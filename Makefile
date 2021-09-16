@@ -758,7 +758,16 @@ endif # KBUILD_EXTMOD
 
 ifeq ($(dot-config),1)
 # Modified for U-Boot
+# Read in the config for this phase
+ifdef CONFIG_TPL_BUILD
+-include include/config/auto_tpl.conf
+else ifdef CONFIG_VPL_BUILD
+-include include/config/auto_vpl.conf
+else ifdef CONFIG_SPL_BUILD
+-include include/config/auto_spl.conf
+else
 -include include/config/auto.conf
+endif
 endif
 
 # The all: target is the default when no target is given on the

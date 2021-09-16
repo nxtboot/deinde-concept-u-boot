@@ -21,15 +21,16 @@ include $(srctree)/scripts/Kbuild.uboot
 
 include scripts/Makefile.compiler
 
--include include/config/auto.conf
-
-# This file contains 0, or 2 lines
-# It is empty for U-Boot proper (where $(obj) is empty)
-# For any xPL build it contains CONFIG_XPL_BUILD=y
-#    - for SPL builds it also contains CONFIG_SPL_BUILD=y
-#    - for TPL builds it also contains CONFIG_TPL_BUILD=y
-#    - for VPL builds it also contains CONFIG_VPL_BUILD=y
 -include $(obj)/include/autoconf.mk
+
+# Read in the config for this SPL phase
+ifdef CONFIG_TPL_BUILD
+-include include/config/auto_tpl.conf
+else ifdef CONFIG_VPL_BUILD
+-include include/config/auto_vpl.conf
+else
+-include include/config/auto_spl.conf
+endif
 
 UBOOTINCLUDE := -I$(obj)/include $(UBOOTINCLUDE)
 
