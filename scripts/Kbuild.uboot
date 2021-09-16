@@ -32,16 +32,7 @@ cc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-version.sh $(CC))
 binutils-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/binutils-version.sh $(AS))
 dtc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/dtc-version.sh $(DTC))
 
-ifeq ($(CONFIG_SPL_BUILD),y)
-PHASE_ := SPL_
-else
-ifeq ($(CONFIG_VPL_BUILD),y)
-PHASE_ := VPL_
-else
-ifeq ($(CONFIG_TPL_BUILD),y)
-PHASE_ := TPL_
-else
+# The XPL_ and PHASE_ vars resolve to nothing so they can be used in
+# Makefiles
+XPL_ :=
 PHASE_ :=
-endif
-endif
-endif
