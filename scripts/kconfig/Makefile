@@ -25,6 +25,8 @@ endif
 # We need this, in case the user has it in its environment
 unexport CONFIG_
 
+$(obj)/conf: $(srctree)/scripts/conf_nospl
+
 xconfig: $(obj)/qconf
 	$< $(silent) $(Kconfig)
 
@@ -71,8 +73,9 @@ simple-targets := oldconfig allnoconfig allyesconfig allmodconfig \
 	alldefconfig randconfig listnewconfig olddefconfig syncconfig
 PHONY += $(simple-targets)
 
+# Pass --u-boot to get SPL behaviour
 $(simple-targets): $(obj)/conf
-	$< $(silent) --$@ $(Kconfig)
+	KCONFIG_SPL=1 $< $(silent) --$@ $(Kconfig)
 
 PHONY += savedefconfig defconfig
 
