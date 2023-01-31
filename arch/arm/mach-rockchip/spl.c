@@ -158,8 +158,8 @@ void spl_board_prepare_for_boot(void)
 	 * to the SRAM. So move the bloblist to RAM.
 	 */
 	if (xpl_phase() == PHASE_SPL && IS_ENABLED(CONFIG_BLOBLIST_RELOC)) {
-		ulong addr = CONFIG_IF_ENABLED_INT(CONFIG_BLOBLIST_RELOC,
-						   CONFIG_BLOBLIST_RELOC_ADDR);
+		ulong addr = IF_ENABLED_INT(CONFIG_BLOBLIST_RELOC,
+					    CONFIG_BLOBLIST_RELOC_ADDR);
 
 		log_debug("Relocating bloblist %p to %lx\n", gd_bloblist(),
 			  addr);
