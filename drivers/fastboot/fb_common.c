@@ -97,16 +97,15 @@ int __weak fastboot_set_reboot_flag(enum fastboot_reboot_reason reason)
 		[FASTBOOT_REBOOT_REASON_FASTBOOTD] = "boot-fastboot",
 		[FASTBOOT_REBOOT_REASON_RECOVERY] = "boot-recovery"
 	};
-
-	int device = config_opt_enabled(CONFIG_FASTBOOT_FLASH_BLOCK,
-					CONFIG_FASTBOOT_FLASH_BLOCK_DEVICE_ID, -1);
+	int device = IS_ENABLED(CONFIG_FASTBOOT_FLASH_BLOCK,
+				(CONFIG_FASTBOOT_FLASH_BLOCK_DEVICE_ID), (-1));
 	if (device == -1) {
-		device = config_opt_enabled(CONFIG_FASTBOOT_FLASH_MMC,
-					    CONFIG_FASTBOOT_FLASH_MMC_DEV, -1);
+		device = IS_ENABLED(CONFIG_FASTBOOT_FLASH_MMC,
+				    (CONFIG_FASTBOOT_FLASH_MMC_DEV), (-1));
 	}
-	const char *bcb_iface = config_opt_enabled(CONFIG_FASTBOOT_FLASH_BLOCK,
-						   CONFIG_FASTBOOT_FLASH_BLOCK_INTERFACE_NAME,
-						   "mmc");
+	const char *bcb_iface = IS_ENABLED(CONFIG_FASTBOOT_FLASH_BLOCK,
+					   (CONFIG_FASTBOOT_FLASH_BLOCK_INTERFACE_NAME),
+					   ("mmc"));
 
 	if (device == -1)
 		return -EINVAL;
