@@ -600,7 +600,7 @@ static int ipuv3_video_probe(struct udevice *dev)
 	if (ret < 0)
 		return ret;
 
-#if !CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if !IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	if (of_machine_is_compatible("fsl,imx6qp"))
 		ret = clk_get_by_id(gdisp ? IMX6QDL_CLK_LDB_DI1_PODF :
 					    IMX6QDL_CLK_LDB_DI0_PODF,

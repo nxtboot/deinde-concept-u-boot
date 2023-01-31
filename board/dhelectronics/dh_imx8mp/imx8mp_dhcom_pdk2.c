@@ -141,7 +141,7 @@ int board_late_init(void)
 
 enum env_location env_get_location(enum env_operation op, int prio)
 {
-	return prio ? ENVL_UNKNOWN : CONFIG_IS_ENABLED(CONFIG_ENV_IS_IN_SPI_FLASH,
+	return prio ? ENVL_UNKNOWN : IS_ENABLED(CONFIG_ENV_IS_IN_SPI_FLASH,
 						       (ENVL_SPI_FLASH),
 						       (ENVL_NOWHERE));
 }

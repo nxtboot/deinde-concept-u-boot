@@ -556,7 +556,7 @@ static int msm_serial_probe(struct udevice *dev)
 		return ret;
 
 	/* Skip re-init after relocation if debug UART and early DM skip are not enabled */
-	if ((!CONFIG_IS_ENABLED(CONFIG_DEBUG_UART) && !IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
+	if ((!IS_ENABLED(CONFIG_DEBUG_UART) && !IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
 	    (gd->flags & GD_FLG_RELOC))
 		return 0;
 

@@ -911,7 +911,7 @@ static int ast2700_clk_bind(struct udevice *dev)
 	 * <&syscon0/1 RESET_X> phandle references resolve to a UCLASS_RESET
 	 * device. This pairs with the airoha-style binding pattern.
 	 */
-	if (CONFIG_IS_ENABLED(CONFIG_RESET_AST2700)) {
+	if (IS_ENABLED(CONFIG_RESET_AST2700)) {
 		ret = device_bind_driver_to_node(dev, "ast2700_reset", "reset",
 						 dev_ofnode(dev), &rst_dev);
 		if (ret)

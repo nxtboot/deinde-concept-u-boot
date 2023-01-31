@@ -277,8 +277,8 @@ U_BOOT_DRIVER(clk_gen5) = {
 	.name		= "clk_gen5",
 	.id		= UCLASS_CLK,
 	.of_match	= r8a78000_mdlc_ids,
-	.priv_auto	= CONFIG_IS_ENABLED(CONFIG_CLK_SCMI, (sizeof(struct gen5_clk_priv)), (0)),
+	.priv_auto	= IS_ENABLED(CONFIG_CLK_SCMI, (sizeof(struct gen5_clk_priv)), (0)),
 	.ops		= &gen5_clk_ops,
-	.probe		= CONFIG_IS_ENABLED(CONFIG_CLK_SCMI, (gen5_clk_probe), (NULL)),
+	.probe		= IS_ENABLED(CONFIG_CLK_SCMI, (gen5_clk_probe), (NULL)),
 	.flags          = DM_FLAG_OS_PREPARE | DM_FLAG_VITAL,
 };

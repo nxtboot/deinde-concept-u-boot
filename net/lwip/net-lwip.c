@@ -164,7 +164,7 @@ static int get_udev_ipv4_info(struct udevice *dev, ip4_addr_t *ip,
  */
 int net_lwip_dns_init(void)
 {
-#if CONFIG_IS_ENABLED(CONFIG_DNS)
+#if IS_ENABLED(CONFIG_DNS)
 	bool has_server = false;
 	ip_addr_t ns;
 	char *nsenv;
@@ -448,7 +448,7 @@ int net_loop(enum proto_t protocol)
 
 u32_t sys_now(void)
 {
-#if CONFIG_IS_ENABLED(CONFIG_SANDBOX_TIMER)
+#if IS_ENABLED(CONFIG_SANDBOX_TIMER)
 	return timer_early_get_count();
 #else
 	return get_timer(0);

@@ -697,7 +697,7 @@ static void video_idle(struct cyclic_info *cyc)
 	if (uc_priv->manual_sync)
 		return;
 
-	if (CONFIG_IS_ENABLED(CONFIG_CURSOR)) {
+	if (IS_ENABLED(CONFIG_CURSOR)) {
 		struct udevice *cons;
 
 		/* Handle cursor display for each video console */

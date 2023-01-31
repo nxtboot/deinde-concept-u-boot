@@ -286,7 +286,7 @@ int console_alloc_cursor(struct udevice *dev, struct vidconsole_cursor *curs)
 	struct udevice *vid;
 	int save_count;
 
-	if (!CONFIG_IS_ENABLED(CONFIG_CURSOR) || xpl_phase() < PHASE_BOARD_R)
+	if (!IS_ENABLED(CONFIG_CURSOR) || xpl_phase() < PHASE_BOARD_R)
 		return 0;
 	vid = dev_get_parent(dev);
 	vid_priv = dev_get_uclass_priv(vid);

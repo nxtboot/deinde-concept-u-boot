@@ -459,7 +459,7 @@ struct bootm_headers {
 	ulong		cmdline_end;
 	struct bd_info		*kbd;
 
-#if CONFIG_IS_ENABLED(CONFIG_FIT_VERITY)
+#if IS_ENABLED(CONFIG_FIT_VERITY)
 	/*
 	 * dm-verity kernel command-line fragments, populated during FIT
 	 * parsing by fit_verity_build_cmdline().  Bootmeths can check
@@ -859,7 +859,7 @@ int fit_image_load(struct bootm_headers *images, ulong addr,
 		   enum image_arch_t arch, int image_ph_type, int bootstage_id,
 		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
 
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(CONFIG_FIT_VERITY)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_FIT_VERITY)
 /**
  * fit_verity_build_cmdline() - build dm-verity cmdline from FIT metadata
  * @fit:		pointer to the FIT blob

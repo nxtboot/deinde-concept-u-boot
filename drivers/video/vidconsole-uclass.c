@@ -741,7 +741,7 @@ int vidconsole_ctx_new(struct udevice *dev, void **ctxp)
 		goto err_alloc;
 	*ptr = ctx;
 
-	if (CONFIG_IS_ENABLED(CONFIG_CURSOR) && xpl_phase() == PHASE_BOARD_R) {
+	if (IS_ENABLED(CONFIG_CURSOR) && xpl_phase() == PHASE_BOARD_R) {
 		ret = console_alloc_cursor(dev, &ctx->curs);
 		if (ret)
 			goto err_curs;

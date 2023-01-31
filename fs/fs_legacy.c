@@ -271,7 +271,7 @@ static struct fstype_info fstypes[] = {
 		.statfs = fs_statfs_unsupported,
 	},
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_FS_EXT4L)
+#if IS_ENABLED(CONFIG_FS_EXT4L)
 	{
 		.fstype = FS_TYPE_EXT,
 		.name = "ext4",
@@ -294,7 +294,7 @@ static struct fstype_info fstypes[] = {
 		.statfs = ext4l_statfs_legacy,
 	},
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_FS_ISOFS)
+#if IS_ENABLED(CONFIG_FS_ISOFS)
 	{
 		.fstype = FS_TYPE_ISO,
 		.name = "iso9660",
@@ -403,7 +403,7 @@ static struct fstype_info fstypes[] = {
 	},
 #endif
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_FS_BTRFS)
+#if IS_ENABLED(CONFIG_FS_BTRFS)
 	{
 		.fstype = FS_TYPE_BTRFS,
 		.name = "btrfs",
@@ -449,7 +449,7 @@ static struct fstype_info fstypes[] = {
 		.statfs = fs_statfs_unsupported,
 	},
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_FS_EROFS)
+#if IS_ENABLED(CONFIG_FS_EROFS)
 	{
 		.fstype = FS_TYPE_EROFS,
 		.name = "erofs",
@@ -472,7 +472,7 @@ static struct fstype_info fstypes[] = {
 		.statfs = fs_statfs_unsupported,
 	},
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_FS_EXFAT)
+#if IS_ENABLED(CONFIG_FS_EXFAT)
 	{
 		.fstype = FS_TYPE_EXFAT,
 		.name = "exfat",
@@ -495,7 +495,7 @@ static struct fstype_info fstypes[] = {
 		.statfs = fs_statfs_unsupported,
 	},
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_VIRTIO_FS)
+#if IS_ENABLED(CONFIG_VIRTIO_FS)
 	{
 		.fstype = FS_TYPE_VIRTIO,
 		.name = "virtio",

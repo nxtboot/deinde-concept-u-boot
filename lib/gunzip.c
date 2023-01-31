@@ -160,7 +160,7 @@ int gzwrite(unsigned char *src, size_t len, struct blk_desc *dev,
 	const ulong minchunk = 0x400;
 	const ulong maxchunk = SZ_4G - minchunk;
 	const ulong chunk =
-		CONFIG_IS_ENABLED(CONFIG_SANDBOX,
+		IS_ENABLED(CONFIG_SANDBOX,
 				  (clamp(env_get_ulong("gzwrite_chunk", 10, maxchunk),
 					 minchunk, maxchunk)),
 				  (maxchunk));

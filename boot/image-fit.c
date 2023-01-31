@@ -1314,7 +1314,7 @@ int fit_check_format(const void *fit, ulong size)
 	 * For the control DTB to act as a FIT image, we only require
 	 * an /images node.
 	 */
-	if (CONFIG_IS_ENABLED(CONFIG_CONTROL_DTB_AS_FIT) && fit == gd_fdt_blob())
+	if (IS_ENABLED(CONFIG_CONTROL_DTB_AS_FIT) && fit == gd_fdt_blob())
 		return fit_check_images_node(fit);
 
 	if (IS_ENABLED(CONFIG_FIT_FULL_CHECK)) {
@@ -2525,7 +2525,7 @@ out:
 }
 #endif
 
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(CONFIG_FIT_VERITY)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_FIT_VERITY)
 
 static const char *const verity_opt_props[] = {
 	FIT_VERITY_OPT_RESTART,

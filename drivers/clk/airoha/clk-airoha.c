@@ -522,7 +522,7 @@ static int airoha_clk_bind(struct udevice *dev)
 	struct udevice *rst_dev;
 	int ret = 0;
 
-	if (CONFIG_IS_ENABLED(CONFIG_RESET_AIROHA)) {
+	if (IS_ENABLED(CONFIG_RESET_AIROHA)) {
 		ret = device_bind_driver_to_node(dev, "airoha-reset", "reset",
 						 dev_ofnode(dev), &rst_dev);
 		if (ret)

@@ -132,7 +132,7 @@ int ft_board_setup(void *fdt, struct bd_info *bd)
 }
 
 #if IS_ENABLED(CONFIG_SUPPORT_EXTENSION_SCAN) && \
-	!CONFIG_IS_ENABLED(CONFIG_XPL_BUILD)
+	!IS_ENABLED(CONFIG_XPL_BUILD)
 static int sandbox_extension_board_scan(struct udevice *dev,
 					struct alist *extension_list)
 {

@@ -852,7 +852,7 @@ static struct udevice *airoha_switch_mdio_init(struct udevice *dev)
 	struct udevice *mdio_dev;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CONFIG_MDIO_MT7531_MMIO))
+	if (!IS_ENABLED(CONFIG_MDIO_MT7531_MMIO))
 		return NULL;
 
 	switch_node = ofnode_by_compatible(ofnode_null(),

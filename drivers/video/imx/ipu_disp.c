@@ -612,7 +612,7 @@ void ipu_dp_dc_enable(struct ipu_ctx *ctx, ipu_channel_t channel)
 	__raw_writel(reg, DC_WR_CH_CONF(dc_chan));
 
 	clk_enable(ctx->pixel_clk[di]);
-#if !CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if !IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	reg = __raw_readl(IPU_DISP_GEN);
 	reg |= di ? DI1_COUNTER_RELEASE : DI0_COUNTER_RELEASE;
 	__raw_writel(reg, IPU_DISP_GEN);
@@ -707,7 +707,7 @@ void ipu_dp_dc_disable(struct ipu_ctx *ctx, ipu_channel_t channel,
 
 		/* Clock is already off because it must be done quickly, but
 		   we need to fix the ref count */
-#if !CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if !IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 		reg = __raw_readl(IPU_DISP_GEN);
 		reg &= ctx->dc_di_assignment[dc_chan] ? ~DI1_COUNTER_RELEASE :
 							~DI0_COUNTER_RELEASE;
@@ -787,7 +787,7 @@ static u32 ipu_di_clk_config(struct ipu_di_config *di, ipu_di_signal_cfg_t sig)
 	/* Init clocking */
 	debug("pixel clk = %dHz\n", di->pixel_clk_rate);
 
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	u32 rounded_pixel_clk;
 	struct clk *di_parent;
 

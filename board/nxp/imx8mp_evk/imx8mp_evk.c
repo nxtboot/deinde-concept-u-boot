@@ -8,7 +8,7 @@
 #include <env.h>
 #include <asm/arch/sys_proto.h>
 
-#if CONFIG_IS_ENABLED(CONFIG_EFI_HAVE_CAPSULE_SUPPORT)
+#if IS_ENABLED(CONFIG_EFI_HAVE_CAPSULE_SUPPORT)
 #define IMX_BOOT_IMAGE_GUID \
 	EFI_GUID(0x928b33bc, 0xe58b, 0x4247, 0x9f, 0x1d, \
 		 0x3b, 0xf1, 0xee, 0x1c, 0xda, 0xff)

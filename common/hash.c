@@ -634,7 +634,7 @@ int hash_command(const char *algo_name, int flags, int argc,
 			return CMD_RET_FAILURE;
 
 		buf = map_sysmem(addr, len);
-		if (CONFIG_IS_ENABLED(CONFIG_DM_HASH)) {
+		if (IS_ENABLED(CONFIG_DM_HASH)) {
 			enum HASH_ALGO hash_algo;
 			int ret;
 

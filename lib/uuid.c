@@ -243,7 +243,7 @@ static const struct {
 		"EFI Conformance Profiles Table",
 		EFI_CONFORMANCE_PROFILES_TABLE_GUID,
 	},
-#if CONFIG_IS_ENABLED(CONFIG_EFI_ECPT)
+#if IS_ENABLED(CONFIG_EFI_ECPT)
 	{
 		"EFI EBBR 2.1 Conformance Profile",
 		EFI_CONFORMANCE_PROFILE_EBBR_2_1_GUID,

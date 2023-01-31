@@ -153,7 +153,7 @@ malloc within that phase, since the dlmalloc code is not included in the
 binary.
 
 Note: When building with ``CONFIG_XPL_BUILD``, the code uses
-``CONFIG_IS_ENABLED()`` macros to automatically select the appropriate
+``IS_ENABLED()`` macros to automatically select the appropriate
 phase-specific option (e.g., ``IS_ENABLED(CONFIG_SYS_MALLOC_F)`` expands to
 ``CONFIG_SPL_SYS_MALLOC_F`` when building SPL).
 

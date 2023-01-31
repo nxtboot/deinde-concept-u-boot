@@ -447,7 +447,7 @@ extern const efi_guid_t efi_guid_firmware_management_protocol;
 /* GUID for the ESRT */
 extern const efi_guid_t efi_esrt_guid;
 /* GUID for the ECPT */
-#if CONFIG_IS_ENABLED(CONFIG_EFI_ECPT)
+#if IS_ENABLED(CONFIG_EFI_ECPT)
 extern const efi_guid_t efi_ecpt_guid;
 #endif
 /* GUID of the SMBIOS table */
@@ -883,7 +883,7 @@ struct efi_state {
  */
 extern struct efi_state *efis __attribute__((visibility("hidden")));
 
-#if CONFIG_IS_ENABLED(CONFIG_EFI_COUNT_CALLS)
+#if IS_ENABLED(CONFIG_EFI_COUNT_CALLS)
 /**
  * efi_count_call() - Note that an application has made an EFI call
  *

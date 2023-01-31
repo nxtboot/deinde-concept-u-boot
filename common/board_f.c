@@ -321,7 +321,7 @@ __weak int mach_cpu_init(void)
 /* Get the top of usable RAM */
 __weak phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 {
-	if (CONFIG_IS_ENABLED(CONFIG_RELOC_ADDR_TOP))
+	if (IS_ENABLED(CONFIG_RELOC_ADDR_TOP))
 		return gd->ram_top;
 
 #if defined(CFG_SYS_SDRAM_BASE) && CFG_SYS_SDRAM_BASE > 0
@@ -356,7 +356,7 @@ static int setup_ram_config(void)
 {
 	debug("Monitor len: %08x\n", gd->mon_len);
 
-	if (CONFIG_IS_ENABLED(CONFIG_RELOC_ADDR_TOP)) {
+	if (IS_ENABLED(CONFIG_RELOC_ADDR_TOP)) {
 		int i;
 		phys_addr_t top;
 
@@ -978,7 +978,7 @@ static void initcall_run_f(void)
 	INITCALL(arch_cpu_init);	/* basic arch cpu dependent setup */
 	INITCALL(mach_cpu_init);	/* SoC/machine dependent CPU setup */
 	INITCALL(initf_dm);
-#if CONFIG_IS_ENABLED(CONFIG_BOARD_EARLY_INIT_F)
+#if IS_ENABLED(CONFIG_BOARD_EARLY_INIT_F)
 	INITCALL(board_early_init_f);
 #endif
 #if defined(CONFIG_PPC) || defined(CONFIG_SYS_FSL_CLK) || defined(CONFIG_M68K)
@@ -1002,13 +1002,13 @@ static void initcall_run_f(void)
 	INITCALL(print_resetinfo);
 #endif
 	/* display cpu info (and speed) */
-#if CONFIG_IS_ENABLED(CONFIG_DISPLAY_CPUINFO)
+#if IS_ENABLED(CONFIG_DISPLAY_CPUINFO)
 	INITCALL(print_cpuinfo);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_DTB_RESELECT)
+#if IS_ENABLED(CONFIG_DTB_RESELECT)
 	INITCALL(embedded_dtb_select);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_DISPLAY_BOARDINFO)
+#if IS_ENABLED(CONFIG_DISPLAY_BOARDINFO)
 	INITCALL(show_board_info);
 #endif
 	WATCHDOG_INIT();
@@ -1019,7 +1019,7 @@ static void initcall_run_f(void)
 #endif
 	INITCALL(announce_dram_init);
 	INITCALL(dram_init);		/* configure available RAM banks */
-#if CONFIG_IS_ENABLED(CONFIG_POST)
+#if IS_ENABLED(CONFIG_POST)
 	INITCALL(post_init_f);
 #endif
 	WATCHDOG_RESET();
@@ -1027,7 +1027,7 @@ static void initcall_run_f(void)
 	INITCALL(testdram);
 #endif /* CFG_SYS_DRAM_TEST */
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(CONFIG_POST)
+#if IS_ENABLED(CONFIG_POST)
 	INITCALL(init_post);
 #endif
 	WATCHDOG_RESET();

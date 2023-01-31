@@ -12,7 +12,7 @@
 
 #include <pci.h>
 
-#if CONFIG_IS_ENABLED(CONFIG_TURIN_REG_TRACE)
+#if IS_ENABLED(CONFIG_TURIN_REG_TRACE)
 void turin_trace_smn(u32 addr, u32 val);
 void turin_trace_pci(pci_dev_t bdf, uint offset, ulong val, int bits);
 void turin_trace_msr(u32 msr, u64 val);

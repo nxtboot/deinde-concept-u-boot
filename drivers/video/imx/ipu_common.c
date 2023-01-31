@@ -101,7 +101,7 @@ struct ipu_ch_param {
  */
 static int ipu_clk_init(struct ipu_ctx *ctx)
 {
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	return ipu_clk_init_legacy(ctx);
 #else
 	struct clk *clk;
@@ -124,7 +124,7 @@ static int ipu_clk_init(struct ipu_ctx *ctx)
  */
 static int ipu_ldb_clk_init(struct ipu_ctx *ctx)
 {
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	return ipu_ldb_clk_init_legacy(ctx);
 #else
 	/* Set this in the FB driver where we know the display id */
@@ -176,7 +176,7 @@ static inline void ipu_ch_param_set_buffer(u32 ch, int buf_num,
  */
 static int ipu_di_clk_init(struct ipu_ctx *ctx, int id)
 {
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	ctx->di_clk[id] = NULL;
 	return 0;
 #else
@@ -199,7 +199,7 @@ static int ipu_di_clk_init(struct ipu_ctx *ctx, int id)
  */
 static int ipu_pixel_clk_init(struct ipu_ctx *ctx, int id)
 {
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	return ipu_pixel_clk_init_legacy(ctx, id);
 #else
 	ctx->pixel_clk[id] = ctx->ipu_clk;
@@ -296,7 +296,7 @@ struct ipu_ctx *ipu_probe(struct udevice *dev)
 
 	ipu_reset();
 
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	clk_set_parent(ctx->pixel_clk[0], ctx->ipu_clk);
 	clk_set_parent(ctx->pixel_clk[1], ctx->ipu_clk);
 #endif
@@ -329,7 +329,7 @@ struct ipu_ctx *ipu_probe(struct udevice *dev)
 	/* Set MCU_T to divide MCU access window into 2 */
 	__raw_writel(0x00400000L | (IPU_MCU_T_DEFAULT << 18), IPU_DISP_GEN);
 
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	clk_disable(ctx->ipu_clk);
 #endif
 
@@ -1042,7 +1042,7 @@ ipu_color_space_t format_to_colorspace(u32 fmt)
 
 bool ipu_clk_enabled(struct ipu_ctx *ctx)
 {
-#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
+#if IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 	return clk_get_usecount(ctx->ipu_clk);
 #else
 	return ctx->ipu_clk->enable_count;

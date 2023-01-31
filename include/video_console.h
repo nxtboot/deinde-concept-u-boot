@@ -630,7 +630,7 @@ static inline void vidconsole_readline_end_all(void)
 
 static inline void cli_index_adjust(struct vidconsole_ctx *ctx, int by)
 {
-	if (CONFIG_IS_ENABLED(CONFIG_CURSOR))
+	if (IS_ENABLED(CONFIG_CURSOR))
 		ctx->cli_index += by;
 }
 

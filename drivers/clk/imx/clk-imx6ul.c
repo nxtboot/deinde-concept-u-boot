@@ -237,7 +237,7 @@ static int imx6ul_clk_probe(struct udevice *dev)
 	clk_dm(IMX6UL_CLK_UART8_SERIAL,
 	       imx_clk_gate2(dev, "uart8_serial", "uart_podf", base + 0x80, 14));
 
-#if CONFIG_IS_ENABLED(CONFIG_NAND_MXS)
+#if IS_ENABLED(CONFIG_NAND_MXS)
 	clk_dm(IMX6UL_CLK_PER_BCH,
 	       imx_clk_gate2(dev, "per_bch", "bch_podf", base + 0x78, 12));
 	clk_dm(IMX6UL_CLK_GPMI_BCH_APB,

@@ -266,7 +266,7 @@ static void fit_image_print_data(struct fit_print_ctx *ctx, int noffset,
 static __maybe_unused void fit_image_print_dm_verity(struct fit_print_ctx *ctx,
 						     int noffset)
 {
-#if defined(USE_HOSTCC) || CONFIG_IS_ENABLED(CONFIG_FIT_VERITY)
+#if defined(USE_HOSTCC) || IS_ENABLED(CONFIG_FIT_VERITY)
 	const void *fit = ctx->fit;
 	const char *algo;
 	const uint8_t *bin;
@@ -322,7 +322,7 @@ static void fit_image_print_verification_data(struct fit_print_ctx *ctx,
 		fit_image_print_data(ctx, noffset, "Hash");
 	else if (!strncmp(name, FIT_SIG_NODENAME, strlen(FIT_SIG_NODENAME)))
 		fit_image_print_data(ctx, noffset, "Sign");
-#if defined(USE_HOSTCC) || CONFIG_IS_ENABLED(CONFIG_FIT_VERITY)
+#if defined(USE_HOSTCC) || IS_ENABLED(CONFIG_FIT_VERITY)
 	else if (!strcmp(name, FIT_VERITY_NODENAME))
 		fit_image_print_dm_verity(ctx, noffset);
 #endif

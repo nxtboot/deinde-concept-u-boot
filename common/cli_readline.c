@@ -545,7 +545,7 @@ int cread_line_process_ch(struct cli_line_state *cls, char ichar)
 		}
 		break;
 	case CTL_CH('x'):
-		if (CONFIG_IS_ENABLED(CONFIG_CMDLINE_UNDO)) {
+		if (IS_ENABLED(CONFIG_CMDLINE_UNDO)) {
 			cread_save_undo(cls);
 			cread_save_yank(cls, buf, cls->eol_num);
 			BEGINNING_OF_LINE();
@@ -687,7 +687,7 @@ void cli_cread_init(struct cli_line_state *cls, char *buf, uint buf_size)
 void cli_cread_init_undo(struct cli_line_state *cls, char *buf, uint buf_size)
 {
 	cli_cread_init(cls, buf, buf_size);
-	if (CONFIG_IS_ENABLED(CONFIG_CMDLINE_UNDO)) {
+	if (IS_ENABLED(CONFIG_CMDLINE_UNDO)) {
 		struct cli_editor_state *ed = cli_editor(cls);
 
 		abuf_init_size(&ed->yank, buf_size);

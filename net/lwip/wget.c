@@ -315,8 +315,8 @@ static int wget_handle_request(struct wget_ctx *ctx, bool is_https,
 		char *ca;
 		size_t ca_sz;
 
-#if IS_ENABLED(CONFIG_WGET_CACERT) || CONFIG_IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
-#if CONFIG_IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT) || IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 		if (!cacert_initialized)
 			set_cacert_builtin();
 #endif

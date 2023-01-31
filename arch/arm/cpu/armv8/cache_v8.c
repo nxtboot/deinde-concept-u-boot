@@ -819,7 +819,7 @@ __weak u64 get_page_table_size(void)
 	 * An EFI payload may change the attributes of each section of the
 	 * images it loads, splitting a block at each end of every section
 	 */
-	if (CONFIG_IS_ENABLED(CONFIG_EFI_MEMORY_ATTRIBUTE_PROTOCOL))
+	if (IS_ENABLED(CONFIG_EFI_MEMORY_ATTRIBUTE_PROTOCOL))
 		size += one_pt * 32;
 
 	return size;

@@ -259,7 +259,7 @@ static const char *parse_config_line(const char *p, const char **endp)
 		r = q;
 	/*
 	 * U-Boot also handles
-	 *   CONFIG_IS_ENABLED(...)
+	 *   IS_ENABLED(...)
 	 *   CONFIG_VAL(...)
 	 */
 	if ((q - p == 10 && !memcmp(p, "IS_ENABLED(", 11)) ||

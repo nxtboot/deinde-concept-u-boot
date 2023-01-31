@@ -589,7 +589,7 @@ static void initcall_run_r(void)
 	INITCALL(initr_reloc);
 	INITCALL(event_init);
 	/* TODO: could x86/PPC have this also perhaps? */
-#if CONFIG_IS_ENABLED(CONFIG_ARM) || CONFIG_IS_ENABLED(CONFIG_RISCV)
+#if IS_ENABLED(CONFIG_ARM) || IS_ENABLED(CONFIG_RISCV)
 	INITCALL(initr_caches);
 	/* Note: For Freescale LS2 SoCs, new MMU table is created in DDR.
 	 *	 A temporary mapping of IFC high region is since removed,
@@ -601,14 +601,14 @@ static void initcall_run_r(void)
 	INITCALL(initr_reloc_global_data);
 	/* the state is runtime data, relocated just above */
 	INITCALL(efi_state_init_default);
-#if IS_ENABLED(CONFIG_SYS_INIT_RAM_LOCK) && CONFIG_IS_ENABLED(CONFIG_E500)
+#if IS_ENABLED(CONFIG_SYS_INIT_RAM_LOCK) && IS_ENABLED(CONFIG_E500)
 	INITCALL(initr_unlock_ram_in_cache);
 #endif
 	INITCALL(initr_barrier);
 	INITCALL(initr_malloc);
 	INITCALL(log_init);
 	INITCALL(initr_bootstage); /* Needs malloc() but has its own timer */
-#if CONFIG_IS_ENABLED(CONFIG_CONSOLE_RECORD)
+#if IS_ENABLED(CONFIG_CONSOLE_RECORD)
 	INITCALL(console_record_init);
 #endif
 #if IS_ENABLED(CONFIG_SYS_HAS_NONCACHED_MEMORY)
@@ -618,7 +618,7 @@ static void initcall_run_r(void)
 #if IS_ENABLED(CONFIG_DM)
 	INITCALL(initr_dm);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_ADDR_MAP)
+#if IS_ENABLED(CONFIG_ADDR_MAP)
 	INITCALL(init_addr_map);
 #endif
 #if IS_ENABLED(CONFIG_BOARD_INIT)
@@ -653,11 +653,11 @@ static void initcall_run_r(void)
 #endif
 	WATCHDOG_RESET();
 	INITCALL(arch_initr_trap);
-#if CONFIG_IS_ENABLED(CONFIG_BOARD_EARLY_INIT_R)
+#if IS_ENABLED(CONFIG_BOARD_EARLY_INIT_R)
 	INITCALL(board_early_init_r);
 #endif
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(CONFIG_POST)
+#if IS_ENABLED(CONFIG_POST)
 	INITCALL(post_output_backlog);
 #endif
 	WATCHDOG_RESET();
@@ -668,11 +668,11 @@ static void initcall_run_r(void)
 	 */
 	INITCALL(pci_init);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_ARCH_EARLY_INIT_R)
+#if IS_ENABLED(CONFIG_ARCH_EARLY_INIT_R)
 	INITCALL(arch_early_init_r);
 #endif
 	INITCALL(power_init_board);
-#if CONFIG_IS_ENABLED(CONFIG_MTD_NOR_FLASH)
+#if IS_ENABLED(CONFIG_MTD_NOR_FLASH)
 	INITCALL(initr_flash);
 #endif
 	WATCHDOG_RESET();
@@ -683,16 +683,16 @@ static void initcall_run_r(void)
 #if IS_ENABLED(CONFIG_EFI_LOADER)
 	INITCALL(efi_init_early);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_CMD_NAND)
+#if IS_ENABLED(CONFIG_CMD_NAND)
 	INITCALL(initr_nand);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_CMD_ONENAND)
+#if IS_ENABLED(CONFIG_CMD_ONENAND)
 	INITCALL(initr_onenand);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_XEN)
+#if IS_ENABLED(CONFIG_XEN)
 	INITCALL(xen_init);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_PVBLOCK)
+#if IS_ENABLED(CONFIG_PVBLOCK)
 	INITCALL(initr_pvblock);
 #endif
 	INITCALL(initr_env);
@@ -714,24 +714,24 @@ static void initcall_run_r(void)
 #endif
 	INITCALL(stdio_add_devices);
 	INITCALL(jumptable_init);
-#if CONFIG_IS_ENABLED(CONFIG_LEGACY_API)
+#if IS_ENABLED(CONFIG_LEGACY_API)
 	INITCALL(legacy_api_init);
 #endif
 	INITCALL(console_init_r);	/* fully init console as a device */
-#if CONFIG_IS_ENABLED(CONFIG_DISPLAY_BOARDINFO_LATE)
+#if IS_ENABLED(CONFIG_DISPLAY_BOARDINFO_LATE)
 	INITCALL(console_announce_r);
 	INITCALL(show_board_info);
 #endif
 	/* miscellaneous arch-dependent init */
-#if CONFIG_IS_ENABLED(CONFIG_ARCH_MISC_INIT)
+#if IS_ENABLED(CONFIG_ARCH_MISC_INIT)
 	INITCALL(arch_misc_init);
 #endif
 	/* miscellaneous platform-dependent init */
-#if CONFIG_IS_ENABLED(CONFIG_MISC_INIT_R)
+#if IS_ENABLED(CONFIG_MISC_INIT_R)
 	INITCALL(misc_init_r);
 #endif
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(CONFIG_CMD_KGDB)
+#if IS_ENABLED(CONFIG_CMD_KGDB)
 	INITCALL(kgdb_init);
 #endif
 	INITCALL(interrupt_init);
@@ -739,7 +739,7 @@ static void initcall_run_r(void)
 	INITCALL(timer_init);		/* initialize timer */
 #endif
 	/* PPC has a udelay(20) here dating from 2002. Why? */
-#if CONFIG_IS_ENABLED(CONFIG_BOARD_LATE_INIT)
+#if IS_ENABLED(CONFIG_BOARD_LATE_INIT)
 	INITCALL(board_late_init);
 #endif
 #ifdef CONFIG_PCI_ENDPOINT
@@ -749,7 +749,7 @@ static void initcall_run_r(void)
 	WATCHDOG_RESET();
 	INITCALL(initr_net);
 #endif
-#if CONFIG_IS_ENABLED(CONFIG_POST)
+#if IS_ENABLED(CONFIG_POST)
 	INITCALL(initr_post);
 #endif
 	WATCHDOG_RESET();

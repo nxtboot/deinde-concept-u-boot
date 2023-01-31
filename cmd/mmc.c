@@ -519,7 +519,7 @@ static int do_mmc_rescan(struct cmd_tbl *cmdtp, int flag,
 
 	if (argc == 1) {
 		mmc = init_mmc_device(curr_device, true);
-	} else if ((argc == 2) && (CONFIG_IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET))) {
+	} else if ((argc == 2) && (IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET))) {
 		enum bus_mode speed_mode;
 
 		speed_mode = (int)dectoul(argv[1], NULL);
@@ -564,7 +564,7 @@ static int do_mmc_dev(struct cmd_tbl *cmdtp, int flag,
 
 	switch (argc) {
 	case 4:
-		if (CONFIG_IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET)) {
+		if (IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET)) {
 			speed_mode = (int)dectoul(argv[3], &endp);
 			if (*endp) {
 				printf("Invalid speed mode index '%s', did you specify a mode name?\n",
@@ -1314,7 +1314,7 @@ U_BOOT_CMD(
 #endif
 	"mmc erase blk# cnt\n"
 	"mmc erase partname\n"
-#if CONFIG_IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET)
+#if IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET)
 	"mmc rescan [mode]\n"
 	"mmc dev [dev] [part] [mode] - show or set current mmc device [partition] and set mode\n"
 	"  - the required speed mode is passed as the index from the following list\n"
