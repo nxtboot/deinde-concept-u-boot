@@ -33,6 +33,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifndef ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE
+#define ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE	0
+#endif
+
 struct fsl_esdhc {
 	uint    dsaddr;		/* SDMA system address register */
 	uint    blkattr;	/* Block attributes register */
@@ -324,7 +328,7 @@ static int esdhc_setup_data(struct fsl_esdhc_priv *priv, struct mmc *mmc,
 	    (timeout == 4 || timeout == 8 || timeout == 12))
 		timeout++;
 
-	if (IS_ENABLED(ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE))
+	if (ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE)
 		timeout = 0xE;
 
 	esdhc_clrsetbits32(&regs->sysctl, SYSCTL_TIMEOUT_MASK, timeout << 16);
