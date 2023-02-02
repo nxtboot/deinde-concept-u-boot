@@ -124,7 +124,7 @@ unsigned long long get_qixis_addr(void);
 	"mcinitcmd=fsl_mc start mc 0x580a00000"	\
 	" 0x580e00000 \0"
 
-#ifdef CONFIG_NAND_BOOT
+#ifdef CONFIG_PPL_NAND_BOOT
 #define CFG_SYS_NAND_U_BOOT_DST	0x80400000
 #define CFG_SYS_NAND_U_BOOT_START	CFG_SYS_NAND_U_BOOT_DST
 #endif
