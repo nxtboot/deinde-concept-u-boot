@@ -72,13 +72,7 @@ quiet_cmd_autoconf = GEN     $@
 
 quiet_cmd_u_boot_cfg = CFG     $@
       cmd_u_boot_cfg = \
-	$(CPP) $(c_flags) $2 -DDO_DEPS_ONLY -dM include/config.h > $@.tmp && { \
-		egrep 'define (CONFIG_|CFG_)' $@.tmp | sort | \
-			sed '/define CONFIG_IS_ENABLED(/d;/define CONFIG_IF_ENABLED_INT(/d;/define CONFIG_VAL(/d;' > $@; \
-		rm $@.tmp;						\
-	} || {								\
-		rm $@.tmp; false;					\
-	}
+	$(CPP) $(c_flags) $2 -DDO_DEPS_ONLY -dM include/config.h > $@
 
 u-boot.cfg: include/config.h FORCE
 	$(call cmd,u_boot_cfg)
