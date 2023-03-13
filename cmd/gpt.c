@@ -182,9 +182,9 @@ static int calc_parts_list_len(int numparts)
 	/* see part.h for definition of struct disk_partition */
 	partlistlen += numparts * (strlen("start=0x,") + lbaint_size);
 	partlistlen += numparts * (strlen("size=0x,") + lbaint_size);
-	if (IS_ENABLED(CONFIG_PARTITION_UUIDS))
+	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))
 		partlistlen += numparts * (strlen("uuid=,") + UUID_STR_LEN);
-	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))
+	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))
 		partlistlen += numparts * (strlen("type=;") + UUID_STR_LEN);
 	debug("Length of partitions_list is %d for %d partitions\n",
 	      partlistlen, numparts);
@@ -224,7 +224,7 @@ static struct disk_part *allocate_disk_part(struct disk_partition *info,
 	if (IS_ENABLED(CONFIG_PARTITION_UUIDS))
 		disk_partition_set_uuid(&newpart->gpt_part_info,
 					disk_partition_uuid(info));
-	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))
+	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))
 		disk_partition_set_type_guid(&newpart->gpt_part_info,
 					     disk_partition_type_guid(info));
 	newpart->partnum = partnum;
@@ -265,7 +265,7 @@ static void print_gpt_info(void)
 		if (CONFIG_IS_ENABLED(PARTITION_UUIDS))
 			printf("UUID %s\n",
 			       disk_partition_uuid(&curr->gpt_part_info));
-		if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))
+		if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))
 			printf("Type GUID %s\n",
 			       disk_partition_type_guid(&curr->gpt_part_info));
 		printf("\n");
@@ -312,7 +312,7 @@ static int create_gpt_partitions_list(int numparts, const char *guid,
 					    curr->gpt_part_info.blksz);
 		strncat(partitions_list, partstr, PART_NAME_LEN + 1);
 
-		if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)) {
+		if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)) {
 			strcat(partitions_list, ",type=");
 			strncat(partitions_list,
 				disk_partition_type_guid(&curr->gpt_part_info),
@@ -530,7 +530,7 @@ static int set_gpt_info(struct blk_desc *dev_desc,
 			strncpy((char *)parts[i].uuid, p, max_str_part);
 			free(val);
 		}
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 		/* guid */
 		val = extract_val(tok, "type");
 		if (val) {

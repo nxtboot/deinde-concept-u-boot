@@ -67,11 +67,11 @@ static const struct {
 	efi_guid_t guid;
 } list_guid[] = {
 #ifndef USE_HOSTCC
-#if defined(CONFIG_PARTITION_TYPE_GUID) || defined(CONFIG_CMD_EFIDEBUG) || \
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID) || defined(CONFIG_CMD_EFIDEBUG) || \
 	defined(CONFIG_EFI)
 	{"EFI System Partition", PARTITION_SYSTEM_GUID},
 #endif
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 	{"mbr",		LEGACY_MBR_PARTITION_GUID},
 	{"msft",	PARTITION_MSFT_RESERVED_GUID},
 	{"data",	PARTITION_BASIC_DATA_GUID},
@@ -332,7 +332,7 @@ int uuid_str_to_bin(const char *uuid_str, unsigned char *uuid_bin,
 	uint64_t tmp64;
 
 	if (!uuid_str_valid(uuid_str)) {
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 		if (!uuid_guid_get_bin(uuid_str, uuid_bin))
 			return 0;
 #endif
