@@ -211,7 +211,6 @@ static void skip_num(int hex, const char *value, const char **end,
 		*end = value;
 }
 
-#if CONFIG_IS_ENABLED(NET)
 int eth_validate_ethaddr_str(const char *addr)
 {
 	const char *end;
@@ -234,7 +233,6 @@ int eth_validate_ethaddr_str(const char *addr)
 
 	return 0;
 }
-#endif
 
 /*
  * Based on the declared type enum, validate that the value string complies
