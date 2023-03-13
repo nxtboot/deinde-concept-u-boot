@@ -459,6 +459,7 @@ static int rockchip_pinctrl_set_state(struct udevice *dev,
 	const u32 *data;
 	ofnode node;
 	struct ofprop prop;
+
 	data = dev_read_prop(config, "rockchip,pins", &count);
 	if (count < 0) {
 		debug("%s: bad array size %d\n", __func__, count);
