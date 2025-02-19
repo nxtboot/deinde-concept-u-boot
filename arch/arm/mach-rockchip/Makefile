@@ -7,18 +7,25 @@
 # this may have entered from ATF with the stack-pointer pointing to
 # inaccessible/protected memory (and the bootrom-helper assumes that
 # the stack-pointer is valid before switching to the U-Boot stack).
-obj-spl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
-obj-spl-$(CONFIG_SPL_ROCKCHIP_COMMON_BOARD) += spl.o spl_common.o
-ifndef CONFIG_VPL
-obj-spl-$(CONFIG_SPL_ROCKCHIP_COMMON_BOARD) += spl-boot-order.o
+ifdef CONFIG_XPL_BUILD
+ifndef CONFIG_VPL_BUILD
+obj-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 endif
-obj-tpl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
-obj-tpl-$(CONFIG_TPL_ROCKCHIP_COMMON_BOARD) += tpl.o spl_common.o
-obj-tpl-$(CONFIG_ROCKCHIP_PX30) += px30-board-tpl.o spl_common.o
-
-obj-vpl-$(CONFIG_VPL_ROCKCHIP_COMMON_BOARD) += vpl.o
-
-obj-spl-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o spl_common.o
+endif
+ifdef CONFIG_SPL_BUILD
+obj-$(CONFIG_SPL_ROCKCHIP_COMMON_BOARD) += spl.o spl_common.o
+ifndef CONFIG_VPL
+obj-$(CONFIG_SPL_ROCKCHIP_COMMON_BOARD) += spl-boot-order.o
+endif
+obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o spl_common.o
+endif
+ifdef CONFIG_TPL_BUILD
+obj-$(CONFIG_TPL_ROCKCHIP_COMMON_BOARD) += tpl.o spl_common.o
+obj-$(CONFIG_ROCKCHIP_PX30) += px30-board-tpl.o spl_common.o
+endif
+ifdef CONFIG_VPL_BUILD
+obj-$(CONFIG_VPL_ROCKCHIP_COMMON_BOARD) += vpl.o
+endif
 
 ifeq ($(CONFIG_XPL_BUILD)$(CONFIG_TPL_BUILD),)
 
@@ -54,12 +61,3 @@ obj-$(CONFIG_ROCKCHIP_RK3576) += rk3576/
 obj-$(CONFIG_ROCKCHIP_RK3588) += rk3588/
 obj-$(CONFIG_ROCKCHIP_RV1108) += rv1108/
 obj-$(CONFIG_ROCKCHIP_RV1126) += rv1126/
-
-# Clear out SPL objects, in case this is a TPL or VPL build
-obj-spl-$(CONFIG_TPL_BUILD) =
-obj-spl-$(CONFIG_VPL_BUILD) =
-
-# Now add SPL/TPL objects back into the main build
-obj-$(CONFIG_XPL_BUILD) += $(obj-spl-y)
-obj-$(CONFIG_TPL_BUILD) += $(obj-tpl-y)
-obj-$(CONFIG_VPL_BUILD) += $(obj-vpl-y)
