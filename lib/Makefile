@@ -33,11 +33,7 @@ endif
 
 obj-$(CONFIG_CHID) += chid.o
 
-ifdef CONFIG_USB_TTY
-obj-y += circbuf.o
-else
 obj-$(CONFIG_CIRCBUF) += circbuf.o
-endif
 
 obj-y += crc8.o
 obj-$(CONFIG_ERRNO_STR) += errno_str.o
