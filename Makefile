@@ -2718,6 +2718,7 @@ CLEAN_FILES += include/autoconf.mk* include/bmp_logo.h include/bmp_logo_data.h \
 	       libu-boot.a.tmp libu-boot.a.objlist \
 	       include/u-boot-api.h \
 	       imx9image* m33-oei-ddrfw* tifalcon.bin
+
 # Directories & files removed with 'make mrproper'
 MRPROPER_FILES  += include/config include/generated spl tpl vpl \
 		  .tmp_objdiff doc/output include/asm
