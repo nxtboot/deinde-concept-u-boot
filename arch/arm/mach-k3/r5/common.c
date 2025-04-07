@@ -145,7 +145,7 @@ void __noreturn jump_to_image(struct spl_image_info *spl_image)
 	int ret, size = 0, shut_cpu = 0;
 
 	/* Release all the exclusive devices held by SPL before starting ATF */
-	ti_sci->ops.dev_ops.release_exclusive_devices(ti_sci);
+	ti_sci->ops.dev_ops.release_exclusive_devices();
 
 	ret = rproc_init();
 	if (ret)
