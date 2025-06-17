@@ -19,7 +19,6 @@ U-Boot API documentation
    i3c
    led
    linker_lists
-   lmb
    logging
    nvmem
    pager
