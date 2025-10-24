@@ -29,6 +29,8 @@ DECLARE_GLOBAL_DATA_PTR;
 	"starfive/jh7110-starfive-visionfive-2-v1.2a.dtb"
 #define FDTFILE_VISIONFIVE2_1_3B \
 	"starfive/jh7110-starfive-visionfive-2-v1.3b.dtb"
+#define FDTFILE_VISIONFIVE2_LITE \
+	"starfive/jh7110-starfive-visionfive-2-lite.dtb"
 #define FDTFILE_PINE64_STAR64 \
 	"starfive/jh7110-pine64-star64.dtb"
 
@@ -95,6 +97,8 @@ static void set_fdtfile(void)
 		}
 	} else if (!strncmp(product_id, "STAR64", 6)) {
 		fdtfile = FDTFILE_PINE64_STAR64;
+	} else if (!strncmp(product_id, "VF7110SL", 8)) {
+		fdtfile = FDTFILE_VISIONFIVE2_LITE;
 	} else {
 		log_err("Unknown product\n");
 		return;
