@@ -124,7 +124,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	pkg-config \
 	python-is-python3 \
 	qemu-efi-aarch64 \
-	python2.7 \
 	python3 \
 	python3-cryptography \
 	python3-dev \
