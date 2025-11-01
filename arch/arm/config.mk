@@ -25,6 +25,10 @@ PLATFORM_RELFLAGS += -fno-common $(FIXED_REG)
 PLATFORM_RELFLAGS += $(call cc-option, -msoft-float) \
       $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,))
 
+ifeq ($(CONFIG_ARM64),y)
+PLATFORM_RELFLAGS += $(call cc-option,-mgeneral-regs-only)
+endif
+
 # LLVM support
 LLVM_RELFLAGS		:= $(call cc-option,-mllvm,) \
 			$(call cc-option,-mno-movt,)

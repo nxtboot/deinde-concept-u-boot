@@ -15,6 +15,8 @@ else ifdef CONFIG_CONSOLE_ROTATION
 obj-y += console_core.o
 endif
 obj-$(CONFIG_CONSOLE_ROTATION) += console_core.o
+# Allow floating-point in console_truetype.c which uses stb_truetype.h
+CFLAGS_REMOVE_console_truetype.o := -mgeneral-regs-only
 obj-$(CONFIG_CONSOLE_TRUETYPE) += console_truetype.o fonts/
 obj-$(CONFIG_DISPLAY) += display-uclass.o
 obj-$(CONFIG_VIDEO_MIPI_DSI) += dsi-host-uclass.o
