@@ -27,7 +27,7 @@ default:
     - ${DEFAULT_TAG}
   # Grab our configured image.  The source for this is found
   # in the u-boot tree at tools/docker/Dockerfile
-  image: ${MIRROR_DOCKER}/sjg20/u-boot-gitlab-ci-runner:noble-20251001-10Nov2025
+  image: ${MIRROR_DOCKER}/sjg20/u-boot-gitlab-ci-runner:noble-20251001-10Apr2026
   services:
     - name: container-$(CI_JOB_ID)
       command: ["--rm"]
@@ -467,7 +467,7 @@ sandbox test.py:
 sandbox with clang test.py:
   variables:
     TEST_PY_BD: "sandbox"
-    OVERRIDE: "-O clang-18"
+    OVERRIDE: "-O clang-20"
     # addr2line in Ubuntu 'Noble' and later are broken.
     TEST_PY_TEST_SPEC: "not event_dump"
   <<: *buildman_and_testpy_dfn
@@ -480,7 +480,7 @@ sandbox64 test.py:
 sandbox64 with clang test.py:
   variables:
     TEST_PY_BD: "sandbox64"
-    OVERRIDE: "-O clang-18"
+    OVERRIDE: "-O clang-20"
   <<: *buildman_and_testpy_dfn
 
 sandbox64_lwip test.py:
