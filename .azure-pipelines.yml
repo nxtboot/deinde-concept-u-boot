@@ -304,7 +304,7 @@ stages:
               /opt/coreboot/cbfstool \${UBOOT_TRAVIS_BUILD_DIR}/coreboot.rom remove -n fallback/payload;
               /opt/coreboot/cbfstool \${UBOOT_TRAVIS_BUILD_DIR}/coreboot.rom add-flat-binary -f \${UBOOT_TRAVIS_BUILD_DIR}/u-boot.bin -n fallback/payload -c LZMA -l 0x1110000 -e 0x1110000;
           fi
-# If we have TF-A binaries, we need to use them.
+          # If we have TF-A binaries, we need to use them.
           tfa_dir=""
           rm -f /tmp/fip.bin
           rm -f /tmp/bl1.bin
