@@ -175,6 +175,7 @@ stages:
 build all 32bit ARM platforms:
   extends: .world_build
   dependencies: []
+  needs: [ "sandbox test.py" ]
   tags:
     - single
   script:
@@ -844,6 +845,7 @@ coreboot test.py:
       when: manual
       allow_failure: true
   dependencies: []
+  needs: [ "sandbox test.py" ]
   tags: [ 'lab' ]
   script:
     # Environment:
