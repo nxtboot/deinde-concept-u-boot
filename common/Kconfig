@@ -26,8 +26,8 @@ config CONSOLE_RECORD_INIT_F
 config CONSOLE_RECORD_OUT_SIZE
 	hex "Output buffer size"
 	depends on CONSOLE_RECORD
-	default 0x2000 if CMD_MALLOC && UNIT_TEST
-	default 0x1000 if UNIT_TEST
+	default 0x6000 if CMD_MALLOC && UNIT_TEST
+	default 0x6000 if UNIT_TEST
 	default 0x400
 	help
 	  Set the size of the console recording output buffer. When this fills
