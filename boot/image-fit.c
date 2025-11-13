@@ -23,7 +23,6 @@
 #include <log.h>
 #include <mapmem.h>
 #include <asm/io.h>
-#include <malloc.h>
 #include <memalign.h>
 #include <asm/global_data.h>
 #ifdef CONFIG_DM_HASH
@@ -36,6 +35,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #include <bootm.h>
 #include <image.h>
 #include <bootstage.h>
+#include <malloc.h>
 #include <upl.h>
 #include <u-boot/crc.h>
 
@@ -1958,7 +1958,7 @@ int decomp_image(const void *fit, int noffset, const char *prop_name,
 
 		log_debug("decompressing image\n");
 		if (load == data) {
-			loadbuf = malloc(max_decomp_len);
+			loadbuf = memalign(8, max_decomp_len);
 			load = map_to_sysmem(loadbuf);
 		} else {
 			loadbuf = map_sysmem(load, max_decomp_len);
@@ -1970,6 +1970,11 @@ int decomp_image(const void *fit, int noffset, const char *prop_name,
 			return -ENOEXEC;
 		}
 		size = load_end - load;
+	} else if (load_op != FIT_LOAD_IGNORED && image_type == IH_TYPE_FLATDT &&
+		   ((uintptr_t)buf & 7)) {
+		loadbuf = memalign(8, size);
+		load = map_to_sysmem(loadbuf);
+		memcpy(loadbuf, buf, size);
 	} else if (load != data) {
 		log_debug("copying\n");
 		loadbuf = map_sysmem(load, size);
