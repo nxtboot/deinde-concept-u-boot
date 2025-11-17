@@ -407,7 +407,7 @@ static void label_boot_extension(struct pxe_context *ctx,
 	const struct extension *extension;
 	struct fdt_header *working_fdt;
 	struct alist *extension_list;
-	int ret, dir_len, len;
+	int ret, dir_len, len = 0;
 	char *overlay_dir;
 	const char *slash;
 	ulong fdt_addr;
@@ -435,21 +435,16 @@ static void label_boot_extension(struct pxe_context *ctx,
 			slash = "/";
 		else
 			slash = "";
-
-		dir_len = strlen(label->fdtdir) + strlen(slash) + 1;
-		overlay_dir = calloc(1, len);
-		if (!overlay_dir)
-			return;
-
-		snprintf(overlay_dir, dir_len, "%s%s", label->fdtdir,
-			 slash);
 	} else {
-		dir_len = 2;
-		overlay_dir = calloc(1, dir_len);
-		if (!overlay_dir)
-			return;
-		snprintf(overlay_dir, dir_len, "/");
+		slash = "/";
 	}
+	dir_len = len + strlen(slash) + 1;
+
+	overlay_dir = calloc(1, dir_len);
+	if (!overlay_dir)
+		return;
+
+	snprintf(overlay_dir, dir_len, "%s%s", label->fdtdir ?: "", slash);
 
 	alist_for_each(extension, extension_list) {
 		ulong overlay_addr, size;
