@@ -137,7 +137,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	python3-tomli \
 	python3-venv \
 	rpm2cpio \
+	rsync \
 	sbsigntool \
+	snmp \
 	socat \
 	softhsm2 \
 	sparse \
