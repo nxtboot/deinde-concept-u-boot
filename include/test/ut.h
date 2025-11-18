@@ -157,18 +157,28 @@ int ut_check_console_end(struct unit_test_state *uts);
  *
  * This only supports a byte dump.
  *
- * @total_bytes: Size of the expected dump in bytes`
- * Return: 0 if OK (looks like a dump and the length matches), other value on
- *	error
+ * @uts:		Test state
+ * @total_bytes:	Size of the expected dump in bytes
+ * Return:		0 if OK (looks like a dump and the length matches),
+ *			other value on error
  */
 int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 
-/* Report a failure, with printf() string */
+/**
+ * ut_report() - Report a failure, with printf() string
+ *
+ * @fmt:	format string
+ * @args:	arguments to be printed
+ */
 #define ut_reportf(fmt, args...)					\
 	ut_failf(uts, __FILE__, __LINE__, __func__, "report",		\
 		 fmt, ##args)
 
-/* Assert that a condition is non-zero */
+/**
+ * ut_assert() - Assert that a condition is true (not 0)
+ *
+ * @cond:	condition
+ */
 #define ut_assert(cond) ({						\
 	int __ret = 0;							\
 									\
@@ -180,7 +190,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a condition is non-zero, with printf() string */
+/**
+ * ut_assertf() - Assert that a condition is true with printf string
+ *
+ * @cond:	condition
+ * @fmt:	format string
+ * @args:	arguments to be printed
+ */
 #define ut_assertf(cond, fmt, args...) ({				\
 	int __ret = 0;							\
 									\
@@ -193,7 +209,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two int expressions are equal */
+/**
+ * ut_asserteq() - Assert that two int32 expressions are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ */
 #define ut_asserteq(expr1, expr2) ({					\
 	unsigned int _val1 = (expr1), _val2 = (expr2);			\
 	int __ret = 0;							\
@@ -209,7 +230,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two 64 int expressions are equal */
+/**
+ * ut_asserteq_64() - Assert that two int64 expressions are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ */
 #define ut_asserteq_64(expr1, expr2) ({					\
 	u64 _val1 = (expr1), _val2 = (expr2);				\
 	int __ret = 0;							\
@@ -228,7 +254,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two string expressions are equal */
+/**
+ * ut_asserteq_str() - Assert that two string expressions are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ */
 #define ut_asserteq_str(expr1, expr2) ({				\
 	const char *_val1 = (expr1), *_val2 = (expr2);			\
 	int __ret = 0;							\
@@ -251,9 +282,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/*
- * Assert that two string expressions are equal, up to length of the
- * first
+/**
+ * ut_asserteq_strn() - Assert that two string expressions are equal
+ *                      up to the length of the first expression
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
  */
 #define ut_asserteq_strn(expr1, expr2) ({				\
 	const char *_val1 = (expr1), *_val2 = (expr2);			\
@@ -297,7 +331,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two memory areas are equal */
+/**
+ * ut_asserteq_mem() - Assert that two memory areas are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ * @len:	length of the memory areas
+ */
 #define ut_asserteq_mem(expr1, expr2, len) ({				\
 	const u8 *_val1 = (u8 *)(expr1), *_val2 = (u8 *)(expr2);	\
 	const uint __len = len;						\
@@ -318,7 +358,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two pointers are equal */
+/**
+ * ut_asserteq_ptr() - Assert that two string pointers are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ */
 #define ut_asserteq_ptr(expr1, expr2) ({				\
 	const void *_val1 = (expr1), *_val2 = (expr2);			\
 	int __ret = 0;							\
@@ -333,7 +378,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that two addresses (converted from pointers) are equal */
+/**
+ * ut_asserteq_addr() - Assert that two addresses (converted from pointers)
+ *			are equal
+ *
+ * @expr1:	expected value
+ * @expr2:	actual value
+ */
 #define ut_asserteq_addr(expr1, expr2) ({				\
 	ulong _val1 = map_to_sysmem(expr1);				\
 	ulong _val2 = map_to_sysmem(expr2);				\
@@ -349,7 +400,11 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a pointer is NULL */
+/**
+ * ut_assertnull() - Assert that a pointer is NULL
+ *
+ * @expr:	pointer
+ */
 #define ut_assertnull(expr) ({						\
 	const void *_val = (expr);					\
 	int __ret = 0;							\
@@ -364,7 +419,11 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a pointer is not NULL */
+/**
+ * ut_assertnonnull() - Assert that a pointer is not NULL
+ *
+ * @expr:	pointer
+ */
 #define ut_assertnonnull(expr) ({					\
 	const void *_val = (expr);					\
 	int __ret = 0;							\
@@ -379,7 +438,11 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a pointer is not an error pointer */
+/**
+ * ut_assertok_ptr() - Assert that a pointer is not an error pointer
+ *
+ * @expr:	pointer
+ */
 #define ut_assertok_ptr(expr) ({					\
 	const void *_val = (expr);					\
 	int __ret = 0;							\
@@ -395,10 +458,19 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that an operation succeeds (returns 0) */
+/**
+ * ut_assertok() - Assert that an operation succeeds (returns 0)
+ *
+ * @cond:	expression
+ */
 #define ut_assertok(cond)	ut_asserteq(0, cond)
 
-/* Assert that the next console output line matches */
+/**
+ * ut_assert_nextline() - Assert that the next console output line matches
+ *
+ * @fmt:	format string
+ * @args:	print arguments
+ */
 #define ut_assert_nextline(fmt, args...) ({				\
 	int __ret = 0;							\
 									\
@@ -412,7 +484,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that the next console output line matches up to the length */
+/**
+ * ut_assert_nextlinen() - Assert that the next console output line matches
+ *			   up to the length of the expected string.
+ *
+ * @fmt:	format string
+ * @args:	print arguments
+ */
 #define ut_assert_nextlinen(fmt, args...) ({				\
 	int __ret = 0;							\
 									\
@@ -441,7 +519,10 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that there is a 'next' console output line, and skip it */
+/**
+ * ut_assert_skipline() - Assert that there is a 'next' console output line,
+ *			  and skip it
+ */
 #define ut_assert_skipline() ({						\
 	int __ret = 0;							\
 									\
@@ -454,7 +535,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a following console output line matches */
+/**
+ * ut_assert_skip_to_line() - Assert that a following console output line
+ *			      matches
+ *
+ * @fmt:	format string
+ * @args:	print arguments
+ */
 #define ut_assert_skip_to_line(fmt, args...) ({				\
 	int __ret = 0;							\
 									\
@@ -468,7 +555,13 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that a following console output line matches */
+/**
+ * ut_assert_skip_to_linen() - Assert that a following console output line
+ *			       matches up to the length of the expected string
+ *
+ * @fmt:	format string
+ * @args:	print arguments
+ */
 #define ut_assert_skip_to_linen(fmt, args...) ({				\
 	int __ret = 0;							\
 									\
@@ -482,7 +575,9 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that there is no more console output */
+/**
+ * ut_assert_console_end() - Assert that there is no more console output
+ */
 #define ut_assert_console_end() ({					\
 	int __ret = 0;							\
 									\
@@ -496,7 +591,12 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that the next lines are print_buffer() dump at an address */
+/**
+ * ut_assert_nextlines_are_dump - Assert that the next lines are print_buffer()
+ *				  dump at an address
+ *
+ * @total_bytes:	Size of the expected dump in bytes
+ */
 #define ut_assert_nextlines_are_dump(total_bytes) ({			\
 	int __ret = 0;							\
 									\
@@ -511,7 +611,10 @@ int ut_check_console_dump(struct unit_test_state *uts, int total_bytes);
 	__ret;								\
 })
 
-/* Assert that the next console output line is empty */
+/**
+ * ut_assert_nextline_empty() - Assert that the next console output line is
+ *				empty
+ */
 #define ut_assert_nextline_empty()					\
 	ut_assert_nextline("%s", "")
 
@@ -546,6 +649,8 @@ void ut_silence_console(struct unit_test_state *uts);
  *
  * This restarts console output again and turns off console recording. This
  * happens on all boards, including sandbox.
+ *
+ * @uts:	Test state
  */
 void ut_unsilence_console(struct unit_test_state *uts);
 
