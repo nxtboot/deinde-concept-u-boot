@@ -9,3 +9,4 @@ obj-$(CONFIG_CONSOLE_TRUETYPE_RUFSCRIPT) += rufscript010.o
 obj-$(CONFIG_CONSOLE_TRUETYPE_CANTORAONE) += cantoraone_regular.o
 obj-$(CONFIG_CONSOLE_TRUETYPE_UBUNTU_LIGHT) += ubuntu_light.o
 obj-$(CONFIG_CONSOLE_TRUETYPE_UBUNTU_BOLD) += ubuntu_bold.o
+obj-$(CONFIG_CONSOLE_TRUETYPE_DEJAVU) += dejavu_mono.o
