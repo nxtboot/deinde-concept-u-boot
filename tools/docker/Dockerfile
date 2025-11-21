@@ -96,6 +96,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	inetutils-telnet \
 	iputils-ping \
 	libconfuse-dev \
+	libengine-pkcs11-openssl \
 	libgit2-dev \
 	libjson-glib-dev \
 	libguestfs-tools \
