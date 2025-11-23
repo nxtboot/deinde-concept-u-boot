@@ -45,7 +45,7 @@ CMD_TEST(cmd_test_qfw_list, UTF_CONSOLE);
 /* Test 'qfw dump' command */
 static int cmd_test_qfw_dump(struct unit_test_state *uts)
 {
-	if (IS_ENABLED(CONFIG_SANDBOX) || IS_ENABLED(CONFIG_RISCV))
+	if (IS_ENABLED(CONFIG_SANDBOX) || !IS_ENABLED(CONFIG_X86))
 		return -EAGAIN;
 
 	ut_assertok(run_command("qfw dump", 0));
@@ -69,7 +69,8 @@ static int cmd_test_qfw_table(struct unit_test_state *uts)
 
 	ut_assertok(run_command("qfw table", 0));
 	ut_assert_nextline("  0 alloc: align 10 zone fseg name 'etc/acpi/rsdp'");
-	ut_assert_nextline("  1 alloc: align 40 zone high name 'etc/acpi/tables'");
+	if (IS_ENABLED(CONFIG_X86))
+		ut_assert_nextline("  1 alloc: align 40 zone high name 'etc/acpi/tables'");
 
 	/*
 	 * we can't really test anything else as it may vary, so just check that
@@ -104,7 +105,7 @@ static int cmd_test_qfw_read(struct unit_test_state *uts)
 {
 	char *ptr = map_sysmem(0x1000, 0x100);
 
-	if (IS_ENABLED(CONFIG_SANDBOX) || IS_ENABLED(CONFIG_RISCV))
+	if (IS_ENABLED(CONFIG_SANDBOX) || !IS_ENABLED(CONFIG_X86))
 		return -EAGAIN;
 
 	ut_assertok(run_command("qfw read 1000 etc/acpi/rsdp", 0));
