@@ -176,7 +176,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 	TARGET_STRIP=/opt/gcc-${TCVER}-nolibc/aarch64-linux/bin/aarch64-linux-strip \
 	TARGET_NM=/opt/gcc-${TCVER}-nolibc/aarch64-linux/bin/aarch64-linux-nm \
 	TARGET_RANLIB=/opt/gcc-${TCVER}-nolibc/aarch64-linux/bin/aarch64-linux-ranlib && \
-	make -j$(nproc) && \
+	make && \
 	./grub-mkimage -O arm64-efi -o /opt/grub/grubaa64.efi --prefix= -d \
 	grub-core cat chain configfile echo efinet ext2 fat halt help linux \
 	lsefisystab loadenv lvm minicmd normal part_msdos part_gpt reboot \
@@ -190,7 +190,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 	TARGET_STRIP=/opt/gcc-${TCVER}-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-strip \
 	TARGET_NM=/opt/gcc-${TCVER}-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-nm \
 	TARGET_RANLIB=/opt/gcc-${TCVER}-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-ranlib && \
-	make -j$(nproc) && \
+	make && \
 	./grub-mkimage -O arm-efi -o /opt/grub/grubarm.efi --prefix= -d \
 	grub-core cat chain configfile echo efinet ext2 fat halt help linux \
 	lsefisystab loadenv lvm minicmd normal part_msdos part_gpt reboot \
@@ -204,7 +204,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 	TARGET_STRIP=/opt/gcc-${TCVER}-nolibc/riscv64-linux/bin/riscv64-linux-strip \
 	TARGET_NM=/opt/gcc-${TCVER}-nolibc/riscv64-linux/bin/riscv64-linux-nm \
 	TARGET_RANLIB=/opt/gcc-${TCVER}-nolibc/riscv64-linux/bin/riscv64-linux-ranlib && \
-	make -j$(nproc) && \
+	make && \
 	./grub-mkimage -O riscv64-efi -o /opt/grub/grubriscv64.efi --prefix= -d \
 	grub-core cat chain configfile echo efinet ext2 fat halt help linux \
 	lsefisystab loadenv lvm minicmd normal part_msdos part_gpt reboot \
@@ -218,7 +218,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 	TARGET_STRIP=/opt/gcc-${TCVER}-nolibc/i386-linux/bin/i386-linux-strip \
 	TARGET_NM=/opt/gcc-${TCVER}-nolibc/i386-linux/bin/i386-linux-nm \
 	TARGET_RANLIB=/opt/gcc-${TCVER}-nolibc/i386-linux/bin/i386-linux-ranlib && \
-	make -j$(nproc) && \
+	make && \
 	./grub-mkimage -O i386-efi -o /opt/grub/grub_x86.efi --prefix= -d \
 	grub-core normal echo lsefimmap lsefi lsefisystab efinet tftp minicmd && \
 	make clean && \
@@ -229,7 +229,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 	TARGET_STRIP=/opt/gcc-${TCVER}-nolibc/x86_64-linux/bin/x86_64-linux-strip \
 	TARGET_NM=/opt/gcc-${TCVER}-nolibc/x86_64-linux/bin/x86_64-linux-nm \
 	TARGET_RANLIB=/opt/gcc-${TCVER}-nolibc/x86_64-linux/bin/x86_64-linux-ranlib && \
-	make -j$(nproc) && \
+	make && \
 	./grub-mkimage -O x86_64-efi -o /opt/grub/grub_x64.efi --prefix= -d \
 	grub-core normal echo lsefimmap lsefi lsefisystab efinet tftp minicmd && \
 	rm -rf /tmp/grub
@@ -241,7 +241,7 @@ RUN git clone https://gitlab.com/qemu-project/qemu.git /tmp/qemu && \
 	git config user.name u-boot && \
 	git config user.email u-boot@denx.de && \
 	./configure --prefix=/opt/qemu --target-list="aarch64-softmmu,arm-softmmu,i386-softmmu,m68k-softmmu,mips-softmmu,mips64-softmmu,mips64el-softmmu,mipsel-softmmu,ppc-softmmu,riscv32-softmmu,riscv64-softmmu,sh4-softmmu,x86_64-softmmu,xtensa-softmmu" && \
-	make -j$(nproc) all install && \
+	make all install && \
 	rm -rf /tmp/qemu
 
 # Build OP-TEE for qemu_arm64
@@ -301,7 +301,7 @@ RUN wget -O - https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architect
 RUN wget -O - https://github.com/pengutronix/genimage/releases/download/v14/genimage-14.tar.xz | tar -C /tmp -xJ && \
 	cd /tmp/genimage-14 && \
 	./configure && \
-	make -j$(nproc) && \
+	make && \
 	make install && \
 	rm -rf /tmp/genimage-14
 
@@ -310,7 +310,7 @@ RUN git clone https://github.com/stefanberger/libtpms /tmp/libtpms && \
 	cd /tmp/libtpms && \
 	./autogen.sh && \
 	./configure && \
-	make -j$(nproc) && \
+	make && \
 	make install && \
 	ldconfig && \
 	rm -rf /tmp/libtpms
@@ -320,7 +320,7 @@ RUN git clone https://github.com/stefanberger/swtpm /tmp/swtpm && \
 	cd /tmp/swtpm && \
 	./autogen.sh && \
 	./configure && \
-	make -j$(nproc) && \
+	make && \
 	make install && \
 	rm -rf /tmp/swtpm
 
@@ -331,18 +331,18 @@ RUN mkdir /tmp/trace && \
     git clone https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git /tmp/trace/libtraceevent && \
     cd /tmp/trace/libtraceevent && \
     git checkout b3f5849 && \
-    make -j$(nproc) && \
+    make && \
     sudo make install prefix=/usr && \
     sudo ldconfig && \
     git clone --branch libtracefs-1.8.1 --depth 1 https://git.kernel.org/pub/scm/libs/libtrace/libtracefs.git /tmp/trace/libtracefs && \
     cd /tmp/trace/libtracefs && \
-    make -j$(nproc) && \
+    make && \
     sudo make install prefix=/usr && \
     sudo ldconfig && \
     git clone https://github.com/rostedt/trace-cmd.git /tmp/trace/trace-cmd && \
     cd /tmp/trace/trace-cmd && \
     git checkout 364faec && \
-    make -j$(nproc) && \
+    make && \
     sudo make install && \
     rm -rf /tmp/trace
 
