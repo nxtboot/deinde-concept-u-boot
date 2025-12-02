@@ -2,7 +2,7 @@
 .. sectionauthor:: Kaustabh Chakraborty <kauschluss@disroot.org>
 
 Samsung Exynos Generic ARMv8 Boards (for mobile devices)
-=======================================================
+========================================================
 
 Overview
 --------
