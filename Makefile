@@ -508,7 +508,6 @@ ifeq ($(NO_PYTHON),)
 PYTHON_ENABLE=y
 endif
 
-# ===========================================================================
 # Rules shared between *config targets and build targets
 
 # Basic helpers built in scripts/
@@ -573,7 +572,6 @@ ifeq ($(KBUILD_EXTMOD),)
 endif
 
 ifeq ($(mixed-targets),1)
-# ===========================================================================
 # We're called with mixed targets (*config and build targets).
 # Handle them one by one.
 
@@ -590,7 +588,6 @@ __build_one_by_one:
 
 else
 ifeq ($(config-targets),1)
-# ===========================================================================
 # *config targets only - make sure prerequisites are updated, and descend
 # in scripts/kconfig to make the *config target
 
@@ -604,7 +601,6 @@ config: scripts_basic outputmakefile FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 else
-# ===========================================================================
 # Build targets only - this includes vmlinux, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
 
@@ -1168,13 +1164,11 @@ expect = $(foreach cfg,$(1),y)
 # (patches welcome!)
 define deprecated
 	@if [ -n "$(strip $(4))" ]; then if [ "$(got)" != "$(expect)" ]; then \
-		echo >&2 "===================== WARNING ======================"; \
 		echo >&2 "This board does not use $(firstword $(1)) (Driver Model"; \
 		echo >&2 "for $(2)). Please update the board to use"; \
 		echo >&2 "$(firstword $(1)) before the $(3) release. Failure to"; \
 		echo >&2 "update by the deadline may result in board removal."; \
 		echo >&2 "See doc/develop/driver-model/migration.rst for more info."; \
-		echo >&2 "===================================================="; \
 	fi; fi
 
 endef
@@ -1196,12 +1190,10 @@ ifeq ($(CONFIG_DEPRECATED),y)
 	$(warning "You have deprecated configuration options enabled in your .config! Please check your configuration.")
 endif
 ifeq ($(CONFIG_OF_EMBED),y)
-	@echo >&2 "===================== WARNING ======================"
 	@echo >&2 "CONFIG_OF_EMBED is enabled. This option should only"
 	@echo >&2 "be used for debugging purposes. Please use"
 	@echo >&2 "CONFIG_OF_SEPARATE for boards in mainline."
 	@echo >&2 "See doc/develop/devicetree/control.rst for more info."
-	@echo >&2 "===================================================="
 endif
 	$(call deprecated,CONFIG_WDT,DM watchdog,v2019.10,\
 		$(CONFIG_WATCHDOG)$(CONFIG_HW_WATCHDOG))
@@ -1339,6 +1331,24 @@ u-boot.hex u-boot.srec: u-boot FORCE
 	$(call if_changed,zobjcopy)
 
 OBJCOPYFLAGS_u-boot-elf.srec := $(OBJCOPYFLAGS_u-boot.srec)
+
+ifeq ($(CONFIG_POSITION_INDEPENDENT)$(CONFIG_RCAR_GEN3),yy)
+# The flash_writer tool and previous recovery tools
+# require the SREC load address to be 0x5000_0000 .
+# The PIE U-Boot build sets the address to 0x0, so
+# override the address back to make u-boot-elf.srec
+# compatible with the recovery tools.
+OBJCOPYFLAGS_u-boot-elf.srec += --change-addresses=0x50000000
+endif
+
+ifeq ($(CONFIG_POSITION_INDEPENDENT)$(CONFIG_RCAR_GEN5),yy)
+# The flash_writer tool and previous recovery tools
+# require the SREC load address to be 0x8e30_0000 .
+# The PIE U-Boot build sets the address to 0x0, so
+# override the address back to make u-boot-elf.srec
+# compatible with the recovery tools.
+OBJCOPYFLAGS_u-boot-elf.srec += --change-addresses=0x8e300000
+endif
 
 u-boot-elf.srec: u-boot.elf FORCE
 	$(call if_changed,zobjcopy)
@@ -2707,7 +2717,6 @@ coccicheck:
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/$@
 
 # FIXME Should go into a make.lib or something
-# ===========================================================================
 
 quiet_cmd_rmdirs = $(if $(wildcard $(rm-dirs)),CLEAN   $(wildcard $(rm-dirs)))
       cmd_rmdirs = rm -rf $(rm-dirs)
