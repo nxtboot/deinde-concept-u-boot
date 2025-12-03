@@ -41,7 +41,7 @@ The following should be configured for each of the enabled LEDs:
 Where <n> is an integer 1 through 5 (empty for 0).
 
 CONFIG_STATUS_LED_BIT is passed into the __led_* functions to identify which LED
-is being acted on. As such, the value choose must be unique with with respect to
+is being acted on. As such, the value choose must be unique with respect to
 the other CONFIG_STATUS_LED_BIT's. Mapping the value to a physical LED is the
 reponsiblity of the __led_* function.
 
