@@ -343,6 +343,17 @@ static struct hash_algo hash_algo[] = {
 		.hash_finish	= hash_finish_sm3,
 	},
 #endif
+#if CONFIG_IS_ENABLED(SM3)
+	{
+		.name		= "sm3_256",
+		.digest_size	= SM3_DIGEST_SIZE,
+		.chunk_size	= SM3_BLOCK_SIZE,
+		.hash_func_ws	= sm3_csum_wd,
+		.hash_init	= hash_init_sm3,
+		.hash_update	= hash_update_sm3,
+		.hash_finish	= hash_finish_sm3,
+	},
+#endif
 #if CONFIG_IS_ENABLED(CRC16)
 	{
 		.name		= "crc16-ccitt",
