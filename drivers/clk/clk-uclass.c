@@ -352,7 +352,7 @@ static int clk_set_default_rates(struct udevice *dev,
 
 		c = clk_set_default_get_by_id(&clk);
 		if (IS_ERR(c))
-			return PTR_ERR(c);
+			continue;
 
 		ret = clk_set_rate(c, rates[index]);
 
