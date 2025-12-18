@@ -133,7 +133,7 @@ static int bdinfo_print_all(struct bd_info *bd)
 	lprint_num_l("relocaddr", gd->relocaddr);
 	lprint_num_l("reloc off", gd->reloc_off);
 	printf("%-12s= %u-bit\n", "Build", (uint)sizeof(void *) * 8);
-	if (IS_ENABLED(CONFIG_CMD_NET) || IS_ENABLED(CONFIG_CMD_NET_LWIP))
+	if (IS_ENABLED(CONFIG_NET) || IS_ENABLED(CONFIG_NET_LWIP))
 		print_eth();
 	lprint_num_l("fdt_blob", (ulong)map_to_sysmem(gd->fdt_blob));
 	if (IS_ENABLED(CONFIG_VIDEO))
@@ -178,8 +178,8 @@ int do_bdinfo(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		case 'a':
 			return bdinfo_print_all(bd);
 		case 'e':
-			if (!IS_ENABLED(CONFIG_CMD_NET) &&
-			    !IS_ENABLED(CONFIG_CMD_NET_LWIP))
+			if (!IS_ENABLED(CONFIG_NET) &&
+			    !IS_ENABLED(CONFIG_NET_LWIP))
 				return CMD_RET_USAGE;
 			print_eth();
 			return CMD_RET_SUCCESS;
