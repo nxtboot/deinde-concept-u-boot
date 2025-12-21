@@ -23,9 +23,9 @@ static void print_region(const char *name, ulong base, ulong size, ulong *uptop)
 {
 	ulong end = base + size;
 
-	printf("%-12s %10lx %10lx %10lx", name, base, size, end);
+	printf("%-12s %13lx %13lx %13lx", name, base, size, end);
 	if (*uptop)
-		printf(" %10lx", *uptop - end);
+		printf(" %13lx", *uptop - end);
 	putc('\n');
 	*uptop = base;
 }
@@ -62,12 +62,11 @@ static int do_meminfo(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (!IS_ENABLED(CONFIG_CMD_MEMINFO_MAP))
 		return 0;
 
-	printf("\n%-12s %10s %10s %10s %10s\n", "Region", "||   Base",
-	       "||   Size", "||    End",
-	       "Gap");
 	arch_dump_mem_attrs();
 
-	printf("--------------------------------------------------------\n");
+	printf("\n%-12s %13s %13s %13s %13s\n", "Region", "Base", "Size", "End",
+	       "Gap");
+	printf("--------------------------------------------------------------------\n");
 	upto = 0;
 	if (IS_ENABLED(CONFIG_VIDEO))
 		print_region("video", gd_video_bottom(),
