@@ -195,11 +195,11 @@ static int bdinfo_test_all(struct unit_test_state *uts)
 #endif
 	ut_assertok(test_num_l(uts, "flags", gd->flags));
 
-	if (IS_ENABLED(CONFIG_LMB) && gd->fdt_blob) {
+	if (IS_ENABLED(CONFIG_LMB))
 		ut_assertok(lmb_test_dump_all(uts));
-		if (IS_ENABLED(CONFIG_OF_REAL))
-			ut_assert_nextline("devicetree  = %s", fdtdec_get_srcname());
-	}
+
+	if (IS_ENABLED(CONFIG_OF_REAL) && gd->fdt_blob)
+		ut_assert_nextline("devicetree  = %s", fdtdec_get_srcname());
 
 	if (IS_ENABLED(CONFIG_DM_SERIAL)) {
 		struct serial_device_info info;
