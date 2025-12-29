@@ -9,6 +9,7 @@ Emulation
    acpi
    blkdev
    common
+   network
    script
    qemu-arm
    qemu-mips
