@@ -73,7 +73,6 @@ config CONSOLE_TRUETYPE_UBUNTU_BOLD
 
 config CONSOLE_TRUETYPE_DEJAVU
 	bool "DejaVu Sans Mono Regular"
-	depends on CONSOLE_TRUETYPE
 	help
 	  This mono spaced font contains all code page 437 characters.
 	  From https://sourceforge.net/projects/dejavu/
