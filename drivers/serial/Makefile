@@ -66,3 +66,4 @@ ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_USB_TTY) += usbtty.o
 endif
 obj-$(CONFIG_UART4_SERIAL) += serial_adi_uart4.o
+obj-$(CONFIG_SERIAL_GOLDFISH) += serial_goldfish.o
