@@ -50,6 +50,7 @@ SECTIONS
 		__binman_sym_start = .;
 		KEEP(*(SORT(.binman_sym*)));
 		__binman_sym_end = .;
+		. = ALIGN(8);
 	} > .nor
 
 	/*
@@ -77,6 +78,9 @@ SECTIONS
 ASSERT(__image_copy_end - __image_copy_start <= (IMAGE_MAX_SIZE), \
 	"SPL image too big");
 #endif
+
+ASSERT(_image_binary_end % 8 == 0, \
+       "_image_binary_end must be 8-byte aligned for device tree");
 
 #if defined(CONFIG_SPL_BSS_MAX_SIZE)
 ASSERT(__bss_end - __bss_start <= (CONFIG_SPL_BSS_MAX_SIZE), \

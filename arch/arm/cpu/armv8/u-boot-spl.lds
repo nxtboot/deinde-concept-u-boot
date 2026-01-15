@@ -52,6 +52,7 @@ SECTIONS
 	__u_boot_list : {
 		. = ALIGN(8);
 		KEEP(*(SORT(__u_boot_list*)));
+		. = ALIGN(8);
 	} >.sram
 
 	.binman_sym_table : {
@@ -96,5 +97,7 @@ SECTIONS
 #endif
 }
 
+ASSERT(_image_binary_end % 8 == 0, \
+       "_image_binary_end must be 8-byte aligned for device tree");
 ASSERT(ADDR(.bss) % 8 == 0, \
        ".bss must be 8-byte aligned");
