@@ -100,6 +100,8 @@ When using clang-format to format code, consider these best practices:
   useful as it formats only the lines that have been modified in your current
   changes, avoiding unnecessary formatting of unchanged code.
 
+.. _b4_contrib:
+
 * Use the `b4 <https://b4.docs.kernel.org/en/latest/>`__ tool to prepare and
   send your patches. b4 has become the preferred tool to sending patches for many
   Linux kernel contributors, and U-Boot ships with a ready-to-use ``.b4-config`` that
