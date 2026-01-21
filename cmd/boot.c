@@ -62,6 +62,9 @@ U_BOOT_CMD(
 	"- cold boot without level specifier\n"
 	"reset -h - hotreset if implemented\n"
 	"reset -u - reset to firmware UI if implemented\n"
+#ifdef CONFIG_SYSRESET_QCOM_PSCI
+	"reset -edl - Boot to Emergency DownLoad mode\n"
+#endif
 	"reset -w - warm reset if implemented"
 );
 
