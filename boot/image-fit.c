@@ -2296,7 +2296,8 @@ int boot_get_fdt_fit(struct bootm_headers *images, ulong addr,
 
 		err = fdt_open_into(ov, ovcopy, ovcopylen);
 		if (err < 0) {
-			printf("failed on fdt_open_into for DTO\n");
+			printf("failed on fdt_open_into for DTO: %s\n",
+			       fdt_strerror(err));
 			fdt_noffset = err;
 			goto out;
 		}
@@ -2304,7 +2305,8 @@ int boot_get_fdt_fit(struct bootm_headers *images, ulong addr,
 		base = map_sysmem(load, len + ovlen);
 		err = fdt_open_into(base, base, len + ovlen);
 		if (err < 0) {
-			printf("failed on fdt_open_into\n");
+			printf("failed on fdt_open_into: %s\n",
+			       fdt_strerror(err));
 			fdt_noffset = err;
 			goto out;
 		}
