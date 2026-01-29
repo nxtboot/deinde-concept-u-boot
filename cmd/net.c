@@ -357,8 +357,8 @@ static int netboot_common(enum proto_t proto, struct cmd_tbl *cmdtp, int argc,
 	bool fname_explicit;
 	const char *fname;
 	char *s;
-	int   rcode = 0;
-	int   size;
+	int rcode;
+	u32 size;
 
 	net_boot_file_name_explicit = false;
 	*net_boot_file_name = '\0';
@@ -404,10 +404,11 @@ static int netboot_common(enum proto_t proto, struct cmd_tbl *cmdtp, int argc,
 		}
 	}
 
-	size = netboot_run_(proto, addr, fname, save_size, fname_explicit,
-			    IS_ENABLED(CONFIG_IPV6) && use_ip6);
-	if (size < 0)
+	rcode = netboot_run_(proto, addr, fname, save_size, fname_explicit,
+			     IS_ENABLED(CONFIG_IPV6) && use_ip6);
+	if (rcode < 0)
 		return CMD_RET_FAILURE;
+	size = net_boot_file_size;
 
 	/* net_loop ok, update environment */
 	netboot_update_env();
