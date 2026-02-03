@@ -566,8 +566,8 @@ static int do_mmc_dev(struct cmd_tbl *cmdtp, int flag,
 	case 4:
 		speed_mode = (int)dectoul(argv[3], &endp);
 		if (*endp) {
-			printf("Invalid speed mode index '%s', "
-			       "did you specify a mode name?\n", argv[3]);
+			printf("Invalid speed mode index '%s', did you specify a mode name?\n",
+			       argv[3]);
 			return CMD_RET_USAGE;
 		}
 
