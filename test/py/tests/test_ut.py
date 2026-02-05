@@ -70,6 +70,12 @@ def test_ut_dm_init(ubman):
     with open(fn, 'wb') as fh:
         fh.write(data)
 
+    mmc_dev = 9
+    fn = os.path.join(ubman.config.source_dir, f'mmc{mmc_dev}.img')
+    data = b'\x00' * (32 * 1024 * 1024)
+    with open(fn, 'wb') as fh:
+        fh.write(data)
+
 
 @pytest.mark.buildconfigspec('cmd_bootflow')
 @pytest.mark.buildconfigspec('sandbox')

@@ -1304,7 +1304,7 @@
 		filename = "mmc8.img";
 	};
 
-	/* This is used for extlinux localboot */
+	/* This is used for extlinux localboot and zip/unzip/gzwrite tests */
 	mmc9 {
 		status = "disabled";
 		compatible = "sandbox,mmc";
