@@ -28,7 +28,6 @@
 #include <ubifs_uboot.h>
 #include <btrfs.h>
 #include <asm/cache.h>
-#include <asm/global_data.h>
 #include <asm/io.h>
 #include <div64.h>
 #include <linux/math64.h>
@@ -38,8 +37,6 @@
 #include <erofs.h>
 #include <exfat.h>
 #include <virtio_fs.h>
-
-DECLARE_GLOBAL_DATA_PTR;
 
 static struct blk_desc *fs_dev_desc;
 static int fs_dev_part;
