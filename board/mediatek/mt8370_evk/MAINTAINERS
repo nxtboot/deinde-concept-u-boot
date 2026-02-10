@@ -1,0 +1,4 @@
+MT8370 EVK
+M:	Macpaul Lin <Macpaul.Lin@mediatek.com>
+S:	Maintained
+F:	configs/mt8370_evk_defconfig
