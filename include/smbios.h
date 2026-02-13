@@ -187,9 +187,41 @@ struct __packed smbios_type0 {
 	char eos[SMBIOS_STRUCT_EOS_BYTES];
 };
 
+#define SMBIOS_TYPE0_LENGTH_V24		0x18
+#define SMBIOS_TYPE0_LENGTH_V31		0x1a
+
 #define SMBIOS_TYPE1_LENGTH_V20		0x08
 #define SMBIOS_TYPE1_LENGTH_V21		0x19
 #define SMBIOS_TYPE1_LENGTH_V24		0x1b
+
+#define SMBIOS_TYPE4_LENGTH_V20		0x1a
+#define SMBIOS_TYPE4_LENGTH_V23		0x23
+#define SMBIOS_TYPE4_LENGTH_V25		0x28
+#define SMBIOS_TYPE4_LENGTH_V26		0x2a
+#define SMBIOS_TYPE4_LENGTH_V30		0x30
+#define SMBIOS_TYPE4_LENGTH_V36		0x32
+
+#define SMBIOS_TYPE7_LENGTH_V20		0x0f
+#define SMBIOS_TYPE7_LENGTH_V21		0x13
+#define SMBIOS_TYPE7_LENGTH_V31		0x1b
+
+#define SMBIOS_TYPE9_LENGTH_V20		0x0c
+#define SMBIOS_TYPE9_LENGTH_V21		0x0d
+#define SMBIOS_TYPE9_LENGTH_V26		0x11
+
+#define SMBIOS_TYPE16_LENGTH_V21	0x0f
+#define SMBIOS_TYPE16_LENGTH_V27	0x17
+
+#define SMBIOS_TYPE17_LENGTH_V21	0x15
+#define SMBIOS_TYPE17_LENGTH_V23	0x1b
+#define SMBIOS_TYPE17_LENGTH_V26	0x1c
+#define SMBIOS_TYPE17_LENGTH_V27	0x22
+#define SMBIOS_TYPE17_LENGTH_V28	0x28
+#define SMBIOS_TYPE17_LENGTH_V32	0x54
+#define SMBIOS_TYPE17_LENGTH_V33	0x5c
+
+#define SMBIOS_TYPE19_LENGTH_V21	0x0f
+#define SMBIOS_TYPE19_LENGTH_V27	0x1f
 
 /**
  * struct smbios_type1 - SMBIOS Type 1 (System Information) structure
@@ -209,6 +241,7 @@ struct __packed smbios_type0 {
  * @family: String number for the family of systems
  * @eos: End-of-structure marker (double null bytes)
  */
+
 struct __packed smbios_type1 {
 	struct smbios_header hdr;
 	u8 manufacturer;
