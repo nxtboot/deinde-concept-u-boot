@@ -602,13 +602,12 @@ struct __packed smbios_type17 {
 
 struct __packed smbios_type19 {
 	struct smbios_header hdr;
-	u32 starting_address;
-	u32 ending_address;
-	u16 memory_array_handle;
-	u8 partition_width;
-	/* The following fields are only present in SMBIOS v2.7+ */
-	u64 extended_starting_address;
-	u64 extended_ending_address;
+	u32 start_addr;
+	u32 end_addr;
+	u16 mem_array_hdl;
+	u8 partition_wid;
+	u64 ext_start_addr;
+	u64 ext_end_addr;
 	char eos[SMBIOS_STRUCT_EOS_BYTES];
 };
 

@@ -647,27 +647,13 @@ static void smbios_print_type17(struct smbios_type17 *table)
 
 static void smbios_print_type19(struct smbios_type19 *table)
 {
-	u64 start_addr, end_addr;
-
-	printf("Memory Array Mapped Address\n");
-
-	/* Check if extended address fields are present (SMBIOS v2.7+) */
-	if (table->hdr.length >= 0x1f) {
-		start_addr = table->extended_starting_address;
-		end_addr = table->extended_ending_address;
-	} else {
-		start_addr = table->starting_address;
-		end_addr = table->ending_address;
-	}
-
-	/* The ending address is the address of the last 1KB block */
-	if (end_addr != 0xffffffff && end_addr != 0xffffffffffffffff)
-		end_addr = (end_addr + 1) * 1024 - 1;
-
-	printf("\tStarting Address: 0x%016llx\n", start_addr);
-	printf("\tEnding Address:   0x%016llx\n", end_addr);
-	printf("\tMemory Array Handle: 0x%04x\n", table->memory_array_handle);
-	printf("\tPartition Width: %u\n", table->partition_width);
+	printf("Memory Array Mapped Address:\n");
+	printf("\tStarting Address: 0x%08x\n", table->start_addr);
+	printf("\tEnding Address: 0x%08x\n", table->end_addr);
+	printf("\tMemory Array Handle: 0x%04x\n", table->mem_array_hdl);
+	printf("\tPartition Width: 0x%04x\n", table->partition_wid);
+	printf("\tExtended Starting Address: 0x%016llx\n", table->ext_start_addr);
+	printf("\tExtended Ending Address: 0x%016llx\n", table->ext_end_addr);
 }
 
 static void smbios_print_type127(struct smbios_type127 *table)
