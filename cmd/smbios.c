@@ -168,41 +168,30 @@ static const struct str_lookup_table slot_length_strings[] = {
 	{ SMBIOS_SYSSLOT_LENG_3_5INDRV,	"3.5 inch drive form factor" },
 };
 
-static const struct str_lookup_table mem_array_location_strings[] = {
-	{ 0x01, "Other" },
-	{ 0x02, "Unknown" },
-	{ 0x03, "System board or motherboard" },
-	{ 0x04, "ISA add-on card" },
-	{ 0x05, "EISA add-on card" },
-	{ 0x06, "PCI add-on card" },
-	{ 0x07, "MCA add-on card" },
-	{ 0x08, "PCMCIA add-on card" },
-	{ 0x09, "Proprietary add-on card" },
-	{ 0x0A, "NuBus" },
-	{ 0xA0, "PC-98/C20 add-on card" },
-	{ 0xA1, "PC-98/C24 add-on card" },
-	{ 0xA2, "PC-98/E add-on card" },
-	{ 0xA3, "PC-98/Local bus add-on card" },
+static const struct str_lookup_table ma_location_strings[] = {
+	{ SMBIOS_MA_LOCATION_OTHER,		"Other" },
+	{ SMBIOS_MA_LOCATION_UNKNOWN,		"Unknown" },
+	{ SMBIOS_MA_LOCATION_MOTHERBOARD,	"System board or motherboard" },
 };
 
-static const struct str_lookup_table mem_array_use_strings[] = {
-	{ 0x01, "Other" },
-	{ 0x02, "Unknown" },
-	{ 0x03, "System memory" },
-	{ 0x04, "Video memory" },
-	{ 0x05, "Flash memory" },
-	{ 0x06, "Non-volatile RAM" },
-	{ 0x07, "Cache memory" },
+static const struct str_lookup_table ma_use_strings[] = {
+	{ SMBIOS_MA_USE_OTHER,		"Other" },
+	{ SMBIOS_MA_USE_UNKNOWN,	"Unknown" },
+	{ SMBIOS_MA_USE_SYSTEM,		"System memory" },
+	{ SMBIOS_MA_USE_VIDEO,		"Video memory" },
+	{ SMBIOS_MA_USE_FLASH,		"Flash memory" },
+	{ SMBIOS_MA_USE_NVRAM,		"Non-volatile RAM" },
+	{ SMBIOS_MA_USE_CACHE,		"Cache memory" },
 };
 
-static const struct str_lookup_table mem_err_corr_strings[] = {
-	{ 0x01, "Other" },
-	{ 0x02, "Unknown" },
-	{ 0x03, "None" },
-	{ 0x04, "Parity" },
-	{ 0x05, "Single-bit ECC" },
-	{ 0x06, "Multi-bit ECC" },
-	{ 0x07, "CRC" },
+static const struct str_lookup_table ma_err_corr_strings[] = {
+	{ SMBIOS_MA_ERRCORR_OTHER,	"Other" },
+	{ SMBIOS_MA_ERRCORR_UNKNOWN,	"Unknown" },
+	{ SMBIOS_MA_ERRCORR_NONE,	"None" },
+	{ SMBIOS_MA_ERRCORR_PARITY,	"Parity" },
+	{ SMBIOS_MA_ERRCORR_SBITECC,	"Single-bit ECC" },
+	{ SMBIOS_MA_ERRCORR_MBITECC,	"Multi-bit ECC" },
+	{ SMBIOS_MA_ERRCORR_CRC,	"CRC" },
 };
 
 static void smbios_print_generic(const struct smbios_header *table)
@@ -518,33 +507,19 @@ static void smbios_print_type9(struct smbios_type9 *table)
 
 static void smbios_print_type16(struct smbios_type16 *table)
 {
-	u64 capacity;
-
-	printf("Physical Memory Array\n");
-	smbios_print_lookup_str(mem_array_location_strings, table->location,
-				ARRAY_SIZE(mem_array_location_strings),
-				"Location");
-	smbios_print_lookup_str(mem_array_use_strings, table->use,
-				ARRAY_SIZE(mem_array_use_strings), "Use");
-	smbios_print_lookup_str(mem_err_corr_strings, table->error_correction,
-				ARRAY_SIZE(mem_err_corr_strings),
-				"Error Correction");
-
-	capacity = table->maximum_capacity;
-	if (capacity == 0x7fffffff &&
-	    table->hdr.length >= offsetof(struct smbios_type16,
-					  extended_maximum_capacity)) {
-		capacity = table->extended_maximum_capacity;
-		printf("\tMaximum Capacity: %llu GB\n", capacity >> 30);
-	} else if (capacity > 0) {
-		printf("\tMaximum Capacity: %llu MB\n", capacity >> 10);
-	} else {
-		printf("\tMaximum Capacity: No limit\n");
-	}
-
-	printf("\tError Information Handle: 0x%04x\n",
-	       table->error_information_handle);
-	printf("\tNumber Of Devices: %u\n", table->number_of_memory_devices);
+	printf("Physical Memory Array:\n");
+	smbios_print_lookup_str(ma_location_strings, table->location,
+				ARRAY_SIZE(ma_location_strings), "Location");
+	smbios_print_lookup_str(ma_use_strings, table->use,
+				ARRAY_SIZE(ma_use_strings), "Use");
+	smbios_print_lookup_str(ma_err_corr_strings, table->mem_err_corr,
+				ARRAY_SIZE(ma_err_corr_strings),
+				"Memory Error Correction");
+	printf("\tMaximum Capacity: 0x%08x\n", table->max_cap);
+	printf("\tMemory Error Information Handle: 0x%04x\n",
+	       table->mem_err_info_hdl);
+	printf("\tNumber of Memory Devices: 0x%04x\n", table->num_of_mem_dev);
+	printf("\tExtended Maximum Capacity: 0x%016llx\n", table->ext_max_cap);
 }
 
 static void smbios_print_type19(struct smbios_type19 *table)
