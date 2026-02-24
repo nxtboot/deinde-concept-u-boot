@@ -10,6 +10,8 @@
 #include <bootflow.h>
 #include <ctype.h>
 #include <dm/ofnode.h>
+#include <efi.h>
+#include <efi_loader.h>
 #include <env.h>
 #include <errno.h>
 #include <init.h>
@@ -20,6 +22,19 @@
 #include <string.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+struct efi_fw_image fw_images[] = {
+	{
+		.fw_name = u"UBOOT_BOOT_PARTITION",
+		.image_index = 1,
+	},
+};
+
+struct efi_capsule_update_info update_info = {
+	.dfu_string = NULL,
+	.images = fw_images,
+	.num_images = ARRAY_SIZE(fw_images),
+};
 
 /*
  * The memory mapping includes all DRAM banks, along with the
@@ -188,6 +203,7 @@ static int exynos_blk_env_setup(void)
 	struct blk_desc *blk_desc;
 	struct disk_partition info = {0};
 	unsigned long largest_part_start = 0, largest_part_size = 0;
+	static char dfu_string[32];
 	int i;
 
 	blk_ifname = "mmc";
@@ -200,6 +216,14 @@ static int exynos_blk_env_setup(void)
 	for (i = 1; i < CONFIG_EFI_PARTITION_ENTRIES_NUMBERS; i++) {
 		if (part_get_info(blk_desc, i, &info))
 			continue;
+
+		if (!update_info.dfu_string &&
+		    !strncasecmp(info.name, "boot", strlen("boot"))) {
+			snprintf(dfu_string, sizeof(dfu_string),
+				 "mmc %d=u-boot.bin part %d %d", blk_dev,
+				 blk_dev, i);
+			update_info.dfu_string = dfu_string;
+		}
 
 		if (info.start > largest_part_size) {
 			largest_part_start = info.start;
