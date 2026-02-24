@@ -8,7 +8,6 @@
 #include <bootm.h>
 #include <bootstage.h>
 #include <event.h>
-#include <usb.h>
 #include <acpi/acpi_table.h>
 #include <dm/root.h>
 
@@ -38,9 +37,6 @@ void bootm_final(enum bootm_final_t flags)
 		bootstage_report();
 
 	board_quiesce_devices();
-
-	if (IS_ENABLED(CONFIG_USB_DEVICE))
-		udc_disconnect();
 
 	/*
 	 * Call remove function of all devices with a removal flag set.
