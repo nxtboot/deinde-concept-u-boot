@@ -584,7 +584,7 @@ static int scsi_detect_dev(struct udevice *dev, int target, int lun,
 	pccb->target = target;
 	pccb->lun = lun;
 	pccb->pdata = tempbuff;
-	pccb->datalen = TEMPBUFF_SIZE;
+	pccb->datalen = 36;
 	pccb->dma_dir = DMA_FROM_DEVICE;
 	scsi_setup_inquiry(desc, pccb);
 	if (scsi_exec(dev, pccb)) {
