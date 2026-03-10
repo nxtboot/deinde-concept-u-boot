@@ -248,7 +248,9 @@ struct fsdata {
 	int	fatsize;
 	u32	fatlength;
 	u16	fat_sect;
+#ifdef CONFIG_FAT_WRITE
 	u8	fat_dirty;
+#endif
 	u32	rootdir_sect;
 	u16	sect_size;
 	u16	clust_size;
@@ -284,6 +286,44 @@ static inline u32 clust_to_sect(struct fsdata *fsdata, u32 clust)
 static inline u32 sect_to_clust(struct fsdata *fsdata, int sect)
 {
 	return (sect - fsdata->data_begin) / fsdata->clust_size;
+}
+
+/**
+ * fat_mark_clean() - clear the dirty flag on FAT buffer
+ * @fsdata: filesystem instance data
+ */
+static inline void fat_mark_clean(struct fsdata *fsdata)
+{
+#ifdef CONFIG_FAT_WRITE
+	fsdata->fat_dirty = 0;
+#endif
+}
+
+/**
+ * fat_mark_dirty() - set the dirty flag on FAT buffer
+ * @fsdata: filesystem instance data
+ */
+static inline void fat_mark_dirty(struct fsdata *fsdata)
+{
+#ifdef CONFIG_FAT_WRITE
+	fsdata->fat_dirty = 1;
+#endif
+}
+
+/**
+ * fat_is_dirty() - check if FAT buffer has been modified
+ * @fsdata: filesystem instance data
+ *
+ * Return: true if dirty, false otherwise
+ */
+static inline bool fat_is_dirty(struct fsdata *fsdata)
+{
+#ifdef CONFIG_FAT_WRITE
+	if (fsdata->fat_dirty)
+		return true;
+#endif
+
+	return false;
 }
 
 /**

@@ -226,9 +226,9 @@ int flush_dirty_fat_buffer(struct fsdata *mydata)
 	u32 startblock = mydata->fatbufnum * FATBUFBLOCKS;
 
 	debug("debug: evicting %d, dirty: %d\n", mydata->fatbufnum,
-	      (int)mydata->fat_dirty);
+	      (int)fat_is_dirty(mydata));
 
-	if ((!mydata->fat_dirty) || (mydata->fatbufnum == -1))
+	if (!fat_is_dirty(mydata) || (mydata->fatbufnum == -1))
 		return 0;
 
 	/* Cap length if fatlength is not a multiple of FATBUFBLOCKS */
@@ -251,7 +251,7 @@ int flush_dirty_fat_buffer(struct fsdata *mydata)
 			return -1;
 		}
 	}
-	mydata->fat_dirty = 0;
+	fat_mark_clean(mydata);
 
 	return 0;
 }
@@ -487,8 +487,7 @@ static int set_fatent_value(struct fsdata *mydata, u32 entry, u32 entry_value)
 		mydata->fatbufnum = bufnum;
 	}
 
-	/* Mark as dirty */
-	mydata->fat_dirty = 1;
+	fat_mark_dirty(mydata);
 
 	/* Set the actual entry */
 	switch (mydata->fatsize) {
