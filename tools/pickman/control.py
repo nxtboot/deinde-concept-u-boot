@@ -1592,10 +1592,11 @@ def _subtree_record(dbs, source, squash_hash, merge_hash):
 
 def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: disable=too-many-arguments
                          target, push=True):
-    """Apply a subtree update on the target branch
+    """Apply a subtree update on a branch and create a merge request
 
-    Runs tools/update-subtree.sh to pull the subtree update, then
-    optionally pushes the result to the remote target branch.
+    Runs tools/update-subtree.sh to pull the subtree update on a new
+    branch (cherry-<hash>), then optionally pushes and creates a merge
+    request to the target branch.
 
     Args:
         dbs (Database): Database instance
@@ -1619,6 +1620,9 @@ def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: 
         return 1
     squash_hash = parents[1]
 
+    branch_name = f'cherry-{merge_hash[:11]}'
+
+    # Create a new branch from the target for this subtree update
     try:
         run_git(['checkout', target])
     except command.CommandExc:
@@ -1629,6 +1633,12 @@ def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: 
         except command.CommandExc:
             tout.error(f'Could not checkout {target}')
             return 1
+
+    # Delete the branch if it already exists, then create it
+    if run_git(['branch', '--list', branch_name]).strip():
+        tout.info(f'Deleting existing branch {branch_name}')
+        run_git(['branch', '-D', branch_name])
+    run_git(['checkout', '-b', branch_name])
 
     ret = _subtree_run_update(name, tag)
     if ret == SUBTREE_FAIL:
@@ -1649,11 +1659,11 @@ def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: 
             return 1
 
     if push:
-        try:
-            gitlab_api.push_branch(remote, target, skip_ci=True)
-            tout.info(f'Pushed {target} to {remote}')
-        except command.CommandExc as exc:
-            tout.error(f'Failed to push {target}: {exc}')
+        title = f'Subtree update: {name} -> {tag}'
+        mr_url = gitlab_api.push_and_create_mr(
+            remote, branch_name, target, title)
+        if not mr_url:
+            tout.error(f'Failed to push/create MR for {branch_name}')
             return 1
 
     _subtree_record(dbs, source, squash_hash, merge_hash)

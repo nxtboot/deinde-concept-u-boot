@@ -4048,6 +4048,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                 if 'rev-parse' in git_args:
                     # Parents of merge: first_parent squash_hash
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if '--format=%s|%an' in git_args:
@@ -4081,7 +4083,7 @@ class TestApplySubtreeUpdate(unittest.TestCase):
             dbs.close()
 
     def test_apply_with_push(self):
-        """Test apply_subtree_update pushes when args.push is True."""
+        """Test apply_subtree_update creates MR when push is True."""
         with terminal.capture():
             dbs = database.Database(self.db_path)
             dbs.start()
@@ -4094,17 +4096,22 @@ class TestApplySubtreeUpdate(unittest.TestCase):
             def run_git_handler(git_args):
                 if 'rev-parse' in git_args:
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if '--format=%s|%an' in git_args:
                     return 'Commit subject|Author'
                 return ''
 
-            pushed = [False]
+            mr_info = {}
 
-            def mock_push(remote, branch, skip_ci=False):
-                pushed[0] = True
-                return True
+            def mock_push_mr(remote, branch, target, title, desc=''):
+                mr_info['remote'] = remote
+                mr_info['branch'] = branch
+                mr_info['target'] = target
+                mr_info['title'] = title
+                return 'https://example.com/mr/1'
 
             mock_result = command.CommandResult('ok', '', '', 0)
             with mock.patch.object(control, 'run_git',
@@ -4113,19 +4120,23 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                         control.command, 'run_one',
                         return_value=mock_result):
                     with mock.patch.object(
-                            control.gitlab_api, 'push_branch',
-                            side_effect=mock_push):
+                            control.gitlab_api, 'push_and_create_mr',
+                            side_effect=mock_push_mr):
                         ret = control.apply_subtree_update(
                             dbs, 'us/next', 'dts', 'v6.15-dts',
                             'merge_hash', 'ci', 'master',
                             push=args.push)
 
             self.assertEqual(ret, 0)
-            self.assertTrue(pushed[0])
+            self.assertEqual(mr_info['remote'], 'ci')
+            self.assertEqual(mr_info['branch'], 'cherry-merge_hash')
+            self.assertEqual(mr_info['target'], 'master')
+            self.assertEqual(mr_info['title'],
+                             'Subtree update: dts -> v6.15-dts')
             dbs.close()
 
     def test_apply_push_defaults_to_true(self):
-        """Test apply_subtree_update pushes when push is not specified."""
+        """Test apply_subtree_update creates MR when push not specified."""
         with terminal.capture():
             dbs = database.Database(self.db_path)
             dbs.start()
@@ -4135,17 +4146,19 @@ class TestApplySubtreeUpdate(unittest.TestCase):
             def run_git_handler(git_args):
                 if 'rev-parse' in git_args:
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if '--format=%s|%an' in git_args:
                     return 'Commit subject|Author'
                 return ''
 
-            pushed = [False]
+            mr_created = [False]
 
-            def mock_push(remote, branch, skip_ci=False):
-                pushed[0] = True
-                return True
+            def mock_push_mr(remote, branch, target, title, desc=''):
+                mr_created[0] = True
+                return 'https://example.com/mr/1'
 
             mock_result = command.CommandResult('ok', '', '', 0)
             with mock.patch.object(control, 'run_git',
@@ -4154,14 +4167,14 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                         control.command, 'run_one',
                         return_value=mock_result):
                     with mock.patch.object(
-                            control.gitlab_api, 'push_branch',
-                            side_effect=mock_push):
+                            control.gitlab_api, 'push_and_create_mr',
+                            side_effect=mock_push_mr):
                         ret = control.apply_subtree_update(
                             dbs, 'us/next', 'dts', 'v6.15-dts',
                             'merge_hash', 'ci', 'master')
 
             self.assertEqual(ret, 0)
-            self.assertTrue(pushed[0])
+            self.assertTrue(mr_created[0])
             dbs.close()
 
     def test_apply_checkout_failure(self):
@@ -4180,6 +4193,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                     return 'first_parent\nsquash_hash'
                 if 'checkout' in git_args:
                     raise command.CommandExc('checkout failed', None)
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 return ''
 
             with mock.patch.object(control, 'run_git',
@@ -4210,9 +4225,13 @@ class TestApplySubtreeUpdate(unittest.TestCase):
             def run_git_handler(git_args):
                 if 'rev-parse' in git_args:
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     checkout_calls.append(list(git_args))
-                    if '-b' not in git_args:
+                    # Fail bare checkout of target, succeed on
+                    # fallback and branch creation
+                    if git_args == ['checkout', 'master']:
                         raise command.CommandExc(
                             'ambiguous checkout', None)
                     return ''
@@ -4230,11 +4249,14 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                         push=args.push)
 
             self.assertEqual(ret, 0)
-            # Should have tried bare checkout, then fallback
-            self.assertEqual(len(checkout_calls), 2)
+            # Should have tried bare checkout, then fallback, then
+            # branch creation
+            self.assertEqual(len(checkout_calls), 3)
             self.assertEqual(checkout_calls[0], ['checkout', 'master'])
             self.assertEqual(checkout_calls[1],
                              ['checkout', '-b', 'master', 'ci/master'])
+            self.assertEqual(checkout_calls[2],
+                             ['checkout', '-b', 'cherry-merge_hash'])
             dbs.close()
 
     def test_apply_no_second_parent(self):
@@ -4273,6 +4295,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
             def run_git_handler(git_args):
                 if 'rev-parse' in git_args:
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 return ''
@@ -4310,6 +4334,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                     if '--verify' in git_args:
                         raise Exception('no MERGE_HEAD')
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if 'merge' in git_args and '--abort' in git_args:
@@ -4351,6 +4377,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                     if '--verify' in git_args:
                         return 'abc123'
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if '--format=%s|%an' in git_args:
@@ -4395,6 +4423,8 @@ class TestApplySubtreeUpdate(unittest.TestCase):
                     if '--verify' in git_args:
                         return 'abc123'
                     return 'first_parent\nsquash_hash'
+                if 'branch' in git_args and '--list' in git_args:
+                    return ''
                 if 'checkout' in git_args:
                     return ''
                 if 'merge' in git_args and '--abort' in git_args:
