@@ -105,7 +105,7 @@ U_BOOT_DRIVER(efi_bootdev) = {
 	.of_match	= efi_bootdev_ids,
 };
 
-U_BOOT_DRIVER(efi_block) = {
+U_BOOT_DRIVER(efi_media_block) = {
 	.name		= "efi_block",
 	.id		= UCLASS_BLK,
 	.ops		= &efi_blk_ops,
