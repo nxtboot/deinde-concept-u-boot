@@ -857,6 +857,81 @@ static int dm_test_vfs_ln(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_ln, UTF_SCAN_FDT);
 
+/* Test the tree command via VFS */
+static int dm_test_vfs_tree(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* tree should show the root with host mount */
+	ut_assertok(run_command("tree /", 0));
+	ut_assert_nextline("/");
+	ut_assert_skip_to_linen("    host/");
+	console_record_reset_enable();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_tree, UTF_SCAN_FDT);
+
+/* Test 'test -f' and 'test -d' with VFS paths */
+static int dm_test_vfs_test(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* -f should succeed for regular files */
+	ut_assertok(run_command("test -f /host/README", 0));
+
+	/* -f should fail for directories */
+	ut_asserteq(1, run_command("test -f /host/cmd", 0));
+
+	/* -d should succeed for directories */
+	ut_assertok(run_command("test -d /host/cmd", 0));
+
+	/* -d should fail for regular files */
+	ut_asserteq(1, run_command("test -d /host/README", 0));
+
+	/* Both should fail for non-existent paths */
+	ut_asserteq(1, run_command("test -f /host/nonexistent", 0));
+	ut_asserteq(1, run_command("test -d /host/nonexistent", 0));
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_test, UTF_SCAN_FDT);
+
+/* Test mount -a (automount from fstab env) */
+static int dm_test_vfs_fstab(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	env_set("fstab", "hostfs /host");
+	ut_assertok(run_command("mount -a", 0));
+	ut_assert_console_end();
+
+	/* Verify mount worked */
+	ut_assertok(run_command("ls /", 0));
+	ut_assert_nextline("DIR %10u host", 0);
+	ut_assert_console_end();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	env_set("fstab", NULL);
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_fstab, UTF_SCAN_FDT);
+
 /* Test cross-filesystem copy (hostfs ↔ ext4) */
 static int dm_test_vfs_cross_cp(struct unit_test_state *uts)
 {

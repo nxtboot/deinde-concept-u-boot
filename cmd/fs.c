@@ -41,6 +41,38 @@ static int mount_handler(int argc, char *const argv[])
 		return 0;
 	}
 
+	/* mount -a: process entries from 'fstab' env variable */
+	if (!strcmp(argv[1], "-a")) {
+		const char *fstab = env_get("fstab");
+		char *buf, *entry, *next;
+
+		if (!fstab) {
+			printf("No 'fstab' environment variable set\n");
+			return CMD_RET_FAILURE;
+		}
+
+		buf = strdup(fstab);
+		if (!buf)
+			return CMD_RET_FAILURE;
+
+		for (entry = buf; entry; entry = next) {
+			next = strchr(entry, ';');
+			if (next)
+				*next++ = '\0';
+
+			/* Skip leading whitespace */
+			while (*entry == ' ')
+				entry++;
+			if (!*entry)
+				continue;
+
+			run_commandf("mount %s", entry);
+		}
+
+		free(buf);
+		return CMD_RET_SUCCESS;
+	}
+
 	/* mount -t <type> <interface> <dev:part> <mountpoint> */
 	if (!strcmp(argv[1], "-t")) {
 		struct disk_partition info;
@@ -369,6 +401,123 @@ U_BOOT_CMD_COMPLETE(
 	"create a symbolic link",
 	"<target> <linkname>\n"
 	"    - Create symlink 'linkname' pointing to 'target'",
+	vfs_cmd_complete
+);
+
+static int do_tree_recurse(const char *path, int depth, int max_depth)
+{
+	struct udevice *mnt_dev, *dir;
+	struct fs_dir_stream *strm;
+	const char *subpath;
+	struct fs_dirent dent;
+	struct vfsmount *mnt;
+	int ret;
+
+	if (max_depth && depth >= max_depth)
+		return 0;
+
+	if (!strcmp(path, "/")) {
+		/* List root mount points */
+		struct udevice *dev;
+
+		uclass_foreach_dev_probe(UCLASS_MOUNT, dev) {
+			struct dir_uc_priv *uc_priv;
+			char mpath[FILE_MAX_PATH_LEN];
+
+			mnt = dev_get_uclass_priv(dev);
+			uc_priv = dev_get_uclass_priv(mnt->dir);
+			printf("%*s%s/\n", depth * 4, "", uc_priv->path);
+			snprintf(mpath, sizeof(mpath), "/%s", uc_priv->path);
+			do_tree_recurse(mpath, depth + 1, max_depth);
+		}
+		return 0;
+	}
+
+	{
+		struct udevice *vfs;
+
+		vfs = vfs_root();
+		if (!vfs)
+			return -ENXIO;
+		ret = vfs_find_mount(vfs, path, &mnt_dev, &subpath);
+	}
+	if (ret)
+		return ret;
+
+	mnt = dev_get_uclass_priv(mnt_dev);
+	ret = fs_lookup_dir(mnt->target, subpath, &dir);
+	if (ret)
+		return ret;
+
+	ret = dir_open(dir, &strm);
+	if (ret)
+		return ret;
+
+	while (!dir_read(dir, strm, &dent)) {
+		if (!strcmp(dent.name, ".") || !strcmp(dent.name, ".."))
+			continue;
+
+		printf("%*s%s%s\n", depth * 4, "", dent.name,
+		       dent.type == FS_DT_DIR ? "/" :
+		       dent.type == FS_DT_LNK ? "@" : "");
+
+		if (dent.type == FS_DT_DIR) {
+			char child_path[FILE_MAX_PATH_LEN];
+
+			if (path[strlen(path) - 1] == '/')
+				snprintf(child_path, sizeof(child_path),
+					 "%s%s", path, dent.name);
+			else
+				snprintf(child_path, sizeof(child_path),
+					 "%s/%s", path, dent.name);
+			do_tree_recurse(child_path, depth + 1, max_depth);
+		}
+	}
+
+	dir_close(dir, strm);
+
+	return 0;
+}
+
+static int do_tree(struct cmd_tbl *cmdtp, int flag, int argc,
+		   char *const argv[])
+{
+	const char *path = argc >= 2 ? argv[1] : NULL;
+	char resolved[FILE_MAX_PATH_LEN];
+	int ret;
+
+	ret = vfs_init();
+	if (ret)
+		return CMD_RET_FAILURE;
+
+	path = path ? path : vfs_getcwd();
+	if (path[0] != '/') {
+		const char *cwd = vfs_getcwd();
+		int cwd_len = strlen(cwd);
+
+		if (cwd_len == 1)
+			snprintf(resolved, sizeof(resolved), "/%s", path);
+		else
+			snprintf(resolved, sizeof(resolved), "%s/%s", cwd,
+				 path);
+		path = resolved;
+	}
+
+	printf("%s\n", path);
+	ret = do_tree_recurse(path, 1, 3);
+	if (ret) {
+		printf("tree failed: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	tree,	2,	1,	do_tree,
+	"list directory tree",
+	"[<path>]\n"
+	"    - Recursively list directory tree (max 3 levels deep)",
 	vfs_cmd_complete
 );
 
