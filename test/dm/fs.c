@@ -6,6 +6,7 @@
  */
 
 #include <console.h>
+#include <env.h>
 #include <dir.h>
 #include <dm.h>
 #include <file.h>
@@ -792,6 +793,38 @@ static int dm_test_vfs_symlink(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_vfs_symlink, UTF_SCAN_FDT);
+
+/* Test source command with VFS path */
+static int dm_test_vfs_source(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a simple script that sets an env var */
+	memcpy(map_sysmem(0x1000, 18), "setenv vfs_test ok", 18);
+	ut_assertok(run_command("save 1000 /host/.vfs_script 12", 0));
+	ut_assert_nextline("18 bytes written");
+	ut_assert_console_end();
+
+	/* Run it via source */
+	ut_assertok(run_command("source /host/.vfs_script", 0));
+	ut_assert_nextlinen("## Executing script");
+	ut_assert_console_end();
+
+	/* Verify the env var was set */
+	ut_asserteq_str("ok", env_get("vfs_test"));
+
+	os_unlink(".vfs_script");
+	env_set("vfs_test", NULL);
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_source, UTF_SCAN_FDT);
 
 /* Test the ln command via VFS */
 static int dm_test_vfs_ln(struct unit_test_state *uts)
