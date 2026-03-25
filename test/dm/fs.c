@@ -247,4 +247,31 @@ static int dm_test_vfs_mount(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_vfs_mount, UTF_SCAN_FDT);
+
+/* Test the VFS layer using the 'fs' command */
+static int dm_test_vfs_cmd(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	/* Mount the sandbox FS at /host */
+	ut_assertok(run_command("fs mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Verify it appears in the mount list */
+	ut_assertok(run_command("fs mount", 0));
+	ut_assert_nextlinen("/host");
+	ut_assert_console_end();
+
+	/* Unmount */
+	ut_assertok(run_command("fs umount /host", 0));
+	ut_assert_console_end();
+
+	/* Mount list should now be empty */
+	ut_assertok(run_command("fs mount", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cmd, UTF_SCAN_FDT);
+
 #endif

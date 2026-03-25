@@ -2987,6 +2987,14 @@ config CMD_FS_LEGACY
 	  include load, save, ls, size, mkdir, rm, ln, mv, fstype and
 	  fstypes.
 
+config CMD_VFS
+	bool "fs - virtual filesystem commands"
+	depends on VFS
+	default y if SANDBOX
+	help
+	  Provides the 'fs' command with mount, umount and ls subcommands
+	  for the virtual filesystem layer.
+
 config CMD_FS_UUID
 	bool "fsuuid command"
 	default y if SANDBOX
