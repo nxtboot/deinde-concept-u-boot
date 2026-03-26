@@ -9,7 +9,8 @@ import pytest
 from fstest_defs import *
 from fstest_helpers import assert_fs_integrity
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.slow
 class TestRename(object):
     def test_rename1(self, ubman, fs_obj_rename):

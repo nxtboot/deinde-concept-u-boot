@@ -15,6 +15,7 @@
 #include <file.h>
 #include <fs.h>
 #include <fs_legacy.h>
+#include <malloc.h>
 #include <mapmem.h>
 #include <part.h>
 #include <vfs.h>
@@ -136,9 +137,12 @@ static int do_umount(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
-	ret = umount_handler(argv[1]);
+	if (!strcmp(argv[1], "-a"))
+		ret = vfs_umount_all();
+	else
+		ret = umount_handler(argv[1]);
 	if (ret) {
-		printf("Error: %dE\n", ret);
+		printf("umount failed: %dE\n", ret);
 		return CMD_RET_FAILURE;
 	}
 
@@ -148,8 +152,8 @@ static int do_umount(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD_COMPLETE(
 	umount,	2,	1,	do_umount,
 	"unmount a filesystem",
-	"<mountpoint>\n"
-	"    - Unmount the filesystem at 'mountpoint'",
+	"<mountpoint> | -a\n"
+	"    - Unmount the filesystem at 'mountpoint', or all (-a)",
 	vfs_cmd_complete
 );
 
@@ -271,6 +275,168 @@ int do_cp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
+static int do_rm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	ret = vfs_unlink(argv[1]);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	rm,	2,	0,	do_rm,
+	"delete a file",
+	"<path>\n"
+	"    - Delete the file at 'path' in the VFS",
+	vfs_cmd_complete
+);
+
+static int do_mv(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	ret = vfs_rename(argv[1], argv[2]);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	mv,	3,	0,	do_mv,
+	"rename/move a file or directory",
+	"<old_path> <new_path>\n"
+	"    - Rename or move a file/directory within the same filesystem",
+	vfs_cmd_complete
+);
+
+static int do_mkdir(struct cmd_tbl *cmdtp, int flag, int argc,
+		    char *const argv[])
+{
+	int ret;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	ret = vfs_mkdir(argv[1]);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	mkdir,	2,	0,	do_mkdir,
+	"create a directory",
+	"<path>\n"
+	"    - Create directory at 'path' in the VFS",
+	vfs_cmd_complete
+);
+
+static int do_ln(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	ret = vfs_ln(argv[2], argv[1]);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	ln,	3,	0,	do_ln,
+	"create a symbolic link",
+	"<target> <linkname>\n"
+	"    - Create symlink 'linkname' pointing to 'target'",
+	vfs_cmd_complete
+);
+
+static void print_size_human(u64 bytes)
+{
+	if (bytes >= (u64)1024 * 1024 * 1024)
+		printf("%llu.%llu GiB", bytes >> 30,
+		       (bytes & ((1 << 30) - 1)) / (((u64)1 << 30) / 10));
+	else if (bytes >= 1024 * 1024)
+		printf("%llu.%llu MiB", bytes >> 20,
+		       (bytes & ((1 << 20) - 1)) / ((1 << 20) / 10));
+	else if (bytes >= 1024)
+		printf("%llu KiB", bytes >> 10);
+	else
+		printf("%llu B", bytes);
+}
+
+static void print_df_one(const char *name, struct fs_statfs *stats)
+{
+	u64 used = stats->blocks - stats->bfree;
+	u64 total_bytes = stats->blocks * stats->bsize;
+	u64 free_bytes = stats->bfree * stats->bsize;
+	u64 used_bytes = used * stats->bsize;
+
+	printf("%-16s %6lu %10llu %10llu %10llu  ", name, stats->bsize,
+	       total_bytes, used_bytes, free_bytes);
+	print_size_human(total_bytes);
+	printf("\n");
+}
+
+static int do_df(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	struct fs_statfs stats;
+	int ret;
+
+	if (argc >= 2) {
+		/* Single filesystem */
+		ret = vfs_statfs(argv[1], &stats);
+		if (ret) {
+			printf("Error: %dE\n", ret);
+			return CMD_RET_FAILURE;
+		}
+		printf("%-16s %6s %10s %10s %10s  %s\n",
+		       "Filesystem", "Blksz", "Total", "Used", "Free",
+		       "Size");
+		print_df_one(argv[1], &stats);
+	} else {
+		/* All mounts */
+		ret = vfs_init();
+		if (ret)
+			return CMD_RET_FAILURE;
+
+		printf("%-16s %6s %10s %10s %10s  %s\n",
+		       "Filesystem", "Blksz", "Total", "Used", "Free",
+		       "Size");
+		vfs_print_df();
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(
+	df,	2,	1,	do_df,
+	"show filesystem usage",
+	"[<path>]\n"
+	"    - Show usage for the filesystem at 'path', or all mounts"
+);
+
 static const char *fs_type_name(unsigned int type)
 {
 	switch (type) {
@@ -303,6 +469,14 @@ static int do_stat(struct cmd_tbl *cmdtp, int flag, int argc,
 	printf("  File: %s\n", dent.name);
 	printf("  Size: %llu\n", dent.size);
 	printf("  Type: %s\n", fs_type_name(dent.type));
+	if (dent.type == FS_DT_LNK) {
+		char target[FILE_MAX_PATH_LEN];
+		int len;
+
+		len = vfs_readlink(argv[1], target, sizeof(target));
+		if (len >= 0)
+			printf("  Link: %s\n", target);
+	}
 	if (dent.change_time.tm_year) {
 		printf("Modify: %04d-%02d-%02d %02d:%02d:%02d\n",
 		       dent.change_time.tm_year, dent.change_time.tm_mon,
@@ -481,7 +655,7 @@ static int do_save(struct cmd_tbl *cmdtp, int flag, int argc,
 	unmap_sysmem(buf);
 
 	if (written < 0) {
-		printf("Write failed: %ldE\n", written);
+		printf("Error: %dE\n", ret);
 		return CMD_RET_FAILURE;
 	}
 

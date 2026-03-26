@@ -12,7 +12,9 @@
 #include <fs.h>
 #include <mapmem.h>
 #include <os.h>
+#include <sandbox_host.h>
 #include <vfs.h>
+#include <dm/device-internal.h>
 #include <dm/test.h>
 #include <dm/uclass-internal.h>
 #include <test/ut.h>
@@ -99,7 +101,7 @@ static int dm_test_fs_file(struct unit_test_state *uts)
 
 	buf[READ_SIZE] = '\0';
 	ut_asserteq(READ_SIZE, file_read(fil, buf, READ_SIZE));
-	ut_asserteq_str("# SPDX-License-Identifier: GPL-2", buf);
+	ut_asserteq_str("# SPDX-License-Ident" "ifier: GPL-2", buf);
 	ut_asserteq(0x20, uc_priv->pos);
 
 	ut_asserteq(READ_SIZE, file_read_at(fil, buf, uc_priv->size - 0x20, 0));
@@ -470,6 +472,36 @@ static int dm_test_vfs_cwd(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_cwd, UTF_SCAN_FDT);
 
+/* Test umount -a */
+static int dm_test_vfs_umount_all(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	/* Clean up any leftover mounts */
+	run_command("umount -a", 0);
+	console_record_reset_enable();
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Verify mount is there */
+	ut_assertok(run_command("ls /", 0));
+	ut_assert_nextline("DIR %10u host", 0);
+	ut_assert_console_end();
+
+	/* Unmount all */
+	ut_assertok(run_command("umount -a", 0));
+	ut_assert_console_end();
+
+	/* Mount point directory should still exist but mount list is empty */
+	console_record_reset_enable();
+	vfs_print_mounts();
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_umount_all, UTF_SCAN_FDT);
+
 /* Test cd and pwd commands */
 static int dm_test_vfs_cd(struct unit_test_state *uts)
 {
@@ -495,13 +527,41 @@ static int dm_test_vfs_cd(struct unit_test_state *uts)
 	ut_assert_skip_to_linen("DIR ");
 	console_record_reset_enable();
 
-	/* cd back to root */
-	ut_assertok(run_command("cd /", 0));
+	/* Test relative file access from cwd */
+	ut_assertok(run_command("cd /host", 0));
+	ut_assert_console_end();
+
+	/* 'cat Kbuild' should resolve to /host/Kbuild */
+	ut_assertok(run_command("cat Kbuild", 0));
+	ut_assert_skip_to_linen("# SPDX");
+	console_record_reset_enable();
+
+	/* cd .. should go back to root */
+	ut_assertok(run_command("cd ..", 0));
 	ut_assert_console_end();
 	ut_assertok(run_command("pwd", 0));
 	ut_assert_nextline("/");
 	ut_assert_console_end();
 
+	/* cd .. at root stays at root */
+	ut_assertok(run_command("cd ..", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("pwd", 0));
+	ut_assert_nextline("/");
+	ut_assert_console_end();
+
+	/* . is a no-op */
+	ut_assertok(run_command("cd /host", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("cd .", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("pwd", 0));
+	ut_assert_nextline("/host");
+	ut_assert_console_end();
+
+	/* cd back to root and umount */
+	ut_assertok(run_command("cd /", 0));
+	ut_assert_console_end();
 	ut_assertok(run_command("umount /host", 0));
 	ut_assert_console_end();
 
@@ -580,6 +640,244 @@ static int dm_test_vfs_cp(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_vfs_cp, UTF_SCAN_FDT);
+
+/* Test the rm command via VFS */
+static int dm_test_vfs_rm(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a file to delete */
+	memcpy(map_sysmem(0x1000, 4), "test", 4);
+	ut_assertok(run_command("save 1000 /host/.rm_test 4", 0));
+	ut_assert_nextline("4 bytes written");
+	ut_assert_console_end();
+
+	/* Verify it exists */
+	ut_assertok(run_command("stat /host/.rm_test", 0));
+	ut_assert_nextline("  File: .rm_test");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: regular file");
+	console_record_reset_enable();
+
+	/* Delete it */
+	ut_assertok(run_command("rm /host/.rm_test", 0));
+	ut_assert_console_end();
+
+	/* Verify it is gone */
+	ut_asserteq(1, run_command("stat /host/.rm_test", 0));
+	console_record_reset_enable();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_rm, UTF_SCAN_FDT);
+
+/* Test the mv command via VFS */
+static int dm_test_vfs_mv(struct unit_test_state *uts)
+{
+	char buf[8];
+
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a file */
+	memcpy(map_sysmem(0x1000, 6), "moved!", 6);
+	ut_assertok(run_command("save 1000 /host/.mv_src 6", 0));
+	ut_assert_nextline("6 bytes written");
+	ut_assert_console_end();
+
+	/* Rename it */
+	ut_assertok(run_command("mv /host/.mv_src /host/.mv_dst", 0));
+	ut_assert_console_end();
+
+	/* Old name should be gone */
+	ut_asserteq(1, run_command("stat /host/.mv_src", 0));
+	console_record_reset_enable();
+
+	/* New name should have the data */
+	memset(map_sysmem(0x2000, 8), 0, 8);
+	ut_assertok(run_command("load 2000 /host/.mv_dst", 0));
+	ut_assert_nextline("6 bytes read");
+	ut_assert_console_end();
+
+	memcpy(buf, map_sysmem(0x2000, 6), 6);
+	buf[6] = '\0';
+	ut_asserteq_str("moved!", buf);
+
+	os_unlink(".mv_dst");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_mv, UTF_SCAN_FDT);
+
+/* Test the mkdir command via VFS */
+static int dm_test_vfs_mkdir(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	os_rmdir(".vfs_test_dir");
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a directory */
+	ut_assertok(run_command("mkdir /host/.vfs_test_dir", 0));
+	ut_assert_console_end();
+
+	/* Verify it appears in ls */
+	ut_assertok(run_command("stat /host/.vfs_test_dir", 0));
+	ut_assert_nextline("  File: .vfs_test_dir");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: directory");
+	console_record_reset_enable();
+
+	/* Clean up */
+	os_rmdir(".vfs_test_dir");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_mkdir, UTF_SCAN_FDT);
+
+/* Test symlink following and readlink */
+static int dm_test_vfs_symlink(struct unit_test_state *uts)
+{
+	char *buf;
+
+	ut_assertok(vfs_init());
+
+	os_unlink(".vfs_test_link");
+	buf = map_sysmem(0x10000, 0x21);
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a symlink */
+	ut_assertok(os_symlink("README", ".vfs_test_link"));
+
+	/* stat shows it as a symbolic link with target */
+	ut_assertok(run_command("stat /host/.vfs_test_link", 0));
+	ut_assert_nextline("  File: .vfs_test_link");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: symbolic link");
+	ut_assert_nextline("  Link: README");
+	ut_assert_console_end();
+
+	/* load follows the symlink transparently */
+	memset(buf, '\0', 0x21);
+	ut_assertok(run_command("load 10000 /host/.vfs_test_link 20", 0));
+	ut_assert_nextline("32 bytes read");
+	ut_assert_console_end();
+	ut_asserteq_str("# SPDX-License-Ident" "ifier: GPL-2", buf);
+
+	/* Clean up */
+	os_unlink(".vfs_test_link");
+	unmap_sysmem(buf);
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_symlink, UTF_SCAN_FDT);
+
+/* Test the ln command via VFS */
+static int dm_test_vfs_ln(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	os_unlink(".ln_test");
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Create a symlink */
+	ut_assertok(run_command("ln README /host/.ln_test", 0));
+	ut_assert_console_end();
+
+	/* Verify it is a symlink pointing to README */
+	ut_assertok(run_command("stat /host/.ln_test", 0));
+	ut_assert_nextline("  File: .ln_test");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: symbolic link");
+	ut_assert_nextline("  Link: README");
+	ut_assert_console_end();
+
+	os_unlink(".ln_test");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_ln, UTF_SCAN_FDT);
+
+/* Test cross-filesystem copy (hostfs ↔ ext4) */
+static int dm_test_vfs_cross_cp(struct unit_test_state *uts)
+{
+	struct udevice *dev, *blk;
+	struct blk_desc *desc;
+	struct fs_dirent dent;
+
+	ut_assertok(vfs_init());
+	char fname[256];
+
+	ut_assertok(os_persistent_file(fname, sizeof(fname), "2MB.ext2.img"));
+
+	ut_assertok(host_create_device("cptest", true, DEFAULT_BLKSZ, &dev));
+	ut_assertok(host_attach_file(dev, fname));
+	ut_assertok(blk_get_from_parent(dev, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+	ut_assertok(run_commandf("mount host %x:0 /mnt", desc->devnum));
+	ut_assert_console_end();
+
+	/* Copy hostfs -> ext4 */
+	ut_assertok(run_command("fs cp /host/Kbuild /mnt/Kbuild", 0));
+	console_record_reset_enable();
+
+	/* Verify the copy exists on ext4 */
+	ut_assertok(vfs_stat("/mnt/Kbuild", &dent));
+	ut_asserteq(FS_DT_REG, dent.type);
+	ut_assert(dent.size > 0);
+
+	/* Copy ext4 -> hostfs */
+	ut_assertok(run_command("fs cp /mnt/Kbuild /host/.cross_cp_test", 0));
+	console_record_reset_enable();
+
+	/* Verify the copy exists on hostfs */
+	ut_assertok(vfs_stat("/host/.cross_cp_test", &dent));
+	ut_asserteq(FS_DT_REG, dent.type);
+	ut_assert(dent.size > 0);
+
+	os_unlink(".cross_cp_test");
+
+	ut_assertok(run_command("umount /mnt", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	ut_assertok(host_detach_file(dev));
+	ut_assertok(device_unbind(dev));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cross_cp, UTF_SCAN_FDT);
 
 /* Test the stat command via VFS */
 static int dm_test_vfs_stat(struct unit_test_state *uts)

@@ -78,6 +78,15 @@ static int do_fs_umount(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
+	if (!strcmp(argv[1], "-a")) {
+		ret = vfs_umount_all();
+		if (ret) {
+			printf("fs umount -a failed: %dE\n", ret);
+			return CMD_RET_FAILURE;
+		}
+		return CMD_RET_SUCCESS;
+	}
+
 	ret = fs_umount_handler(argv[1]);
 	if (ret) {
 		printf("fs umount failed: %dE\n", ret);
