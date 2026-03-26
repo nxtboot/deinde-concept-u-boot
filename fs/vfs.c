@@ -311,6 +311,13 @@ int vfs_umount_path(struct udevice *vfs, const char *path)
 	return vfs_umount(mnt_dev);
 }
 
+bool vfs_is_mount_point(struct udevice *dir)
+{
+	struct udevice *mnt;
+
+	return !find_mount(dir, &mnt);
+}
+
 void vfs_print_mounts(void)
 {
 	struct vfsmount *mnt;

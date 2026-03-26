@@ -13,6 +13,7 @@
 #include <dir.h>
 #include <dm.h>
 #include <fs.h>
+#include <vfs.h>
 #include <fs_common.h>
 
 static int vfs_rootfs_dir_open(struct udevice *dev,
@@ -81,8 +82,17 @@ static struct dir_ops vfs_rootfs_dir_ops = {
 	.close	= vfs_rootfs_dir_close,
 };
 
+static int vfs_rootfs_dir_remove(struct udevice *dev)
+{
+	if (vfs_is_mount_point(dev))
+		return log_msg_ret("drm", -EBUSY);
+
+	return 0;
+}
+
 U_BOOT_DRIVER(vfs_rootfs_dir) = {
 	.name	= "vfs_rootfs_dir",
 	.id	= UCLASS_DIR,
 	.ops	= &vfs_rootfs_dir_ops,
+	.remove	= vfs_rootfs_dir_remove,
 };

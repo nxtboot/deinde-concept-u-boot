@@ -113,6 +113,14 @@ int vfs_find_mount(struct udevice *vfs, const char *path,
 		   struct udevice **mntp, const char **subpathp);
 
 /**
+ * vfs_is_mount_point() - Check whether a directory is a mount point
+ *
+ * @dir: UCLASS_DIR device to check
+ * Return: true if this directory has an active mount, false otherwise
+ */
+bool vfs_is_mount_point(struct udevice *dir);
+
+/**
  * vfs_print_mounts() - Print all current mounts
  */
 void vfs_print_mounts(void);

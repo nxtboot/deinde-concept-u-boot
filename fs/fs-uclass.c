@@ -61,6 +61,8 @@ int fs_lookup_dir(struct udevice *dev, const char *path, struct udevice **dirp)
 
 		if (!device_active(dir))
 			continue;
+		if (device_get_uclass_id(dir) != UCLASS_DIR)
+			continue;
 
 		priv = dev_get_uclass_priv(dir);
 		log_debug("dir %s '%s' '%s'\n", dir->name, path, priv->path);
