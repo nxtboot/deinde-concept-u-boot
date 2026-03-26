@@ -4,6 +4,7 @@
 #
 
 obj-y := interface.o support.o stub.o
+obj-$(CONFIG_$(PHASE_)VFS) += fs.o
 
 # Core ext4 objects (always needed)
 obj-y	+= balloc.o bitmap.o block_validity.o dir.o ext4_jbd2.o extents.o \

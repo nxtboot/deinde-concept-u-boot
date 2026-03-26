@@ -932,6 +932,47 @@ static int dm_test_vfs_fstab(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_fstab, UTF_SCAN_FDT);
 
+/* Test the df command on an ext4 mount */
+static int dm_test_vfs_df(struct unit_test_state *uts)
+{
+	struct udevice *dev, *blk;
+	struct blk_desc *desc;
+	char fname[256];
+
+	ut_assertok(vfs_init());
+
+	ut_assertok(os_persistent_file(fname, sizeof(fname), "2MB.ext2.img"));
+
+	ut_assertok(host_create_device("dftest", true, DEFAULT_BLKSZ, &dev));
+	ut_assertok(host_attach_file(dev, fname));
+	ut_assertok(blk_get_from_parent(dev, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+
+	ut_assertok(run_commandf("mount host %x:0 /df", desc->devnum));
+	ut_assert_console_end();
+
+	ut_assertok(run_command("df /df", 0));
+	ut_assert_nextlinen("Filesystem");
+	ut_assert_nextlinen("/df");
+	ut_assert_console_end();
+
+	/* df with no args should list all mounts */
+	ut_assertok(run_command("df", 0));
+	ut_assert_nextlinen("Filesystem");
+	ut_assert_skip_to_linen("/df");
+	console_record_reset_enable();
+
+	ut_assertok(run_command("umount /df", 0));
+	ut_assert_console_end();
+
+	ut_assertok(host_detach_file(dev));
+	ut_assertok(device_unbind(dev));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_df, UTF_SCAN_FDT);
+
 /* Test cross-filesystem copy (hostfs ↔ ext4) */
 static int dm_test_vfs_cross_cp(struct unit_test_state *uts)
 {
