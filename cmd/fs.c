@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * VFS-based filesystem commands - mount, umount, ls, load, size
+ * VFS-based filesystem commands - mount, umount, ls, load, save, size
  *
  * These replace the legacy commands in cmd/fs_legacy.c with versions that
  * use absolute paths through the virtual filesystem layer.
@@ -213,6 +213,126 @@ U_BOOT_CMD_COMPLETE(
 	vfs_cmd_complete
 );
 
+#define COPY_BUF_SIZE	0x1000
+
+int do_cp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	struct file_uc_priv *uc_priv;
+	struct udevice *src, *dst;
+	char buf[COPY_BUF_SIZE];
+	loff_t remaining, pos;
+	long total = 0;
+	int ret;
+
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	ret = vfs_open_file(argv[1], DIR_O_RDONLY, &src);
+	if (ret) {
+		printf("Source '%s' not found: %dE\n", argv[1], ret);
+		return CMD_RET_FAILURE;
+	}
+
+	ret = vfs_open_file(argv[2], DIR_O_WRONLY, &dst);
+	if (ret) {
+		printf("Dest '%s' failed: %dE\n", argv[2], ret);
+		return CMD_RET_FAILURE;
+	}
+
+	uc_priv = dev_get_uclass_priv(src);
+	remaining = uc_priv->size;
+	pos = 0;
+
+	while (remaining > 0) {
+		long chunk = min((loff_t)COPY_BUF_SIZE, remaining);
+		long nread, nwritten;
+
+		nread = file_read_at(src, buf, pos, chunk);
+		if (nread < 0) {
+			printf("Read failed: %ldE\n", nread);
+			return CMD_RET_FAILURE;
+		}
+		if (!nread)
+			break;
+
+		nwritten = file_write_at(dst, buf, pos, nread);
+		if (nwritten < 0) {
+			printf("Write failed: %ldE\n", nwritten);
+			return CMD_RET_FAILURE;
+		}
+
+		pos += nread;
+		remaining -= nread;
+		total += nwritten;
+	}
+
+	printf("%ld bytes copied\n", total);
+
+	return CMD_RET_SUCCESS;
+}
+
+static const char *fs_type_name(unsigned int type)
+{
+	switch (type) {
+	case FS_DT_DIR:
+		return "directory";
+	case FS_DT_REG:
+		return "regular file";
+	case FS_DT_LNK:
+		return "symbolic link";
+	default:
+		return "unknown";
+	}
+}
+
+static int do_stat(struct cmd_tbl *cmdtp, int flag, int argc,
+			   char *const argv[])
+{
+	struct fs_dirent dent;
+	int ret;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	ret = vfs_stat(argv[1], &dent);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	printf("  File: %s\n", dent.name);
+	printf("  Size: %llu\n", dent.size);
+	printf("  Type: %s\n", fs_type_name(dent.type));
+	if (dent.change_time.tm_year) {
+		printf("Modify: %04d-%02d-%02d %02d:%02d:%02d\n",
+		       dent.change_time.tm_year, dent.change_time.tm_mon,
+		       dent.change_time.tm_mday, dent.change_time.tm_hour,
+		       dent.change_time.tm_min, dent.change_time.tm_sec);
+	}
+	if (dent.access_time.tm_year) {
+		printf("Access: %04d-%02d-%02d %02d:%02d:%02d\n",
+		       dent.access_time.tm_year, dent.access_time.tm_mon,
+		       dent.access_time.tm_mday, dent.access_time.tm_hour,
+		       dent.access_time.tm_min, dent.access_time.tm_sec);
+	}
+	if (dent.create_time.tm_year) {
+		printf(" Birth: %04d-%02d-%02d %02d:%02d:%02d\n",
+		       dent.create_time.tm_year, dent.create_time.tm_mon,
+		       dent.create_time.tm_mday, dent.create_time.tm_hour,
+		       dent.create_time.tm_min, dent.create_time.tm_sec);
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	stat,	2,	1,	do_stat,
+	"display file status",
+	"<path>\n"
+	"    - Show type, size and timestamps of a file or directory",
+	vfs_cmd_complete
+);
+
 static int do_size(struct cmd_tbl *cmdtp, int flag, int argc,
 		   char *const argv[])
 {
@@ -233,12 +353,13 @@ static int do_size(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_COMPLETE(
 	size,	2,	0,	do_size,
 	"determine a file's size",
 	"<path>\n"
 	"    - Find file at 'path' in the VFS, determine its size,\n"
-	"      and store in the 'filesize' variable."
+	"      and store in the 'filesize' variable.",
+	vfs_cmd_complete
 );
 
 static int do_vfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -328,5 +449,53 @@ U_BOOT_CMD_COMPLETE(
 	"      If 'pos' is 0 or omitted, the file is read from the start.\n"
 	"load <interface> [<dev[:part]> [<addr> [<filename> [bytes [pos]]]]]\n"
 	"    - Legacy: load from block device interface",
+	vfs_cmd_complete
+);
+
+static int do_save(struct cmd_tbl *cmdtp, int flag, int argc,
+		   char *const argv[])
+{
+	struct udevice *fil;
+	long bytes, written;
+	unsigned long addr;
+	loff_t pos = 0;
+	void *buf;
+	int ret;
+
+	if (argc < 4)
+		return CMD_RET_USAGE;
+
+	addr = hextoul(argv[1], NULL);
+	bytes = hextoul(argv[3], NULL);
+	if (argc >= 5)
+		pos = hextoul(argv[4], NULL);
+
+	ret = vfs_open_file(argv[2], DIR_O_WRONLY, &fil);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	buf = map_sysmem(addr, bytes);
+	written = file_write_at(fil, buf, pos, bytes);
+	unmap_sysmem(buf);
+
+	if (written < 0) {
+		printf("Write failed: %ldE\n", written);
+		return CMD_RET_FAILURE;
+	}
+
+	printf("%ld bytes written\n", written);
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD_COMPLETE(
+	save,	5,	0,	do_save,
+	"save memory to a file",
+	"<addr> <path> <bytes> [pos]\n"
+	"    - Save 'bytes' from address 'addr' to 'path' in the VFS.\n"
+	"      'pos' gives the file byte position to start writing to.\n"
+	"      If 'pos' is 0 or omitted, the file is written from the start.",
 	vfs_cmd_complete
 );

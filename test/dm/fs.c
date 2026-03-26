@@ -14,6 +14,7 @@
 #include <os.h>
 #include <vfs.h>
 #include <dm/test.h>
+#include <dm/uclass-internal.h>
 #include <test/ut.h>
 
 #define READ_SIZE	0x20
@@ -231,6 +232,15 @@ static int dm_test_vfs_complete(struct unit_test_state *uts)
 
 	/* Non-matching prefix should return 0 */
 	ut_asserteq(0, vfs_complete(buf, "/z", 16, cmdv));
+
+	/* Create a known file to complete against */
+	memcpy(map_sysmem(0x10000, 5), "hello", 5);
+	ut_assertok(run_command("save 10000 /host/.comp_test 5", 0));
+	console_record_reset_enable();
+
+	/* Complete inside mount */
+	ut_assert(vfs_complete(buf, "/host/.comp_", 16, cmdv) >= 1);
+	ut_asserteq_str(".comp_test", cmdv[0]);
 
 	/* Complete with empty prefix shows entries */
 	ut_assert(vfs_complete(buf, "/host/", 16, cmdv) >= 1);
@@ -459,5 +469,187 @@ static int dm_test_vfs_cwd(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_vfs_cwd, UTF_SCAN_FDT);
+
+/* Test cd and pwd commands */
+static int dm_test_vfs_cd(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Default cwd is root */
+	ut_assertok(run_command("pwd", 0));
+	ut_assert_nextline("/");
+	ut_assert_console_end();
+
+	/* cd to an absolute path */
+	ut_assertok(run_command("cd /host", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("pwd", 0));
+	ut_assert_nextline("/host");
+	ut_assert_console_end();
+
+	/* ls without a path should list cwd */
+	ut_assertok(run_command("ls", 0));
+	ut_assert_skip_to_linen("DIR ");
+	console_record_reset_enable();
+
+	/* cd back to root */
+	ut_assertok(run_command("cd /", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("pwd", 0));
+	ut_assert_nextline("/");
+	ut_assert_console_end();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cd, UTF_SCAN_FDT);
+
+/* Test multi-component path resolution (files in subdirectories) */
+static int dm_test_vfs_path(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* stat a file in a subdirectory */
+	ut_assertok(run_command("stat /host/cmd/vfs.c", 0));
+	ut_assert_nextline("  File: vfs.c");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: regular file");
+	console_record_reset_enable();
+
+	/* load from a subdirectory */
+	ut_assertok(run_command("load 1000000 /host/cmd/vfs.c", 0));
+	ut_assert_nextlinen("%s", "");
+	ut_assert_console_end();
+
+	/* ls a nested subdirectory */
+	ut_assertok(run_command("ls /host/arch", 0));
+	ut_assert_skip_to_linen("DIR ");
+	console_record_reset_enable();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_path, UTF_SCAN_FDT);
+
+/* Test the cp command via VFS */
+static int dm_test_vfs_cp(struct unit_test_state *uts)
+{
+	char buf[32];
+
+	ut_assertok(vfs_init());
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Write a source file */
+	memcpy(map_sysmem(0x1000, 5), "hello", 5);
+	ut_assertok(run_command("save 1000 /host/.cp_src 5", 0));
+	ut_assert_nextline("5 bytes written");
+	ut_assert_console_end();
+
+	/* Copy it */
+	ut_assertok(run_command("fs cp /host/.cp_src /host/.cp_dst", 0));
+	ut_assert_nextline("5 bytes copied");
+	ut_assert_console_end();
+
+	/* Read back the copy and verify */
+	memset(map_sysmem(0x2000, 8), 0, 8);
+	ut_assertok(run_command("load 2000 /host/.cp_dst", 0));
+	ut_assert_nextline("5 bytes read");
+	ut_assert_console_end();
+
+	memcpy(buf, map_sysmem(0x2000, 5), 5);
+	buf[5] = '\0';
+	ut_asserteq_str("hello", buf);
+
+	os_unlink(".cp_src");
+	os_unlink(".cp_dst");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cp, UTF_SCAN_FDT);
+
+/* Test the stat command via VFS */
+static int dm_test_vfs_stat(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* stat a regular file */
+	ut_assertok(run_command("stat /host/README", 0));
+	ut_assert_nextline("  File: README");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: regular file");
+	console_record_reset_enable();
+
+	/* stat a directory */
+	ut_assertok(run_command("stat /host/cmd", 0));
+	ut_assert_nextline("  File: cmd");
+	ut_assert_nextlinen("  Size: ");
+	ut_assert_nextline("  Type: directory");
+	console_record_reset_enable();
+
+	/* stat non-existent file */
+	ut_asserteq(1, run_command("stat /host/does-not-exist", 0));
+	console_record_reset_enable();
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_stat, UTF_SCAN_FDT);
+
+/* Test save and load round-trip via VFS */
+static int dm_test_vfs_save(struct unit_test_state *uts)
+{
+	char buf[32];
+
+	ut_assertok(vfs_init());
+
+	/* Mount hostfs */
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Write a known pattern to a temp file */
+	memset(map_sysmem(0x1000, 16), 0, 16);
+	memcpy(map_sysmem(0x1000, 11), "hello world", 11);
+	ut_assertok(run_command("save 1000 /host/.vfs_test_tmp 0xb", 0));
+	ut_assert_nextline("11 bytes written");
+	ut_assert_console_end();
+
+	/* Read it back and verify */
+	memset(map_sysmem(0x2000, 16), 0, 16);
+	ut_assertok(run_command("load 2000 /host/.vfs_test_tmp", 0));
+	ut_assert_nextline("11 bytes read");
+	ut_assert_console_end();
+
+	memcpy(buf, map_sysmem(0x2000, 11), 11);
+	buf[11] = '\0';
+	ut_asserteq_str("hello world", buf);
+
+	/* Clean up the temp file */
+	os_unlink(".vfs_test_tmp");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_save, UTF_SCAN_FDT);
 
 #endif

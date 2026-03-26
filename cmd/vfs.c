@@ -104,11 +104,14 @@ static int do_fs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 
 U_BOOT_LONGHELP(fs,
 	"mount [<dev> <mountpoint>]                   - list or create mounts\n"
-	"fs mount -t <type> <iface> <dev:part> <path>  - mount from block device\n"
+	"fs mount <iface> <dev:part> <path>             - auto-detect and mount\n"
+	"fs mount -t <type> <iface> <dev:part> <path>  - mount specific type\n"
 	"fs umount <mountpoint>                        - unmount a filesystem\n"
-	"fs ls [<path>]                                - list directory (default /)");
+	"fs ls [<path>]                                - list directory (default /)\n"
+	"fs cp <source> <dest>                         - copy a file");
 
 U_BOOT_CMD_WITH_SUBCMDS(fs, "Filesystem operations", fs_help_text,
 	U_BOOT_SUBCMD_MKENT(mount, 6, 1, do_fs_mount),
 	U_BOOT_SUBCMD_MKENT(umount, 2, 1, do_fs_umount),
-	U_BOOT_SUBCMD_MKENT(ls, 2, 1, do_fs_ls));
+	U_BOOT_SUBCMD_MKENT(ls, 2, 1, do_fs_ls),
+	U_BOOT_SUBCMD_MKENT(cp, 3, 0, do_cp));

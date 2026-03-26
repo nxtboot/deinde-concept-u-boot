@@ -292,6 +292,14 @@ int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
  */
 void vfs_print_mounts(void);
 
+/**
+ * do_cp() - Copy a file within the VFS
+ *
+ * Implements the 'fs cp' subcommand. Defined in cmd/fs.c, declared here
+ * so that cmd/vfs.c can reference it.
+ */
+int do_cp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
+
 #ifdef CONFIG_AUTO_COMPLETE
 /**
  * vfs_complete() - Complete a partial VFS path
