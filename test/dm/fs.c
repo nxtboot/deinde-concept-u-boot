@@ -262,6 +262,16 @@ static int dm_test_vfs_cmd(struct unit_test_state *uts)
 	ut_assert_nextlinen("/host");
 	ut_assert_console_end();
 
+	/* Root should show the "host" mount point */
+	ut_assertok(run_command("fs ls /", 0));
+	ut_assert_nextline("DIR %10u host", 0);
+	ut_assert_console_end();
+
+	/* Listing /host should show sandbox directory contents */
+	ut_assertok(run_command("fs ls /host", 0));
+	ut_assert_skip_to_linen("DIR ");
+	console_record_reset_enable();
+
 	/* Unmount */
 	ut_assertok(run_command("fs umount /host", 0));
 	ut_assert_console_end();

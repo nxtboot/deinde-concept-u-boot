@@ -331,6 +331,52 @@ void vfs_print_mounts(void)
 	}
 }
 
+int vfs_ls(const char *path)
+{
+	struct udevice *vfs, *mnt, *dir = NULL;
+	struct fs_dir_stream *strm;
+	struct fs_dirent dent;
+	const char *subpath;
+	bool empty = true;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return -ENXIO;
+
+	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
+	if (!ret && mnt) {
+		struct vfsmount *m = dev_get_uclass_priv(mnt);
+
+		ret = fs_lookup_dir(m->target, subpath, &dir);
+		if (ret)
+			return ret;
+	} else if (!ret || !path[1]) {
+		/* Root "/" - list the VFS root dir */
+		ret = fs_lookup_dir(vfs, "", &dir);
+		if (ret)
+			return ret;
+	} else {
+		return ret;
+	}
+
+	ret = dir_open(dir, &strm);
+	if (ret)
+		return ret;
+
+	while (!dir_read(dir, strm, &dent)) {
+		if (dent.type == FS_DT_DIR)
+			printf("DIR %10u %s\n", 0, dent.name);
+		else
+			printf("    %10llu %s\n", dent.size, dent.name);
+		empty = false;
+	}
+
+	dir_close(dir, strm);
+
+	return 0;
+}
+
 struct udevice *vfs_root(void)
 {
 	struct udevice *dev;

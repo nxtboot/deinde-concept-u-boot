@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * VFS commands - 'fs mount', 'fs umount'
+ * VFS commands - 'fs mount', 'fs umount', 'fs ls'
  *
  * Provides a new 'fs' command with subcommands for the virtual filesystem
  * layer, co-existing with the legacy filesystem commands in cmd/fs.c.
@@ -87,10 +87,28 @@ static int do_fs_umount(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
+static int do_fs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
+		    char *const argv[])
+{
+	const char *path = argc >= 2 ? argv[1] : "/";
+	int ret;
+
+	ret = vfs_ls(path);
+	if (ret) {
+		printf("fs ls failed: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
 U_BOOT_LONGHELP(fs,
-	"mount [<dev> <mountpoint>] - list or create mounts\n"
-	"fs umount <mountpoint>         - unmount a filesystem");
+	"mount [<dev> <mountpoint>]                   - list or create mounts\n"
+	"fs mount -t <type> <iface> <dev:part> <path>  - mount from block device\n"
+	"fs umount <mountpoint>                        - unmount a filesystem\n"
+	"fs ls [<path>]                                - list directory (default /)");
 
 U_BOOT_CMD_WITH_SUBCMDS(fs, "Filesystem operations", fs_help_text,
-	U_BOOT_SUBCMD_MKENT(mount, 3, 1, do_fs_mount),
-	U_BOOT_SUBCMD_MKENT(umount, 2, 1, do_fs_umount));
+	U_BOOT_SUBCMD_MKENT(mount, 6, 1, do_fs_mount),
+	U_BOOT_SUBCMD_MKENT(umount, 2, 1, do_fs_umount),
+	U_BOOT_SUBCMD_MKENT(ls, 2, 1, do_fs_ls));

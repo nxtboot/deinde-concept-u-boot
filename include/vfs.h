@@ -125,4 +125,15 @@ bool vfs_is_mount_point(struct udevice *dir);
  */
 void vfs_print_mounts(void);
 
+/**
+ * vfs_ls() - List directory contents
+ *
+ * Resolves the path through the mount table and lists directory entries
+ * using dir_open(), dir_read() and dir_close().
+ *
+ * @path: Absolute path to list, or "/" for root
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_ls(const char *path);
+
 #endif
