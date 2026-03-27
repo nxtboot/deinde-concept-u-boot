@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 # Allow 'from patman import xxx to work'
 # pylint: disable=C0413
@@ -31,6 +32,7 @@ sys.path.append(os.path.join(our_path, '..'))
 from u_boot_pylib import terminal, tools, tout
 
 # Import analysis modules
+import database
 import dwarf
 import lsp
 import output
@@ -50,6 +52,9 @@ EXCLUDE_DIRS = ['.git', 'Documentation', 'doc', 'scripts', 'tools']
 
 # Default base directory for builds
 BUILD_BASE = '/tmp/b'
+
+# Database filename, stored in the source tree root
+DB_NAME = 'codman.db'
 
 
 def cmdfiles_in_dir(directory):
@@ -368,7 +373,8 @@ def do_build(args):
     return srcdir, build_dir
 
 
-def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
+def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
+                fatal_on_error=True):
     """Build a board using buildman.
 
     Args:
@@ -377,9 +383,11 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
         srcdir (str): U-Boot source directory
         adjust_cfg (list): List of CONFIG adjustments
         use_dwarf (bool): Enable CC_OPTIMIZE_FOR_DEBUG to prevent inlining
+        fatal_on_error (bool): If True (default), call tout.fatal() on
+            failure (which exits). If False, return False on failure.
 
     Returns:
-        True on success (note: failures call tout.fatal() which exits)
+        True on success, False on failure (only when fatal_on_error=False)
     """
     tout.info(f"Building board '{board}' with buildman...")
     tout.info(f'Build directory: {build_dir}')
@@ -411,14 +419,22 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
         result = subprocess.run(cmd, cwd=srcdir, check=False,
                               capture_output=False, text=True)
         if result.returncode != 0:
-            tout.fatal(f'buildman exited with code {result.returncode}')
+            if fatal_on_error:
+                tout.fatal(f'buildman exited with code {result.returncode}')
+            tout.error(f'buildman exited with code {result.returncode}')
+            return False
         return True
     except FileNotFoundError:
-        tout.fatal('buildman not found. Please ensure buildman is in '
-                   'your PATH.')
+        if fatal_on_error:
+            tout.fatal('buildman not found. Please ensure buildman is in '
+                       'your PATH.')
+        tout.error('buildman not found')
+        return False
     except OSError as e:
-        tout.fatal(f'Error running buildman: {e}')
-    return None
+        if fatal_on_error:
+            tout.fatal(f'Error running buildman: {e}')
+        tout.error(f'Error running buildman: {e}')
+        return False
 
 
 def parse_args(argv=None):
@@ -518,6 +534,72 @@ def parse_args(argv=None):
                                   help='Copy used source files to a directory')
     copy.add_argument('dest_dir', metavar='DIR',
                       help='Destination directory')
+
+    # scan command - multi-board build + analyse + store
+    scan = subparsers.add_parser(
+        'scan',
+        help='Build and analyse multiple boards, store results in database')
+    scan.add_argument('board_specs', nargs='*', metavar='SPEC',
+                      help='Buildman board specifiers '
+                           '(e.g., arm sandbox "qemu*"). '
+                           'If empty, all boards are scanned.')
+    scan.add_argument('--resume', action='store_true',
+                      help='Skip boards already in the database')
+    scan.add_argument('--max-boards', type=int, metavar='N',
+                      help='Limit to first N matching boards (for testing)')
+    scan.add_argument('--exclude', type=str, action='append',
+                      help='Board specifiers to exclude')
+    scan.add_argument('--clean-after', action='store_true',
+                      help='Delete build directory after analysing each board')
+
+    # query command - database queries
+    query = subparsers.add_parser(
+        'query',
+        help='Query the multi-board analysis database')
+    query.add_argument('--format', choices=['table', 'csv', 'count'],
+                       default='table',
+                       help='Output format (default: table)')
+    query.add_argument('--arch', type=str,
+                       help='Filter results by architecture')
+
+    query_sub = query.add_subparsers(dest='query_cmd',
+                                     help='Query type')
+
+    # query file - which boards compile a file
+    qf = query_sub.add_parser(
+        'file', help='Which boards compile a given file')
+    qf.add_argument('path', help='File path (supports wildcards)')
+
+    # query line - which boards have a line active
+    ql = query_sub.add_parser(
+        'line', help='Which boards have a specific line active')
+    ql.add_argument('location',
+                    help='File path and line number '
+                         '(e.g., common/main.c:42)')
+
+    # query board - what files a board compiles
+    qb = query_sub.add_parser(
+        'board', help='What files a given board compiles')
+    qb.add_argument('target', help='Board target name')
+    qb.add_argument('file_pattern', nargs='?',
+                    help='Optional file pattern filter')
+
+    # query unique - code unique to a board
+    qu = query_sub.add_parser(
+        'unique',
+        help='Find code unique to a board (not compiled by any other)')
+    qu.add_argument('target', help='Board target name')
+
+    # query function - which boards build a function
+    qfn = query_sub.add_parser(
+        'function',
+        help='Which boards build a given function')
+    qfn.add_argument('name', help='Function name to search for')
+    qfn.add_argument('path', nargs='?',
+                     help='Optional file path to restrict search')
+
+    # query info - database statistics
+    query_sub.add_parser('info', help='Show database statistics')
 
     args = parser.parse_args(argv)
 
@@ -650,6 +732,435 @@ def do_output(args, all_srcs, used, skipped, results, srcdir, analysis_method):
     return ok
 
 
+def load_board_list(srcdir, board_specs, exclude=None, jobs=None):
+    """Load and select boards using buildman's board selection.
+
+    Args:
+        srcdir (str): U-Boot source directory
+        board_specs (list): Buildman board specifiers (empty = all boards)
+        exclude (list): Board specifiers to exclude
+        jobs (int): Number of parallel jobs for board list generation
+
+    Returns:
+        list: List of Board objects selected
+    """
+    from buildman import boards as bm_boards
+
+    brds = bm_boards.Boards()
+
+    # Generate/read the board list
+    board_file = os.path.join(srcdir, 'boards.cfg')
+    tout.progress('Loading board list...')
+    brds.ensure_board_list(board_file, jobs or multiprocessing.cpu_count(),
+                           force=False, quiet=True)
+    brds.read_boards(board_file)
+
+    # Select boards based on specifiers
+    _why, warnings = brds.select_boards(board_specs or [], exclude)
+    for warn in warnings:
+        tout.warning(warn)
+
+    selected = brds.get_selected()
+    tout.info(f'Selected {len(selected)} boards')
+    return selected
+
+
+def _get_db_path(srcdir):
+    """Get the path to the codman database for a source tree.
+
+    Args:
+        srcdir (str): Source directory root
+
+    Returns:
+        str: Absolute path to the database file
+    """
+    return os.path.join(srcdir, DB_NAME)
+
+
+def _get_git_hash(srcdir):
+    """Get the current git HEAD hash for a source tree.
+
+    Args:
+        srcdir (str): Source directory root
+
+    Returns:
+        str: Git hash string, or empty string on failure
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'], cwd=srcdir,
+            capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except OSError:
+        pass
+    return ''
+
+
+def _scan_one_board(brd, args, srcdir, db):
+    """Build, analyse, and store results for a single board.
+
+    Args:
+        brd: Board object from buildman
+        args (Namespace): Parsed command-line arguments
+        srcdir (str): Source directory root
+        db (CodmanDatabase): Database to store results in
+
+    Returns:
+        bool: True on success, False on failure
+    """
+    build_dir = os.path.join(args.build_base, brd.target)
+    defconfig = f'{brd.target}_defconfig'
+
+    # Build the board
+    if not build_board(brd.target, build_dir, srcdir,
+                       getattr(args, 'adjust', None),
+                       getattr(args, 'use_dwarf', False),
+                       fatal_on_error=False):
+        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                     brd.vendor, brd.board_name, defconfig,
+                     status='build_failed')
+        return False
+
+    # Find used sources
+    try:
+        _all, used, _skip = select_sources(srcdir, build_dir,
+                                           args.filter, args.jobs)
+    except Exception as e:
+        tout.error(f'{brd.target}: source selection failed: {e}')
+        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                     brd.vendor, brd.board_name, defconfig,
+                     status='analysis_failed')
+        return False
+
+    # Run line-level analysis
+    unifdef_path = None
+    if not (getattr(args, 'use_dwarf', False) or
+            getattr(args, 'use_lsp', False)):
+        unifdef_path = getattr(args, 'unifdef', 'unifdef')
+    results, _method = do_analysis(
+        used, build_dir, srcdir, unifdef_path,
+        getattr(args, 'include_headers', False),
+        args.jobs, getattr(args, 'use_lsp', False))
+
+    if results is None:
+        tout.error(f'{brd.target}: analysis failed')
+        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                     brd.vendor, brd.board_name, defconfig,
+                     status='analysis_failed')
+        return False
+
+    # Store results in database
+    board_id = db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                            brd.vendor, brd.board_name, defconfig)
+    db.store_board_results(board_id, results, srcdir)
+
+    # Clean up build directory if requested
+    if getattr(args, 'clean_after', False):
+        import shutil
+
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+    return True
+
+
+def do_scan(args):
+    """Build and analyse multiple boards, storing results in a database.
+
+    Args:
+        args (Namespace): Parsed command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure)
+    """
+    srcdir = os.path.realpath(args.source)
+    if not os.path.isdir(srcdir):
+        tout.fatal(f'Source directory does not exist: {srcdir}')
+
+    # Load board list
+    selected = load_board_list(srcdir, args.board_specs,
+                               args.exclude, args.jobs)
+    if not selected:
+        tout.error('No boards selected')
+        return 1
+
+    if args.max_boards:
+        selected = selected[:args.max_boards]
+
+    # Open/create database
+    db_path = _get_db_path(srcdir)
+    db = database.CodmanDatabase(db_path)
+    db.create_tables()
+
+    db.set_scan_info('srcdir', srcdir)
+    db.set_scan_info('git_hash', _get_git_hash(srcdir))
+    db.set_scan_info('scan_start', str(time.time()))
+
+    # Filter out already-completed boards if --resume
+    if args.resume:
+        completed = db.get_completed_targets()
+        before = len(selected)
+        selected = [b for b in selected if b.target not in completed]
+        skipped = before - len(selected)
+        if skipped:
+            terminal.tprint(f'Resuming: skipping {skipped} already-scanned '
+                            f'boards, {len(selected)} remaining')
+
+    if not selected:
+        terminal.tprint('All boards already scanned')
+        db.close()
+        return 0
+
+    terminal.tprint(f'Scanning {len(selected)} boards...')
+    scan_start = time.time()
+    ok_count = 0
+    fail_count = 0
+
+    for i, brd in enumerate(selected):
+        elapsed = time.time() - scan_start
+        if i > 0:
+            per_board = elapsed / i
+            remaining = per_board * (len(selected) - i)
+            eta = f', ETA {_format_duration(remaining)}'
+        else:
+            eta = ''
+
+        terminal.tprint(
+            f'[{i + 1}/{len(selected)}] {brd.target} '
+            f'({_format_duration(elapsed)}{eta})')
+
+        if _scan_one_board(brd, args, srcdir, db):
+            ok_count += 1
+        else:
+            fail_count += 1
+
+    # Finalise
+    total_time = time.time() - scan_start
+    db.set_scan_info('scan_end', str(time.time()))
+    db.set_scan_info('board_count', str(ok_count))
+
+    terminal.tprint(
+        f'\nScan complete in {_format_duration(total_time)}: '
+        f'{ok_count} OK, {fail_count} failed')
+    try:
+        db_size = os.path.getsize(db_path)
+        terminal.tprint(f'Database: {db_path} ({_format_size(db_size)})')
+    except OSError:
+        pass
+
+    db.close()
+    return 0
+
+
+def _format_duration(seconds):
+    """Format a duration in seconds to a human-readable string.
+
+    Args:
+        seconds (float): Duration in seconds
+
+    Returns:
+        str: Formatted duration (e.g. '2h 15m', '3m 42s', '15s')
+    """
+    seconds = int(seconds)
+    if seconds >= 3600:
+        hours = seconds // 3600
+        mins = (seconds % 3600) // 60
+        return f'{hours}h {mins:02d}m'
+    if seconds >= 60:
+        mins = seconds // 60
+        secs = seconds % 60
+        return f'{mins}m {secs:02d}s'
+    return f'{seconds}s'
+
+
+def _format_size(size_bytes):
+    """Format a byte count to a human-readable string.
+
+    Args:
+        size_bytes (int): Size in bytes
+
+    Returns:
+        str: Formatted size (e.g. '1.5 MB', '256 KB')
+    """
+    if size_bytes >= 1024 * 1024 * 1024:
+        return f'{size_bytes / (1024 * 1024 * 1024):.1f} GB'
+    if size_bytes >= 1024 * 1024:
+        return f'{size_bytes / (1024 * 1024):.1f} MB'
+    if size_bytes >= 1024:
+        return f'{size_bytes / 1024:.1f} KB'
+    return f'{size_bytes} B'
+
+
+def find_function_lines(srcdir, func_name, file_path=None):
+    """Find the file and line range for a C function definition.
+
+    Searches source files for a function definition matching func_name
+    and returns the file path and line range.
+
+    Args:
+        srcdir (str): Source directory root
+        func_name (str): Function name to search for
+        file_path (str): Optional file path to restrict search
+
+    Returns:
+        list of tuple: (rel_path, start_line, end_line) for each match
+    """
+    # Pattern to match function definitions (name at start of line or after
+    # return type, followed by opening paren)
+    pattern = re.compile(
+        rf'^[a-zA-Z_][\w\s*]*\b{re.escape(func_name)}\s*\(', re.MULTILINE)
+
+    results = []
+
+    if file_path:
+        search_files = [os.path.join(srcdir, file_path)]
+    else:
+        # Search all .c files (not headers — we want definitions)
+        search_files = []
+        exclude = {os.path.join(srcdir, d) for d in EXCLUDE_DIRS}
+        for dirpath, dirnames, filenames in os.walk(srcdir, topdown=True):
+            if any(dirpath.startswith(e) for e in exclude):
+                dirnames[:] = []
+                continue
+            for fname in filenames:
+                if fname.endswith('.c'):
+                    search_files.append(os.path.join(dirpath, fname))
+
+    for fpath in search_files:
+        if not os.path.exists(fpath):
+            continue
+        try:
+            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+        except IOError:
+            continue
+
+        for match in pattern.finditer(content):
+            # Find line number of match
+            start_line = content[:match.start()].count('\n') + 1
+
+            # Find the end of the function (matching closing brace)
+            # Start from the match position, find the opening {
+            pos = content.find('{', match.start())
+            if pos == -1:
+                continue
+            depth = 1
+            end_pos = pos + 1
+            while end_pos < len(content) and depth > 0:
+                if content[end_pos] == '{':
+                    depth += 1
+                elif content[end_pos] == '}':
+                    depth -= 1
+                end_pos += 1
+            end_line = content[:end_pos].count('\n') + 1
+
+            rel_path = os.path.relpath(fpath, srcdir)
+            results.append((rel_path, start_line, end_line))
+
+    return results
+
+
+def do_query(args):
+    """Execute a query against the multi-board database.
+
+    Args:
+        args (Namespace): Parsed command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure)
+    """
+    srcdir = os.path.realpath(args.source)
+    db_path = _get_db_path(srcdir)
+
+    if not os.path.exists(db_path):
+        tout.error(f'Database not found: {db_path}')
+        tout.error('Run "codman scan" first to build the database')
+        return 1
+
+    db = database.CodmanDatabase(db_path)
+    query_cmd = getattr(args, 'query_cmd', None)
+
+    if not query_cmd:
+        tout.error('No query type specified. '
+                   'Use: file, line, board, unique, function, or info')
+        db.close()
+        return 1
+
+    fmt = getattr(args, 'format', 'table')
+    arch = getattr(args, 'arch', None)
+
+    if query_cmd == 'info':
+        ok = output.show_query_info(db.query_info())
+
+    elif query_cmd == 'file':
+        rows = db.query_boards_for_file(args.path, arch=arch)
+        ok = output.show_query_boards(rows, args.path, fmt)
+
+    elif query_cmd == 'line':
+        # Parse file:line format
+        rel_path, line_num = _parse_file_line(args.location)
+        if line_num is None:
+            tout.error(f'Invalid location format: {args.location}')
+            tout.error('Use file:line format, e.g. common/main.c:42')
+            db.close()
+            return 1
+        rows = db.query_boards_for_line(rel_path, line_num, arch=arch)
+        ok = output.show_query_line_boards(
+            rows, rel_path, line_num, fmt)
+
+    elif query_cmd == 'board':
+        file_pattern = getattr(args, 'file_pattern', None)
+        rows = db.query_files_for_board(args.target, file_pattern)
+        ok = output.show_query_files(rows, args.target, fmt)
+
+    elif query_cmd == 'unique':
+        rows = db.query_unique_code(args.target)
+        ok = output.show_query_unique(rows, args.target, fmt)
+
+    elif query_cmd == 'function':
+        file_path = getattr(args, 'path', None)
+        matches = find_function_lines(srcdir, args.name, file_path)
+        if not matches:
+            tout.error(f'Function {args.name}() not found')
+            db.close()
+            return 1
+
+        # For each match, query which boards have those lines active
+        ok = True
+        for rel_path, start_line, end_line in matches:
+            # Query using the first line of the function body
+            rows = db.query_boards_for_line(rel_path, start_line, arch=arch)
+            ok = output.show_query_function_boards(
+                rows, args.name, rel_path, start_line, end_line, fmt)
+    else:
+        tout.error(f'Unknown query type: {query_cmd}')
+        db.close()
+        return 1
+
+    db.close()
+    return 0 if ok else 1
+
+
+def _parse_file_line(location):
+    """Parse a file:line location string.
+
+    Args:
+        location (str): Location in file:line format (e.g. 'common/main.c:42')
+
+    Returns:
+        tuple: (file_path, line_number) or (location, None) if no line number
+    """
+    # Try to split on the last colon (to handle Windows paths, though
+    # unlikely here)
+    parts = location.rsplit(':', 1)
+    if len(parts) == 2:
+        try:
+            return parts[0], int(parts[1])
+        except ValueError:
+            pass
+    return location, None
+
+
 def main(argv=None):
     """Main function.
 
@@ -667,6 +1178,12 @@ def main(argv=None):
         tout.init(tout.DEBUG)
     elif args.verbose:
         tout.init(tout.INFO)
+
+    # Dispatch scan and query commands separately
+    if args.cmd == 'scan':
+        return do_scan(args)
+    if args.cmd == 'query':
+        return do_query(args)
 
     srcdir, build_dir = do_build(args)
     all_srcs, used, skipped = select_sources(srcdir, build_dir, args.filter,

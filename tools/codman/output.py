@@ -1192,3 +1192,265 @@ def show_statistics(all_sources, used_sources, skipped_sources, file_results,
                   f'({pct_inactive:4.1f}%) - {rel_path}')
 
     return True
+
+
+# --- Query output functions ---
+
+
+def _format_csv_rows(header, rows):
+    """Write rows as CSV to stdout.
+
+    Args:
+        header (list of str): Column names
+        rows (list of list): Row data
+    """
+    writer = csv.writer(sys.stdout)
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow(row)
+
+
+def show_query_info(info):
+    """Display database statistics.
+
+    Args:
+        info (dict): Statistics from CodmanDatabase.query_info()
+
+    Returns:
+        bool: True
+    """
+    print_heading('DATABASE INFO', width=50)
+    print(f"  Boards (OK):     {info.get('board_count', 0):>8}")
+    print(f"  Boards (failed): {info.get('board_failed', 0):>8}")
+    print(f"  Files:           {info.get('file_count', 0):>8}")
+    print(f"  Board-file rows: {info.get('board_file_count', 0):>8}")
+    print(f"  Active ranges:   {info.get('range_count', 0):>8}")
+    db_size = info.get('db_size', 0)
+    if db_size >= 1024 * 1024:
+        print(f'  Database size:   {db_size / (1024 * 1024):>7.1f} MB')
+    elif db_size >= 1024:
+        print(f'  Database size:   {db_size / 1024:>7.1f} KB')
+    else:
+        print(f'  Database size:   {db_size:>8} B')
+    print()
+
+    # Architecture breakdown
+    arch_counts = info.get('arch_counts', {})
+    if arch_counts:
+        print('  Architecture breakdown:')
+        for arch, cnt in arch_counts.items():
+            print(f'    {arch:<20} {cnt:>5}')
+        print()
+
+    # Scan info
+    srcdir = info.get('srcdir', '')
+    if srcdir:
+        print(f'  Source dir: {srcdir}')
+    git_hash = info.get('git_hash', '')
+    if git_hash:
+        print(f'  Git hash:   {git_hash[:12]}')
+
+    return True
+
+
+def show_query_boards(rows, path, fmt):
+    """Display which boards compile a file.
+
+    Args:
+        rows (list of dict): Results from query_boards_for_file()
+        path (str): File path that was queried
+        fmt (str): Output format ('table', 'csv', or 'count')
+
+    Returns:
+        bool: True
+    """
+    if fmt == 'count':
+        print(len(rows))
+        return True
+
+    if fmt == 'csv':
+        _format_csv_rows(
+            ['target', 'arch', 'active_lines', 'total_lines'],
+            [[r['target'], r['arch'], r['active_lines'], r['total_lines']]
+             for r in rows])
+        return True
+
+    # Table format
+    if not rows:
+        print(f'No boards compile {path}')
+        return True
+
+    print(f'{len(rows)} boards compile {path}:')
+    print(f"  {'Board':<40} {'Arch':<12} {'Active':>7} {'Total':>7}"
+          f" {'%':>6}")
+    print('  ' + '-' * 72)
+    for row in rows:
+        pct = percent(row['active_lines'], row['total_lines'])
+        print(f"  {row['target']:<40} {row['arch']:<12}"
+              f" {row['active_lines']:>7} {row['total_lines']:>7}"
+              f" {pct:>5.1f}%")
+    return True
+
+
+def show_query_line_boards(rows, rel_path, line_num, fmt):
+    """Display which boards have a specific line active.
+
+    Args:
+        rows (list of dict): Results from query_boards_for_line()
+        rel_path (str): File path
+        line_num (int): Line number
+        fmt (str): Output format ('table', 'csv', or 'count')
+
+    Returns:
+        bool: True
+    """
+    if fmt == 'count':
+        print(len(rows))
+        return True
+
+    if fmt == 'csv':
+        _format_csv_rows(
+            ['target', 'arch'],
+            [[r['target'], r['arch']] for r in rows])
+        return True
+
+    # Table format
+    location = f'{rel_path}:{line_num}'
+    if not rows:
+        print(f'No boards have {location} active')
+        return True
+
+    print(f'{len(rows)} boards have {location} active:')
+    print(f"  {'Board':<40} {'Arch':<12}")
+    print('  ' + '-' * 52)
+    for row in rows:
+        print(f"  {row['target']:<40} {row['arch']:<12}")
+    return True
+
+
+def show_query_files(rows, target, fmt):
+    """Display what files a board compiles.
+
+    Args:
+        rows (list of dict): Results from query_files_for_board()
+        target (str): Board target name
+        fmt (str): Output format ('table', 'csv', or 'count')
+
+    Returns:
+        bool: True
+    """
+    if fmt == 'count':
+        print(len(rows))
+        return True
+
+    if fmt == 'csv':
+        _format_csv_rows(
+            ['rel_path', 'total_lines', 'active_lines', 'inactive_lines'],
+            [[r['rel_path'], r['total_lines'], r['active_lines'],
+              r['inactive_lines']] for r in rows])
+        return True
+
+    # Table format
+    if not rows:
+        print(f'Board {target} not found or has no files')
+        return True
+
+    total_active = sum(r['active_lines'] for r in rows)
+    total_all = sum(r['total_lines'] for r in rows)
+    print(f'{target}: {len(rows)} files, {total_active} active lines'
+          f' of {total_all} total'
+          f' ({percent(total_active, total_all):.1f}%)')
+    print(f"  {'File':<50} {'Active':>7} {'Total':>7} {'%':>6}")
+    print('  ' + '-' * 70)
+    for row in rows:
+        pct = percent(row['active_lines'], row['total_lines'])
+        path = row['rel_path']
+        if len(path) > 47:
+            path = '...' + path[-44:]
+        print(f"  {path:<50} {row['active_lines']:>7}"
+              f" {row['total_lines']:>7} {pct:>5.1f}%")
+    return True
+
+
+def show_query_unique(rows, target, fmt):
+    """Display code unique to a board.
+
+    Args:
+        rows (list of dict): Results from query_unique_code()
+        target (str): Board target name
+        fmt (str): Output format ('table', 'csv', or 'count')
+
+    Returns:
+        bool: True
+    """
+    if fmt == 'count':
+        total_lines = sum(r['end_line'] - r['start_line'] + 1 for r in rows)
+        print(total_lines)
+        return True
+
+    if fmt == 'csv':
+        _format_csv_rows(
+            ['rel_path', 'start_line', 'end_line'],
+            [[r['rel_path'], r['start_line'], r['end_line']] for r in rows])
+        return True
+
+    # Table format
+    if not rows:
+        print(f'No unique code found for {target}')
+        return True
+
+    total_lines = sum(r['end_line'] - r['start_line'] + 1 for r in rows)
+    print(f'{target}: {total_lines} unique lines in {len(rows)} ranges:')
+    print(f"  {'File':<50} {'Lines':>15}")
+    print('  ' + '-' * 65)
+    for row in rows:
+        path = row['rel_path']
+        if len(path) > 47:
+            path = '...' + path[-44:]
+        lines = row['end_line'] - row['start_line'] + 1
+        if row['start_line'] == row['end_line']:
+            rng = str(row['start_line'])
+        else:
+            rng = f"{row['start_line']}-{row['end_line']}"
+        print(f"  {path:<50} {rng:>10} ({lines:>3})")
+    return True
+
+
+def show_query_function_boards(rows, func_name, rel_path, start_line,
+                               end_line, fmt):
+    """Display which boards build a function.
+
+    Args:
+        rows (list of dict): Results from query_boards_for_line()
+        func_name (str): Function name
+        rel_path (str): File containing the function
+        start_line (int): First line of the function
+        end_line (int): Last line of the function
+        fmt (str): Output format ('table', 'csv', or 'count')
+
+    Returns:
+        bool: True
+    """
+    if fmt == 'count':
+        print(len(rows))
+        return True
+
+    if fmt == 'csv':
+        _format_csv_rows(
+            ['target', 'arch', 'file', 'start_line', 'end_line'],
+            [[r['target'], r['arch'], rel_path, start_line, end_line]
+             for r in rows])
+        return True
+
+    # Table format
+    location = f'{rel_path}:{start_line}-{end_line}'
+    if not rows:
+        print(f'No boards build {func_name}() ({location})')
+        return True
+
+    print(f'{len(rows)} boards build {func_name}() ({location}):')
+    print(f"  {'Board':<40} {'Arch':<12}")
+    print('  ' + '-' * 52)
+    for row in rows:
+        print(f"  {row['target']:<40} {row['arch']:<12}")
+    return True
