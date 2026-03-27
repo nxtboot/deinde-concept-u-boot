@@ -5,6 +5,7 @@
  * Copyright 2025 Simon Glass <sjg@chromium.org>
  */
 
+#include <console.h>
 #include <dir.h>
 #include <dm.h>
 #include <file.h>
@@ -128,10 +129,122 @@ static int dm_test_vfs_init(struct unit_test_state *uts)
 	ut_asserteq(-ENOENT, dir_read(dir, strm, &dent));
 	ut_assertok(dir_close(dir, strm));
 
+	/* vfs_resolve("/") should return the root dir */
+	ut_assertok(vfs_resolve(vfs, "/", &dir));
+	ut_assertnonnull(dir);
+
+	/* vfs_resolve with bad paths should fail */
+	ut_asserteq(-EINVAL, vfs_resolve(vfs, NULL, &dir));
+	ut_asserteq(-EINVAL, vfs_resolve(vfs, "no_slash", &dir));
+
 	/* rootfs cannot be unmounted */
 	ut_asserteq(-EBUSY, fs_unmount(vfs));
 
 	return 0;
 }
 DM_TEST(dm_test_vfs_init, UTF_SCAN_FDT);
+
+/* Test that the root directory lists mount points */
+static int dm_test_vfs_dir(struct unit_test_state *uts)
+{
+	struct udevice *vfs, *fsdev, *dir, *root_dir;
+	struct fs_dir_stream *strm;
+	struct fs_dirent dent;
+
+	ut_assertok(vfs_init());
+	vfs = vfs_root();
+	ut_assertnonnull(vfs);
+
+	/* Root dir should be empty before any mounts */
+	ut_assertok(fs_lookup_dir(vfs, "", &root_dir));
+	ut_assertok(dir_open(root_dir, &strm));
+	ut_asserteq(-ENOENT, dir_read(root_dir, strm, &dent));
+	ut_assertok(dir_close(root_dir, strm));
+
+	/* Mount the sandbox FS at /host */
+	ut_assertok(uclass_get_device_by_name(UCLASS_FS, "hostfs", &fsdev));
+	ut_assertok(vfs_resolve(vfs, "/host", &dir));
+	ut_assertok(vfs_mount(vfs, dir, fsdev));
+
+	/* Root dir should now list "host" */
+	ut_assertok(fs_lookup_dir(vfs, "", &root_dir));
+	ut_assertok(dir_open(root_dir, &strm));
+	ut_assertok(dir_read(root_dir, strm, &dent));
+	ut_asserteq_str("host", dent.name);
+	ut_asserteq(FS_DT_DIR, dent.type);
+	ut_asserteq(-ENOENT, dir_read(root_dir, strm, &dent));
+	ut_assertok(dir_close(root_dir, strm));
+
+	ut_assertok(vfs_umount_path(vfs, "/host"));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_dir, UTF_SCAN_FDT);
+
+/* Test basic VFS mount, find_mount, ls and umount */
+static int dm_test_vfs_mount(struct unit_test_state *uts)
+{
+	struct udevice *vfs, *fsdev, *dir, *mnt;
+	const char *subpath;
+
+	ut_assertok(vfs_init());
+	vfs = vfs_root();
+	ut_assertnonnull(vfs);
+
+	/* Find the sandbox FS (not the vfs_rootfs) */
+	ut_assertok(uclass_get_device_by_name(UCLASS_FS, "hostfs", &fsdev));
+
+	/* Resolve /host to a mount-point DIR */
+	ut_assertok(vfs_resolve(vfs, "/host", &dir));
+
+	/* Mount the sandbox FS at /host */
+	ut_assertok(vfs_mount(vfs, dir, fsdev));
+
+	/* Mounting same FS at another path is OK (-EISCONN ignored) */
+	ut_assertok(vfs_resolve(vfs, "/other", &dir));
+	ut_assertok(vfs_mount(vfs, dir, fsdev));
+	ut_assertok(vfs_umount_path(vfs, "/other"));
+
+	/* vfs_print_mounts() should show the /host mount */
+	console_record_reset_enable();
+	vfs_print_mounts();
+	ut_assert_nextlinen("/host");
+	ut_assert_console_end();
+
+	/* find_mount should resolve /host exactly */
+	ut_assertok(vfs_find_mount(vfs, "/host", &mnt, &subpath));
+	ut_asserteq_str("", subpath);
+
+	/* find_mount should strip mount prefix from subpath */
+	ut_assertok(vfs_find_mount(vfs, "/host/some/path", &mnt, &subpath));
+	ut_asserteq_str("some/path", subpath);
+
+	/* find_mount should handle trailing component */
+	ut_assertok(vfs_find_mount(vfs, "/host/file.txt", &mnt, &subpath));
+	ut_asserteq_str("file.txt", subpath);
+
+	/* find_mount should fail for unmounted path */
+	ut_asserteq(-ENOENT, vfs_find_mount(vfs, "/nowhere", &mnt, &subpath));
+
+	/* find_mount with partial prefix should not match */
+	ut_asserteq(-ENOENT, vfs_find_mount(vfs, "/hostal", &mnt, &subpath));
+
+	/* vfs_resolve with intermediate non-mount should fail */
+	ut_asserteq(-ENOENT, vfs_resolve(vfs, "/bogus/sub", &dir));
+
+	/* Unmount */
+	ut_assertok(vfs_umount_path(vfs, "/host"));
+
+	/* Should not be mounted any more */
+	ut_asserteq(-ENOENT, vfs_find_mount(vfs, "/host", &mnt, &subpath));
+
+	/* Double umount should fail */
+	ut_asserteq(-ENOENT, vfs_umount_path(vfs, "/host"));
+
+	/* Umount of never-mounted path should fail */
+	ut_asserteq(-ENOENT, vfs_umount_path(vfs, "/bogus"));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_mount, UTF_SCAN_FDT);
 #endif

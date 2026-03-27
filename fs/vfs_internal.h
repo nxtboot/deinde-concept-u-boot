@@ -19,4 +19,26 @@ struct vfs_priv {
 	int mount_count;
 };
 
+/**
+ * fs_mount_init() - Create a mount device
+ *
+ * Binds and probes a UCLASS_MOUNT device as a child of @vfs, linking
+ * @dir to @fsdev.
+ *
+ * @vfs: VFS root FS device
+ * @dir: UCLASS_DIR device that is the mount point
+ * @fsdev: UCLASS_FS device to mount
+ * Return: 0 if OK, -ve on error
+ */
+int fs_mount_init(struct udevice *vfs, struct udevice *dir,
+		  struct udevice *fsdev);
+
+/**
+ * fs_mount_uninit() - Remove and unbind a mount device
+ *
+ * @mnt_dev: UCLASS_MOUNT device to destroy
+ * Return: 0 if OK, -ve on error
+ */
+int fs_mount_uninit(struct udevice *mnt_dev);
+
 #endif
