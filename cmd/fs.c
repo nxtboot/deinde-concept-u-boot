@@ -8,12 +8,15 @@
  * Copyright 2026 Simon Glass <sjg@chromium.org>
  */
 
+#include <blk.h>
 #include <command.h>
 #include <dm.h>
 #include <env.h>
 #include <file.h>
+#include <fs.h>
 #include <fs_legacy.h>
 #include <mapmem.h>
+#include <part.h>
 #include <vfs.h>
 #include <dm/uclass.h>
 
@@ -26,7 +29,7 @@ static int mount_handler(int argc, char *const argv[])
 {
 	struct udevice *vfs, *fsdev, *dir, *mnt;
 	const char *subpath;
-	int ret;
+	int part_num, ret;
 
 	vfs = vfs_root();
 	if (!vfs)
@@ -37,6 +40,39 @@ static int mount_handler(int argc, char *const argv[])
 		return 0;
 	}
 
+	/* mount -t <type> <interface> <dev:part> <mountpoint> */
+	if (!strcmp(argv[1], "-t")) {
+		struct disk_partition info;
+		struct blk_desc *desc;
+
+		if (argc < 6)
+			return -EINVAL;
+
+		ret = blk_get_device_part_str(argv[3], argv[4], &desc,
+					      &info, 1);
+		if (ret < 0)
+			return ret;
+		part_num = ret;
+
+		return fs_mount_blkdev(argv[2], desc, part_num, &info,
+				       argv[5]);
+	}
+
+	/* mount <iface> <dev:part> <mountpoint> - auto-detect type */
+	if (argc == 4) {
+		struct disk_partition info;
+		struct blk_desc *desc;
+
+		ret = blk_get_device_part_str(argv[1], argv[2], &desc,
+					      &info, 1);
+		if (ret < 0)
+			return ret;
+		part_num = ret;
+
+		return fs_mount_blkdev_auto(desc, part_num, &info, argv[3]);
+	}
+
+	/* mount <dev> <mountpoint> - mount an existing UCLASS_FS device */
 	if (argc < 3)
 		return -EINVAL;
 
@@ -71,11 +107,14 @@ static int do_mount(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 U_BOOT_CMD(
-	mount,	3,	1,	do_mount,
+	mount,	6,	1,	do_mount,
 	"mount a filesystem",
 	"[<dev> <mountpoint>]\n"
 	"    - With no args, list all mounts\n"
-	"    - Mount device 'dev' at 'mountpoint'"
+	"mount <iface> <dev:part> <mountpoint>\n"
+	"    - Auto-detect and mount a filesystem\n"
+	"mount -t <type> <iface> <dev:part> <mountpoint>\n"
+	"    - Mount a specific filesystem type"
 );
 
 static int umount_handler(const char *path)

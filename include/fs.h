@@ -30,11 +30,13 @@ enum {
  *
  * @name: Name of the filesystem, or empty if not available
  * @desc: Block device descriptor, or NULL if not block-backed
+ * @part_num: Partition number (valid only when @desc is non-NULL)
  * @part: Partition information (valid only when @desc is non-NULL)
  */
 struct fs_plat {
 	char name[FS_MAX_NAME_LEN];
 	struct blk_desc *desc;
+	int part_num;
 	struct disk_partition part;
 };
 

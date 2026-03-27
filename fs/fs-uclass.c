@@ -7,7 +7,9 @@
 
 #define LOG_CATEGORY	UCLASS_FS
 
+#include <blk.h>
 #include <bootdev.h>
+#include <bootflow.h>
 #include <bootmeth.h>
 #include <dir.h>
 #include <dm.h>
@@ -124,16 +126,38 @@ static int fs_get_bootflow(struct udevice *dev, struct bootflow_iter *iter,
 			   struct bootflow *bflow)
 {
 	struct udevice *fsdev = dev_get_parent(dev);
+	struct fs_plat *plat = dev_get_uclass_plat(fsdev);
+	char name[60];
 	int ret;
 
 	log_debug("get_bootflow fs '%s'\n", fsdev->name);
 
-	/* for now, always fail here as we don't have FS support in bootmeths */
-	return -ENOENT;
+	/*
+	 * Block-backed filesystems expose their blk device and partition so
+	 * that existing bootmeths (script, extlinux) can read files using the
+	 * legacy FS layer.
+	 */
+	if (!plat->desc || !plat->desc->bdev)
+		return log_msg_ret("blk", -ENOENT);
+
+	bflow->blk = plat->desc->bdev;
+	bflow->part = plat->part_num;
+
+	snprintf(name, sizeof(name), "%s.bootflow", fsdev->name);
+	bflow->name = strdup(name);
+	if (!bflow->name)
+		return log_msg_ret("nam", -ENOMEM);
+
+	bflow->state = BOOTFLOWST_MEDIA;
 
 	ret = bootmeth_check(bflow->method, iter);
 	if (ret)
-		return log_msg_ret("check", ret);
+		return log_msg_ret("chk", ret);
+
+	/* Let the bootmeth discover files (extlinux.conf, boot.scr, etc.) */
+	ret = bootmeth_read_bootflow(bflow->method, bflow);
+	if (ret)
+		return log_msg_ret("rd", ret);
 
 	return 0;
 }
