@@ -179,9 +179,14 @@ int fs_write_sandbox(const char *filename, void *buf, loff_t offset,
 static int sandbox_fs_mount(struct udevice *dev)
 {
 	struct fs_priv *uc_priv = dev_get_uclass_priv(dev);
+	struct fs_plat *plat = dev_get_uclass_plat(dev);
 
 	if (uc_priv->mounted)
 		return log_msg_ret("vfi", -EISCONN);
+
+	/* Reject block-device mounts - sandboxfs uses the host OS */
+	if (plat->desc)
+		return log_msg_ret("vfb", -ENODEV);
 
 	uc_priv->mounted = true;
 

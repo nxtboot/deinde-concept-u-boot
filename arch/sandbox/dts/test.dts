@@ -589,7 +589,7 @@
 		compatible = "denx,u-boot-devres-test";
 	};
 
-	fs {
+	hostfs {
 		compatible = "sandbox,fs";
 	};
 

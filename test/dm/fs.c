@@ -46,7 +46,7 @@ static int dm_test_fs_dir(struct unit_test_state *uts)
 	ut_asserteq(-ENOENT, fs_lookup_dir(fsdev, "does-not-exit", &dir));
 	ut_assertok(fs_lookup_dir(fsdev, "", &dir));
 	ut_assertnonnull(dir);
-	ut_asserteq_str("fs.dir", dir->name);
+	ut_asserteq_str("hostfs.dir", dir->name);
 
 	ut_assertok(dir_open(dir, &strm));
 	found = 0;
@@ -81,12 +81,12 @@ static int dm_test_fs_file(struct unit_test_state *uts)
 
 	ut_assertok(fs_lookup_dir(fsdev, "", &dir));
 	ut_assertnonnull(dir);
-	ut_asserteq_str("fs.dir", dir->name);
+	ut_asserteq_str("hostfs.dir", dir->name);
 
 	/* check the start and end of the README, which perhaps won't change */
 	ut_assertok(dir_open_file(dir, "README", DIR_O_RDONLY, &fil));
 	ut_assertnonnull(fil);
-	ut_asserteq_str("fs.dir.file.1", fil->name);
+	ut_asserteq_str("hostfs.dir.file.1", fil->name);
 	uc_priv = dev_get_uclass_priv(fil);
 	ut_asserteq_str("README", uc_priv->leaf);
 	ut_asserteq(0, uc_priv->pos);
