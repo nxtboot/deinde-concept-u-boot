@@ -12,6 +12,7 @@
 #define __FS_H
 
 #include <fs_common.h>
+#include <part.h>
 
 struct udevice;
 
@@ -23,10 +24,18 @@ enum {
 /**
  * struct fs_plat - Filesystem information
  *
+ * For block-device-backed filesystems, @desc and @part identify the
+ * underlying storage. Non-block filesystems (hostfs, rootfs) leave
+ * @desc as NULL.
+ *
  * @name: Name of the filesystem, or empty if not available
+ * @desc: Block device descriptor, or NULL if not block-backed
+ * @part: Partition information (valid only when @desc is non-NULL)
  */
 struct fs_plat {
 	char name[FS_MAX_NAME_LEN];
+	struct blk_desc *desc;
+	struct disk_partition part;
 };
 
 /**
