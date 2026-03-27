@@ -15,12 +15,15 @@ preprocessor and Kconfig options.
 """
 
 import argparse
+from concurrent import futures
 import fnmatch
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
+import threading
 import time
 
 # Allow 'from patman import xxx to work'
@@ -374,7 +377,7 @@ def do_build(args):
 
 
 def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
-                fatal_on_error=True):
+                fatal_on_error=True, make_jobs=None):
     """Build a board using buildman.
 
     Args:
@@ -385,6 +388,7 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
         use_dwarf (bool): Enable CC_OPTIMIZE_FOR_DEBUG to prevent inlining
         fatal_on_error (bool): If True (default), call tout.fatal() on
             failure (which exits). If False, return False on failure.
+        make_jobs (int): Number of make -j jobs (None = buildman default)
 
     Returns:
         True on success, False on failure (only when fatal_on_error=False)
@@ -409,6 +413,10 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
     # -m: mrproper (clean), -I: show errors/warnings only (incremental)
     cmd = ['buildman', '--board', board, '-L', '-w', '-m', '-I', '-o',
            build_dir]
+
+    # Limit per-board make parallelism when running multiple boards
+    if make_jobs:
+        cmd.extend(['-j', str(make_jobs)])
 
     # Add CONFIG adjustments if specified
     if adjust_cfg:
@@ -549,6 +557,9 @@ def parse_args(argv=None):
                       help='Limit to first N matching boards (for testing)')
     scan.add_argument('--exclude', type=str, action='append',
                       help='Board specifiers to exclude')
+    scan.add_argument('-W', '--workers', type=int, metavar='N',
+                      help='Number of boards to build in parallel '
+                           '(default: CPU count)')
     scan.add_argument('--clean-after', action='store_true',
                       help='Delete build directory after analysing each board')
 
@@ -797,97 +808,85 @@ def _get_git_hash(srcdir):
     return ''
 
 
-def _scan_one_board(brd, args, srcdir, db):
-    """Build, analyse, and store results for a single board.
+def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
+                    use_lsp, unifdef_cmd, include_headers, make_jobs,
+                    analysis_jobs, filter_pattern, clean_after):
+    """Build, analyse, and return results for a single board.
+
+    This runs in a worker thread. It does not touch the database — results
+    are returned to the main thread for storage.
 
     Args:
         brd: Board object from buildman
-        args (Namespace): Parsed command-line arguments
         srcdir (str): Source directory root
-        db (CodmanDatabase): Database to store results in
+        build_base (str): Base build directory
+        adjust_cfg (list): CONFIG adjustments
+        use_dwarf (bool): Use DWARF analysis
+        use_lsp (bool): Use LSP analysis
+        unifdef_cmd (str): Path to unifdef
+        include_headers (bool): Include headers in analysis
+        make_jobs (int): Number of make -j jobs per board
+        analysis_jobs (int): Number of parallel analysis jobs
+        filter_pattern (str): File filter pattern
+        clean_after (bool): Delete build dir after analysis
 
     Returns:
-        bool: True on success, False on failure
+        tuple: (target, status, results_or_None) where status is 'ok',
+            'build_failed', or 'analysis_failed'
     """
-    build_dir = os.path.join(args.build_base, brd.target)
-    defconfig = f'{brd.target}_defconfig'
+    build_dir = os.path.join(build_base, brd.target)
 
     # Build the board
-    if not build_board(brd.target, build_dir, srcdir,
-                       getattr(args, 'adjust', None),
-                       getattr(args, 'use_dwarf', False),
-                       fatal_on_error=False):
-        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
-                     brd.vendor, brd.board_name, defconfig,
-                     status='build_failed')
-        return False
+    if not build_board(brd.target, build_dir, srcdir, adjust_cfg,
+                       use_dwarf, fatal_on_error=False,
+                       make_jobs=make_jobs):
+        return (brd, 'build_failed', None)
 
     # Find used sources
     try:
         _all, used, _skip = select_sources(srcdir, build_dir,
-                                           args.filter, args.jobs)
+                                           filter_pattern, analysis_jobs)
     except Exception as e:
         tout.error(f'{brd.target}: source selection failed: {e}')
-        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
-                     brd.vendor, brd.board_name, defconfig,
-                     status='analysis_failed')
-        return False
+        return (brd, 'analysis_failed', None)
 
     # Run line-level analysis
     unifdef_path = None
-    if not (getattr(args, 'use_dwarf', False) or
-            getattr(args, 'use_lsp', False)):
-        unifdef_path = getattr(args, 'unifdef', 'unifdef')
+    if not (use_dwarf or use_lsp):
+        unifdef_path = unifdef_cmd
     results, _method = do_analysis(
         used, build_dir, srcdir, unifdef_path,
-        getattr(args, 'include_headers', False),
-        args.jobs, getattr(args, 'use_lsp', False))
+        include_headers, analysis_jobs, use_lsp)
 
     if results is None:
-        tout.error(f'{brd.target}: analysis failed')
-        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
-                     brd.vendor, brd.board_name, defconfig,
-                     status='analysis_failed')
-        return False
-
-    # Store results in database
-    board_id = db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
-                            brd.vendor, brd.board_name, defconfig)
-    db.store_board_results(board_id, results, srcdir)
+        return (brd, 'analysis_failed', None)
 
     # Clean up build directory if requested
-    if getattr(args, 'clean_after', False):
-        import shutil
-
+    if clean_after:
         shutil.rmtree(build_dir, ignore_errors=True)
 
-    return True
+    return (brd, 'ok', results)
 
 
-def do_scan(args):
-    """Build and analyse multiple boards, storing results in a database.
+def _init_scan_db(srcdir, args):
+    """Create and initialise the scan database.
 
     Args:
+        srcdir (str): Source directory root
         args (Namespace): Parsed command-line arguments
 
     Returns:
-        int: Exit code (0 for success, 1 for failure)
+        tuple: (CodmanDatabase, db_path, selected_boards) or None on error
     """
-    srcdir = os.path.realpath(args.source)
-    if not os.path.isdir(srcdir):
-        tout.fatal(f'Source directory does not exist: {srcdir}')
-
-    # Load board list
     selected = load_board_list(srcdir, args.board_specs,
                                args.exclude, args.jobs)
     if not selected:
         tout.error('No boards selected')
-        return 1
+        return None
 
     if args.max_boards:
         selected = selected[:args.max_boards]
 
-    # Open/create database
     db_path = _get_db_path(srcdir)
     db = database.CodmanDatabase(db_path)
     db.create_tables()
@@ -906,33 +905,114 @@ def do_scan(args):
             terminal.tprint(f'Resuming: skipping {skipped} already-scanned '
                             f'boards, {len(selected)} remaining')
 
+    return db, db_path, selected
+
+
+def _store_board_result(db, brd, status, results, srcdir):
+    """Store the scan result for one board in the database.
+
+    Args:
+        db (CodmanDatabase): Database instance
+        brd: Board object from buildman
+        status (str): 'ok', 'build_failed', or 'analysis_failed'
+        results (dict): Analysis results (None for failed boards)
+        srcdir (str): Source directory root
+    """
+    defconfig = f'{brd.target}_defconfig'
+    if status != 'ok':
+        db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                     brd.vendor, brd.board_name, defconfig,
+                     status=status)
+        return
+
+    board_id = db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,
+                            brd.vendor, brd.board_name, defconfig)
+    db.store_board_results(board_id, results, srcdir)
+
+
+def do_scan(args):
+    """Build and analyse multiple boards, storing results in a database.
+
+    Boards are processed in parallel using a thread pool. Each worker
+    builds and analyses one board, returning results to the main thread
+    for database storage.
+
+    Args:
+        args (Namespace): Parsed command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure)
+    """
+    srcdir = os.path.realpath(args.source)
+    if not os.path.isdir(srcdir):
+        tout.fatal(f'Source directory does not exist: {srcdir}')
+
+    result = _init_scan_db(srcdir, args)
+    if result is None:
+        return 1
+    db, db_path, selected = result
+
     if not selected:
         terminal.tprint('All boards already scanned')
         db.close()
         return 0
 
-    terminal.tprint(f'Scanning {len(selected)} boards...')
+    # Compute parallelism settings
+    cpu_count = multiprocessing.cpu_count()
+    workers = getattr(args, 'workers', None) or cpu_count
+    make_jobs = max(1, cpu_count // workers)
+    # Use single-threaded analysis in workers to avoid nested
+    # multiprocessing conflicts
+    analysis_jobs = 1
+
+    terminal.tprint(
+        f'Scanning {len(selected)} boards '
+        f'({workers} workers, {make_jobs} make jobs each)...')
     scan_start = time.time()
     ok_count = 0
     fail_count = 0
+    done_count = 0
+    count_lock = threading.Lock()
 
-    for i, brd in enumerate(selected):
-        elapsed = time.time() - scan_start
-        if i > 0:
-            per_board = elapsed / i
-            remaining = per_board * (len(selected) - i)
-            eta = f', ETA {_format_duration(remaining)}'
-        else:
-            eta = ''
+    # Extract args that workers need (avoid passing args object to threads)
+    adjust_cfg = getattr(args, 'adjust', None)
+    use_dwarf = getattr(args, 'use_dwarf', False)
+    use_lsp = getattr(args, 'use_lsp', False)
+    unifdef_cmd = getattr(args, 'unifdef', 'unifdef')
+    include_headers = getattr(args, 'include_headers', False)
+    filter_pattern = args.filter
+    clean_after = getattr(args, 'clean_after', False)
 
-        terminal.tprint(
-            f'[{i + 1}/{len(selected)}] {brd.target} '
-            f'({_format_duration(elapsed)}{eta})')
+    with futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        future_map = {}
+        for brd in selected:
+            fut = executor.submit(
+                _scan_one_board, brd, srcdir, args.build_base,
+                adjust_cfg, use_dwarf, use_lsp, unifdef_cmd,
+                include_headers, make_jobs, analysis_jobs,
+                filter_pattern, clean_after)
+            future_map[fut] = brd
 
-        if _scan_one_board(brd, args, srcdir, db):
-            ok_count += 1
-        else:
-            fail_count += 1
+        for fut in futures.as_completed(future_map):
+            brd, status, results = fut.result()
+
+            _store_board_result(db, brd, status, results, srcdir)
+
+            with count_lock:
+                done_count += 1
+                if status == 'ok':
+                    ok_count += 1
+                else:
+                    fail_count += 1
+                n = done_count
+
+            elapsed = time.time() - scan_start
+            per_board = elapsed / n
+            remaining = per_board * (len(selected) - n)
+            terminal.tprint(
+                f'[{n}/{len(selected)}] {brd.target}: {status} '
+                f'({_format_duration(elapsed)}'
+                f', ETA {_format_duration(remaining)})')
 
     # Finalise
     total_time = time.time() - scan_start
@@ -991,11 +1071,42 @@ def _format_size(size_bytes):
     return f'{size_bytes} B'
 
 
+def _find_function_end(fpath, start_line):
+    """Find the closing brace of a function starting at a given line.
+
+    Args:
+        fpath (str): Absolute path to the source file
+        start_line (int): Line number where the function signature starts
+
+    Returns:
+        int: Line number of the closing brace, or start_line on failure
+    """
+    try:
+        with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+    except IOError:
+        return start_line
+
+    # Find the opening brace from the start line onwards
+    depth = 0
+    found_open = False
+    for i in range(start_line - 1, len(lines)):
+        for ch in lines[i]:
+            if ch == '{':
+                depth += 1
+                found_open = True
+            elif ch == '}':
+                depth -= 1
+                if found_open and depth == 0:
+                    return i + 1
+    return start_line
+
+
 def find_function_lines(srcdir, func_name, file_path=None):
     """Find the file and line range for a C function definition.
 
-    Searches source files for a function definition matching func_name
-    and returns the file path and line range.
+    Uses grep to quickly locate candidate lines, then reads only those
+    files to find the function end.
 
     Args:
         srcdir (str): Source directory root
@@ -1005,57 +1116,53 @@ def find_function_lines(srcdir, func_name, file_path=None):
     Returns:
         list of tuple: (rel_path, start_line, end_line) for each match
     """
-    # Pattern to match function definitions (name at start of line or after
-    # return type, followed by opening paren)
-    pattern = re.compile(
-        rf'^[a-zA-Z_][\w\s*]*\b{re.escape(func_name)}\s*\(', re.MULTILINE)
+    # Use grep for fast initial search — match function definitions
+    grep_pattern = rf'\b{re.escape(func_name)}\s*\('
 
-    results = []
+    cmd = ['grep', '-rn', '--include=*.c', '-E', grep_pattern]
+    for exc in EXCLUDE_DIRS:
+        cmd.extend(['--exclude-dir', exc])
 
     if file_path:
-        search_files = [os.path.join(srcdir, file_path)]
+        cmd.append(os.path.join(srcdir, file_path))
     else:
-        # Search all .c files (not headers — we want definitions)
-        search_files = []
-        exclude = {os.path.join(srcdir, d) for d in EXCLUDE_DIRS}
-        for dirpath, dirnames, filenames in os.walk(srcdir, topdown=True):
-            if any(dirpath.startswith(e) for e in exclude):
-                dirnames[:] = []
-                continue
-            for fname in filenames:
-                if fname.endswith('.c'):
-                    search_files.append(os.path.join(dirpath, fname))
+        cmd.append(srcdir)
 
-    for fpath in search_files:
-        if not os.path.exists(fpath):
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True,
+                                check=False, cwd=srcdir)
+    except FileNotFoundError:
+        return []
+
+    if result.returncode not in (0, 1):  # 1 = no matches
+        return []
+
+    # Parse grep output and filter for real definitions (not calls/decls)
+    # A definition has a return type before the function name
+    def_pattern = re.compile(
+        rf'^[a-zA-Z_][\w\s*]*\b{re.escape(func_name)}\s*\(')
+
+    results = []
+    for line in result.stdout.splitlines():
+        # grep -n output: file:line:content
+        parts = line.split(':', 2)
+        if len(parts) < 3:
             continue
+        fpath, line_num_str, content = parts[0], parts[1], parts[2]
         try:
-            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-        except IOError:
+            line_num = int(line_num_str)
+        except ValueError:
             continue
 
-        for match in pattern.finditer(content):
-            # Find line number of match
-            start_line = content[:match.start()].count('\n') + 1
+        # Filter: must look like a definition, not a call or declaration
+        if not def_pattern.match(content):
+            continue
 
-            # Find the end of the function (matching closing brace)
-            # Start from the match position, find the opening {
-            pos = content.find('{', match.start())
-            if pos == -1:
-                continue
-            depth = 1
-            end_pos = pos + 1
-            while end_pos < len(content) and depth > 0:
-                if content[end_pos] == '{':
-                    depth += 1
-                elif content[end_pos] == '}':
-                    depth -= 1
-                end_pos += 1
-            end_line = content[:end_pos].count('\n') + 1
-
-            rel_path = os.path.relpath(fpath, srcdir)
-            results.append((rel_path, start_line, end_line))
+        abs_path = os.path.join(srcdir, fpath) if not os.path.isabs(fpath) \
+            else fpath
+        end_line = _find_function_end(abs_path, line_num)
+        rel_path = os.path.relpath(abs_path, srcdir)
+        results.append((rel_path, line_num, end_line))
 
     return results
 
