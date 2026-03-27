@@ -100,11 +100,13 @@ def _get_git_hash(srcdir):
 
 def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
                     use_lsp, unifdef_cmd, include_headers,
-                    analysis_jobs, filter_pattern, clean_after):
+                    analysis_jobs, filter_pattern, clean_after,
+                    isolate=False):
     """Build, analyse, and return results for a single board.
 
-    This runs in a worker thread. It does not touch the database — results
-    are returned to the main thread for storage.
+    Does not touch the database — results are returned for the caller
+    to store. KeyboardInterrupt is not caught here so it can propagate
+    to the caller's handler.
 
     Args:
         brd: Board object from buildman
@@ -118,6 +120,7 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
         analysis_jobs (int): Number of parallel analysis jobs
         filter_pattern (str): File filter pattern
         clean_after (bool): Delete build dir after analysis
+        isolate (bool): Isolate buildman in its own session
 
     Returns:
         tuple: (brd, status, results_or_None) where status is 'ok',
@@ -125,40 +128,35 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
     """
     build_dir = os.path.join(build_base, brd.target)
 
+    if not codman.build_board(brd.target, build_dir, srcdir, adjust_cfg,
+                              use_dwarf, fatal_on_error=False,
+                              make_jobs=1, isolate=isolate):
+        return (brd, 'build_failed', None)
+
+    # Find used sources
     try:
-        # Build the board with -j1; parallelism comes from multiple workers
-        if not codman.build_board(brd.target, build_dir, srcdir, adjust_cfg,
-                                  use_dwarf, fatal_on_error=False,
-                                  make_jobs=1):
-            return (brd, 'build_failed', None)
+        _all, used, _skip = codman.select_sources(
+            srcdir, build_dir, filter_pattern, analysis_jobs)
+    except Exception as e:
+        tout.error(f'{brd.target}: source selection failed: {e}')
+        return (brd, 'analysis_failed', None)
 
-        # Find used sources
-        try:
-            _all, used, _skip = codman.select_sources(
-                srcdir, build_dir, filter_pattern, analysis_jobs)
-        except Exception as e:
-            tout.error(f'{brd.target}: source selection failed: {e}')
-            return (brd, 'analysis_failed', None)
+    # Run line-level analysis
+    unifdef_path = None
+    if not (use_dwarf or use_lsp):
+        unifdef_path = unifdef_cmd
+    results, _method = codman.do_analysis(
+        used, build_dir, srcdir, unifdef_path,
+        include_headers, analysis_jobs, use_lsp)
 
-        # Run line-level analysis
-        unifdef_path = None
-        if not (use_dwarf or use_lsp):
-            unifdef_path = unifdef_cmd
-        results, _method = codman.do_analysis(
-            used, build_dir, srcdir, unifdef_path,
-            include_headers, analysis_jobs, use_lsp)
+    if results is None:
+        return (brd, 'analysis_failed', None)
 
-        if results is None:
-            return (brd, 'analysis_failed', None)
+    # Clean up build directory if requested
+    if clean_after:
+        shutil.rmtree(build_dir, ignore_errors=True)
 
-        # Clean up build directory if requested
-        if clean_after:
-            shutil.rmtree(build_dir, ignore_errors=True)
-
-        return (brd, 'ok', results)
-
-    except KeyboardInterrupt:
-        return (brd, 'interrupted', None)
+    return (brd, 'ok', results)
 
 
 def _init_scan_db(srcdir, args):
@@ -181,6 +179,11 @@ def _init_scan_db(srcdir, args):
         selected = selected[:args.max_boards]
 
     db_path = get_db_path(srcdir)
+
+    # Without --resume, start with a fresh database
+    if not args.resume and os.path.exists(db_path):
+        os.remove(db_path)
+
     db = database.CodmanDatabase(db_path)
     db.create_tables()
 
@@ -253,6 +256,124 @@ def _kill_children():
             pass
 
 
+def _scan_sequential(selected, srcdir, build_base, adjust_cfg, use_dwarf,
+                     use_lsp, unifdef_cmd, include_headers, filter_pattern,
+                     clean_after, db, scan_start):
+    """Scan boards sequentially without threading.
+
+    Useful for debugging since all work happens in the main process.
+
+    Returns:
+        tuple: (ok_count, fail_count)
+    """
+    terminal.tprint(
+        f'Scanning {len(selected)} boards (sequential)...')
+    ok_count = 0
+    fail_count = 0
+
+    try:
+        for i, brd in enumerate(selected):
+            elapsed = time.time() - scan_start
+            if i > 0:
+                per_board = elapsed / i
+                remaining = per_board * (len(selected) - i)
+                eta = f', ETA {_format_duration(remaining)}'
+            else:
+                eta = ''
+
+            terminal.tprint(
+                f'[{i + 1}/{len(selected)}] {brd.target} '
+                f'({_format_duration(elapsed)}{eta})')
+
+            brd, status, results = _scan_one_board(
+                brd, srcdir, build_base, adjust_cfg, use_dwarf,
+                use_lsp, unifdef_cmd, include_headers,
+                None, filter_pattern, clean_after)
+
+            _store_board_result(db, brd, status, results, srcdir)
+
+            if status == 'ok':
+                ok_count += 1
+            else:
+                fail_count += 1
+    except KeyboardInterrupt:
+        terminal.tprint(f'\nInterrupted. {ok_count} boards completed, '
+                        f'{fail_count} failed.')
+
+    return ok_count, fail_count
+
+
+def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
+                   use_lsp, unifdef_cmd, include_headers, filter_pattern,
+                   clean_after, db, scan_start, workers):
+    """Scan boards in parallel using a thread pool.
+
+    Each worker builds with -j1 and analyses one board. Results are
+    returned to the main thread for database storage.
+
+    Returns:
+        tuple: (ok_count, fail_count)
+    """
+    terminal.tprint(
+        f'Scanning {len(selected)} boards ({workers} workers)...')
+    ok_count = 0
+    fail_count = 0
+    done_count = 0
+    count_lock = threading.Lock()
+    analysis_jobs = 1
+
+    # Install a signal handler that kills all children and exits
+    # immediately. This avoids the problem of as_completed() blocking
+    # while killed buildman processes dump error messages.
+    orig_handler = signal.getsignal(signal.SIGINT)
+
+    def _sigint_handler(_signum, _frame):
+        _kill_children()
+        terminal.tprint(f'\nInterrupted. {ok_count} boards completed, '
+                        f'{fail_count} failed.')
+        db.close()
+        os._exit(1)
+
+    signal.signal(signal.SIGINT, _sigint_handler)
+
+    with futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        future_map = {}
+        for brd in selected:
+            fut = executor.submit(
+                _scan_one_board, brd, srcdir, build_base,
+                adjust_cfg, use_dwarf, use_lsp, unifdef_cmd,
+                include_headers, analysis_jobs,
+                filter_pattern, clean_after, isolate=True)
+            future_map[fut] = brd
+
+        for fut in futures.as_completed(future_map):
+            try:
+                brd, status, results = fut.result()
+            except Exception:
+                continue
+
+            _store_board_result(db, brd, status, results, srcdir)
+
+            with count_lock:
+                done_count += 1
+                if status == 'ok':
+                    ok_count += 1
+                else:
+                    fail_count += 1
+                n = done_count
+
+            elapsed = time.time() - scan_start
+            per_board = elapsed / n
+            remaining = per_board * (len(selected) - n)
+            terminal.tprint(
+                f'[{n}/{len(selected)}] {brd.target}: {status} '
+                f'({_format_duration(elapsed)}'
+                f', ETA {_format_duration(remaining)})')
+
+    signal.signal(signal.SIGINT, orig_handler)
+    return ok_count, fail_count
+
+
 def do_scan(args):
     """Build and analyse multiple boards, storing results in a database.
 
@@ -280,23 +401,7 @@ def do_scan(args):
         db.close()
         return 0
 
-    # Each build uses -j1; parallelism comes from running multiple workers.
-    # Default to half the CPU count (capped at 16) since each worker spawns
-    # several processes (buildman, make, cc1, analysis).
-    cpu_count = multiprocessing.cpu_count()
-    workers = getattr(args, 'workers', None) or min(cpu_count // 2, 16)
-    workers = max(workers, 1)
-    analysis_jobs = 1
-
-    terminal.tprint(
-        f'Scanning {len(selected)} boards ({workers} workers)...')
-    scan_start = time.time()
-    ok_count = 0
-    fail_count = 0
-    done_count = 0
-    count_lock = threading.Lock()
-
-    # Extract args that workers need (avoid passing args object to threads)
+    # Extract args that workers need
     adjust_cfg = getattr(args, 'adjust', None)
     use_dwarf = getattr(args, 'use_dwarf', False)
     use_lsp = getattr(args, 'use_lsp', False)
@@ -304,76 +409,29 @@ def do_scan(args):
     include_headers = getattr(args, 'include_headers', False)
     filter_pattern = args.filter
     clean_after = getattr(args, 'clean_after', False)
+    sequential = getattr(args, 'sequential', False)
 
-    # Install a flag-based interrupt handler so Ctrl-C is handled cleanly.
-    # Buildman subprocesses run in their own session (start_new_session=True)
-    # so Ctrl-C does not reach them directly; we kill them here instead.
-    interrupted = threading.Event()
-    orig_handler = signal.getsignal(signal.SIGINT)
+    scan_start = time.time()
+    ok_count = 0
+    fail_count = 0
 
-    def _sigint_handler(_signum, _frame):
-        if interrupted.is_set():
-            return  # already shutting down
-        interrupted.set()
-        # Kill all child processes of this process
-        _kill_children()
+    if sequential:
+        ok_count, fail_count = _scan_sequential(
+            selected, srcdir, args.build_base, adjust_cfg, use_dwarf,
+            use_lsp, unifdef_cmd, include_headers, filter_pattern,
+            clean_after, db, scan_start)
+    else:
+        # Each build uses -j1; parallelism comes from multiple workers.
+        # Default to half the CPU count (capped at 16) since each worker
+        # spawns several processes (buildman, make, cc1, analysis).
+        cpu_count = multiprocessing.cpu_count()
+        workers = getattr(args, 'workers', None) or min(cpu_count // 2, 16)
+        workers = max(workers, 1)
 
-    signal.signal(signal.SIGINT, _sigint_handler)
-
-    try:
-        with futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            future_map = {}
-            for brd in selected:
-                if interrupted.is_set():
-                    break
-                fut = executor.submit(
-                    _scan_one_board, brd, srcdir, args.build_base,
-                    adjust_cfg, use_dwarf, use_lsp, unifdef_cmd,
-                    include_headers, analysis_jobs,
-                    filter_pattern, clean_after)
-                future_map[fut] = brd
-
-            for fut in futures.as_completed(future_map):
-                try:
-                    brd, status, results = fut.result()
-                except Exception:
-                    continue
-
-                if status == 'interrupted':
-                    continue
-
-                _store_board_result(db, brd, status, results, srcdir)
-
-                with count_lock:
-                    done_count += 1
-                    if status == 'ok':
-                        ok_count += 1
-                    else:
-                        fail_count += 1
-                    n = done_count
-
-                elapsed = time.time() - scan_start
-                per_board = elapsed / n
-                remaining = per_board * (len(selected) - n)
-                terminal.tprint(
-                    f'[{n}/{len(selected)}] {brd.target}: {status} '
-                    f'({_format_duration(elapsed)}'
-                    f', ETA {_format_duration(remaining)})')
-
-                if interrupted.is_set():
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    break
-
-    except KeyboardInterrupt:
-        pass
-    finally:
-        signal.signal(signal.SIGINT, orig_handler)
-
-    if interrupted.is_set():
-        terminal.tprint(f'\nInterrupted. {ok_count} boards completed, '
-                        f'{fail_count} failed.')
-        db.close()
-        return 1
+        ok_count, fail_count = _scan_parallel(
+            selected, srcdir, args.build_base, adjust_cfg, use_dwarf,
+            use_lsp, unifdef_cmd, include_headers, filter_pattern,
+            clean_after, db, scan_start, workers)
 
     # Finalise
     total_time = time.time() - scan_start

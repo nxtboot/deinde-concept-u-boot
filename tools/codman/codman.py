@@ -377,7 +377,7 @@ def do_build(args):
 
 
 def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
-                fatal_on_error=True, make_jobs=None):
+                fatal_on_error=True, make_jobs=None, isolate=False):
     """Build a board using buildman.
 
     Args:
@@ -389,6 +389,8 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
         fatal_on_error (bool): If True (default), call tout.fatal() on
             failure (which exits). If False, return False on failure.
         make_jobs (int): Number of make -j jobs (None = buildman default)
+        isolate (bool): Run in a new session with captured output, so
+            Ctrl-C and output from parallel builds do not interfere.
 
     Returns:
         True on success, False on failure (only when fatal_on_error=False)
@@ -411,7 +413,7 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
     # Run buildman to build the board
     # -L: disable LTO, -w: enable warnings, -o: output directory,
     # -m: mrproper (clean), -I: show errors/warnings only (incremental)
-    cmd = ['buildman', '--board', board, '-L', '-w', '-m', '-I', '-o',
+    cmd = ['buildman', '--boards', board, '-L', '-w', '-m', '-I', '-o',
            build_dir]
 
     # Limit per-board make parallelism when running multiple boards
@@ -423,17 +425,12 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
         for adj in adjust_cfg:
             cmd.extend(['--adjust-cfg', adj])
 
-    # In scan mode (fatal_on_error=False), run in a new session so Ctrl-C
-    # does not propagate directly to buildman and its children, and capture
-    # output so interrupted subprocesses don't spam the terminal.
-    new_session = not fatal_on_error
-    capture = not fatal_on_error
-
     try:
         result = subprocess.run(cmd, cwd=srcdir, check=False,
-                              capture_output=capture, text=True,
-                              start_new_session=new_session)
-        if result.returncode != 0:
+                              capture_output=isolate, text=True,
+                              start_new_session=isolate)
+        # 101 = missing external blobs; the build is still usable
+        if result.returncode not in (0, 101):
             if fatal_on_error:
                 tout.fatal(f'buildman exited with code {result.returncode}')
             tout.error(f'buildman exited with code {result.returncode}')
@@ -566,7 +563,10 @@ def parse_args(argv=None):
                       help='Board specifiers to exclude')
     scan.add_argument('-W', '--workers', type=int, metavar='N',
                       help='Number of boards to build in parallel '
-                           '(default: CPU count)')
+                           '(default: half CPU count, max 16)')
+    scan.add_argument('-1', '--sequential', action='store_true',
+                      help='Process boards sequentially without threading '
+                           '(useful for debugging)')
     scan.add_argument('--clean-after', action='store_true',
                       help='Delete build directory after analysing each board')
 
