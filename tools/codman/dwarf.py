@@ -138,10 +138,13 @@ class DwarfAnalyser(Analyser):
         args_list = [(obj_path, self.build_dir, self.srcdir)
                      for obj_path in obj_files]
 
-        # Process in parallel
+        # Process in parallel (sequential when jobs=1 for thread safety)
         num_jobs = jobs if jobs else multiprocessing.cpu_count()
-        with multiprocessing.Pool(num_jobs) as pool:
-            results = pool.map(worker, args_list)
+        if num_jobs <= 1:
+            results = [worker(args) for args in args_list]
+        else:
+            with multiprocessing.Pool(num_jobs) as pool:
+                results = pool.map(worker, args_list)
 
         # Merge results from all workers and check for errors
         source_lines = defaultdict(set)
