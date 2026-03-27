@@ -9,6 +9,7 @@
 #include <dm.h>
 #include <file.h>
 #include <fs.h>
+#include <vfs.h>
 #include <dm/test.h>
 #include <test/ut.h>
 
@@ -104,3 +105,33 @@ static int dm_test_fs_file(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_fs_file, UTF_SCAN_FDT);
+
+#if IS_ENABLED(CONFIG_VFS)
+/* Test VFS init and root directory operations */
+static int dm_test_vfs_init(struct unit_test_state *uts)
+{
+	struct udevice *vfs, *dir;
+	struct fs_dir_stream *strm;
+	struct fs_dirent dent;
+
+	ut_assertok(vfs_init());
+
+	vfs = vfs_root();
+	ut_assertnonnull(vfs);
+
+	/* Look up the root directory */
+	ut_assertok(fs_lookup_dir(vfs, "", &dir));
+	ut_assertnonnull(dir);
+
+	/* open should succeed, read should return -ENOENT (root is empty) */
+	ut_assertok(dir_open(dir, &strm));
+	ut_asserteq(-ENOENT, dir_read(dir, strm, &dent));
+	ut_assertok(dir_close(dir, strm));
+
+	/* rootfs cannot be unmounted */
+	ut_asserteq(-EBUSY, fs_unmount(vfs));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_init, UTF_SCAN_FDT);
+#endif

@@ -28,4 +28,22 @@ struct vfsmount {
 	struct udevice *target;
 };
 
+/**
+ * vfs_init() - Initialise the VFS
+ *
+ * Creates the VFS root directory device. Normally called automatically
+ * via EVT_LAST_STAGE_INIT during boot. May also be called directly in
+ * tests after a DM tree reset.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_init(void);
+
+/**
+ * vfs_root() - Get the VFS root FS device
+ *
+ * Return: VFS root FS device, or NULL if not initialised
+ */
+struct udevice *vfs_root(void);
+
 #endif

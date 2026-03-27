@@ -21,6 +21,7 @@ EVT_LAST_STAGE_INIT   alloc_write_acpi_tables         .*lib/acpi/acpi_table.c:.*
 EVT_LAST_STAGE_INIT   efi_block_device_create         .*lib/efi_driver/efi_block_device.c:.*
 EVT_LAST_STAGE_INIT   install_smbios_table            .*lib/efi_loader/efi_smbios.c:.*
 EVT_LAST_STAGE_INIT   last_stage_init                 .*arch/sandbox/cpu/start.c:.*
+EVT_LAST_STAGE_INIT   vfs_init                        .*fs/vfs.c:.*
 EVT_MISC_INIT_F       sandbox_early_getopt_check      .*arch/sandbox/cpu/start.c:.*
 EVT_SETTINGS_R        sandbox_settings                .*board/sandbox/sandbox.c:.*
 EVT_TEST              h_adder_simple                  .*test/common/event.c:'''

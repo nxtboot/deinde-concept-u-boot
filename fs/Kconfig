@@ -32,6 +32,7 @@ config FILE
 config VFS
 	bool "Virtual filesystem support"
 	depends on FS && DIR
+	select EVENT
 	help
 	  Provides a virtual filesystem layer with a mount table and
 	  unified path namespace. Includes a root filesystem at "/".
