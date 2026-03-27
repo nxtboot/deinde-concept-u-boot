@@ -408,8 +408,57 @@ static int vfs_resolve_mount(const char *path, char *resolved, int size,
 	return vfs_find_mount(vfs, path, mntp, subpathp);
 }
 
-int vfs_resolve(struct udevice *vfs, const char *path,
-		struct udevice **dirp)
+/**
+ * vfs_resolve_dir() - Resolve a path to its parent directory and leaf name
+ *
+ * Resolves the mount, splits the subpath into directory and leaf, and
+ * looks up the directory device.
+ *
+ * @path: Absolute or relative VFS path
+ * @dirp: Returns the UCLASS_DIR device for the parent directory
+ * @leafp: Returns allocated copy of the leaf filename (caller must free)
+ * Return: 0 if OK, -ve on error
+ */
+static int vfs_resolve_dir(const char *path, struct udevice **dirp,
+			   char **leafp)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *mnt;
+	struct vfsmount *mnt_priv;
+	const char *subpath, *dirpart, *leaf;
+	char *sub;
+	int ret;
+
+	ret = vfs_resolve_mount(path, resolved, sizeof(resolved),
+				&mnt, &subpath);
+	if (ret)
+		return log_msg_ret("vdm", ret);
+
+	if (!mnt)
+		return log_msg_ret("vdr", -ENOENT);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	/*
+	 * Split in place - subpath points into resolved[], so we can
+	 * modify it. After the split, dirpart is the directory portion
+	 * and leaf points to the leaf filename.
+	 */
+	sub = (char *)subpath;
+	fs_split_path_inplace(sub, &dirpart, &leaf);
+
+	ret = fs_lookup_dir(mnt_priv->target, dirpart, dirp);
+	if (ret)
+		return log_msg_ret("vdd", ret);
+
+	*leafp = strdup(leaf);
+	if (!*leafp)
+		return log_msg_ret("vdl", -ENOMEM);
+
+	return 0;
+}
+
+int vfs_resolve(struct udevice *vfs, const char *path, struct udevice **dirp)
 {
 	struct udevice *cur_fs, *best;
 	const char *remain;
@@ -501,34 +550,18 @@ void vfs_print_mounts(void)
 int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
 		  struct udevice **filp)
 {
-	struct udevice *vfs, *mnt, *dir;
-	const char *subpath, *leaf;
-	struct vfsmount *mnt_priv;
-	char *dirpath;
+	struct udevice *dir;
+	char *leaf;
 	int ret;
 
-	vfs = vfs_root();
-	if (!vfs)
-		return log_msg_ret("voi", -ENXIO);
-
-	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
-	if (ret)
-		return log_msg_ret("vom", ret);
-
-	mnt_priv = dev_get_uclass_priv(mnt);
-
-	ret = fs_split_path(subpath, &dirpath, &leaf);
-	if (ret)
-		return log_msg_ret("vos", ret);
-
-	ret = fs_lookup_dir(mnt_priv->target, dirpath, &dir);
-	free(dirpath);
-	if (ret)
-		return log_msg_ret("vod", ret);
-
-	ret = dir_open_file(dir, leaf, oflags, filp);
+	ret = vfs_resolve_dir(path, &dir, &leaf);
 	if (ret)
 		return log_msg_ret("vof", ret);
+
+	ret = dir_open_file(dir, leaf, oflags, filp);
+	free(leaf);
+	if (ret)
+		return log_msg_ret("voo", ret);
 
 	return 0;
 }

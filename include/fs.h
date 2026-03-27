@@ -122,4 +122,18 @@ int fs_lookup_dir(struct udevice *dev, const char *path, struct udevice **dirp);
  */
 int fs_split_path(const char *fname, char **subdirp, const char **leafp);
 
+/**
+ * fs_split_path_inplace() - Split a path into directory and leaf in place
+ *
+ * Modifies @fname by null-terminating at the last '/'. Sets @dirp to
+ * point to the directory part and @leafp to the leaf. If there is no
+ * '/', @dirp is set to "" and @leafp points to @fname unchanged.
+ *
+ * @fname: Path to split (modified in place when it contains '/')
+ * @dirp: Returns pointer to the directory part
+ * @leafp: Returns pointer to the leaf filename
+ */
+void fs_split_path_inplace(char *fname, const char **dirp,
+			   const char **leafp);
+
 #endif

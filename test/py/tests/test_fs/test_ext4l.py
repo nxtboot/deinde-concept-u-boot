@@ -15,7 +15,8 @@ from tempfile import NamedTemporaryFile
 import pytest
 
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.buildconfigspec('fs_ext4l')
 class TestExt4l:
     """Test ext4l filesystem operations."""
 
@@ -79,6 +80,7 @@ class TestExt4l:
         with ubman.log.section('Test ext4l msgs'):
             ubman.run_ut('fs', 'fs_test_ext4l_msgs', fs_image=ext4_image)
 
+    @pytest.mark.boardspec('!sandbox')
     def test_ls(self, ubman, ext4_image):
         """Test that ext4l can list directory contents."""
         with ubman.log.section('Test ext4l ls'):
@@ -114,6 +116,7 @@ class TestExt4l:
         with ubman.log.section('Test ext4l statfs'):
             ubman.run_ut('fs', 'fs_test_ext4l_statfs', fs_image=ext4_image)
 
+    @pytest.mark.boardspec('!sandbox')
     def test_fsinfo(self, ubman, ext4_image):
         """Test that fsinfo command displays filesystem statistics."""
         with ubman.log.section('Test ext4l fsinfo'):

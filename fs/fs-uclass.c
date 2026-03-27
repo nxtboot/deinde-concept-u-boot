@@ -46,6 +46,21 @@ int fs_split_path(const char *fname, char **subdirp, const char **leafp)
 	return 0;
 }
 
+void fs_split_path_inplace(char *fname, const char **dirp, const char **leafp)
+{
+	char *last_slash;
+
+	last_slash = strrchr(fname, '/');
+	if (last_slash) {
+		*leafp = last_slash + 1;
+		*last_slash = '\0';
+		*dirp = fname;
+	} else {
+		*leafp = fname;
+		*dirp = "";
+	}
+}
+
 int fs_lookup_dir(struct udevice *dev, const char *path, struct udevice **dirp)
 {
 	struct fs_ops *ops = fs_get_ops(dev);
