@@ -25,6 +25,7 @@ ALIASES = {
     'series': ['s', 'ser'],
     'status': ['st'],
     'patchwork': ['pw'],
+    'review': ['r', 'rev'],
     'upstream': ['us'],
     'workflow': ['wf'],
 
@@ -521,6 +522,46 @@ def add_workflow_subparser(subparsers):
     return workflow
 
 
+def add_review_subparser(subparsers):
+    """Add the 'review' subparser
+
+    Args:
+        subparsers (argparse action): Subparser parent
+
+    Return:
+        ArgumentParser: review subparser
+    """
+    review = subparsers.add_parser(
+        'review', aliases=ALIASES['review'],
+        help='AI-powered review of a patchwork series')
+    review.add_argument(
+        '-l', '--link', type=str, dest='pw_link',
+        help='Patchwork series link/ID number')
+    review.add_argument(
+        '-t', '--title', type=str,
+        help='Search for series by cover-letter title')
+    review.add_argument(
+        '-n', '--dry-run', action='store_true', dest='dry_run',
+        default=False,
+        help='Show what would be done without creating drafts')
+    review.add_argument(
+        '--create-drafts', action='store_true',
+        help='Create Gmail draft emails for each review')
+    review.add_argument(
+        '--no-cover', action='store_true',
+        help='Skip reviewing the cover letter')
+    review.add_argument(
+        '--reviewer', type=str, default=None,
+        help="Override reviewer identity (format: 'Name <email>')")
+    review.add_argument(
+        '-U', '--upstream', type=str, default=None,
+        help='Upstream name (for patchwork URL lookup)')
+    review.add_argument(
+        '--apply-only', action='store_true',
+        help='Only download and apply patches, skip AI review')
+    return review
+
+
 def setup_parser():
     """Set up command-line parser
 
@@ -560,6 +601,7 @@ def setup_parser():
     subparsers = parser.add_subparsers(dest='cmd')
     add_send_subparser(subparsers)
     patchwork = add_patchwork_subparser(subparsers)
+    review = add_review_subparser(subparsers)
     series = add_series_subparser(subparsers)
     add_status_subparser(subparsers)
     upstream = add_upstream_subparser(subparsers)
@@ -573,6 +615,7 @@ def setup_parser():
 
     parsers = {
         'main': parser,
+        'review': review,
         'series': series,
         'patchwork': patchwork,
         'upstream': upstream,

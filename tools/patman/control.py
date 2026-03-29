@@ -19,6 +19,7 @@ except ImportError:
 
 from patman import cseries
 from patman import patchstream
+from patman import review as review_mod
 from patman import send
 from patman import settings
 from patman import status
@@ -396,6 +397,37 @@ def do_workflow(args, test_db=None):
         cser.close_database()
 
 
+def do_review(args, test_db=None, pwork=None, cser=None):
+    """Process the 'review' command
+
+    Sets up patchwork and cseries, then delegates to
+    review.do_review().
+
+    Args:
+        args (Namespace): Arguments to process
+        test_db (str or None): Directory containing the test
+            database, None to use the normal one
+        pwork (Patchwork): Patchwork object to use, or None to
+            create one
+        cser (Cseries): Cseries object to use, or None to create
+            one
+    """
+    if not cser:
+        cser = cseries.Cseries(test_db)
+    try:
+        cser.open_database()
+
+        ups = args.upstream
+        if not ups:
+            ups = cser.db.upstream_get_default()
+        pwork = _setup_patchwork(
+            cser, pwork, ups, args.patchwork_url)
+
+        return review_mod.do_review(args, pwork, cser)
+    finally:
+        cser.close_database()
+
+
 # pylint: disable=R0912
 def do_patman(args, test_db=None, pwork=None, cser=None):
     """Process a patman command
@@ -445,6 +477,8 @@ def do_patman(args, test_db=None, pwork=None, cser=None):
             upstream(args, test_db)
         elif args.cmd == 'patchwork':
             patchwork(args, test_db, pwork)
+        elif args.cmd == 'review':
+            do_review(args, test_db, pwork, cser)
         elif args.cmd == 'workflow':
             do_workflow(args, test_db)
     except Exception as exc:  # pylint: disable=W0718
