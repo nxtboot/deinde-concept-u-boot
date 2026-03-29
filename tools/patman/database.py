@@ -2,6 +2,7 @@
 #
 # Copyright 2025 Simon Glass <sjg@chromium.org>
 #
+# pylint: disable=C0302
 """Handles the patman database
 
 This uses sqlite3 with a local file.
@@ -19,7 +20,12 @@ from u_boot_pylib import tout
 from patman.series import Series
 
 # Schema version (version 0 means there is no database yet)
-LATEST = 7
+LATEST = 8
+
+# Information about a review record
+Review = namedtuple(
+    'REVIEW',
+    'idnum,svid,seq,body,approved,timestamp')
 
 # Information about a series/version record
 SerVer = namedtuple(
@@ -223,6 +229,20 @@ class Database:  # pylint:disable=R0904
         self.cur.execute(
             'ALTER TABLE workflow ADD COLUMN ser_ver_id INTEGER')
 
+    def _migrate_to_v8(self):
+        """Add review tracking and series source type
+
+        - Add source column to series table (NULL for user's own series,
+          'review' for series being reviewed)
+        - Add review table for storing AI review results per patch
+        """
+        self.cur.execute('ALTER TABLE series ADD COLUMN source')
+        self.cur.execute(
+            'CREATE TABLE review (id INTEGER PRIMARY KEY AUTOINCREMENT,'
+            'svid INTEGER, seq INTEGER, body TEXT, approved BIT, '
+            'timestamp TEXT, '
+            'FOREIGN KEY (svid) REFERENCES ser_ver (id))')
+
     def migrate_to(self, dest_version):
         """Migrate the database to the selected version
 
@@ -255,6 +275,8 @@ class Database:  # pylint:disable=R0904
                 self._migrate_to_v6()
             elif version == 7:
                 self._migrate_to_v7()
+            elif version == 8:
+                self._migrate_to_v8()
 
             # Save the new version if we have a schema_version table
             if version > 1:
@@ -842,6 +864,7 @@ class Database:  # pylint:disable=R0904
 
     # upstream functions
 
+    # pylint: disable=R0913
     def upstream_add(self, name, url, patchwork_url=None, identity=None,
                      series_to=None, no_maintainers=False, no_tags=False):
         """Add a new upstream record
@@ -1200,3 +1223,99 @@ class Database:  # pylint:disable=R0904
         query += ' ORDER BY w.timestamp'
         res = self.execute(query)
         return res.fetchall()
+
+    # pylint: disable=R0913
+    def review_add(self, svid, seq, body, approved, timestamp):
+        """Add a review record
+
+        Args:
+            svid (int): ser_ver ID num
+            seq (int): Patch sequence (0 for cover, 1..N for patches)
+            body (str): Review email body text
+            approved (bool): True if Reviewed-by was given
+            timestamp (str): ISO datetime string
+
+        Return:
+            int: ID num of the new review record
+        """
+        self.execute(
+            'INSERT INTO review (svid, seq, body, approved, timestamp) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (svid, seq, body, 1 if approved else 0, timestamp))
+        return self.lastrowid()
+
+    def review_get_for_version(self, svid):
+        """Get review records for a given series version
+
+        Args:
+            svid (int): ser_ver ID num
+
+        Return:
+            list of Review: Review records ordered by sequence
+        """
+        res = self.execute(
+            'SELECT id, svid, seq, body, approved, timestamp '
+            'FROM review WHERE svid = ? ORDER BY seq', (svid,))
+        return [Review(*row) for row in res.fetchall()]
+
+    def review_get_previous(self, series_id, version):
+        """Get reviews from the previous version of a series
+
+        Looks up the ser_ver for version-1 and returns its reviews, so
+        they can be provided as context when reviewing a new version.
+
+        Args:
+            series_id (int): Series ID
+            version (int): Current version being reviewed
+
+        Return:
+            list of Review: Reviews from version-1, or empty list
+        """
+        prev_version = version - 1
+        if prev_version < 1:
+            return []
+        res = self.execute(
+            'SELECT sv.id FROM ser_ver sv '
+            'WHERE sv.series_id = ? AND sv.version = ?',
+            (series_id, prev_version))
+        row = res.fetchone()
+        if not row:
+            return []
+        return self.review_get_for_version(row[0])
+
+    def series_find_by_link(self, link):
+        """Find a series by its patchwork link
+
+        Args:
+            link (str): Patchwork series link/ID
+
+        Return:
+            tuple or None: (series_id, name, version, svid) if found
+        """
+        res = self.execute(
+            'SELECT s.id, s.name, sv.version, sv.id '
+            'FROM ser_ver sv '
+            'JOIN series s ON sv.series_id = s.id '
+            'WHERE sv.link = ?', (str(link),))
+        return res.fetchone()
+
+    def series_find_review_by_name(self, name):
+        """Find a review series by its name
+
+        Looks for series with source='review' matching the given name,
+        so that new versions of a previously reviewed series can be
+        added under the same series record.
+
+        Args:
+            name (str): Series name to search for
+
+        Return:
+            tuple or None: (series_id, name, max_version) if found
+        """
+        res = self.execute(
+            'SELECT s.id, s.name, MAX(sv.version) '
+            'FROM series s '
+            'JOIN ser_ver sv ON sv.series_id = s.id '
+            "WHERE s.source = 'review' AND s.name = ? "
+            'GROUP BY s.id', (name,))
+        return res.fetchone()
