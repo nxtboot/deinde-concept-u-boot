@@ -2667,6 +2667,38 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         self.assertEqual(('Linux', 10, 'linux'), cser.db.patchwork_get('ci'))
         self.assertEqual(('U-Boot', 6, 'uboot'), cser.db.patchwork_get('us'))
 
+    def test_patchwork_rm(self):
+        """Test deleting a patchwork project configuration"""
+        cser = self.get_cser()
+
+        cser.db.upstream_add('us', 'https://us.example.com')
+        cser.db.upstream_add('ci', 'https://ci.example.com')
+        cser.db.patchwork_update('U-Boot', 6, 'uboot', 'us')
+        cser.db.patchwork_update('Linux', 10, 'linux', 'ci')
+        cser.db.commit()
+
+        # Delete by upstream name
+        cser.db.patchwork_delete('us')
+        cser.db.commit()
+        self.assertIsNone(cser.db.patchwork_get('us'))
+        self.assertEqual(('Linux', 10, 'linux'), cser.db.patchwork_get('ci'))
+
+        # Delete non-existent raises ValueError
+        with self.assertRaises(ValueError):
+            cser.db.patchwork_delete('us')
+
+    def test_patchwork_rm_default(self):
+        """Test deleting the default (no upstream) patchwork project"""
+        cser = self.get_cser()
+
+        cser.db.patchwork_update('U-Boot', 6, 'uboot')
+        cser.db.commit()
+        self.assertIsNotNone(cser.db.patchwork_get())
+
+        cser.db.patchwork_delete(None)
+        cser.db.commit()
+        self.assertIsNone(cser.db.patchwork_get())
+
     def test_migrate_patchwork_upstream(self):
         """Test that migrating to v5 renames settings to patchwork"""
         db = database.Database(f'{self.tmpdir}/.patman3.db')

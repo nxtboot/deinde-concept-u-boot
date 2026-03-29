@@ -1041,6 +1041,26 @@ class Database:  # pylint:disable=R0904
             'INSERT INTO patchwork (name, proj_id, link_name, upstream) '
             'VALUES (?, ?, ?, ?)', (name, proj_id, link_name, ups))
 
+    def patchwork_delete(self, ups):
+        """Delete a patchwork project configuration
+
+        Args:
+            ups (str or None): Upstream name to delete, or None for the
+                entry with no upstream
+
+        Raises:
+            ValueError: if no matching entry exists
+        """
+        if ups is not None:
+            self.execute(
+                'DELETE FROM patchwork WHERE upstream = ?', (ups,))
+        else:
+            self.execute(
+                'DELETE FROM patchwork WHERE upstream IS NULL')
+        if not self.rowcount():
+            raise ValueError(
+                f"No patchwork project found for upstream '{ups}'")
+
     def patchwork_get_list(self):
         """Get all patchwork project configurations
 

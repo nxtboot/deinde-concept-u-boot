@@ -367,6 +367,11 @@ def patchwork(args, test_db=None, pwork=None):
             if ups:
                 msg += f" remote '{ups}'"
             print(msg)
+        elif args.subcmd == 'rm':
+            cser.db.patchwork_delete(args.remote)
+            cser.commit()
+            ups_str = f" for upstream '{args.remote}'" if args.remote else ''
+            tout.info(f'Deleted patchwork project{ups_str}')
         elif args.subcmd == 'ls':
             cser.project_list()
         else:

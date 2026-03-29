@@ -173,6 +173,10 @@ def add_patchwork_subparser(subparsers):
     uset.add_argument(
         'remote', nargs='?',
         help='Remote to associate with this project')
+    pdel = patchwork_subparsers.add_parser('rm')
+    pdel.add_argument(
+        'remote', nargs='?',
+        help='Remote to delete the project for, or omit for the default')
     patchwork_subparsers.add_parser('ls', aliases=['list'])
     return patchwork
 
