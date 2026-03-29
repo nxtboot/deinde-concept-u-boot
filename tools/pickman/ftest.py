@@ -3121,7 +3121,8 @@ class TestRunAgentCollect(unittest.TestCase):
         async def fake_query(**kwargs):
             yield msg
 
-        with mock.patch.object(agent, 'query', fake_query, create=True):
+        with mock.patch('u_boot_pylib.claude.query', fake_query,
+                        create=True):
             with terminal.capture():
                 opts = mock.MagicMock()
                 success, log = asyncio.run(
@@ -3141,7 +3142,8 @@ class TestRunAgentCollect(unittest.TestCase):
             yield msg
             raise RuntimeError('agent crashed')
 
-        with mock.patch.object(agent, 'query', fake_query, create=True):
+        with mock.patch('u_boot_pylib.claude.query', fake_query,
+                        create=True):
             with terminal.capture():
                 opts = mock.MagicMock()
                 success, log = asyncio.run(
@@ -3157,7 +3159,8 @@ class TestRunAgentCollect(unittest.TestCase):
         async def fake_query(**kwargs):
             yield msg
 
-        with mock.patch.object(agent, 'query', fake_query, create=True):
+        with mock.patch('u_boot_pylib.claude.query', fake_query,
+                        create=True):
             with terminal.capture():
                 opts = mock.MagicMock()
                 success, log = asyncio.run(
@@ -6610,14 +6613,14 @@ class TestResolveSubtreeConflicts(unittest.TestCase):
         """Test successful conflict resolution."""
         mock_collect = mock.AsyncMock(return_value=(True, 'resolved'))
         with terminal.capture():
-            with mock.patch.object(agent, 'AGENT_AVAILABLE', True):
-                with mock.patch.object(agent, 'run_agent_collect',
-                                       mock_collect):
-                    with mock.patch.object(agent, 'ClaudeAgentOptions',
-                                           create=True):
-                        success, log = agent.resolve_subtree_conflicts(
-                            'dts', 'v6.15-dts', 'dts/upstream',
-                            '/tmp/test')
+            with mock.patch('u_boot_pylib.claude.AGENT_AVAILABLE', True), \
+                 mock.patch.object(agent, 'run_agent_collect',
+                                   mock_collect), \
+                 mock.patch.object(agent, 'ClaudeAgentOptions',
+                                   create=True):
+                success, log = agent.resolve_subtree_conflicts(
+                    'dts', 'v6.15-dts', 'dts/upstream',
+                    '/tmp/test')
         self.assertTrue(success)
         self.assertEqual(log, 'resolved')
 
@@ -6625,20 +6628,20 @@ class TestResolveSubtreeConflicts(unittest.TestCase):
         """Test failed conflict resolution."""
         mock_collect = mock.AsyncMock(return_value=(False, 'failed'))
         with terminal.capture():
-            with mock.patch.object(agent, 'AGENT_AVAILABLE', True):
-                with mock.patch.object(agent, 'run_agent_collect',
-                                       mock_collect):
-                    with mock.patch.object(agent, 'ClaudeAgentOptions',
-                                           create=True):
-                        success, log = agent.resolve_subtree_conflicts(
-                            'dts', 'v6.15-dts', 'dts/upstream',
-                            '/tmp/test')
+            with mock.patch('u_boot_pylib.claude.AGENT_AVAILABLE', True), \
+                 mock.patch.object(agent, 'run_agent_collect',
+                                   mock_collect), \
+                 mock.patch.object(agent, 'ClaudeAgentOptions',
+                                   create=True):
+                success, log = agent.resolve_subtree_conflicts(
+                    'dts', 'v6.15-dts', 'dts/upstream',
+                    '/tmp/test')
         self.assertFalse(success)
 
     def test_sdk_unavailable(self):
         """Test returns failure when SDK is not available."""
         with terminal.capture():
-            with mock.patch.object(agent, 'AGENT_AVAILABLE', False):
+            with mock.patch('u_boot_pylib.claude.AGENT_AVAILABLE', False):
                 success, log = agent.resolve_subtree_conflicts(
                     'dts', 'v6.15-dts', 'dts/upstream', '/tmp/test')
         self.assertFalse(success)

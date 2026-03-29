@@ -28,12 +28,14 @@ def run_tests():
                         help='Verbose output')
     args = parser.parse_args()
 
+    from u_boot_pylib import test_claude
+
     to_run = args.testname if args.testname not in [None, 'test'] else None
     result = test_util.run_test_suites(
         'u_boot_pylib', False, args.verbose, False,
         False, None, to_run, None,
         ['u_boot_pylib.terminal', 'u_boot_pylib.gitutil',
-         cros_subprocess.TestSubprocess])
+         cros_subprocess.TestSubprocess, test_claude.TestClaude])
 
     sys.exit(0 if result.wasSuccessful() else 1)
 

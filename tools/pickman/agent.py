@@ -27,8 +27,14 @@ SIGNAL_SUCCESS = 'success'
 SIGNAL_APPLIED = 'already_applied'
 SIGNAL_CONFLICT = 'conflict'
 
-# Maximum buffer size for agent responses
-MAX_BUFFER_SIZE = 10 * 1024 * 1024  # 10MB
+# Import common Claude agent utilities from shared module
+from u_boot_pylib.claude import (
+    AGENT_AVAILABLE, MAX_BUFFER_SIZE, check_available, run_agent_collect,
+)
+
+ClaudeAgentOptions = None
+if AGENT_AVAILABLE:
+    from u_boot_pylib.claude import ClaudeAgentOptions  # pylint: disable=C0412
 
 # Commits that need special handling (regenerate instead of cherry-pick)
 # These run savedefconfig on all boards and depend on target branch
@@ -36,54 +42,6 @@ MAX_BUFFER_SIZE = 10 * 1024 * 1024  # 10MB
 QCONFIG_SUBJECTS = [
     'configs: Resync with savedefconfig',
 ]
-
-# Check if claude_agent_sdk is available
-try:
-    from claude_agent_sdk import query, ClaudeAgentOptions
-    AGENT_AVAILABLE = True
-except ImportError:
-    AGENT_AVAILABLE = False
-
-
-def check_available():
-    """Check if the Claude Agent SDK is available
-
-    Returns:
-        bool: True if available, False otherwise
-    """
-    if not AGENT_AVAILABLE:
-        tout.error('Claude Agent SDK not available')
-        tout.error('Install with: pip install claude-agent-sdk')
-        return False
-    return True
-
-
-async def run_agent_collect(prompt, options):
-    """Run a Claude agent and collect its conversation log
-
-    Sends the prompt to a Claude agent, streams output to stdout and
-    collects all text blocks into a conversation log.
-
-    Args:
-        prompt (str): The prompt to send to the agent
-        options (ClaudeAgentOptions): Agent configuration
-
-    Returns:
-        tuple: (success, conversation_log) where success is bool and
-            conversation_log is the agent's output text
-    """
-    conversation_log = []
-    try:
-        async for message in query(prompt=prompt, options=options):
-            if hasattr(message, 'content'):
-                for block in message.content:
-                    if hasattr(block, 'text'):
-                        print(block.text)
-                        conversation_log.append(block.text)
-        return True, '\n\n'.join(conversation_log)
-    except (RuntimeError, ValueError, OSError) as exc:
-        tout.error(f'Agent failed: {exc}')
-        return False, '\n\n'.join(conversation_log)
 
 
 def is_qconfig_commit(subject):
