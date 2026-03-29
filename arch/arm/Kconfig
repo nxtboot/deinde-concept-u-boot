@@ -366,7 +366,8 @@ config CPU_V7A
 	select SYS_CACHE_SHIFT_6
 	imply SYS_ARM_MMU
 
-config CPU_V7M
+# ARMv7-M/ARMv8-M
+config CPU_V7M_V8M
 	bool
 	select HAS_THUMB2
 	select SYS_ARM_MPU
@@ -375,12 +376,20 @@ config CPU_V7M
 	select THUMB2_KERNEL
 	select NVIC
 
+config CPU_V7M
+	bool
+	select CPU_V7M_V8M
+
 config CPU_V7R
 	bool
 	select HAS_THUMB2
 	select SYS_ARM_CACHE_CP15
 	select SYS_ARM_MPU
 	select SYS_CACHE_SHIFT_6
+
+config CPU_V8M
+	bool
+	select CPU_V7M_V8M
 
 config SYS_CPU
 	default "arm720t" if CPU_ARM720T
@@ -392,6 +401,7 @@ config SYS_CPU
 	default "armv7" if CPU_V7A
 	default "armv7" if CPU_V7R
 	default "armv7m" if CPU_V7M
+	default "armv7m" if CPU_V8M
 	default "armv8" if ARM64
 
 config SYS_ARM_ARCH
@@ -405,6 +415,7 @@ config SYS_ARM_ARCH
 	default 7 if CPU_V7A
 	default 7 if CPU_V7M
 	default 7 if CPU_V7R
+	default 7 if CPU_V8M
 	default 8 if ARM64
 
 choice
@@ -448,7 +459,7 @@ config ARCH_CPU_INIT
 
 config SYS_ARCH_TIMER
 	bool "ARM Generic Timer support"
-	depends on CPU_V7A || CPU_V7M || ARM64
+	depends on CPU_V7A || CPU_V7M_V8M || ARM64
 	default y if ARM64
 	help
 	  The ARM Generic Timer (aka arch-timer) provides an architected
