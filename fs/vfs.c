@@ -19,6 +19,7 @@
 #include <fs.h>
 #include <fs_common.h>
 #include <malloc.h>
+#include <part.h>
 #include <vfs.h>
 #include "vfs_internal.h"
 #include <dm/device-internal.h>
@@ -566,6 +567,40 @@ int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
 	return 0;
 }
 
+int vfs_stat(const char *path, struct fs_dirent *dent)
+{
+	struct fs_dir_stream *strm;
+	struct fs_dirent entry;
+	struct udevice *dir;
+	char *leaf;
+	int ret;
+
+	ret = vfs_resolve_dir(path, &dir, &leaf);
+	if (ret)
+		return log_msg_ret("vsd", ret);
+
+	/* Scan the directory for the matching entry */
+	ret = dir_open(dir, &strm);
+	if (ret) {
+		free(leaf);
+		return log_msg_ret("vso", ret);
+	}
+
+	while (!(ret = dir_read(dir, strm, &entry))) {
+		if (!strcmp(entry.name, leaf)) {
+			*dent = entry;
+			dir_close(dir, strm);
+			free(leaf);
+			return 0;
+		}
+	}
+
+	dir_close(dir, strm);
+	free(leaf);
+
+	return log_msg_ret("vsn", -ENOENT);
+}
+
 int vfs_ls(const char *path)
 {
 	char resolved[FILE_MAX_PATH_LEN];
@@ -607,6 +642,111 @@ int vfs_ls(const char *path)
 	}
 
 	dir_close(dir, strm);
+
+	return 0;
+}
+
+int fs_mount_blkdev_auto(struct blk_desc *desc, int part_num,
+			 struct disk_partition *part, const char *mountpoint)
+{
+	struct driver *drv = ll_entry_start(struct driver, driver);
+	const int n_ents = ll_entry_count(struct driver, driver);
+	int i;
+
+	for (i = 0; i < n_ents; i++, drv++) {
+		const char *name = drv->name;
+		int len = strlen(name);
+		char type[30];
+		int ret;
+
+		if (drv->id != UCLASS_FS)
+			continue;
+
+		/* Strip "_fs" suffix to get the type name */
+		if (len < 4 || strcmp(name + len - 3, "_fs"))
+			continue;
+
+		strlcpy(type, name, min((int)sizeof(type), len - 2));
+
+		ret = fs_mount_blkdev(type, desc, part_num, part, mountpoint);
+		if (!ret)
+			return 0;
+		if (ret == -EBUSY)
+			return log_msg_ret("fmb", ret);
+	}
+
+	return -ENODEV;
+}
+
+int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
+		    struct disk_partition *part, const char *mountpoint)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	static int blkfs_count;
+	char drv_name[30], dev_name[30];
+	struct udevice *vfs, *mnt, *dir, *dev;
+	const char *subpath;
+	struct fs_plat *plat;
+	char *str;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("fmi", -ENXIO);
+
+	mountpoint = vfs_path_resolve(vfs_getcwd(), mountpoint,
+				      resolved, sizeof(resolved));
+	if (!mountpoint)
+		return log_msg_ret("fmp", -ENAMETOOLONG);
+
+	snprintf(drv_name, sizeof(drv_name), "%s_fs", type);
+	snprintf(dev_name, sizeof(dev_name), "%s.%d", drv_name, blkfs_count);
+
+	str = strdup(dev_name);
+	if (!str)
+		return -ENOMEM;
+
+	ret = device_bind_driver(dm_root(), drv_name, str, &dev);
+	if (ret) {
+		free(str);
+		return log_msg_ret("fmb", ret);
+	}
+	device_set_name_alloced(dev);
+
+	/* Set block device info in uclass platdata before probing */
+	plat = dev_get_uclass_plat(dev);
+	plat->desc = desc;
+	plat->part = *part;
+
+	ret = device_probe(dev);
+	if (ret) {
+		device_unbind(dev);
+		return log_msg_ret("fmp", ret);
+	}
+
+	/* Check if the mountpoint is already in use */
+	ret = vfs_find_mount(vfs, mountpoint, &mnt, &subpath);
+	if (!ret && mnt && !*subpath) {
+		device_remove(dev, DM_REMOVE_NORMAL);
+		device_unbind(dev);
+		return log_msg_ret("fme", -EBUSY);
+	}
+
+	ret = vfs_resolve(vfs, mountpoint, &dir);
+	if (ret) {
+		device_remove(dev, DM_REMOVE_NORMAL);
+		device_unbind(dev);
+		return log_msg_ret("fmr", ret);
+	}
+
+	ret = vfs_mount(vfs, dir, dev);
+	if (ret) {
+		device_remove(dev, DM_REMOVE_NORMAL);
+		device_unbind(dev);
+		return log_msg_ret("fmm", ret);
+	}
+
+	blkfs_count++;
 
 	return 0;
 }

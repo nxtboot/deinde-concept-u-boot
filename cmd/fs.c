@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * VFS-based filesystem commands - mount, umount, ls, load
+ * VFS-based filesystem commands - mount, umount, ls, load, size
  *
  * These replace the legacy commands in cmd/fs_legacy.c with versions that
  * use absolute paths through the virtual filesystem layer.
@@ -171,6 +171,33 @@ U_BOOT_CMD(
 	"    - List files at 'path' in the VFS (default cwd)"
 );
 
+static int do_size(struct cmd_tbl *cmdtp, int flag, int argc,
+		   char *const argv[])
+{
+	struct fs_dirent dent;
+	int ret;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	ret = vfs_stat(argv[1], &dent);
+	if (ret) {
+		printf("Error: %dE\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	env_set_hex("filesize", dent.size);
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(
+	size,	2,	0,	do_size,
+	"determine a file's size",
+	"<path>\n"
+	"    - Find file at 'path' in the VFS, determine its size,\n"
+	"      and store in the 'filesize' variable."
+);
 
 static int do_vfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
 		       char *const argv[])

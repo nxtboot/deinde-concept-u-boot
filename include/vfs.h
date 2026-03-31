@@ -13,6 +13,10 @@
 
 #include <dir.h>
 
+struct blk_desc;
+struct disk_partition;
+struct fs_dirent;
+struct fs_statfs;
 struct udevice;
 
 /**
@@ -181,5 +185,110 @@ int vfs_ls(const char *path);
  */
 int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
 		  struct udevice **filp);
+
+/**
+ * vfs_stat() - Get information about a file or directory
+ *
+ * Looks up the named entry in its parent directory and fills in a
+ * struct fs_dirent with type, size and timestamps. Handles both files
+ * and directories. Calls vfs_init() if needed.
+ *
+ * @path: Absolute or relative VFS path
+ * @dent: Returns the directory entry information
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_stat(const char *path, struct fs_dirent *dent);
+
+/**
+ * vfs_mkdir() - Create a directory by absolute or relative VFS path
+ *
+ * @path: Path of the directory to create
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_mkdir(const char *path);
+
+/**
+ * vfs_unlink() - Delete a file by absolute or relative VFS path
+ *
+ * @path: Path of the file to delete
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_unlink(const char *path);
+
+/**
+ * vfs_rename() - Rename or move a file or directory
+ *
+ * Both paths must be on the same mounted filesystem.
+ *
+ * @old_path: Current absolute or relative VFS path
+ * @new_path: New absolute or relative VFS path
+ * Return: 0 if OK, -EXDEV if paths are on different mounts, other -ve on error
+ */
+/**
+ * vfs_ln() - Create a symbolic link
+ *
+ * @path: Absolute or relative VFS path for the new symlink
+ * @target: Target path the symlink points to
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_ln(const char *path, const char *target);
+
+int vfs_rename(const char *old_path, const char *new_path);
+
+/**
+ * vfs_readlink() - Read a symbolic link target
+ *
+ * @path: Absolute or relative VFS path to the symlink
+ * @buf: Buffer to receive the target path
+ * @size: Size of buffer
+ * Return: length of target, or -ve on error
+ */
+int vfs_readlink(const char *path, char *buf, int size);
+
+/**
+ * vfs_statfs() - Get filesystem statistics for a mount point
+ *
+ * @path: Absolute or relative VFS path (any path within the mount)
+ * @stats: Returns filesystem statistics
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_statfs(const char *path, struct fs_statfs *stats);
+
+/**
+ * fs_mount_blkdev_auto() - Auto-detect and mount a filesystem from a block
+ *	device
+ *
+ * Tries each UCLASS_FS driver with a "_fs" suffix in turn until one
+ * succeeds.
+ *
+ * @desc: Block device descriptor
+ * @part: Partition information
+ * @mountpoint: Absolute path to mount at
+ * Return: 0 if OK, -ENODEV if no FS type matched, other -ve on error
+ */
+int fs_mount_blkdev_auto(struct blk_desc *desc, int part_num,
+			 struct disk_partition *part, const char *mountpoint);
+
+/**
+ * fs_mount_blkdev() - Create and mount a FS device from a block device
+ *
+ * Uses a naming convention to find the right driver: filesystem type "ext4"
+ * maps to driver "ext4_fs". The block device and partition info are stored
+ * in the generic struct fs_plat so that any block-backed FS driver can
+ * read them.
+ *
+ * @type: Filesystem type name (e.g. "ext4")
+ * @desc: Block device descriptor
+ * @part: Partition information
+ * @mountpoint: Absolute path to mount at
+ * Return: 0 if OK, -ve on error
+ */
+int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
+		    struct disk_partition *part, const char *mountpoint);
+
+/**
+ * vfs_print_mounts() - Print all current mounts
+ */
+void vfs_print_mounts(void);
 
 #endif
