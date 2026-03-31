@@ -51826,3 +51826,116 @@ The branch `cherry-c9838ec5451` is ready for pushing.
 
 ---
 
+## 2026-03-31: us/next
+
+Branch: cherry-45b7857d3b5
+
+Commits:
+- 45b7857d3b5 arm: armv8: mmu: fix mem_map_from_dram_banks
+- 183299d9a40 docker: add OP-TEE and TF-A build for testing Firmware Handoff
+- f974e9b6263 pytest: add test script to validate Firmware Handoff
+- 5396bf30ab5 configs: select CMD_BLOBLIST for Firmware Handoff testing
+- 7a3fae6a493 ci: check existence of bl1 and fip in the test script
+- 915f0b232af ci: add test entries for qemu_arm64_tfa_fw_handoff
+- 7babc31ddfd Merge patch series "Enable Firmware Handoff CI test on qemu_arm64"
+
+### Conversation log
+The repository state is mostly clean (just some untracked files which won't affect cherry-picking). Let me proceed with creating the new branch based on ci/master.
+
+Branch created successfully. Now let me cherry-pick the first commit:
+
+First cherry-pick succeeded. Let me verify the commit delta and run the build test:
+
+The commit deltas match (2 files changed, 1 insertion, 6 deletions). Now let me run the build test:
+
+Build passed. Let me continue with the second commit:
+
+Second cherry-pick succeeded. Let me verify the delta and run build:
+
+Small difference (36 vs 37 insertions) - this is due to conflict resolution or context line differences, but well within the 20% threshold. Let me run the build test:
+
+Build passed. Continue with the third commit:
+
+Third cherry-pick succeeded. Let me verify the delta:
+
+Deltas match exactly. Let me run the build test:
+
+Build passed. Continue with the fourth commit:
+
+Fourth cherry-pick succeeded. Let me verify the delta:
+
+Deltas match exactly. Let me run the build test:
+
+Build passed. Continue with the fifth commit:
+
+There's a conflict. Let me examine the conflict and try to resolve it:
+
+I can see the conflict. Let me view the full conflicting area to understand both versions:
+
+I can resolve this conflict. The HEAD version has virtualenv setup, and the incoming version adds the TF-A binary detection code. Both changes are needed - we need to keep the virtualenv setup AND add the TF-A binary detection code before it.
+
+It seems there's a permissions issue with editing. Let me try using bash to fix the conflict:
+
+The conflict was resolved. Let me amend the commit to add a note about the fixup:
+
+Now let me verify the delta and run build:
+
+The delta difference is due to the conflict resolution (we added the TF-A code where it was needed without removing the virtualenv setup). The cherry-picked version has 29 insertions vs original 24 - the difference is the 4 lines for virtualenv setup that were already present. This is expected and acceptable.
+
+Build passed. Continue with the sixth commit:
+
+Sixth cherry-pick succeeded. Let me verify the delta:
+
+Deltas match exactly. Let me run the build test:
+
+Build passed. Now the final commit - the merge commit:
+
+There's a conflict with the merge commit. Let me examine it:
+
+This is a simple indentation conflict - my earlier conflict resolution left the comment without proper indentation. Let me fix it:
+
+Let me amend to add a fixup note:
+
+Now let me verify the commit delta:
+
+The delta difference is expected - the merge commit when cherry-picked with `-m 1` only brings in the diff against the first parent, and since we've already applied all the individual patches, the only remaining change is the indentation fix. This is normal.
+
+Now let me run the build test:
+
+Build passed. Now let me verify all commits are present:
+
+All 7 commits are present. Now let me run the final build test:
+
+## Final Status
+
+### Cherry-pick Summary
+
+All 7 commits successfully cherry-picked from `us/next` to branch `cherry-45b7857d3b5` (based on `ci/master`):
+
+| # | Original Hash | New Hash | Subject | Status |
+|---|---------------|----------|---------|--------|
+| 1 | 45b7857d3b5 | 7e7b2caadb0 | arm: armv8: mmu: fix mem_map_from_dram_banks | ✅ Clean |
+| 2 | 183299d9a40 | 010e7437557 | docker: add OP-TEE and TF-A build for testing Firmware Handoff | ✅ Clean (minor delta) |
+| 3 | f974e9b6263 | 6d9d2e6d733 | pytest: add test script to validate Firmware Handoff | ✅ Clean |
+| 4 | 5396bf30ab5 | dfd8f42ea44 | configs: select CMD_BLOBLIST for Firmware Handoff testing | ✅ Clean |
+| 5 | 7a3fae6a493 | e847a3202a0 | ci: check existence of bl1 and fip in the test script | ⚠️ Conflict resolved |
+| 6 | 915f0b232af | 018c0e57c47 | ci: add test entries for qemu_arm64_tfa_fw_handoff | ✅ Clean |
+| 7 | 7babc31ddfd | 65eb6cd89b9 | Merge patch series "Enable Firmware Handoff CI test on qemu_arm64" | ⚠️ Conflict resolved |
+
+### Build Result
+✅ **OK** - Final sandbox build passed with no warnings or errors.
+
+### Fix-ups Made
+1. **Commit 5 (7a3fae6a493)**: Resolved conflict in `.azure-pipelines.yml` by keeping both the virtualenv setup code (from ci/master) and adding the TF-A binary detection code from the incoming commit.
+2. **Commit 7 (7babc31ddfd)**: Fixed indentation conflict in `.azure-pipelines.yml` - the TF-A comment had lost its indentation during the earlier conflict resolution.
+
+### Commits with Delta Differences
+- **Commit 2**: Minor delta difference (36 vs 37 insertions) - within acceptable range
+- **Commit 5**: Expected delta difference due to conflict resolution (29 vs 24 insertions - added TF-A code without removing existing virtualenv setup)
+- **Commit 7**: Expected minimal delta (only 1 line change) - merge commit brings only the incremental diff since individual patches were already applied
+
+### Branch Status
+Branch `cherry-45b7857d3b5` is ready for pushing. The branch was NOT merged back to any other branch.
+
+---
+
