@@ -12,27 +12,34 @@
 #include <dir.h>
 #include <dm.h>
 #include <fs.h>
+#include <malloc.h>
 #include <dm/device-internal.h>
 
 int fs_split_path(const char *fname, char **subdirp, const char **leafp)
 {
-	char *subdir, *p;
+	const char *last_slash;
+	char *subdir;
 
 	if (!*fname)
 		return log_msg_ret("fsp", -EINVAL);
 
-	/* allocate space for the whole filename, for simplicity */
-	subdir = strdup(fname);
-	if (!subdir)
-		return log_msg_ret("fsp", -ENOMEM);
+	last_slash = strrchr(fname, '/');
+	if (last_slash) {
+		int dir_len = last_slash - fname;
 
-	p = strrchr(subdir, '/');
-	if (p) {
-		*leafp = p + 1;
-		*p = '\0';
+		if (!dir_len)
+			dir_len = 1;	/* root "/" */
+		subdir = malloc(dir_len + 1);
+		if (!subdir)
+			return log_msg_ret("fsp", -ENOMEM);
+		memcpy(subdir, fname, dir_len);
+		subdir[dir_len] = '\0';
+		*leafp = last_slash + 1;
 	} else {
+		subdir = strdup("");
+		if (!subdir)
+			return log_msg_ret("fsp", -ENOMEM);
 		*leafp = fname;
-		strcpy(subdir, "/");
 	}
 	*subdirp = subdir;
 
