@@ -11,6 +11,7 @@
 
 #define LOG_CATEGORY	UCLASS_MOUNT
 
+#include <blk.h>
 #include <dir.h>
 #include <dm.h>
 #include <event.h>
@@ -29,6 +30,139 @@
 	for (uclass_first_device(UCLASS_MOUNT, &(pos)); \
 	     (pos) && ((mnt) = dev_get_uclass_priv(pos)); \
 	     uclass_next_device(&(pos)))
+
+/**
+ * canonicalise_path() - Remove . and .. components from an absolute path
+ *
+ * Modifies @buf in place. The path must start with '/'.
+ *
+ * @buf: Absolute path to canonicalise (modified in place)
+ */
+static int canonicalise_path(char *buf)
+{
+	char *p, *token;
+	char *stack[64];
+	int depth = 0;
+
+	/* Tokenise by '/' and resolve . and .. */
+	p = buf + 1;	/* skip leading '/' */
+	while (*p) {
+		token = p;
+		while (*p && *p != '/')
+			p++;
+		if (*p)
+			*p++ = '\0';
+
+		if (!*token || !strcmp(token, ".")) {
+			continue;
+		} else if (!strcmp(token, "..")) {
+			if (depth > 0)
+				depth--;
+		} else {
+			if (depth >= ARRAY_SIZE(stack))
+				return -ENAMETOOLONG;
+			stack[depth++] = token;
+		}
+	}
+
+	/*
+	 * Rebuild the path from the stack. This always fits in buf since
+	 * removing . and .. components can only shorten the path.
+	 */
+	p = buf;
+	*p++ = '/';
+	for (int i = 0; i < depth; i++) {
+		if (i > 0)
+			*p++ = '/';
+		strcpy(p, stack[i]);
+		p += strlen(stack[i]);
+	}
+	*p = '\0';
+
+	/* Ensure root is "/" not "" */
+	if (!buf[1])
+		buf[0] = '/';
+
+	return 0;
+}
+
+const char *vfs_path_resolve(const char *cwd, const char *path, char *buf,
+			     int size)
+{
+	if (!path || !*path) {
+		strncpy(buf, cwd, size);
+		buf[size - 1] = '\0';
+		return buf;
+	}
+
+	if (*path == '/') {
+		strncpy(buf, path, size);
+		buf[size - 1] = '\0';
+	} else {
+		int len = strlen(cwd);
+
+		if (len == 1)
+			snprintf(buf, size, "/%s", path);
+		else
+			snprintf(buf, size, "%s/%s", cwd, path);
+	}
+
+	if (canonicalise_path(buf))
+		return NULL;
+
+	return buf;
+}
+
+const char *vfs_getcwd(void)
+{
+	struct udevice *vfs = vfs_root();
+	struct vfs_priv *priv;
+
+	if (!vfs)
+		return "/";
+	priv = dev_get_priv(vfs);
+
+	return priv->cwd;
+}
+
+int vfs_chdir(const char *path)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *vfs, *mnt;
+	const char *subpath, *abs;
+	struct vfs_priv *priv;
+	int len, ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("vci", -ENXIO);
+	priv = dev_get_priv(vfs);
+
+	abs = vfs_path_resolve(vfs_getcwd(), path, resolved, sizeof(resolved));
+	if (!abs)
+		return log_msg_ret("vcp", -ENAMETOOLONG);
+
+	/* Verify the path exists by trying to resolve it */
+	if (strcmp(abs, "/")) {
+		ret = vfs_find_mount(vfs, abs, &mnt, &subpath);
+		if (ret)
+			return log_msg_ret("vcf", ret);
+	}
+
+	len = strlen(abs);
+
+	/* Strip trailing slash (but keep "/" for root) */
+	if (len > 1 && abs[len - 1] == '/')
+		len--;
+
+	if (len >= sizeof(priv->cwd))
+		return log_msg_ret("vcl", -ENAMETOOLONG);
+
+	memcpy(priv->cwd, abs, len);
+	priv->cwd[len] = '\0';
+
+	return 0;
+}
 
 /**
  * find_mount() - Check whether a directory is a mount point
@@ -174,9 +308,12 @@ static int vfs_mount_path(struct udevice *mnt_dev, char *buf, int size)
 static int vfs_rootfs_mount(struct udevice *dev)
 {
 	struct fs_priv *uc_priv = dev_get_uclass_priv(dev);
+	struct vfs_priv *priv = dev_get_priv(dev);
 
 	if (uc_priv->mounted)
 		return log_msg_ret("rfm", -EISCONN);
+
+	strcpy(priv->cwd, "/");
 
 	uc_priv->mounted = true;
 
@@ -243,6 +380,34 @@ int vfs_find_mount(struct udevice *vfs, const char *path, struct udevice **mntp,
 	return 0;
 }
 
+/**
+ * vfs_resolve_mount() - Resolve a path to its mount and subpath
+ *
+ * Handles vfs_root lookup, cwd resolution and mount lookup in one call.
+ *
+ * @path: Absolute or relative VFS path
+ * @resolved: Buffer for cwd-resolved path
+ * @size: Size of @resolved
+ * @mntp: Returns the UCLASS_MOUNT device (NULL for root)
+ * @subpathp: Returns the remaining path within the mount
+ * Return: 0 if OK, -ve on error
+ */
+static int vfs_resolve_mount(const char *path, char *resolved, int size,
+			     struct udevice **mntp, const char **subpathp)
+{
+	struct udevice *vfs;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("vrv", -ENXIO);
+
+	path = vfs_path_resolve(vfs_getcwd(), path, resolved, size);
+	if (!path)
+		return log_msg_ret("vrp", -ENAMETOOLONG);
+
+	return vfs_find_mount(vfs, path, mntp, subpathp);
+}
+
 int vfs_resolve(struct udevice *vfs, const char *path,
 		struct udevice **dirp)
 {
@@ -296,11 +461,13 @@ int vfs_umount(struct udevice *mnt_dev)
 
 int vfs_umount_path(struct udevice *vfs, const char *path)
 {
+	char resolved[FILE_MAX_PATH_LEN];
 	struct udevice *mnt_dev;
 	const char *subpath;
 	int ret;
 
-	ret = vfs_find_mount(vfs, path, &mnt_dev, &subpath);
+	ret = vfs_resolve_mount(path, resolved, sizeof(resolved),
+				&mnt_dev, &subpath);
 	if (ret)
 		return log_msg_ret("vuf", ret);
 
@@ -368,32 +535,31 @@ int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
 
 int vfs_ls(const char *path)
 {
-	struct udevice *vfs, *mnt, *dir = NULL;
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *mnt, *dir = NULL;
 	struct fs_dir_stream *strm;
 	struct fs_dirent dent;
 	const char *subpath;
 	bool empty = true;
 	int ret;
 
-	vfs = vfs_root();
-	if (!vfs)
-		return -ENXIO;
+	ret = vfs_resolve_mount(path, resolved, sizeof(resolved),
+				&mnt, &subpath);
+	if (ret)
+		return ret;
 
-	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
-	if (!ret && mnt) {
+	if (mnt) {
 		struct vfsmount *m = dev_get_uclass_priv(mnt);
 
 		ret = fs_lookup_dir(m->target, subpath, &dir);
-		if (ret)
-			return ret;
-	} else if (!ret || !path[1]) {
-		/* Root "/" - list the VFS root dir */
-		ret = fs_lookup_dir(vfs, "", &dir);
-		if (ret)
-			return ret;
 	} else {
-		return ret;
+		/* Root "/" - list the VFS root dir */
+		struct udevice *vfs = vfs_root();
+
+		ret = fs_lookup_dir(vfs, "", &dir);
 	}
+	if (ret)
+		return ret;
 
 	ret = dir_open(dir, &strm);
 	if (ret)

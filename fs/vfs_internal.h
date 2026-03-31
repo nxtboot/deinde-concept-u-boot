@@ -8,15 +8,19 @@
 #ifndef __VFS_INTERNAL_H
 #define __VFS_INTERNAL_H
 
+#include <file.h>
+
 struct udevice;
 
 /**
  * struct vfs_priv - VFS root FS device driver-private data
  *
  * @mount_count: Counter for unique mount device names
+ * @cwd: Current working directory (absolute path)
  */
 struct vfs_priv {
 	int mount_count;
+	char cwd[FILE_MAX_PATH_LEN];
 };
 
 /**

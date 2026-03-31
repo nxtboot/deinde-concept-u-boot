@@ -284,4 +284,46 @@ static int dm_test_vfs_cmd(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_cmd, UTF_SCAN_FDT);
 
+/* Test current working directory */
+static int dm_test_vfs_cwd(struct unit_test_state *uts)
+{
+	struct udevice *vfs, *fsdev, *dir;
+
+	ut_assertok(vfs_init());
+	vfs = vfs_root();
+	ut_assertnonnull(vfs);
+
+	/* Default cwd is "/" */
+	ut_asserteq_str("/", vfs_getcwd());
+
+	/* Mount sandbox FS at /host */
+	ut_assertok(uclass_get_device_by_name(UCLASS_FS, "hostfs", &fsdev));
+	ut_assertok(vfs_resolve(vfs, "/host", &dir));
+	ut_assertok(vfs_mount(vfs, dir, fsdev));
+
+	/* cd to /host */
+	ut_assertok(vfs_chdir("/host"));
+	ut_asserteq_str("/host", vfs_getcwd());
+
+	/* ls with NULL should list cwd (i.e. /host) */
+	console_record_reset_enable();
+	ut_assertok(vfs_ls(NULL));
+	ut_assert_skip_to_linen("DIR ");
+	console_record_reset_enable();
+
+	/* cd back to root */
+	ut_assertok(vfs_chdir("/"));
+	ut_asserteq_str("/", vfs_getcwd());
+
+	/* cd to non-existent path should fail */
+	ut_asserteq(-ENOENT, vfs_chdir("/nowhere"));
+	/* cwd should be unchanged */
+	ut_asserteq_str("/", vfs_getcwd());
+
+	ut_assertok(vfs_umount_path(vfs, "/host"));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cwd, UTF_SCAN_FDT);
+
 #endif

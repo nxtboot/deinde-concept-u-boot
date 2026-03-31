@@ -42,6 +42,36 @@ struct vfsmount {
 int vfs_init(void);
 
 /**
+ * vfs_chdir() - Change the current working directory
+ *
+ * @path: New directory (absolute or relative to current cwd)
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_chdir(const char *path);
+
+/**
+ * vfs_getcwd() - Get the current working directory
+ *
+ * Return: pointer to the cwd string (static buffer, do not free)
+ */
+const char *vfs_getcwd(void);
+
+/**
+ * vfs_path_resolve() - Resolve a path against a given working directory
+ *
+ * If @path starts with '/', it is used as an absolute path. Otherwise it
+ * is joined with @cwd. In both cases, '.' and '..' components are resolved.
+ *
+ * @cwd: Current working directory (must be absolute)
+ * @path: Input path (absolute or relative), or NULL/empty for cwd
+ * @buf: Buffer to write the resolved absolute path
+ * @size: Size of @buf
+ * Return: pointer to @buf
+ */
+const char *vfs_path_resolve(const char *cwd, const char *path,
+			     char *buf, int size);
+
+/**
  * vfs_root() - Get the VFS root FS device
  *
  * Return: VFS root FS device, or NULL if not initialised
