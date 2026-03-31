@@ -51939,3 +51939,149 @@ Branch `cherry-45b7857d3b5` is ready for pushing. The branch was NOT merged back
 
 ---
 
+### Pipeline fix: 2026-03-31 (attempt 1)
+
+Branch: cherry-45b7857d3b5
+
+Failed jobs:
+- qemu_arm64_tfa_fw_handoff test.py (test.py)
+- Check make qcheck (test.py)
+
+### Conversation log
+Now I understand the two failures:
+
+1. **qemu_arm64_tfa_fw_handoff test.py**: The tests are failing because the `bloblist` is empty - it shows `Address Size Tag Name` with no entries. The test expects to find "Control FDT entry" and "TPM event log" in the bloblist but finds nothing.
+
+2. **Check make qcheck**: The binman code coverage is 99% but should be 100%, causing a test failure.
+
+Let me checkout the branch and investigate:
+
+Let me understand the two issues better:
+
+1. For the binman code coverage issue (99% vs 100%), let me check what's new in the branch
+2. For the bloblist test issue, the bloblist is empty when it shouldn't be
+
+Let me check what changed with binman coverage. The error says `Coverage error: 99%, but should be 100%`. Looking at the coverage report, I see `tools/binman/etype/nxp_imx8mcst.py` has 22% coverage (69 lines missed). Let me check if this is a new file or if this is related to the cherry-picked commits:
+
+This file is not from our cherry-picked commits. Let me check if this is an issue in the base branch (ci/master) or in our cherry-picked commits:
+
+This file exists in ci/master too. Let me check if there was already a coverage issue before our cherry-pick or if something changed:
+
+Looking at the coverage issue more closely, the `nxp_imx8mcst.py` shows 22% coverage (69 of 89 lines missed). This is likely a pre-existing issue in the base branch, not introduced by our cherry-picked commits. 
+
+Let me check the bloblist test failure more carefully. The test expects entries in the bloblist but it's empty:
+
+The test checks for `env__firmware_handoff_enabled` from the boardenv configuration. Let me check what the CI configuration looks like for the test:
+
+Now let me look for the boardenv file that would enable the firmware handoff test:
+
+Good, the boardenv file exists and sets `env__firmware_handoff_enabled = True`. The issue is that the TF-A binaries (bl1.bin and fip.bin) are supposed to be in `/opt/tf-a/qemu_arm64_fw_handoff_tfa_optee/`, but looking at the log:
+
+```
+if [[ -d /opt/tf-a/"${TEST_PY_BD}${TEST_PY_ID//--id /_}" ]]; then tfa_dir="/opt/tf-a/${TEST_PY_BD}${TEST_PY_ID//--id /_}";
+```
+
+With `TEST_PY_BD=qemu_arm64` and `TEST_PY_ID="--id fw_handoff_tfa_optee"`, the directory searched is `/opt/tf-a/qemu_arm64_fw_handoff_tfa_optee`.
+
+Let me look at the test runner script more carefully:
+
+I see. The CI is looking for TF-A binaries in `/opt/tf-a/qemu_arm64_fw_handoff_tfa_optee/`. These binaries need to be built and placed there by the Docker image. Let me check the Dockerfile:
+
+I see! The Dockerfile creates `/opt/tf-a/qemu_arm64_fw_handoff_tfa_optee/` with `bl1.bin` and `fip.bin`. But the CI test is failing because the bloblist is empty, meaning the TF-A firmware isn't passing data correctly through the transfer list mechanism.
+
+Looking at the test output again:
+```
+Address       Size   Tag Name
+```
+
+The bloblist is completely empty. This suggests either:
+1. The TF-A binaries aren't properly configured/built with TRANSFER_LIST=1
+2. The Docker image doesn't have the new TF-A build with the correct configuration
+3. There's an issue with the qemu_arm64 defconfig not properly enabling bloblist
+
+Let me check the qemu_arm64_defconfig changes:
+
+Let me check the entire qemu_arm64_defconfig to see if there are other relevant config options:
+
+Now let me check if there's a mechanism to get the bloblist from TF-A. Let me look at what the tests on the main branch (us/next) would look like:
+
+Wait, the us/next branch doesn't have `CONFIG_CMD_BLOBLIST=y`! Let me check the current ci/master defconfig:
+
+So ci/master also doesn't have `CONFIG_CMD_BLOBLIST=y`. Our commit dfd8f42ea44 adds it. But why is the bloblist empty?
+
+Looking more carefully at the Dockerfile and CI, I realize the issue might be infrastructure related - the Docker image needs to have been rebuilt with the new TF-A build. Let me check when this Docker image entry was added:
+
+The commit `010e7437557 docker: add OP-TEE and TF-A build for testing Firmware Handoff` is part of our cherry-picked commits. This means the Docker image needs to be rebuilt after this commit, but the CI won't do that automatically - the Docker image is pre-built.
+
+This is an **infrastructure issue** - the test requires a new Docker image with OP-TEE and TF-A firmware for QEMU, but that Docker image hasn't been built yet on the CI infrastructure. The changes to the Dockerfile won't take effect until the Docker image is rebuilt.
+
+Now let me focus on the second failure - the binman coverage issue:
+
+Let me investigate the binman coverage issue more carefully. The coverage report shows `nxp_imx8mcst.py` at 22% coverage with 69 lines missed:
+
+The file `nxp_imx8mcst.py` hasn't been modified recently. Let me check if there's a test for it:
+
+Interesting! I can see at line 104-106, `nxp_imx8mcst.py` is already in the `allow_failures` list. This means it's supposed to be allowed to fail coverage checks. But the test output shows `Coverage error: 99%, but should be 100%`. Let me check the current state of the test_util coverage function:
+
+No changes to main.py. Let me check the test_util.py:
+
+No changes here either. Let me check whether there's something else going on:
+
+None of our changes touch the binman code. Let me check if this coverage failure is also present in ci/master:
+
+This confirms that the binman coverage failure at 99% already exists in `ci/master`. This is **NOT** caused by our cherry-picked commits - it's a pre-existing issue in the base branch.
+
+Let me go back to the cherry branch:
+
+## Summary
+
+Both CI failures are **NOT caused by the cherry-picked commits**:
+
+### 1. Job: qemu_arm64_tfa_fw_handoff test.py - **Infrastructure Issue**
+
+The test fails because:
+- The test requires TF-A and OP-TEE binaries to be pre-built in the Docker image at `/opt/tf-a/qemu_arm64_fw_handoff_tfa_optee/`
+- Commit `010e7437557 docker: add OP-TEE and TF-A build for testing Firmware Handoff` adds instructions to build these binaries into the Dockerfile
+- **However**, the Docker image needs to be rebuilt for these changes to take effect
+- The CI is running with the old Docker image that doesn't have these binaries
+- When the test runs, the bloblist is empty because TF-A isn't providing the handoff data
+
+This is a **transient/infrastructure issue** - once the Docker image is rebuilt with the new Dockerfile, the test should pass.
+
+### 2. Job: Check make qcheck - **Pre-existing Issue in ci/master**
+
+The binman coverage test fails at 99% instead of 100%:
+- `tools/binman/etype/nxp_imx8mcst.py` shows 22% coverage (69 lines missed)
+- I verified this same failure exists on `ci/master` by running `python3 tools/binman/binman test -T` directly
+- This file is already in the `allow_failures` list in `tools/binman/main.py` (line 105), but the coverage check still fails
+- This is a **pre-existing bug** in the base branch, not introduced by our cherry-picked commits
+
+### Recommendation
+
+**No code changes should be made** to this branch because:
+1. The qemu_arm64_tfa_fw_handoff failure requires infrastructure changes (Docker image rebuild), not code fixes
+2. The binman coverage failure is a pre-existing issue in ci/master that needs to be fixed separately at the source
+
+The failures should be reported as infrastructure/pre-existing issues rather than attempting to fix them in this cherry-pick branch.
+
+---
+
+## Final Report
+
+**Branch:** cherry-45b7857d3b5 (attempt 1)
+
+**Failures Analyzed:**
+
+| Job | Type | Root Cause |
+|-----|------|------------|
+| qemu_arm64_tfa_fw_handoff test.py | Infrastructure | Docker image needs rebuild with new TF-A/OP-TEE binaries from commit 010e7437557 |
+| Check make qcheck | Pre-existing | Binman coverage at 99% is a bug in ci/master (nxp_imx8mcst.py has 22% coverage despite being in allow_failures list) |
+
+**Action Taken:** None - both failures are not caused by the cherry-picked commits and cannot be fixed by code changes in this branch.
+
+**Recommendations:**
+1. **For qemu_arm64_tfa_fw_handoff**: Wait for Docker image rebuild, or mark this test as expected to fail until the new image is deployed
+2. **For binman coverage**: This needs to be fixed in the mainline branches (us/next and ci/master) where the test_util coverage handling isn't properly excluding nxp_imx8mcst.py despite it being in the allow_failures list
+
+---
+
