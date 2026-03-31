@@ -277,8 +277,29 @@ static ssize_t sandbox_read_iter(struct udevice *dev, struct iov_iter *iter,
 	return ret;
 }
 
+static ssize_t sandbox_write_iter(struct udevice *dev, struct iov_iter *iter,
+				  loff_t pos)
+{
+	struct file_priv *priv = dev_get_priv(dev);
+	ssize_t ret;
+
+	log_debug("start dev '%s' len %lx\n", dev->name, iter->count);
+	ret = os_lseek(priv->fd, pos, OS_SEEK_SET);
+	if (ret < 0)
+		return log_msg_ret("vfs", ret);
+
+	ret = os_write(priv->fd, iter_iov_ptr(iter), iter_iov_avail(iter));
+	if (ret < 0)
+		return log_msg_ret("vfw", ret);
+	iter_advance(iter, ret);
+	log_debug("wrote %lx bytes\n", ret);
+
+	return ret;
+}
+
 static struct file_ops sandbox_file_ops = {
 	.read_iter	= sandbox_read_iter,
+	.write_iter	= sandbox_write_iter,
 };
 
 static const struct udevice_id file_ids[] = {
@@ -309,10 +330,13 @@ static int sandbox_dir_open_file(struct udevice *dir, const char *leaf,
 	snprintf(pathname, sizeof(pathname), "%s/%s",
 		 *uc_priv->path ? uc_priv->path: ".", leaf);
 	ftype = os_get_filetype(pathname);
-	if (ftype < 0)
-		return log_msg_ret("soF", ftype);
-	if (ftype != OS_FILET_REG)
+	if (ftype < 0) {
+		/* Allow creating new files for write modes */
+		if (oflags == DIR_O_RDONLY)
+			return log_msg_ret("soF", ftype);
+	} else if (ftype != OS_FILET_REG) {
 		return log_msg_ret("sOf", -EINVAL);
+	}
 
 	if (oflags == DIR_O_RDONLY)
 		mode = OS_O_RDONLY;

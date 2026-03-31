@@ -10,6 +10,7 @@
 #include <dm.h>
 #include <file.h>
 #include <fs.h>
+#include <os.h>
 #include <vfs.h>
 #include <dm/test.h>
 #include <test/ut.h>
@@ -106,6 +107,35 @@ static int dm_test_fs_file(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_fs_file, UTF_SCAN_FDT);
+
+/* Test writing a file */
+static int dm_test_fs_file_write(struct unit_test_state *uts)
+{
+	struct udevice *fsdev, *dir, *fil;
+	static const char data[] = "hello world\n";
+	char buf[32];
+
+	ut_assertok(uclass_first_device_err(UCLASS_FS, &fsdev));
+	ut_assertok(fs_mount(fsdev));
+	ut_assertok(fs_lookup_dir(fsdev, "", &dir));
+
+	/* Write a new file */
+	ut_assertok(dir_open_file(dir, "_test_write.tmp", DIR_O_WRONLY, &fil));
+	ut_asserteq(sizeof(data) - 1,
+		    file_write_at(fil, data, 0, sizeof(data) - 1));
+
+	/* Read it back */
+	ut_assertok(dir_open_file(dir, "_test_write.tmp", DIR_O_RDONLY, &fil));
+	memset(buf, '\0', sizeof(buf));
+	ut_asserteq(sizeof(data) - 1, file_read(fil, buf, sizeof(buf)));
+	ut_asserteq_str("hello world\n", buf);
+
+	/* Clean up */
+	os_unlink("_test_write.tmp");
+
+	return 0;
+}
+DM_TEST(dm_test_fs_file_write, UTF_SCAN_FDT);
 
 #if IS_ENABLED(CONFIG_VFS)
 /* Test VFS init and root directory operations */
