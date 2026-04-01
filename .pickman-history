@@ -51758,286 +51758,71 @@ Now let me force push to update the MR:
 
 ## 2026-03-31: us/next
 
-Branch: cherry-eb8074f5cc2
+Branch: cherry-c9838ec5451
 
 Commits:
-- eb8074f5cc2 configs: tegra: remove ATAGS support
-- 4f7057962dc watchdog: Add support for Tegra watchdog timer
-- e50f80d137b timer: tegra: Bind watchdog to timer node
-- 9ce9f66b76c crypto: tegra: Tighten TEGRA_AES driver dependency
-- f77584b53ac video: tegra: Remove unreachable code
-- 1530cfe09a2 video: tegra: Incorrect operator used
-- 200549b0961 gpio: tegra_gpio: convert to use set_flags
-- b4c3869292e Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra
+- c9838ec5451 usb: musb-new: fix ti-musb dependencies
+- f0f23e0618d usb: musb-new: fix typos
+- e5b9d92d408 Merge branch 'master' of git://source.denx.de/u-boot-usb
 
 ### Conversation log
-The repository state is clean (untracked files are fine). Now let me create and checkout the new branch based on ci/master.
+The repository is clean (untracked files are fine). Let me create the new branch and start cherry-picking.
 
-Now let me cherry-pick the first commit:
+Good. Now let me cherry-pick the first commit:
 
-Let me verify the delta and run the build test:
+First commit applied successfully. Let me verify the delta and run the build:
 
-The deltas match (18 files changed, 54 deletions). Now let me run the build test:
+Delta is identical (1 file, 1 insertion). Let me run the build test:
 
 Build passed. Now let me cherry-pick the second commit:
 
-Deltas match. Now build test:
+Second commit applied. Let me verify the delta:
 
-Build passed. Cherry-pick the third commit:
+Delta is identical (3 files, 4 insertions, 4 deletions). Let me run the build test:
 
-Deltas match. Build test:
+Build passed. Now for the third commit - this is a merge commit and needs to be checked if it's already applied. Let me first verify if 2a454d1037d is the same commit:
 
-Build passed. Cherry-pick the fourth commit:
+The commits are different - they are merge commits with different parent hashes and different commit messages. Let me check if 2a454d1037d contains the same changes (the commits being merged):
 
-Deltas match. Build test:
+Let me check what commits were introduced by each merge to see if they are actually similar:
 
-Build passed. Cherry-pick the fifth commit:
+Interesting - the original merge e5b9d92d408 introduced the two commits we just cherry-picked (f0f23e0618d and c9838ec5451). Since we've already cherry-picked those commits individually, cherry-picking this merge commit will result in an empty commit. Let me check if those commits are already in ci/master:
 
-Deltas match. Build test:
+Good - those commits are not in ci/master yet (they're on our current branch now). The merge commit e5b9d92d408 was used in the upstream to merge these two commits. Since we've already cherry-picked the individual commits, the merge commit will be empty. Let me cherry-pick it with --allow-empty:
 
-Build passed. Cherry-pick the sixth commit:
+The merge commit is empty as expected (because we already cherry-picked its contents). Let me commit it with --allow-empty to preserve the merge history:
 
-Deltas match. Build test:
+The merge commit was created. Let me verify the commit and add the cherry-pick reference:
 
-Build passed. Cherry-pick the seventh commit:
+All 3 commits are present. The merge commit doesn't have the "(cherry picked from commit ...)" tag because it was committed via `git commit --allow-empty`. Let me amend it to include this information:
 
-Deltas match. Build test:
+The cherry-pick reference is already there. Let me verify the delta for the merge commit:
 
-Build passed. Now for the eighth commit - this is a merge commit. First, let me check if it might already be applied as ce345971b06:
+The cherry-picked merge commit is empty (no file changes shown) because the changes were already applied by the individual commits we cherry-picked earlier. This is expected and correct behavior. Now let me run the final build test:
 
-These are different merges - ce345971b06 appears to be a GitLab merge request that merged the same content but is a different merge commit. Let me check if it contains the same actual changes:
+Build passed. Let me provide the final verification:
 
-The merge commits are different - they merge different content. Let me check if all the commits we're cherry-picking are already in ci/master:
+## Summary
 
-These first few commits are not in ci/master, so they are new. Let me proceed with cherry-picking the merge commit. Since it's a merge commit, I'll use -m 1 --allow-empty:
+All 3 commits have been successfully cherry-picked to branch `cherry-c9838ec5451`:
 
-The merge commit is empty because we've already applied the individual commits. Let me commit it with --allow-empty to preserve the merge history:
+| Commit | Subject | Status |
+|--------|---------|--------|
+| c9838ec5451 → 0d6ff268189 | usb: musb-new: fix ti-musb dependencies | ✅ Applied |
+| f0f23e0618d → 6e0bbe5b1d4 | usb: musb-new: fix typos | ✅ Applied |
+| e5b9d92d408 → f4635111069 | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Applied (empty) |
 
-Now let me verify all 8 commits are present:
+**Build result:** OK (no warnings or errors)
 
-All 8 commits are present. Now let me run the final build test:
+**Fix-ups made:** None required
 
-All builds passed. Here's the final summary:
-
-## Cherry-pick Summary
-
-### Branch: `cherry-eb8074f5cc2`
-
-**Build Result:** ✅ OK (all builds passed)
-
-**Commits cherry-picked successfully (8/8):**
-
-| # | Original Hash | New Hash | Subject | Delta |
-|---|---------------|----------|---------|-------|
-| 1 | eb8074f5cc2 | b62b1b9d53a | configs: tegra: remove ATAGS support | ✅ Match (18 files, 54 deletions) |
-| 2 | 4f7057962dc | ce0ad5877a0 | watchdog: Add support for Tegra watchdog timer | ✅ Match (3 files, 125 insertions) |
-| 3 | e50f80d137b | 023fb9b5f05 | timer: tegra: Bind watchdog to timer node | ✅ Match (1 file, 10 insertions) |
-| 4 | 9ce9f66b76c | 0ceac145e25 | crypto: tegra: Tighten TEGRA_AES driver dependency | ✅ Match (1 file, 1+/1-) |
-| 5 | f77584b53ac | a17133d93b5 | video: tegra: Remove unreachable code | ✅ Match (1 file, 2 deletions) |
-| 6 | 1530cfe09a2 | bea50c63ce8 | video: tegra: Incorrect operator used | ✅ Match (1 file, 1+/1-) |
-| 7 | 200549b0961 | 0684aa03738 | gpio: tegra_gpio: convert to use set_flags | ✅ Match (1 file, 22+/18-) |
-| 8 | b4c3869292e | 4b53f47a13d | Merge branch 'staging'... (merge commit) | ✅ Empty commit (expected - commits already applied individually) |
-
-**Fix-ups made:** None
-
-**Commits with concerning deltas:** None
+**Concerning deltas:** None - all commits have matching deltas
 
 **Notes:**
-- The merge commit (b4c3869292e) resulted in an empty commit, which is expected since the individual commits were already cherry-picked before it. The commit was preserved with `--allow-empty` to maintain the history tracking.
-- The commit ce345971b06 mentioned as "maybe already applied" is a different merge commit (a GitLab MR merge) and was not a duplicate of b4c3869292e.
+- The merge commit (e5b9d92d408) was applied as an empty commit because its content (the two musb fixes) were already cherry-picked individually before it
+- The commit 2a454d1037d mentioned as "maybe already applied" is a different merge commit in ci/master that brings in a larger set of USB-related changes - it is NOT the same as e5b9d92d408
 
-The branch `cherry-eb8074f5cc2` is ready for pushing.
-
----
-
-### Pipeline fix: 2026-03-31 (attempt 1)
-
-Branch: cherry-eb8074f5cc2
-
-Failed jobs:
-- Check make qcheck (test.py)
-
-### Conversation log
-Now I understand the failure. The job log shows:
-- binman code coverage is 99% but should be 100%
-- `Coverage error: 99%, but should be 100%`
-- The test framework requires 100% coverage for binman
-
-Looking at the coverage report, I can see:
-- `tools/binman/etype/nxp_imx8mcst.py` has 69 lines missed (22% coverage)
-- `tools/binman/etype/nxp_imx8mimage.py` has 6 lines missed (84% coverage)
-- `tools/binman/btool/cst.py` has 4 lines missed (76% coverage)
-
-However, this seems like a pre-existing issue since none of the commits in this MR touch binman files. Let me checkout the branch and investigate more:
-
-Now let me check what files each of these commits touched. The failure is related to binman coverage, so let me check if any of these commits touched binman files:
-
-None of these commits touch any binman files. The binman coverage failure is not caused by this MR's commits. Let me verify by checking the ci/master base branch:
-
-Confirmed - there are no binman changes in this MR. The coverage failure is a pre-existing issue or a flaky test. Let me check if this failure is reproducible by checking on ci/master:
-
-Interesting! The same failure happens on ci/master - this is a pre-existing issue in the CI base, not something introduced by this MR. The binman coverage is 99% instead of 100%.
-
-Let me check the specific files that have coverage gaps:
-
-This is a pre-existing coverage issue. Let me check if it's in ci/master:
-
-The commit 88420ed1a9e is already in ci/master. So this is a pre-existing issue where the base branch ci/master already has failing tests.
-
-Let me verify this one more time by checking if qcheck was passing before this commit was merged:
-
-The failing test is:
-1. **Not caused by this MR** - none of the commits in this MR touch binman files
-2. **Pre-existing in ci/master** - the same failure occurs on the base branch
-
-This is a pre-existing infrastructure issue in the CI base branch. The binman coverage dropped below 100% due to commits already merged to ci/master (like 88420ed1a9e "binman: cst: Build from source").
-
-Let me check what changed recently that might have caused this:
-
-Since this is a pre-existing issue in ci/master (the base branch already fails qcheck), this is not something that this MR can or should fix. The MR commits are unrelated to binman coverage.
-
-Let me verify this is truly a base branch issue by checking if the CI passed on the base branch recently:
-
-Based on my analysis:
-
-## Summary
-
-**This is a pre-existing infrastructure issue, not caused by this MR.**
-
-### Root Cause
-The `make qcheck` failure is due to binman code coverage dropping from 100% to 99%. The coverage report shows:
-- `tools/binman/etype/nxp_imx8mcst.py`: 22% coverage (69 lines missed)  
-- `tools/binman/etype/nxp_imx8mimage.py`: 84% coverage (6 lines missed)
-- `tools/binman/btool/cst.py`: 76% coverage (4 lines missed)
-
-### Evidence
-1. **No binman files touched by this MR** - All commits in this MR only touch Tegra-related files (configs, gpio, video, crypto, timer, watchdog drivers).
-
-2. **Same failure on ci/master base branch** - I ran `make qcheck` on ci/master (the base branch) and it produces the identical failure:
-   ```
-   Coverage error: 99%, but should be 100%
-   Tests FAILED
-   ```
-
-3. **Issue introduced by prior commits** - The coverage gaps were introduced by commits like `88420ed1a9e "binman: cst: Build from source"` which is already in ci/master.
-
-### Recommendation
-**No changes should be made to this MR.** This is an infrastructure issue in the base branch that needs to be fixed separately. The failing test is not related to the Tegra changes in this MR.
-
-The pipeline failure should be reported as a **transient/infrastructure issue** - the CI base branch itself has failing tests that need to be fixed upstream before this MR can pass.
-
----
-
-### Review: 2026-03-31
-
-Branch: cherry-eb8074f5cc2
-
-Comments addressed:
-- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) Check make qcheck.
-
-Now I understand the failure. The ...
-
-### Conversation log
-Now let me understand the review comment. The comment is about fixing a pipeline failure related to binman code coverage. Looking at the context, the previous analysis concluded that this is a **pre-existing issue in ci/master** and not caused by this MR. The reviewer seems to be asking to fix the failed `make qcheck` job.
-
-Let me verify the current state and understand what the actual request is:
-
-The MR only changes Tegra-related files and doesn't touch any binman files. Let me check the binman coverage files that are mentioned:
-
-Based on my analysis, this MR's commits don't touch binman files at all. The review comment is asking to fix a failing `make qcheck` job related to binman coverage. However:
-
-1. This MR only contains Tegra-related changes (configs, gpio, video, crypto, timer, watchdog)
-2. The binman coverage failure is pre-existing in the base branch (ci/master already contains the commit 88420ed1a9e that introduced the coverage gap)
-3. The proper fix would need to be made upstream to binman tests, not in this MR
-
-Let me check if there's been any recent fix to the binman coverage issue:
-
-I see there's a commit `0cab35362d7 binman: test: Fix code coverage for iMX8 and cst bintool` in `me/dm-next`. Let me check if this fix is available:
-
-There's a fix commit `0cab35362d7` that adds test coverage for the iMX8 and cst bintool. This commit is in `me/dm-next` but not yet in `ci/master`. Let me check if it's possible to cherry-pick this commit to fix the coverage issue:
-
-This fix is available but not in ci/master yet. However, since this is a pre-existing infrastructure issue that is not related to this MR's changes, I need to think about what the appropriate response is:
-
-1. **The MR's changes are unrelated to binman** - all commits touch Tegra files only
-2. **The coverage failure is pre-existing in ci/master** - it was introduced by commit `88420ed1a9e` 
-3. **A fix exists** (`0cab35362d7`) but it's not in ci/master yet
-
-The review comment asks to fix the pipeline failure. Since this is a pre-existing issue in the base branch and not something introduced by this MR, there are a few options:
-
-1. Cherry-pick the fix commit `0cab35362d7` into this MR (adds unrelated changes)
-2. Rebase on a fixed ci/master (if one becomes available)
-3. Mark this as a known issue that's blocking CI but not related to this MR
-
-Looking at the context more carefully - the previous analysis already identified this as a pre-existing issue. The appropriate response is that this MR cannot fix the qcheck failure because:
-1. The failure is in binman code coverage
-2. This MR doesn't touch binman files
-3. The base branch (ci/master) already has this issue
-
-Let me verify the build still passes for the actual code changes in this MR:
-
-The sandbox build passes. The actual code in this MR is fine - the pipeline failure is from an unrelated pre-existing issue in binman test coverage.
-
-Given this situation, there's nothing actionable I can do to fix the `make qcheck` failure in this MR without adding unrelated changes. The review comment essentially asks to fix a pre-existing infrastructure issue that's in the base branch.
-
-Let me check if maybe the reviewer expects us to acknowledge this and possibly rebase on a newer base or wait:
-
-The fix commit `0cab35362d7` (binman: test: Fix code coverage for iMX8 and cst bintool) is NOT in ci/master yet. The pre-existing issue remains unfixed in the base branch.
-
-Given this situation, I have a few options:
-1. Cherry-pick the coverage fix into this MR (adds unrelated changes)
-2. Report that this cannot be fixed in this MR since it's a pre-existing base branch issue
-
-Since the review comment specifically asks to fix the qcheck failure, and the only way to do that is to add the coverage fix, let me check if the fix can be cleanly cherry-picked:
-
-There are merge conflicts. Let me abort and reconsider:
-
-The coverage fix commit has merge conflicts with the current codebase. Given that:
-
-1. The review comment asks to fix `make qcheck` which fails due to binman coverage
-2. This MR doesn't touch binman files - it's purely Tegra changes
-3. The failure is a pre-existing issue in the ci/master base branch
-4. The fix commit exists but has merge conflicts and would add unrelated changes
-5. This MR should not include changes unrelated to its purpose (Tegra cherry-picks)
-
-The appropriate response is that **this review comment cannot be addressed by changes to this MR** because:
-- The failure is pre-existing in the base branch
-- The MR's commits don't touch binman
-- Adding the fix would introduce unrelated changes with merge conflicts
-
-I should report this back with a recommendation that the comment should be dismissed or the CI base should be fixed separately.
-
-## Summary
-
-Based on my analysis:
-
-1. **Checkout branch**: ✅ Done (`cherry-eb8074f5cc2`)
-2. **Read and understand the comment**: The review asks to fix `make qcheck` pipeline failure related to binman code coverage (99% vs required 100%)
-3. **Analysis**: 
-   - This MR contains only Tegra-related changes (configs, gpio, video, crypto, timer, watchdog drivers)
-   - None of the 8 commits in this MR touch any binman files
-   - The binman coverage failure exists in ci/master base branch (pre-existing issue)
-   - A fix exists (`0cab35362d7`) but it has merge conflicts and is unrelated to this MR
-4. **Build verification**: ✅ Sandbox build passes
-5. **Action**: **No changes can be made** - this is a pre-existing infrastructure issue
-
-**Report:**
-
-The review comment requesting to fix the `make qcheck` pipeline failure **cannot be addressed by changes to this MR** because:
-
-1. **Pre-existing issue**: The binman coverage failure (99% vs 100%) exists in the ci/master base branch and is not introduced by this MR
-2. **Unrelated changes**: This MR only contains Tegra-related changes (configs, gpio, video, crypto, timer, watchdog) and does not touch any binman files
-3. **Fix unavailable**: The coverage fix commit (`0cab35362d7 binman: test: Fix code coverage for iMX8 and cst bintool`) exists in `me/dm-next` but has merge conflicts and would add unrelated changes to this MR
-
-**Suggested reply to MR:**
-
-> The `make qcheck` failure is a **pre-existing issue in the ci/master base branch**, not introduced by this MR. 
->
-> Analysis:
-> - None of the 8 commits in this MR touch binman files - all changes are Tegra-related (configs, gpio, video, crypto, timer, watchdog drivers)
-> - The binman coverage dropped to 99% due to commit `88420ed1a9e` (binman: cst: Build from source) which is already in ci/master
-> - A fix exists (`0cab35362d7 binman: test: Fix code coverage for iMX8 and cst bintool`) but it's not yet merged to ci/master and has merge conflicts
->
-> This MR cannot fix the qcheck failure without adding unrelated changes. The CI base branch needs to be fixed separately.
+The branch `cherry-c9838ec5451` is ready for pushing.
 
 ---
 
