@@ -417,6 +417,34 @@ static int sandbox_fs_lookup_dir(struct udevice *dev, const char *path,
 	return 0;
 }
 
+static int sandbox_fs_ln(struct udevice *dev, const char *path,
+			 const char *target)
+{
+	return os_symlink(target, path);
+}
+
+static int sandbox_fs_rename(struct udevice *dev, const char *old_path,
+			     const char *new_path)
+{
+	return os_rename(old_path, new_path);
+}
+
+static int sandbox_fs_readlink(struct udevice *dev, const char *path,
+			       char *buf, int size)
+{
+	return os_readlink(path, buf, size);
+}
+
+static int sandbox_fs_unlink(struct udevice *dev, const char *path)
+{
+	return os_unlink(path);
+}
+
+static int sandbox_fs_mkdir(struct udevice *dev, const char *path)
+{
+	return os_mkdir(path, 0755);
+}
+
 static int sandbox_fs_remove(struct udevice *dev)
 {
 	return 0;
@@ -426,6 +454,11 @@ static const struct fs_ops sandbox_fs_ops = {
 	.mount		= sandbox_fs_mount,
 	.unmount	= sandbox_fs_unmount,
 	.lookup_dir	= sandbox_fs_lookup_dir,
+	.ln		= sandbox_fs_ln,
+	.rename		= sandbox_fs_rename,
+	.readlink	= sandbox_fs_readlink,
+	.unlink		= sandbox_fs_unlink,
+	.mkdir		= sandbox_fs_mkdir,
 };
 
 static const struct udevice_id sandbox_fs_ids[] = {

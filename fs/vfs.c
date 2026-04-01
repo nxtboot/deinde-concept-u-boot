@@ -19,6 +19,7 @@
 #include <file.h>
 #include <fs.h>
 #include <fs_common.h>
+#include <fs_legacy.h>
 #include <malloc.h>
 #include <part.h>
 #include <vfs.h>
@@ -431,8 +432,8 @@ static int vfs_resolve_dir(const char *path, struct udevice **dirp,
 	char *sub;
 	int ret;
 
-	ret = vfs_resolve_mount(path, resolved, sizeof(resolved),
-				&mnt, &subpath);
+	ret = vfs_resolve_mount(path, resolved,
+				sizeof(resolved), &mnt, &subpath);
 	if (ret)
 		return log_msg_ret("vdm", ret);
 
@@ -536,6 +537,36 @@ bool vfs_is_mount_point(struct udevice *dir)
 	return !find_mount(dir, &mnt);
 }
 
+int vfs_umount_all(void)
+{
+	struct udevice *dev, *next;
+	struct uclass *uc;
+	int ret, err = 0;
+
+	ret = uclass_get(UCLASS_MOUNT, &uc);
+	if (ret)
+		return ret;
+
+	uclass_foreach_dev_safe(dev, next, uc) {
+		struct vfsmount *mnt = dev_get_uclass_priv(dev);
+
+		if (!device_active(dev))
+			continue;
+
+		ret = fs_unmount(mnt->target);
+		if (ret && ret != -ENOTCONN) {
+			err = ret;
+			continue;
+		}
+
+		ret = fs_mount_uninit(dev);
+		if (ret)
+			err = ret;
+	}
+
+	return err;
+}
+
 void vfs_print_mounts(void)
 {
 	struct vfsmount *mnt;
@@ -566,6 +597,175 @@ int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
 		return log_msg_ret("voo", ret);
 
 	return 0;
+}
+
+void vfs_print_df(void)
+{
+	struct vfsmount *mnt;
+	struct udevice *dev;
+
+	vfs_foreach_mount(mnt, dev) {
+		char path[FILE_MAX_PATH_LEN];
+		struct fs_statfs stats;
+		int ret;
+
+		if (vfs_mount_path(dev, path, sizeof(path)))
+			continue;
+
+		ret = fs_do_statfs(mnt->target, &stats);
+		if (!ret) {
+			u64 used = stats.blocks - stats.bfree;
+
+			printf("%-16s %6lu %10llu %10llu %10llu\n", path,
+			       stats.bsize, stats.blocks * stats.bsize,
+			       used * stats.bsize,
+			       stats.bfree * stats.bsize);
+		} else {
+			printf("%-16s %6s %10s %10s %10s\n", path,
+			       "-", "-", "-", "-");
+		}
+	}
+}
+
+int vfs_ln(const char *path, const char *target)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *vfs, *mnt;
+	const char *subpath;
+	struct vfsmount *mnt_priv;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("vli", -ENXIO);
+
+	path = vfs_path_resolve(vfs_getcwd(), path, resolved, sizeof(resolved));
+
+	if (!path)
+		return log_msg_ret("vrp", -ENAMETOOLONG);
+	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("vlm", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	return fs_do_ln(mnt_priv->target, subpath, target);
+}
+
+int vfs_rename(const char *old_path, const char *new_path)
+{
+	char resolved_old[FILE_MAX_PATH_LEN];
+	char resolved_new[FILE_MAX_PATH_LEN];
+	struct udevice *mnt_old, *mnt_new;
+	const char *sub_old, *sub_new;
+	struct vfsmount *mnt_priv;
+	int ret;
+
+	ret = vfs_resolve_mount(old_path, resolved_old,
+				sizeof(resolved_old),
+				&mnt_old, &sub_old);
+	if (ret)
+		return log_msg_ret("vro", ret);
+
+	ret = vfs_resolve_mount(new_path, resolved_new,
+				sizeof(resolved_new),
+				&mnt_new, &sub_new);
+	if (ret)
+		return log_msg_ret("vrn", ret);
+
+	/* Both paths must be on the same mount */
+	if (mnt_old != mnt_new)
+		return log_msg_ret("vrx", -EXDEV);
+
+	mnt_priv = dev_get_uclass_priv(mnt_old);
+
+	return fs_do_rename(mnt_priv->target, sub_old, sub_new);
+}
+
+int vfs_readlink(const char *path, char *buf, int size)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *mnt;
+	struct vfsmount *mnt_priv;
+	const char *subpath;
+	int ret;
+
+	ret = vfs_resolve_mount(path, resolved,
+				sizeof(resolved), &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("rlm", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	return fs_readlink(mnt_priv->target, subpath, buf, size);
+}
+
+int vfs_statfs(const char *path, struct fs_statfs *stats)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *mnt;
+	struct vfsmount *mnt_priv;
+	const char *subpath;
+	int ret;
+
+	ret = vfs_resolve_mount(path, resolved,
+				sizeof(resolved), &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("dfm", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	return fs_do_statfs(mnt_priv->target, stats);
+}
+
+int vfs_unlink(const char *path)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *vfs, *mnt;
+	struct vfsmount *mnt_priv;
+	const char *subpath;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("vui", -ENXIO);
+
+	path = vfs_path_resolve(vfs_getcwd(), path, resolved, sizeof(resolved));
+	if (!path)
+		return log_msg_ret("vup", -ENAMETOOLONG);
+
+	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("vum", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	return fs_do_unlink(mnt_priv->target, subpath);
+}
+
+int vfs_mkdir(const char *path)
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *vfs, *mnt;
+	struct vfsmount *mnt_priv;
+	const char *subpath;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("vmi", -ENXIO);
+
+	path = vfs_path_resolve(vfs_getcwd(), path, resolved, sizeof(resolved));
+	if (!path)
+		return log_msg_ret("vmp", -ENAMETOOLONG);
+
+	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("vmm", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	return fs_do_mkdir(mnt_priv->target, subpath);
 }
 
 int vfs_stat(const char *path, struct fs_dirent *dent)
@@ -612,8 +812,8 @@ int vfs_ls(const char *path)
 	bool empty = true;
 	int ret;
 
-	ret = vfs_resolve_mount(path, resolved, sizeof(resolved),
-				&mnt, &subpath);
+	ret = vfs_resolve_mount(path, resolved,
+				sizeof(resolved), &mnt, &subpath);
 	if (ret)
 		return ret;
 

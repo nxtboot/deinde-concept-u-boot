@@ -132,6 +132,15 @@ int vfs_umount(struct udevice *mnt_dev);
 int vfs_umount_path(struct udevice *vfs, const char *path);
 
 /**
+ * vfs_umount_all() - Unmount all filesystems
+ *
+ * Unmounts all mounted filesystems. Returns an error if any unmount fails.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_umount_all(void);
+
+/**
  * vfs_find_mount() - Find the mount covering a path
  *
  * Walks the mount tree from the VFS root, following mount points for
@@ -291,6 +300,14 @@ int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
  * vfs_print_mounts() - Print all current mounts
  */
 void vfs_print_mounts(void);
+
+/**
+ * vfs_print_df() - Print filesystem usage for all mounts
+ *
+ * Iterates all mounts and prints statfs info for those that support it.
+ * Mounts that do not support statfs are listed with dashes.
+ */
+void vfs_print_df(void);
 
 /**
  * do_cp() - Copy a file within the VFS

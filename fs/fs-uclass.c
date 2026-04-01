@@ -115,6 +115,67 @@ int fs_mount(struct udevice *dev)
 	return 0;
 }
 
+int fs_do_ln(struct udevice *dev, const char *path, const char *target)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->ln)
+		return log_msg_ret("fln", -ENOSYS);
+
+	return ops->ln(dev, path, target);
+}
+
+int fs_do_rename(struct udevice *dev, const char *old_path,
+		 const char *new_path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->rename)
+		return log_msg_ret("frn", -ENOSYS);
+
+	return ops->rename(dev, old_path, new_path);
+}
+
+int fs_readlink(struct udevice *dev, const char *path, char *buf, int size)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->readlink)
+		return log_msg_ret("frl", -ENOSYS);
+
+	return ops->readlink(dev, path, buf, size);
+}
+
+int fs_do_statfs(struct udevice *dev, struct fs_statfs *stats)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->statfs)
+		return log_msg_ret("fss", -ENOSYS);
+
+	return ops->statfs(dev, stats);
+}
+
+int fs_do_unlink(struct udevice *dev, const char *path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->unlink)
+		return log_msg_ret("fsu", -ENOSYS);
+
+	return ops->unlink(dev, path);
+}
+
+int fs_do_mkdir(struct udevice *dev, const char *path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->mkdir)
+		return log_msg_ret("fsm", -ENOSYS);
+
+	return ops->mkdir(dev, path);
+}
+
 int fs_unmount(struct udevice *dev)
 {
 	struct fs_ops *ops = fs_get_ops(dev);
