@@ -122,6 +122,19 @@ void *kmemdup(const void *src, size_t len, gfp_t gfp);
  */
 char *kmemdup_nul(const char *s, size_t len, gfp_t gfp);
 
+/**
+ * kstrdup_const - conditionally duplicate an existing const string
+ * @s: the string to duplicate
+ * @gfp: the GFP mask used in the kmalloc() call when allocating memory
+ *
+ * Note: Strings allocated by kstrdup_const should be freed by kfree_const and
+ * must not be passed to krealloc().
+ *
+ * Return: source string if it is in .rodata section otherwise
+ * fallback to kstrdup.
+ */
+#define kstrdup_const(s, gfp) strdup_const(s)
+
 /* kmem_cache stubs */
 struct kmem_cache {
 	int sz;
