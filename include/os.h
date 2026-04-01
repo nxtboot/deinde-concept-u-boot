@@ -109,6 +109,51 @@ int os_isatty(int fd);
 int os_unlink(const char *pathname);
 
 /**
+ * os_mkdir() - Create a directory
+ *
+ * @pathname:	Path of directory to create
+ * @mode:	Permissions (e.g. 0755)
+ * Return:	0 for success, -errno on error
+ */
+int os_mkdir(const char *pathname, int mode);
+
+/**
+ * os_rmdir() - Remove an empty directory
+ *
+ * @pathname:	Path of directory to remove
+ * Return:	0 for success, -errno on error
+ */
+int os_rmdir(const char *pathname);
+
+/**
+ * os_readlink() - Read the target of a symbolic link
+ *
+ * @pathname:	Path of the symbolic link
+ * @buf:	Buffer to receive the target path
+ * @size:	Size of buffer
+ * Return:	length of target on success, -errno on error
+ */
+int os_readlink(const char *pathname, char *buf, int size);
+
+/**
+ * os_symlink() - Create a symbolic link
+ *
+ * @target:	Target path
+ * @linkpath:	Path of the symbolic link to create
+ * Return:	0 for success, -errno on error
+ */
+int os_symlink(const char *target, const char *linkpath);
+
+/**
+ * os_rename() - Rename or move a file or directory
+ *
+ * @old_path:	Current path
+ * @new_path:	New path
+ * Return:	0 for success, -errno on error
+ */
+int os_rename(const char *old_path, const char *new_path);
+
+/**
  * os_fgets() - read a string from a file stream
  *
  * Reads at most @size - 1 characters from the stream and stores them in str.
