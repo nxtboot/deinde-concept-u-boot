@@ -1,4 +1,4 @@
-.. SPDX-License-Identifier: GPL-2.0+:
+.. SPDX-License-Identifier: GPL-2.0+
 
 .. index::
    single: mv (command)
@@ -9,53 +9,48 @@ mv command
 Synopsis
 --------
 
-::
+With VFS (CONFIG_CMD_VFS)::
+
+    mv <old_path> <new_path>
+
+Legacy (CONFIG_CMD_FS_LEGACY)::
 
     mv <interface> [<dev[:part]>] <old_path> <new_path>
 
 Description
 -----------
 
-The mv command renames/moves a file or directory within a filesystem.
-
-interface
-    interface for accessing the block device (mmc, sata, scsi, usb, ....)
-
-dev
-    device number
-
-part
-    partition number, defaults to 0 (whole device)
+The mv command renames or moves a file or directory within a filesystem.
+Both paths must be on the same mounted filesystem - cross-filesystem
+moves are not supported.
 
 old_path
-   existing path to file/directory
+    absolute or relative path to the existing file or directory
 
 new_path
-   new path/name for the rename/move
-
+    absolute or relative path for the new name/location
 
 Example
 -------
 
-    # Rename file 'foo' in directory 'dir' to 'bar'
-    mv mmc 0:0 dir/foo dir/bar
+VFS::
 
-    # Move file 'f' from directory 'foo' to existing directory 'bar' renaming
-    # 'f' to 'g'
-    mv mmc 0:0 foo/f bar/g
+    => mount hostfs /host
+    => mv /host/old-name.txt /host/new-name.txt
+    => mv /host/file.txt /host/subdir/file.txt
 
-    # Move directory 'abc' in directory 'dir1' into existing directory 'dir2'
-    mv mmc 0:0 dir1/abc dir2
+Legacy::
+
+    => mv mmc 0:0 dir/foo dir/bar
 
 Configuration
 -------------
 
-The mv command is only available if CONFIG_CMD_FS_GENERIC=y.
+The VFS mv command is available when CONFIG_CMD_VFS=y. The legacy
+version is available when CONFIG_CMD_FS_LEGACY=y.
 
 Return value
 ------------
 
-The return value $? is set to 0 (true) if the file was successfully
-renamed/moved.
-
-If an error occurs, the return value $? is set to 1 (false).
+The return value $? is set to 0 (true) if the rename succeeded,
+1 (false) otherwise.

@@ -64,6 +64,7 @@ Implementation
    ulib
    vbe
    version
+   vfs
 
 Debugging
 ---------

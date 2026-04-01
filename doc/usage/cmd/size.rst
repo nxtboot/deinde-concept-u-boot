@@ -11,16 +11,33 @@ Synopsis
 
 ::
 
+    size <path>
     size <interface> <dev[:part]> <filename>
 
 Description
 -----------
 
-The size command determines the size of a file and sets the environment variable
-filesize to this value. If filename points to a directory, the value is set to
-zero.
+The size command determines the size of a file and sets the environment
+variable filesize to this value.
 
 If the command fails, the filesize environment variable is not changed.
+
+VFS form
+~~~~~~~~
+
+When the VFS is enabled, the first form is used. The filesystem must be
+mounted first using ``mount``.
+
+path
+    absolute or relative path to the file in the VFS
+
+Legacy form
+~~~~~~~~~~~
+
+The second form accesses a block device directly without mounting.
+
+interface
+    interface for accessing the block device (mmc, sata, scsi, usb, ....)
 
 dev
     device number
@@ -31,7 +48,30 @@ part
 filename
     path to file
 
+Example
+-------
+
+VFS::
+
+    => mount host 0:0 /mnt
+    => size /mnt/testfile.txt
+    => echo $filesize
+    c
+
+Legacy::
+
+    => size mmc 0:1 snp.efi
+    => echo $filesize
+    24720
+
 Configuration
 -------------
 
-The size command is only available if CONFIG_CMD_FS_GENERIC=y.
+The VFS form is available when CONFIG_CMD_VFS=y. The legacy form is
+available when CONFIG_CMD_FS_GENERIC=y.
+
+Return value
+------------
+
+The return value $? is set to 0 (true) if the file was found,
+1 (false) otherwise.

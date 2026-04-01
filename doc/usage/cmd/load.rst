@@ -11,15 +11,40 @@ Synopsis
 
 ::
 
+    load <addr> <path> [bytes [pos]]
     load <interface> [<dev[:part]> [<addr> [<filename> [bytes [pos]]]]]
 
 Description
 -----------
 
-The load command is used to read a file from a filesystem into memory.
+The load command reads a file from a filesystem into memory.
 
-The number of transferred bytes is saved in the environment variable filesize.
-The load address is saved in the environment variable fileaddr.
+The number of transferred bytes is saved in the environment variable
+filesize. The load address is saved in the environment variable fileaddr.
+
+VFS form
+~~~~~~~~
+
+When the VFS is enabled, the first form is used. The filesystem must be
+mounted first using ``mount``.
+
+addr
+    load address (hexadecimal)
+
+path
+    absolute or relative path to the file in the VFS
+
+bytes
+    maximum number of bytes to load (hexadecimal, default: whole file)
+
+pos
+    byte offset to start reading from (hexadecimal, default: 0)
+
+Legacy form
+~~~~~~~~~~~
+
+The second form is used when CONFIG_CMD_FS_GENERIC=y and accesses a
+block device directly without mounting.
 
 interface
     interface for accessing the block device (mmc, sata, scsi, usb, ....)
@@ -48,25 +73,26 @@ part, addr, bytes, pos are hexadecimal numbers.
 Example
 -------
 
-::
+VFS::
+
+    => mount host 0:0 /mnt
+    => load ${loadaddr} /mnt/Image
+    12345678 bytes read
+    => load ${loadaddr} /mnt/Image 1000
+    4096 bytes read
+
+Legacy::
 
     => load mmc 0:1 ${kernel_addr_r} snp.efi
     149280 bytes read in 11 ms (12.9 MiB/s)
-    =>
-    => load mmc 0:1 ${kernel_addr_r} snp.efi 1000000
-    149280 bytes read in 9 ms (15.8 MiB/s)
-    =>
     => load mmc 0:1 ${kernel_addr_r} snp.efi 1000000 100
     149024 bytes read in 10 ms (14.2 MiB/s)
-    =>
-    => load mmc 0:1 ${kernel_addr_r} snp.efi 10
-    16 bytes read in 1 ms (15.6 KiB/s)
-    =>
 
 Configuration
 -------------
 
-The load command is only available if CONFIG_CMD_FS_GENERIC=y.
+The VFS form is available when CONFIG_CMD_VFS=y. The legacy form is
+available when CONFIG_CMD_FS_GENERIC=y.
 
 Return value
 ------------
