@@ -11,6 +11,8 @@
 #ifndef __VFS_H
 #define __VFS_H
 
+#include <dir.h>
+
 struct udevice;
 
 /**
@@ -135,5 +137,19 @@ void vfs_print_mounts(void);
  * Return: 0 if OK, -ve on error
  */
 int vfs_ls(const char *path);
+
+/**
+ * vfs_open_file() - Open a file by absolute VFS path
+ *
+ * Resolves the path through the mount tree, splits into directory and leaf,
+ * then opens the file.
+ *
+ * @path: Absolute VFS path to the file
+ * @oflags: Open flags (DIR_O_RDONLY, DIR_O_WRONLY, DIR_O_RDWR)
+ * @filp: Returns the UCLASS_FILE device
+ * Return: 0 if OK, -ve on error
+ */
+int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
+		  struct udevice **filp);
 
 #endif

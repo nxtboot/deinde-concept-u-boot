@@ -331,6 +331,41 @@ void vfs_print_mounts(void)
 	}
 }
 
+int vfs_open_file(const char *path, enum dir_open_flags_t oflags,
+		  struct udevice **filp)
+{
+	struct udevice *vfs, *mnt, *dir;
+	const char *subpath, *leaf;
+	struct vfsmount *mnt_priv;
+	char *dirpath;
+	int ret;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return log_msg_ret("voi", -ENXIO);
+
+	ret = vfs_find_mount(vfs, path, &mnt, &subpath);
+	if (ret)
+		return log_msg_ret("vom", ret);
+
+	mnt_priv = dev_get_uclass_priv(mnt);
+
+	ret = fs_split_path(subpath, &dirpath, &leaf);
+	if (ret)
+		return log_msg_ret("vos", ret);
+
+	ret = fs_lookup_dir(mnt_priv->target, dirpath, &dir);
+	free(dirpath);
+	if (ret)
+		return log_msg_ret("vod", ret);
+
+	ret = dir_open_file(dir, leaf, oflags, filp);
+	if (ret)
+		return log_msg_ret("vof", ret);
+
+	return 0;
+}
+
 int vfs_ls(const char *path)
 {
 	struct udevice *vfs, *mnt, *dir = NULL;
