@@ -12,6 +12,7 @@
 #define LOG_CATEGORY	UCLASS_MOUNT
 
 #include <blk.h>
+#include <ctype.h>
 #include <dir.h>
 #include <dm.h>
 #include <event.h>
@@ -750,6 +751,112 @@ int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
 
 	return 0;
 }
+
+#ifdef CONFIG_AUTO_COMPLETE
+int vfs_complete(char *buf, const char *path, int maxv, char *cmdv[])
+{
+	char resolved[FILE_MAX_PATH_LEN];
+	struct udevice *vfs, *mnt_dev, *dir;
+	struct fs_dir_stream *strm;
+	const char *subpath, *prefix;
+	struct vfsmount *mnt;
+	struct fs_dirent dent;
+	int n = 0;
+
+	vfs = vfs_root();
+	if (!vfs)
+		return 0;
+
+	path = vfs_path_resolve(vfs_getcwd(), path, resolved, sizeof(resolved));
+	if (!path)
+		return 0;
+
+	/*
+	 * Split into directory part and prefix to match.
+	 * "/host/ar" -> dir="/host", prefix="ar"
+	 * "/host/"   -> dir="/host", prefix=""
+	 * "/"        -> dir="/", prefix=""
+	 */
+	prefix = strrchr(path, '/');
+	if (!prefix)
+		return 0;
+	prefix++;	/* skip the '/' */
+
+	/* Complete from root mount points */
+	if (prefix == path + 1) {
+		struct dir_uc_priv *uc_priv;
+
+		vfs_foreach_mount(mnt, mnt_dev) {
+			uc_priv = dev_get_uclass_priv(mnt->dir);
+			if (!strncmp(uc_priv->path, prefix, strlen(prefix))) {
+				if (n >= maxv - 1)
+					break;
+				sprintf(buf, "/%s/", uc_priv->path);
+				cmdv[n++] = buf;
+				buf += strlen(buf) + 1;
+			}
+		}
+		cmdv[n] = NULL;
+		return n;
+	}
+
+	/* Resolve the directory portion */
+	if (vfs_find_mount(vfs, path, &mnt_dev, &subpath))
+		return 0;
+
+	mnt = dev_get_uclass_priv(mnt_dev);
+
+	/* Get the directory part of subpath (everything before prefix) */
+	{
+		char dirpath[FILE_MAX_PATH_LEN];
+		int dir_len;
+
+		dir_len = prefix - 1 - (path + strlen(path) - strlen(subpath));
+		if (dir_len < 0)
+			dir_len = 0;
+		memcpy(dirpath, subpath, dir_len);
+		dirpath[dir_len] = '\0';
+
+		if (fs_lookup_dir(mnt->target, dirpath, &dir))
+			return 0;
+	}
+
+	if (dir_open(dir, &strm))
+		return 0;
+
+	while (!dir_read(dir, strm, &dent)) {
+		if (strncmp(dent.name, prefix, strlen(prefix)))
+			continue;
+		if (n >= maxv - 1)
+			break;
+		strcpy(buf, dent.name);
+		if (dent.type == FS_DT_DIR)
+			strcat(buf, "/");
+		cmdv[n++] = buf;
+		buf += strlen(buf) + 1;
+	}
+
+	dir_close(dir, strm);
+	cmdv[n] = NULL;
+
+	return n;
+}
+
+int vfs_cmd_complete(int argc, char *const argv[], char last_char,
+		     int maxv, char *cmdv[])
+{
+	static char complete_buf[2048];
+	int space = last_char == '\0' || isblank(last_char);
+
+	/* Complete the last argument as a path */
+	if (space && argc >= 1)
+		return vfs_complete(complete_buf, "", maxv, cmdv);
+	if (!space && argc >= 2)
+		return vfs_complete(complete_buf, argv[argc - 1], maxv, cmdv);
+
+	return 0;
+}
+#endif
 
 struct udevice *vfs_root(void)
 {

@@ -145,11 +145,12 @@ static int do_umount(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_COMPLETE(
 	umount,	2,	1,	do_umount,
 	"unmount a filesystem",
 	"<mountpoint>\n"
-	"    - Unmount the filesystem at 'mountpoint'"
+	"    - Unmount the filesystem at 'mountpoint'",
+	vfs_cmd_complete
 );
 
 static int do_cd(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -167,11 +168,12 @@ static int do_cd(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_COMPLETE(
 	cd,	2,	1,	do_cd,
 	"change working directory",
 	"[<path>]\n"
-	"    - Change to 'path' in the VFS (default /)"
+	"    - Change to 'path' in the VFS (default /)",
+	vfs_cmd_complete
 );
 
 static int do_pwd(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -203,11 +205,12 @@ static int do_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_COMPLETE(
 	ls,	2,	1,	do_ls,
 	"list files in a directory (default cwd)",
 	"[<path>]\n"
-	"    - List files at 'path' in the VFS (default cwd)"
+	"    - List files at 'path' in the VFS (default cwd)",
+	vfs_cmd_complete
 );
 
 static int do_size(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -314,7 +317,7 @@ U_BOOT_CMD(
 	"List supported filesystem types", ""
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_COMPLETE(
 	load,	7,	0,	do_load_vfs,
 	"load binary file from a filesystem",
 	"<addr> <path> [bytes [pos]]\n"
@@ -324,5 +327,6 @@ U_BOOT_CMD(
 	"      'pos' gives the file byte position to start reading from.\n"
 	"      If 'pos' is 0 or omitted, the file is read from the start.\n"
 	"load <interface> [<dev[:part]> [<addr> [<filename> [bytes [pos]]]]]\n"
-	"    - Legacy: load from block device interface"
+	"    - Legacy: load from block device interface",
+	vfs_cmd_complete
 );

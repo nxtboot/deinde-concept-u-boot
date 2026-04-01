@@ -14,6 +14,7 @@
 #include <dir.h>
 
 struct blk_desc;
+struct cmd_tbl;
 struct disk_partition;
 struct fs_dirent;
 struct fs_statfs;
@@ -290,5 +291,30 @@ int fs_mount_blkdev(const char *type, struct blk_desc *desc, int part_num,
  * vfs_print_mounts() - Print all current mounts
  */
 void vfs_print_mounts(void);
+
+#ifdef CONFIG_AUTO_COMPLETE
+/**
+ * vfs_complete() - Complete a partial VFS path
+ *
+ * Suitable for use as (or called from) a U_BOOT_CMD complete callback.
+ * Fills @cmdv with matching directory entries.
+ *
+ * @buf: Scratch buffer (must be at least FILE_MAX_PATH_LEN bytes)
+ * @path: Partial path to complete (absolute or relative)
+ * @maxv: Maximum number of entries in @cmdv
+ * @cmdv: Output array of matching names (NULL-terminated)
+ * Return: number of matches
+ */
+int vfs_complete(char *buf, const char *path, int maxv, char *cmdv[]);
+
+/**
+ * vfs_cmd_complete() - Complete callback for commands taking a VFS path
+ *
+ * Completes the last argument as a VFS path. Can be passed directly to
+ * U_BOOT_CMD_COMPLETE.
+ */
+int vfs_cmd_complete(int argc, char *const argv[], char last_char,
+		     int maxv, char *cmdv[]);
+#endif
 
 #endif

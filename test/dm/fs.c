@@ -10,6 +10,7 @@
 #include <dm.h>
 #include <file.h>
 #include <fs.h>
+#include <mapmem.h>
 #include <os.h>
 #include <vfs.h>
 #include <dm/test.h>
@@ -138,6 +139,109 @@ static int dm_test_fs_file_write(struct unit_test_state *uts)
 DM_TEST(dm_test_fs_file_write, UTF_SCAN_FDT);
 
 #if IS_ENABLED(CONFIG_VFS)
+/* Helper: resolve and compare */
+static int check_resolve(struct unit_test_state *uts, const char *cwd,
+			 const char *path, const char *expected)
+{
+	char buf[256];
+	const char *ret;
+
+	ret = vfs_path_resolve(cwd, path, buf, sizeof(buf));
+	ut_assertnonnull(ret);
+	ut_asserteq_str(expected, ret);
+
+	return 0;
+}
+
+/* Test vfs_path_resolve() - no VFS device needed */
+static int dm_test_vfs_path_resolve(struct unit_test_state *uts)
+{
+	char buf[512], buf2[512];
+	int i;
+
+	/* NULL/empty path returns cwd */
+	ut_assertok(check_resolve(uts, "/", NULL, "/"));
+	ut_assertok(check_resolve(uts, "/", "", "/"));
+	ut_assertok(check_resolve(uts, "/host", NULL, "/host"));
+
+	/* Absolute path ignores cwd */
+	ut_assertok(check_resolve(uts, "/host", "/mnt", "/mnt"));
+	ut_assertok(check_resolve(uts, "/host", "/a/b", "/a/b"));
+
+	/* Relative path is joined with cwd */
+	ut_assertok(check_resolve(uts, "/", "foo", "/foo"));
+	ut_assertok(check_resolve(uts, "/host", "file.txt", "/host/file.txt"));
+	ut_assertok(check_resolve(uts, "/host", "sub/file", "/host/sub/file"));
+
+	/* . is resolved */
+	ut_assertok(check_resolve(uts, "/host", ".", "/host"));
+	ut_assertok(check_resolve(uts, "/host", "./a", "/host/a"));
+
+	/* .. is resolved */
+	ut_assertok(check_resolve(uts, "/host", "..", "/"));
+	ut_assertok(check_resolve(uts, "/host/sub", "..", "/host"));
+	ut_assertok(check_resolve(uts, "/host/a", "../b", "/host/b"));
+
+	/* .. at root stays at root */
+	ut_assertok(check_resolve(uts, "/", "..", "/"));
+	ut_assertok(check_resolve(uts, "/", "../..", "/"));
+
+	/* Absolute path with . and .. */
+	ut_assertok(check_resolve(uts, "/", "/host/./sub/..", "/host"));
+	ut_assertok(check_resolve(uts, "/", "/a/b/../c", "/a/c"));
+
+	/* Trailing slash */
+	ut_assertok(check_resolve(uts, "/", "/host/", "/host"));
+
+	/* Stack overflow returns NULL (path with >64 components) */
+	strcpy(buf, "/");
+	for (i = 0; i < 65; i++) {
+		if (i)
+			strcat(buf, "/");
+		strcat(buf, "a");
+	}
+	ut_assertnull(vfs_path_resolve("/", buf, buf2, sizeof(buf2)));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_path_resolve, 0);
+
+/* Test vfs_complete() tab completion */
+static int dm_test_vfs_complete(struct unit_test_state *uts)
+{
+	struct udevice *vfs, *fsdev, *dir;
+	char buf[2048];
+	char *cmdv[16];
+
+	ut_assertok(vfs_init());
+	vfs = vfs_root();
+	ut_assertnonnull(vfs);
+
+	ut_assertok(uclass_get_device_by_name(UCLASS_FS, "hostfs", &fsdev));
+	ut_assertok(vfs_resolve(vfs, "/host", &dir));
+	ut_assertok(vfs_mount(vfs, dir, fsdev));
+
+	/* Complete from root - should find "host" mount point */
+	ut_assert(vfs_complete(buf, "/", 16, cmdv) >= 1);
+	ut_asserteq_str("/host/", cmdv[0]);
+
+	/* Partial mount name */
+	ut_assert(vfs_complete(buf, "/h", 16, cmdv) >= 1);
+	ut_asserteq_str("/host/", cmdv[0]);
+
+	/* Non-matching prefix should return 0 */
+	ut_asserteq(0, vfs_complete(buf, "/z", 16, cmdv));
+
+	/* Complete with empty prefix shows entries */
+	ut_assert(vfs_complete(buf, "/host/", 16, cmdv) >= 1);
+
+	os_unlink(".comp_test");
+	ut_assertok(vfs_umount_path(vfs, "/host"));
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_complete, UTF_SCAN_FDT);
+
 /* Test VFS init and root directory operations */
 static int dm_test_vfs_init(struct unit_test_state *uts)
 {
