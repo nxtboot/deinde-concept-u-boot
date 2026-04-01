@@ -174,8 +174,8 @@ void acpi_fill_header(struct acpi_table_header *header, char *signature)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, OEM_TABLE_ID, 8);
 	header->oem_revision = OEM_REVISION;
-	memcpy(header->creator_id, ASLC_ID, 4);
-	header->creator_revision = ASL_REVISION;
+	memcpy(header->creator_id, ACPI_CREATOR_ID, 4);
+	header->creator_revision = ACPI_CREATOR_REVISION;
 }
 
 void acpi_align(struct acpi_ctx *ctx)
