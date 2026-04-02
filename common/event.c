@@ -50,6 +50,10 @@ const char *const type_name[] = {
 
 	/* main loop events */
 	"main_loop",
+
+	/* post preboot events */
+	"post_preboot",
+
 	"bootcmd",
 
 	/* booting */

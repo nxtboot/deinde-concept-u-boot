@@ -183,6 +183,15 @@ enum event_t {
 	EVT_MAIN_LOOP,
 
 	/**
+	 * @EVT_POST_PREBOOT:
+	 * This event is triggered in main_loop() after the preboot command
+	 * has run, so that devices initialised by preboot (e.g. USB, UFS)
+	 * are available to event handlers. Its parameter is NULL.
+	 * A non-zero return value causes the boot to fail.
+	 */
+	EVT_POST_PREBOOT,
+
+	/**
 	 * @EVT_BOOTCMD:
 	 * This event is triggered in main_loop() before autoboot_command().
 	 * It allows platform code to provide a custom bootcmd string.
