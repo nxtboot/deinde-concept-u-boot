@@ -614,6 +614,33 @@ static int dm_test_vfs_stat(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_stat, UTF_SCAN_FDT);
 
+/* Test the cat command via VFS */
+static int dm_test_vfs_cat(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* Write a small file and cat it */
+	memcpy(map_sysmem(0x1000, 11), "hello world", 11);
+	ut_assertok(run_command("save 1000 /host/.cat_test 0xb", 0));
+	ut_assert_nextlinen("11 bytes");
+	ut_assert_console_end();
+
+	ut_assertok(run_command("cat /host/.cat_test", 0));
+	ut_assert_nextline("hello world");
+	ut_assert_console_end();
+
+	os_unlink(".cat_test");
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_cat, UTF_SCAN_FDT);
+
 /* Test save and load round-trip via VFS */
 static int dm_test_vfs_save(struct unit_test_state *uts)
 {
