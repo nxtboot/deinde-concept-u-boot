@@ -22,6 +22,7 @@
 #include <fs_legacy.h>
 #include <malloc.h>
 #include <part.h>
+#include <sort.h>
 #include <vfs.h>
 #include "vfs_internal.h"
 #include <dm/device-internal.h>
@@ -802,15 +803,25 @@ int vfs_stat(const char *path, struct fs_dirent *dent)
 	return log_msg_ret("vsn", -ENOENT);
 }
 
+static int dirent_cmp(const void *a, const void *b)
+{
+	const struct fs_dirent *da = a;
+	const struct fs_dirent *db = b;
+
+	return strcmp(da->name, db->name);
+}
+
 int vfs_ls(const char *path)
 {
 	char resolved[FILE_MAX_PATH_LEN];
 	struct udevice *mnt, *dir = NULL;
 	struct fs_dir_stream *strm;
+	struct fs_dirent *entries;
 	struct fs_dirent dent;
 	const char *subpath;
-	bool empty = true;
-	int ret;
+	int count = 0;
+	int max = 64;
+	int ret, i;
 
 	ret = vfs_resolve_mount(path, resolved,
 				sizeof(resolved), &mnt, &subpath);
@@ -830,17 +841,41 @@ int vfs_ls(const char *path)
 	if (ret)
 		return ret;
 
+	entries = malloc(max * sizeof(*entries));
+	if (!entries)
+		return -ENOMEM;
+
 	ret = dir_open(dir, &strm);
-	if (ret)
+	if (ret) {
+		free(entries);
 		return ret;
+	}
 
 	while (!dir_read(dir, strm, &dent)) {
-		if (dent.type == FS_DT_DIR)
-			printf("DIR %10u %s\n", 0, dent.name);
-		else
-			printf("    %10llu %s\n", dent.size, dent.name);
-		empty = false;
+		if (count == max) {
+			struct fs_dirent *tmp;
+
+			max *= 2;
+			tmp = realloc(entries, max * sizeof(*entries));
+			if (!tmp) {
+				free(entries);
+				return -ENOMEM;
+			}
+			entries = tmp;
+		}
+		entries[count++] = dent;
 	}
+
+	qsort(entries, count, sizeof(*entries), dirent_cmp);
+
+	for (i = 0; i < count; i++) {
+		if (entries[i].type == FS_DT_DIR)
+			printf("DIR %10u %s\n", 0, entries[i].name);
+		else
+			printf("    %10llu %s\n", entries[i].size,
+			       entries[i].name);
+	}
+	free(entries);
 
 	dir_close(dir, strm);
 
