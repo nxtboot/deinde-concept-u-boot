@@ -515,4 +515,8 @@
 	keyboard-controller {
 		bootph-some-ram;
 	};
+
+	hostfs {
+		compatible = "sandbox,fs";
+	};
 };
