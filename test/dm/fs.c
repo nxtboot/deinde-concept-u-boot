@@ -1020,6 +1020,37 @@ static int dm_test_vfs_stat(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_vfs_stat, UTF_SCAN_FDT);
 
+/* Test the -f and -d operators in the test command */
+static int dm_test_vfs_test_fd(struct unit_test_state *uts)
+{
+	ut_assertok(vfs_init());
+
+	ut_assertok(run_command("mount hostfs /host", 0));
+	ut_assert_console_end();
+
+	/* -f should succeed for a regular file */
+	ut_assertok(run_command("test -f /host/README", 0));
+
+	/* -f should fail for a directory */
+	ut_asserteq(1, run_command("test -f /host/cmd", 0));
+
+	/* -d should succeed for a directory */
+	ut_assertok(run_command("test -d /host/cmd", 0));
+
+	/* -d should fail for a regular file */
+	ut_asserteq(1, run_command("test -d /host/README", 0));
+
+	/* Both should fail for non-existent paths */
+	ut_asserteq(1, run_command("test -f /host/no-such-file", 0));
+	ut_asserteq(1, run_command("test -d /host/no-such-dir", 0));
+
+	ut_assertok(run_command("umount /host", 0));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_vfs_test_fd, UTF_SCAN_FDT);
+
 /* Test the cat command via VFS */
 static int dm_test_vfs_cat(struct unit_test_state *uts)
 {
