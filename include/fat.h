@@ -414,6 +414,14 @@ int fat_rename(const char *old_path, const char *new_path);
 int fat_mkdir(const char *dirname);
 
 /**
+ * fat_statfs() - get filesystem statistics
+ *
+ * @stats: pointer to struct fs_statfs to fill
+ * Return: 0 on success, -ve on error
+ */
+int fat_statfs(struct fs_statfs *stats);
+
+/**
  * fat_close() - close FAT filesystem and release resources
  */
 void fat_close(void);

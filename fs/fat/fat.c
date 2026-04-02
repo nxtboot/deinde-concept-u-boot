@@ -697,6 +697,33 @@ static int get_fs_info(struct fsdata *mydata)
 	return 0;
 }
 
+int fat_statfs(struct fs_statfs *stats)
+{
+	struct fsdata fsdata;
+	u32 total_clust, free_clust, entry;
+	int ret;
+
+	ret = get_fs_info(&fsdata);
+	if (ret)
+		return ret;
+
+	total_clust = (fsdata.total_sect - fsdata.data_begin) /
+		      fsdata.clust_size;
+	free_clust = 0;
+	for (entry = 2; entry < total_clust + 2; entry++) {
+		if (!get_fatent(&fsdata, entry))
+			free_clust++;
+	}
+
+	stats->bsize = fsdata.clust_size * fsdata.sect_size;
+	stats->blocks = total_clust;
+	stats->bfree = free_clust;
+
+	free(fsdata.fatbuf);
+
+	return 0;
+}
+
 int fat_itr_root(struct fat_itr *itr, struct fsdata *fsdata)
 {
 	if (get_fs_info(fsdata))
