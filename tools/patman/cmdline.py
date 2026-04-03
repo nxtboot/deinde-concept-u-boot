@@ -555,7 +555,7 @@ def add_review_subparser(subparsers):
         default=False,
         help='Show what would be done without creating drafts')
     review.add_argument(
-        '--create-drafts', action='store_true',
+        '-d', '--create-drafts', action='store_true',
         help='Create Gmail draft emails for each review')
     review.add_argument(
         '--gmail-account', type=str, default=None,
