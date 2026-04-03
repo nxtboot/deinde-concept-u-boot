@@ -472,6 +472,10 @@ static inline bool dir_emit(struct dir_context *ctx, const char *name, int len,
 	return ctx->actor(ctx, name, len, ctx->pos, ino, type) == 0;
 }
 
+/* dir_emit_dot/dotdot - implemented in fs/linux_fs.c */
+bool dir_emit_dot(struct file *file, struct dir_context *ctx);
+bool dir_emit_dotdot(struct file *file, struct dir_context *ctx);
+
 #define dir_relax_shared(i)	({ (void)(i); 1; })
 
 /* Inode mutex nesting classes */
@@ -729,11 +733,17 @@ struct inode_operations {
 /* Case-insensitive name validation - not supported */
 #define generic_ci_validate_strict_name(d, n)	({ (void)(d); (void)(n); 1; })
 
-/* Generic directory read - implemented in ext4l/stub.c */
+/* Generic directory read - implemented in fs/linux_fs.c */
 ssize_t generic_read_dir(struct file *f, char __user *buf, size_t count,
 			 loff_t *ppos);
 
-/* Block addressability check - implemented in ext4l/stub.c */
+/* Block addressability check - implemented in fs/linux_fs.c */
 int generic_check_addressable(unsigned int blocksize_bits, u64 num_blocks);
+
+/* Read-only file operations stub - implemented in fs/linux_fs.c */
+extern const struct file_operations generic_ro_fops;
+
+/* Symlink inode operations stub - implemented in fs/linux_fs.c */
+extern const struct inode_operations page_symlink_inode_operations;
 
 #endif /* _LINUX_FS_H */
