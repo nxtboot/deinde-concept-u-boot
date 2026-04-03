@@ -4,19 +4,37 @@
 # Copyright 2023 Google LLC
 #
 
+"""u_boot_pylib test runner"""
+
 import os
 import sys
 
-if __name__ == "__main__":
-    # Allow 'from u_boot_pylib import xxx to work'
-    our_path = os.path.dirname(os.path.realpath(__file__))
-    sys.path.append(os.path.join(our_path, '..'))
+# Allow 'from u_boot_pylib import xxx' to work
+our_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(our_path, '..'))
 
-    # Run tests
-    from u_boot_pylib import test_util
+import argparse
 
+from u_boot_pylib import test_util
+
+
+def run_tests():
+    parser = argparse.ArgumentParser(description='u_boot_pylib test runner')
+    parser.add_argument('cmd', choices=['test'], help='Command to run')
+    parser.add_argument('testname', nargs='?', default=None,
+                        help='Specific test to run')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Verbose output')
+    args = parser.parse_args()
+
+    to_run = args.testname if args.testname not in [None, 'test'] else None
     result = test_util.run_test_suites(
-        'u_boot_pylib', False, False, False, False, None, None, None,
-        ['terminal'])
+        'u_boot_pylib', False, args.verbose, False,
+        False, None, to_run, None,
+        ['u_boot_pylib.terminal'])
 
     sys.exit(0 if result.wasSuccessful() else 1)
+
+
+if __name__ == "__main__":
+    run_tests()
