@@ -17,14 +17,17 @@ except ImportError:
     # for Python 3.6
     import importlib_resources as resources
 
+from patman import cseries
+from patman import patchstream
+from patman import send
+from patman import settings
+from patman import status
+from patman import workflow
+from patman.patchwork import Patchwork
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
 from u_boot_pylib import tools
 from u_boot_pylib import tout
-from patman import patchstream
-from patman.patchwork import Patchwork
-from patman import send
-from patman import settings
 
 
 def setup():
@@ -45,6 +48,7 @@ def do_send(args):
     send.send(args)
 
 
+# pylint: disable=R0913
 def patchwork_status(branch, count, start, end, dest_branch, force,
                      show_comments, url, single_thread=False):
     """Check the status of patches in patchwork
@@ -81,11 +85,11 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
     warnings = 0
     for cmt in series.commits:
         if cmt.warn:
-            print('%d warnings for %s:' % (len(cmt.warn), cmt.hash))
+            print(f'{len(cmt.warn)} warnings for {cmt.hash}:')
             for warn in cmt.warn:
                 print('\t', warn)
                 warnings += 1
-            print
+            print()
     if warnings:
         raise ValueError('Please fix warnings before running status')
     links = series.get('links')
@@ -103,9 +107,6 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
         url = series.patchwork_url
     pwork = Patchwork(url, single_thread=single_thread)
 
-    # Import this here to avoid failing on other commands if the dependencies
-    # are not present
-    from patman import status
     pwork = Patchwork(url)
     status.check_and_show_status(series, link, branch, dest_branch, force,
                                  show_comments, False, pwork)
@@ -159,6 +160,7 @@ def _setup_patchwork(cser, pwork, ups, pw_url):
     return pwork
 
 
+# pylint: disable=R0912,R0915
 def do_series(args, test_db=None, pwork=None, cser=None):
     """Process a series subcommand
 
@@ -170,8 +172,6 @@ def do_series(args, test_db=None, pwork=None, cser=None):
             needed
         cser (Cseries): Cseries object to use, None to create one
     """
-    from patman import cseries
-
     if not cser:
         cser = cseries.Cseries(test_db)
     needs_patchwork = [
@@ -266,6 +266,7 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         cser.close_database()
 
 
+# pylint: disable=R0912
 def upstream(args, test_db=None):
     """Process an 'upstream' subcommand
 
@@ -274,8 +275,6 @@ def upstream(args, test_db=None):
         test_db (str or None): Directory containing the test database, None to
             use the normal one
     """
-    from patman import cseries
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -324,6 +323,7 @@ def upstream(args, test_db=None):
         cser.close_database()
 
 
+# pylint: disable=R0912
 def patchwork(args, test_db=None, pwork=None):
     """Process a 'patchwork' subcommand
     Args:
@@ -332,8 +332,6 @@ def patchwork(args, test_db=None, pwork=None):
             use the normal one
         pwork (Patchwork): Patchwork object to use
     """
-    from patman import cseries
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -387,9 +385,6 @@ def do_workflow(args, test_db=None):
         test_db (str or None): Directory containing the test database, None to
             use the normal one
     """
-    from patman import cseries
-    from patman import workflow
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -408,6 +403,7 @@ def do_workflow(args, test_db=None):
         cser.close_database()
 
 
+# pylint: disable=R0912
 def do_patman(args, test_db=None, pwork=None, cser=None):
     """Process a patman command
 
@@ -458,7 +454,7 @@ def do_patman(args, test_db=None, pwork=None, cser=None):
             patchwork(args, test_db, pwork)
         elif args.cmd == 'workflow':
             do_workflow(args, test_db)
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=W0718
         terminal.tprint(f'patman: {type(exc).__name__}: {exc}',
                         colour=terminal.Color.RED)
         if args.debug:
