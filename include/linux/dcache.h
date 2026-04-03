@@ -48,11 +48,14 @@ static const struct qstr dotdot_name = QSTR_INIT("..", 2);
  *
  * U-Boot stub - minimal fields for ext4l.
  */
+struct dentry_operations;
+
 struct dentry {
 	struct qstr d_name;
 	struct inode *d_inode;
 	struct super_block *d_sb;
 	struct dentry *d_parent;
+	const struct dentry_operations *d_op;
 };
 
 /**
