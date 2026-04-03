@@ -233,10 +233,7 @@ struct ext4_iloc;
 /*
  * Stubs for dir.c
  */
-ssize_t generic_read_dir(struct file *f, char *buf, size_t count, loff_t *ppos)
-{
-	return -EISDIR;
-}
+/* generic_read_dir is now in fs/linux_fs.c */
 
 /* __ext4_error_file is now in super.c */
 
@@ -480,11 +477,7 @@ int sb_set_blocksize(struct super_block *sb, int size)
 /* strscpy_pad is now a macro in linux/string.h */
 /* kmemdup_nul is now in lib/string.c */
 
-/* Address check */
-int generic_check_addressable(unsigned int blocksize_bits, u64 num_blocks)
-{
-	return 0;
-}
+/* generic_check_addressable is now in fs/linux_fs.c */
 
 /* Block device blocks */
 u64 sb_bdev_nr_blocks(struct super_block *sb)

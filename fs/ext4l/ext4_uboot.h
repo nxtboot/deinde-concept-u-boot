@@ -243,7 +243,7 @@ int sync_filesystem(void *sb);
 /* Trace stubs for super.c - declaration for stub.c */
 void trace_ext4_error(struct super_block *sb, const char *func, unsigned int line);
 
-/* end_buffer_write_sync - implemented in support.c */
+/* end_buffer_write_sync - implemented in fs/linux_fs.c */
 void end_buffer_write_sync(struct buffer_head *bh, int uptodate);
 
 /* ext4 superblock initialisation and commit */
@@ -251,15 +251,13 @@ int ext4_commit_super(struct super_block *sb);
 int ext4_fill_super(struct super_block *sb, struct fs_context *fc);
 void ext4_unregister_li_request(struct super_block *sb);
 
-/* ext4l support functions (support.c) */
+/* Common VFS functions (fs/linux_fs.c) */
 int bh_cache_sync(void);
-int ext4l_read_block(struct block_device *bdev, sector_t block, size_t size,
-		     void *buffer);
-int ext4l_write_block(struct block_device *bdev, sector_t block, size_t size,
-		      void *buffer);
-struct membuf *ext4l_get_msg_buf(void);
 void bh_cache_clear(struct block_device *bdev);
 void bh_cache_release_jbd(struct block_device *bdev);
+
+/* ext4l support functions (support.c) */
+struct membuf *ext4l_get_msg_buf(void);
 void ext4l_crc32c_init(void);
 void ext4l_msg_init(void);
 void ext4l_print_msgs(void);
