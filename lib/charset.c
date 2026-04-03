@@ -10,6 +10,7 @@
 #include <cp437.h>
 #include <efi_loader.h>
 #include <errno.h>
+#include <linux/nls.h>
 #include <malloc.h>
 
 /**
@@ -309,6 +310,34 @@ int utf16_utf8_strncpy(char **dst, const u16 *src, size_t count)
 	}
 	**dst = 0;
 	return 0;
+}
+
+int utf16s_to_utf8s(const u16 *pwcs, int inlen, enum utf16_endian endian,
+		    u8 *s, int maxout)
+{
+	u16 *tmp;
+	u8 *start = s;
+	int i;
+
+	tmp = malloc(inlen * sizeof(u16));
+	if (!tmp)
+		return 0;
+
+	for (i = 0; i < inlen; i++) {
+		if (endian == UTF16_BIG_ENDIAN)
+			tmp[i] = __be16_to_cpu(pwcs[i]);
+		else
+			tmp[i] = __le16_to_cpu(pwcs[i]);
+		if (!tmp[i]) {
+			inlen = i;
+			break;
+		}
+	}
+
+	s = utf16_to_utf8(s, tmp, inlen);
+	free(tmp);
+
+	return min((int)(s - start), maxout);
 }
 
 s32 utf_to_lower(const s32 code)
