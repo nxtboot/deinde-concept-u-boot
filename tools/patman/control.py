@@ -105,6 +105,7 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
         single_thread)
 
 
+
 def _setup_patchwork(cser, pwork, ups, pw_url):
     """Set up a Patchwork instance from upstream and project settings
 
@@ -230,6 +231,10 @@ def do_series(args, test_db=None, pwork=None, cser=None):
             cser.remove(args.series, dry_run=args.dry_run)
         elif args.subcmd == 'rm-version':
             cser.version_remove(args.series, args.version, dry_run=args.dry_run)
+        elif args.subcmd == 'save-notes':
+            cser.save_notes(args.series, args.notes_file)
+        elif args.subcmd == 'show-notes':
+            cser.show_notes(args.series)
         elif args.subcmd == 'rename':
             cser.rename(args.series, args.new_name, dry_run=args.dry_run)
         elif args.subcmd == 'set-upstream':
@@ -365,7 +370,7 @@ def patchwork(args, test_db=None, pwork=None):
             cser.db.patchwork_delete(args.remote)
             cser.commit()
             ups_str = f" for upstream '{args.remote}'" if args.remote else ''
-            tout.info(f'Deleted patchwork project{ups_str}')
+            tout.notice(f'Deleted patchwork project{ups_str}')
         elif args.subcmd == 'ls':
             cser.project_list()
         else:
@@ -419,11 +424,13 @@ def do_review(args, test_db=None, pwork=None, cser=None):
     try:
         cser.open_database()
 
-        ups = args.upstream
-        if not ups:
-            ups = cser.db.upstream_get_default()
-        pwork = _setup_patchwork(
-            cser, pwork, ups, args.patchwork_url)
+        # Resolve patchwork URL
+        if not pwork and not args.learn_voice and not args.sync:
+            ups = args.upstream
+            if not ups:
+                ups = cser.db.upstream_get_default()
+            pwork = _setup_patchwork(
+                cser, pwork, ups, args.patchwork_url)
 
         return review_mod.do_review(args, pwork, cser)
     finally:
@@ -480,7 +487,7 @@ def do_patman(args, test_db=None, pwork=None, cser=None):
         elif args.cmd == 'patchwork':
             patchwork(args, test_db, pwork)
         elif args.cmd == 'review':
-            do_review(args, test_db, pwork, cser)
+            ret_code = do_review(args, test_db, pwork, cser) or 0
         elif args.cmd == 'workflow':
             do_workflow(args, test_db)
     except Exception as exc:  # pylint: disable=W0718

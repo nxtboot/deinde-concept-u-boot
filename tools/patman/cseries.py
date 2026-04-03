@@ -7,11 +7,13 @@
 
 import asyncio
 from collections import OrderedDict, defaultdict
+import os
 import pygit2
 
 from u_boot_pylib import cros_subprocess
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
+from u_boot_pylib import tools
 from u_boot_pylib import tout
 
 from patman import patchstream
@@ -860,6 +862,40 @@ class Cseries(cser_helper.CseriesHelper):
         tout.notice(f"Renamed series '{series}' to '{name}'")
         if dry_run:
             tout.info('Dry run completed')
+
+    def save_notes(self, series, notes_file='review-notes.txt'):
+        """Save review-handling notes for the current series version
+
+        Args:
+            series (str): Series name, or None for current branch
+            notes_file (str): Path to the notes file
+        """
+        if not os.path.exists(notes_file):
+            raise FileNotFoundError(f"Notes file not found: {notes_file}")
+
+        notes = tools.read_file(notes_file, binary=False).strip()
+        ser, version = self._parse_series_and_version(series, None)
+        svid = self.get_series_svid(ser.idnum, version)
+        self.db.ser_ver_set_notes(svid, notes)
+        self.commit()
+        tout.notice(f"Saved notes for '{ser.name}' v{version}")
+
+    def show_notes(self, series):
+        """Show review-handling notes from all versions of a series
+
+        Args:
+            series (str): Series name, or None for current branch
+        """
+        ser, _ = self._parse_series_and_version(series, None)
+        all_notes = self.db.ser_ver_get_all_notes(ser.idnum)
+        if not all_notes:
+            tout.notice(f"No review notes for '{ser.name}'")
+            return
+        for version, notes in all_notes:
+            terminal.tprint(f'\n--- v{version} ---',
+                            colour=terminal.Color.YELLOW)
+            print(notes)
+            print()
 
     def show_info(self, series):
         """Show detailed information about a series and all its versions
