@@ -84,6 +84,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	flex \
 	gawk \
 	gdisk \
+	genisoimage \
 	gettext \
 	git \
 	gnu-efi \
