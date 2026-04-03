@@ -112,6 +112,7 @@
 #include <linux/ktime.h>
 #include <linux/list_sort.h>
 #include <linux/lockdep.h>
+#include <linux/magic.h>
 #include <linux/mbcache.h>
 #include <linux/mempool.h>
 #include <linux/mm_types.h>
@@ -174,7 +175,6 @@
 
 /* ext4-specific constants */
 #define EXT4_FIEMAP_EXTENT_HOLE		0x08000000
-#define EXT4_SUPER_MAGIC		0xEF53
 
 #define EXT4_GOING_FLAGS_DEFAULT	0
 #define EXT4_GOING_FLAGS_LOGFLUSH	1
