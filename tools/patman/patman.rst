@@ -1188,3 +1188,210 @@ putting an incorrect tag in a commit may provide a confusing message.
 There might be a few other features not mentioned in this README. They
 might be bugs. In particular, tags are case sensitive which is probably
 a bad thing.
+
+
+AI-assisted patch review
+========================
+
+Patman can review other people's patches from Patchwork using a Claude
+AI agent, and create Gmail draft replies with the review comments.
+
+Prerequisites
+-------------
+
+Install the required packages::
+
+    sudo apt install python3-google-auth python3-google-auth-oauthlib \
+        python3-google-auth-httplib2 python3-googleapi
+    pip install claude-agent-sdk
+
+Setting up Gmail API access
+---------------------------
+
+1. Go to https://console.cloud.google.com and create (or select) a project.
+
+2. Enable the **Gmail API**:
+
+   - Navigate to **APIs & Services > Enabled APIs & services**
+   - Click **Enable APIs and services**, search for "Gmail API", enable it
+
+3. Configure the **OAuth consent screen**:
+
+   - Navigate to **APIs & Services > OAuth consent screen**
+   - Set publishing status to **Testing**
+   - Under **Test users**, add your email address (e.g. sjg@chromium.org)
+
+4. Create **OAuth client credentials**:
+
+   - Navigate to **APIs & Services > Credentials**
+   - Click **Create Credentials > OAuth client ID**
+   - Application type: **Desktop app**
+   - Download the JSON file
+
+5. Save the credentials::
+
+    mkdir -p ~/.config/patman.d
+    mv ~/Downloads/client_secret_*.json ~/.config/patman.d/client_secret.json
+
+The first time you create drafts, a browser window opens for OAuth
+consent. After authentication, the token is cached in
+``~/.config/patman.d/`` and reused for future runs.
+
+Setting up Patchwork
+--------------------
+
+Configure an upstream with its Patchwork URL::
+
+    patman upstream add us https://source.denx.de/u-boot/u-boot.git \
+        --patchwork-url https://patchwork.ozlabs.org
+    patman patchwork set-project U-Boot us
+
+Basic usage
+-----------
+
+Review a series by Patchwork link::
+
+    patman review -l 497923 -U us --reviewer 'Your Name <your@email>'
+
+Or search by cover-letter title::
+
+    patman review -t 'boot/bootm: Disable interrupts' -U us \
+        --reviewer 'Your Name <your@email>'
+
+To create Gmail drafts threaded under the original emails::
+
+    patman review -l 497923 -U us \
+        --reviewer 'Your Name <your@email>' \
+        --create-drafts --gmail-account your@email
+
+Use ``-n`` with ``--create-drafts`` for a dry run that shows what would
+be created without calling the Gmail API.
+
+Use ``--apply-only`` to download and apply patches without running the
+AI review — useful for checking that patches apply cleanly.
+
+Use ``-f`` / ``--force`` to re-review a series that has already been
+reviewed. This deletes the old review records and runs the review
+again::
+
+    patman review -l 497923 -U us -f --reviewer 'Your Name <your@email>'
+
+If the reviewer email (from ``--reviewer`` or git config) differs from
+the ``--gmail-account``, patman sets the From header on the draft so
+the email is sent with the correct identity.
+
+How the review works
+--------------------
+
+For each patch, the AI agent:
+
+1. Studies all patches in the series to understand the overall design
+2. Re-reads the specific patch in detail
+3. Examines surrounding source code for context
+4. Checks existing comments from other reviewers on Patchwork and
+   avoids repeating points already made
+5. Produces a structured review (GREETING/COMMENT/VERDICT format)
+
+After all patches are reviewed, a refinement agent makes a second pass
+over the drafts to tighten the language, remove cross-patch duplicates
+and check voice consistency. Approved reviews without comments are
+excluded from refinement to preserve their quoted commit messages.
+
+A mechanical cleanup step also runs to remove backticks and fix function
+quoting style (e.g. ``malloc()`` not ```malloc```).
+
+Patchwork subcommands
+---------------------
+
+Remove a patchwork project configuration::
+
+    patman patchwork rm [remote]
+
+If no remote is given, the default (no-upstream) entry is deleted.
+
+Review notes
+------------
+
+The ``handle-reviews`` workflow produces a ``review-notes.txt`` file
+describing how feedback was addressed. Store it in the database so
+future versions can reference it::
+
+    patman series save-notes [notes-file]
+
+The default filename is ``review-notes.txt``. Display notes from all
+previous versions::
+
+    patman series show-notes
+
+Settings
+--------
+
+Add these to your ``~/.patman`` file to avoid repeating flags:
+
+.. code-block:: ini
+
+    [settings]
+    signoff: Regards,\nSimon
+    spelling: British
+
+The ``signoff`` is appended to reviews that have comments (not to
+clean Reviewed-by-only replies). The ``spelling`` setting controls
+the spelling convention used in review comments.
+
+Voice learning
+--------------
+
+Build a voice profile so AI reviews match your writing style::
+
+    # From Gmail (searches your sent reviews to the mailing list)
+    patman review --learn-voice gmail -U us \
+        --gmail-account your@email --reviewer 'Your Name <your@email>'
+
+    # From Patchwork (scans your comments on recent patches)
+    patman review --learn-voice patchwork -U us \
+        --reviewer 'Your Name <your@email>'
+
+Use ``--voice-count N`` to control how many reviews to collect
+(default: 20). The voice profile is saved to
+``~/.config/patman.d/voice.md`` and automatically used in subsequent
+reviews.
+
+Syncing drafts
+--------------
+
+After editing and sending (or deleting) Gmail drafts::
+
+    patman review --sync --gmail-account your@email \
+        --reviewer 'Your Name <your@email>'
+
+This:
+
+- Detects which drafts have been sent and records the final email
+  content in the database (for context when reviewing future versions)
+- Detects deleted drafts (review not sent)
+- Refines the voice profile if the sent text differs from the AI draft
+- Detects replies from the patch author or other reviewers
+- Generates response drafts when appropriate (e.g. answering
+  questions, pushing back on objections, or conceding gracefully)
+
+Review lifecycle
+----------------
+
+Each review goes through these states:
+
+- **new**: AI review generated, not yet sent
+- **draft**: Gmail draft created
+- **sent**: Draft was sent; body updated with actual sent content
+- **deleted**: Draft was deleted without sending
+- **replied**: Author or another reviewer has replied to our review
+
+When reviewing a new version of a previously reviewed series, patman
+loads the previous review as context for the AI, so it can check
+whether earlier issues have been addressed.
+
+Aliases
+-------
+
+The ``review`` command supports aliases ``r`` and ``rev``::
+
+    patman r -l 497923 -U us --reviewer 'Your Name <your@email>'
