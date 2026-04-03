@@ -379,8 +379,11 @@ Rules:
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
   'malloc()' or `malloc`. For other identifiers (variables, struct
-  names, filenames) do not quote them unless they are common English
-  words where the reader might not realise they are code references
+  names, filenames) use single quotes: 'my_var' not "my_var", unless
+  it is a string literal (use double quotes for strings). Do not
+  quote identifiers that are obviously code (e.g. CONFIG_FOO)
+- Never put a period directly after a code identifier — rephrase,
+  omit the period, or use an em dash to start the next clause
 - If another reviewer has already made a point, do NOT repeat it,
   rephrase it, or add to it — skip it entirely
 - Focus on what is wrong and what to do instead
@@ -479,8 +482,12 @@ VERDICT: changes_needed
 Rules:
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
-  'malloc()' or `malloc`. For other identifiers do not quote them
-  unless they are common English words that might confuse the reader
+  'malloc()' or `malloc`. For other identifiers (variables, struct
+  names, filenames) use single quotes: 'my_var' not "my_var", unless
+  it is a string literal (use double quotes for strings). Do not
+  quote identifiers that are obviously code (e.g. CONFIG_FOO)
+- Never put a period directly after a code identifier — rephrase,
+  omit the period, or use an em dash to start the next clause
 - Use {ctx.spelling} spelling
 - Be brief — only raise series-level concerns, not per-patch nits
 - Do NOT repeat issues that belong on individual patches
@@ -657,7 +664,14 @@ def _format_with_comments(ctx, greeting, verdict, comments,
             lines.append(f'> {cl}')
         if len(msg_lines) > max_quote:
             lines.append('> [...]')
-        lines.append('')
+    diffstat = getattr(ctx, 'diffstat', None)
+    if diffstat:
+        ds_lines = diffstat.strip().splitlines()
+        if len(ds_lines) <= 30:
+            lines.append('>')
+            for dl in ds_lines:
+                lines.append(f'> {dl}')
+    lines.append('')
 
     for hunk, comment in comments:
         if hunk:
@@ -1698,10 +1712,15 @@ def _find_or_register(ctx, args, clean_name, link):
     if not existing:
         return None
 
-    _, _, _, svid = existing
+    series_id, _, _, svid = existing
     reviews = ctx.cser.db.review_get_for_version(svid)
 
-    if reviews and not args.force:
+    if not reviews:
+        # Interrupted previous attempt — resume with existing record
+        tout.notice('Resuming incomplete review')
+        return series_id, svid
+
+    if not args.force:
         _, db_name, db_version, _ = existing
         tout.notice(f"Already reviewed: '{db_name}' v{db_version}")
         _show_reviews(reviews, ctx.series_data)
@@ -1710,14 +1729,10 @@ def _find_or_register(ctx, args, clean_name, link):
                                   ctx.cser)
         return None
 
-    if reviews and args.force:
-        ctx.cser.db.review_delete_for_version(svid)
-        ctx.cser.commit()
-        tout.notice('Re-reviewing (forced)')
-
-    # Re-register for re-review
-    return _register_series(ctx.cser, clean_name, ctx.version, link,
-                            ctx.series_data)
+    ctx.cser.db.review_delete_for_version(svid)
+    ctx.cser.commit()
+    tout.notice('Re-reviewing (forced)')
+    return series_id, svid
 
 
 def do_review(args, pwork, cser):
