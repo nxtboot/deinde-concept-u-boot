@@ -32,7 +32,8 @@ def run_tests():
     result = test_util.run_test_suites(
         'u_boot_pylib', False, args.verbose, False,
         False, None, to_run, None,
-        ['u_boot_pylib.terminal', cros_subprocess.TestSubprocess])
+        ['u_boot_pylib.terminal', 'u_boot_pylib.gitutil',
+         cros_subprocess.TestSubprocess])
 
     sys.exit(0 if result.wasSuccessful() else 1)
 

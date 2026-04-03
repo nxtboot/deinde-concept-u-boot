@@ -414,10 +414,9 @@ def build_email_list(in_list, alias, tag=None, warn_on_error=True):
     >>> build_email_list(['john', 'mary'], alias, None)
     ['j.bloggs@napier.co.nz', 'Mary Poppins <m.poppins@cloud.net>']
     >>> build_email_list(['john', 'mary'], alias, '--to')
-    ['--to "j.bloggs@napier.co.nz"', \
-'--to "Mary Poppins <m.poppins@cloud.net>"']
+    ['--to', 'j.bloggs@napier.co.nz', '--to', 'Mary Poppins <m.poppins@cloud.net>']
     >>> build_email_list(['john', 'mary'], alias, 'Cc')
-    ['Cc j.bloggs@napier.co.nz', 'Cc Mary Poppins <m.poppins@cloud.net>']
+    ['Cc', 'j.bloggs@napier.co.nz', 'Cc', 'Mary Poppins <m.poppins@cloud.net>']
     """
     raw = []
     for item in in_list:
@@ -501,24 +500,16 @@ def email_patches(series, cover_fname, args, dry_run, warn_on_error, cc_fname,
     >>> series = {}
     >>> series['to'] = ['fred']
     >>> series['cc'] = ['mary']
-    >>> email_patches(series, 'cover', ['p1', 'p2'], True, True, 'cc-fname', \
-            False, alias)
-    ('git send-email --annotate --to "f.bloggs@napier.co.nz" --cc \
-"m.poppins@cloud.net" --cc-cmd "./patman send --cc-cmd cc-fname" cover p1 p2', 0)
-    >>> email_patches(series, None, ['p1'], True, True, 'cc-fname', False, \
-            alias)
-    ('git send-email --annotate --to "f.bloggs@napier.co.nz" --cc \
-"m.poppins@cloud.net" --cc-cmd "./patman send --cc-cmd cc-fname" p1', 0)
+    >>> email_patches(series, 'cover', ['p1', 'p2'], True, True, 'cc-fname',
+    ...              alias)
+    ('git send-email --annotate --to f.bloggs@napier.co.nz --cc m.poppins@cloud.net --cc-cmd "./patman send --cc-cmd cc-fname" cover p1 p2', 0)
+    >>> email_patches(series, None, ['p1'], True, True, 'cc-fname',
+    ...              alias)
+    ('git send-email --annotate --to f.bloggs@napier.co.nz --cc m.poppins@cloud.net --cc-cmd "./patman send --cc-cmd cc-fname" p1', 0)
     >>> series['cc'] = ['all']
-    >>> email_patches(series, 'cover', ['p1', 'p2'], True, True, 'cc-fname', \
-            True, alias)
-    ('git send-email --annotate --to "this-is-me@me.com" --cc-cmd "./patman \
-send --cc-cmd cc-fname" cover p1 p2', 0)
-    >>> email_patches(series, 'cover', ['p1', 'p2'], True, True, 'cc-fname', \
-            False, alias)
-    ('git send-email --annotate --to "f.bloggs@napier.co.nz" --cc \
-"f.bloggs@napier.co.nz" --cc "j.bloggs@napier.co.nz" --cc \
-"m.poppins@cloud.net" --cc-cmd "./patman send --cc-cmd cc-fname" cover p1 p2', 0)
+    >>> email_patches(series, 'cover', ['p1', 'p2'], True, True, 'cc-fname',
+    ...              alias)
+    ('git send-email --annotate --to f.bloggs@napier.co.nz --cc f.bloggs@napier.co.nz --cc j.bloggs@napier.co.nz --cc m.poppins@cloud.net --cc-cmd "./patman send --cc-cmd cc-fname" cover p1 p2', 0)
 
     # Restore argv[0] since we clobbered it.
     >>> sys.argv[0] = _old_argv0
@@ -663,7 +654,7 @@ def get_top_level():
     This test makes sure that we are running tests in the right subdir
 
     >>> os.path.realpath(os.path.dirname(__file__)) == \
-            os.path.join(get_top_level(), 'tools', 'patman')
+            os.path.join(get_top_level(), 'tools', 'u_boot_pylib')
     True
     """
     result = command.run_one(
