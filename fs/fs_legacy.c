@@ -20,6 +20,7 @@
 #include <ext4fs.h>
 #include <ext4l.h>
 #include <fat.h>
+#include <isofs.h>
 #include <fs_legacy.h>
 #include <sandboxfs.h>
 #include <semihostingfs.h>
@@ -293,6 +294,29 @@ static struct fstype_info fstypes[] = {
 		.ln = ext4l_op_ptr(ext4l_ln_legacy, fs_ln_unsupported),
 		.rename = ext4l_op_ptr(ext4l_rename_legacy, fs_rename_unsupported),
 		.statfs = ext4l_statfs_legacy,
+	},
+#endif
+#if CONFIG_IS_ENABLED(FS_ISOFS)
+	{
+		.fstype = FS_TYPE_ISO,
+		.name = "iso9660",
+		.null_dev_desc_ok = false,
+		.probe = isofs_probe,
+		.close = isofs_close,
+		.ls = isofs_ls,
+		.exists = isofs_exists,
+		.size = isofs_size,
+		.read = isofs_read,
+		.write = fs_write_unsupported,
+		.uuid = fs_uuid_unsupported,
+		.opendir = isofs_opendir,
+		.readdir = isofs_readdir,
+		.closedir = isofs_closedir,
+		.unlink = fs_unlink_unsupported,
+		.mkdir = fs_mkdir_unsupported,
+		.ln = fs_ln_unsupported,
+		.rename = fs_rename_unsupported,
+		.statfs = fs_statfs_unsupported,
 	},
 #endif
 #if IS_ENABLED(CONFIG_SANDBOX) && !IS_ENABLED(CONFIG_XPL_BUILD)

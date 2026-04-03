@@ -72,6 +72,8 @@ static inline void *kzalloc(size_t size, gfp_t flags)
 	return kmalloc(size, flags | __GFP_ZERO);
 }
 
+#define kzalloc_obj(obj, ...)	kzalloc(sizeof(obj), GFP_KERNEL)
+
 static inline void *kmalloc_array(size_t n, size_t size, gfp_t flags)
 {
 	if (size != 0 && n > SIZE_MAX / size)

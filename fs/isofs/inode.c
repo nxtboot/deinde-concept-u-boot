@@ -492,7 +492,7 @@ root_found:
 
 #ifdef CONFIG_JOLIET
 	if (joliet_level) {
-		char *p = opt->iocharset ? opt->iocharset : CONFIG_NLS_DEFAULT;
+		char *p = opt->iocharset ? opt->iocharset : CFG_NLS_DEFAULT;
 		if (strcmp(p, "utf8") != 0) {
 			sbi->s_nls_iocharset = opt->iocharset ?
 				load_nls(opt->iocharset) : load_nls_default();
