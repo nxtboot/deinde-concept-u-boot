@@ -1479,6 +1479,17 @@ def _register_series(cser, clean_name, version, link, series_data):
     if pcommits:
         cser.db.pcommit_add_list(svid, pcommits)
 
+        # pcommit_add_list only stores seq/subject/change_id; update
+        # patch_id from the patchwork data
+        pclist = cser.db.pcommit_get_list(svid)
+        for pcm, patch in zip(pclist, patches):
+            patch_id = patch.get('id')
+            if patch_id:
+                cser.db.pcommit_update(database.Pcommit(
+                    idnum=pcm.idnum, seq=pcm.seq, subject=pcm.subject,
+                    svid=svid, change_id=pcm.change_id, state=pcm.state,
+                    patch_id=patch_id, num_comments=pcm.num_comments))
+
     cser.commit()
     tout.notice(f"Added series '{clean_name}' v{version} to database")
     return series_id, svid

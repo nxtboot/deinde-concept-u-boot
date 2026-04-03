@@ -5,6 +5,7 @@
 """Functional tests for checking that patman behaves correctly"""
 
 import asyncio
+import contextlib
 from datetime import datetime
 import os
 import re
@@ -4480,3 +4481,692 @@ Date:   .*
         self.assertIn('Version 2:', output)
         self.assertIn('Second version desc', output)
         self.assertIn('Notes: Fixed review feedback', output)
+
+    # Series link used by the review tests
+    REVIEW_LINK = 497923
+    REVIEW_LINK_V2 = 497924
+    REVIEW_NAME = 'boot/bootm: Disable interrupts after loading the image'
+
+    def _fake_patchwork_review(self, subpath):
+        """Fake Patchwork server for review tests
+
+        Args:
+            subpath (str): URL subpath to use
+        """
+        if subpath == 'projects/':
+            return [
+                {'id': self.PROJ_ID, 'name': 'U-Boot',
+                 'link_name': self.PROJ_LINK_NAME},
+            ]
+
+        re_search = re.match(r'series/\?project=(\d+)&q=(.*)$', subpath)
+        if re_search:
+            return [
+                {'id': self.REVIEW_LINK, 'name': self.REVIEW_NAME,
+                 'version': 1, 'date': '2026-03-29T15:17:33'},
+                {'id': self.REVIEW_LINK_V2, 'name': self.REVIEW_NAME,
+                 'version': 2, 'date': '2026-04-01T10:00:00'},
+            ]
+
+        m_series = re.match(r'series/(\d+)/$', subpath)
+        if m_series:
+            series_id = int(m_series.group(1))
+            if series_id == self.REVIEW_LINK:
+                return {
+                    'name': f'[PATCH] {self.REVIEW_NAME}',
+                    'version': 1,
+                    'received_total': 1,
+                    'mbox': f'https://my-fake-url/series/{series_id}/mbox/',
+                    'submitter': {'name': 'Test Author',
+                                  'email': 'author@example.com'},
+                    'project': {'list_email': 'u-boot@lists.denx.de'},
+                    'cover_letter': None,
+                    'patches': [
+                        {'id': 900,
+                         'name': f'[PATCH] {self.REVIEW_NAME}',
+                         'msgid': '<20260329-bootm-v1-1-abc@posteo.net>'},
+                    ],
+                }
+            if series_id == self.REVIEW_LINK_V2:
+                return {
+                    'name': f'[PATCH v2] {self.REVIEW_NAME}',
+                    'version': 2,
+                    'received_total': 1,
+                    'mbox': f'https://my-fake-url/series/{series_id}/mbox/',
+                    'submitter': {'name': 'Test Author',
+                                  'email': 'author@example.com'},
+                    'project': {'list_email': 'u-boot@lists.denx.de'},
+                    'cover_letter': None,
+                    'patches': [
+                        {'id': 901,
+                         'name': f'[PATCH,v2] {self.REVIEW_NAME}',
+                         'msgid': '<20260401-bootm-v2-1-def@posteo.net>'},
+                    ],
+                }
+            raise ValueError(
+                f'Fake Patchwork unknown series_id: {series_id}')
+
+        m_patch = re.match(r'patches/(\d+)/$', subpath)
+        if m_patch:
+            return {
+                'headers': {
+                    'Reply-To': 'author@posteo.net',
+                    'To': 'u-boot@lists.denx.de',
+                    'Cc': 'Tom Rini <trini@konsulko.com>',
+                },
+            }
+
+        m_pcomm = re.match(r'patches/(\d+)/comments/$', subpath)
+        if m_pcomm:
+            return []
+
+        m_ccomm = re.match(r'covers/(\d+)/comments/$', subpath)
+        if m_ccomm:
+            return []
+
+        raise ValueError(f'Fake Patchwork unhandled URL: {subpath}')
+
+    REVIEWER = 'Test Reviewer <test@test.com>'
+
+    def run_review(self, *argv, **kwargs):
+        """Run a review command with the test reviewer identity"""
+        return self.run_args('review', '--reviewer', self.REVIEWER,
+                             *argv, **kwargs)
+
+    def _mock_review(self):
+        """Context manager to mock apply, upstream, git and AI review"""
+        fake_review = {1: f'Reviewed-by: {self.REVIEWER}'}
+        return (mock.patch('patman.review._apply_and_check',
+                           return_value='review1'),
+                mock.patch('patman.review._get_upstream_branch',
+                           return_value='origin/master'),
+                mock.patch('patman.review.review_patches_sync',
+                           return_value=fake_review),
+                mock.patch('patman.review.gitutil.get_top_level',
+                           return_value=self.tmpdir),
+                mock.patch('patman.review.command.output',
+                           return_value='pati'),
+                mock.patch('patman.review._git_restore'))
+
+    def test_review_new_series(self):
+        """Test reviewing a new series creates database records"""
+        cser = self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as _:
+                self.run_review( '-l', str(self.REVIEW_LINK),
+                              pwork=pwork)
+
+        # Check the series was created with source='review'
+        self.db_open()
+        result = cser.db.series_find_by_link(str(self.REVIEW_LINK))
+        self.assertIsNotNone(result)
+        series_id, name, version, svid = result
+        self.assertEqual(self.REVIEW_NAME, name)
+        self.assertEqual(1, version)
+
+        # Check source is 'review'
+        res = cser.db.execute(
+            'SELECT source FROM series WHERE id = ?', (series_id,))
+        self.assertEqual('review', res.fetchone()[0])
+
+        # Check pcommit was created
+        pclist = cser.db.pcommit_get_list(svid)
+        self.assertEqual(1, len(pclist))
+        self.assertEqual(900, pclist[0].patch_id)
+
+    def test_review_already_reviewed(self):
+        """Test that reviewing the same link again is detected"""
+        cser = self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as _:
+                self.run_review( '-l', str(self.REVIEW_LINK),
+                              pwork=pwork)
+
+        # Review the same link again
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as (out, err):
+                self.run_review('-l', str(self.REVIEW_LINK), pwork=pwork)
+        self.assertIn('Already reviewed', out.getvalue())
+
+    def test_review_new_version(self):
+        """Test that reviewing v2 detects v1 as previously reviewed"""
+        cser = self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        # Review v1 first
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as _:
+                self.run_review( '-l', str(self.REVIEW_LINK),
+                              pwork=pwork)
+
+        # Now review v2 - should detect the previous review
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as (out, _):
+                self.run_review( '-l', str(self.REVIEW_LINK_V2),
+                              pwork=pwork)
+        self.assertIn('Previously reviewed', out.getvalue())
+
+        # Check both versions are under the same series
+        self.db_open()
+        v1 = cser.db.series_find_by_link(str(self.REVIEW_LINK))
+        v2 = cser.db.series_find_by_link(str(self.REVIEW_LINK_V2))
+        self.assertEqual(v1[0], v2[0])  # same series_id
+        self.assertEqual(1, v1[2])  # version 1
+        self.assertEqual(2, v2[2])  # version 2
+
+    def test_review_title_search(self):
+        """Test searching for a series by title"""
+        cser = self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as (out, _):
+                self.run_review( '-t', 'Disable interrupts',
+                              pwork=pwork)
+        # Should pick the most recent (v2)
+        self.assertIn('Using most recent', out.getvalue())
+
+        self.db_open()
+        result = cser.db.series_find_by_link(str(self.REVIEW_LINK_V2))
+        self.assertIsNotNone(result)
+
+    def test_review_no_link_or_title(self):
+        """Test that missing -l and -t gives a proper error"""
+        self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        with terminal.capture() as _:
+            self.run_review( pwork=pwork, expect_ret=1)
+
+    def test_review_apply_failure(self):
+        """Test that apply failure is reported"""
+        self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        with mock.patch('patman.review._apply_and_check',
+                        return_value=None), \
+             mock.patch('patman.review._get_upstream_branch',
+                        return_value='origin/master'), \
+             mock.patch('patman.review.gitutil.get_top_level',
+                        return_value=self.tmpdir), \
+             mock.patch('patman.review.command.output',
+                        return_value='test'), \
+             mock.patch('patman.review._git_restore'):
+            with terminal.capture() as _:
+                self.run_review('-l', str(self.REVIEW_LINK),
+                                pwork=pwork, expect_ret=1)
+
+    def test_review_create_drafts_dry_run(self):
+        """Test dry-run draft creation shows what would be created"""
+        self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with terminal.capture() as (out, _):
+                self.run_review( '-l', str(self.REVIEW_LINK),
+                              '--create-drafts', '-n', pwork=pwork)
+        output = out.getvalue()
+        self.assertIn('Would create draft', output)
+        self.assertIn('author@posteo.net', output)
+        self.assertIn('trini@konsulko.com', output)
+
+    def test_review_create_drafts(self):
+        """Test actual draft creation calls Gmail API"""
+        self.get_cser()
+        pwork = Patchwork.for_testing(self._fake_patchwork_review)
+        pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
+
+        mocks = self._mock_review()
+        with contextlib.ExitStack() as stack:
+            for m in mocks:
+                stack.enter_context(m)
+            with mock.patch('patman.gmail.check_available',
+                            return_value=True):
+                with mock.patch('patman.gmail.get_service') as mock_svc:
+                    mock_svc.return_value.users.return_value \
+                        .drafts.return_value \
+                        .create.return_value \
+                        .execute.return_value = {'id': 'draft123'}
+                    mock_svc.return_value.users.return_value \
+                        .messages.return_value \
+                        .list.return_value \
+                        .execute.return_value = {'messages': []}
+                    with terminal.capture() as (out, _):
+                        self.run_review( '-l',
+                                      str(self.REVIEW_LINK),
+                                      '--create-drafts', pwork=pwork)
+        output = out.getvalue()
+        self.assertIn('Created 1 Gmail draft', output)
+
+    def _make_review_ctx(self, reviewer_name='Test', reviewer_email='test@test.com',
+                         author_name='', author_email='', date='', signoff=None,
+                         diffstat=None):
+        """Build a ReviewContext for testing format_review_email()"""
+        from patman.review import ReviewContext
+
+        ctx = ReviewContext(None, None,
+            {'submitter': {'name': author_name, 'email': author_email},
+             'date': date})
+        ctx.reviewer_name = reviewer_name
+        ctx.reviewer_email = reviewer_email
+        ctx.signoff = signoff
+        ctx.diffstat = diffstat
+        return ctx
+
+    def test_review_parse_approved(self):
+        """Test parsing an approved review"""
+        from patman.review import parse_review_output, format_review_email
+
+        text = """GREETING: Marek
+VERDICT: approved"""
+        greeting, verdict, comments = parse_review_output(text)
+        self.assertEqual('Marek', greeting)
+        self.assertEqual('approved', verdict)
+        self.assertEqual([], comments)
+
+        ctx = self._make_review_ctx(author_name='Marek Vasut',
+            author_email='marex@denx.de', date='2026-03-21',
+            diffstat=' drivers/pci.c | 2 +-\n 1 file changed')
+        email = format_review_email(ctx, greeting, verdict, comments,
+            commit_message='pci: Fix the return type\n\nThe return is wrong.')
+        self.assertNotIn('Hi Marek,', email)
+        self.assertIn('On 2026-03-21, Marek Vasut', email)
+        self.assertIn('> pci: Fix the return type', email)
+        self.assertIn('> The return is wrong.', email)
+        self.assertIn('> drivers/pci.c', email)
+        self.assertIn('Reviewed-by: Test <test@test.com>', email)
+
+    def test_review_parse_skip(self):
+        """Test parsing a skipped review (e.g. cover letter with no issues)"""
+        from patman.review import parse_review_output
+
+        text = """GREETING: Michal
+VERDICT: skip"""
+        greeting, verdict, comments = parse_review_output(text)
+        self.assertEqual('Michal', greeting)
+        self.assertEqual('skip', verdict)
+        self.assertEqual([], comments)
+
+    def test_review_guess_name(self):
+        """Test guessing first name from email address"""
+        from patman.review import guess_name_from_email
+
+        self.assertEqual('Simon', guess_name_from_email('simon.glass@xxx'))
+        self.assertEqual('Michal', guess_name_from_email('michal@amd.com'))
+        self.assertEqual('Marek',
+                         guess_name_from_email('marek-vasut@denx.de'))
+        self.assertEqual('', guess_name_from_email('j@posteo.net'))
+        self.assertEqual('', guess_name_from_email(''))
+        self.assertEqual('', guess_name_from_email('12345@test.com'))
+
+    def test_review_cleanup(self):
+        """Test mechanical cleanup of review text"""
+        from patman.review import cleanup_review_text
+
+        # Backticks removed
+        self.assertEqual('Use foo here',
+                         cleanup_review_text('Use `foo` here'))
+
+        # Quoted function references unquoted
+        self.assertEqual('Call malloc() first',
+                         cleanup_review_text("Call 'malloc()' first"))
+        self.assertEqual('Call free() after',
+                         cleanup_review_text('Call "free()" after'))
+
+        # Normal quotes preserved
+        self.assertEqual("Normal 'text' stays",
+                         cleanup_review_text("Normal 'text' stays"))
+
+        # Quoted diff lines not mangled
+        line = "> +\t`something`"
+        self.assertEqual('> +\tsomething', cleanup_review_text(line))
+
+    def test_review_greeting_fallback(self):
+        """Test greeting falls back to email when name is empty"""
+        from patman.review import format_review_email
+
+        # Empty greeting should be guessed from email
+        ctx = self._make_review_ctx(author_name='Simon Glass',
+            author_email='simon.glass@xxx.com', date='2026-04-01',
+            signoff='Regards,\nTest')
+        email = format_review_email(ctx, '', 'changes_needed',
+            [('> +\tsome code', 'Fix this')])
+        self.assertIn('Hi Simon,', email)
+
+        # Unguessable email falls back to bare 'Hi,'
+        ctx = self._make_review_ctx(author_email='x@test.com',
+                                     date='2026-04-01')
+        email = format_review_email(ctx, '', 'changes_needed',
+            [('> +\tsome code', 'Fix this')])
+        self.assertIn('Hi,', email)
+        self.assertNotIn('Hi ,', email)
+
+    def test_review_refine_skips_approved(self):
+        """Test that refinement skips approved reviews without comments"""
+        import asyncio
+        from unittest.mock import patch, AsyncMock
+
+        from patman.review import refine_reviews
+
+        # An approved review with only structural lines
+        approved = ('On 2026-04-01, A <a@b.com> wrote:\n'
+                    '> Some commit message\n'
+                    '>\n'
+                    '> drivers/foo.c | 2 +-\n'
+                    '\n'
+                    'Reviewed-by: Test <test@test.com>\n')
+
+        # Should be returned unchanged without calling the agent
+        loop = asyncio.new_event_loop()
+        with patch('patman.review.get_voice', return_value=None):
+            result = loop.run_until_complete(
+                refine_reviews({1: approved}))
+        loop.close()
+        self.assertEqual({1: approved}, result)
+
+    def test_review_refine_processes_comments(self):
+        """Test that refinement processes reviews with comments"""
+        import asyncio
+        import sys
+        import types
+        from unittest.mock import patch, MagicMock
+
+        review_with_comments = (
+            'Hi Marek,\n\n'
+            'On 2026-04-01, Marek <m@d.de> wrote:\n'
+            '> +\tsome code\n\n'
+            'This needs fixing.\n\n'
+            'Regards,\nSimon\n')
+
+        # Mock the agent to return a slightly trimmed version
+        refined = '---SEQ 1---\n' + review_with_comments.replace(
+            'This needs fixing.', 'Fix this.')
+
+        async def mock_agent(prompt, options):
+            return True, refined
+
+        from patman import review as review_mod
+
+        loop = asyncio.new_event_loop()
+        with patch.object(review_mod, 'get_voice', return_value=None), \
+             patch.object(review_mod.claude_mod, 'run_agent_collect',
+                          side_effect=mock_agent), \
+             patch.object(review_mod, 'ClaudeAgentOptions', MagicMock()), \
+             terminal.capture():
+            result = loop.run_until_complete(
+                review_mod.refine_reviews({1: review_with_comments}))
+        loop.close()
+        self.assertIn('Fix this.', result[1])
+
+    def test_review_parse_changes(self):
+        """Test parsing a review with comments"""
+        from patman.review import parse_review_output, format_review_email
+
+        text = """GREETING: J.
+COMMENT:
+> +	if (ret < 0)
+> +		return ret;
+
+This should use goto err instead.
+
+COMMENT:
+> +	bootm_disable_interrupts();
+
+This call should be conditional.
+
+VERDICT: changes_needed"""
+
+        greeting, verdict, comments = parse_review_output(text)
+        self.assertEqual('J.', greeting)
+        self.assertEqual('changes_needed', verdict)
+        self.assertEqual(2, len(comments))
+        self.assertIn('goto err', comments[0][1])
+        self.assertIn('conditional', comments[1][1])
+
+        ctx = self._make_review_ctx(author_name='J. Neuschäfer',
+            author_email='j.ne@posteo.net', date='2026-03-29',
+            signoff='Regards,\nSimon')
+        email = format_review_email(ctx, greeting, verdict, comments)
+        self.assertIn('Hi J.,', email)
+        self.assertIn('> +\tif (ret < 0)', email)
+        self.assertIn('goto err', email)
+        self.assertNotIn('Reviewed-by', email)
+        self.assertIn('Regards,\nSimon', email)
+
+    def test_review_commit_msg_no_duplicate(self):
+        """Test that the commit-msg builder avoids duplicating the subject"""
+        # Simulate cmt.subject and cmt.msg where msg starts with subject
+        subject = 'Drop unused macros'
+        msg_with_dup = 'Drop unused macros\n\nThese macros are never used.'
+        msg_without_dup = '\nThese macros are never used.'
+
+        # When body starts with subject, use body as-is
+        body = msg_with_dup.strip()
+        if body.startswith(subject):
+            commit_msg = body
+        else:
+            commit_msg = (subject + '\n' + body).strip()
+        self.assertEqual(1, commit_msg.count('Drop unused macros'))
+
+        # When body doesn't start with subject, prepend it
+        body = msg_without_dup.strip()
+        if body.startswith(subject):
+            commit_msg = body
+        else:
+            commit_msg = (subject + '\n' + body).strip()
+        self.assertTrue(commit_msg.startswith('Drop unused macros'))
+        self.assertIn('These macros are never used.', commit_msg)
+
+    def test_review_commit_msg_with_body(self):
+        """Test that subject + body are both quoted when body differs"""
+        from patman.review import format_review_email
+
+        ctx = self._make_review_ctx(author_name='Author',
+            author_email='a@b.com', date='2026-04-01',
+            diffstat=' file.c | 1 +\n 1 file changed')
+        email = format_review_email(ctx, '', 'approved', [],
+            commit_message='Fix the bug\n\nThe bug causes a crash.')
+        self.assertIn('> Fix the bug', email)
+        self.assertIn('> The bug causes a crash.', email)
+
+    def test_gmail_subject_preserves_patch_prefix(self):
+        """Test that reply subjects use the original Subject header"""
+        from patman.gmail import create_review_drafts
+
+        series_data = {
+            'submitter': {'email': 'a@b.com'},
+            'project': {'list_email': 'list@test.com'},
+            'cover_letter': None,
+            'patches': [
+                {'id': 1, 'name': 'Fix the bug',
+                 'msgid': '<1@test.com>'},
+            ],
+        }
+        patch_headers = {
+            1: {'Subject': '[PATCH v2 1/3] Fix the bug',
+                'Message-Id': '<1@test.com>'},
+        }
+        review_bodies = {1: 'Reviewed-by: Test <test@test.com>'}
+
+        with terminal.capture():
+            create_review_drafts(series_data, review_bodies,
+                                 patch_headers=patch_headers, dry_run=True)
+
+    def test_gmail_subject_falls_back_to_name(self):
+        """Test that reply subjects fall back to patchwork name"""
+        from patman.gmail import create_review_drafts
+
+        series_data = {
+            'submitter': {'email': 'a@b.com'},
+            'project': {'list_email': 'list@test.com'},
+            'cover_letter': None,
+            'patches': [
+                {'id': 1, 'name': 'Fix the bug',
+                 'msgid': '<1@test.com>'},
+            ],
+        }
+        # No Subject in headers — should fall back to patch name
+        patch_headers = {1: {'Message-Id': '<1@test.com>'}}
+        review_bodies = {1: 'Reviewed-by: Test <test@test.com>'}
+
+        with terminal.capture():
+            create_review_drafts(series_data, review_bodies,
+                                 patch_headers=patch_headers, dry_run=True)
+
+    def test_gmail_from_header(self):
+        """Test that create_draft sets From when sender is provided"""
+        from patman.gmail import create_draft
+        from email import message_from_bytes
+        from unittest.mock import MagicMock, patch
+        import base64
+
+        service = MagicMock()
+        service.users().drafts().create().execute.return_value = {
+            'id': 'draft123'}
+
+        draft = create_draft(
+            service, 'to@test.com', 'Re: test', 'body',
+            sender='Simon Glass <sjg@chromium.org>')
+
+        # Extract the raw message that was passed to the API
+        call_kwargs = (service.users().drafts().create
+                       .call_args)
+        raw = call_kwargs[1]['body']['message']['raw']
+        msg = message_from_bytes(base64.urlsafe_b64decode(raw))
+        self.assertEqual('Simon Glass <sjg@chromium.org>', msg['from'])
+
+    def test_gmail_no_from_without_sender(self):
+        """Test that create_draft omits From when sender is None"""
+        from patman.gmail import create_draft
+        from email import message_from_bytes
+        from unittest.mock import MagicMock
+        import base64
+
+        service = MagicMock()
+        service.users().drafts().create().execute.return_value = {
+            'id': 'draft123'}
+
+        draft = create_draft(
+            service, 'to@test.com', 'Re: test', 'body')
+
+        call_kwargs = (service.users().drafts().create
+                       .call_args)
+        raw = call_kwargs[1]['body']['message']['raw']
+        msg = message_from_bytes(base64.urlsafe_b64decode(raw))
+        self.assertIsNone(msg['from'])
+
+    def test_review_delete_for_version(self):
+        """Test deleting all reviews for a series version"""
+        cser = self.get_database()
+
+        series_id = cser.db.series_add('test-delete', 'Test')
+        svid = cser.db.ser_ver_add(series_id, 1)
+
+        from datetime import datetime
+        ts = datetime.now().isoformat()
+        cser.db.review_add(svid, 1, 'review body 1', True, ts)
+        cser.db.review_add(svid, 2, 'review body 2', False, ts)
+        cser.commit()
+
+        reviews = cser.db.review_get_for_version(svid)
+        self.assertEqual(2, len(reviews))
+
+        cser.db.review_delete_for_version(svid)
+        cser.commit()
+
+        reviews = cser.db.review_get_for_version(svid)
+        self.assertEqual(0, len(reviews))
+
+    def test_series_set_source(self):
+        """Test setting the source field on a series"""
+        cser = self.get_database()
+
+        series_id = cser.db.series_add('test-source', 'Test')
+        cser.db.series_set_source(series_id, 'review')
+        cser.commit()
+
+        res = cser.db.execute(
+            'SELECT source FROM series WHERE id = ?', (series_id,))
+        self.assertEqual('review', res.fetchone()[0])
+
+    def test_review_notes_save_and_show(self):
+        """Test saving and retrieving review notes"""
+        cser = self.get_database()
+
+        # Create a series with two versions
+        series_id = cser.db.series_add('test-notes', 'Test series')
+        svid1 = cser.db.ser_ver_add(series_id, 1)
+        svid2 = cser.db.ser_ver_add(series_id, 2)
+
+        # No notes initially
+        notes = cser.db.ser_ver_get_all_notes(series_id)
+        self.assertEqual([], notes)
+
+        # Save notes for v1
+        cser.db.ser_ver_set_notes(svid1, 'Fixed the memory leak issue')
+        cser.commit()
+
+        notes = cser.db.ser_ver_get_all_notes(series_id)
+        self.assertEqual(1, len(notes))
+        self.assertEqual(1, notes[0][0])
+        self.assertIn('memory leak', notes[0][1])
+
+        # Save notes for v2
+        cser.db.ser_ver_set_notes(svid2, 'Addressed style feedback')
+        cser.commit()
+
+        notes = cser.db.ser_ver_get_all_notes(series_id)
+        self.assertEqual(2, len(notes))
+        self.assertEqual(1, notes[0][0])
+        self.assertEqual(2, notes[1][0])
+
+    def test_review_notes_skips_empty(self):
+        """Test that versions without notes are excluded"""
+        cser = self.get_database()
+
+        series_id = cser.db.series_add('test-empty', 'Test')
+        svid1 = cser.db.ser_ver_add(series_id, 1)
+        svid2 = cser.db.ser_ver_add(series_id, 2)
+        svid3 = cser.db.ser_ver_add(series_id, 3)
+
+        # Only set notes for v1 and v3
+        cser.db.ser_ver_set_notes(svid1, 'v1 notes')
+        cser.db.ser_ver_set_notes(svid3, 'v3 notes')
+        cser.commit()
+
+        notes = cser.db.ser_ver_get_all_notes(series_id)
+        self.assertEqual(2, len(notes))
+        self.assertEqual(1, notes[0][0])
+        self.assertEqual(3, notes[1][0])
