@@ -6,7 +6,8 @@
 import pytest
 from tests.fs_helper import FsHelper
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.buildconfigspec('cmd_cat')
 def test_cat(ubman):
     """ Unit test for cat

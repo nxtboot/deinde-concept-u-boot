@@ -16,7 +16,8 @@ from fstest_defs import SMALL_FILE, BIG_FILE
 from fstest_helpers import assert_fs_integrity
 
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.slow
 class TestFsBasic:
     """Test basic filesystem operations via C unit tests."""

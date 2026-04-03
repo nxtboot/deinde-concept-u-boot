@@ -1,4 +1,4 @@
-.. SPDX-License-Identifier: GPL-2.0+:
+.. SPDX-License-Identifier: GPL-2.0+
 
 .. index::
    single: cat (command)
@@ -9,39 +9,49 @@ cat command
 Synopsis
 --------
 
-::
+With VFS (CONFIG_CMD_VFS)::
+
+    cat <path>
+
+Legacy (CONFIG_CMD_CAT)::
 
     cat <interface> <dev[:part]> <file>
 
 Description
 -----------
 
-The cat command prints the file content to standard out.
+The cat command prints the contents of a file to standard output.
 
-interface
-    interface for accessing the block device (mmc, sata, scsi, usb, ....)
+With VFS enabled, the file is read in chunks through the file uclass, so
+arbitrary file sizes are supported without loading the entire file into
+memory. The filesystem must be mounted first using ``mount``.
 
-dev
-    device number
-
-part
-    partition number, defaults to 1
-
-file
-    path to file
+path
+    absolute path in the VFS, e.g. ``/host/README``
 
 Example
 -------
 
-Here is the output for a example text file:
+VFS::
 
-::
+    => mount hostfs /host
+    => cat /host/README
+    # SPDX-License-Identifier: GPL-2.0+
+    ...
+
+Legacy::
 
     => cat mmc 0:1 hello
     hello world
-    =>
 
 Configuration
 -------------
 
-The cat command is only available if CONFIG_CMD_CAT=y.
+The VFS-based cat command is available when CONFIG_CMD_VFS=y. The legacy
+cat command is available when CONFIG_CMD_CAT=y.
+
+Return value
+------------
+
+The return value $? is set to 0 (true) if the file was successfully
+printed, 1 (false) otherwise.

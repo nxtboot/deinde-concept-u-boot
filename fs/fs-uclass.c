@@ -7,36 +7,60 @@
 
 #define LOG_CATEGORY	UCLASS_FS
 
+#include <blk.h>
 #include <bootdev.h>
+#include <bootflow.h>
 #include <bootmeth.h>
 #include <dir.h>
 #include <dm.h>
 #include <fs.h>
+#include <malloc.h>
 #include <dm/device-internal.h>
 
 int fs_split_path(const char *fname, char **subdirp, const char **leafp)
 {
-	char *subdir, *p;
+	const char *last_slash;
+	char *subdir;
 
 	if (!*fname)
 		return log_msg_ret("fsp", -EINVAL);
 
-	/* allocate space for the whole filename, for simplicity */
-	subdir = strdup(fname);
-	if (!subdir)
-		return log_msg_ret("fsp", -ENOMEM);
+	last_slash = strrchr(fname, '/');
+	if (last_slash) {
+		int dir_len = last_slash - fname;
 
-	p = strrchr(subdir, '/');
-	if (p) {
-		*leafp = p + 1;
-		*p = '\0';
+		if (!dir_len)
+			dir_len = 1;	/* root "/" */
+		subdir = malloc(dir_len + 1);
+		if (!subdir)
+			return log_msg_ret("fsp", -ENOMEM);
+		memcpy(subdir, fname, dir_len);
+		subdir[dir_len] = '\0';
+		*leafp = last_slash + 1;
 	} else {
+		subdir = strdup("");
+		if (!subdir)
+			return log_msg_ret("fsp", -ENOMEM);
 		*leafp = fname;
-		strcpy(subdir, "/");
 	}
 	*subdirp = subdir;
 
 	return 0;
+}
+
+void fs_split_path_inplace(char *fname, const char **dirp, const char **leafp)
+{
+	char *last_slash;
+
+	last_slash = strrchr(fname, '/');
+	if (last_slash) {
+		*leafp = last_slash + 1;
+		*last_slash = '\0';
+		*dirp = fname;
+	} else {
+		*leafp = fname;
+		*dirp = "";
+	}
 }
 
 int fs_lookup_dir(struct udevice *dev, const char *path, struct udevice **dirp)
@@ -53,6 +77,8 @@ int fs_lookup_dir(struct udevice *dev, const char *path, struct udevice **dirp)
 		struct dir_uc_priv *priv;
 
 		if (!device_active(dir))
+			continue;
+		if (device_get_uclass_id(dir) != UCLASS_DIR)
 			continue;
 
 		priv = dev_get_uclass_priv(dir);
@@ -89,6 +115,67 @@ int fs_mount(struct udevice *dev)
 	return 0;
 }
 
+int fs_do_ln(struct udevice *dev, const char *path, const char *target)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->ln)
+		return log_msg_ret("fln", -ENOSYS);
+
+	return ops->ln(dev, path, target);
+}
+
+int fs_do_rename(struct udevice *dev, const char *old_path,
+		 const char *new_path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->rename)
+		return log_msg_ret("frn", -ENOSYS);
+
+	return ops->rename(dev, old_path, new_path);
+}
+
+int fs_readlink(struct udevice *dev, const char *path, char *buf, int size)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->readlink)
+		return log_msg_ret("frl", -ENOSYS);
+
+	return ops->readlink(dev, path, buf, size);
+}
+
+int fs_do_statfs(struct udevice *dev, struct fs_statfs *stats)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->statfs)
+		return log_msg_ret("fss", -ENOSYS);
+
+	return ops->statfs(dev, stats);
+}
+
+int fs_do_unlink(struct udevice *dev, const char *path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->unlink)
+		return log_msg_ret("fsu", -ENOSYS);
+
+	return ops->unlink(dev, path);
+}
+
+int fs_do_mkdir(struct udevice *dev, const char *path)
+{
+	struct fs_ops *ops = fs_get_ops(dev);
+
+	if (!ops->mkdir)
+		return log_msg_ret("fsm", -ENOSYS);
+
+	return ops->mkdir(dev, path);
+}
+
 int fs_unmount(struct udevice *dev)
 {
 	struct fs_ops *ops = fs_get_ops(dev);
@@ -100,16 +187,38 @@ static int fs_get_bootflow(struct udevice *dev, struct bootflow_iter *iter,
 			   struct bootflow *bflow)
 {
 	struct udevice *fsdev = dev_get_parent(dev);
+	struct fs_plat *plat = dev_get_uclass_plat(fsdev);
+	char name[60];
 	int ret;
 
 	log_debug("get_bootflow fs '%s'\n", fsdev->name);
 
-	/* for now, always fail here as we don't have FS support in bootmeths */
-	return -ENOENT;
+	/*
+	 * Block-backed filesystems expose their blk device and partition so
+	 * that existing bootmeths (script, extlinux) can read files using the
+	 * legacy FS layer.
+	 */
+	if (!plat->desc || !plat->desc->bdev)
+		return log_msg_ret("blk", -ENOENT);
+
+	bflow->blk = plat->desc->bdev;
+	bflow->part = plat->part_num;
+
+	snprintf(name, sizeof(name), "%s.bootflow", fsdev->name);
+	bflow->name = strdup(name);
+	if (!bflow->name)
+		return log_msg_ret("nam", -ENOMEM);
+
+	bflow->state = BOOTFLOWST_MEDIA;
 
 	ret = bootmeth_check(bflow->method, iter);
 	if (ret)
-		return log_msg_ret("check", ret);
+		return log_msg_ret("chk", ret);
+
+	/* Let the bootmeth discover files (extlinux.conf, boot.scr, etc.) */
+	ret = bootmeth_read_bootflow(bflow->method, bflow);
+	if (ret)
+		return log_msg_ret("rd", ret);
 
 	return 0;
 }

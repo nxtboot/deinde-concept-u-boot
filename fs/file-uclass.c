@@ -96,6 +96,27 @@ long file_read_at(struct udevice *dev, void *buf, loff_t offset, long len)
 	return ret;
 }
 
+long file_write_at(struct udevice *dev, const void *buf, loff_t offset,
+		   long len)
+{
+	struct file_uc_priv *uc_priv = dev_get_uclass_priv(dev);
+	struct file_ops *ops = file_get_ops(dev);
+	struct iov_iter iter;
+	ssize_t ret;
+
+	if (!ops->write_iter)
+		return log_msg_ret("fwn", -ENOSYS);
+
+	iter_ubuf(&iter, false, (void *)buf, len);
+
+	ret = ops->write_iter(dev, &iter, offset);
+	if (ret < 0)
+		return log_msg_ret("fww", ret);
+	uc_priv->pos = offset + ret;
+
+	return ret;
+}
+
 UCLASS_DRIVER(file) = {
 	.name	= "file",
 	.id	= UCLASS_FILE,

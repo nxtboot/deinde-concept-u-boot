@@ -11,7 +11,8 @@ This test verifies mkdir operation on file system.
 import pytest
 from fstest_helpers import assert_fs_integrity
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.slow
 class TestMkdir(object):
     def test_mkdir1(self, ubman, fs_obj_mkdir):

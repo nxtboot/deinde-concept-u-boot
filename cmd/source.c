@@ -16,12 +16,77 @@
 
 #include <command.h>
 #include <env.h>
+#include <dm.h>
+#include <file.h>
+#include <fs_common.h>
 #include <image.h>
 #include <log.h>
 #include <malloc.h>
 #include <mapmem.h>
+#include <vfs.h>
 #include <asm/byteorder.h>
 #include <asm/io.h>
+
+#if IS_ENABLED(CONFIG_VFS)
+/**
+ * source_vfs_file() - Load and execute a script from a VFS path
+ *
+ * Loads the file into memory. If it has a valid image header, runs it
+ * via cmd_source_script(). Otherwise treats it as a plain text command
+ * list.
+ *
+ * @path: VFS path to the script file
+ * Return: 0 on success, non-zero on error
+ */
+static int source_vfs_file(const char *path)
+{
+	struct file_uc_priv *uc_priv;
+	struct udevice *fil;
+	long actual;
+	char *buf;
+	ulong addr;
+	int ret;
+
+	ret = vfs_open_file(path, DIR_O_RDONLY, &fil);
+	if (ret) {
+		printf("## Cannot find script '%s'\n", path);
+		return CMD_RET_FAILURE;
+	}
+
+	uc_priv = dev_get_uclass_priv(fil);
+	buf = malloc(uc_priv->size + 1);
+	if (!buf)
+		return CMD_RET_FAILURE;
+
+	actual = file_read_at(fil, buf, 0, uc_priv->size);
+	if (actual < 0) {
+		free(buf);
+		printf("## Cannot read script '%s'\n", path);
+		return CMD_RET_FAILURE;
+	}
+
+	buf[actual] = '\0';
+
+	/* Check for a mkimage header (legacy or FIT) */
+	if (actual >= sizeof(struct legacy_img_hdr) &&
+	    image_get_magic((struct legacy_img_hdr *)buf) == IH_MAGIC) {
+		addr = map_to_sysmem(buf);
+		ret = cmd_source_script(addr, NULL, NULL);
+	} else {
+		/* Plain text command list */
+		ret = run_command_list(buf, actual, 0);
+	}
+
+	free(buf);
+
+	return ret;
+}
+
+static bool is_vfs_path(const char *arg)
+{
+	return arg && (arg[0] == '/' || strchr(arg, '/'));
+}
+#endif
 
 static int do_source(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
@@ -29,6 +94,13 @@ static int do_source(struct cmd_tbl *cmdtp, int flag, int argc,
 	ulong addr;
 	int rcode;
 	const char *fit_uname = NULL, *confname = NULL;
+
+#if IS_ENABLED(CONFIG_VFS)
+	if (argc >= 2 && is_vfs_path(argv[1])) {
+		printf("## Executing script from '%s'\n", argv[1]);
+		return source_vfs_file(argv[1]);
+	}
+#endif
 
 	/* Find script image */
 	if (argc < 2) {

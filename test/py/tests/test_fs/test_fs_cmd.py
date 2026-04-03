@@ -4,7 +4,8 @@
 
 import pytest
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.buildconfigspec('cmd_fs_generic')
 def test_fstypes(ubman):
     """Test that `fstypes` prints a result which includes `sandbox`."""

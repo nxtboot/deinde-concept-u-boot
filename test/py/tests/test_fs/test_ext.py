@@ -26,7 +26,8 @@ def str2fat(long_filename):
         name = '%s~1' % name[:6]
     return '%-8s %s' % (name, ext)
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.slow
 class TestFsExt(object):
     def test_fs_ext1(self, ubman, fs_obj_ext):

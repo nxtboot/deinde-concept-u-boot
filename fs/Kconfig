@@ -29,6 +29,14 @@ config FILE
 	  (UCLASS_FS). Note that a UCLASS_FILE device is only created when it
 	  is opened.
 
+config VFS
+	bool "Virtual filesystem support"
+	depends on FS && DIR
+	select EVENT
+	help
+	  Provides a virtual filesystem layer with a mount table and
+	  unified path namespace. Includes a root filesystem at "/".
+
 config FS_LEGACY
 	def_bool y
 	help

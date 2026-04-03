@@ -11,7 +11,8 @@ This test verifies fat specific file system behaviour.
 import pytest
 import re
 
-@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('sandbox')
+@pytest.mark.boardspec('!sandbox')
 @pytest.mark.slow
 class TestFsFat(object):
     def test_fs_fat1(self, ubman, fs_obj_fat):

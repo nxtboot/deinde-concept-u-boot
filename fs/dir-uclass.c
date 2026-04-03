@@ -27,7 +27,7 @@ int dir_add_probe(struct udevice *fsdev, struct driver *drv, const char *path,
 	if (!str)
 		goto no_dev_name;
 	dup_path = strdup(path);
-	if (!str)
+	if (!dup_path)
 		goto no_dev_path;
 
 	ret = device_bind_with_driver_data(fsdev, drv, str, 0 /* data */,

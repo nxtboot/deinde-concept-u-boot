@@ -2973,7 +2973,27 @@ config CMD_FS_GENERIC
 	bool "filesystem commands"
 	help
 	  Enables filesystem commands (e.g. load, ls) that work for multiple
-	  fs types.
+	  fs types. When VFS is available these use absolute paths through
+	  the virtual filesystem. Otherwise the legacy interface/dev:part
+	  commands are used.
+
+config CMD_FS_LEGACY
+	bool "Legacy filesystem commands (ls, load, save, ...)"
+	depends on CMD_FS_GENERIC && !VFS
+	default y
+	help
+	  Enables the legacy filesystem commands that use the
+	  interface/dev:part syntax to access filesystems directly. These
+	  include load, save, ls, size, mkdir, rm, ln, mv, fstype and
+	  fstypes.
+
+config CMD_VFS
+	bool "fs - virtual filesystem commands"
+	depends on VFS
+	default VFS
+	help
+	  Provides the 'fs' command with mount, umount and ls subcommands
+	  for the virtual filesystem layer.
 
 config CMD_FS_UUID
 	bool "fsuuid command"

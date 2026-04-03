@@ -152,6 +152,50 @@ int os_unlink(const char *pathname)
 	return unlink(pathname);
 }
 
+int os_mkdir(const char *pathname, int mode)
+{
+	if (mkdir(pathname, mode))
+		return -errno;
+
+	return 0;
+}
+
+int os_rmdir(const char *pathname)
+{
+	if (rmdir(pathname))
+		return -errno;
+
+	return 0;
+}
+
+int os_rename(const char *old_path, const char *new_path)
+{
+	if (rename(old_path, new_path))
+		return -errno;
+
+	return 0;
+}
+
+int os_symlink(const char *target, const char *linkpath)
+{
+	if (symlink(target, linkpath))
+		return -errno;
+
+	return 0;
+}
+
+int os_readlink(const char *pathname, char *buf, int size)
+{
+	ssize_t len;
+
+	len = readlink(pathname, buf, size - 1);
+	if (len < 0)
+		return -errno;
+	buf[len] = '\0';
+
+	return len;
+}
+
 char *os_fgets(char *str, int size, int fd)
 {
 	char *s = str;

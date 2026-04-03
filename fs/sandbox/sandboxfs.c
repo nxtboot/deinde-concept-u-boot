@@ -179,9 +179,14 @@ int fs_write_sandbox(const char *filename, void *buf, loff_t offset,
 static int sandbox_fs_mount(struct udevice *dev)
 {
 	struct fs_priv *uc_priv = dev_get_uclass_priv(dev);
+	struct fs_plat *plat = dev_get_uclass_plat(dev);
 
 	if (uc_priv->mounted)
 		return log_msg_ret("vfi", -EISCONN);
+
+	/* Reject block-device mounts - sandboxfs uses the host OS */
+	if (plat->desc)
+		return log_msg_ret("vfb", -ENODEV);
 
 	uc_priv->mounted = true;
 
@@ -272,8 +277,29 @@ static ssize_t sandbox_read_iter(struct udevice *dev, struct iov_iter *iter,
 	return ret;
 }
 
+static ssize_t sandbox_write_iter(struct udevice *dev, struct iov_iter *iter,
+				  loff_t pos)
+{
+	struct file_priv *priv = dev_get_priv(dev);
+	ssize_t ret;
+
+	log_debug("start dev '%s' len %lx\n", dev->name, iter->count);
+	ret = os_lseek(priv->fd, pos, OS_SEEK_SET);
+	if (ret < 0)
+		return log_msg_ret("vfs", ret);
+
+	ret = os_write(priv->fd, iter_iov_ptr(iter), iter_iov_avail(iter));
+	if (ret < 0)
+		return log_msg_ret("vfw", ret);
+	iter_advance(iter, ret);
+	log_debug("wrote %lx bytes\n", ret);
+
+	return ret;
+}
+
 static struct file_ops sandbox_file_ops = {
 	.read_iter	= sandbox_read_iter,
+	.write_iter	= sandbox_write_iter,
 };
 
 static const struct udevice_id file_ids[] = {
@@ -304,10 +330,13 @@ static int sandbox_dir_open_file(struct udevice *dir, const char *leaf,
 	snprintf(pathname, sizeof(pathname), "%s/%s",
 		 *uc_priv->path ? uc_priv->path: ".", leaf);
 	ftype = os_get_filetype(pathname);
-	if (ftype < 0)
-		return log_msg_ret("soF", ftype);
-	if (ftype != OS_FILET_REG)
+	if (ftype < 0) {
+		/* Allow creating new files for write modes */
+		if (oflags == DIR_O_RDONLY)
+			return log_msg_ret("soF", ftype);
+	} else if (ftype != OS_FILET_REG) {
 		return log_msg_ret("sOf", -EINVAL);
+	}
 
 	if (oflags == DIR_O_RDONLY)
 		mode = OS_O_RDONLY;
@@ -388,6 +417,34 @@ static int sandbox_fs_lookup_dir(struct udevice *dev, const char *path,
 	return 0;
 }
 
+static int sandbox_fs_ln(struct udevice *dev, const char *path,
+			 const char *target)
+{
+	return os_symlink(target, path);
+}
+
+static int sandbox_fs_rename(struct udevice *dev, const char *old_path,
+			     const char *new_path)
+{
+	return os_rename(old_path, new_path);
+}
+
+static int sandbox_fs_readlink(struct udevice *dev, const char *path,
+			       char *buf, int size)
+{
+	return os_readlink(path, buf, size);
+}
+
+static int sandbox_fs_unlink(struct udevice *dev, const char *path)
+{
+	return os_unlink(path);
+}
+
+static int sandbox_fs_mkdir(struct udevice *dev, const char *path)
+{
+	return os_mkdir(path, 0755);
+}
+
 static int sandbox_fs_remove(struct udevice *dev)
 {
 	return 0;
@@ -397,6 +454,11 @@ static const struct fs_ops sandbox_fs_ops = {
 	.mount		= sandbox_fs_mount,
 	.unmount	= sandbox_fs_unmount,
 	.lookup_dir	= sandbox_fs_lookup_dir,
+	.ln		= sandbox_fs_ln,
+	.rename		= sandbox_fs_rename,
+	.readlink	= sandbox_fs_readlink,
+	.unlink		= sandbox_fs_unlink,
+	.mkdir		= sandbox_fs_mkdir,
 };
 
 static const struct udevice_id sandbox_fs_ids[] = {

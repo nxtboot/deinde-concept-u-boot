@@ -6,6 +6,8 @@
 
 #include <command.h>
 #include <fs_cmd.h>
+#include <fs_common.h>
+#include <vfs.h>
 #include <log.h>
 #include <slre.h>
 #include <vsprintf.h>
@@ -29,6 +31,8 @@
 #define OP_INT_GE	15
 #define OP_FILE_EXISTS	16
 #define OP_REGEX	17
+#define OP_VFS_FILE	18
+#define OP_VFS_DIR	19
 
 const struct {
 	int arg;
@@ -52,6 +56,10 @@ const struct {
 	{0, "-z", OP_STR_EMPTY, 2},
 	{0, "-n", OP_STR_NEMPTY, 2},
 	{0, "-e", OP_FILE_EXISTS, 4},
+#if IS_ENABLED(CONFIG_VFS)
+	{0, "-f", OP_VFS_FILE, 2},
+	{0, "-d", OP_VFS_DIR, 2},
+#endif
 #ifdef CONFIG_REGEX
 	{1, "=~", OP_REGEX, 3},
 #endif
@@ -147,6 +155,22 @@ static int do_test(struct cmd_tbl *cmdtp, int flag, int argc,
 		case OP_FILE_EXISTS:
 			expr = file_exists(ap[1], ap[2], ap[3], FS_TYPE_ANY);
 			break;
+#if IS_ENABLED(CONFIG_VFS)
+		case OP_VFS_FILE: {
+			struct fs_dirent dent;
+
+			expr = !vfs_stat(ap[1], &dent) &&
+			       dent.type == FS_DT_REG;
+			break;
+		}
+		case OP_VFS_DIR: {
+			struct fs_dirent dent;
+
+			expr = !vfs_stat(ap[1], &dent) &&
+			       dent.type == FS_DT_DIR;
+			break;
+		}
+#endif
 #ifdef CONFIG_REGEX
 		case OP_REGEX: {
 			struct slre slre;
