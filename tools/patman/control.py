@@ -48,7 +48,7 @@ def do_send(args):
     send.send(args)
 
 
-# pylint: disable=R0913
+# pylint: disable=R0913,R0917
 def patchwork_status(branch, count, start, end, dest_branch, force,
                      show_comments, url, single_thread=False):
     """Check the status of patches in patchwork
@@ -69,8 +69,11 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
         force (bool): With dest_branch, force overwriting an existing branch
         show_comments (bool): True to display snippets from the comments
             provided by reviewers
-        url (str): URL of patchwork server, e.g. 'https://patchwork.ozlabs.org'.
-            This is ignored if the series provides a Series-patchwork-url tag.
+        url (str): URL of patchwork server, e.g.
+            'https://patchwork.ozlabs.org'. Ignored if the series
+            provides a Series-patchwork-url tag.
+        single_thread (bool): True to use a single thread for
+            patchwork access
 
     Raises:
         ValueError: if the branch has no Series-link value
@@ -94,7 +97,7 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
         raise ValueError('Please fix warnings before running status')
     links = series.get('links')
     if not links:
-        raise ValueError("Branch has no Series-links value")
+        raise ValueError('Branch has no Series-links value')
 
     status.find_link_and_show_status(
         series, branch, url, dest_branch, force, show_comments, False,
@@ -176,7 +179,8 @@ def do_series(args, test_db=None, pwork=None, cser=None):
                 cser, pwork, ups, args.patchwork_url)
         elif pwork and pwork is not True:
             raise ValueError(
-                f"Internal error: command '{args.subcmd}' should not have patchwork")
+                "Internal error: command "
+                f"'{args.subcmd}' should not have patchwork")
         if args.subcmd == 'add':
             cser.add(args.series, args.desc, mark=args.mark,
                      allow_unmarked=args.allow_unmarked, end=args.upstream,
