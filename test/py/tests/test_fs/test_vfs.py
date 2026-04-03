@@ -4,9 +4,9 @@
 # Test VFS operations on real filesystem images
 
 """
-Test VFS mount, ls, stat, load, save, cat, mkdir, rm, mv on ext4 and
-FAT images. Python creates the filesystem image; C tests mount it via
-VFS and exercise the operations.
+Test VFS mount, ls, stat, load, save, cat, mkdir, rm, mv on ext4,
+FAT and ISO 9660 images. Python creates the filesystem image; C tests
+mount it via VFS and exercise the operations.
 """
 
 import os
@@ -96,3 +96,31 @@ class TestVfsFat:
 # Attach shared test methods to TestVfsFat
 for _name in VFS_TESTS:
     setattr(TestVfsFat, f'test_{_name}', _define_test(_name))
+
+
+# Read-only tests applicable to ISO 9660
+ISO_TESTS = ['cat', 'cd', 'load', 'ls', 'nested', 'size']
+
+
+@pytest.mark.buildconfigspec('cmd_vfs')
+@pytest.mark.buildconfigspec('fs_isofs')
+class TestVfsIso:
+    """Test VFS operations on an ISO 9660 filesystem."""
+
+    @pytest.fixture(scope='class')
+    def fs_image(self, u_boot_config):
+        """Create an ISO 9660 filesystem image with test files."""
+        fsh = FsHelper(u_boot_config, 'iso', 0, 'vfs')
+        fsh.setup()
+        _populate_srcdir(fsh.srcdir)
+        fsh.mk_fs()
+
+        yield fsh.fs_img
+
+        fsh.cleanup()
+
+
+# Attach read-only test methods to TestVfsIso (using vfs_iso prefix)
+for _name in ISO_TESTS:
+    setattr(TestVfsIso, f'test_{_name}',
+            _define_test(_name, 'vfs_iso'))

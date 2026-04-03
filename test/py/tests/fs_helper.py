@@ -101,7 +101,7 @@ class FsHelper:
                 master key (via --master-key-file), enabling pre_derived unlock.
         """
         if ('fat' not in fs_type and 'ext' not in fs_type and
-             fs_type not in ['exfat', 'fs_generic']):
+             fs_type not in ['exfat', 'fs_generic', 'iso']):
             raise ValueError(f"Unsupported filesystem type '{fs_type}'")
 
         self.config = config
@@ -164,6 +164,11 @@ class FsHelper:
     def mk_fs(self):
         """Make a new filesystem and copy in the files"""
         self.setup()
+
+        if self.fs_type == 'iso':
+            self._mk_iso()
+            return
+
         mkfs_opt, fs_lnxtype = self._get_fs_args()
         fs_img = self.fs_img
         with open(fs_img, 'wb') as fsi:
@@ -194,6 +199,15 @@ class FsHelper:
         # Encrypt the filesystem if requested
         if self.passphrase or self.encrypt_keyfile:
             self.encrypt_luks()
+
+    def _mk_iso(self):
+        """Make an ISO 9660 filesystem image with Rock Ridge extensions"""
+        fs_img = self.fs_img
+        self._do_cleanup = True
+        quiet = '-quiet' if self.quiet else ''
+        check_call(f'genisoimage -R {quiet} -o {fs_img} {self.srcdir}',
+                   shell=True, stdout=DEVNULL if self.quiet else None,
+                   stderr=DEVNULL if self.quiet else None)
 
     def setup(self):
         """Set up the srcdir ready to receive files"""
