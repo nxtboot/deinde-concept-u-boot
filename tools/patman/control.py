@@ -54,14 +54,14 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
     """Check the status of patches in patchwork
 
     This finds the series in patchwork using the Series-link tag, checks for new
-    comments and review tags, displays then and creates a new branch with the
+    comments and review tags, displays them and creates a new branch with the
     review tags.
 
     Args:
         branch (str): Branch to create patches from (None = current)
         count (int): Number of patches to produce, or -1 to produce patches for
             the current branch back to the upstream commit
-        start (int): Start partch to use (0=first / top of branch)
+        start (int): Start patch to use (0=first / top of branch)
         end (int): End patch to use (0=last one in series, 1=one before that,
             etc.)
         dest_branch (str): Name of new branch to create with the updated tags
@@ -96,20 +96,9 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
     if not links:
         raise ValueError("Branch has no Series-links value")
 
-    _, version = patchstream.split_name_version(branch)
-    link = series.get_link_for_version(version, links)
-    if not link:
-        raise ValueError(f'Series-links has no link for v{version}')
-    tout.debug(f"Link '{link}")
-
-    # Allow the series to override the URL
-    if 'patchwork_url' in series:
-        url = series.patchwork_url
-    pwork = Patchwork(url, single_thread=single_thread)
-
-    pwork = Patchwork(url)
-    status.check_and_show_status(series, link, branch, dest_branch, force,
-                                 show_comments, False, pwork)
+    status.find_link_and_show_status(
+        series, branch, url, dest_branch, force, show_comments, False,
+        single_thread)
 
 
 def _setup_patchwork(cser, pwork, ups, pw_url):
