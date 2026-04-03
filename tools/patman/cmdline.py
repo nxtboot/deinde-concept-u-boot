@@ -324,6 +324,13 @@ def add_series_subparser(subparsers):
 
     series_subparsers.add_parser('rm')
 
+    snotes = series_subparsers.add_parser('save-notes')
+    snotes.add_argument(
+        'notes_file', nargs='?', default='review-notes.txt',
+        help='Path to the review notes file (default: review-notes.txt)')
+
+    series_subparsers.add_parser('show-notes')
+
     sup = series_subparsers.add_parser('set-upstream')
     sup.add_argument('upstream_name', nargs='?',
                      help='Name of the upstream for this series')
@@ -549,6 +556,9 @@ def add_review_subparser(subparsers):
         '--create-drafts', action='store_true',
         help='Create Gmail draft emails for each review')
     review.add_argument(
+        '--gmail-account', type=str, default=None,
+        help='Gmail account to create drafts in (e.g. user@gmail.com)')
+    review.add_argument(
         '--no-cover', action='store_true',
         help='Skip reviewing the cover letter')
     review.add_argument(
@@ -560,6 +570,29 @@ def add_review_subparser(subparsers):
     review.add_argument(
         '--apply-only', action='store_true',
         help='Only download and apply patches, skip AI review')
+    review.add_argument(
+        '--signoff', type=str, default='',
+        help="Sign-off for reviews with comments (from .patman settings)")
+    review.add_argument(
+        '--spelling', type=str, default='British',
+        help="Spelling convention for review comments (from .patman "
+             "settings)")
+    review.add_argument(
+        '--learn-voice', type=str, nargs='?', const='gmail',
+        choices=['gmail', 'patchwork'],
+        help="Analyse past reviews to build a voice profile "
+             "(from 'gmail' or 'patchwork', default: gmail)")
+    review.add_argument(
+        '--voice-count', type=int, default=20,
+        help='Number of review emails/comments to collect for '
+             '--learn-voice (default: 20)')
+    review.add_argument(
+        '--sync', action='store_true',
+        help='Check if review drafts have been sent and record the '
+             'final email content')
+    review.add_argument(
+        '-f', '--force', action='store_true',
+        help='Force re-review even if the series was already reviewed')
     return review
 
 
