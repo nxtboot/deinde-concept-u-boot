@@ -261,9 +261,9 @@ class TestSubprocess(unittest.TestCase):
                 input_to_send: a text string to send when we first get input. We will
                     add \r\n to the string.
             """
-            self.stdout_data = ''
-            self.stderr_data = ''
-            self.combined_data = ''
+            self.stdout_data = b''
+            self.stderr_data = b''
+            self.combined_data = b''
             self.stdin_pipe = None
             self._input_to_send = input_to_send
             if input_to_send:
@@ -305,8 +305,8 @@ class TestSubprocess(unittest.TestCase):
         cmd = 'echo fred >/dev/stderr && false || echo bad'
         plist = Popen([cmd], shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
-        self.assertEqual(plist [0], 'bad\r\n')
-        self.assertEqual(plist [1], 'fred\r\n')
+        self.assertEqual(plist [0], b'bad\r\n')
+        self.assertEqual(plist [1], b'fred\r\n')
 
     def test_shell(self):
         """Check with and without shell works"""
@@ -316,7 +316,7 @@ class TestSubprocess(unittest.TestCase):
         plist = Popen([cmd], shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
         self.assertEqual(len(plist [0]), 0)
-        self.assertEqual(plist [1], 'test\r\n')
+        self.assertEqual(plist [1], b'test\r\n')
 
     def test_list_args(self):
         """Check with and without shell works using list arguments"""
@@ -324,7 +324,7 @@ class TestSubprocess(unittest.TestCase):
         cmd = ['echo', 'test', '>/dev/stderr']
         plist = Popen(cmd, shell=False).communicate_filter(oper.output)
         self._basic_check(plist, oper)
-        self.assertEqual(plist [0], ' '.join(cmd[1:]) + '\r\n')
+        self.assertEqual(plist [0], (' '.join(cmd[1:]) + '\r\n').encode())
         self.assertEqual(len(plist [1]), 0)
 
         oper = TestSubprocess.MyOperation()
@@ -333,7 +333,7 @@ class TestSubprocess(unittest.TestCase):
         cmd = ['echo', 'test', '>/dev/stderr']
         plist = Popen(cmd, shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
-        self.assertEqual(plist [0], '\r\n')
+        self.assertEqual(plist [0], b'\r\n')
 
     def test_cwd(self):
         """Check we can change directory"""
@@ -342,7 +342,7 @@ class TestSubprocess(unittest.TestCase):
             plist = Popen('pwd', shell=shell, cwd='/tmp').communicate_filter(
                 oper.output)
             self._basic_check(plist, oper)
-            self.assertEqual(plist [0], '/tmp\r\n')
+            self.assertEqual(plist [0], b'/tmp\r\n')
 
     def test_env(self):
         """Check we can change environment"""
@@ -354,7 +354,7 @@ class TestSubprocess(unittest.TestCase):
             cmd = 'echo $FRED'
             plist = Popen(cmd, shell=True, env=env).communicate_filter(oper.output)
             self._basic_check(plist, oper)
-            self.assertEqual(plist [0], add and 'fred\r\n' or '\r\n')
+            self.assertEqual(plist [0], add and b'fred\r\n' or b'\r\n')
 
     def test_extra_args(self):
         """Check we can't add extra arguments"""
@@ -374,7 +374,8 @@ class TestSubprocess(unittest.TestCase):
                 shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
         self.assertEqual(len(plist [1]), 0)
-        self.assertEqual(plist [0], prompt + 'Hello Flash\r\r\n')
+        self.assertEqual(plist [0],
+                         (prompt + 'Hello Flash\r\r\n').encode())
 
     def test_isatty(self):
         """Check that ptys appear as terminals to the subprocess"""
@@ -386,16 +387,16 @@ class TestSubprocess(unittest.TestCase):
             both_cmds += cmd % (fd, fd, fd, fd, fd)
         plist = Popen(both_cmds, shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
-        self.assertEqual(plist [0], 'terminal 1\r\n')
-        self.assertEqual(plist [1], 'terminal 2\r\n')
+        self.assertEqual(plist [0], b'terminal 1\r\n')
+        self.assertEqual(plist [1], b'terminal 2\r\n')
 
         # Now try with PIPE and make sure it is not a terminal
         oper = TestSubprocess.MyOperation()
         plist = Popen(both_cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 shell=True).communicate_filter(oper.output)
         self._basic_check(plist, oper)
-        self.assertEqual(plist [0], 'not 1\n')
-        self.assertEqual(plist [1], 'not 2\n')
+        self.assertEqual(plist [0], b'not 1\n')
+        self.assertEqual(plist [1], b'not 2\n')
 
 if __name__ == '__main__':
     unittest.main()
