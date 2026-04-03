@@ -12,6 +12,7 @@ import aiohttp
 from collections import namedtuple
 
 from u_boot_pylib import terminal
+from u_boot_pylib import tout
 
 # Information passed to series_get_states()
 # link (str): Patchwork link for series
@@ -807,6 +808,54 @@ On Tue, 4 Mar 2025 at 06:09, Simon Glass <sjg@chromium.org> wrote:
             info = await self.get_cover_comments(client, cover_id)
             cover = COVER(cover_id, len(info), cover['name'], info)
         return cover
+
+    async def fetch_user_comments(self, client, user_email, max_comments=20):
+        """Fetch comments made by a user on recent patches
+
+        Paginates through recent patches for the project, fetching
+        comments on each until the target count is reached.
+
+        Args:
+            client (aiohttp.ClientSession): Session to use
+            user_email (str): Email address to match
+            max_comments (int): Number of comments to collect
+
+        Returns:
+            list of str: Comment body texts
+        """
+        comments = []
+        page = 1
+        per_page = 50
+        patches_scanned = 0
+
+        while len(comments) < max_comments:
+            patches = await self._request(
+                client, f'patches/?project={self.proj_id}&order=-date'
+                f'&per_page={per_page}&page={page}')
+            if not patches:
+                break
+
+            for patch in patches:
+                if len(comments) >= max_comments:
+                    break
+                patches_scanned += 1
+                tout.progress(
+                    f'Scanned {patches_scanned} patches, '
+                    f'found {len(comments)}/{max_comments} comments')
+                patch_comments = await self._request(
+                    client, f"patches/{patch['id']}/comments/")
+                for comment in patch_comments:
+                    submitter = comment.get('submitter', {})
+                    if submitter.get('email') == user_email:
+                        content = comment.get('content', '')
+                        if content and '>' in content:
+                            comments.append(content)
+                            if len(comments) >= max_comments:
+                                break
+
+            page += 1
+        tout.clear_progress()
+        return comments
 
     async def series_get_state(self, client, link, read_comments,
                                read_cover_comments):
