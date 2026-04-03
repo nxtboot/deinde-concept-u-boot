@@ -4354,7 +4354,8 @@ Date:   .*
         self.assertIn('todo', lines[3])
 
         # Archive the todo
-        wf.todo_clear(cser, 'first')
+        with terminal.capture():
+            wf.todo_clear(cser, 'first')
 
         # Without --all, only SENT is active; no 'A' column
         with terminal.capture() as (out, _):
