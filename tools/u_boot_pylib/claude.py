@@ -62,3 +62,8 @@ async def run_agent_collect(prompt, options):
     except (RuntimeError, ValueError, OSError) as exc:
         tout.error(f'Agent failed: {exc}')
         return False, '\n\n'.join(conversation_log)
+    except Exception as exc:
+        if 'API Error' in str(exc) or 'exit code' in str(exc):
+            tout.error(f'Agent failed: {exc}')
+            return False, '\n\n'.join(conversation_log)
+        raise

@@ -83,6 +83,37 @@ class TestClaude(unittest.TestCase):
 
         self.assertFalse(success)
 
+    def test_run_agent_collect_handles_api_error(self):
+        """run_agent_collect() catches SDK API errors"""
+        # pylint: disable=W0613,W0719
+        async def mock_query(**kwargs):
+            raise Exception(
+                'Command failed with exit code 1 (exit code: 1)')
+            yield  # pylint: disable=W0101
+
+        self._setup_claude_with_mock_query(mock_query)
+        loop = asyncio.new_event_loop()
+        with terminal.capture():
+            success, _ = loop.run_until_complete(
+                claude.run_agent_collect('test prompt', MagicMock()))
+        loop.close()
+
+        self.assertFalse(success)
+
+    def test_run_agent_collect_reraises_unknown(self):
+        """run_agent_collect() re-raises unexpected exceptions"""
+        # pylint: disable=W0613
+        async def mock_query(**kwargs):
+            raise TypeError('unexpected bug')
+            yield  # pylint: disable=W0101
+
+        self._setup_claude_with_mock_query(mock_query)
+        loop = asyncio.new_event_loop()
+        with self.assertRaises(TypeError):
+            loop.run_until_complete(
+                claude.run_agent_collect('test prompt', MagicMock()))
+        loop.close()
+
     def test_run_agent_collect_skips_non_text_blocks(self):
         """run_agent_collect() ignores blocks without text attribute"""
         text_block = MagicMock()
