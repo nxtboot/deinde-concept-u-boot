@@ -657,6 +657,15 @@ class Database:  # pylint:disable=R0904
         if self.rowcount() != 1:
             raise ValueError(f'No ser_ver updated (svid {svid})')
 
+    def ser_ver_set_desc(self, svid, desc):
+        """Update the description for a series version
+
+        Args:
+            svid (int): ser_ver ID num
+            desc (str): Description text
+        """
+        self.execute('UPDATE ser_ver SET desc = ? WHERE id = ?', (desc, svid))
+
     def ser_ver_add(self, series_idnum, version, link=None, desc=None):
         """Add a new ser_ver record
 
