@@ -302,11 +302,19 @@ class Cseries(cser_helper.CseriesHelper):
         stop = start + wait_s
         sleep_time = 5
         last_options = None
+        first = True
         while True:
             pws, options, name, version, desc = self.link_search(
                 pwork, series, version)
+            if first:
+                tout.debug(f"Autolinking series '{name}' v{version}"
+                           f" (timeout {wait_s}s)")
+                first = False
+            tout.debug(f"Searching {pwork.url} project {pwork.proj_id}"
+                       f" for '{desc}'")
             if pws:
                 tout.clear_progress()
+                tout.debug(f'Found link: {pws}')
                 if wait_s:
                     tout.notice('Link completed after '
                                 f'{self.get_time() - start} seconds')

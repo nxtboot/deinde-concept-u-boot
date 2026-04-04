@@ -182,6 +182,7 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         cser.open_database()
         if args.subcmd in needs_patchwork:
             ups = cser.get_series_upstream(args.series)
+            tout.debug(f'Series upstream: {ups!r}')
             pwork = _setup_patchwork(
                 cser, pwork, ups, args.patchwork_url)
         elif pwork and pwork is not True:

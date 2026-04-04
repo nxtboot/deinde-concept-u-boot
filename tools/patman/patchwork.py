@@ -281,8 +281,9 @@ class Patchwork:
             list of series matches, each a dict, see get_series()
         """
         query = desc.replace(' ', '+')
-        return await self._request(
-            client, f'series/?project={self.proj_id}&q={query}')
+        subpath = f'series/?project={self.proj_id}&q={query}'
+        tout.debug(f'  GET {self.url}/api/1.2/{subpath}')
+        return await self._request(client, subpath)
 
     async def _find_series(self, client, svid, ser_id, version, ser):
         """Find a series on the server
