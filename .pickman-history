@@ -52664,3 +52664,133 @@ The branch `cherry-1b738947e33` is ready for pushing with all 30 commits success
 
 ---
 
+## 2026-04-04: us/next
+
+Branch: cherry-64ba0aa9f48
+
+Commits:
+- 64ba0aa9f48 rsa: fix typo in $(PHASE_)RSA_VERIFY_WITH_PKEY help text
+- 3e68c01baf8 boot: specify SPL_FIT_FULL_CHECK applies to SPL
+- 9c23910f665 serial: make VPL_DM_SERIAL depend on VPL_DM
+- f05576620c5 boot: fix typo in SYS_BOOTM_LEN description
+- 4f9765d9434 arm: k3-binman: add tifalcon.bin for falcon mode
+- 197459d198c configs: add falcon mode fragment for k3 devices
+- e40c406914a mach-k3: common: enable falcon mode from R5 SPL
+- 18a3a7a9b82 mach-k3: common: support only MMC in R5 falcon mode
+- 518d8c1bec4 mach-k3: r5: common: add fdt fixups for falcon mode
+- 2da694254df mach-k3: r5: common: add bootargs to kernel's dtb
+- 489ec1ee14a doc: ti: document R5 falcon mode for AM62 platforms
+- 9e2bce78fd5 Merge patch series "Allow falcon boot from R5 SPL on TI's AM62 devices"
+
+### Conversation log
+The repository state is clean (just untracked files which don't affect cherry-picking). Now let me create and checkout the new branch based on ci/master:
+
+Now let me start cherry-picking the commits one at a time. Starting with the first commit:
+
+First commit cherry-picked. Let me verify the delta and run the build test:
+
+Delta is identical (1 file, 2 insertions, 2 deletions). Now running the build test:
+
+Build passed. Moving to the second commit:
+
+Delta matches. Running build test:
+
+Build passed. Now commit 3:
+
+Build passed. Now commit 4:
+
+Build passed. Now commit 5:
+
+There's a conflict. Let me check the conflicting file:
+
+This is a simple conflict. The HEAD has additional lines for ulib, while the incoming commit adds `tifalcon.bin`. Let me resolve this by combining both:
+
+I can see the conflict clearly. I need to merge both versions - keep the ulib entries from HEAD and add `tifalcon.bin` from the incoming commit. The resolution should be:
+
+Hmm, the resolution wasn't quite right - it seems to have removed some lines. Let me check more carefully:
+
+I lost the `include/u-boot-api.h` entry. Let me fix that:
+
+Now the resolution looks correct. Let me check for any remaining conflict markers:
+
+No conflict markers remain. Now let me add the file and continue the cherry-pick:
+
+Now let me amend the commit to note the conflict resolution:
+
+Now let me compare the delta:
+
+Delta is almost identical (222 vs 221 insertions, +1 because we needed an extra line continuation). Same files modified. Now let me run the build test:
+
+Build passed. Now commit 6:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 7:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 8:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 9:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 10:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 11:
+
+Delta is identical. Build test:
+
+Build passed. Now commit 12 - this is the **merge commit**, so I need to use special flags:
+
+There's a conflict. Since this is a merge commit and we've already applied all the individual commits, the merge commit should essentially be empty. Let me check the conflict:
+
+This is the same conflict as before - the merge commit contains the same changes we already applied. Since we want to keep our current state (HEAD which already has the tifalcon.bin and other changes), I'll resolve in favor of HEAD:
+
+As expected, the merge commit is now empty since all changes were already applied. As per the instructions, I must create an empty commit to preserve the merge commit in history:
+
+Now let me verify the log to ensure all 12 commits are present:
+
+All 12 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+### Build Result
+**OK** - Sandbox board builds successfully with no warnings or errors.
+
+### Commits Cherry-picked (12 total)
+| # | Hash | Subject |
+|---|------|---------|
+| 1 | b92552f35a3 | rsa: fix typo in $(PHASE_)RSA_VERIFY_WITH_PKEY help text |
+| 2 | 2de27af32b3 | boot: specify SPL_FIT_FULL_CHECK applies to SPL |
+| 3 | 73282cccc5c | serial: make VPL_DM_SERIAL depend on VPL_DM |
+| 4 | d7c0075a815 | boot: fix typo in SYS_BOOTM_LEN description |
+| 5 | 1e3865fae9d | arm: k3-binman: add tifalcon.bin for falcon mode |
+| 6 | 8797fd52766 | configs: add falcon mode fragment for k3 devices |
+| 7 | 80b97a00f7c | mach-k3: common: enable falcon mode from R5 SPL |
+| 8 | f8fddf44142 | mach-k3: common: support only MMC in R5 falcon mode |
+| 9 | 30f841eacbd | mach-k3: r5: common: add fdt fixups for falcon mode |
+| 10 | 1c93a4697ad | mach-k3: r5: common: add bootargs to kernel's dtb |
+| 11 | 426c166edd0 | doc: ti: document R5 falcon mode for AM62 platforms |
+| 12 | 9dab6a5aa18 | Merge patch series "Allow falcon boot from R5 SPL on TI's AM62 devices" (empty) |
+
+### Fix-ups Made
+1. **Commit 5 (1e3865fae9d)** - `arm: k3-binman: add tifalcon.bin for falcon mode`
+   - Conflict in `Makefile` CLEAN_FILES section
+   - Resolved by merging tifalcon.bin into existing CLEAN_FILES with ulib entries
+   - Delta: 222 insertions vs original 221 (extra line continuation added)
+   - Commit message amended to note the fix-up
+
+### Commits with Concerning Deltas
+- None. All commits matched their original deltas exactly (except for the minor Makefile fix noted above).
+
+### Notes
+- The merge commit (commit 12) was applied as an empty commit as expected, since all individual commits were already cherry-picked
+- Branch `cherry-64ba0aa9f48` is ready for pushing
+
+---
+
