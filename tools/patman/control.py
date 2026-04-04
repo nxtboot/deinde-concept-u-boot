@@ -111,6 +111,42 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
                                  show_comments, False, pwork)
 
 
+def _setup_patchwork(cser, pwork, ups, pw_url):
+    """Set up a Patchwork instance from upstream and project settings
+
+    Args:
+        cser (Cseries): Open cseries instance
+        pwork (Patchwork or None): Existing instance, or None to create
+        ups (str or None): Upstream name
+        pw_url (str or None): Patchwork URL override
+
+    Returns:
+        Patchwork: Configured instance
+
+    Raises:
+        ValueError: if the URL or project cannot be resolved
+    """
+    if pwork:
+        return pwork
+    if not pw_url and ups:
+        pw_url = cser.db.upstream_get_patchwork_url(ups)
+    if not pw_url:
+        raise ValueError(
+            'No patchwork URL found; use -U/--upstream or '
+            "configure with 'patman upstream add'")
+    pwork = Patchwork(pw_url)
+    proj = cser.project_get(ups)
+    if not proj:
+        proj = cser.project_get()
+    if not proj:
+        raise ValueError(
+            "Patchwork project not configured; use "
+            "'patman patchwork set-project'")
+    _, proj_id, link_name = proj
+    pwork.project_set(proj_id, link_name)
+    return pwork
+
+
 def do_series(args, test_db=None, pwork=None, cser=None):
     """Process a series subcommand
 
@@ -133,28 +169,9 @@ def do_series(args, test_db=None, pwork=None, cser=None):
     try:
         cser.open_database()
         if args.subcmd in needs_patchwork:
-            if not pwork:
-                ups = cser.get_series_upstream(args.series)
-                pw_url = None
-                if ups:
-                    pw_url = cser.db.upstream_get_patchwork_url(ups)
-                if not pw_url:
-                    pw_url = args.patchwork_url
-                if not pw_url:
-                    raise ValueError(
-                        'No patchwork URL found for upstream '
-                        f"'{ups}'; use 'patman upstream add' with "
-                        '-p or pass --patchwork-url')
-                pwork = Patchwork(pw_url)
-                proj = cser.project_get(ups)
-                if not proj:
-                    proj = cser.project_get()
-                if not proj:
-                    raise ValueError(
-                        "Please set project ID with "
-                        "'patman patchwork set-project'")
-                _, proj_id, link_name = proj
-                pwork.project_set(proj_id, link_name)
+            ups = cser.get_series_upstream(args.series)
+            pwork = _setup_patchwork(
+                cser, pwork, ups, args.patchwork_url)
         elif pwork and pwork is not True:
             raise ValueError(
                 f"Internal error: command '{args.subcmd}' should not have patchwork")
