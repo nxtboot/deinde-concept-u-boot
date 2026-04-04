@@ -52883,3 +52883,137 @@ The branch `cherry-fdf36c2e9ad` is ready for pushing.
 
 ---
 
+## 2026-04-04: us/next
+
+Branch: cherry-74545d49c7d
+
+Commits:
+- 74545d49c7d qfw: Add more fields and a heading to qfw list
+- 33355013ffc qfw/acpi: do not zero out XSDT address
+- 893871132e5 test: provide test for 'acpi list' command
+- 411f8f5367c efi: Use struct efi_gop_mode_info in struct efi_entry_gopmode
+- ad669eb7966 efi: video: fix mode info in payload mode
+- 811d41221be doc: bootstd: Remove extension support from TODO list
+- 81458bd1135 doc: bootstd: Describe the optional extension_overlay_addr environment
+- d05190bd65c efi_loader: correct struct efi_priv description
+- 1a30ddeda9a efi_client: efi_store_memory_map() must return int
+- 35e510f2af5 efi_driver: correct formatting in efi_uc_stop()
+- 59f2c5a0fa6 efi_driver: typo 'to be write'
+- dbed0534876 efi_driver: don't leak name in efi_bl_create_block_device()
+- 6bb374b1a12 efi_loader: typo 'mange' in efi_net.c
+- df786b4c57f Merge tag 'efi-2026-01-rc2' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Now let me first check if the first commit has a potential already-applied version. The instructions mention `74545d49c7d` might already be applied as `9d9f440c7ad`. Let me verify this first:
+
+The patches are similar but with different formatting (16 vs 8 character width for addresses). The core functionality is the same - adding headers to qfw list output and updating test. This can be considered "already applied" with minor variations. Let me proceed to skip this commit and try the next one:
+
+Conflict detected. Let me check if this commit might already be applied in ci/master:
+
+Let me look at the conflict:
+
+I can see the conflict. The change is trying to add code that recalculates the RSDP length and ext_checksum. Let me look at the original commit to understand what it's trying to do:
+
+I see - the original file had the lines:
+```c
+struct acpi_rsdp *rsdp = ctx->rsdp;
+rsdp->length = sizeof(*rsdp);
+rsdp->xsdt_address = 0;
+rsdp->ext_checksum = table_compute_checksum((u8 *)rsdp, sizeof(*rsdp));
+```
+
+And this commit removes `rsdp->xsdt_address = 0;`.
+
+The conflict occurs because in the ci/master branch, this entire block of code doesn't exist - meaning it was refactored/removed. Let me check what ci/master has there:
+
+I see - in ci/master, the entire block with `rsdp->length`, `rsdp->xsdt_address = 0`, and `rsdp->ext_checksum` doesn't exist. This means the problematic code `rsdp->xsdt_address = 0` is not present in ci/master, so this fix has already been incorporated (or the code was refactored differently).
+
+Let me check if there's a commit in ci/master that addresses this:
+
+The `rsdp->xsdt_address = 0;` line was **removed** by commit `6d2aabd2cc7` which is already in ci/master. This means the fix from `33355013ffc` is already effectively applied in ci/master (the problematic line no longer exists).
+
+Let me abort this cherry-pick and skip this commit:
+
+This is a simple conflict - both sides are adding entries. I need to keep both the `backtrace.o` line and add the `acpi.o` line. Let me resolve this:
+
+Conflict resolved. Now let me stage and continue:
+
+Now let me verify and run build:
+
+Both stats match. Let me run the build:
+
+Build passed. Let me continue with the next commit:
+
+Stats match. Build test:
+
+The function `efi_store_memory_map` was moved to the stub. Let me check if the same fix is needed:
+
+So the function has been moved to `lib/efi_client/stub.c`. Let me check if the same bug exists there:
+
+Yes, the bug still exists in `lib/efi_client/stub.c`. The function still returns `ret` (EFI error code) instead of `-EFAULT`. Let me abort this cherry-pick and apply the fix to the correct file:
+
+Now I need to manually apply the fix to `lib/efi_client/stub.c`. Let me check the exact lines:
+
+I can see lines 161, 174, and 183 contain `return ret;` in the `efi_store_memory_map()` function that need to be changed to `return -EFAULT;`. Let me apply these fixes:
+
+Good. Now let me create the commit:
+
+Now the last one - the merge commit:
+
+The merge commit has many conflicts. This is expected since a merge commit typically brings together many changes. Since we've already cherry-picked the individual commits, the merge commit itself should be empty or have minimal changes. Let me check what changes the merge commit is actually supposed to introduce:
+
+The merge commit was just combining all the individual commits we've already cherry-picked. Since we've already applied all the individual commits, the merge commit is essentially a no-op for us. The conflicts we're seeing are because we've already applied those changes.
+
+Let me abort and create an empty commit to preserve the merge commit message:
+
+Now let me run the final build and verify the git log:
+
+I can see 12 new commits from ci/master base. Let me count them properly. We were asked to cherry-pick 14 commits but:
+- 74545d49c7d was skipped (already applied as 9d9f440c7ad)
+- 33355013ffc was skipped (already fixed via 6d2aabd2cc7)
+
+That leaves 12 commits that should be cherry-picked. Let me verify:
+
+12 commits applied. Now let me run the final build:
+
+Build passed. Let me provide the final status:
+
+## Final Status Report
+
+**Branch:** `cherry-74545d49c7d` based on `ci/master`
+
+**Build Result:** ✅ OK (sandbox builds successfully)
+
+### Cherry-pick Summary (14 requested, 12 applied)
+
+| Commit | Subject | Status |
+|--------|---------|--------|
+| 74545d49c7d | qfw: Add more fields and a heading to qfw list | ⏭️ SKIPPED - already applied as 9d9f440c7ad with minor formatting differences |
+| 33355013ffc | qfw/acpi: do not zero out XSDT address | ⏭️ SKIPPED - fix already incorporated via 6d2aabd2cc7 (entire code block was removed) |
+| 893871132e5 | test: provide test for 'acpi list' command | ✅ Applied (conflict resolved: added backtrace.o line from HEAD) |
+| 411f8f5367c | efi: Use struct efi_gop_mode_info in struct efi_entry_gopmode | ✅ Applied cleanly |
+| ad669eb7966 | efi: video: fix mode info in payload mode | ✅ Applied cleanly |
+| 811d41221be | doc: bootstd: Remove extension support from TODO list | ✅ Applied cleanly |
+| 81458bd1135 | doc: bootstd: Describe the optional extension_overlay_addr environment | ✅ Applied cleanly |
+| d05190bd65c | efi_loader: correct struct efi_priv description | ✅ Applied cleanly |
+| 1a30ddeda9a | efi_client: efi_store_memory_map() must return int | ⚠️ ADAPTED - function moved to stub.c; fix applied to new location |
+| 35e510f2af5 | efi_driver: correct formatting in efi_uc_stop() | ✅ Applied cleanly |
+| 59f2c5a0fa6 | efi_driver: typo 'to be write' | ✅ Applied cleanly |
+| dbed0534876 | efi_driver: don't leak name in efi_bl_create_block_device() | ✅ Applied cleanly |
+| 6bb374b1a12 | efi_loader: typo 'mange' in efi_net.c | ✅ Applied cleanly |
+| df786b4c57f | Merge tag 'efi-2026-01-rc2' | ✅ Applied as empty commit (all constituent commits already applied) |
+
+### Fix-ups Made
+
+1. **893871132e5 (test: provide test for 'acpi list')**: Resolved Makefile conflict by keeping both the acpi.o line from the cherry-pick and the backtrace.o line from HEAD.
+
+2. **1a30ddeda9a (efi_store_memory_map)**: The function `efi_store_memory_map()` was moved from `lib/efi_client/efi.c` to `lib/efi_client/stub.c` in ci/master. Applied the same fix (changing `return ret;` to `return -EFAULT;`) to the new location.
+
+### Commits with No Concerns
+
+All applied commits have matching deltas between the original and cherry-picked versions.
+
+The branch `cherry-74545d49c7d` is ready for pushing.
+
+---
+
