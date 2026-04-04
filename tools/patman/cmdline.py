@@ -260,7 +260,10 @@ def add_series_subparser(subparsers):
 
     auto = series_subparsers.add_parser('autolink',
                                         aliases=ALIASES['autolink'])
-    _add_update(auto)
+    auto.add_argument('-u', '--update', action='store_true', default=True,
+                      help='Update the branch commit (default)')
+    auto.add_argument('--no-update', action='store_false', dest='update',
+                      help='Do not update the branch commit')
     _add_wait(auto, 0)
 
     aall = series_subparsers.add_parser('autolink-all')
@@ -268,7 +271,10 @@ def add_series_subparser(subparsers):
                       help='Link all series versions, not just the latest')
     aall.add_argument('-r', '--replace-existing', action='store_true',
                       help='Replace existing links')
-    _add_update(aall)
+    aall.add_argument('-u', '--update', action='store_true', default=True,
+                      help='Update the branch commits (default)')
+    aall.add_argument('--no-update', action='store_false', dest='update',
+                      help='Do not update the branch commits')
 
     series_subparsers.add_parser('dec')
 

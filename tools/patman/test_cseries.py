@@ -1402,7 +1402,7 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with (mock.patch.object(cseries.Cseries, 'link_auto_all',
                                 return_value=None) as method):
             self.run_args('series', 'autolink-all', pwork=True)
-        method.assert_called_once_with(True, update_commit=False,
+        method.assert_called_once_with(True, update_commit=True,
                                        link_all_versions=False,
                                        replace_existing=False, dry_run=False,
                                        show_summary=True)
@@ -1410,7 +1410,7 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with (mock.patch.object(cseries.Cseries, 'link_auto_all',
                                 return_value=None) as method):
             self.run_args('series', 'autolink-all', '-a', pwork=True)
-        method.assert_called_once_with(True, update_commit=False,
+        method.assert_called_once_with(True, update_commit=True,
                                        link_all_versions=True,
                                        replace_existing=False, dry_run=False,
                                        show_summary=True)
@@ -1418,7 +1418,7 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with (mock.patch.object(cseries.Cseries, 'link_auto_all',
                                 return_value=None) as method):
             self.run_args('series', 'autolink-all', '-a', '-r', pwork=True)
-        method.assert_called_once_with(True, update_commit=False,
+        method.assert_called_once_with(True, update_commit=True,
                                        link_all_versions=True,
                                        replace_existing=True, dry_run=False,
                                        show_summary=True)
@@ -1426,22 +1426,23 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with (mock.patch.object(cseries.Cseries, 'link_auto_all',
                                 return_value=None) as method):
             self.run_args('series', '-n', 'autolink-all', '-r', pwork=True)
-        method.assert_called_once_with(True, update_commit=False,
+        method.assert_called_once_with(True, update_commit=True,
                                        link_all_versions=False,
                                        replace_existing=True, dry_run=True,
                                        show_summary=True)
 
         with (mock.patch.object(cseries.Cseries, 'link_auto_all',
                                 return_value=None) as method):
-            self.run_args('series', 'autolink-all', '-u', pwork=True)
-        method.assert_called_once_with(True, update_commit=True,
+            self.run_args('series', 'autolink-all', '--no-update', pwork=True)
+        method.assert_called_once_with(True, update_commit=False,
                                        link_all_versions=False,
                                        replace_existing=False, dry_run=False,
                                        show_summary=True)
 
         # Now do a real one to check the patchwork handling and output
         with terminal.capture() as (out, _):
-            self.run_args('series', 'autolink-all', '-a', pwork=pwork)
+            self.run_args('series', 'autolink-all', '-a', '--no-update',
+                          pwork=pwork)
         itr = iter(out.getvalue().splitlines())
         self.assertEqual(
             '1 series linked, 1 already linked, 1 not found (3 requests)',
