@@ -1370,10 +1370,10 @@ class CseriesHelper:
                     updated += 1
         if cover:
             info = SerVer(svid, None, None, None, cover.id,
-                           cover.num_comments, cover.name, None, None)
+                           cover.num_comments, cover.name, None, None, None)
         else:
             info = SerVer(svid, None, None, None, None, None, patches[0].name,
-                           None, None)
+                           None, None, None)
         self.db.ser_ver_set_info(info)
 
         return updated, 1 if cover else 0

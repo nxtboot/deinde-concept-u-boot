@@ -635,7 +635,9 @@ diff --git a/lib/efi_loader/efi_memory.c b/lib/efi_loader/efi_memory.c
         extra = '::::::::::::::\n' + help_file + '\n::::::::::::::\n'
         gothelp = result.stdout.replace(extra, '')
         self.assertEqual(len(gothelp), os.path.getsize(help_file))
-        self.assertEqual(0, len(result.stderr))
+        unexpected = [l for l in result.stderr.splitlines()
+                      if not l.startswith('WARNING:')]
+        self.assertEqual(0, len(unexpected))
         self.assertEqual(0, result.return_code)
 
     def test_help(self):

@@ -28,7 +28,7 @@ def process_reviews(content, comment_data, base_rtags):
     Args:
         content (str): Content text of the patch itself - see pwork.get_patch()
         comment_data (list of dict): Comments for the patch - see
-            pwork._get_patch_comments()
+            pwork.get_patch_comments()
         base_rtags (dict): base review tags (before any comments)
             key: Response tag (e.g. 'Reviewed-by')
             value: Set of people who gave that response, each a name/email
@@ -379,6 +379,63 @@ async def check_status(link, pwork, read_comments=False,
     async with aiohttp.ClientSession() as client:
         return await pwork.series_get_state(client, link, read_comments,
                                              read_cover_comments)
+
+
+def find_link_and_show_status(series, branch, url, dest_branch, force,
+                              show_comments, show_cover_comments,
+                              single_thread=False):
+    """Find the patchwork link for a series and show its status
+
+    Resolves the patchwork link from the series metadata, then checks
+    and displays the review status.
+
+    Args:
+        series (Series): Series object for the existing branch
+        branch (str): Branch name (used to determine the version)
+        url (str): Patchwork server URL. Overridden by Series-patchwork-url
+            if present in the series.
+        dest_branch (str): Name of new branch to create, or None
+        force (bool): True to force overwriting dest_branch if it exists
+        show_comments (bool): True to show comments on each patch
+        show_cover_comments (bool): True to show cover letter comments
+        single_thread (bool): True to use a single thread for patchwork
+    """
+    from patman import patchstream
+    from patman.patchwork import Patchwork
+    from u_boot_pylib import tout
+
+    _, version = patchstream.split_name_version(branch)
+    links = series.get('links')
+    link = series.get_link_for_version(version, links)
+    if not link:
+        # Fall back to the database if the commit metadata does not
+        # have a link for this version (e.g. autolink ran without -u)
+        from patman import cseries
+
+        cser = cseries.Cseries()
+        try:
+            cser.open_database()
+            name, _ = patchstream.split_name_version(branch)
+            ser = cser.get_series_by_name(name)
+            if ser:
+                svinfo = cser.get_ser_ver(ser.idnum, version)
+                if svinfo:
+                    link = svinfo.link
+        except (ValueError, AttributeError):
+            pass
+        finally:
+            cser.close_database()
+    if not link:
+        raise ValueError(f'No patchwork link for v{version}; '
+                         'try: patman series autolink')
+    tout.debug(f"Link '{link}")
+
+    if 'patchwork_url' in series:
+        url = series.patchwork_url
+    pwork = Patchwork(url, single_thread=single_thread)
+
+    check_and_show_status(series, link, branch, dest_branch, force,
+                          show_comments, show_cover_comments, pwork)
 
 
 def check_and_show_status(series, link, branch, dest_branch, force,

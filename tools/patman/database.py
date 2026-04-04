@@ -2,6 +2,7 @@
 #
 # Copyright 2025 Simon Glass <sjg@chromium.org>
 #
+# pylint: disable=C0302
 """Handles the patman database
 
 This uses sqlite3 with a local file.
@@ -19,13 +20,26 @@ from u_boot_pylib import tout
 from patman.series import Series
 
 # Schema version (version 0 means there is no database yet)
-LATEST = 7
+LATEST = 10
+
+# Information about a review record
+# Review status values
+REVIEW_NEW = 'new'          # AI review generated, no draft created
+REVIEW_DRAFT = 'draft'      # Gmail draft created
+REVIEW_SENT = 'sent'        # Draft was sent
+REVIEW_DELETED = 'deleted'  # Draft was deleted without sending
+REVIEW_REPLIED = 'replied'  # Author has replied to our review
+
+Review = namedtuple(
+    'REVIEW',
+    'idnum,svid,seq,body,approved,timestamp,draft_id,status,'
+    'gmail_msg_id,gmail_thread_id')
 
 # Information about a series/version record
 SerVer = namedtuple(
     'SER_VER',
     'idnum,series_id,version,link,cover_id,cover_num_comments,name,'
-    'archive_tag,desc')
+    'archive_tag,desc,notes')
 
 # Record from the pcommit table:
 # idnum (int): record ID
@@ -223,6 +237,33 @@ class Database:  # pylint:disable=R0904
         self.cur.execute(
             'ALTER TABLE workflow ADD COLUMN ser_ver_id INTEGER')
 
+    def _migrate_to_v8(self):
+        """Add review tracking and series source type
+
+        - Add source column to series table (NULL for user's own series,
+          'review' for series being reviewed)
+        - Add review table for storing AI review results per patch
+        """
+        self.cur.execute('ALTER TABLE series ADD COLUMN source')
+        self.cur.execute(
+            'CREATE TABLE review (id INTEGER PRIMARY KEY AUTOINCREMENT,'
+            'svid INTEGER, seq INTEGER, body TEXT, approved BIT, '
+            'timestamp TEXT, '
+            'FOREIGN KEY (svid) REFERENCES ser_ver (id))')
+
+    def _migrate_to_v9(self):
+        """Add draft tracking, status, and Gmail IDs to review table"""
+        self.cur.execute('ALTER TABLE review ADD COLUMN draft_id')
+        self.cur.execute('ALTER TABLE review ADD COLUMN status')
+        self.cur.execute('ALTER TABLE review ADD COLUMN gmail_msg_id')
+        self.cur.execute('ALTER TABLE review ADD COLUMN gmail_thread_id')
+        self.cur.execute("UPDATE review SET status = 'new'")
+
+    def _migrate_to_v10(self):
+        """Add review notes column to ser_ver table"""
+        self.cur.execute('ALTER TABLE ser_ver ADD COLUMN notes')
+
+    # pylint: disable=R0912
     def migrate_to(self, dest_version):
         """Migrate the database to the selected version
 
@@ -255,6 +296,12 @@ class Database:  # pylint:disable=R0904
                 self._migrate_to_v6()
             elif version == 7:
                 self._migrate_to_v7()
+            elif version == 8:
+                self._migrate_to_v8()
+            elif version == 9:
+                self._migrate_to_v9()
+            elif version == 10:
+                self._migrate_to_v10()
 
             # Save the new version if we have a schema_version table
             if version > 1:
@@ -544,6 +591,17 @@ class Database:  # pylint:disable=R0904
             'UPDATE series SET upstream = ? WHERE id = ?',
             (ups, series_idnum))
 
+    def series_set_source(self, series_idnum, source):
+        """Update the source field for a series
+
+        Args:
+            series_idnum (int): ID num of the series
+            source (str): Source value, e.g. 'review'
+        """
+        self.execute(
+            'UPDATE series SET source = ? WHERE id = ?',
+            (source, series_idnum))
+
     def series_get_null_upstream(self):
         """Get a list of series names that have no upstream set
 
@@ -657,6 +715,41 @@ class Database:  # pylint:disable=R0904
         if self.rowcount() != 1:
             raise ValueError(f'No ser_ver updated (svid {svid})')
 
+    def ser_ver_set_desc(self, svid, desc):
+        """Update the description for a series version
+
+        Args:
+            svid (int): ser_ver ID num
+            desc (str): Description text
+        """
+        self.execute('UPDATE ser_ver SET desc = ? WHERE id = ?', (desc, svid))
+
+    def ser_ver_set_notes(self, svid, notes):
+        """Store review-handling notes for a series version
+
+        Args:
+            svid (int): ser_ver ID num
+            notes (str): Notes text from review-notes.txt
+        """
+        self.execute(
+            'UPDATE ser_ver SET notes = ? WHERE id = ?', (notes, svid))
+
+    def ser_ver_get_all_notes(self, series_id):
+        """Get review notes from all versions of a series
+
+        Args:
+            series_id (int): Series ID
+
+        Return:
+            list of tuple: (version, notes) for versions that have notes,
+                ordered by version
+        """
+        res = self.execute(
+            'SELECT version, notes FROM ser_ver '
+            'WHERE series_id = ? AND notes IS NOT NULL '
+            'ORDER BY version', (series_id,))
+        return [(v, n) for v, n in res.fetchall() if n]
+
     def ser_ver_add(self, series_idnum, version, link=None, desc=None):
         """Add a new ser_ver record
 
@@ -690,7 +783,7 @@ class Database:  # pylint:disable=R0904
             ValueError: There is no matching idnum/version
         """
         base = ('SELECT id, series_id, version, link, cover_id, '
-                'cover_num_comments, name, archive_tag, desc '
+                'cover_num_comments, name, archive_tag, desc, notes '
                 'FROM ser_ver WHERE series_id = ?')
         if version:
             res = self.execute(base + ' AND version = ?',
@@ -732,7 +825,8 @@ class Database:  # pylint:disable=R0904
         """
         res = self.execute(
             'SELECT id, series_id, version, link, cover_id, '
-            'cover_num_comments, name, archive_tag, desc FROM ser_ver')
+            'cover_num_comments, name, archive_tag, desc, notes '
+            'FROM ser_ver')
         items = res.fetchall()
         return [SerVer(*x) for x in items]
 
@@ -833,6 +927,7 @@ class Database:  # pylint:disable=R0904
 
     # upstream functions
 
+    # pylint: disable=R0913,R0917
     def upstream_add(self, name, url, patchwork_url=None, identity=None,
                      series_to=None, no_maintainers=False, no_tags=False):
         """Add a new upstream record
@@ -1032,6 +1127,26 @@ class Database:  # pylint:disable=R0904
             'INSERT INTO patchwork (name, proj_id, link_name, upstream) '
             'VALUES (?, ?, ?, ?)', (name, proj_id, link_name, ups))
 
+    def patchwork_delete(self, ups):
+        """Delete a patchwork project configuration
+
+        Args:
+            ups (str or None): Upstream name to delete, or None for the
+                entry with no upstream
+
+        Raises:
+            ValueError: if no matching entry exists
+        """
+        if ups is not None:
+            self.execute(
+                'DELETE FROM patchwork WHERE upstream = ?', (ups,))
+        else:
+            self.execute(
+                'DELETE FROM patchwork WHERE upstream IS NULL')
+        if not self.rowcount():
+            raise ValueError(
+                f"No patchwork project found for upstream '{ups}'")
+
     def patchwork_get_list(self):
         """Get all patchwork project configurations
 
@@ -1171,3 +1286,176 @@ class Database:  # pylint:disable=R0904
         query += ' ORDER BY w.timestamp'
         res = self.execute(query)
         return res.fetchall()
+
+    # pylint: disable=R0913,R0917
+    def review_add(self, svid, seq, body, approved, timestamp):
+        """Add a review record
+
+        Args:
+            svid (int): ser_ver ID num
+            seq (int): Patch sequence (0 for cover, 1..N for patches)
+            body (str): Review email body text
+            approved (bool): True if Reviewed-by was given
+            timestamp (str): ISO datetime string
+
+        Return:
+            int: ID num of the new review record
+        """
+        self.execute(
+            'INSERT INTO review (svid, seq, body, approved, timestamp, '
+            'status) VALUES (?, ?, ?, ?, ?, ?)',
+            (svid, seq, body, 1 if approved else 0, timestamp,
+             REVIEW_NEW))
+        return self.lastrowid()
+
+    def review_set_draft_id(self, review_id, draft_id):
+        """Set the Gmail draft ID for a review record
+
+        Args:
+            review_id (int): Review record ID
+            draft_id (str or None): Gmail draft ID
+        """
+        status = REVIEW_DRAFT if draft_id else None
+        self.execute(
+            'UPDATE review SET draft_id = ?, status = ? WHERE id = ?',
+            (draft_id, status, review_id))
+
+    def review_set_sent(self, review_id, body, gmail_msg_id=None,
+                        gmail_thread_id=None):
+        """Mark a review as sent and update its body
+
+        Args:
+            review_id (int): Review record ID
+            body (str): Sent email body text
+            gmail_msg_id (str or None): Gmail message ID of sent email
+            gmail_thread_id (str or None): Gmail thread ID
+        """
+        self.execute(
+            'UPDATE review SET body = ?, draft_id = NULL, status = ?, '
+            'gmail_msg_id = ?, gmail_thread_id = ? WHERE id = ?',
+            (body, REVIEW_SENT, gmail_msg_id, gmail_thread_id,
+             review_id))
+
+    def review_set_replied(self, review_id):
+        """Mark a review as having received a reply
+
+        Args:
+            review_id (int): Review record ID
+        """
+        self.execute(
+            'UPDATE review SET status = ? WHERE id = ?',
+            (REVIEW_REPLIED, review_id))
+
+    def review_set_deleted(self, review_id):
+        """Mark a review draft as deleted (not sent)
+
+        Args:
+            review_id (int): Review record ID
+        """
+        self.execute(
+            'UPDATE review SET draft_id = NULL, status = ? '
+            'WHERE id = ?', (REVIEW_DELETED, review_id))
+
+    def review_delete_for_version(self, svid):
+        """Delete all review records for a given series version
+
+        Args:
+            svid (int): ser_ver ID num
+        """
+        self.execute('DELETE FROM review WHERE svid = ?', (svid,))
+
+    def review_get_for_version(self, svid):
+        """Get review records for a given series version
+
+        Args:
+            svid (int): ser_ver ID num
+
+        Return:
+            list of Review: Review records ordered by sequence
+        """
+        res = self.execute(
+            'SELECT id, svid, seq, body, approved, timestamp, draft_id, '
+            'status, gmail_msg_id, gmail_thread_id '
+            'FROM review WHERE svid = ? ORDER BY seq', (svid,))
+        return [Review(*row) for row in res.fetchall()]
+
+    def review_get_by_status(self, status, need_thread=False):
+        """Get review records with a given status
+
+        Args:
+            status (str): Status to filter by (e.g. 'draft', 'sent')
+            need_thread (bool): If True, only return records with a
+                gmail_thread_id
+
+        Return:
+            list of Review: Matching review records
+        """
+        sql = ('SELECT id, svid, seq, body, approved, timestamp, '
+               'draft_id, status, gmail_msg_id, gmail_thread_id '
+               'FROM review WHERE status = ?')
+        if need_thread:
+            sql += ' AND gmail_thread_id IS NOT NULL'
+        res = self.execute(sql, (status,))
+        return [Review(*row) for row in res.fetchall()]
+
+    def review_get_previous(self, series_id, version):
+        """Get reviews from the previous version of a series
+
+        Looks up the ser_ver for version-1 and returns its reviews, so
+        they can be provided as context when reviewing a new version.
+
+        Args:
+            series_id (int): Series ID
+            version (int): Current version being reviewed
+
+        Return:
+            list of Review: Reviews from version-1, or empty list
+        """
+        prev_version = version - 1
+        if prev_version < 1:
+            return []
+        res = self.execute(
+            'SELECT sv.id FROM ser_ver sv '
+            'WHERE sv.series_id = ? AND sv.version = ?',
+            (series_id, prev_version))
+        row = res.fetchone()
+        if not row:
+            return []
+        return self.review_get_for_version(row[0])
+
+    def series_find_by_link(self, link):
+        """Find a series by its patchwork link
+
+        Args:
+            link (str): Patchwork series link/ID
+
+        Return:
+            tuple or None: (series_id, name, version, svid) if found
+        """
+        res = self.execute(
+            'SELECT s.id, s.name, sv.version, sv.id '
+            'FROM ser_ver sv '
+            'JOIN series s ON sv.series_id = s.id '
+            'WHERE sv.link = ?', (str(link),))
+        return res.fetchone()
+
+    def series_find_review_by_name(self, name):
+        """Find a review series by its name
+
+        Looks for series with source='review' matching the given name,
+        so that new versions of a previously reviewed series can be
+        added under the same series record.
+
+        Args:
+            name (str): Series name to search for
+
+        Return:
+            tuple or None: (series_id, name, max_version) if found
+        """
+        res = self.execute(
+            'SELECT s.id, s.name, MAX(sv.version) '
+            'FROM series s '
+            'JOIN ser_ver sv ON sv.series_id = s.id '
+            "WHERE s.source = 'review' AND s.name = ? "
+            'GROUP BY s.id', (name,))
+        return res.fetchone()

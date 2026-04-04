@@ -21,10 +21,15 @@ from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
 from u_boot_pylib import tools
 from u_boot_pylib import tout
+
+from patman import cseries
 from patman import patchstream
-from patman.patchwork import Patchwork
+from patman import review as review_mod
 from patman import send
 from patman import settings
+from patman import status
+from patman import workflow
+from patman.patchwork import Patchwork
 
 
 def setup():
@@ -45,19 +50,20 @@ def do_send(args):
     send.send(args)
 
 
+# pylint: disable=R0913,R0917
 def patchwork_status(branch, count, start, end, dest_branch, force,
                      show_comments, url, single_thread=False):
     """Check the status of patches in patchwork
 
     This finds the series in patchwork using the Series-link tag, checks for new
-    comments and review tags, displays then and creates a new branch with the
+    comments and review tags, displays them and creates a new branch with the
     review tags.
 
     Args:
         branch (str): Branch to create patches from (None = current)
         count (int): Number of patches to produce, or -1 to produce patches for
             the current branch back to the upstream commit
-        start (int): Start partch to use (0=first / top of branch)
+        start (int): Start patch to use (0=first / top of branch)
         end (int): End patch to use (0=last one in series, 1=one before that,
             etc.)
         dest_branch (str): Name of new branch to create with the updated tags
@@ -65,8 +71,11 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
         force (bool): With dest_branch, force overwriting an existing branch
         show_comments (bool): True to display snippets from the comments
             provided by reviewers
-        url (str): URL of patchwork server, e.g. 'https://patchwork.ozlabs.org'.
-            This is ignored if the series provides a Series-patchwork-url tag.
+        url (str): URL of patchwork server, e.g.
+            'https://patchwork.ozlabs.org'. Ignored if the series
+            provides a Series-patchwork-url tag.
+        single_thread (bool): True to use a single thread for
+            patchwork access
 
     Raises:
         ValueError: if the branch has no Series-link value
@@ -81,36 +90,72 @@ def patchwork_status(branch, count, start, end, dest_branch, force,
     warnings = 0
     for cmt in series.commits:
         if cmt.warn:
-            print('%d warnings for %s:' % (len(cmt.warn), cmt.hash))
+            print(f'{len(cmt.warn)} warnings for {cmt.hash}:')
             for warn in cmt.warn:
                 print('\t', warn)
                 warnings += 1
-            print
+            print()
     if warnings:
         raise ValueError('Please fix warnings before running status')
     links = series.get('links')
     if not links:
-        raise ValueError("Branch has no Series-links value")
+        raise ValueError('Branch has no Series-links value')
 
-    _, version = patchstream.split_name_version(branch)
-    link = series.get_link_for_version(version, links)
-    if not link:
-        raise ValueError(f'Series-links has no link for v{version}')
-    tout.debug(f"Link '{link}")
-
-    # Allow the series to override the URL
-    if 'patchwork_url' in series:
-        url = series.patchwork_url
-    pwork = Patchwork(url, single_thread=single_thread)
-
-    # Import this here to avoid failing on other commands if the dependencies
-    # are not present
-    from patman import status
-    pwork = Patchwork(url)
-    status.check_and_show_status(series, link, branch, dest_branch, force,
-                                 show_comments, False, pwork)
+    status.find_link_and_show_status(
+        series, branch, url, dest_branch, force, show_comments, False,
+        single_thread)
 
 
+
+def _setup_patchwork(cser, pwork, ups, pw_url):
+    """Set up a Patchwork instance from upstream and project settings
+
+    Args:
+        cser (Cseries): Open cseries instance
+        pwork (Patchwork or None): Existing instance, or None to create
+        ups (str or None): Upstream name
+        pw_url (str or None): Patchwork URL override
+
+    Returns:
+        Patchwork: Configured instance
+
+    Raises:
+        ValueError: if the URL or project cannot be resolved
+    """
+    if pwork:
+        return pwork
+    tout.debug(f'_setup_patchwork: ups={ups!r} pw_url={pw_url!r}')
+    if ups:
+        ups_url = cser.db.upstream_get_patchwork_url(ups)
+        if ups_url:
+            if pw_url and pw_url != ups_url:
+                tout.info(f'  Overriding {pw_url!r} with upstream'
+                          f' {ups!r} URL {ups_url!r}')
+            pw_url = ups_url
+        tout.debug(f'  URL from upstream {ups!r}: {pw_url!r}')
+    if not pw_url:
+        raise ValueError(
+            'No patchwork URL found; use -U/--upstream or '
+            "configure with 'patman upstream add'")
+    pwork = Patchwork(pw_url)
+    proj = cser.project_get(ups)
+    tout.debug(f'  project_get({ups!r}): {proj!r}')
+    if not proj:
+        proj = cser.project_get()
+        tout.debug(f'  project_get(None) fallback: {proj!r}')
+        if proj:
+            tout.warning(f"No patchwork project for upstream '{ups}';"
+                         f' using default project {proj[0]} (ID {proj[1]})')
+    if not proj:
+        raise ValueError(
+            "Patchwork project not configured; use "
+            "'patman patchwork set-project'")
+    _, proj_id, link_name = proj
+    pwork.project_set(proj_id, link_name)
+    return pwork
+
+
+# pylint: disable=R0912,R0915
 def do_series(args, test_db=None, pwork=None, cser=None):
     """Process a series subcommand
 
@@ -122,8 +167,6 @@ def do_series(args, test_db=None, pwork=None, cser=None):
             needed
         cser (Cseries): Cseries object to use, None to create one
     """
-    from patman import cseries
-
     if not cser:
         cser = cseries.Cseries(test_db)
     needs_patchwork = [
@@ -133,31 +176,14 @@ def do_series(args, test_db=None, pwork=None, cser=None):
     try:
         cser.open_database()
         if args.subcmd in needs_patchwork:
-            if not pwork:
-                ups = cser.get_series_upstream(args.series)
-                pw_url = None
-                if ups:
-                    pw_url = cser.db.upstream_get_patchwork_url(ups)
-                if not pw_url:
-                    pw_url = args.patchwork_url
-                if not pw_url:
-                    raise ValueError(
-                        'No patchwork URL found for upstream '
-                        f"'{ups}'; use 'patman upstream add' with "
-                        '-p or pass --patchwork-url')
-                pwork = Patchwork(pw_url)
-                proj = cser.project_get(ups)
-                if not proj:
-                    proj = cser.project_get()
-                if not proj:
-                    raise ValueError(
-                        "Please set project ID with "
-                        "'patman patchwork set-project'")
-                _, proj_id, link_name = proj
-                pwork.project_set(proj_id, link_name)
+            ups = cser.get_series_upstream(args.series)
+            tout.debug(f'Series upstream: {ups!r}')
+            pwork = _setup_patchwork(
+                cser, pwork, ups, args.patchwork_url)
         elif pwork and pwork is not True:
             raise ValueError(
-                f"Internal error: command '{args.subcmd}' should not have patchwork")
+                "Internal error: command "
+                f"'{args.subcmd}' should not have patchwork")
         if args.subcmd == 'add':
             cser.add(args.series, args.desc, mark=args.mark,
                      allow_unmarked=args.allow_unmarked, end=args.upstream,
@@ -175,6 +201,8 @@ def do_series(args, test_db=None, pwork=None, cser=None):
                                dry_run=args.dry_run, show_summary=True)
         elif args.subcmd == 'dec':
             cser.decrement(args.series, args.dry_run)
+        elif args.subcmd == 'info':
+            cser.show_info(args.series)
         elif args.subcmd == 'gather':
             cser.gather(pwork, args.series, args.version, args.show_comments,
                         args.show_cover_comments, args.gather_tags,
@@ -204,6 +232,10 @@ def do_series(args, test_db=None, pwork=None, cser=None):
             cser.remove(args.series, dry_run=args.dry_run)
         elif args.subcmd == 'rm-version':
             cser.version_remove(args.series, args.version, dry_run=args.dry_run)
+        elif args.subcmd == 'save-notes':
+            cser.save_notes(args.series, args.notes_file)
+        elif args.subcmd == 'show-notes':
+            cser.show_notes(args.series)
         elif args.subcmd == 'rename':
             cser.rename(args.series, args.new_name, dry_run=args.dry_run)
         elif args.subcmd == 'set-upstream':
@@ -236,6 +268,7 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         cser.close_database()
 
 
+# pylint: disable=R0912
 def upstream(args, test_db=None):
     """Process an 'upstream' subcommand
 
@@ -244,8 +277,6 @@ def upstream(args, test_db=None):
         test_db (str or None): Directory containing the test database, None to
             use the normal one
     """
-    from patman import cseries
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -294,6 +325,7 @@ def upstream(args, test_db=None):
         cser.close_database()
 
 
+# pylint: disable=R0912
 def patchwork(args, test_db=None, pwork=None):
     """Process a 'patchwork' subcommand
     Args:
@@ -302,8 +334,6 @@ def patchwork(args, test_db=None, pwork=None):
             use the normal one
         pwork (Patchwork): Patchwork object to use
     """
-    from patman import cseries
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -337,6 +367,11 @@ def patchwork(args, test_db=None, pwork=None):
             if ups:
                 msg += f" remote '{ups}'"
             print(msg)
+        elif args.subcmd == 'rm':
+            cser.db.patchwork_delete(args.remote)
+            cser.commit()
+            ups_str = f" for upstream '{args.remote}'" if args.remote else ''
+            tout.notice(f'Deleted patchwork project{ups_str}')
         elif args.subcmd == 'ls':
             cser.project_list()
         else:
@@ -352,9 +387,6 @@ def do_workflow(args, test_db=None):
         test_db (str or None): Directory containing the test database, None to
             use the normal one
     """
-    from patman import cseries
-    from patman import workflow
-
     cser = cseries.Cseries(test_db)
     try:
         cser.open_database()
@@ -373,6 +405,40 @@ def do_workflow(args, test_db=None):
         cser.close_database()
 
 
+def do_review(args, test_db=None, pwork=None, cser=None):
+    """Process the 'review' command
+
+    Sets up patchwork and cseries, then delegates to
+    review.do_review().
+
+    Args:
+        args (Namespace): Arguments to process
+        test_db (str or None): Directory containing the test
+            database, None to use the normal one
+        pwork (Patchwork): Patchwork object to use, or None to
+            create one
+        cser (Cseries): Cseries object to use, or None to create
+            one
+    """
+    if not cser:
+        cser = cseries.Cseries(test_db)
+    try:
+        cser.open_database()
+
+        # Resolve patchwork URL
+        if not pwork and not args.learn_voice and not args.sync:
+            ups = args.upstream
+            if not ups:
+                ups = cser.db.upstream_get_default()
+            pwork = _setup_patchwork(
+                cser, pwork, ups, args.patchwork_url)
+
+        return review_mod.do_review(args, pwork, cser)
+    finally:
+        cser.close_database()
+
+
+# pylint: disable=R0912
 def do_patman(args, test_db=None, pwork=None, cser=None):
     """Process a patman command
 
@@ -421,9 +487,11 @@ def do_patman(args, test_db=None, pwork=None, cser=None):
             upstream(args, test_db)
         elif args.cmd == 'patchwork':
             patchwork(args, test_db, pwork)
+        elif args.cmd == 'review':
+            ret_code = do_review(args, test_db, pwork, cser) or 0
         elif args.cmd == 'workflow':
             do_workflow(args, test_db)
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=W0718
         terminal.tprint(f'patman: {type(exc).__name__}: {exc}',
                         colour=terminal.Color.RED)
         if args.debug:

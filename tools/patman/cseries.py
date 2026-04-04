@@ -7,11 +7,13 @@
 
 import asyncio
 from collections import OrderedDict, defaultdict
+import os
 import pygit2
 
 from u_boot_pylib import cros_subprocess
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
+from u_boot_pylib import tools
 from u_boot_pylib import tout
 
 from patman import patchstream
@@ -191,7 +193,19 @@ class Cseries(cser_helper.CseriesHelper):
         old_svid = self.get_series_svid(ser.idnum, max_vers)
         pcd = self.get_pcommit_dict(old_svid)
 
-        svid = self.db.ser_ver_add(ser.idnum, vers)
+        # Set the per-version description from the cover letter or
+        # first commit subject, so autolink can find the series on
+        # patchwork even if the patch order changes
+        meta_name = new_name if not dry_run else branch_name
+        new_series = patchstream.get_metadata(meta_name, 0, count,
+                                              git_dir=self.gitdir)
+        if new_series.get('cover'):
+            sv_desc = new_series.cover[0]  # pylint: disable=E1136
+        elif new_series.commits:
+            sv_desc = new_series.commits[0].subject
+        else:
+            sv_desc = None
+        svid = self.db.ser_ver_add(ser.idnum, vers, desc=sv_desc)
         self.db.pcommit_add_list(svid, pcd.values())
         if not dry_run:
             self.commit()
@@ -260,13 +274,18 @@ class Cseries(cser_helper.CseriesHelper):
                 str: series description
         """
         _, ser, version, _, _, _, _, _ = self._get_patches(series, version)
+        svinfo = self.get_ser_ver(ser.idnum, version)
 
-        if not ser.desc:
+        # Use the per-version description if available, since the
+        # series-level desc may be stale (e.g. patch order changed)
+        desc = svinfo.desc or ser.desc
+        if not desc:
             raise ValueError(f"Series '{ser.name}' has an empty description")
+        ser.desc = desc
 
         pws, options = self.loop.run_until_complete(pwork.find_series(
             ser, version))
-        return pws, options, ser.name, version, ser.desc
+        return pws, options, ser.name, version, desc
 
     def link_auto(self, pwork, series, version, update_commit, wait_s=0):
         """Automatically find a series link by looking in patchwork
@@ -285,11 +304,19 @@ class Cseries(cser_helper.CseriesHelper):
         stop = start + wait_s
         sleep_time = 5
         last_options = None
+        first = True
         while True:
             pws, options, name, version, desc = self.link_search(
                 pwork, series, version)
+            if first:
+                tout.debug(f"Autolinking series '{name}' v{version}"
+                           f" (timeout {wait_s}s)")
+                first = False
+            tout.debug(f"Searching {pwork.url} project {pwork.proj_id}"
+                       f" for '{desc}'")
             if pws:
                 tout.clear_progress()
+                tout.debug(f'Found link: {pws}')
                 if wait_s:
                     tout.notice('Link completed after '
                                 f'{self.get_time() - start} seconds')
@@ -304,7 +331,7 @@ class Cseries(cser_helper.CseriesHelper):
                 raise ValueError(
                     f"Cannot find series '{desc}'{delay}; "
                     'to try again later:\n'
-                    f"  patman series autolink -s {name} -V {version}")
+                    f'  patman series -s {name} -V {version} autolink')
 
             if options != last_options:
                 tout.clear_progress()
@@ -836,6 +863,87 @@ class Cseries(cser_helper.CseriesHelper):
         if dry_run:
             tout.info('Dry run completed')
 
+    def save_notes(self, series, notes_file='review-notes.txt'):
+        """Save review-handling notes for the current series version
+
+        Args:
+            series (str): Series name, or None for current branch
+            notes_file (str): Path to the notes file
+        """
+        if not os.path.exists(notes_file):
+            raise FileNotFoundError(f"Notes file not found: {notes_file}")
+
+        notes = tools.read_file(notes_file, binary=False).strip()
+        ser, version = self._parse_series_and_version(series, None)
+        svid = self.get_series_svid(ser.idnum, version)
+        self.db.ser_ver_set_notes(svid, notes)
+        self.commit()
+        tout.notice(f"Saved notes for '{ser.name}' v{version}")
+
+    def show_notes(self, series):
+        """Show review-handling notes from all versions of a series
+
+        Args:
+            series (str): Series name, or None for current branch
+        """
+        ser, _ = self._parse_series_and_version(series, None)
+        all_notes = self.db.ser_ver_get_all_notes(ser.idnum)
+        if not all_notes:
+            tout.notice(f"No review notes for '{ser.name}'")
+            return
+        for version, notes in all_notes:
+            terminal.tprint(f'\n--- v{version} ---',
+                            colour=terminal.Color.YELLOW)
+            print(notes)
+            print()
+
+    def show_info(self, series):
+        """Show detailed information about a series and all its versions
+
+        Args:
+            series (str): Series name, or None for current branch
+        """
+        ser, _ = self._parse_series_and_version(series, None)
+        if not ser.idnum:
+            raise ValueError(f"Series '{ser.name}' not found in database")
+
+        print(f"Series: {ser.name}")
+        print(f"  Description: {ser.desc}")
+        print(f"  Upstream: {ser.upstream or '(none)'}")
+
+        versions = self.db.ser_ver_get_for_series(ser.idnum)
+        if not isinstance(versions, list):
+            versions = [versions]
+
+        for sv in versions:
+            link_str = sv.link or '(none)'
+            print(f"\n  Version {sv.version}:")
+            print(f"    Link: {link_str}")
+            print(f"    Description: {sv.desc or '(none)'}")
+            if sv.name:
+                print(f"    Cover: {sv.name}")
+            if sv.archive_tag:
+                print(f"    Archive tag: {sv.archive_tag}")
+
+            # Show patches
+            try:
+                pclist = self.db.pcommit_get_list(sv.idnum)
+                print(f"    Patches: {len(pclist)}")
+                for pc in pclist:
+                    state = f' [{pc.state}]' if pc.state else ''
+                    print(f"      {pc.seq + 1}: {pc.subject}{state}")
+            except (ValueError, AttributeError):
+                pass
+
+            # Show notes if any
+            if sv.notes:
+                lines = sv.notes.strip().splitlines()
+                print(f"    Notes: {lines[0]}")
+                for line in lines[1:3]:
+                    print(f"           {line}")
+                if len(lines) > 3:
+                    print(f"           ... ({len(lines)} lines)")
+
     def set_upstream(self, series, ups, dry_run=False):
         """Set the upstream for a series
 
@@ -938,6 +1046,17 @@ class Cseries(cser_helper.CseriesHelper):
         if branch_desc and branch_desc != ser.desc:
             self.db.series_set_desc(ser.idnum, branch_desc)
             tout.notice(f"Updated description to '{branch_desc}'")
+
+        # Update per-version description from cover letter or first
+        # commit, so autolink uses the right search term
+        if ser.cover:
+            sv_desc = ser.cover[0]  # pylint: disable=E1136
+        elif ser.commits:
+            sv_desc = ser.commits[0].subject
+        else:
+            sv_desc = None
+        if sv_desc:
+            self.db.ser_ver_set_desc(svid, sv_desc)
 
         if not dry_run:
             self.commit()

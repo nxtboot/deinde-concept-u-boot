@@ -307,7 +307,7 @@ def _UpdateDefaults(main_parser, config, argv):
                 val = config.get('settings', name)
             defaults[name] = val
         else:
-            print("WARNING: Unknown setting %s" % name)
+            print("WARNING: Unknown setting %s" % name, file=sys.stderr)
     if 'cmd' in defaults:
         del defaults['cmd']
     if 'subcmd' in defaults:

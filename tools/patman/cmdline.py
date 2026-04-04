@@ -25,6 +25,7 @@ ALIASES = {
     'series': ['s', 'ser'],
     'status': ['st'],
     'patchwork': ['pw'],
+    'review': ['r', 'rev'],
     'upstream': ['us'],
     'workflow': ['wf'],
 
@@ -173,6 +174,10 @@ def add_patchwork_subparser(subparsers):
     uset.add_argument(
         'remote', nargs='?',
         help='Remote to associate with this project')
+    pdel = patchwork_subparsers.add_parser('rm')
+    pdel.add_argument(
+        'remote', nargs='?',
+        help='Remote to delete the project for, or omit for the default')
     patchwork_subparsers.add_parser('ls', aliases=['list'])
     return patchwork
 
@@ -256,7 +261,10 @@ def add_series_subparser(subparsers):
 
     auto = series_subparsers.add_parser('autolink',
                                         aliases=ALIASES['autolink'])
-    _add_update(auto)
+    auto.add_argument('-u', '--update', action='store_true', default=True,
+                      help='Update the branch commit (default)')
+    auto.add_argument('--no-update', action='store_false', dest='update',
+                      help='Do not update the branch commit')
     _add_wait(auto, 0)
 
     aall = series_subparsers.add_parser('autolink-all')
@@ -264,7 +272,10 @@ def add_series_subparser(subparsers):
                       help='Link all series versions, not just the latest')
     aall.add_argument('-r', '--replace-existing', action='store_true',
                       help='Replace existing links')
-    _add_update(aall)
+    aall.add_argument('-u', '--update', action='store_true', default=True,
+                      help='Update the branch commits (default)')
+    aall.add_argument('--no-update', action='store_false', dest='update',
+                      help='Do not update the branch commits')
 
     series_subparsers.add_parser('dec')
 
@@ -283,6 +294,7 @@ def add_series_subparser(subparsers):
 
     series_subparsers.add_parser('get-link')
     series_subparsers.add_parser('inc')
+    series_subparsers.add_parser('info')
     ls = series_subparsers.add_parser('ls', aliases=['list'])
     _add_archived(ls)
 
@@ -311,6 +323,13 @@ def add_series_subparser(subparsers):
     ren.add_argument('-N', '--new-name', help='New name for the series')
 
     series_subparsers.add_parser('rm')
+
+    snotes = series_subparsers.add_parser('save-notes')
+    snotes.add_argument(
+        'notes_file', nargs='?', default='review-notes.txt',
+        help='Path to the review notes file (default: review-notes.txt)')
+
+    series_subparsers.add_parser('show-notes')
 
     sup = series_subparsers.add_parser('set-upstream')
     sup.add_argument('upstream_name', nargs='?',
@@ -511,6 +530,72 @@ def add_workflow_subparser(subparsers):
     return workflow
 
 
+def add_review_subparser(subparsers):
+    """Add the 'review' subparser
+
+    Args:
+        subparsers (argparse action): Subparser parent
+
+    Return:
+        ArgumentParser: review subparser
+    """
+    review = subparsers.add_parser(
+        'review', aliases=ALIASES['review'],
+        help='AI-powered review of a patchwork series')
+    review.add_argument(
+        '-l', '--link', type=str, dest='pw_link',
+        help='Patchwork series link/ID number')
+    review.add_argument(
+        '-t', '--title', type=str,
+        help='Search for series by cover-letter title')
+    review.add_argument(
+        '-n', '--dry-run', action='store_true', dest='dry_run',
+        default=False,
+        help='Show what would be done without creating drafts')
+    review.add_argument(
+        '--create-drafts', action='store_true',
+        help='Create Gmail draft emails for each review')
+    review.add_argument(
+        '--gmail-account', type=str, default=None,
+        help='Gmail account to create drafts in (e.g. user@gmail.com)')
+    review.add_argument(
+        '--no-cover', action='store_true',
+        help='Skip reviewing the cover letter')
+    review.add_argument(
+        '--reviewer', type=str, default=None,
+        help="Override reviewer identity (format: 'Name <email>')")
+    review.add_argument(
+        '-U', '--upstream', type=str, default=None,
+        help='Upstream name (for patchwork URL lookup)')
+    review.add_argument(
+        '--apply-only', action='store_true',
+        help='Only download and apply patches, skip AI review')
+    review.add_argument(
+        '--signoff', type=str, default='',
+        help="Sign-off for reviews with comments (from .patman settings)")
+    review.add_argument(
+        '--spelling', type=str, default='British',
+        help="Spelling convention for review comments (from .patman "
+             "settings)")
+    review.add_argument(
+        '--learn-voice', type=str, nargs='?', const='gmail',
+        choices=['gmail', 'patchwork'],
+        help="Analyse past reviews to build a voice profile "
+             "(from 'gmail' or 'patchwork', default: gmail)")
+    review.add_argument(
+        '--voice-count', type=int, default=20,
+        help='Number of review emails/comments to collect for '
+             '--learn-voice (default: 20)')
+    review.add_argument(
+        '--sync', action='store_true',
+        help='Check if review drafts have been sent and record the '
+             'final email content')
+    review.add_argument(
+        '-f', '--force', action='store_true',
+        help='Force re-review even if the series was already reviewed')
+    return review
+
+
 def setup_parser():
     """Set up command-line parser
 
@@ -550,6 +635,7 @@ def setup_parser():
     subparsers = parser.add_subparsers(dest='cmd')
     add_send_subparser(subparsers)
     patchwork = add_patchwork_subparser(subparsers)
+    review = add_review_subparser(subparsers)
     series = add_series_subparser(subparsers)
     add_status_subparser(subparsers)
     upstream = add_upstream_subparser(subparsers)
@@ -563,6 +649,7 @@ def setup_parser():
 
     parsers = {
         'main': parser,
+        'review': review,
         'series': series,
         'patchwork': patchwork,
         'upstream': upstream,

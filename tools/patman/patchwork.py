@@ -12,6 +12,7 @@ import aiohttp
 from collections import namedtuple
 
 from u_boot_pylib import terminal
+from u_boot_pylib import tout
 
 # Information passed to series_get_states()
 # link (str): Patchwork link for series
@@ -174,7 +175,7 @@ class Patchwork:
             url (str): URL of patchwork server, e.g.
                'https://patchwork.ozlabs.org'
         """
-        self.url = url
+        self.url = url.rstrip('/') if url else url
         self.fake_request = None
         self.proj_id = None
         self.link_name = None
@@ -270,7 +271,7 @@ class Patchwork:
         async with aiohttp.ClientSession() as client:
             return await self._request(client, 'projects/')
 
-    async def _query_series(self, client, desc):
+    async def query_series(self, client, desc):
         """Query series by name
 
         Args:
@@ -281,8 +282,9 @@ class Patchwork:
             list of series matches, each a dict, see get_series()
         """
         query = desc.replace(' ', '+')
-        return await self._request(
-            client, f'series/?project={self.proj_id}&q={query}')
+        subpath = f'series/?project={self.proj_id}&q={query}'
+        tout.debug(f'  GET {self.url}/api/1.2/{subpath}')
+        return await self._request(client, subpath)
 
     async def _find_series(self, client, svid, ser_id, version, ser):
         """Find a series on the server
@@ -306,7 +308,7 @@ class Patchwork:
         name_found = []
 
         # Do a series query on the description
-        res = await self._query_series(client, desc)
+        res = await self.query_series(client, desc)
         for pws in res:
             if pws['name'] == desc:
                 if int(pws['version']) == version:
@@ -317,7 +319,7 @@ class Patchwork:
         # series name
         cmt = ser.commits[0]
 
-        res = await self._query_series(client, cmt.subject)
+        res = await self.query_series(client, cmt.subject)
         for pws in res:
             patch = Patch(0)
             patch.parse_subject(pws['name'])
@@ -523,7 +525,7 @@ class Patchwork:
         """
         return await self._request(client, f'patches/{patch_id}/')
 
-    async def _get_patch_comments(self, client, patch_id):
+    async def get_patch_comments(self, client, patch_id):
         """Read comments about a patch
 
         Args:
@@ -783,7 +785,7 @@ On Tue, 4 Mar 2025 at 06:09, Simon Glass <sjg@chromium.org> wrote:
         """
         data = await self.get_patch(client, patch_id)
         state = data['state']
-        comment_data = await self._get_patch_comments(client, patch_id)
+        comment_data = await self.get_patch_comments(client, patch_id)
 
         return Patch(patch_id, state, data, comment_data)
 
@@ -806,6 +808,54 @@ On Tue, 4 Mar 2025 at 06:09, Simon Glass <sjg@chromium.org> wrote:
             info = await self.get_cover_comments(client, cover_id)
             cover = COVER(cover_id, len(info), cover['name'], info)
         return cover
+
+    async def fetch_user_comments(self, client, user_email, max_comments=20):
+        """Fetch comments made by a user on recent patches
+
+        Paginates through recent patches for the project, fetching
+        comments on each until the target count is reached.
+
+        Args:
+            client (aiohttp.ClientSession): Session to use
+            user_email (str): Email address to match
+            max_comments (int): Number of comments to collect
+
+        Returns:
+            list of str: Comment body texts
+        """
+        comments = []
+        page = 1
+        per_page = 50
+        patches_scanned = 0
+
+        while len(comments) < max_comments:
+            patches = await self._request(
+                client, f'patches/?project={self.proj_id}&order=-date'
+                f'&per_page={per_page}&page={page}')
+            if not patches:
+                break
+
+            for patch in patches:
+                if len(comments) >= max_comments:
+                    break
+                patches_scanned += 1
+                tout.progress(
+                    f'Scanned {patches_scanned} patches, '
+                    f'found {len(comments)}/{max_comments} comments')
+                patch_comments = await self._request(
+                    client, f"patches/{patch['id']}/comments/")
+                for comment in patch_comments:
+                    submitter = comment.get('submitter', {})
+                    if submitter.get('email') == user_email:
+                        content = comment.get('content', '')
+                        if content and '>' in content:
+                            comments.append(content)
+                            if len(comments) >= max_comments:
+                                break
+
+            page += 1
+        tout.clear_progress()
+        return comments
 
     async def series_get_state(self, client, link, read_comments,
                                read_cover_comments):
