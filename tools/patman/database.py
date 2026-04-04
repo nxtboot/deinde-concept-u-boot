@@ -39,7 +39,7 @@ Review = namedtuple(
 SerVer = namedtuple(
     'SER_VER',
     'idnum,series_id,version,link,cover_id,cover_num_comments,name,'
-    'archive_tag,desc')
+    'archive_tag,desc,notes')
 
 # Record from the pcommit table:
 # idnum (int): record ID
@@ -783,7 +783,7 @@ class Database:  # pylint:disable=R0904
             ValueError: There is no matching idnum/version
         """
         base = ('SELECT id, series_id, version, link, cover_id, '
-                'cover_num_comments, name, archive_tag, desc '
+                'cover_num_comments, name, archive_tag, desc, notes '
                 'FROM ser_ver WHERE series_id = ?')
         if version:
             res = self.execute(base + ' AND version = ?',
@@ -825,7 +825,8 @@ class Database:  # pylint:disable=R0904
         """
         res = self.execute(
             'SELECT id, series_id, version, link, cover_id, '
-            'cover_num_comments, name, archive_tag, desc FROM ser_ver')
+            'cover_num_comments, name, archive_tag, desc, notes '
+            'FROM ser_ver')
         items = res.fetchall()
         return [SerVer(*x) for x in items]
 
