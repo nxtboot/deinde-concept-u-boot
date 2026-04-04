@@ -861,6 +861,53 @@ class Cseries(cser_helper.CseriesHelper):
         if dry_run:
             tout.info('Dry run completed')
 
+    def show_info(self, series):
+        """Show detailed information about a series and all its versions
+
+        Args:
+            series (str): Series name, or None for current branch
+        """
+        ser, _ = self._parse_series_and_version(series, None)
+        if not ser.idnum:
+            raise ValueError(f"Series '{ser.name}' not found in database")
+
+        print(f"Series: {ser.name}")
+        print(f"  Description: {ser.desc}")
+        print(f"  Upstream: {ser.upstream or '(none)'}")
+
+        versions = self.db.ser_ver_get_for_series(ser.idnum)
+        if not isinstance(versions, list):
+            versions = [versions]
+
+        for sv in versions:
+            link_str = sv.link or '(none)'
+            print(f"\n  Version {sv.version}:")
+            print(f"    Link: {link_str}")
+            print(f"    Description: {sv.desc or '(none)'}")
+            if sv.name:
+                print(f"    Cover: {sv.name}")
+            if sv.archive_tag:
+                print(f"    Archive tag: {sv.archive_tag}")
+
+            # Show patches
+            try:
+                pclist = self.db.pcommit_get_list(sv.idnum)
+                print(f"    Patches: {len(pclist)}")
+                for pc in pclist:
+                    state = f' [{pc.state}]' if pc.state else ''
+                    print(f"      {pc.seq + 1}: {pc.subject}{state}")
+            except (ValueError, AttributeError):
+                pass
+
+            # Show notes if any
+            if sv.notes:
+                lines = sv.notes.strip().splitlines()
+                print(f"    Notes: {lines[0]}")
+                for line in lines[1:3]:
+                    print(f"           {line}")
+                if len(lines) > 3:
+                    print(f"           ... ({len(lines)} lines)")
+
     def set_upstream(self, series, ups, dry_run=False):
         """Set the upstream for a series
 

@@ -4438,3 +4438,45 @@ Date:   .*
         # Future 3 weeks
         when = datetime(2025, 3, 31, 10, 0, 0)
         self.assertEqual('in 3w', wf.friendly_time(now, when))
+
+    def test_series_info(self):
+        """Test the series info command"""
+        cser = self.get_database()
+
+        # Create a series with upstream and two versions
+        cser.db.upstream_add('us', 'https://us.example.com')
+        series_id = cser.db.series_add('test-info', 'My test series', ups='us')
+        svid1 = cser.db.ser_ver_add(series_id, 1, link='12345',
+                                     desc='First version desc')
+        svid2 = cser.db.ser_ver_add(series_id, 2, desc='Second version desc')
+
+        # Add patches to v1
+        from patman.database import Pcommit
+        cser.db.pcommit_add_list(svid1, [
+            Pcommit(idnum=None, seq=0, subject='Fix the widget',
+                    svid=svid1, change_id=None, state=None,
+                    patch_id=None, num_comments=0),
+            Pcommit(idnum=None, seq=1, subject='Add widget tests',
+                    svid=svid1, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+
+        # Add notes to v2
+        cser.db.ser_ver_set_notes(svid2, 'Fixed review feedback')
+        cser.commit()
+
+        with terminal.capture() as (out, _):
+            cser.show_info('test-info')
+
+        output = out.getvalue()
+        self.assertIn('Series: test-info', output)
+        self.assertIn('Description: My test series', output)
+        self.assertIn('Upstream: us', output)
+        self.assertIn('Version 1:', output)
+        self.assertIn('Link: 12345', output)
+        self.assertIn('First version desc', output)
+        self.assertIn('Patches: 2', output)
+        self.assertIn('Fix the widget', output)
+        self.assertIn('Add widget tests', output)
+        self.assertIn('Version 2:', output)
+        self.assertIn('Second version desc', output)
+        self.assertIn('Notes: Fixed review feedback', output)

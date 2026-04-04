@@ -294,6 +294,7 @@ def add_series_subparser(subparsers):
 
     series_subparsers.add_parser('get-link')
     series_subparsers.add_parser('inc')
+    series_subparsers.add_parser('info')
     ls = series_subparsers.add_parser('ls', aliases=['list'])
     _add_archived(ls)
 
