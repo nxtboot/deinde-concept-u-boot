@@ -128,16 +128,28 @@ def _setup_patchwork(cser, pwork, ups, pw_url):
     """
     if pwork:
         return pwork
-    if not pw_url and ups:
-        pw_url = cser.db.upstream_get_patchwork_url(ups)
+    tout.debug(f'_setup_patchwork: ups={ups!r} pw_url={pw_url!r}')
+    if ups:
+        ups_url = cser.db.upstream_get_patchwork_url(ups)
+        if ups_url:
+            if pw_url and pw_url != ups_url:
+                tout.info(f'  Overriding {pw_url!r} with upstream'
+                          f' {ups!r} URL {ups_url!r}')
+            pw_url = ups_url
+        tout.debug(f'  URL from upstream {ups!r}: {pw_url!r}')
     if not pw_url:
         raise ValueError(
             'No patchwork URL found; use -U/--upstream or '
             "configure with 'patman upstream add'")
     pwork = Patchwork(pw_url)
     proj = cser.project_get(ups)
+    tout.debug(f'  project_get({ups!r}): {proj!r}')
     if not proj:
         proj = cser.project_get()
+        tout.debug(f'  project_get(None) fallback: {proj!r}')
+        if proj:
+            tout.warning(f"No patchwork project for upstream '{ups}';"
+                         f' using default project {proj[0]} (ID {proj[1]})')
     if not proj:
         raise ValueError(
             "Patchwork project not configured; use "
