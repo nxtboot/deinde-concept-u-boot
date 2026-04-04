@@ -52789,3 +52789,96 @@ No reply is needed - the bot comment is a status update about work that was alre
 
 ---
 
+### Review: 2026-04-04
+
+Branch: cherry-c9b43591ea5
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository path:
+
+Good, I'm already in the u-boot repository at `/home/sglass/dev/u-boot`. Let me proceed with the rebase:
+
+Let me try fetching in a different way:
+
+Good, I have ci/master locally. Let me check if it's up to date and understand the current state:
+
+Now let me understand the current branch structure and prepare for the rebase. Let me first identify the commits that need to be rebased:
+
+Now let me save the original commit stats before rebasing so I can compare after each rebased commit:
+
+Now I have the original deltas. Let me perform the rebase:
+
+There's a conflict in `.pickman-history`. Let me examine and resolve it:
+
+The conflict is in `.pickman-history` which is just a history file. For this type of file, we should keep both sections (ours first, then theirs). Let me look at the conflict:
+
+This is a long history file with conflicts. Let me see where the conflict markers are:
+
+The file has 52721 lines. The conflict is near the end (lines 51829-52718). Let me look at the conflict area:
+
+I see the conflict now. HEAD has newer content (cherry-45b7857d3b5 branch work) and the incoming commit has older content (the original cherry-c9b43591ea5 content). For `.pickman-history`, the resolution should be to keep both - since this is an append-only log file. Let me resolve this:
+
+Now I understand the conflict. The file has:
+1. HEAD (ci/master) content ending at line 52522 (ending with the cherry-45b7857d3b5 MR reply)
+2. The incoming content starting at line 52524 (the cherry-c9b43591ea5 section)
+
+For a history file, we need to keep HEAD first (since it's chronologically later), then append the incoming content. Let me resolve this:
+
+Good, the conflict is resolved. Now let me stage it and continue the rebase:
+
+Rebase completed! Now let me verify the commits and compare deltas:
+
+Let me compare the deltas between original and rebased commits:
+
+The deltas match. Now let me run the build test:
+
+Build passes. Now let me create the local versioned branch and push to the remote:
+
+Now let me push to the remote to update the MR:
+
+The branch has been force-pushed. Let me verify the final state and provide a summary:
+
+## Summary Report
+
+### Task Completed: Rebase and resolve merge conflicts for MR !816
+
+**Branch:** `cherry-c9b43591ea5`
+**Local versioned branch:** `cherry-c9b43591ea5-v2`
+**MR URL:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/816
+
+### What was done:
+
+1. **Rebased onto `ci/master`** - Successfully rebased all 13 commits (11 cherry-picked commits + 2 pickman history commits)
+
+2. **Resolved merge conflict** - One conflict in `.pickman-history` was resolved by keeping both HEAD content (newer cherry-45b7857d3b5 MR work) and the incoming content (cherry-c9b43591ea5 history), properly merged as an append-only history file.
+
+3. **Verified deltas** - All commit deltas match their pre-rebase values:
+   - `armv8: implement workaround for broken CNTFRQ_EL0 value`: 2 files, 12 insertions ✓
+   - `gpio: Return -ENODEV if gpio_hog_lookup_name() is empty`: 1 file, 1 insertion, 1 deletion ✓
+   - `Revert "power: regulator..."`: empty (as expected) ✓
+   - `Azure: Ensure we do a shallow git clone`: 1 file, 2 insertions ✓
+   - `acpi: use U-Boot ACPI vendor ID`: 6 files, 53 insertions, 31 deletions ✓
+   - `common/spl: fix endless loop`: 1 file, 2 insertions, 2 deletions ✓
+   - `tools: key2dtsi...`: 1 file, 11 insertions, 10 deletions ✓
+   - `Invalidate cached FAT device`: 1 file, 3 insertions, 1 deletion ✓
+   - `arch: arm: build: only set -mgeneral-regs-only for AArch64`: 2 files, 6 insertions ✓
+   - `build: fix building u-boot.lds with Clang`: empty (as expected) ✓
+   - `Merge patch series "Fix AArch32 compilation with Clang"`: empty (as expected) ✓
+
+4. **Build verified** - Sandbox build passes ✓
+
+5. **Pushed to remote** - Force pushed to `ci/cherry-c9b43591ea5` to update MR !816
+
+### Suggested MR Reply:
+
+> Rebased onto `ci/master` to resolve the merge conflicts.
+> 
+> The only conflict was in the `.pickman-history` file which was resolved by merging both the existing history (from the recently merged cherry-45b7857d3b5 MR) and this MR's history entries.
+> 
+> All 11 cherry-picked commits preserved with identical deltas. Build verified.
+
+---
+
