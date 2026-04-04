@@ -28,7 +28,7 @@ def process_reviews(content, comment_data, base_rtags):
     Args:
         content (str): Content text of the patch itself - see pwork.get_patch()
         comment_data (list of dict): Comments for the patch - see
-            pwork._get_patch_comments()
+            pwork.get_patch_comments()
         base_rtags (dict): base review tags (before any comments)
             key: Response tag (e.g. 'Reviewed-by')
             value: Set of people who gave that response, each a name/email

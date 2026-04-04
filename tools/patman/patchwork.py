@@ -270,7 +270,7 @@ class Patchwork:
         async with aiohttp.ClientSession() as client:
             return await self._request(client, 'projects/')
 
-    async def _query_series(self, client, desc):
+    async def query_series(self, client, desc):
         """Query series by name
 
         Args:
@@ -306,7 +306,7 @@ class Patchwork:
         name_found = []
 
         # Do a series query on the description
-        res = await self._query_series(client, desc)
+        res = await self.query_series(client, desc)
         for pws in res:
             if pws['name'] == desc:
                 if int(pws['version']) == version:
@@ -317,7 +317,7 @@ class Patchwork:
         # series name
         cmt = ser.commits[0]
 
-        res = await self._query_series(client, cmt.subject)
+        res = await self.query_series(client, cmt.subject)
         for pws in res:
             patch = Patch(0)
             patch.parse_subject(pws['name'])
@@ -523,7 +523,7 @@ class Patchwork:
         """
         return await self._request(client, f'patches/{patch_id}/')
 
-    async def _get_patch_comments(self, client, patch_id):
+    async def get_patch_comments(self, client, patch_id):
         """Read comments about a patch
 
         Args:
@@ -783,7 +783,7 @@ On Tue, 4 Mar 2025 at 06:09, Simon Glass <sjg@chromium.org> wrote:
         """
         data = await self.get_patch(client, patch_id)
         state = data['state']
-        comment_data = await self._get_patch_comments(client, patch_id)
+        comment_data = await self.get_patch_comments(client, patch_id)
 
         return Patch(patch_id, state, data, comment_data)
 
