@@ -191,7 +191,19 @@ class Cseries(cser_helper.CseriesHelper):
         old_svid = self.get_series_svid(ser.idnum, max_vers)
         pcd = self.get_pcommit_dict(old_svid)
 
-        svid = self.db.ser_ver_add(ser.idnum, vers)
+        # Set the per-version description from the cover letter or
+        # first commit subject, so autolink can find the series on
+        # patchwork even if the patch order changes
+        meta_name = new_name if not dry_run else branch_name
+        new_series = patchstream.get_metadata(meta_name, 0, count,
+                                              git_dir=self.gitdir)
+        if new_series.get('cover'):
+            sv_desc = new_series.cover[0]  # pylint: disable=E1136
+        elif new_series.commits:
+            sv_desc = new_series.commits[0].subject
+        else:
+            sv_desc = None
+        svid = self.db.ser_ver_add(ser.idnum, vers, desc=sv_desc)
         self.db.pcommit_add_list(svid, pcd.values())
         if not dry_run:
             self.commit()
@@ -260,13 +272,18 @@ class Cseries(cser_helper.CseriesHelper):
                 str: series description
         """
         _, ser, version, _, _, _, _, _ = self._get_patches(series, version)
+        svinfo = self.get_ser_ver(ser.idnum, version)
 
-        if not ser.desc:
+        # Use the per-version description if available, since the
+        # series-level desc may be stale (e.g. patch order changed)
+        desc = svinfo.desc or ser.desc
+        if not desc:
             raise ValueError(f"Series '{ser.name}' has an empty description")
+        ser.desc = desc
 
         pws, options = self.loop.run_until_complete(pwork.find_series(
             ser, version))
-        return pws, options, ser.name, version, ser.desc
+        return pws, options, ser.name, version, desc
 
     def link_auto(self, pwork, series, version, update_commit, wait_s=0):
         """Automatically find a series link by looking in patchwork
@@ -938,6 +955,17 @@ class Cseries(cser_helper.CseriesHelper):
         if branch_desc and branch_desc != ser.desc:
             self.db.series_set_desc(ser.idnum, branch_desc)
             tout.notice(f"Updated description to '{branch_desc}'")
+
+        # Update per-version description from cover letter or first
+        # commit, so autolink uses the right search term
+        if ser.cover:
+            sv_desc = ser.cover[0]  # pylint: disable=E1136
+        elif ser.commits:
+            sv_desc = ser.commits[0].subject
+        else:
+            sv_desc = None
+        if sv_desc:
+            self.db.ser_ver_set_desc(svid, sv_desc)
 
         if not dry_run:
             self.commit()
