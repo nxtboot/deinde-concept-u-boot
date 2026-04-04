@@ -304,7 +304,7 @@ class Cseries(cser_helper.CseriesHelper):
                 raise ValueError(
                     f"Cannot find series '{desc}'{delay}; "
                     'to try again later:\n'
-                    f"  patman series autolink -s {name} -V {version}")
+                    f'  patman series -s {name} -V {version} autolink')
 
             if options != last_options:
                 tout.clear_progress()
