@@ -408,7 +408,26 @@ def find_link_and_show_status(series, branch, url, dest_branch, force,
     links = series.get('links')
     link = series.get_link_for_version(version, links)
     if not link:
-        raise ValueError(f'Series-links has no link for v{version}')
+        # Fall back to the database if the commit metadata does not
+        # have a link for this version (e.g. autolink ran without -u)
+        from patman import cseries
+
+        cser = cseries.Cseries()
+        try:
+            cser.open_database()
+            name, _ = patchstream.split_name_version(branch)
+            ser = cser.get_series_by_name(name)
+            if ser:
+                svinfo = cser.get_ser_ver(ser.idnum, version)
+                if svinfo:
+                    link = svinfo.link
+        except (ValueError, AttributeError):
+            pass
+        finally:
+            cser.close_database()
+    if not link:
+        raise ValueError(f'No patchwork link for v{version}; '
+                         'try: patman series autolink')
     tout.debug(f"Link '{link}")
 
     if 'patchwork_url' in series:
