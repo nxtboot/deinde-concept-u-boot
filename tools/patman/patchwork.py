@@ -174,7 +174,7 @@ class Patchwork:
             url (str): URL of patchwork server, e.g.
                'https://patchwork.ozlabs.org'
         """
-        self.url = url
+        self.url = url.rstrip('/') if url else url
         self.fake_request = None
         self.proj_id = None
         self.link_name = None
