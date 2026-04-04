@@ -578,6 +578,7 @@ qemu_arm64_tfa_fw_handoff test.py:
     TEST_PY_BD: "qemu_arm64"
     TEST_PY_ID: "--id fw_handoff_tfa_optee"
     TEST_PY_TEST_SPEC: "test_fw_handoff"
+    OVERRIDE: "-a PASSAGE_IN,~BLOBLIST_ALLOC,BLOBLIST_PASSAGE,~OF_SEPARATE,OF_PASSAGE"
   <<: *buildman_and_testpy_dfn
 
 qemu_arm_sbsa test.py:
