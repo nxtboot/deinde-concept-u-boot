@@ -52791,6 +52791,95 @@ All 12 commits are present. Now let me run the final build test:
 ### Notes
 - The merge commit (commit 12) was applied as an empty commit as expected, since all individual commits were already cherry-picked
 - Branch `cherry-64ba0aa9f48` is ready for pushing
+Branch: cherry-fdf36c2e9ad
+
+Commits:
+- fdf36c2e9ad spl: remove redundant prints in boot_from_devices
+- f391a1158f3 mmc: exynos_dw_mmc: Extend dm_dwmci_ops without code duplication
+- 20b19639cdf mmc: dw_mmc: Do not export dwmci_send_cmd() and dwmci_set_ios()
+- 6f0845fcb2c mmc: exynos_dw_mmc: Improve coding style
+- 1e665e543c5 mmc: exynos_dw_mmc: Add quirk for disabling FMP
+- cd7b26a254c mmc: exynos_dw_mmc: Add exynos850 compatible
+- e11db644884 mmc: exynos_dw_mmc: Disable FMP for Exynos850 chip
+- 0408ae531fe spl: mmc: avoid including errno.h twice
+- b660df55854 Merge tag 'mmc-master-2025-11-07' of https://source.denx.de/u-boot/custodians/u-boot-mmc
+
+### Conversation log
+The repository is clean (only untracked files, no uncommitted changes). Let me create the new branch based on ci/master.
+
+Good. Now let me cherry-pick the first commit:
+
+First commit successful. Let me verify the delta and run the build:
+
+Delta looks good (identical: 1 file, 18 insertions, 18 deletions). Now let me run the build:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the third commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now for the fourth commit (6f0845fcb2c), which is marked as "maybe already applied as 9bedead15a2". Let me first verify if it's already applied:
+
+The patches differ significantly! The original commit (6f0845fcb2c) from the us/next branch is different from 9bedead15a2. Let me check what each commit does:
+
+They have the same subject but the diffs are very different. The original (6f0845fcb2c) is a smaller patch with specific coding style fixes while 9bedead15a2 is a much larger patch from an earlier date (Aug 2024 vs Oct 2025). These are clearly different commits. Let me proceed with cherry-picking:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the fifth commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the sixth commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the seventh commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the eighth commit:
+
+Delta is identical. Let me run the build:
+
+Build passed. Now let me cherry-pick the ninth and final commit (the merge commit):
+
+The merge commit results in an empty commit because all the changes have already been applied. Let me commit it with --allow-empty as instructed:
+
+Good, the merge commit has been preserved. Let me verify the commit log:
+
+All 9 commits are present. Now let me run the final build test:
+
+Final build passed.
+
+## Summary
+
+All 9 commits have been successfully cherry-picked to branch `cherry-fdf36c2e9ad`:
+
+| # | Commit | Subject | Status | Delta |
+|---|--------|---------|--------|-------|
+| 1 | fdf36c2e9ad → 35cfe7aed76 | spl: remove redundant prints in boot_from_devices | ✓ OK | Match |
+| 2 | f391a1158f3 → 9ac08f3fefb | mmc: exynos_dw_mmc: Extend dm_dwmci_ops without code duplication | ✓ OK | Match |
+| 3 | 20b19639cdf → 1f5943fb93a | mmc: dw_mmc: Do not export dwmci_send_cmd() and dwmci_set_ios() | ✓ OK | Match |
+| 4 | 6f0845fcb2c → c581e4adfb7 | mmc: exynos_dw_mmc: Improve coding style | ✓ OK | Match |
+| 5 | 1e665e543c5 → 4f6cc5003dc | mmc: exynos_dw_mmc: Add quirk for disabling FMP | ✓ OK | Match |
+| 6 | cd7b26a254c → 76a50f7afb6 | mmc: exynos_dw_mmc: Add exynos850 compatible | ✓ OK | Match |
+| 7 | e11db644884 → 1a9e361f1c1 | mmc: exynos_dw_mmc: Disable FMP for Exynos850 chip | ✓ OK | Match |
+| 8 | 0408ae531fe → 867309e1d5d | spl: mmc: avoid including errno.h twice | ✓ OK | Match |
+| 9 | b660df55854 → a933ea9dd34 | Merge tag 'mmc-master-2025-11-07'... | ✓ OK (empty) | N/A |
+
+**Build result:** ✓ OK - All builds passed successfully
+
+**Fix-ups made:** None required
+
+**Commits with concerning deltas:** None - all deltas match the originals exactly
+
+**Note about commit 4 (6f0845fcb2c):** While marked as "maybe already applied as 9bedead15a2", comparison showed these are **different commits** with the same subject line. The original (6f0845fcb2c) from Oct 2025 is a smaller coding style patch, while 9bedead15a2 from Aug 2024 is a much larger refactoring. The original was cherry-picked as intended.
+
+The branch `cherry-fdf36c2e9ad` is ready for pushing.
 
 ---
 
