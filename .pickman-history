@@ -53151,3 +53151,86 @@ If the infrastructure issue persists after retry, the lab maintainers should be 
 
 ---
 
+### Review: 2026-04-04
+
+Branch: cherry-cde77583cf0
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the repository location:
+
+I'm already in the u-boot directory. Let me check the current state and work from here:
+
+Let me fetch the correct remote reference:
+
+Good, I can see `ci/master` and `ci/cherry-cde77583cf0`. Let me now checkout the branch and check its current state:
+
+I can see:
+- The local branch is based on `5667dd26912` 
+- ci/master is now at `b0c6a387eade` (different!)
+
+So ci/master has moved forward since this branch was last rebased. Let me check how many commits behind we are:
+
+The branch is 38 commits behind ci/master. Let me now rebase onto the latest ci/master:
+
+Rebase succeeded. Now let me verify the commits and check deltas:
+
+The branch is now based on ci/master (`b0c6a387ead`). Now let me verify the deltas of each cherry-picked commit:
+
+Excellent! The deltas match the expected values:
+- Commit 1: 4 files changed, 172 insertions ✓
+- Commit 2: 1 file changed, 35 insertions ✓
+- Commit 3: Empty (merge commit, as expected) ✓
+
+Now let me run the build test:
+
+Build passes. Now let me check for existing -v2/-v3 branches and create the new local branch:
+
+There's already a -v2 branch. Let me create -v3:
+
+Now let me force push to the original remote branch to update the MR:
+
+The push was successful. Let me verify the final state:
+
+The remote branch is now 5 commits ahead of ci/master and 0 commits behind.
+
+## Summary
+
+### Rebase completed successfully!
+
+**Branch:** `cherry-cde77583cf0` (rebased onto latest `ci/master`)
+
+**What was done:**
+1. Fetched latest `ci/master` (commit `b0c6a387ead`)
+2. Rebased branch from `5667dd26912` to `b0c6a387ead` (38 commits forward)
+3. Verified all 5 commits were rebased successfully:
+   - `bfddc505a75`: spl: Add support for Device Firmware Upgrade (DFU) over PCIe - 4 files, +172 lines ✓
+   - `3fe353aced7`: bootstd: android: add the bootargs env to the commandline - 1 file, +35 lines ✓
+   - `a89e755d2da`: Merge tag 'u-boot-dfu-20251107' - empty commit (expected) ✓
+   - `1162c44746d`: pickman: Record cherry-pick of 3 commits from us/next ✓
+   - `387541e4178`: pickman: Record review handling for cherry-cde77583cf0 ✓
+4. Build test passed (sandbox)
+5. Created local branch `cherry-cde77583cf0-v3`
+6. Force pushed to remote branch `cherry-cde77583cf0`
+
+**Result:** The remote branch was updated from being 38 commits behind ci/master to being 5 commits ahead (3 content commits + 2 pickman record commits) and 0 commits behind.
+
+**GitLab MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/822
+
+---
+
+### Suggested reply to post on the MR:
+
+Rebased the branch onto latest `ci/master`.
+
+**Changes:**
+- Branch rebased from commit `5667dd26912` to `b0c6a387ead` (38 commits forward)
+- All 3 cherry-picked commits preserved with identical deltas
+- Build test passed (sandbox)
+
+The pipeline should automatically run on the updated branch.
+
+---
+
