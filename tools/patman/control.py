@@ -17,6 +17,11 @@ except ImportError:
     # for Python 3.6
     import importlib_resources as resources
 
+from u_boot_pylib import gitutil
+from u_boot_pylib import terminal
+from u_boot_pylib import tools
+from u_boot_pylib import tout
+
 from patman import cseries
 from patman import patchstream
 from patman import review as review_mod
@@ -25,10 +30,6 @@ from patman import settings
 from patman import status
 from patman import workflow
 from patman.patchwork import Patchwork
-from u_boot_pylib import gitutil
-from u_boot_pylib import terminal
-from u_boot_pylib import tools
-from u_boot_pylib import tout
 
 
 def setup():
