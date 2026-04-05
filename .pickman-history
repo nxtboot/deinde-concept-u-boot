@@ -53231,6 +53231,77 @@ Rebased the branch onto latest `ci/master`.
 - Build test passed (sandbox)
 
 The pipeline should automatically run on the updated branch.
+## 2026-04-04: us/next
+
+Branch: cherry-4d02b0343e3
+
+Commits:
+- 4d02b0343e3 configs: Resync with savedefconfig
+- 3dd58620fa2 pwm: move all PWM related topics inside a Kconfig menu
+- 53489252251 pwm: make sandbox depend on DM_PWM
+- e0dae656539 pwm: put all PWM DM drivers under an if condition on DM_PWM
+- 4287a1a2464 pwm: fix typo in PWM_MESON help text
+- 09ca8d472e6 Merge patch series "pwm: put symbols into a menu + use if DM_PWM block instead of depends on"
+
+### Conversation log
+The repository state is clean (untracked files don't affect cherry-picks). Now let me create and checkout the new branch based on ci/master.
+
+Branch created. Now let me start cherry-picking the commits. First, let me check if the first commit (marked as "maybe already applied") is indeed already applied by comparing patches.
+
+The patches are significantly different. The first commit (4d02b0343e3) is a QCONFIG RESYNC commit, and the found commit (8a470707e99) is actually a different pickman merge commit. So 4d02b0343e3 is NOT already applied.
+
+According to the instructions, for commits marked [QCONFIG RESYNC], I should skip the cherry-pick and instead run `./tools/qconfig.py -s -Cy` to regenerate the defconfigs.
+
+Let me proceed with the QCONFIG resync:
+
+The qconfig.py tool completed successfully and created a commit. Let me check the status of the repository and verify the commit was created:
+
+The qconfig.py tool created the defconfig resync commit. Now let me run a build test to verify everything is okay:
+
+Build passed. Now let me cherry-pick commit 2: `3dd58620fa2: pwm: move all PWM related topics inside a Kconfig menu`
+
+Let me verify the commit delta and run a build test:
+
+The commit deltas match (1 file changed, 4 insertions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick commit 3: `53489252251: pwm: make sandbox depend on DM_PWM`
+
+Build passed. Now let me cherry-pick commit 4: `e0dae656539: pwm: put all PWM DM drivers under an if condition on DM_PWM`
+
+Build passed. Now let me cherry-pick commit 5: `4287a1a2464: pwm: fix typo in PWM_MESON help text`
+
+Build passed. Now let me cherry-pick commit 6 (the merge commit): `09ca8d472e6: Merge patch series "pwm: put symbols into a menu + use if DM_PWM block instead of depends on"`
+
+The merge commit is empty because all its changes were already applied via the individual commits. As per instructions, I need to commit it anyway to preserve the merge commit message:
+
+Now let me verify all 6 commits are present and run the final build:
+
+All 6 commits are present (the first 6 commits on the branch are the cherry-picked commits). Now let me run the final build test:
+
+## Final Status Report
+
+**Build Result:** ✅ OK - All builds passed
+
+**Cherry-pick Summary:**
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 4d02b0343e3 | configs: Resync with savedefconfig [QCONFIG RESYNC] | ✅ Applied via qconfig.py (as 4679bc9440d) |
+| 2 | 3dd58620fa2 | pwm: move all PWM related topics inside a Kconfig menu | ✅ Applied (as a00fe4c430d) |
+| 3 | 53489252251 | pwm: make sandbox depend on DM_PWM | ✅ Applied (as 2ceb5468deb) |
+| 4 | e0dae656539 | pwm: put all PWM DM drivers under an if condition on DM_PWM | ✅ Applied (as d258db09aba) |
+| 5 | 4287a1a2464 | pwm: fix typo in PWM_MESON help text | ✅ Applied (as 743e46e1b9f) |
+| 6 | 09ca8d472e6 | Merge patch series "pwm: put symbols into a menu + use if DM_PWM block instead of depends on" | ✅ Applied as empty commit (as c234dbbca63) |
+
+**Notes:**
+- The first commit (4d02b0343e3) was a QCONFIG RESYNC commit and was handled by running `./tools/qconfig.py -s -Cy` which regenerated the defconfigs based on the current Kconfig state
+- The comparison showed that commit 8a470707e99 (mentioned in "maybe already applied as") was a different pickman merge commit, not the same defconfig resync
+- The final merge commit (09ca8d472e6) was empty because all constituent commits were already cherry-picked individually, but it was committed with `--allow-empty` to preserve the merge commit message for tracking history
+- All commit deltas matched their original commits exactly
+- No fix-ups were needed
+- No concerning deltas were detected
+
+**Branch ready for pushing:** `cherry-4d02b0343e3` with 6 commits on top of `ci/master`
 
 ---
 
