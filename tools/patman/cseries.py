@@ -1343,6 +1343,7 @@ class Cseries(cser_helper.CseriesHelper):
 
             if not dry_run:
                 self.commit()
+                self.check_applied(svid, ser.name, version)
             else:
                 self.rollback()
                 tout.info('Dry run completed')
@@ -1377,8 +1378,14 @@ class Cseries(cser_helper.CseriesHelper):
                 f"{tot_cover} cover letter{'s' if tot_cover != 1 else ''} "
                 f'updated, {missing} missing '
                 f"link{'s' if missing != 1 else ''} ({requests} requests)")
+            applied = []
             if not dry_run:
                 self.commit()
+                for svid, sync in to_fetch.items():
+                    if self.check_applied(svid, sync.series_name, sync.version):
+                        applied.append(sync.series_name)
+                if applied:
+                    tout.notice(f'{len(applied)} series applied upstream')
             else:
                 self.rollback()
                 tout.info('Dry run completed')

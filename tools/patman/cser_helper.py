@@ -1378,6 +1378,29 @@ class CseriesHelper:
 
         return updated, 1 if cover else 0
 
+    def check_applied(self, svid, series_name, version):
+        """Check if all patches in a series version are accepted
+
+        If every patch has state 'accepted', notify the user that the
+        series has been applied upstream.
+
+        Args:
+            svid (int): Ser/ver ID
+            series_name (str): Series name (for display)
+            version (int): Version number (for display)
+
+        Returns:
+            bool: True if all patches are accepted
+        """
+        pclist = self.db.pcommit_get_list(svid)
+        if not pclist:
+            return False
+        if all(pc.state == 'accepted' for pc in pclist):
+            tout.notice(f"Series '{series_name}' v{version}: all patches "
+                        'accepted upstream')
+            return True
+        return False
+
     async def _gather(self, pwork, link, show_cover_comments):
         """Sync the series status from patchwork
 
