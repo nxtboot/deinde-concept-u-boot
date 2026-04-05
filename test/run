@@ -105,7 +105,7 @@ export PATH=$PATH:${TOOLS_DIR}
 
 run_test "binman" ./tools/binman/binman ${TOOLPATH} test
 run_test "patman" ./tools/patman/patman test
-run_test "u_boot_pylib" ./tools/u_boot_pylib/u_boot_pylib
+run_test "u_boot_pylib" ./tools/u_boot_pylib/u_boot_pylib test
 
 run_test "buildman" ./tools/buildman/buildman -t ${skip}
 run_test "fdt" ./tools/dtoc/test_fdt -t
