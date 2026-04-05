@@ -53459,6 +53459,117 @@ All 28 commits are present. Let me run the final build test:
 - Some buildman runs showed "WARNING: no maintainers for 'en7523_evb'" which is expected and resolved by the final merge commit that adds the MAINTAINERS file.
 
 **Branch `cherry-20b822dd4f0` is ready for pushing.**
+### Review: 2026-04-04
+
+Branch: cherry-4d02b0343e3
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct working directory:
+
+Good, I'm in the u-boot directory. Let me proceed with the checkout and fetch:
+
+Let me try fetching the master branch properly:
+
+Good, I can see `ci/master` is already available as a remote tracking branch. Let me fetch the latest updates:
+
+Good. I can see that the branch `cherry-4d02b0343e3` has 7 commits on top of the merge-base (`c94cfcbbeaa`), and `ci/master` has moved on. Let me check how many commits behind we are and then do the rebase:
+
+The branch is 6 commits behind `ci/master`. Let me save the current commit stats before rebasing and then start the rebase:
+
+Let me save the stats for each commit before rebasing:
+
+Good. Now I have the before stats. Let me perform the rebase:
+
+There's a conflict in the `.pickman-history` file. This is a tracking file - let me resolve it by keeping both changes:
+
+The `.pickman-history` file is long. Let me check the conflict markers:
+
+The conflict is near the end of the file. Let me see the conflicting section:
+
+I see the conflict. The HEAD (ci/master) contains a different MR's review log, and the incoming commit contains the original cherry-4d02b0343e3 history. I need to keep both - they're different MRs. Let me resolve this properly by keeping both sections:
+
+The conflict structure is:
+- Line 53091: `<<<<<<< HEAD` 
+- Lines 53092-53234: HEAD content (cherry-cde77583cf0 review log from ci/master)
+- Line 53235: `=======`
+- Lines 53236-53306: Theirs content (cherry-4d02b0343e3 original cherry-pick log)
+- Line 53307: `>>>>>>> 89eca6af46a`
+
+I need to keep both sections. The proper resolution is to include the HEAD content first (cherry-cde77583cf0), then the theirs content (cherry-4d02b0343e3):
+
+Good, the resolution looks correct. Let me apply it and continue the rebase:
+
+Rebase completed successfully. Now let me verify the commits and their deltas:
+
+The rebase completed. The branch is now based on ci/master (`600cdeea0ab`). Now let me verify the deltas for each rebased commit:
+
+Excellent! All deltas match the originals:
+
+| # | New Commit | Subject | Before Delta | After Delta | Match |
+|---|------------|---------|--------------|-------------|-------|
+| 1 | ccd825f9a2f | configs: Resync | 137 files, +2508/-1856 | 137 files, +2508/-1856 | ✅ |
+| 2 | e30baf13110 | pwm: move | 1 file, +4 | 1 file, +4 | ✅ |
+| 3 | a3839766a20 | pwm: sandbox | 1 file, +1 | 1 file, +1 | ✅ |
+| 4 | dddf3413dc2 | pwm: DM_PWM if | 1 file, +23/-26 | 1 file, +23/-26 | ✅ |
+| 5 | 0fe0ce12685 | pwm: typo | 1 file, +1/-1 | 1 file, +1/-1 | ✅ |
+| 6 | 1ec201f14ad | Merge | empty | empty | ✅ |
+
+Now let me run the build test:
+
+Build passed. Now let me check for existing versioned branches and create the new local branch:
+
+No versioned branches exist yet. Let me create the -v2 local branch and push to the remote:
+
+The push was successful. Let me verify the final state:
+
+The branch is now 0 commits behind and 7 commits ahead of ci/master.
+
+## Summary
+
+### Rebase completed successfully!
+
+**Branch:** `cherry-4d02b0343e3` (rebased onto latest `ci/master`)
+
+**What was done:**
+1. Fetched latest `ci/master` (commit `600cdeea0ab`)
+2. Rebased branch from old base (`c94cfcbbeaa`) to new base (`600cdeea0ab`) - 6 commits forward
+3. Resolved one merge conflict in `.pickman-history` (simple append conflict - kept both sections)
+4. Verified all 7 commits were rebased successfully with matching deltas:
+
+| # | New Commit | Subject | Delta | Status |
+|---|------------|---------|-------|--------|
+| 1 | ccd825f9a2f | configs: Resync with savedefconfig | 137 files | ✅ Match |
+| 2 | e30baf13110 | pwm: move all PWM related topics inside a Kconfig menu | 1 file, +4 | ✅ Match |
+| 3 | a3839766a20 | pwm: make sandbox depend on DM_PWM | 1 file, +1 | ✅ Match |
+| 4 | dddf3413dc2 | pwm: put all PWM DM drivers under an if condition on DM_PWM | 1 file, +23/-26 | ✅ Match |
+| 5 | 0fe0ce12685 | pwm: fix typo in PWM_MESON help text | 1 file, +1/-1 | ✅ Match |
+| 6 | 1ec201f14ad | Merge patch series "pwm: ..." | empty | ✅ Match |
+| 7 | ea0661a94ae | pickman: Record cherry-pick | 1 file, +71 | ✅ OK |
+
+5. Build test passed (sandbox)
+6. Created local branch `cherry-4d02b0343e3-v2`
+7. Force pushed to remote branch `cherry-4d02b0343e3`
+
+**Result:** The remote branch was updated. It is now 0 commits behind and 7 commits ahead of ci/master (6 content commits + 1 pickman record commit).
+
+**GitLab MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/824
+
+---
+
+### Suggested reply to post on the MR:
+
+> Rebased the branch onto latest `ci/master`.
+> 
+> **Changes:**
+> - Branch rebased from commit `c94cfcbbeaa` to `600cdeea0ab` (6 commits forward)
+> - All 6 cherry-picked commits preserved with identical deltas
+> - Resolved one minor conflict in `.pickman-history` (tracking file only)
+> - Build test passed (sandbox)
+> 
+> The pipeline should automatically run on the updated branch.
 
 ---
 
