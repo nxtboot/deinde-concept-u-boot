@@ -53573,3 +53573,81 @@ The branch is now 0 commits behind and 7 commits ahead of ci/master.
 
 ---
 
+### Review: 2026-04-05
+
+Branch: cherry-4d02b0343e3
+
+Comments addressed:
+
+
+### Conversation log
+The branch has 8 commits ahead of ci/master and ci/master has 3 new commits. Let me save the before-rebase stats for each commit, then rebase:
+
+Good. Now I have all the before stats. Let me perform the rebase:
+
+Excellent! The rebase completed successfully without conflicts. Now let me verify the rebased commits and their deltas:
+
+All deltas match exactly:
+- Commit 1: 137 files, +2508/-1856 ✅
+- Commit 2: 1 file, +4 ✅
+- Commit 3: 1 file, +1 ✅
+- Commit 4: 1 file, +23/-26 ✅
+- Commit 5: 1 file, +1/-1 ✅
+- Commit 6: empty merge ✅
+- Commit 7: 1 file, +71 (pickman record) ✅
+- Commit 8: 1 file, +114 (pickman review record) ✅
+
+Now let me run the build test:
+
+Build passed. Now let me check for existing versioned branches and create the new one:
+
+There's already a -v2 branch. Let me create -v3:
+
+The branch is now 0 commits behind and 8 commits ahead of ci/master.
+
+## Summary
+
+### Rebase completed successfully!
+
+**Branch:** `cherry-4d02b0343e3` (rebased onto latest `ci/master`)
+
+**What was done:**
+1. Fetched latest `ci/master` (commit `a99460f7e5d`)
+2. Rebased branch - moved forward 3 commits on ci/master
+3. No conflicts encountered - rebase was clean
+4. Verified all 8 commits were rebased successfully with matching deltas:
+
+| # | New Commit | Subject | Delta | Status |
+|---|------------|---------|-------|--------|
+| 1 | efdcfe80c31 | configs: Resync with savedefconfig | 137 files, +2508/-1856 | ✅ Match |
+| 2 | d825b55d904 | pwm: move all PWM related topics inside a Kconfig menu | 1 file, +4 | ✅ Match |
+| 3 | 3a2dc5ed9dc | pwm: make sandbox depend on DM_PWM | 1 file, +1 | ✅ Match |
+| 4 | 6a7b4ce13a2 | pwm: put all PWM DM drivers under an if condition on DM_PWM | 1 file, +23/-26 | ✅ Match |
+| 5 | ef392db145a | pwm: fix typo in PWM_MESON help text | 1 file, +1/-1 | ✅ Match |
+| 6 | 5be149e011c | Merge patch series "pwm: ..." | empty | ✅ Match |
+| 7 | 70f5419786e | pickman: Record cherry-pick | 1 file, +71 | ✅ Match |
+| 8 | 3e4f673a5a7 | pickman: Record review handling | 1 file, +114 | ✅ Match |
+
+5. Build test passed (sandbox)
+6. Created local branch `cherry-4d02b0343e3-v3`
+7. Force pushed to remote branch `cherry-4d02b0343e3`
+
+**Result:** The remote branch was updated. It is now 0 commits behind and 8 commits ahead of ci/master.
+
+**GitLab MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/824
+
+---
+
+### Suggested reply to post on the MR:
+
+> Rebased the branch onto latest `ci/master`.
+> 
+> **Changes:**
+> - Branch rebased forward 3 commits (clean rebase, no conflicts)
+> - All 8 commits preserved with identical deltas
+> - Build test passed (sandbox)
+> 
+> The pipeline should automatically run on the updated branch.
+
+---
+
