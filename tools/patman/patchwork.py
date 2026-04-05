@@ -7,6 +7,7 @@
 
 import asyncio
 import re
+from urllib.parse import quote_plus
 
 import aiohttp
 from collections import namedtuple
@@ -281,8 +282,9 @@ class Patchwork:
         Return:
             list of series matches, each a dict, see get_series()
         """
-        query = desc.replace(' ', '+')
+        query = quote_plus(desc, safe=':')
         subpath = f'series/?project={self.proj_id}&q={query}'
+        tout.info(f"Searching for '{desc}'")
         tout.debug(f'  GET {self.url}/api/1.2/{subpath}')
         return await self._request(client, subpath)
 

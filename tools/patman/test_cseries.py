@@ -1101,16 +1101,19 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         self.assertFalse(cser.project_get())
         cser.project_set(pwork, 'U-Boot', quiet=True)
 
-        self.assertEqual(
-            (self.SERIES_ID_SECOND_V1, None, 'second', 1,
-             'Series for my board'),
-            cser.link_search(pwork, 'second', 1))
+        with terminal.capture():
+            self.assertEqual(
+                (self.SERIES_ID_SECOND_V1, None, 'second', 1,
+                 'Series for my board'),
+                cser.link_search(pwork, 'second', 1))
 
         with terminal.capture():
             cser.increment('second')
 
-        self.assertEqual((457, None, 'second', 2, 'Series for my board'),
-                         cser.link_search(pwork, 'second', 2))
+        with terminal.capture():
+            self.assertEqual(
+                (457, None, 'second', 2, 'Series for my board'),
+                cser.link_search(pwork, 'second', 2))
 
     def test_series_link_auto_name(self):
         """Test finding the patchwork link for a cseries with auto name"""
@@ -1197,13 +1200,15 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         self.assertFalse(cser.project_get())
         cser.project_set(pwork, 'U-Boot', quiet=True)
 
-        self.assertEqual(
-            (self.SERIES_ID_SECOND_V1, None, 'second', 1,
-             'Series for my board'),
-            cser.link_search(pwork, 'second', 1))
-        self.assertEqual((457, None, 'second', 2, 'Series for my board'),
-                         cser.link_search(pwork, 'second', 2))
-        res = cser.link_search(pwork, 'second', 3)
+        with terminal.capture():
+            self.assertEqual(
+                (self.SERIES_ID_SECOND_V1, None, 'second', 1,
+                 'Series for my board'),
+                cser.link_search(pwork, 'second', 1))
+            self.assertEqual(
+                (457, None, 'second', 2, 'Series for my board'),
+                cser.link_search(pwork, 'second', 2))
+            res = cser.link_search(pwork, 'second', 3)
         self.assertEqual(
             (None,
              [{'id': self.SERIES_ID_SECOND_V1, 'name': 'Series for my board',
@@ -1444,7 +1449,9 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with terminal.capture() as (out, _):
             self.run_args('series', 'autolink-all', '-a', '--no-update',
                           pwork=pwork)
-        itr = iter(out.getvalue().splitlines())
+        lines = [ln for ln in out.getvalue().splitlines()
+                 if not ln.startswith('Searching for ')]
+        itr = iter(lines)
         self.assertEqual(
             '1 series linked, 1 already linked, 1 not found (3 requests)',
             next(itr))
@@ -3784,7 +3791,9 @@ Date:   .*
         cser.set_fake_time(h_sleep)
         with terminal.capture() as (out, _):
             cser.link_auto(pwork, 'second3', 3, True, 50)
-        itr = iter(out.getvalue().splitlines())
+        lines = [ln for ln in out.getvalue().splitlines()
+                 if not ln.startswith('Searching for ')]
+        itr = iter(lines)
 
         # Matches shown only once (they don't change between retries)
         self.assertEqual(
