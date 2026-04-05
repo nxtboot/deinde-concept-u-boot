@@ -655,14 +655,8 @@ def email_patches(series, cover_fname, args, dry_run, warn_on_error, cc_fname,
     cmd += args
     num_sent = 0
     if not dry_run:
-        def echo_output(_stream, data):
-            os.write(sys.stdout.fileno(), data)
-            return False
-
-        result = command.run_pipe(
-            [cmd], capture=True, output_func=echo_output,
-            raise_on_error=False, cwd=cwd, merge_stderr=True)
-        num_sent = result.stdout.count('Result: ')
+        captured = command.run_interactive(cmd, cwd)
+        num_sent = captured.count('Result: ')
     cmd_str = ' '.join([f'"{x}"' if ' ' in x and '"' not in x else x
                         for x in cmd])
     return cmd_str, num_sent
