@@ -53234,3 +53234,160 @@ The pipeline should automatically run on the updated branch.
 
 ---
 
+## 2026-04-04: us/next
+
+Branch: cherry-20b822dd4f0
+
+Commits:
+- 20b822dd4f0 test/py: multiplexed_log.py: Clean up and correct RunAndLog()
+- 6e817d51ef5 ext4: include missing blk.h
+- 7f11be48db6 toradex: verdin-am62: sync rm-cfg with SDK 11.01.05.03 baseline
+- 45860d882f3 sound: all sound devices must depend on CONFIG_SOUND
+- 199341908e3 sound: typos 'to be write', 'writen'
+- b9af2d08094 virtio: typo complaint
+- 6978d6ae596 virtio: typo 'private date'
+- 928af44314a block: typo 'to be write'
+- ec0cd37f67b airoha/an7581: add CONFIG_TARGET_AN7581=y to the defconfig
+- 97aa00e0211 arm/airoha: add support for airoha en7523 SoC family
+- 9aa3e440c6e arm: airoha: introduce AN7581 helpers to get SCU and CHIP_SCU regmaps
+- 8e21740b68d arm: airoha: introduce EN7523 helpers to get SCU and CHIP_SCU regmaps
+- f8cef0b7435 clk: airoha: use CHIP_SCU regmap helper
+- ee82f804dd5 clk: airoha: add support for airoha en7523 SoC family
+- 7a656020d8e configs: airoha: en7523: enable clk support
+- ea9b7975378 reset: airoha: convert to regmap API
+- f1cae1f63d9 reset: airoha: unify code using SCU regmap helper
+- 168af8e4f4d dt-bindings: reset: Add reset support for Airoha EN7523
+- 1b333e40630 reset: airoha: add support for airoha en7523 SoC family
+- 4dd7df70b84 dts: airoha: en7523: add reset controller support
+- 4d6da602e3e configs: airoha: en7523: enable reset controller support
+- 801a84b1a46 net: airoha: unify code using SCU regmap helper
+- 251e27fcc20 net: airoha: add support for airoha en7523 SoC family
+- 760063efb04 dts: airoha: en7523: add ethernet controller support
+- 2ccd4b4efb4 configs: airoha: en7523: enable ethernet controller support
+- 4fabdc415c4 dts: airoha: en7523: add spinand flash support
+- 475dec28805 configs: airoha: en7523: enable spinand flashes support
+- 5e5b630eef2 Merge patch series "arm: airoha: add support for en7523 based boards"
+
+### Conversation log
+The repository is in a clean state (untracked files don't affect cherry-picking). Let me proceed with creating the branch and starting the cherry-picks.
+
+Branch created. Now let me cherry-pick the first commit:
+
+First cherry-pick succeeded. Let me verify the delta and build:
+
+Delta matches (1 file, 4+/4-). Let me run the build test:
+
+Build passed. Let me continue with commit 2:
+
+Commit 2 done. Continuing with commit 3:
+
+Commit 3 done. Continuing with commit 4:
+
+Commit 4 done. Continuing with commit 5:
+
+Commit 5 done. Continuing with commit 6:
+
+Commit 6 done. Continuing with commit 7:
+
+Commit 7 done. Continuing with commit 8:
+
+Commit 8 done. Continuing with commit 9:
+
+Commit 9 done. Continuing with commit 10:
+
+Commit 10 done. Continuing with commit 11:
+
+Commit 11 done. Continuing with commit 12:
+
+Commit 12 done. Continuing with commit 13:
+
+Commit 13 done. Continuing with commit 14:
+
+Commit 14 done. Continuing with commit 15:
+
+Commit 15 done. Continuing with commit 16:
+
+Commit 16 done. Continuing with commit 17:
+
+Commit 17 done. Continuing with commit 18:
+
+Commit 18 done. Continuing with commit 19:
+
+Commit 19 done. Continuing with commit 20:
+
+Commit 20 done. Continuing with commit 21:
+
+Commit 21 done. Continuing with commit 22:
+
+Commit 22 done. Continuing with commit 23:
+
+Commit 23 done. Continuing with commit 24:
+
+Commit 24 done. Continuing with commit 25:
+
+Commit 25 done. Continuing with commit 26:
+
+Commit 26 done. Continuing with commit 27:
+
+Commit 27 done. Now for the final commit 28 which is a merge commit:
+
+The merge commit has a different stat - the original merge commit shows 22 files changed which is the cumulative delta of the merge. The cherry-picked version only shows the MAINTAINERS file which is the actual additional change in the merge commit itself. This is expected behavior for cherry-picking merge commits with `-m 1`.
+
+All 28 commits cherry-picked and build passes. Let me verify the commit count and run the final build:
+
+All 28 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+**All 28 commits successfully cherry-picked!**
+
+### Build Result: ✅ OK
+- sandbox build passes with no errors or warnings
+
+### Cherry-Pick Summary:
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 20b822dd4f0 | test/py: multiplexed_log.py: Clean up and correct RunAndLog() | ✅ |
+| 2 | 6e817d51ef5 | ext4: include missing blk.h | ✅ |
+| 3 | 7f11be48db6 | toradex: verdin-am62: sync rm-cfg with SDK 11.01.05.03 baseline | ✅ |
+| 4 | 45860d882f3 | sound: all sound devices must depend on CONFIG_SOUND | ✅ |
+| 5 | 199341908e3 | sound: typos 'to be write', 'writen' | ✅ |
+| 6 | b9af2d08094 | virtio: typo complaint | ✅ |
+| 7 | 6978d6ae596 | virtio: typo 'private date' | ✅ |
+| 8 | 928af44314a | block: typo 'to be write' | ✅ |
+| 9 | ec0cd37f67b | airoha/an7581: add CONFIG_TARGET_AN7581=y to the defconfig | ✅ |
+| 10 | 97aa00e0211 | arm/airoha: add support for airoha en7523 SoC family | ✅ |
+| 11 | 9aa3e440c6e | arm: airoha: introduce AN7581 helpers to get SCU and CHIP_SCU regmaps | ✅ |
+| 12 | 8e21740b68d | arm: airoha: introduce EN7523 helpers to get SCU and CHIP_SCU regmaps | ✅ |
+| 13 | f8cef0b7435 | clk: airoha: use CHIP_SCU regmap helper | ✅ |
+| 14 | ee82f804dd5 | clk: airoha: add support for airoha en7523 SoC family | ✅ |
+| 15 | 7a656020d8e | configs: airoha: en7523: enable clk support | ✅ |
+| 16 | ea9b7975378 | reset: airoha: convert to regmap API | ✅ |
+| 17 | f1cae1f63d9 | reset: airoha: unify code using SCU regmap helper | ✅ |
+| 18 | 168af8e4f4d | dt-bindings: reset: Add reset support for Airoha EN7523 | ✅ |
+| 19 | 1b333e40630 | reset: airoha: add support for airoha en7523 SoC family | ✅ |
+| 20 | 4dd7df70b84 | dts: airoha: en7523: add reset controller support | ✅ |
+| 21 | 4d6da602e3e | configs: airoha: en7523: enable reset controller support | ✅ |
+| 22 | 801a84b1a46 | net: airoha: unify code using SCU regmap helper | ✅ |
+| 23 | 251e27fcc20 | net: airoha: add support for airoha en7523 SoC family | ✅ |
+| 24 | 760063efb04 | dts: airoha: en7523: add ethernet controller support | ✅ |
+| 25 | 2ccd4b4efb4 | configs: airoha: en7523: enable ethernet controller support | ✅ |
+| 26 | 4fabdc415c4 | dts: airoha: en7523: add spinand flash support | ✅ |
+| 27 | 475dec28805 | configs: airoha: en7523: enable spinand flashes support | ✅ |
+| 28 | 5e5b630eef2 | Merge patch series "arm: airoha: add support for en7523 based boards" | ✅ |
+
+### Fix-ups Made:
+- None required - all cherry-picks applied cleanly
+
+### Commits with Concerning Deltas:
+- None - all deltas matched exactly between original and cherry-picked commits
+
+### Notes:
+- The merge commit (commit 28) shows different stats due to the nature of `git cherry-pick -m 1` which extracts only the direct changes from the merge, not the cumulative changes from all merged commits. The MAINTAINERS file was the additional content introduced by the merge.
+- Some buildman runs showed "WARNING: no maintainers for 'en7523_evb'" which is expected and resolved by the final merge commit that adds the MAINTAINERS file.
+
+**Branch `cherry-20b822dd4f0` is ready for pushing.**
+
+---
+
