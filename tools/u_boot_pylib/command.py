@@ -5,7 +5,10 @@ Shell command ease-ups for Python
 Copyright (c) 2011 The Chromium OS Authors.
 """
 
+import os
+import pty
 import subprocess
+import threading
 
 from u_boot_pylib import cros_subprocess
 
@@ -158,6 +161,54 @@ def run_pipe(pipe_list, infile=None, outfile=None, capture=False,
     if raise_on_error and result.return_code:
         raise CommandExc(f"Error running '{user_pipestr}'", result)
     return result
+
+
+def run_interactive(cmd, cwd=None):
+    """Run an interactive command with a PTY for correct output ordering
+
+    Similar to cros_subprocess.Popen with PIPE_PTY, but the child's stdin is
+    inherited from the parent process so the user can respond to prompts
+    directly. cros_subprocess always intercepts stdin which prevents interactive
+    use.
+
+    The child's stdout and stderr go through a PTY so interactive programs (like
+    git send-email) flush before prompting. A reader thread copies PTY output to
+    fd 1 and accumulates it for the caller.
+
+    Args:
+        cmd (list of str): Command to run
+        cwd (str or None): Working directory
+
+    Returns:
+        str: All output produced by the command
+    """
+    parent_fd, child_fd = pty.openpty()
+    captured = []
+
+    def reader():
+        """Drain the PTY: copy each chunk to fd 1 and remember it"""
+        try:
+            while True:
+                data = os.read(parent_fd, 4096)
+                if not data:
+                    break
+                try:
+                    os.write(1, data)
+                except OSError:
+                    pass
+                captured.append(data)
+        except OSError:
+            pass
+
+    thr = threading.Thread(target=reader, daemon=True)
+    thr.start()
+
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=child_fd, stderr=child_fd)
+    os.close(child_fd)
+    proc.wait()
+    thr.join(timeout=2)
+    os.close(parent_fd)
+    return b''.join(captured).decode('utf-8', errors='replace')
 
 
 def output(*cmd, **kwargs):
