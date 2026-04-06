@@ -180,6 +180,7 @@ class Patchwork:
         self.fake_request = None
         self.proj_id = None
         self.link_name = None
+        self.upstream = None
         self._show_progress = show_progress
         self.semaphore = asyncio.Semaphore(
             1 if single_thread else MAX_CONCURRENT)

@@ -299,6 +299,8 @@ def add_series_subparser(subparsers):
                       help='Show review text (optionally for specific patches)')
     ls = series_subparsers.add_parser('ls', aliases=['list'])
     _add_archived(ls)
+    ls.add_argument('-r', '--reviews', action='store_true',
+                    help='Show only review series')
 
     mar = series_subparsers.add_parser('mark')
     mar.add_argument('-m', '--allow-marked', action='store_true',

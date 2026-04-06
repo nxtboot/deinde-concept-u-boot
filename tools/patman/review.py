@@ -1439,7 +1439,22 @@ def _clean_series_name(name):
     return name
 
 
-def _register_series(cser, clean_name, version, link, series_data):
+def _make_review_name(link, upstream=None):
+    """Build a series name for a review branch
+
+    Args:
+        link (str): Patchwork series link/ID
+        upstream (str or None): Upstream name
+
+    Returns:
+        str: Branch-style name, e.g. 'us-498633-review'
+    """
+    ups = upstream or 'pw'
+    return f'{ups}-{link}-review'
+
+
+def _register_series(cser, clean_name, version, link, series_data,
+                     upstream=None):
     """Register a series in the database for review
 
     Creates or finds the series record, adds a ser_ver entry and pcommit
@@ -1451,6 +1466,7 @@ def _register_series(cser, clean_name, version, link, series_data):
         version (int): Series version number
         link (str): Patchwork series link/ID
         series_data (dict): Series data from patchwork
+        upstream (str or None): Upstream name for branch naming
 
     Returns:
         tuple or None: (series_id, svid) or None if already reviewed
@@ -1465,12 +1481,13 @@ def _register_series(cser, clean_name, version, link, series_data):
         tout.notice(f"Previously reviewed '{db_name}' v{prev_version};"
                     f" adding v{version}")
     else:
+        branch_name = _make_review_name(link, upstream)
         series_id = cser.db.series_find_by_name(
-            clean_name, include_archived=True)
+            branch_name, include_archived=True)
         if not series_id:
             desc = series_data.get('cover_letter', {})
-            desc = desc.get('name', '') if desc else ''
-            series_id = cser.db.series_add(clean_name, desc)
+            desc = desc.get('name', '') if desc else clean_name
+            series_id = cser.db.series_add(branch_name, desc, ups=upstream)
         cser.db.series_set_source(series_id, 'review')
 
     svid = cser.db.ser_ver_add(series_id, version, link=str(link))
@@ -1604,7 +1621,8 @@ def _apply_and_check(ctx, link):
     Returns:
         str or None: Branch name, or None on failure
     """
-    branch_name = f'review{ctx.series_id}'
+    ups = ctx.pwork.upstream if ctx.pwork else None
+    branch_name = _make_review_name(link, ups)
     repo_path = gitutil.get_top_level()
     success, branch_name = apply_series_sync(ctx.pwork, link, branch_name,
         ctx.upstream_branch, repo_path)
@@ -1703,8 +1721,9 @@ def _find_or_register(ctx, args, clean_name, link):
         tuple or None: (series_id, svid) or None if already reviewed and
             not forcing
     """
+    ups = ctx.pwork.upstream if ctx.pwork else None
     result = _register_series(ctx.cser, clean_name, ctx.version, link,
-                              ctx.series_data)
+                              ctx.series_data, upstream=ups)
     if result is not None:
         return result
 

@@ -218,7 +218,8 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         elif args.subcmd == 'inc':
             cser.increment(args.series, args.dry_run)
         elif args.subcmd == 'ls':
-            cser.series_list(args.include_archived)
+            cser.series_list(args.include_archived,
+                             reviews_only=getattr(args, 'reviews', False))
         elif args.subcmd == 'open':
             cser.open(pwork, args.series, args.version)
         elif args.subcmd == 'mark':

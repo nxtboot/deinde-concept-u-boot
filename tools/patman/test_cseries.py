@@ -4616,7 +4616,7 @@ Date:   .*
         result = cser.db.series_find_by_link(str(self.REVIEW_LINK))
         self.assertIsNotNone(result)
         series_id, name, version, svid = result
-        self.assertEqual(self.REVIEW_NAME, name)
+        self.assertEqual(f'pw-{self.REVIEW_LINK}-review', name)
         self.assertEqual(1, version)
 
         # Check source is 'review'

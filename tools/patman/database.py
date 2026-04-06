@@ -369,20 +369,29 @@ class Database:  # pylint:disable=R0904
         """
         return self.cur.rowcount
 
-    def _get_series_list(self, include_archived):
+    def _get_series_list(self, include_archived, include_reviews=False,
+                         reviews_only=False):
         """Get a list of Series objects from the database
 
         Args:
             include_archived (bool): True to include archives series
+            include_reviews (bool): True to include review series
+            reviews_only (bool): True to show only review series
 
         Return:
             list of Series
         """
+        conditions = []
+        if not include_archived:
+            conditions.append('archived = 0')
+        if reviews_only:
+            conditions.append("source = 'review'")
+        elif not include_reviews:
+            conditions.append("(source IS NULL OR source != 'review')")
+        where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
         res = self.execute(
-            'SELECT id, name, desc, upstream FROM series ' +
-            ('WHERE archived = 0' if not include_archived else ''))
-        return [Series.from_fields(idnum=idnum, name=name, desc=desc,
-                                   ups=ups)
+            f'SELECT id, name, desc, upstream FROM series {where}')
+        return [Series.from_fields(idnum=idnum, name=name, desc=desc, ups=ups)
                 for idnum, name, desc, ups in res.fetchall()]
 
     # series functions
@@ -447,11 +456,14 @@ class Database:  # pylint:disable=R0904
             raise ValueError(f'No series found (id {idnum} len {len(recs)})')
         return recs[0]
 
-    def series_get_dict(self, include_archived=False):
+    def series_get_dict(self, include_archived=False,
+                        include_reviews=False, reviews_only=False):
         """Get a dict of Series objects from the database
 
         Args:
             include_archived (bool): True to include archives series
+            include_reviews (bool): True to include review series
+            reviews_only (bool): True to show only review series
 
         Return:
             OrderedDict:
@@ -459,7 +471,8 @@ class Database:  # pylint:disable=R0904
                 value: Series with idnum, name and desc filled out
         """
         sdict = OrderedDict()
-        for ser in self._get_series_list(include_archived):
+        for ser in self._get_series_list(include_archived, include_reviews,
+                                         reviews_only):
             sdict[ser.name] = ser
         return sdict
 
@@ -1440,14 +1453,14 @@ class Database:  # pylint:disable=R0904
         return res.fetchone()
 
     def series_find_review_by_name(self, name):
-        """Find a review series by its name
+        """Find a review series by its description
 
-        Looks for series with source='review' matching the given name,
-        so that new versions of a previously reviewed series can be
-        added under the same series record.
+        Looks for series with source='review' whose description matches
+        the given name, so that new versions of a previously reviewed
+        series can be added under the same series record.
 
         Args:
-            name (str): Series name to search for
+            name (str): Series description (cover letter title)
 
         Return:
             tuple or None: (series_id, name, max_version) if found
@@ -1456,6 +1469,6 @@ class Database:  # pylint:disable=R0904
             'SELECT s.id, s.name, MAX(sv.version) '
             'FROM series s '
             'JOIN ser_ver sv ON sv.series_id = s.id '
-            "WHERE s.source = 'review' AND s.name = ? "
+            "WHERE s.source = 'review' AND s.desc = ? "
             'GROUP BY s.id', (name,))
         return res.fetchone()
