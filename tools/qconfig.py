@@ -534,11 +534,108 @@ def _format_sym_value(sym, value=None):
     return f'CONFIG_{sym.name}={value}'
 
 
+def _rebuild_overlay(orig, needed):
+    """Rebuild a #include defconfig preserving the original line ordering
+
+    Keeps existing overlay lines that are still needed (updating values
+    that changed), drops lines that are now redundant, and appends
+    genuinely new entries at the end.
+
+    Args:
+        orig (str): Path to the original defconfig file
+        needed (dict): Mapping of config name to defconfig line value
+
+    Returns:
+        bytes: The rebuilt defconfig content
+    """
+    orig_lines = tools.read_file(orig, binary=False).splitlines(keepends=True)
+    keep = set()
+    lines = []
+    in_overlay = False
+    for line in orig_lines:
+        if line.startswith('#include'):
+            lines.append(line)
+            continue
+        name = _config_name(line)
+        if not name:
+            # Blank lines or comments - keep them (marks start of overlay)
+            if not in_overlay:
+                lines.append(line)
+                in_overlay = True
+            continue
+        in_overlay = True
+        if name in needed:
+            # Keep this line (possibly with updated value)
+            lines.append(needed[name] + '\n')
+            keep.add(name)
+        # else: drop the line (no longer needed in overlay)
+
+    # Append new entries that weren't in the original overlay
+    new_entries = []
+    for name, line in needed.items():
+        if name not in keep:
+            new_entries.append(line + '\n')
+    if new_entries:
+        lines.extend(sorted(new_entries))
+
+    return ''.join(lines).encode()
+
+
+def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
+    """Verify an #include defconfig and fix remaining config differences
+
+    Loads the candidate defconfig through kconfiglib, compares against the
+    target config, and iteratively adds corrections for any remaining
+    differences (from include entries needing explicit resets or transitive
+    Kconfig dependency effects).
+
+    Args:
+        kconf (kconfiglib.Kconfig): Kconfig instance
+        srcdir (str): Source-tree directory
+        confdir (str): Directory for temp file placement
+        target (dict): Target config {sym_name: str_value}
+        needed (dict): Overlay entries {config_name: line}, updated in place
+        new_content (bytes): Current defconfig content to verify
+
+    Returns:
+        bytes: The verified (possibly updated) defconfig content
+    """
+    for _ in range(3):
+        with tempfile.NamedTemporaryFile(suffix='_defconfig',
+                                         dir=confdir) as tmp:
+            tmp.write(new_content)
+            tmp.flush()
+            verify_pp = _cpp_preprocess(srcdir, tmp.name)
+            kconf.load_config(verify_pp)
+            os.unlink(verify_pp)
+
+        # Find configs that differ from target and add corrections
+        extra_lines = []
+        for sym in kconf.unique_defined_syms:
+            if sym.name not in target or sym.str_value == target[sym.name]:
+                continue
+            line = _format_sym_value(sym, target[sym.name])
+            name = _config_name(line)
+            if name not in needed:
+                needed[name] = line
+                extra_lines.append(line + '\n')
+
+        if not extra_lines:
+            break
+        new_content = new_content.rstrip(b'\n') + b'\n'
+        for line in sorted(extra_lines):
+            new_content += line.encode()
+
+    return new_content
+
+
 def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
     """Sync a defconfig that uses #include directives
 
-    Computes the minimal delta between the full config and the base config
-    provided by the included files, preserving the #include structure.
+    Computes the overlay delta needed on top of the include files to produce
+    the target config, preserving the original line ordering. The result is
+    verified against the target config; if any differences remain, the
+    missing entries are added iteratively.
 
     Args:
         kconf (kconfiglib.Kconfig): Kconfig instance
@@ -549,51 +646,44 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
     Returns:
         bool: True if the defconfig was (or would be) updated
     """
-    # Get the full min_config (base + overlay)
+    # Get the full min_config and target config values
     full_tmp = _cpp_preprocess(srcdir, orig)
     full_lines = _get_min_config_lines(kconf, full_tmp)
     os.unlink(full_tmp)
 
+    # Save the target config for verification
+    target = {sym.name: sym.str_value
+              for sym in kconf.unique_defined_syms}
+
     # Build a temp file with just the #include lines (no overlay CONFIGs)
-    # to get the base min_config
     include_lines = []
     with open(orig, 'rb') as inf:
         for line in inf:
             if line.startswith(b'#include'):
                 include_lines.append(line)
 
-    base_tmp = tempfile.NamedTemporaryFile(prefix='qconfig-base-',
-                                           suffix='_defconfig',
-                                           dir=os.path.dirname(orig),
-                                           delete=False)
-    base_tmp.writelines(include_lines)
-    base_tmp.close()
+    with tempfile.NamedTemporaryFile(suffix='_defconfig',
+                                     dir=os.path.dirname(orig)) as tmp:
+        tmp.writelines(include_lines)
+        tmp.flush()
+        base_pp = _cpp_preprocess(srcdir, tmp.name)
 
-    base_pp = _cpp_preprocess(srcdir, base_tmp.name)
-    os.unlink(base_tmp.name)
-    base_lines = _get_min_config_lines(kconf, base_pp)
+    base_entries = _get_defconfig_entries(base_pp)
     os.unlink(base_pp)
 
-    # Delta = full - base
-    delta = sorted(full_lines - base_lines)
+    # Build the set of configs needed in the overlay: full_min entries not
+    # already provided by the include files
+    needed = {}
+    for line in full_lines:
+        name = _config_name(line)
+        if not name or base_entries.get(name) != line.strip():
+            needed[name] = line.strip()
 
-    # Build the new defconfig: #include lines + delta
-    # Preserve the separator (blank line or not) from the original
-    orig_text = tools.read_file(orig, binary=False)
-    last_include_idx = orig_text.rfind('#include')
-    after_include = orig_text[orig_text.index('\n', last_include_idx) + 1:]
-    sep = b'\n' if after_include.startswith('\n') else b''
+    new_content = _rebuild_overlay(orig, needed)
+    new_content = _verify_defconfig(kconf, srcdir, os.path.dirname(orig),
+                                    target, needed, new_content)
 
-    new_content = b''
-    for line in include_lines:
-        new_content += line
-    if delta:
-        new_content += sep
-    for line in delta:
-        new_content += line.encode() if isinstance(line, str) else line
-
-    orig_content = tools.read_file(orig)
-    updated = new_content != orig_content
+    updated = new_content != tools.read_file(orig)
     if updated and not dry_run:
         tools.write_file(orig, new_content)
     return updated
@@ -1808,6 +1898,40 @@ class SyncTests(unittest.TestCase):
             # Disabling CMDLINE is an override — should be kept
             self.assertIn('# CONFIG_CMDLINE is not set', result)
             self.assertIn('#include "sandbox_defconfig"', result)
+        finally:
+            os.unlink(tmp_name)
+
+    def test_sync_include_effective_config(self):
+        """Syncing a #include defconfig must not change the effective config"""
+        orig = 'configs/alt_defconfig'
+        if not os.path.exists(orig):
+            self.skipTest(f'{orig} not found')
+
+        # Load the original to get the target config
+        full_pp = _cpp_preprocess(self.srcdir, orig)
+        self.kconf.load_config(full_pp)
+        os.unlink(full_pp)
+        target = {sym.name: sym.str_value
+                  for sym in self.kconf.unique_defined_syms}
+
+        # Sync into a temp copy
+        tmp_name = orig + '.test_tmp'
+        shutil.copy2(orig, tmp_name)
+        try:
+            _sync_include_defconfig(self.kconf, self.srcdir, tmp_name,
+                                    dry_run=False)
+
+            # Load synced defconfig and compare
+            synced_pp = _cpp_preprocess(self.srcdir, tmp_name)
+            self.kconf.load_config(synced_pp)
+            os.unlink(synced_pp)
+            result = {sym.name: sym.str_value
+                      for sym in self.kconf.unique_defined_syms}
+
+            diffs = {name for name in set(target) | set(result)
+                     if target.get(name) != result.get(name)}
+            self.assertEqual(diffs, set(),
+                             'Synced defconfig changed effective config')
         finally:
             os.unlink(tmp_name)
 
