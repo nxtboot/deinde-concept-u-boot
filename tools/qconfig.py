@@ -683,7 +683,19 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
     new_content = _verify_defconfig(kconf, srcdir, os.path.dirname(orig),
                                     target, needed, new_content)
 
-    updated = new_content != tools.read_file(orig)
+    # Only update the file if the effective config actually changes.
+    # Removing redundant overlay entries is cosmetic and would create
+    # unnecessary churn in the commit.
+    if new_content == tools.read_file(orig):
+        return False
+
+    verify_pp = _cpp_preprocess(srcdir, orig)
+    kconf.load_config(verify_pp)
+    os.unlink(verify_pp)
+    orig_effective = {sym.name: sym.str_value
+                      for sym in kconf.unique_defined_syms}
+    updated = orig_effective != target
+
     if updated and not dry_run:
         tools.write_file(orig, new_content)
     return updated
@@ -1858,8 +1870,8 @@ class SyncTests(unittest.TestCase):
         # The output should still start with #include
         self.assertIn(b'#include', content_after)
 
-    def test_sync_include_removes_redundant(self):
-        """Syncing a #include defconfig removes CONFIGs from the base"""
+    def test_sync_include_skips_redundant(self):
+        """Syncing a #include defconfig skips cosmetic-only changes"""
         # Create a temp defconfig that includes sandbox and redundantly
         # sets a CONFIG that sandbox already sets
         with tempfile.NamedTemporaryFile(
@@ -1871,12 +1883,13 @@ class SyncTests(unittest.TestCase):
         try:
             updated = _sync_include_defconfig(self.kconf, self.srcdir,
                                               tmp_name, dry_run=False)
-            self.assertTrue(updated)
+            # Redundant CONFIG doesn't change the effective config,
+            # so the file should not be updated
+            self.assertFalse(updated)
             with open(tmp_name) as inf:
                 result = inf.read()
-            # CONFIG_CMDLINE=y should be gone (it's in the base)
-            self.assertNotIn('CONFIG_CMDLINE=y', result)
-            # #include should still be there
+            # File should be unchanged
+            self.assertIn('CONFIG_CMDLINE=y', result)
             self.assertIn('#include "sandbox_defconfig"', result)
         finally:
             os.unlink(tmp_name)
