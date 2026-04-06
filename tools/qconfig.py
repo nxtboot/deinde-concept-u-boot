@@ -423,6 +423,43 @@ def _get_min_config_lines(kconf, fname):
     return lines
 
 
+def _config_name(line):
+    """Extract config name (e.g. 'CONFIG_ARM') from a defconfig line
+
+    Args:
+        line (str): A defconfig line
+
+    Returns:
+        str or None: The config name, or None if not a config line
+    """
+    stripped = line.strip()
+    if stripped.startswith('CONFIG_'):
+        return stripped.split('=', 1)[0]
+    if stripped.startswith('# CONFIG_'):
+        return stripped.split()[1]
+    return None
+
+
+def _get_defconfig_entries(fname):
+    """Parse a preprocessed defconfig file to get config entries by name
+
+    Args:
+        fname (str): Path to the preprocessed defconfig file
+
+    Returns:
+        dict: Mapping of config name (e.g. 'CONFIG_ARM') to the full line
+            including the value (e.g. 'CONFIG_ARM=y')
+    """
+    entries = {}
+    with open(fname, encoding='utf-8') as inf:
+        for line in inf:
+            line = line.strip()
+            name = _config_name(line)
+            if name:
+                entries[name] = line
+    return entries
+
+
 def _sync_plain_defconfig(kconf, orig, dry_run):
     """Sync a plain defconfig (no #include)
 
@@ -448,6 +485,53 @@ def _sync_plain_defconfig(kconf, orig, dry_run):
     else:
         os.unlink(tmp.name)
     return updated
+
+
+def _build_include_defconfig(include_lines, delta, sep):
+    """Build defconfig content from include lines and overlay delta
+
+    Assembles a defconfig that uses #include directives by concatenating
+    the original #include lines with the overlay delta (the CONFIG lines
+    that are needed on top of what the includes provide). The separator
+    preserves the blank-line convention from the original file.
+
+    Args:
+        include_lines (list of bytes): The #include lines
+        delta (list of str): Sorted overlay config lines
+        sep (bytes): Separator between includes and delta (b'\\n' or b'')
+
+    Returns:
+        bytes: The defconfig content
+    """
+    out = b''
+    for line in include_lines:
+        out += line
+    if delta:
+        out += sep
+    for line in delta:
+        out += line.encode() if isinstance(line, str) else line
+    return out
+
+
+def _format_sym_value(sym, value=None):
+    """Format a symbol value as a defconfig line
+
+    Args:
+        sym (kconfiglib.Symbol): The symbol
+        value (str or None): Value to format; uses sym.str_value if None
+
+    Returns:
+        str: The defconfig line
+    """
+    if value is None:
+        value = sym.str_value
+    if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
+        if value == 'n':
+            return f'# CONFIG_{sym.name} is not set'
+        return f'CONFIG_{sym.name}={value}'
+    if sym.orig_type == kconfiglib.STRING:
+        return f'CONFIG_{sym.name}="{kconfiglib.escape(value)}"'
+    return f'CONFIG_{sym.name}={value}'
 
 
 def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
