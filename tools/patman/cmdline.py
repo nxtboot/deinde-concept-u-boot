@@ -294,7 +294,9 @@ def add_series_subparser(subparsers):
 
     series_subparsers.add_parser('get-link')
     series_subparsers.add_parser('inc')
-    series_subparsers.add_parser('info')
+    info = series_subparsers.add_parser('info')
+    info.add_argument('-r', '--reviews', nargs='*', type=int, default=None,
+                      help='Show review text (optionally for specific patches)')
     ls = series_subparsers.add_parser('ls', aliases=['list'])
     _add_archived(ls)
 

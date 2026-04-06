@@ -13,6 +13,7 @@ import pygit2
 from u_boot_pylib import cros_subprocess
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
+from u_boot_pylib.terminal import tprint
 from u_boot_pylib import tools
 from u_boot_pylib import tout
 
@@ -892,24 +893,42 @@ class Cseries(cser_helper.CseriesHelper):
             tout.notice(f"No review notes for '{ser.name}'")
             return
         for version, notes in all_notes:
-            terminal.tprint(f'\n--- v{version} ---',
+            tprint(f'\n--- v{version} ---',
                             colour=terminal.Color.YELLOW)
             print(notes)
             print()
 
-    def show_info(self, series):
+    def show_info(self, series, show_reviews=None):
         """Show detailed information about a series and all its versions
 
         Args:
             series (str): Series name, or None for current branch
+            show_reviews (list of int or None): If not None, show review
+                text. An empty list means all patches; otherwise only
+                the listed patch numbers (1-based).
         """
         ser, _ = self._parse_series_and_version(series, None)
         if not ser.idnum:
             raise ValueError(f"Series '{ser.name}' not found in database")
 
-        print(f"Series: {ser.name}")
-        print(f"  Description: {ser.desc}")
-        print(f"  Upstream: {ser.upstream or '(none)'}")
+        with terminal.pager():
+            self._show_info(ser, show_reviews)
+
+    def _show_info(self, ser, show_reviews):
+        """Show series info (called within a pager context)
+
+        Args:
+            ser (Series): Series object with idnum set
+            show_reviews (list of int or None): Patch numbers to show
+                reviews for, or empty list for all, or None for none
+        """
+        col = self.col
+        tprint('Series: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.name, colour=col.WHITE, col=col)
+        tprint('  Description: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.desc, col=col)
+        tprint('  Upstream: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.upstream or '(none)', col=col)
 
         versions = self.db.ser_ver_get_for_series(ser.idnum)
         if not isinstance(versions, list):
@@ -917,32 +936,70 @@ class Cseries(cser_helper.CseriesHelper):
 
         for sv in versions:
             link_str = sv.link or '(none)'
-            print(f"\n  Version {sv.version}:")
-            print(f"    Link: {link_str}")
-            print(f"    Description: {sv.desc or '(none)'}")
+            tprint(f'\n  Version {sv.version}:', colour=col.YELLOW, col=col)
+            tprint('    Link: ', newline=False, colour=col.BLUE, col=col)
+            tprint(link_str, col=col)
+            tprint('    Description: ', newline=False, colour=col.BLUE, col=col)
+            tprint(sv.desc or '(none)', col=col)
             if sv.name:
-                print(f"    Cover: {sv.name}")
+                tprint('    Cover: ', newline=False, colour=col.BLUE, col=col)
+                tprint(sv.name, col=col)
             if sv.archive_tag:
-                print(f"    Archive tag: {sv.archive_tag}")
+                tprint('    Archive tag: ', newline=False, colour=col.BLUE,
+                       col=col)
+                tprint(sv.archive_tag, col=col)
 
-            # Show patches
-            try:
-                pclist = self.db.pcommit_get_list(sv.idnum)
-                print(f"    Patches: {len(pclist)}")
-                for pc in pclist:
-                    state = f' [{pc.state}]' if pc.state else ''
-                    print(f"      {pc.seq + 1}: {pc.subject}{state}")
-            except (ValueError, AttributeError):
-                pass
+            self._show_version_info(sv, show_reviews)
 
-            # Show notes if any
-            if sv.notes:
-                lines = sv.notes.strip().splitlines()
-                print(f"    Notes: {lines[0]}")
-                for line in lines[1:3]:
-                    print(f"           {line}")
-                if len(lines) > 3:
-                    print(f"           ... ({len(lines)} lines)")
+    def _show_version_info(self, sv, show_reviews):
+        """Show patches, reviews and notes for one series version
+
+        Args:
+            sv (SerVer): Series-version record to display
+            show_reviews (list of int or None): Patch numbers to show
+                reviews for, or empty list for all, or None for none
+        """
+        col = self.col
+
+        # Show patches
+        pclist = self.db.pcommit_get_list(sv.idnum)
+        tprint('    Patches: ', newline=False, colour=col.BLUE, col=col)
+        tprint(str(len(pclist)), col=col)
+        for pc in pclist:
+            state = f' [{pc.state}]' if pc.state else ''
+            colour = col.GREEN if pc.state == 'accepted' else None
+            tprint(f'      {pc.seq + 1}: {pc.subject}{state}', colour=colour,
+                   col=col)
+
+        # Show reviews if requested
+        if show_reviews is not None:
+            reviews = self.db.review_get_for_version(sv.idnum)
+            if reviews:
+                shown = [r for r in reviews if not show_reviews
+                         or r.seq in show_reviews]
+                tprint('    Reviews: ', newline=False, colour=col.BLUE, col=col)
+                tprint(f'{len(shown)}/{len(reviews)}', col=col)
+                for rev in shown:
+                    colour = col.GREEN if rev.approved else col.YELLOW
+                    stat = 'approved' if rev.approved else 'comments'
+                    tprint(f'      Patch {rev.seq}: [{stat}]', colour=colour,
+                           col=col)
+                    for line in rev.body.splitlines():
+                        if line.startswith('> '):
+                            tprint(f'        {line}', colour=col.MAGENTA,
+                                   col=col)
+                        else:
+                            tprint(f'        {line}', colour=col.WHITE, col=col)
+
+        # Show notes if any
+        if sv.notes:
+            lines = sv.notes.strip().splitlines()
+            tprint('    Notes: ', newline=False, colour=col.BLUE, col=col)
+            tprint(lines[0], colour=col.CYAN, col=col)
+            for line in lines[1:3]:
+                tprint(f'           {line}', colour=col.CYAN, col=col)
+            if len(lines) > 3:
+                tprint(f'           ... ({len(lines)} lines)', col=col)
 
     def set_upstream(self, series, ups, dry_run=False):
         """Set the upstream for a series

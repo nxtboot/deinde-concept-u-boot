@@ -202,7 +202,8 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         elif args.subcmd == 'dec':
             cser.decrement(args.series, args.dry_run)
         elif args.subcmd == 'info':
-            cser.show_info(args.series)
+            cser.show_info(args.series,
+                           show_reviews=getattr(args, 'reviews', None))
         elif args.subcmd == 'gather':
             cser.gather(pwork, args.series, args.version, args.show_comments,
                         args.show_cover_comments, args.gather_tags,
