@@ -53776,143 +53776,84 @@ The branch is now 0 commits behind and 9 commits ahead of ci/master.
 
 ## 2026-04-06: us/next
 
-Branch: cherry-fedd91b3faf
+Branch: cherry-bc47ca03b80
 
 Commits:
-- fedd91b3faf arm64: dts: ti: k3-am6*-boards: Add label to reserved-memory node
-- 726023f9a0b arm64: dts: ti: k3-am62*: remove SoC dtsi from common dtsi
-- 3c77f8e46f0 arm64: dts: ti: Introduce base support for AM6254atl SiP
-- dd9278ac134 arm64: dts: ti: Add support for AM6254atl SiP SK
-- 3633fdbb6b9 ti: add support for AM6254atl SiP
-- 04ccb271ffe Merge patch series "Add support for TI AM6254atl SiP"
+- bc47ca03b80 clk: renesas: Isolate R-Car Gen3 driver to Gen3, Gen4 and RZ/G2L
+- 1b102d2fe17 mailbox: Allow operation without .recv callback
+- 9535cdf0cb1 mmc: renesas-sdhi: Add R-Car Gen5 support
+- 6b27b688694 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
 
 ### Conversation log
-The repository has untracked files but is otherwise clean. Let me proceed with creating the new branch based on ci/master.
+The repository is clean (untracked files don't affect cherry-picks). Let me create and checkout the new branch based on ci/master.
 
-Branch created. Now let me cherry-pick the first commit:
+Branch created. Now let me start cherry-picking the commits one by one.
 
-First cherry-pick succeeded. Let me verify the delta and run the build test:
+**Cherry-pick 1: bc47ca03b80 - clk: renesas: Isolate R-Car Gen3 driver to Gen3, Gen4 and RZ/G2L**
 
-The deltas match - same 13 files, same +/-. Now let me run the build test:
+First cherry-pick successful. Let me verify the delta and run a build test.
 
-Build passed. Now let me cherry-pick the second commit:
+Delta looks identical (1 file, 2 insertions, 2 deletions). Now run the build test.
 
-Second cherry-pick succeeded. Let me verify the delta:
+Build passed. Moving on to the second cherry-pick.
 
-Deltas match - same 3 files, same +/-. Now run the build test:
+**Cherry-pick 2: 1b102d2fe17 - mailbox: Allow operation without .recv callback**
 
-Build passed. Now let me cherry-pick the third commit:
+Second cherry-pick successful. Let me verify the delta and run a build test.
 
-Third cherry-pick succeeded. Let me verify the delta:
+Delta matches perfectly (1 file, 9 insertions). Now run the build test.
 
-Deltas match. Now run the build test:
+Build passed. Moving on to the third cherry-pick.
 
-Build passed. Now let me cherry-pick the fourth commit:
+**Cherry-pick 3: 9535cdf0cb1 - mmc: renesas-sdhi: Add R-Car Gen5 support**
 
-Fourth cherry-pick succeeded. Let me verify the delta:
+Third cherry-pick successful. Let me verify the delta and run a build test.
 
-Deltas match - same 3 files, same line counts. Now run the build test:
+Delta matches perfectly (1 file, 1 insertion). Now run the build test.
 
-Build passed. Now let me cherry-pick the fifth commit:
+Build passed. Moving on to the fourth and final cherry-pick.
 
-Fifth cherry-pick succeeded. Let me verify the delta:
+**Cherry-pick 4: 6b27b688694 - Merge branch 'master' of u-boot-sh (maybe already applied as 9fe0976006c)**
 
-Deltas match - same 9 files, same line counts. Now run the build test:
+First, let me check if this commit is already applied by comparing with 9fe0976006c.
 
-Build passed. Now let me cherry-pick the sixth and final commit (which is a merge commit):
+These are actually different merge commits - the original (6b27b688694) is Tom Rini's merge from u-boot-sh, while the found commit (9fe0976006c) is a different merge by Simon Glass. Let me also check if the individual commits that were part of the original merge are already in ci/master (since the individual commits we just cherry-picked above may have been part of that merge).
 
-The merge commit is empty (as expected, since all changes are already applied). Let me commit it as an empty commit:
+Let me check the parent commits to understand what was merged:
 
-The merge commit has been added. Let me verify the delta:
+The original merge (6b27b688694) brought in exactly the 3 commits we just cherry-picked. Since we've already cherry-picked those commits individually, the merge commit will likely be empty - but we still need to preserve it with --allow-empty to maintain history tracking.
 
-The cherry-picked merge commit is empty (which is expected - it was a merge commit and all changes are already in the individual commits). The original shows the aggregate of all changes merged. Now let me run the build test:
+Let me proceed with the merge commit cherry-pick:
 
-Build passed. Now let me verify all 6 commits are present with the final log:
+The merge commit is empty as expected (since all the commits it merged are already applied). Let me commit it with --allow-empty to preserve the merge record:
 
-All 6 commits are present. Now let me run the final build test:
+Let me verify the delta for this merge commit:
+
+The cherry-picked merge is empty (as expected - all the changes were already applied via the individual cherry-picks). The original merge showed 3 files changed with 12 insertions and 2 deletions, which matches what the 3 individual commits contributed. This is correct behavior.
+
+Now let me run the build test for the merge commit:
+
+Build passed. Now let me verify all 4 commits are present:
+
+All 4 commits are present. Let me run the final build test:
 
 ## Final Status Report
 
-All 6 commits have been successfully cherry-picked from `us/next` onto the new branch `cherry-fedd91b3faf` (based on `ci/master`).
+All 4 cherry-picks completed successfully:
 
-### Build Result: ✅ OK
-All build tests passed with no warnings or errors.
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | bc47ca03b80 | clk: renesas: Isolate R-Car Gen3 driver to Gen3, Gen4 and RZ/G2L | ✅ Clean cherry-pick |
+| 2 | 1b102d2fe17 | mailbox: Allow operation without .recv callback | ✅ Clean cherry-pick |
+| 3 | 9535cdf0cb1 | mmc: renesas-sdhi: Add R-Car Gen5 support | ✅ Clean cherry-pick |
+| 4 | 6b27b688694 | Merge branch 'master' of u-boot-sh | ✅ Empty commit (expected - all commits already applied via individual cherry-picks) |
 
-### Cherry-Picked Commits:
-| # | Original Hash | New Hash | Subject |
-|---|---------------|----------|---------|
-| 1 | fedd91b3faf | fe36fcd885e | arm64: dts: ti: k3-am6*-boards: Add label to reserved-memory node |
-| 2 | 726023f9a0b | 1526cd36672 | arm64: dts: ti: k3-am62*: remove SoC dtsi from common dtsi |
-| 3 | 3c77f8e46f0 | da997a4a43a | arm64: dts: ti: Introduce base support for AM6254atl SiP |
-| 4 | dd9278ac134 | 5d77d034992 | arm64: dts: ti: Add support for AM6254atl SiP SK |
-| 5 | 3633fdbb6b9 | e1f5c8757c2 | ti: add support for AM6254atl SiP |
-| 6 | 04ccb271ffe | d4d0ef7cf2f | Merge patch series "Add support for TI AM6254atl SiP" |
-
-### Fix-ups Made: None
-All cherry-picks applied cleanly without conflicts.
-
-### Delta Verification: ✅ All commits matched
-All cherry-picked commits have identical file changes and line counts compared to their original versions.
-
-### Notes:
-- The merge commit (6) resulted in an empty commit as expected since all constituent commits were cherry-picked individually beforehand. The `--allow-empty` flag preserved it for history tracking.
-- The branch `cherry-fedd91b3faf` is now ready for pushing and is 6 commits ahead of `ci/master`.
-
----
-
-### Review: 2026-04-06
-
-Branch: cherry-fedd91b3faf
-
-Comments addressed:
-- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rock5b.
-
-Looking at the job logs, I can see this is an...
-
-### Conversation log
-Now let me understand the review comment. The comment says "Pipeline fix (attempt 1): fixed failed job(s) rock5b" and the analysis showed this was an **infrastructure/transient issue** - a hardware I/O error when flashing to the rock5b test device. The conclusion was that **no code changes are needed** and the appropriate action is to retry the CI pipeline.
-
-Since this is not an actionable code review comment (it's an infrastructure issue that just needs a pipeline retry), I should:
-
-1. Verify the build still passes
-2. Create the -v2 branch
-3. Force push to trigger a new pipeline run
-
-Build passes. Now let me check if there's already a -v2 branch:
-
-Now let me push to the original remote branch to trigger a new pipeline:
-
-The push was successful. 
-
-## Summary Report
-
-### Review Comment Analysis
-
-The single review comment was about a **pipeline failure in the rock5b job**. After analyzing the job logs (as detailed in the MR context), the failure was identified as an **infrastructure/transient issue** - specifically a hardware I/O error when trying to flash U-Boot to the rock5b test device's SD card:
-
-```
-dd: error writing '/dev/sdi': Input/output error
-Lab failure: Marking connection bad - no other tests will run
-```
-
-This is not a code problem. The build succeeded; only the flashing step to the physical test device failed due to hardware issues.
-
-### Actions Taken
-
-1. **Checked out branch:** `cherry-fedd91b3faf`
-2. **Verified build passes:** `buildman -L --board sandbox -w -o /tmp/pickman` ✅
-3. **Created local branch:** `cherry-fedd91b3faf-v2`
-4. **Force pushed to remote:** `./tools/pickman/pickman push-branch cherry-fedd91b3faf -r ci -f` ✅
-
-### Code Changes Made
-
-**None** - The review comment identified an infrastructure issue, not a code problem. No code changes were needed.
-
-### Suggested Reply to MR
-
-> The rock5b failure was correctly identified as an infrastructure/transient issue - the test lab hardware had an I/O error when flashing U-Boot to the SD card (dd reported "Input/output error"). This is unrelated to the code changes in this MR.
->
-> Re-pushed to trigger a new pipeline run.
+**Summary:**
+- **Build result:** ✅ OK - No warnings or errors
+- **Fix-ups:** None required
+- **Concerning deltas:** None - all deltas matched expected values
+- **Branch:** `cherry-bc47ca03b80` is ready for pushing
+- **Note:** The merge commit (6b27b688694) was intentionally cherry-picked as an empty commit because all 3 commits it originally merged (bc47ca03b80, 1b102d2fe17, 9535cdf0cb1) were already cherry-picked individually. The commit message and authorship are preserved for history tracking.
 
 ---
 
