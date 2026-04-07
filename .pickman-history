@@ -54161,3 +54161,95 @@ The branch `cherry-a557c50977c` is ready for pushing.
 
 ---
 
+## 2026-04-07: us/next
+
+Branch: cherry-c4097ec6a96
+
+Commits:
+- c4097ec6a96 ARM: dts: Add stm32mp257f-dk-u-boot.dtsi
+- 125b3c8b6da ARM: dts: Fix "arm, smc-id" value for stm32mp23-u-boot.dtsi
+- 64b115d8f18 ARM: dts: Fix "arm, smc-id" value for stm32mp25-u-boot.dtsi
+- 3192a7eb0e6 ARM: dts: Add txbyteclk clock in stm32mp235f-dk-u-boot.dtsi
+- 87b0ab0365d stm32mp: Add stm32mp23 support for syscon driver
+- 58d718b111b adc: stm32mp13: add support of adc to stm32mp13
+- 371baac357c configs: stm32: Enable ADC support for stm32mp13_defconfig
+- 75defb7fbf9 ARM: dts: Add st, adc_usb_pd property for stm32mp135-dk-u-boot
+- 1a7ea0280ee ofnode: support panel-timings in ofnode_decode_display_timing
+- a58312b3c21 video: simple_panel: add support for "panel-lvds" display
+- 16cfbbbe2b5 video: stm32: STM32 driver support for LVDS
+- b3316f6053f video: stm32: ltdc: support new hardware version for STM32MP25 SoC
+- 35be9461473 video: stm32: ltdc: properly search the first available panel
+- 8876396fc7b configs: stm32mp25: enable LVDS display support
+- 16da0356414 arm: stm32mp25: add ethernet support for stm32mp255 series
+- 9853527d6c1 ARM: dts: stm32: Fix STM32MP15xx DHSOM boot breakage due to ETZPC
+- 68430f102d1 ARM: dts: stm32: Keep the reg11 and reg18 regulators always enabled on STM32MP13xx DHCOR
+- f65ca70193c ARM: dts: stm32: Introduce DH STM32MP13x target
+- da9e7637df0 ARM: stm32: Add missing build of ST DFU virt code on DH STM32MP1 DHSOM
+- c5c5d8a4f84 board: dhelectronics: Move dh_add_item_number_and_serial_to_env() to common code
+- f37f0dc8e9b ARM: stm32: Read values from M24256 write-lockable page on STM32MP13xx DHCOR
+- 96b66742a99 ARM: stm32: Add MAC address readout from fuses on DH STM32MP1 DHSOM
+- 91861e5a30d Merge tag 'u-boot-stm32-20251117' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me create the new branch based on ci/master.
+
+Now let me start cherry-picking the commits one by one. First commit:
+
+Delta matches. Now let me run the build test:
+
+Build passes. Continuing with the second commit:
+
+Now for the last commit - this is a merge commit (subject starts with "Merge"):
+
+As instructed, I need to commit the empty merge commit since it's important for tracking history:
+
+The merge commit is empty as expected (all the individual commits were already cherry-picked). Now let me verify all 23 commits are present and run the final build:
+
+All 23 commits are present. Now let me run the final build:
+
+## Summary - Cherry-Pick Complete
+
+**Branch created:** `cherry-c4097ec6a96` (based on `ci/master`)
+
+**Build result:** ✅ OK (no warnings/errors)
+
+**All 23 commits successfully cherry-picked:**
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | c4097ec6a96 | ARM: dts: Add stm32mp257f-dk-u-boot.dtsi | ✅ |
+| 2 | 125b3c8b6da | ARM: dts: Fix "arm, smc-id" value for stm32mp23-u-boot.dtsi | ✅ |
+| 3 | 64b115d8f18 | ARM: dts: Fix "arm, smc-id" value for stm32mp25-u-boot.dtsi | ✅ |
+| 4 | 3192a7eb0e6 | ARM: dts: Add txbyteclk clock in stm32mp235f-dk-u-boot.dtsi | ✅ |
+| 5 | 87b0ab0365d | stm32mp: Add stm32mp23 support for syscon driver | ✅ |
+| 6 | 58d718b111b | adc: stm32mp13: add support of adc to stm32mp13 | ✅ (auto-merge) |
+| 7 | 371baac357c | configs: stm32: Enable ADC support for stm32mp13_defconfig | ✅ |
+| 8 | 75defb7fbf9 | ARM: dts: Add st, adc_usb_pd property for stm32mp135-dk-u-boot | ✅ |
+| 9 | 1a7ea0280ee | ofnode: support panel-timings in ofnode_decode_display_timing | ✅ |
+| 10 | a58312b3c21 | video: simple_panel: add support for "panel-lvds" display | ✅ |
+| 11 | 16cfbbbe2b5 | video: stm32: STM32 driver support for LVDS | ✅ (auto-merge MAINTAINERS) |
+| 12 | b3316f6053f | video: stm32: ltdc: support new hardware version for STM32MP25 SoC | ✅ |
+| 13 | 35be9461473 | video: stm32: ltdc: properly search the first available panel | ✅ |
+| 14 | 8876396fc7b | configs: stm32mp25: enable LVDS display support | ✅ (auto-merge) |
+| 15 | 16da0356414 | arm: stm32mp25: add ethernet support for stm32mp255 series | ✅ |
+| 16 | 9853527d6c1 | ARM: dts: stm32: Fix STM32MP15xx DHSOM boot breakage due to ETZPC | ✅ |
+| 17 | 68430f102d1 | ARM: dts: stm32: Keep the reg11 and reg18 regulators always enabled | ✅ |
+| 18 | f65ca70193c | ARM: dts: stm32: Introduce DH STM32MP13x target | ✅ |
+| 19 | da9e7637df0 | ARM: stm32: Add missing build of ST DFU virt code | ✅ |
+| 20 | c5c5d8a4f84 | board: dhelectronics: Move dh_add_item_number_and_serial_to_env() | ✅ |
+| 21 | f37f0dc8e9b | ARM: stm32: Read values from M24256 write-lockable page | ✅ |
+| 22 | 96b66742a99 | ARM: stm32: Add MAC address readout from fuses | ✅ |
+| 23 | 91861e5a30d | Merge tag 'u-boot-stm32-20251117' | ✅ (empty - as expected) |
+
+**Fix-ups:** None required
+
+**Concerning deltas:** None - all commits matched their original deltas exactly
+
+**Notes:**
+- The merge commit (91861e5a30d) was committed as empty, which is expected since all the merged commits were already cherry-picked individually
+- Some commits had clean auto-merges (commits 6, 11, 14) but the resulting deltas matched the originals
+
+The branch `cherry-c4097ec6a96` is ready for pushing.
+
+---
+
