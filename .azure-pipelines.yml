@@ -149,6 +149,7 @@ stages:
           ./tools/binman/binman --toolpath ${UBOOT_TRAVIS_BUILD_DIR}/tools tool -f missing
           ./tools/binman/binman --toolpath ${UBOOT_TRAVIS_BUILD_DIR}/tools test
           ./tools/buildman/buildman -t
+          ./tools/qconfig.py -t
           ./tools/dtoc/dtoc -t
           ./tools/u_boot_pylib/u_boot_pylib test
           ./tools/patman/patman test

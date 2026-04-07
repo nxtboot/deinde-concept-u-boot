@@ -324,6 +324,7 @@ Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites:
       ./tools/binman/binman ${TOOLPATH} test;
       ./tools/binman/binman ${TOOLPATH} test -T;
       ./tools/buildman/buildman -t;
+      ./tools/qconfig.py -t;
       ./tools/dtoc/dtoc -t;
       ./tools/u_boot_pylib/u_boot_pylib test;
       ./tools/patman/patman test;
