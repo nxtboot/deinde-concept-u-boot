@@ -53857,3 +53857,165 @@ All 4 cherry-picks completed successfully:
 
 ---
 
+## 2026-04-06: us/next
+
+Branch: cherry-d3b691c9d32
+
+Commits:
+- d3b691c9d32 configs: Resync with savedefconfig
+- 431f6cce118 firmware: scmi: Fix up code comments
+- a5a0134570c firmware: scmi: Drop mmu_set_region_dcache_behaviour() misuse
+- 0619cb32030 firmware: scmi: Add clock v3.2 CONFIG_SET support
+- 66cb830291b clk: scmi: fix set_parent support when CCF is not being used
+- ef52f697f28 clk: scmi: Bulk allocate all sub-driver instance data
+- 21bfe6a2911 clk: scmi: Factor out clock control flags resolution
+- fdb1bffe282 clk: scmi: Postpone clock name resolution
+- 3547e315c18 clk: scmi: Defer issue of SCMI_CLOCK_ATTRIBUTES
+- 6d04828b452 dm: Remove pre-schema tag support
+- 365a7079fb9 Prepare v2026.01-rc2
+- c7e33aae35b Merge tag 'scmi-master-2025-11-11' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+The repository is clean (only untracked files). Let me create and checkout the new branch based on ci/master:
+
+Good. Now let me start cherry-picking the commits one by one. First, I need to check if the first commit is marked as "maybe already applied as 452e9f6716b" - I need to verify if d3b691c9d32 and 452e9f6716b are the same commit before proceeding.
+
+These are completely different commits. The original d3b691c9d32 is a defconfig resync, but 452e9f6716b is a different pickman history commit. Since this is a [QCONFIG RESYNC] commit, I should skip the cherry-pick and run qconfig.py instead. Let me proceed:
+
+The qconfig.py completed successfully and created a commit. Let me verify and then run a build test:
+
+Build passed. Now let me cherry-pick commit 2: `431f6cce118: firmware: scmi: Fix up code comments`
+
+Stats match. Let me run a build test:
+
+Build passed. Now commit 3: `a5a0134570c: firmware: scmi: Drop mmu_set_region_dcache_behaviour() misuse`
+
+Stats match. Build test:
+
+Build passed. Now commit 4: `0619cb32030: firmware: scmi: Add clock v3.2 CONFIG_SET support`
+
+Stats match. Build test:
+
+Build passed. Now commit 5: `66cb830291b: clk: scmi: fix set_parent support when CCF is not being used`
+
+Stats match. Build test:
+
+Build passed. Now commit 6: `ef52f697f28: clk: scmi: Bulk allocate all sub-driver instance data`
+
+Stats match. Build test:
+
+Build passed. Now commit 7: `21bfe6a2911: clk: scmi: Factor out clock control flags resolution`
+
+Stats match. Build test:
+
+Build passed. Now commit 8: `fdb1bffe282: clk: scmi: Postpone clock name resolution`
+
+Stats match. Build test:
+
+Build passed. Now commit 9: `3547e315c18: clk: scmi: Defer issue of SCMI_CLOCK_ATTRIBUTES`
+
+Stats match. Build test:
+
+Build passed. Now commit 10: `6d04828b452: dm: Remove pre-schema tag support`
+
+There are conflicts. Let me check the conflicting files:
+
+The conflict in .gitlab-ci.yml is simple - the patch removes the "Check for pre-schema tags" section, and HEAD has it while the patch wants to delete it. Let me resolve this by keeping the version from the patch (which removes the section):
+
+I'll resolve this conflict by taking theirs (the patch version that deletes this section):
+
+Now let me check the conflict in tools/patman/test_checkpatch.py:
+
+The conflict shows the patch wants to remove `test_schema` function. Let me see more context:
+
+I see - the patch wants to remove `test_schema` function (which tests pre-schema tags). But HEAD has also added other tests (`test_ai_co_developed_by` and `test_parse_consecutive_messages`) that the original patch doesn't know about. The correct resolution is to:
+1. Remove the `test_schema` function (as the patch intends)
+2. Keep the other new tests (`test_ai_co_developed_by` and `test_parse_consecutive_messages`)
+
+Let me resolve this manually:
+
+Good, all conflicts are resolved. Let me continue the cherry-pick and add a note about the conflict resolution:
+
+Let me amend the commit to add a note about the conflict resolution:
+
+Now let me compare the stats:
+
+There's a larger delta. Let me check what the difference is - the original shows 183 deletions but the cherry-picked shows 617 deletions. Let me investigate:
+
+Hmm, the .gitlab-ci.yml shows a much bigger change (551 lines vs 9 in the original). That's concerning. Let me investigate:
+
+I see - the original commit only removed 9 lines from .gitlab-ci.yml. But when I did `git checkout --theirs`, it replaced the entire file with the version from the original commit, which has a different structure. Let me reset and try again more carefully:
+
+Now let me manually resolve the conflicts more carefully:
+
+I need to remove the "Check for pre-schema tags" section. Let me do this properly:
+
+Now the test_checkpatch.py:
+
+I need to:
+1. Remove the `test_schema` function (lines that start with `def test_schema`)
+2. Keep the `test_ai_co_developed_by` and `test_parse_consecutive_messages` functions
+3. Keep the `if __name__ == "__main__":` at the end
+
+Let me check the stats now:
+
+Stats match now. Let me amend to add the conflict resolution note:
+
+Build test:
+
+Build passed. Now commit 11: `365a7079fb9: Prepare v2026.01-rc2`
+
+The conflict is about version. HEAD has 2026.02 with no EXTRAVERSION, while the patch is for 2026.01-rc2. Since ci/master is at 2026.02, this version bump for 2026.01-rc2 is no longer relevant. I should skip this cherry-pick as it's a release-tag commit that doesn't make sense on the current branch:
+
+Actually, thinking about it more - per the instructions, I should create an empty commit to preserve the sequence when I can't cherry-pick. However, this is a version bump commit that doesn't make sense to apply. Let me check: is this already in ci/master in some form?
+
+The v2026.01-rc2 prepare commit isn't in ci/master. Since ci/master is at 2026.02, this older release preparation commit is not needed. I'll create an empty commit to preserve the sequence as the instructions say:
+
+Now commit 12: `c7e33aae35b: Merge tag 'scmi-master-2025-11-11' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq`
+
+This is a merge commit, so I need to use `-m 1`:
+
+The merge commit is empty because we've already cherry-picked all the individual commits. Per the instructions, I should include merge commits even if empty, to preserve history:
+
+Now let me verify all 12 commits are present:
+
+All 12 commits are present (counting from 667785450e2 to 487d8e613ae). Now let me run the final build test:
+
+Build passed. Let me provide a final summary:
+
+## Final Status Report
+
+**Branch:** `cherry-d3b691c9d32` based on `ci/master`
+
+**Build Result:** ✅ OK (sandbox build passed)
+
+**Commits Cherry-picked (12 total):**
+
+| # | Original Hash | Status | Notes |
+|---|--------------|--------|-------|
+| 1 | d3b691c9d32 | ✅ Applied via qconfig.py | [QCONFIG RESYNC] - ran `./tools/qconfig.py -s -Cy` |
+| 2 | 431f6cce118 | ✅ Clean cherry-pick | |
+| 3 | a5a0134570c | ✅ Clean cherry-pick | |
+| 4 | 0619cb32030 | ✅ Clean cherry-pick | |
+| 5 | 66cb830291b | ✅ Clean cherry-pick | |
+| 6 | ef52f697f28 | ✅ Clean cherry-pick | |
+| 7 | 21bfe6a2911 | ✅ Clean cherry-pick | |
+| 8 | fdb1bffe282 | ✅ Clean cherry-pick | |
+| 9 | 3547e315c18 | ✅ Clean cherry-pick | |
+| 10 | 6d04828b452 | ✅ With conflict resolution | Resolved conflicts in `.gitlab-ci.yml` and `tools/patman/test_checkpatch.py` |
+| 11 | 365a7079fb9 | ⏭️ Skipped (empty commit) | Version bump to 2026.01-rc2 not applicable (ci/master already at 2026.02) |
+| 12 | c7e33aae35b | ✅ Empty merge commit | All changes already applied via individual cherry-picks |
+
+**Fix-ups Made:**
+1. **Commit 1 (d3b691c9d32):** Used qconfig.py resync instead of cherry-pick as instructed for [QCONFIG RESYNC] commits
+2. **Commit 10 (6d04828b452):** Resolved conflicts:
+   - `.gitlab-ci.yml`: Removed "Check for pre-schema tags" CI job section
+   - `tools/patman/test_checkpatch.py`: Removed `test_schema` function while preserving other new tests (`test_ai_co_developed_by` and `test_parse_consecutive_messages`)
+3. **Commit 11 (365a7079fb9):** Created empty commit with [SKIPPED] marker - version bump commit not applicable to current branch
+
+**No Concerning Deltas:** All cherry-picked commits matched their original stats.
+
+The branch `cherry-d3b691c9d32` is ready for pushing.
+
+---
+
