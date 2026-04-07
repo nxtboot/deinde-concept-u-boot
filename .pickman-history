@@ -54019,3 +54019,55 @@ The branch `cherry-d3b691c9d32` is ready for pushing.
 
 ---
 
+## 2026-04-07: us/next
+
+Branch: cherry-107d5f340bc
+
+Commits:
+- 107d5f340bc i2c: muxes: i2c_mux_select/deselect() should be static
+- 55d60ef1c91 Merge tag 'i2c-updates-for-2026.01-rc3' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+
+### Conversation log
+The repository state is clean (only untracked files, no uncommitted changes). Let me proceed with creating the new branch and cherry-picking.
+
+Now let me cherry-pick the first commit (regular commit):
+
+First cherry-pick succeeded. Let me verify the commit delta and run a build test:
+
+The commit delta is identical (1 file changed, 2 insertions, 2 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit - this is a merge commit (identified by "Merge" in the subject):
+
+The merge commit results in an empty commit (which is expected for merge commits when the changes are already in the base). The instructions say to always include merge commits even if empty. Let me commit it with --allow-empty:
+
+The merge commit was preserved. Let me verify the commit delta:
+
+The merge commit was cherry-picked as an empty commit (expected since the changes were already applied in the previous commit). Now let me run the build test:
+
+Build passed. Now let me verify all commits are present:
+
+All 2 commits are present. Now let me run the final build to ensure everything works together:
+
+## Final Status Report
+
+**Build result:** ✅ OK - No warnings or errors
+
+**Cherry-pick summary:**
+| Commit | Subject | Status |
+|--------|---------|--------|
+| 107d5f340bc | i2c: muxes: i2c_mux_select/deselect() should be static | ✅ Applied cleanly |
+| 55d60ef1c91 | Merge tag 'i2c-updates-for-2026.01-rc3' of ... | ✅ Applied as empty commit (expected for merge) |
+
+**Fix-ups made:** None required
+
+**Commits with concerning deltas:** None - all deltas matched the originals
+
+**Branch status:**
+- Branch `cherry-107d5f340bc` is ready for pushing
+- Contains 2 commits ahead of `ci/master`
+- Final verification shows both commits present:
+  - `c4a76b2f2af` - Merge tag 'i2c-updates-for-2026.01-rc3'...
+  - `089d90a1e67` - i2c: muxes: i2c_mux_select/deselect() should be static
+
+---
+
