@@ -9,11 +9,31 @@
 #ifndef __EXT4L_H__
 #define __EXT4L_H__
 
+#include <part.h>
+
 struct blk_desc;
-struct disk_partition;
 struct fs_dir_stream;
 struct fs_dirent;
 struct fs_statfs;
+struct super_block;
+struct udevice;
+
+/**
+ * struct ext4l_state - per-mount state for the ext4l driver
+ *
+ * @blk: Block device (udevice) for buffer I/O
+ * @partition: Partition info
+ * @sb: Superblock pointer
+ * @open_dirs: Count of open directory streams (prevents unmount)
+ * @mounted: Whether a filesystem is currently mounted
+ */
+struct ext4l_state {
+	struct udevice *blk;
+	struct disk_partition partition;
+	struct super_block *sb;
+	int open_dirs;
+	bool mounted;
+};
 
 /* Select op when EXT4_WRITE is enabled, fallback otherwise */
 #if CONFIG_IS_ENABLED(EXT4_WRITE)

@@ -11,6 +11,7 @@
 
 #include <blk.h>
 #include <env.h>
+#include <ext4l.h>
 #include <fs.h>
 #include <fs_legacy.h>
 #include <part.h>
@@ -26,20 +27,8 @@
 #include "ext4_jbd2.h"
 #include "xattr.h"
 
-/* Global state */
-static struct blk_desc *ext4l_dev_desc;
-static struct disk_partition ext4l_part;
-
-/* Global block device tracking for buffer I/O */
-static struct udevice *ext4l_blk_dev;
-static struct disk_partition ext4l_partition;
-static int ext4l_mounted;
-
-/* Count of open directory streams (prevents unmount while iterating) */
-static int ext4l_open_dirs;
-
-/* Global super_block pointer for filesystem operations */
-static struct super_block *ext4l_sb;
+/* Global state for the legacy filesystem interface */
+static struct ext4l_state efs;
 
 /**
  * ext4l_get_blk() - Get the current block device
@@ -48,9 +37,10 @@ static struct super_block *ext4l_sb;
  */
 struct udevice *ext4l_get_blk(void)
 {
-	if (!ext4l_mounted)
+	if (!efs.mounted)
 		return NULL;
-	return ext4l_blk_dev;
+
+	return efs.blk;
 }
 
 /**
@@ -60,7 +50,7 @@ struct udevice *ext4l_get_blk(void)
  */
 struct disk_partition *ext4l_get_partition(void)
 {
-	return &ext4l_partition;
+	return &efs.partition;
 }
 
 /**
@@ -71,9 +61,9 @@ struct disk_partition *ext4l_get_partition(void)
  */
 int ext4l_get_uuid(u8 *uuid)
 {
-	if (!ext4l_sb)
+	if (!efs.sb)
 		return -ENODEV;
-	memcpy(uuid, ext4l_sb->s_uuid.b, 16);
+	memcpy(uuid, efs.sb->s_uuid.b, 16);
 	return 0;
 }
 
@@ -106,11 +96,11 @@ int ext4l_statfs(struct fs_statfs *stats)
 {
 	struct ext4_super_block *es;
 
-	if (!ext4l_sb)
+	if (!efs.sb)
 		return -ENODEV;
 
-	es = EXT4_SB(ext4l_sb)->s_es;
-	stats->bsize = ext4l_sb->s_blocksize;
+	es = EXT4_SB(efs.sb)->s_es;
+	stats->bsize = efs.sb->s_blocksize;
 	stats->blocks = ext4_blocks_count(es);
 	stats->bfree = ext4_free_blocks_count(es);
 
@@ -126,12 +116,12 @@ int ext4l_statfs(struct fs_statfs *stats)
 void ext4l_set_blk_dev(struct udevice *blk_dev,
 		       struct disk_partition *partition)
 {
-	ext4l_blk_dev = blk_dev;
+	efs.blk = blk_dev;
 	if (partition)
-		memcpy(&ext4l_partition, partition, sizeof(struct disk_partition));
+		memcpy(&efs.partition, partition, sizeof(efs.partition));
 	else
-		memset(&ext4l_partition, 0, sizeof(struct disk_partition));
-	ext4l_mounted = 1;
+		memset(&efs.partition, 0, sizeof(efs.partition));
+	efs.mounted = true;
 }
 
 /**
@@ -142,8 +132,8 @@ void ext4l_clear_blk_dev(void)
 	/* Clear buffer cache before unmounting */
 	bh_cache_clear();
 
-	ext4l_blk_dev = NULL;
-	ext4l_mounted = 0;
+	efs.blk = NULL;
+	efs.mounted = false;
 }
 
 /**
@@ -233,16 +223,15 @@ static void ext4l_free_sb(struct super_block *sb, bool skip_io)
  */
 static void ext4l_close_internal(bool skip_io)
 {
-	struct super_block *sb = ext4l_sb;
+	struct super_block *sb = efs.sb;
 
-	if (ext4l_open_dirs > 0)
+	if (efs.open_dirs > 0)
 		return;
 
 	if (sb)
 		ext4l_free_sb(sb, skip_io);
 
-	ext4l_dev_desc = NULL;
-	ext4l_sb = NULL;
+	efs.sb = NULL;
 
 	/*
 	 * Force cleanup of any remaining journal_heads before clearing
@@ -296,7 +285,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	 * trust the old device state (it may have been rebound to a different
 	 * file). Use skip_io=true to skip all I/O during close.
 	 */
-	if (ext4l_sb)
+	if (efs.sb)
 		ext4l_close_internal(true);
 
 	/* Initialise message buffer for recording ext4 messages */
@@ -403,11 +392,6 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 		goto err_free_buf;
 	}
 
-	/* Save device info for later operations */
-	ext4l_dev_desc = fs_dev_desc;
-	if (fs_partition)
-		memcpy(&ext4l_part, fs_partition, sizeof(ext4l_part));
-
 	/* Set block device for buffer I/O */
 	ext4l_set_blk_dev(fs_dev_desc->bdev, fs_partition);
 
@@ -431,7 +415,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	}
 
 	/* Store super_block for later operations */
-	ext4l_sb = sb;
+	efs.sb = sb;
 
 	/* Free mount context - no longer needed after successful mount */
 	kfree(ctx);
@@ -523,12 +507,12 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 	if (depth > 8)
 		return -ELOOP;
 
-	if (!ext4l_mounted) {
+	if (!efs.mounted) {
 		ext4_debug("ext4l_resolve_path: filesystem not mounted\n");
 		return -ENODEV;
 	}
 
-	dir = ext4l_sb->s_root->d_inode;
+	dir = efs.sb->s_root->d_inode;
 
 	if (!path || !*path || (strcmp(path, "/") == 0)) {
 		*inodep = dir;
@@ -570,7 +554,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 			}
 			dentry->d_name.name = "..";
 			dentry->d_name.len = 2;
-			dentry->d_sb = ext4l_sb;
+			dentry->d_sb = efs.sb;
 			dentry->d_parent = NULL;
 
 			result = ext4_lookup(dir, dentry, 0);
@@ -605,7 +589,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 
 		dentry->d_name.name = component;
 		dentry->d_name.len = strlen(component);
-		dentry->d_sb = ext4l_sb;
+		dentry->d_sb = efs.sb;
 		dentry->d_parent = NULL;
 
 		result = ext4_lookup(dir, dentry, 0);
@@ -731,7 +715,7 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 	namebuf[namelen] = '\0';
 
 	/* Look up the inode to get file size */
-	inode = ext4_iget(ext4l_sb, ino, 0);
+	inode = ext4_iget(efs.sb, ino, 0);
 	if (IS_ERR(inode)) {
 		printf(" %8s   %s\n", "?", namebuf);
 		return 0;
@@ -896,14 +880,14 @@ static int ext4l_resolve_file(const char *path, struct dentry **dir_dentryp,
 	const char *basename;
 	int ret;
 
-	if (!ext4l_sb)
+	if (!efs.sb)
 		return -ENODEV;
 
 	if (!path)
 		return -EINVAL;
 
 	/* Check if filesystem is mounted read-write */
-	if (ext4l_sb->s_flags & SB_RDONLY)
+	if (efs.sb->s_flags & SB_RDONLY)
 		return -EROFS;
 
 	/* Parse path to get parent directory and basename */
@@ -1196,7 +1180,7 @@ int ext4l_unlink(const char *filename)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(efs.sb);
 	}
 
 out:
@@ -1239,7 +1223,7 @@ int ext4l_mkdir(const char *dirname)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(efs.sb);
 	}
 
 out:
@@ -1298,7 +1282,7 @@ int ext4l_ln(const char *filename, const char *linkname)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(efs.sb);
 	}
 
 out:
@@ -1349,7 +1333,7 @@ int ext4l_rename(const char *old_path, const char *new_path)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(efs.sb);
 	}
 
 out_new:
@@ -1379,7 +1363,7 @@ void ext4l_close(void)
  * @skip_last: true if we need to skip the last_ino entry
  *
  * The filesystem stays mounted while directory streams are open (ext4l_close
- * checks ext4l_open_dirs), so we can keep direct pointers to inodes.
+ * checks efs.open_dirs), so we can keep direct pointers to inodes.
  */
 struct ext4l_dir {
 	struct fs_dir_stream parent;
@@ -1451,7 +1435,7 @@ static int ext4l_opendir_actor(struct dir_context *ctx, const char *name,
 	}
 
 	/* Look up inode to get size and other attributes */
-	inode = ext4_iget(ext4l_sb, ino, 0);
+	inode = ext4_iget(efs.sb, ino, 0);
 	if (!IS_ERR(inode)) {
 		dent->size = inode->i_size;
 		/* Refine type from inode mode if needed */
@@ -1483,7 +1467,7 @@ int ext4l_opendir(const char *filename, struct fs_dir_stream **dirsp)
 	struct inode *inode;
 	int ret;
 
-	if (!ext4l_mounted)
+	if (!efs.mounted)
 		return -ENODEV;
 
 	ret = ext4l_resolve_path(filename, &inode);
@@ -1511,7 +1495,7 @@ int ext4l_opendir(const char *filename, struct fs_dir_stream **dirsp)
 	}
 
 	/* Increment open dir count to prevent unmount */
-	ext4l_open_dirs++;
+	efs.open_dirs++;
 
 	*dirsp = (struct fs_dir_stream *)dir;
 
@@ -1524,7 +1508,7 @@ int ext4l_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
 	struct ext4l_readdir_ctx ctx;
 	int ret;
 
-	if (!ext4l_mounted)
+	if (!efs.mounted)
 		return -ENODEV;
 
 	memset(&dir->dirent, '\0', sizeof(dir->dirent));
@@ -1567,6 +1551,6 @@ void ext4l_closedir(struct fs_dir_stream *dirs)
 	}
 
 	/* Decrement open dir count */
-	if (ext4l_open_dirs > 0)
-		ext4l_open_dirs--;
+	if (efs.open_dirs > 0)
+		efs.open_dirs--;
 }
