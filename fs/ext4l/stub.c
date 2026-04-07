@@ -343,7 +343,7 @@ int inode_generic_drop(struct inode *inode)
 void *alloc_inode_sb(struct super_block *sb, struct kmem_cache *cache,
 		     gfp_t gfp)
 {
-	return NULL;
+	return kmem_cache_alloc(cache, gfp);
 }
 
 /* inode_set_iversion is now a macro in linux/iversion.h */
