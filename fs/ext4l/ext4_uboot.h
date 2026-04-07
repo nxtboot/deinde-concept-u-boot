@@ -263,8 +263,18 @@ void ext4l_msg_init(void);
 void ext4l_print_msgs(void);
 void ext4l_record_msg(const char *msg, int len);
 
-/* ext4l interface functions (interface.c) */
-struct blk_desc *ext4l_get_blk_dev(void);
+/**
+ * ext4l_get_blk() - Get the current block device
+ *
+ * Return: Block udevice, or NULL if not mounted
+ */
+struct udevice *ext4l_get_blk(void);
+
+/**
+ * ext4l_get_partition() - Get the current partition info
+ *
+ * Return: Partition info pointer, or NULL if not mounted
+ */
 struct disk_partition *ext4l_get_partition(void);
 
 #endif /* __EXT4_UBOOT_H__ */

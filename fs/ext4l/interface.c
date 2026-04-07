@@ -31,7 +31,7 @@ static struct blk_desc *ext4l_dev_desc;
 static struct disk_partition ext4l_part;
 
 /* Global block device tracking for buffer I/O */
-static struct blk_desc *ext4l_blk_dev;
+static struct udevice *ext4l_blk_dev;
 static struct disk_partition ext4l_partition;
 static int ext4l_mounted;
 
@@ -42,11 +42,11 @@ static int ext4l_open_dirs;
 static struct super_block *ext4l_sb;
 
 /**
- * ext4l_get_blk_dev() - Get the current block device
+ * ext4l_get_blk() - Get the current block device
  *
  * Return: Block device descriptor or NULL if not mounted
  */
-struct blk_desc *ext4l_get_blk_dev(void)
+struct udevice *ext4l_get_blk(void)
 {
 	if (!ext4l_mounted)
 		return NULL;
@@ -123,7 +123,8 @@ int ext4l_statfs(struct fs_statfs *stats)
  * @blk_dev: Block device descriptor
  * @partition: Partition info (can be NULL for whole disk)
  */
-void ext4l_set_blk_dev(struct blk_desc *blk_dev, struct disk_partition *partition)
+void ext4l_set_blk_dev(struct udevice *blk_dev,
+		       struct disk_partition *partition)
 {
 	ext4l_blk_dev = blk_dev;
 	if (partition)
@@ -408,7 +409,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 		memcpy(&ext4l_part, fs_partition, sizeof(ext4l_part));
 
 	/* Set block device for buffer I/O */
-	ext4l_set_blk_dev(fs_dev_desc, fs_partition);
+	ext4l_set_blk_dev(fs_dev_desc->bdev, fs_partition);
 
 	/*
 	 * Test if device supports writes by writing back the same data.

@@ -10,6 +10,7 @@
  */
 
 #include <blk.h>
+#include <dm.h>
 #include <membuf.h>
 #include <part.h>
 #include <malloc.h>
@@ -500,26 +501,28 @@ void free_buffer_head(struct buffer_head *bh)
  */
 int ext4l_read_block(sector_t block, size_t size, void *buffer)
 {
-	struct blk_desc *blk_dev;
 	struct disk_partition *part;
-	lbaint_t sector;
-	lbaint_t sector_count;
-	unsigned long n;
+	lbaint_t sector, count;
+	struct blk_desc *desc;
+	struct udevice *blk;
+	ulong n;
 
-	blk_dev = ext4l_get_blk_dev();
+	blk = ext4l_get_blk();
 	part = ext4l_get_partition();
-	if (!blk_dev)
+	if (!blk)
 		return -EIO;
 
+	desc = dev_get_uclass_plat(blk);
+
 	/* Convert block to sector */
-	sector = (block * size) / blk_dev->blksz + part->start;
-	sector_count = size / blk_dev->blksz;
+	sector = (block * size) / desc->blksz + part->start;
+	count = size / desc->blksz;
 
-	if (sector_count == 0)
-		sector_count = 1;
+	if (count == 0)
+		count = 1;
 
-	n = blk_dread(blk_dev, sector, sector_count, buffer);
-	if (n != sector_count)
+	n = blk_read(blk, sector, count, buffer);
+	if (n != count)
 		return -EIO;
 
 	return 0;
@@ -534,26 +537,28 @@ int ext4l_read_block(sector_t block, size_t size, void *buffer)
  */
 int ext4l_write_block(sector_t block, size_t size, void *buffer)
 {
-	struct blk_desc *blk_dev;
 	struct disk_partition *part;
-	lbaint_t sector;
-	lbaint_t sector_count;
-	unsigned long n;
+	lbaint_t sector, count;
+	struct blk_desc *desc;
+	struct udevice *blk;
+	ulong n;
 
-	blk_dev = ext4l_get_blk_dev();
+	blk = ext4l_get_blk();
 	part = ext4l_get_partition();
-	if (!blk_dev)
+	if (!blk)
 		return -EIO;
 
+	desc = dev_get_uclass_plat(blk);
+
 	/* Convert block to sector */
-	sector = (block * size) / blk_dev->blksz + part->start;
-	sector_count = size / blk_dev->blksz;
+	sector = (block * size) / desc->blksz + part->start;
+	count = size / desc->blksz;
 
-	if (sector_count == 0)
-		sector_count = 1;
+	if (count == 0)
+		count = 1;
 
-	n = blk_dwrite(blk_dev, sector, sector_count, buffer);
-	if (n != sector_count)
+	n = blk_write(blk, sector, count, buffer);
+	if (n != count)
 		return -EIO;
 
 	return 0;
