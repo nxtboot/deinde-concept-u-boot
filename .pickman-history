@@ -54311,3 +54311,186 @@ The branch `cherry-91bb2361941` is ready for pushing.
 
 ---
 
+## 2026-04-07: us/next
+
+Branch: cherry-78dafa8e9e5
+
+Commits:
+- 78dafa8e9e5 mtd: spinor: winbond: Describe several chips
+- 75153d92a5c nand: raw: Kconfig: Correct some dependency issues
+- 5572d941007 cmd: mtd: benchmark: use lldiv() instead of 64-bit division
+- bd763a44830 spl: nand: typo 'destintion'
+- 8b984b5a397 mtd: spinand: add support for FudanMicro FM25S01A
+- c675162bcb3 mtd: nand: raw: Drop SYS_NAND_SOFT_ECC from NAND_SANDBOX
+- c3c758c20d3 spi: spi-mem: fix coverity report CID 537478
+- ba54a70f5c9 spi: airoha: remove unnecessary operation adjust_op_size
+- ba04299ff78 spi: airoha: add support of dual/quad wires spi modes to exec_op() handler
+- a7c3319bc00 spi: airoha: add dma support
+- 8bd05b632a6 spi: airoha: return an error for continuous mode dirmap creation cases
+- 531e1fe34be spi: airoha: support of dualio/quadio flash reading commands
+- 2996c2a7a8e spi: airoha: buffer must be 0xff-ed before writing
+- 00d81bd52b1 dts: airoha: en7523: enable double speed flash reading
+- ad811a65252 spi: airoha: avoid setting of page/oob sizes in REG_SPI_NFI_PAGEFMT
+- a0f6931c32a spi: airoha: reduce the number of modification of REG_SPI_NFI_CNFG and REG_SPI_NFI_SECCUS_SIZE registers
+- 269a4d65566 spi: airoha: set custom sector size equal to flash page size
+- b49b859ecb7 spi: airoha: avoid usage of flash specific parameters
+- 19548adfe9e spi: airoha: en7523: workaround flash damaging if UART_TXD was short to GND
+- 2d226a735e0 smbios: Fix warning when building with clang
+- 1c13c9bbb54 lib: optee: forbid OP-TEE OS loading without adding OP-TEE OS reserved-memory nodes
+- 829c2f02202 .mailmap: add Raymond Mao
+- c2b25f8f66a mailmap: Add entry for Sam Protsenko
+- 942b85636fc Merge branch 'u-boot-nand-20250918' of https://source.denx.de/u-boot/custodians/u-boot-nand-flash
+
+### Conversation log
+The repository state is clean (only untracked files, no staged/unstaged changes). Let me proceed with creating and checking out the new branch based on ci/master.
+
+Branch created. Now let me cherry-pick the first commit:
+
+First commit succeeded. Let me check the delta and run a build test:
+
+Delta matches perfectly. Now running the build test:
+
+Build passed. Now continuing with the second commit:
+
+Delta matches. Running build test:
+
+Build passed. Continuing with commit 3:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 4:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 5:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 6:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 7:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 8:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 9:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 10:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 11:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 12:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 13:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 14:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 15:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 16:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 17:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 18:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 19:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 20:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 21:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 22:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 23:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-picking the final commit (commit 24 - the merge commit):
+
+The merge commit results in an empty commit (which is expected since we cherry-picked all its individual commits). Let me commit it with --allow-empty as instructed:
+
+The merge commit is empty (expected since we applied all the individual commits already), but it preserves the merge commit message for history tracking. Build test:
+
+Build passed. Now let me verify all 24 commits are present with git log:
+
+All 24 commits are present in the log. Now running the final build test:
+
+## Final Status
+
+**Build result:** OK (sandbox build passes)
+
+**Cherry-pick summary:**
+- All 24 commits successfully cherry-picked from `us/next` branch
+- Branch `cherry-78dafa8e9e5` created from `ci/master`
+
+**Commits cherry-picked (in order):**
+1. `78dafa8e9e5` → `afc9e5dc968` - mtd: spinor: winbond: Describe several chips
+2. `75153d92a5c` → `d34c57aceba` - nand: raw: Kconfig: Correct some dependency issues
+3. `5572d941007` → `913482cb775` - cmd: mtd: benchmark: use lldiv() instead of 64-bit division
+4. `bd763a44830` → `25c53758d7b` - spl: nand: typo 'destintion'
+5. `8b984b5a397` → `2c3396a09fc` - mtd: spinand: add support for FudanMicro FM25S01A
+6. `c675162bcb3` → `01eb61c276a` - mtd: nand: raw: Drop SYS_NAND_SOFT_ECC from NAND_SANDBOX
+7. `c3c758c20d3` → `9bcc9a361d4` - spi: spi-mem: fix coverity report CID 537478
+8. `ba54a70f5c9` → `65689b96653` - spi: airoha: remove unnecessary operation adjust_op_size
+9. `ba04299ff78` → `8cd8d4905d7` - spi: airoha: add support of dual/quad wires spi modes to exec_op() handler
+10. `a7c3319bc00` → `cb48f234e5e` - spi: airoha: add dma support
+11. `8bd05b632a6` → `3d51243cec1` - spi: airoha: return an error for continuous mode dirmap creation cases
+12. `531e1fe34be` → `a21945d1f65` - spi: airoha: support of dualio/quadio flash reading commands
+13. `2996c2a7a8e` → `2025d02bba5` - spi: airoha: buffer must be 0xff-ed before writing
+14. `00d81bd52b1` → `afa72dff7aa` - dts: airoha: en7523: enable double speed flash reading
+15. `ad811a65252` → `8bae95853d8` - spi: airoha: avoid setting of page/oob sizes in REG_SPI_NFI_PAGEFMT
+16. `a0f6931c32a` → `6526a25c799` - spi: airoha: reduce the number of modification of REG_SPI_NFI_CNFG and REG_SPI_NFI_SECCUS_SIZE registers
+17. `269a4d65566` → `a43f726de52` - spi: airoha: set custom sector size equal to flash page size
+18. `b49b859ecb7` → `857501cef0a` - spi: airoha: avoid usage of flash specific parameters
+19. `19548adfe9e` → `d630d1511d5` - spi: airoha: en7523: workaround flash damaging if UART_TXD was short to GND
+20. `2d226a735e0` → `3e84f97ea01` - smbios: Fix warning when building with clang
+21. `1c13c9bbb54` → `46638361070` - lib: optee: forbid OP-TEE OS loading without adding OP-TEE OS reserved-memory nodes
+22. `829c2f02202` → `78a8851f966` - .mailmap: add Raymond Mao
+23. `c2b25f8f66a` → `8f2c60f2921` - mailmap: Add entry for Sam Protsenko
+24. `942b85636fc` → `3ec976f235e` - Merge branch 'u-boot-nand-20250918' (empty merge commit, preserved for history)
+
+**Fix-ups made:** None - all cherry-picks applied cleanly
+
+**Concerning deltas:** None - all commit deltas matched exactly between original and cherry-picked versions
+
+**Notes:**
+- Commit 20 (`smbios: Fix warning when building with clang`) required auto-merging of `include/smbios.h` but completed successfully
+- The final merge commit (24) was empty as expected since we cherry-picked all individual commits first, but it was preserved with `--allow-empty` to maintain the commit message/history
+
+The branch `cherry-78dafa8e9e5` is ready for pushing.
+
+---
+
