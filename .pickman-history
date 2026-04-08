@@ -54724,89 +54724,75 @@ All 12 commits are present. Let me provide the final status summary:
 
 ## 2026-04-08: us/next
 
-Branch: cherry-46e0ac55e56
+Branch: cherry-85a7e45c335
 
 Commits:
-- 46e0ac55e56 rpi: Fix compilation with larger configs
-- 2c39d975f87 pinctrl: bcm283x: Add GPIO pull-up/down control for BCM2835 and BCM2711
-- 15c719174cf rpi: Use the U-Boot control FDT for fdt_addr
-- 5b702cf4d09 rpi: Fix DRAM size reporting to show total RAM
-- 31bf4a1c308 Merge tag 'rpi-2026.01-rc3' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+- 85a7e45c335 net: phy: dp83869: fix STRAP_OPMODE bitmask
+- 7c1b99bd601 net: phy: broadcom: fix RGMII delays for BCM54210E
+- 5e9f5ea30f6 Azure: Rework jobs for disk space and 29 jobs
+- 532582d217f Merge tag 'net-20251201' of https://source.denx.de/u-boot/custodians/u-boot-net
 
 ### Conversation log
-The repository is clean (only untracked files present, no uncommitted changes). Let me proceed to create the new branch based on ci/master.
+The repository has some untracked files but is otherwise clean (no uncommitted changes). Let me proceed with creating the new branch from ci/master.
 
-Branch created. Now let me cherry-pick the first commit:
+Good, the branch is created. Now let me cherry-pick the first commit (net: phy: dp83869: fix STRAP_OPMODE bitmask):
 
-First cherry-pick succeeded. Let me verify the delta and run the build test:
+First commit applied successfully. Let me verify the delta and run the build test:
 
-The delta matches exactly (1 file changed, 2 insertions, 1 deletion). Now let me run the build test:
+The deltas match (1 file changed, 3 insertions, 2 deletions). Now let me run the build test:
 
-Build passed. Now let me cherry-pick the second commit:
+Build passed. Now let me cherry-pick the second commit (net: phy: broadcom: fix RGMII delays for BCM54210E):
 
-Second cherry-pick succeeded. Let me verify the delta:
+Second commit applied. Let me verify the delta:
 
-Delta matches exactly (2 files, 112 insertions, 3 deletions). Now let me run the build test:
+Deltas match (1 file changed, 2 insertions, 2 deletions). Now run the build test:
 
-Build passed. Now let me cherry-pick the third commit:
+Build passed. Now let me cherry-pick the third commit (Azure: Rework jobs for disk space and 29 jobs):
 
-Third cherry-pick succeeded. Let me verify the delta:
+Third commit applied (there was an auto-merge but no conflict). Let me verify the delta:
 
-Delta matches exactly (1 file, 10 insertions, 7 deletions). Now build test:
+Deltas match exactly (1 file changed, 107 insertions, 30 deletions). Now run the build test:
 
-Build passed. Now let me cherry-pick the fourth commit:
+Build passed. Now let me cherry-pick the fourth commit which is a merge commit (Merge tag 'net-20251201'):
 
-Fourth cherry-pick succeeded. Let me verify the delta:
+The merge commit results in an empty commit (which is expected for a merge when cherry-picking with -m 1). I need to continue with --allow-empty to preserve this commit as instructed:
 
-Delta matches exactly (1 file, 15 insertions, 1 deletion). Now build test:
+Let me commit the empty commit manually:
 
-Build passed. Now let me cherry-pick the fifth commit (the merge commit - needs special handling):
+The merge commit was preserved as an empty commit. Let me verify the commit message was properly captured:
 
-The merge commit is empty (as expected since all the commits in the merge are already cherry-picked). I need to commit it as empty to preserve the merge commit message for history tracking:
+The merge commit is preserved as expected - it's empty because the changes from the underlying commits (dp83869 and broadcom fixes) were already picked earlier in this series. The commit message with the tag information is preserved.
 
-Fifth commit (merge) cherry-picked successfully as an empty commit. Let me verify the delta:
+Now let me run the build test for this commit:
 
-The cherry-picked merge commit is empty (which is expected since we already cherry-picked the individual commits), while the original merge commit shows the combined changes. This is correct behavior - the individual changes are already in our branch, so the merge commit appears empty but preserves the history.
+Build passed. Now let me verify the final state with git log:
 
-Let me run build test:
-
-Build passed. Now let me verify all commits are present with `git log --oneline -n 7`:
-
-All 5 commits are present:
-1. `0cc43915734` - rpi: Fix compilation with larger configs
-2. `89667eaabe4` - pinctrl: bcm283x: Add GPIO pull-up/down control for BCM2835 and BCM2711  
-3. `b65327eaf5c` - rpi: Use the U-Boot control FDT for fdt_addr
-4. `1b71a5d46bd` - rpi: Fix DRAM size reporting to show total RAM
-5. `b1a0d1b4c41` - Merge tag 'rpi-2026.01-rc3' ...
-
-Now let me run the final build test to verify everything works together:
+All 4 commits are present. Let me run the final build test to verify everything works together:
 
 ## Final Status Report
 
 **Cherry-pick completed successfully!**
 
 ### Summary
+- **Branch created**: `cherry-85a7e45c335` (based on `ci/master`)
+- **Build result**: ✅ OK (sandbox build passes)
+- **Fix-ups made**: None required
+- **Commits with concerning deltas**: None
 
-| Commit | Subject | Status | Delta |
-|--------|---------|--------|-------|
-| `46e0ac55e56` → `0cc43915734` | rpi: Fix compilation with larger configs | ✅ OK | Matches exactly |
-| `2c39d975f87` → `89667eaabe4` | pinctrl: bcm283x: Add GPIO pull-up/down control for BCM2835 and BCM2711 | ✅ OK | Matches exactly |
-| `15c719174cf` → `b65327eaf5c` | rpi: Use the U-Boot control FDT for fdt_addr | ✅ OK | Matches exactly |
-| `5b702cf4d09` → `1b71a5d46bd` | rpi: Fix DRAM size reporting to show total RAM | ✅ OK | Matches exactly |
-| `31bf4a1c308` → `b1a0d1b4c41` | Merge tag 'rpi-2026.01-rc3'... | ✅ OK (empty) | Expected empty |
+### Commits Applied (4 total):
 
-### Build Result
-- **Final build:** ✅ OK (sandbox board builds successfully)
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | a2ea11f16a9 | net: phy: dp83869: fix STRAP_OPMODE bitmask | ✅ Clean |
+| 2 | 371c6181d1f | net: phy: broadcom: fix RGMII delays for BCM54210E | ✅ Clean |
+| 3 | 34ee84bcb69 | Azure: Rework jobs for disk space and 29 jobs | ✅ Clean (auto-merged) |
+| 4 | a8157b0d9bd | Merge tag 'net-20251201' | ✅ Empty (expected) |
 
-### Fix-ups Made
-- None required - all cherry-picks applied cleanly
-
-### Commits with Concerning Deltas
-- None - all regular commits matched their original deltas exactly
-- The merge commit is intentionally empty (all individual commits were already cherry-picked)
-
-### Branch Status
-The branch `cherry-46e0ac55e56` is ready for pushing with 5 commits ahead of `ci/master`.
+### Notes:
+- The merge commit (532582d217f) resulted in an empty commit as expected - its changes were already applied via commits #1 and #2 which are the underlying commits it merged
+- Commit #3 had an auto-merge in `.azure-pipelines.yml` but no conflicts
+- All deltas matched their original commits exactly
+- The branch is ready for pushing
 
 ---
 
