@@ -500,13 +500,15 @@ static int ext4l_read_symlink(struct inode *inode, char *target, size_t max_len)
 /**
  * ext4l_resolve_path_internal() - Resolve path with symlink following
  *
+ * @state: Per-mount state
  * @path: Path to resolve
  * @inodep: Output inode pointer
  * @depth: Current recursion depth (for symlink loop detection)
  * Return: 0 on success, negative on error
  */
-static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
-				       int depth)
+static int ext4l_resolve_path_internal(struct ext4l_state *state,
+				       const char *path,
+				       struct inode **inodep, int depth)
 {
 	struct inode *dir;
 	struct dentry *dentry, *result;
@@ -517,12 +519,12 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 	if (depth > 8)
 		return -ELOOP;
 
-	if (!efs.mounted) {
+	if (!state->mounted) {
 		ext4_debug("ext4l_resolve_path: filesystem not mounted\n");
 		return -ENODEV;
 	}
 
-	dir = efs.sb->s_root->d_inode;
+	dir = state->sb->s_root->d_inode;
 
 	if (!path || !*path || (strcmp(path, "/") == 0)) {
 		*inodep = dir;
@@ -564,7 +566,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 			}
 			dentry->d_name.name = "..";
 			dentry->d_name.len = 2;
-			dentry->d_sb = efs.sb;
+			dentry->d_sb = state->sb;
 			dentry->d_parent = NULL;
 
 			result = ext4_lookup(dir, dentry, 0);
@@ -599,7 +601,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 
 		dentry->d_name.name = component;
 		dentry->d_name.len = strlen(component);
-		dentry->d_sb = efs.sb;
+		dentry->d_sb = state->sb;
 		dentry->d_parent = NULL;
 
 		result = ext4_lookup(dir, dentry, 0);
@@ -674,8 +676,8 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 			free(path_copy);
 
 			/* Recursively resolve the new path */
-			ret = ext4l_resolve_path_internal(new_path, inodep,
-							  depth + 1);
+			ret = ext4l_resolve_path_internal(state, new_path,
+							  inodep, depth + 1);
 			free(new_path);
 			return ret;
 		}
@@ -697,7 +699,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
  */
 static int ext4l_resolve_path(const char *path, struct inode **inodep)
 {
-	return ext4l_resolve_path_internal(path, inodep, 0);
+	return ext4l_resolve_path_internal(&efs, path, inodep, 0);
 }
 
 /**

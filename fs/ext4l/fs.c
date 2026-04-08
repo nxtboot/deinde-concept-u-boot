@@ -22,6 +22,15 @@
 #include <dm/device-internal.h>
 
 /**
+ * struct ext4l_fs_priv - Private data for ext4l UCLASS_FS devices
+ *
+ * @state: Per-mount state
+ */
+struct ext4l_fs_priv {
+	struct ext4l_state state;
+};
+
+/**
  * struct ext4l_dir_priv - Private info for ext4l directory devices
  *
  * @strm: Directory stream from ext4l_opendir(), or NULL. Only one listing
@@ -119,9 +128,10 @@ static const struct fs_ops ext4l_vfs_ops = {
 };
 
 U_BOOT_DRIVER(ext4_fs) = {
-	.name	= "ext4_fs",
-	.id	= UCLASS_FS,
-	.ops	= &ext4l_vfs_ops,
+	.name		= "ext4_fs",
+	.id		= UCLASS_FS,
+	.ops		= &ext4l_vfs_ops,
+	.priv_auto	= sizeof(struct ext4l_fs_priv),
 };
 
 /* ext4l directory driver */
