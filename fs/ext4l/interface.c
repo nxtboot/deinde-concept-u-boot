@@ -10,6 +10,7 @@
  */
 
 #include <blk.h>
+#include <dm.h>
 #include <env.h>
 #include <ext4l.h>
 #include <fs.h>
@@ -108,15 +109,14 @@ int ext4l_statfs(struct fs_statfs *stats)
 }
 
 /**
- * ext4l_set_blk_dev() - Set the block device for ext4l operations
+ * ext4l_set_blk() - Set the block device for ext4l operations
  *
- * @blk_dev: Block device descriptor
+ * @blk: Block device descriptor
  * @partition: Partition info (can be NULL for whole disk)
  */
-void ext4l_set_blk_dev(struct udevice *blk_dev,
-		       struct disk_partition *partition)
+void ext4l_set_blk(struct udevice *blk, struct disk_partition *partition)
 {
-	efs.blk = blk_dev;
+	efs.blk = blk;
 	if (partition)
 		memcpy(&efs.partition, partition, sizeof(efs.partition));
 	else
@@ -125,9 +125,9 @@ void ext4l_set_blk_dev(struct udevice *blk_dev,
 }
 
 /**
- * ext4l_clear_blk_dev() - Clear block device (unmount)
+ * ext4l_clear_blk() - Clear block device (unmount)
  */
-void ext4l_clear_blk_dev(void)
+void ext4l_clear_blk(void)
 {
 	/* Clear buffer cache before unmounting */
 	bh_cache_clear();
@@ -207,31 +207,32 @@ static void ext4l_free_sb(struct super_block *sb, bool skip_io)
 	kfree(sbi->s_blockgroup_lock);
 	kfree(sbi);
 
-	/* Free structures allocated in ext4l_probe() */
+	/* Free structures allocated in ext4l_mount() */
 	kfree(sb->s_bdev->bd_mapping);
 	kfree(sb->s_bdev);
 	kfree(sb);
 }
 
 /**
- * ext4l_close_internal() - Internal close function
+ * ext4l_umount_internal() - Internal close function
+ * @state: Per-mount state to initialise
  * @skip_io: If true, skip all I/O operations (for forced close)
  *
- * When called from the safeguard in ext4l_probe(), the device may be
+ * When called from the safeguard in ext4l_mount(), the device may be
  * invalid (rebound to a different file), so skip_io should be true to
  * avoid crashes when trying to write to the device.
  */
-static void ext4l_close_internal(bool skip_io)
+static void ext4l_umount_internal(struct ext4l_state *state, bool skip_io)
 {
-	struct super_block *sb = efs.sb;
+	struct super_block *sb = state->sb;
 
-	if (efs.open_dirs > 0)
+	if (state->open_dirs > 0)
 		return;
 
 	if (sb)
 		ext4l_free_sb(sb, skip_io);
 
-	efs.sb = NULL;
+	state->sb = NULL;
 
 	/*
 	 * Force cleanup of any remaining journal_heads before clearing
@@ -242,7 +243,7 @@ static void ext4l_close_internal(bool skip_io)
 	 */
 	bh_cache_release_jbd();
 
-	ext4l_clear_blk_dev();
+	ext4l_clear_blk();
 
 	/*
 	 * Clean up ext4 and JBD2 global state so it can be properly
@@ -263,9 +264,10 @@ static void ext4l_close_internal(bool skip_io)
 	destroy_inodecache();
 }
 
-int ext4l_probe(struct blk_desc *fs_dev_desc,
+int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 		struct disk_partition *fs_partition)
 {
+	struct blk_desc *fs_dev_desc = dev_get_uclass_plat(dev);
 	struct ext4_fs_context *ctx;
 	struct super_block *sb;
 	struct fs_context *fc;
@@ -274,19 +276,10 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	u8 *buf;
 	int ret;
 
-	if (!fs_dev_desc)
-		return -EINVAL;
+	memset(state, '\0', sizeof(*state));
 
-	/*
-	 * Ensure any previous mount is properly closed before mounting again.
-	 * This prevents resource leaks if probe is called without close.
-	 *
-	 * Since we're being called while a previous mount exists, we can't
-	 * trust the old device state (it may have been rebound to a different
-	 * file). Use skip_io=true to skip all I/O during close.
-	 */
-	if (efs.sb)
-		ext4l_close_internal(true);
+	if (!dev)
+		return -EINVAL;
 
 	/* Initialise message buffer for recording ext4 messages */
 	ext4l_msg_init();
@@ -393,7 +386,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	}
 
 	/* Set block device for buffer I/O */
-	ext4l_set_blk_dev(fs_dev_desc->bdev, fs_partition);
+	ext4l_set_blk(dev, fs_partition);
 
 	/*
 	 * Test if device supports writes by writing back the same data.
@@ -415,7 +408,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	}
 
 	/* Store super_block for later operations */
-	efs.sb = sb;
+	state->sb = sb;
 
 	/* Free mount context - no longer needed after successful mount */
 	kfree(ctx);
@@ -442,6 +435,23 @@ err_free_sb:
 err_exit_es:
 	ext4_exit_es();
 	return ret;
+}
+
+int ext4l_probe(struct blk_desc *fs_dev_desc,
+		struct disk_partition *fs_partition)
+{
+	if (!fs_dev_desc)
+		return -EINVAL;
+
+	/*
+	 * The legacy interface may call probe without a preceding close.
+	 * Clean up any previous mount to prevent resource leaks. Use
+	 * skip_io=true because the old device may have been rebound.
+	 */
+	if (efs.sb)
+		ext4l_umount_internal(&efs, true);
+
+	return ext4l_mount(&efs, fs_dev_desc->bdev, fs_partition);
 }
 
 /**
@@ -1347,9 +1357,14 @@ out_old:
 	return ret;
 }
 
+void ext4l_umount(struct ext4l_state *state)
+{
+	ext4l_umount_internal(state, false);
+}
+
 void ext4l_close(void)
 {
-	ext4l_close_internal(false);
+	ext4l_umount(&efs);
 }
 
 /**

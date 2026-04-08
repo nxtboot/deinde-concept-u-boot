@@ -43,18 +43,36 @@ struct ext4l_state {
 #endif
 
 /**
- * ext4l_probe() - Probe a block device for an ext4 filesystem
+ * ext4l_mount() - Mount an ext4 filesystem
  *
- * @fs_dev_desc: Block device descriptor
+ * @state: Per-mount state to initialise
+ * @dev: Block device (struct udevice)
  * @fs_partition: Partition information
  * Return: 0 on success, -EINVAL if no device or invalid magic,
  *	   -ENOMEM on allocation failure, -EIO on read error
+ */
+int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
+		struct disk_partition *fs_partition);
+
+/**
+ * ext4l_probe() - Legacy probe: mount using the global state
+ *
+ * @fs_dev_desc: Block device descriptor
+ * @fs_partition: Partition information
+ * Return: 0 on success, negative on error
  */
 int ext4l_probe(struct blk_desc *fs_dev_desc,
 		struct disk_partition *fs_partition);
 
 /**
- * ext4l_close() - Close the ext4 filesystem
+ * ext4l_umount() - Unmount an ext4 filesystem
+ *
+ * @state: Per-mount state to tear down
+ */
+void ext4l_umount(struct ext4l_state *state);
+
+/**
+ * ext4l_close() - Legacy close: unmount using the global state
  */
 void ext4l_close(void);
 
