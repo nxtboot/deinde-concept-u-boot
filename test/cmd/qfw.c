@@ -45,7 +45,7 @@ CMD_TEST(cmd_test_qfw_list, UTF_CONSOLE);
 /* Test 'qfw dump' command */
 static int cmd_test_qfw_dump(struct unit_test_state *uts)
 {
-	if (IS_ENABLED(CONFIG_SANDBOX))
+	if (IS_ENABLED(CONFIG_SANDBOX) || IS_ENABLED(CONFIG_RISCV))
 		return -EAGAIN;
 
 	ut_assertok(run_command("qfw dump", 0));
@@ -104,7 +104,7 @@ static int cmd_test_qfw_read(struct unit_test_state *uts)
 {
 	char *ptr = map_sysmem(0x1000, 0x100);
 
-	if (IS_ENABLED(CONFIG_SANDBOX))
+	if (IS_ENABLED(CONFIG_SANDBOX) || IS_ENABLED(CONFIG_RISCV))
 		return -EAGAIN;
 
 	ut_assertok(run_command("qfw read 1000 etc/acpi/rsdp", 0));

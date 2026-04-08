@@ -29,6 +29,7 @@ U-Boot API documentation
    serial
    setjmp
    sysreset
+   test
    timer
    unicode
    uthread
