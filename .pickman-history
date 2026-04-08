@@ -54624,213 +54624,101 @@ The branch is ready for pushing.
 
 ## 2026-04-08: us/next
 
-Branch: cherry-8385ecc8eff
+Branch: cherry-642a9e716e1
 
 Commits:
-- 8385ecc8eff upl: Fix buf array size
-- 2d7eee5a554 boot: pxe_utils: Fix memory allocation issues in overlay_dir handling
-- 9eeed950445 configs: Resync with savedefconfig
-- e8c10f9d244 rockchip: rk3588: Map SCMI shared memory area as non-cacheable
-- c5e6d2ab7eb Prepare v2026.01-rc3
-- 29f6afc6e39 imx91: fix pinmux macros for ENET1_TD3 and I2C2_SCL
-- 1312a503462 configs: colibri-imx7*: set 'fdtfile' generically in PREBOOT
-- 091df90a89e arm: dts: imx8ulp: Ensure mu@27020000 and lpuart5 availability during all boot phases
-- e2c435bd0aa arm: dts: imx8ulp: Disable wdog3 until DM watchdog support is available
-- bd19527c755 Docker: Update QEMU to 10.0.6
-- bc4a1e56bfc Dockerfile: Include python3-tk for FATtools
-- 4dfa4c14b8e Dockerfile: Update building trace tools slightly
-- 0ae3dc6809f CI: Update to latest container
-- d49e48462b5 Merge tag 'u-boot-imx-master-20251126' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+- 642a9e716e1 cmd/extension: avoid NULL pointer dereference
+- e3b7dd93d39 power: domain: ti: fix ti_pd_get() to return after verifying transition
+- cc0ce9e8c49 net: ti: am65-cpsw-nuss: Ignore disabled ethernet ports
+- 3afc99727ad board: ti: am6x: Restore do_board_detect functions
+- f06e1c04bff board: ti: am335x: Fix DM_TPS65910 condition
+- 70ab39e2305 board: adi: Fix missing semicolon in nfsroot
+- 5d7c080ae5d bootstd: rauc: Don't check root part filesystem
+- 962711498dd bootstd: rauc: Only require partitions for one slot
+- 2736ed925e3 usb: USB_EHCI_PCI depends on PCI
+- 610a3eb27ea configs: toradex-smarc-imx95: set spl_stack
+- 7dbcc316a64 usb/xhci: avoid noisy 'Register NbrPorts' message
+- 781e6e35a06 Merge branch 'master' of git://source.denx.de/u-boot-usb
 
 ### Conversation log
-The repository has some untracked files but is otherwise clean. Let me proceed to create and checkout the new branch based on ci/master.
+Now let me start cherry-picking the commits one by one. Let me start with the first commit:
 
-Good, branch created. Now let me start cherry-picking the commits. Let me start with the first commit.
+Good, commit 1 looks identical. Now let's run the build test:
 
-First cherry-pick successful. Let me verify the delta and run a build test.
+Build successful. Now let's continue with commit 2:
 
-Delta looks good - identical changes. Now let me run the build test.
+Good, stats match. Let's run the build test:
 
-Build passed. Now let me continue with the second commit.
+There's a conflict. Let me check the conflict and try to resolve it:
 
-Conflict on the second cherry-pick. Let me check if this commit might already be applied in ci/master.
+Let me see what the original commit is trying to do:
 
-Not found by subject. Let me look at the conflict to try to resolve it.
+Interesting - the HEAD already has `CONFIG_SPL_POWER_TPS65910`. The conflict is because HEAD doesn't have the return statement at all, but the original already had the guard with the wrong config name. Let me check more context:
 
-I can see the conflict. The HEAD version has a redundant block handling the no fdtdir case. The incoming change simplifies this by just setting slash = "/" and letting the common code below handle the allocation. Let me look at what the original commit does:
+It looks like the ci/master already had this condition removed. Let me check the log of commits for this file to understand:
 
-Now let me see what the current state in ci/master looks like for this section:
+Let me check what exactly the original commit is trying to fix vs. what's currently in ci/master:
 
-I see - the ci/master version has a partial fix (it added the calloc in the else branch), but it's not the full fix from 2d7eee5a554. Let me resolve this conflict by taking the incoming change (which is the proper fix).
+So the guard commit (0b9ff085159) is NOT in ci/master. Let me check what is at that location in ci/master:
 
-I can see the conflict. The HEAD version has a block handling the "no fdtdir" case with its own allocation, while the incoming version just sets slash = "/" and lets the common code below handle the allocation. The incoming version is the correct fix. Let me resolve this by taking the incoming change:
+I see - ci/master doesn't have the guard at all. This cherry-pick is adding the CONFIG_SPL_POWER_TPS65910 guard which is the corrected version. Since ci/master doesn't have the guard and we're trying to add it, we should accept the incoming change:
 
-There's a duplicate `}`. Let me fix that:
+The delta is larger because we also picked up the guard code that wasn't in ci/master. Original was 2 lines changed, we have 8 lines changed (7+, 1-). Let me check what the difference is:
 
-That looks correct. Now I need to also check if there's a change to the `len` initialization that's part of the original commit. Let me check the variable declaration:
+I see - by using `--theirs` I accepted the full state of the file from upstream, which includes additional changes. This is actually more than just the fix - it includes the entire parent commit 0b9ff085159 as well. Let me amend the commit message to note this:
 
-Good, the `len = 0` initialization is already there. Now let me add the file and continue the cherry-pick:
+Now for the last commit (commit 12) which is a merge commit marked as "maybe already applied as ef1a6fc374f". Let me first verify if it's the same:
 
-Let me verify the delta and build:
+The patches are different - they're merging different branches and have different commit messages. Let me check what the original merge commit (781e6e35a06) contains:
 
-The delta is slightly different (9 insertions/14 deletions vs 9 insertions/11 deletions) due to the conflict resolution removing more lines (the existing partial fix in ci/master had additional lines). This is acceptable since the end result is correct. Let me run the build test:
+Let me check if ef1a6fc374f is in ci/master:
 
-Build passed. Now the third commit is marked as [QCONFIG RESYNC] and "maybe already applied as 1acf3c3ec39". Let me check:
+So ef1a6fc374f is not in ci/master. The original merge commit 781e6e35a06 merges the USB commits we've already cherry-picked. Since we've applied those individual commits already, cherry-picking the merge will likely result in an empty commit. Let me proceed with the merge commit:
 
-The commits are very different. The found commit (1acf3c3ec39) is a pickman record commit with many other cherry-picks, not a direct QCONFIG RESYNC. For [QCONFIG RESYNC] commits, I should skip the cherry-pick and run qconfig.py instead. Let me do that:
-
-The qconfig.py command seems to have finished quickly with no output, which might mean no changes were needed. Let me check if it created any commits:
-
-No new commit from qconfig.py. Let me check if there were any changes:
-
-No changes from qconfig.py - this means the defconfig state is already in sync. The resync was likely already captured by other commits or there's nothing to resync. Let me proceed to the next commit.
-
-Commit 4: e8c10f9d244 - "rockchip: rk3588: Map SCMI shared memory area as non-cacheable (maybe already applied as ed49fb48ff0)"
-
-The only differences are the commit hash and the cherry-pick tag in the found commit. This confirms that ed49fb48ff0 IS the cherry-pick of e8c10f9d244. I should SKIP this cherry-pick since it's already applied.
-
-Now commit 5: c5e6d2ab7eb - "Prepare v2026.01-rc3"
-
-Conflicts on version bump commit. Let me check the conflicts:
-
-The ci/master is at 2026.02 (release) while us/next has 2026.01-rc3 (older RC). This is a regression - I should NOT apply an older version. Let me abort this cherry-pick:
-
-The "Prepare v2026.01-rc3" commit should be skipped since ci/master is already at a newer version (2026.02). Let me continue with the next commit.
-
-Commit 6: 29f6afc6e39 - "imx91: fix pinmux macros for ENET1_TD3 and I2C2_SCL"
-
-Delta is identical. Let me run build test:
-
-Build passed. Continue with commit 7: 1312a503462 - "configs: colibri-imx7*: set 'fdtfile' generically in PREBOOT"
-
-Delta is identical. Build test:
-
-Build passed. Continue with commit 8: 091df90a89e - "arm: dts: imx8ulp: Ensure mu@27020000 and lpuart5 availability during all boot phases"
-
-Delta identical. Build test:
-
-Build passed. Continue with commit 9: e2c435bd0aa - "arm: dts: imx8ulp: Disable wdog3 until DM watchdog support is available"
-
-Delta identical. Build test:
-
-Build passed. Continue with commit 10: bd19527c755 - "Docker: Update QEMU to 10.0.6"
-
-Delta identical. Build test:
-
-Build passed. Continue with commit 11: bc4a1e56bfc - "Dockerfile: Include python3-tk for FATtools"
-
-Delta identical. Build test:
-
-Build passed. Continue with commit 12: 4dfa4c14b8e - "Dockerfile: Update building trace tools slightly"
-
-This is a significant conflict - let me look at what both versions are doing. The HEAD has specific git checkouts and explicit `prefix=/usr`, `ldconfig`, etc. The incoming version is simpler without specific checkouts. Let me see the original commit:
-
-Now let me see what the current ci/master version looks like:
-
-I see - the ci/master has different pins and additional changes (comments, prefix=/usr, ldconfig, specific checkouts). The incoming commit is updating to specific tags to fix build issues. Given the ci/master has already had more extensive work done to pin specific versions for different reasons, I should carefully merge. The key changes from the incoming commit are:
-1. Use `--depth=1 -b libtraceevent-1.8.6` tag
-2. Use `--depth=1 -b libtracefs-1.8.2` tag  
-3. Remove `-j$(nproc)` from make commands
-
-But ci/master already has specific versions pinned with different tags/commits. The intent is the same (pin versions to avoid build failures), but they've diverged. Let me resolve this by keeping the ci/master version which has more thorough fixes (with ldconfig and prefix):
-
-There's a duplicate section. Let me fix this properly:
-
-The theirs version looks good but it's missing the comment about pinning and the ldconfig. However, this is the simpler incoming version and we can proceed. But wait - by taking --theirs, we've taken the us/next version which doesn't have the additional ci/master fixes. Let me properly merge this with --ours (keeping HEAD) since ci/master has more thorough trace-cmd fixes:
-
-The "ours" version keeps the existing ci/master changes. Now I need to apply what the incoming commit intended to add: changing from `-j$(nproc)` to just `make` (no parallel). But ci/master already has the trace-cmd pinned, just with -j. The incoming commit wanted to remove -j. Let me apply that part:
-
-The trace-cmd section now has `make` without `-j$(nproc)` as the incoming commit intended, but we kept the existing pinning and ldconfig from ci/master. Now let me continue the cherry-pick:
-
-Let me check the delta:
-
-The delta is different (12 insertions/12 deletions vs 7 insertions/5 deletions) because we're applying the -j removal to both the trace section AND the swtpm section. Let me add a note to the commit about this fixup:
-
-Build test:
-
-Build passed. Continue with commit 13: 0ae3dc6809f - "CI: Update to latest container (maybe already applied as 8accb1d4232)"
-
-These are completely different commits - 8accb1d4232 is a pickman record commit, not the CI container update. Let me try to cherry-pick 0ae3dc6809f:
-
-I see - HEAD has more extensive CI configuration with DEFAULT_TAG, SUITES, PYTEST, etc. The incoming commit just updates the image tag. The HEAD version already has a newer image tag structure but with a different tag. Let me see what the current ci/master version looks like:
-
-The ci/master has sjg20's image with `jammy-20250714-03apr26`. The incoming commit wants to update to `trini/u-boot-gitlab-ci-runner:jammy-20251013-26Nov2025`. But the structure is completely different.
-
-The key change in the incoming commit is updating the container image. The ci/master has extensive changes to the CI structure. Since the incoming commit is specifically about updating the container to include python3-tk, QEMU 10.0.6, and trace-cmd tags - and we've already applied those changes to the Dockerfile - the container update is what matters.
-
-Let me resolve this by keeping HEAD (the sjg20 structure) but update just the image tag to reference the newer base:
-
-Since ci/master already has the sjg20 container setup, which is presumably newer and contains the changes, I'll keep HEAD. The CI container update is primarily about Dockerfile changes which we've already applied:
-
-The delta differs (.gitlab-ci.yml not modified) because we kept HEAD's version. Let me add a note:
-
-Build test:
-
-Build passed. Now the final commit 14: d49e48462b5 - "Merge tag 'u-boot-imx-master-20251126' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx"
-
-This is a merge commit, so I need to use `-m 1 --allow-empty`:
-
-The merge is empty because we've already cherry-picked all the constituent commits. As per the instructions, I need to preserve the merge commit even if empty:
-
-All cherry-picks complete. Let me verify with git log:
-
-Let me count the commits - we have 11 commits from our branch. Let me summarize what happened with all 14 requested commits:
-
-1. **8385ecc8eff - upl: Fix buf array size** ✅ Applied as 6833245d9cf
-2. **2d7eee5a554 - boot: pxe_utils: Fix memory allocation issues** ✅ Applied as df7691065cc (conflict resolved)
-3. **9eeed950445 - configs: Resync with savedefconfig [QCONFIG RESYNC]** ⏭️ Skipped - ran qconfig.py instead (no changes needed)
-4. **e8c10f9d244 - rockchip: rk3588: Map SCMI shared memory** ⏭️ Skipped - already applied as ed49fb48ff0
-5. **c5e6d2ab7eb - Prepare v2026.01-rc3** ⏭️ Skipped - ci/master is at 2026.02 (newer version)
-6. **29f6afc6e39 - imx91: fix pinmux macros** ✅ Applied as fd2e12284f9
-7. **1312a503462 - configs: colibri-imx7*: set 'fdtfile'** ✅ Applied as caa985e4a97
-8. **091df90a89e - arm: dts: imx8ulp: Ensure mu@27020000** ✅ Applied as e049e66e37d
-9. **e2c435bd0aa - arm: dts: imx8ulp: Disable wdog3** ✅ Applied as fbbfa45311c
-10. **bd19527c755 - Docker: Update QEMU to 10.0.6** ✅ Applied as 50e5fef0313
-11. **bc4a1e56bfc - Dockerfile: Include python3-tk** ✅ Applied as ec1bc2d3bb7
-12. **4dfa4c14b8e - Dockerfile: Update building trace tools** ✅ Applied as db2d6acc3e2 (conflict resolved with fixup)
-13. **0ae3dc6809f - CI: Update to latest container** ✅ Applied as c28b3b400c9 (conflict resolved with fixup)
-14. **d49e48462b5 - Merge tag 'u-boot-imx-master-20251126'** ✅ Applied as 0a1826dbfee (empty, preserving history)
+The merge commit is empty because we already cherry-picked the constituent commits. Let me commit it as an empty commit to preserve the history:
 
 Now let me run the final build test:
 
-Final build passes.
+Let me verify all 12 commits are present:
 
-## Summary
+All 12 commits are present. Let me provide the final status summary:
 
-**Cherry-pick branch: `cherry-8385ecc8eff`** is ready for pushing.
+## Cherry-pick Summary
 
-### Build Result: ✅ OK
+**Branch created:** `cherry-642a9e716e1` based on `ci/master`
 
-### Commits Applied (11 commits):
-| Original | Cherry-picked | Subject |
-|----------|---------------|---------|
-| 8385ecc8eff | 6833245d9cf | upl: Fix buf array size |
-| 2d7eee5a554 | df7691065cc | boot: pxe_utils: Fix memory allocation issues in overlay_dir handling |
-| 29f6afc6e39 | fd2e12284f9 | imx91: fix pinmux macros for ENET1_TD3 and I2C2_SCL |
-| 1312a503462 | caa985e4a97 | configs: colibri-imx7*: set 'fdtfile' generically in PREBOOT |
-| 091df90a89e | e049e66e37d | arm: dts: imx8ulp: Ensure mu@27020000 and lpuart5 availability |
-| e2c435bd0aa | fbbfa45311c | arm: dts: imx8ulp: Disable wdog3 |
-| bd19527c755 | 50e5fef0313 | Docker: Update QEMU to 10.0.6 |
-| bc4a1e56bfc | ec1bc2d3bb7 | Dockerfile: Include python3-tk for FATtools |
-| 4dfa4c14b8e | db2d6acc3e2 | Dockerfile: Update building trace tools slightly |
-| 0ae3dc6809f | c28b3b400c9 | CI: Update to latest container |
-| d49e48462b5 | 0a1826dbfee | Merge tag 'u-boot-imx-master-20251126' (empty) |
+**Build result:** ✅ OK (sandbox build passes)
 
-### Commits Skipped (3):
-1. **9eeed950445** - configs: Resync with savedefconfig [QCONFIG RESYNC] - ran qconfig.py instead (no changes needed)
-2. **e8c10f9d244** - rockchip: rk3588: Map SCMI shared memory - already applied as ed49fb48ff0
-3. **c5e6d2ab7eb** - Prepare v2026.01-rc3 - ci/master already at newer version (2026.02)
+### Commits cherry-picked (12 total):
 
-### Fix-ups Made:
-1. **2d7eee5a554** - Conflict resolved: ci/master had partial fix for pxe_utils.c overlay_dir handling
-2. **4dfa4c14b8e** - Conflict resolved: Applied `-j$(nproc)` removal to existing ci/master trace-cmd pins; affected other make commands in file
-3. **0ae3dc6809f** - Conflict resolved: Kept ci/master .gitlab-ci.yml structure (sjg20 container setup) - only applied azure-pipelines.yml and Dockerfile changes
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | 642a9e716e1 | cmd/extension: avoid NULL pointer dereference | ✅ Clean |
+| 2 | e3b7dd93d39 | power: domain: ti: fix ti_pd_get() to return after verifying transition | ✅ Clean |
+| 3 | cc0ce9e8c49 | net: ti: am65-cpsw-nuss: Ignore disabled ethernet ports | ✅ Clean |
+| 4 | 3afc99727ad | board: ti: am6x: Restore do_board_detect functions | ✅ Clean |
+| 5 | f06e1c04bff | board: ti: am335x: Fix DM_TPS65910 condition | ⚠️ Conflict resolved |
+| 6 | 70ab39e2305 | board: adi: Fix missing semicolon in nfsroot | ✅ Clean |
+| 7 | 5d7c080ae5d | bootstd: rauc: Don't check root part filesystem | ✅ Clean |
+| 8 | 962711498dd | bootstd: rauc: Only require partitions for one slot | ✅ Clean |
+| 9 | 2736ed925e3 | usb: USB_EHCI_PCI depends on PCI | ✅ Clean |
+| 10 | 610a3eb27ea | configs: toradex-smarc-imx95: set spl_stack | ✅ Clean |
+| 11 | 7dbcc316a64 | usb/xhci: avoid noisy 'Register NbrPorts' message | ✅ Clean |
+| 12 | 781e6e35a06 | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Empty (content already in commits 9 & 11) |
 
-### Deltas:
-- Most commits have identical deltas
-- **2d7eee5a554**: Different delta (9+/14- vs 9+/11-) due to resolving partial fix already in ci/master
-- **4dfa4c14b8e**: Different delta (12+/12- vs 7+/5-) due to removing -j from more make commands
-- **0ae3dc6809f**: Different delta (2 files vs 3 files) - kept ci/master .gitlab-ci.yml
+### Fix-ups made:
+
+1. **Commit 5 (f06e1c04bff):** Had a conflict in `board/ti/am335x/board.c`. The parent commit (0b9ff085159 "board: ti: am335x: Do not call disabled PMIC functions") was not present in ci/master. Resolved by accepting the incoming changes which include both the guard additions and the fix for the config name. Commit message amended to note: `[cherry-pick: Also includes changes from parent commit 0b9ff085159]`
+
+### Concerning deltas:
+
+1. **Commit 5:** Shows 7 insertions/1 deletion vs. original's 1 insertion/1 deletion. This is expected because the parent commit wasn't in ci/master, so this cherry-pick effectively includes both commits' changes.
+
+### Verified "maybe already applied":
+
+- **781e6e35a06** vs. **ef1a6fc374f**: These are **different** merge commits. The original merges the USB branch; the found commit is a different pickman merge. Since ef1a6fc374f is not even in ci/master, we proceeded with the cherry-pick (which resulted in an empty commit since the constituent commits were already cherry-picked individually).
+
+**The branch `cherry-642a9e716e1` is ready for pushing.**
 
 ---
 
