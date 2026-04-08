@@ -502,22 +502,6 @@ static int ext4l_read_symlink(struct inode *inode, char *target, size_t max_len)
 	return len;
 }
 
-/* Forward declaration for recursive resolution */
-static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
-				       int depth);
-
-/**
- * ext4l_resolve_path() - Resolve path to inode
- *
- * @path: Path to resolve
- * @inodep: Output inode pointer
- * Return: 0 on success, negative on error
- */
-static int ext4l_resolve_path(const char *path, struct inode **inodep)
-{
-	return ext4l_resolve_path_internal(path, inodep, 0);
-}
-
 /**
  * ext4l_resolve_path_internal() - Resolve path with symlink following
  *
@@ -707,6 +691,18 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 	free(path_copy);
 	*inodep = dir;
 	return 0;
+}
+
+/**
+ * ext4l_resolve_path() - Resolve path to inode
+ *
+ * @path: Path to resolve
+ * @inodep: Output inode pointer
+ * Return: 0 on success, negative on error
+ */
+static int ext4l_resolve_path(const char *path, struct inode **inodep)
+{
+	return ext4l_resolve_path_internal(path, inodep, 0);
 }
 
 /**
