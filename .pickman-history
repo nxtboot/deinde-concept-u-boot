@@ -54312,7 +54312,6 @@ The branch `cherry-91bb2361941` is ready for pushing.
 ---
 
 ## 2026-04-07: us/next
-
 Branch: cherry-78dafa8e9e5
 
 Commits:
@@ -54491,6 +54490,65 @@ All 24 commits are present in the log. Now running the final build test:
 - The final merge commit (24) was empty as expected since we cherry-picked all individual commits first, but it was preserved with `--allow-empty` to maintain the commit message/history
 
 The branch `cherry-78dafa8e9e5` is ready for pushing.
+
+---
+
+Branch: cherry-8d6f0c787eb
+
+Commits:
+- 8d6f0c787eb arm: dts: brcp1: Move SPL partition to offset 0x8000 in SPI flash
+- 2e86581d055 net: axi_emac: Fix compilation warnings
+- 05ea0a387ff Merge tag 'xilinx-for-v2026.01-rc3' of https://source.denx.de/u-boot/custodians/u-boot-microblaze
+
+### Conversation log
+The repository state is clean (only untracked files). Let me proceed with creating the branch and starting the cherry-picks.
+
+Now let me cherry-pick the first commit (8d6f0c787eb - arm: dts: brcp1: Move SPL partition to offset 0x8000 in SPI flash):
+
+First commit cherry-picked successfully. Let me check the delta and run build test:
+
+The deltas match exactly (1 file changed, 1 insertion(+), 1 deletion(-)). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit (2e86581d055 - net: axi_emac: Fix compilation warnings):
+
+Second commit cherry-picked successfully. Let me check the delta and run build test:
+
+Deltas match exactly (1 file changed, 8 insertions(+), 8 deletions(-)). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit (05ea0a387ff - a merge commit):
+
+The merge commit is empty (because the constituent commits were already cherry-picked). Let me commit it with --allow-empty to preserve the merge commit in the history:
+
+The merge commit was preserved successfully. Let me verify the delta:
+
+The merge commit is preserved as an empty commit (which is expected since the constituent commits were already cherry-picked above). This is the correct behavior. Let me run the build test:
+
+Build passed. Now let me verify with git log to ensure all 3 commits are present:
+
+All 3 commits are present. Let me run a final build test:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Summary
+- **Branch:** `cherry-8d6f0c787eb` (based on `ci/master`)
+- **Build Result:** ✅ OK - No warnings or errors
+
+### Commits Cherry-Picked (oldest to newest)
+
+| Original Hash | New Hash | Subject |
+|---------------|----------|---------|
+| 8d6f0c787eb | 4ffee934737 | arm: dts: brcp1: Move SPL partition to offset 0x8000 in SPI flash |
+| 2e86581d055 | 02bfa6667cc | net: axi_emac: Fix compilation warnings |
+| 05ea0a387ff | 7564bd2d777 | Merge tag 'xilinx-for-v2026.01-rc3' of https://source.denx.de/u-boot/custodians/u-boot-microblaze |
+
+### Notes
+- All commit deltas matched exactly (no concerning differences)
+- No fix-ups were needed
+- No conflicts encountered
+- The merge commit (05ea0a387ff) is preserved as an empty commit, which is expected since its constituent commits were already cherry-picked individually
+- The branch is ready for pushing
 
 ---
 
