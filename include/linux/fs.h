@@ -273,13 +273,17 @@ static inline void inode_state_assign(struct inode *inode, unsigned long flags)
 	inode->i_state = flags;
 }
 
-/* block_device - minimal stub */
+struct udevice;
+
+/* block_device - minimal stub with U-Boot block I/O fields */
 struct block_device {
 	struct address_space *bd_mapping;
 	void *bd_disk;
 	struct super_block *bd_super;
 	dev_t bd_dev;
 	bool read_only;
+	struct udevice *bd_blk;		/* U-Boot block device */
+	unsigned long bd_part_start;	/* partition start (in device sectors) */
 };
 
 /* errseq functions - stubs */

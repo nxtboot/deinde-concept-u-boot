@@ -233,9 +233,8 @@ static ssize_t ext4l_read_iter(struct udevice *dev, struct iov_iter *iter,
 	loff_t actual;
 	int ret;
 
-	ret = ext4l_read(&fspriv->state, priv->path,
-			 iter_iov_ptr(iter), pos, iter_iov_avail(iter),
-			 &actual);
+	ret = ext4l_read(&fspriv->state, priv->path, iter_iov_ptr(iter), pos,
+			 iter_iov_avail(iter), &actual);
 	if (ret)
 		return log_msg_ret("efr", ret);
 	iter_advance(iter, actual);

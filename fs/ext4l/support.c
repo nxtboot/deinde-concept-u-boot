@@ -231,17 +231,20 @@ static inline unsigned int bh_cache_hash(sector_t block)
 
 /**
  * bh_cache_lookup() - Look up a buffer in the cache
+ * @bdev: Block device to match
  * @block: Block number to look up
  * @size: Expected block size
- * Return: Buffer head if found with matching size, NULL otherwise
+ * Return: Buffer head if found with matching device and size, NULL otherwise
  */
-static struct buffer_head *bh_cache_lookup(sector_t block, size_t size)
+static struct buffer_head *bh_cache_lookup(struct block_device *bdev,
+					   sector_t block, size_t size)
 {
 	unsigned int hash = bh_cache_hash(block);
 	struct bh_cache_entry *entry;
 
 	for (entry = bh_cache[hash]; entry; entry = entry->next) {
-		if (entry->bh && entry->bh->b_blocknr == block &&
+		if (entry->bh && entry->bh->b_bdev == bdev &&
+		    entry->bh->b_blocknr == block &&
 		    entry->bh->b_size == size) {
 			atomic_inc(&entry->bh->b_count);
 			return entry->bh;
@@ -259,9 +262,10 @@ static void bh_cache_insert(struct buffer_head *bh)
 	unsigned int hash = bh_cache_hash(bh->b_blocknr);
 	struct bh_cache_entry *entry;
 
-	/* Check if already in cache - must match block AND size */
+	/* Check if already in cache - must match device, block AND size */
 	for (entry = bh_cache[hash]; entry; entry = entry->next) {
-		if (entry->bh && entry->bh->b_blocknr == bh->b_blocknr &&
+		if (entry->bh && entry->bh->b_bdev == bh->b_bdev &&
+		    entry->bh->b_blocknr == bh->b_blocknr &&
 		    entry->bh->b_size == bh->b_size)
 			return;  /* Already cached */
 	}
@@ -309,30 +313,28 @@ static void bh_clear_stale_jbd(struct buffer_head *bh)
 	}
 }
 
-void bh_cache_clear(void)
+void bh_cache_clear(struct block_device *bdev)
 {
 	int i;
-	struct bh_cache_entry *entry, *next;
+	struct bh_cache_entry *entry, *next, **prev;
 
 	for (i = 0; i < BH_CACHE_SIZE; i++) {
-		for (entry = bh_cache[i]; entry; entry = next) {
+		prev = &bh_cache[i];
+		for (entry = *prev; entry; entry = next) {
 			next = entry->next;
-			if (entry->bh) {
+			if (entry->bh && entry->bh->b_bdev == bdev) {
 				struct buffer_head *bh = entry->bh;
 
 				bh_clear_stale_jbd(bh);
-				/*
-				 * Force count to 1 so the buffer will be freed.
-				 * On unmount, ext4 code won't access these
-				 * buffers again, so extra references are stale.
-				 */
 				atomic_set(&bh->b_count, 1);
 				if (atomic_dec_and_test(&bh->b_count))
 					free_buffer_head(bh);
+				*prev = next;
+				free(entry);
+			} else {
+				prev = &entry->next;
 			}
-			free(entry);
 		}
-		bh_cache[i] = NULL;
 	}
 }
 
@@ -343,14 +345,15 @@ void bh_cache_clear(void)
  * It ensures all journal_heads are properly released from buffer_heads
  * even if the journal destroy didn't fully clean up (e.g., on abort).
  */
-void bh_cache_release_jbd(void)
+void bh_cache_release_jbd(struct block_device *bdev)
 {
 	int i;
 	struct bh_cache_entry *entry;
 
 	for (i = 0; i < BH_CACHE_SIZE; i++) {
 		for (entry = bh_cache[i]; entry; entry = entry->next) {
-			if (entry->bh && buffer_jbd(entry->bh)) {
+			if (entry->bh && entry->bh->b_bdev == bdev &&
+			    buffer_jbd(entry->bh)) {
 				struct buffer_head *bh = entry->bh;
 				struct journal_head *jh = bh2jh(bh);
 
@@ -388,7 +391,8 @@ int bh_cache_sync(void)
 	for (i = 0; i < BH_CACHE_SIZE; i++) {
 		for (entry = bh_cache[i]; entry; entry = entry->next) {
 			if (entry->bh && buffer_dirty(entry->bh)) {
-				int err = ext4l_write_block(entry->bh->b_blocknr,
+				int err = ext4l_write_block(entry->bh->b_bdev,
+							    entry->bh->b_blocknr,
 							    entry->bh->b_size,
 							    entry->bh->b_data);
 				if (err && !ret)
@@ -499,29 +503,26 @@ void free_buffer_head(struct buffer_head *bh)
  * @buffer: Destination buffer
  * Return: 0 on success, negative on error
  */
-int ext4l_read_block(sector_t block, size_t size, void *buffer)
+int ext4l_read_block(struct block_device *bdev, sector_t block, size_t size,
+		     void *buffer)
 {
-	struct disk_partition *part;
-	lbaint_t sector, count;
 	struct blk_desc *desc;
-	struct udevice *blk;
-	ulong n;
+	lbaint_t sector, count;
+	long n;
 
-	blk = ext4l_get_blk();
-	part = ext4l_get_partition();
-	if (!blk)
+	if (!bdev || !bdev->bd_blk)
 		return -EIO;
 
-	desc = dev_get_uclass_plat(blk);
+	desc = dev_get_uclass_plat(bdev->bd_blk);
 
 	/* Convert block to sector */
-	sector = (block * size) / desc->blksz + part->start;
+	sector = (block * size) / desc->blksz + bdev->bd_part_start;
 	count = size / desc->blksz;
 
 	if (count == 0)
 		count = 1;
 
-	n = blk_read(blk, sector, count, buffer);
+	n = blk_read(bdev->bd_blk, sector, count, buffer);
 	if (n != count)
 		return -EIO;
 
@@ -535,29 +536,26 @@ int ext4l_read_block(sector_t block, size_t size, void *buffer)
  * @buffer: Source buffer
  * Return: 0 on success, negative on error
  */
-int ext4l_write_block(sector_t block, size_t size, void *buffer)
+int ext4l_write_block(struct block_device *bdev, sector_t block, size_t size,
+		      void *buffer)
 {
-	struct disk_partition *part;
-	lbaint_t sector, count;
 	struct blk_desc *desc;
-	struct udevice *blk;
-	ulong n;
+	lbaint_t sector, count;
+	long n;
 
-	blk = ext4l_get_blk();
-	part = ext4l_get_partition();
-	if (!blk)
+	if (!bdev || !bdev->bd_blk)
 		return -EIO;
 
-	desc = dev_get_uclass_plat(blk);
+	desc = dev_get_uclass_plat(bdev->bd_blk);
 
 	/* Convert block to sector */
-	sector = (block * size) / desc->blksz + part->start;
+	sector = (block * size) / desc->blksz + bdev->bd_part_start;
 	count = size / desc->blksz;
 
 	if (count == 0)
 		count = 1;
 
-	n = blk_write(blk, sector, count, buffer);
+	n = blk_write(bdev->bd_blk, sector, count, buffer);
 	if (n != count)
 		return -EIO;
 
@@ -578,7 +576,7 @@ struct buffer_head *sb_getblk(struct super_block *sb, sector_t block)
 		return NULL;
 
 	/* Check cache first - must match block number AND size */
-	bh = bh_cache_lookup(block, sb->s_blocksize);
+	bh = bh_cache_lookup(sb->s_bdev, block, sb->s_blocksize);
 	if (bh)
 		return bh;
 
@@ -622,7 +620,7 @@ struct buffer_head *__getblk(struct block_device *bdev, sector_t block,
 		return NULL;
 
 	/* Check cache first - must match block number AND size */
-	bh = bh_cache_lookup(block, size);
+	bh = bh_cache_lookup(bdev, block, size);
 	if (bh)
 		return bh;
 
@@ -673,7 +671,7 @@ struct buffer_head *sb_bread(struct super_block *sb, sector_t block)
 	bh->b_bdev = sb->s_bdev;
 	bh->b_size = sb->s_blocksize;
 
-	ret = ext4l_read_block(block, sb->s_blocksize, bh->b_data);
+	ret = ext4l_read_block(sb->s_bdev, block, sb->s_blocksize, bh->b_data);
 	if (ret) {
 		brelse(bh);
 		return NULL;
@@ -737,7 +735,7 @@ struct buffer_head *bdev_getblk(struct block_device *bdev, sector_t block,
 	struct buffer_head *bh;
 
 	/* Check cache first - must match block number AND size */
-	bh = bh_cache_lookup(block, size);
+	bh = bh_cache_lookup(bdev, block, size);
 	if (bh)
 		return bh;
 
@@ -782,7 +780,7 @@ struct buffer_head *__bread(struct block_device *bdev, sector_t block,
 	bh->b_bdev = bdev;
 	bh->b_size = size;
 
-	ret = ext4l_read_block(block, size, bh->b_data);
+	ret = ext4l_read_block(bdev, block, size, bh->b_data);
 	if (ret) {
 		free_buffer_head(bh);
 		return NULL;
@@ -824,7 +822,8 @@ int submit_bh(int op, struct buffer_head *bh)
 	int uptodate;
 
 	if (op_type == REQ_OP_READ) {
-		ret = ext4l_read_block(bh->b_blocknr, bh->b_size, bh->b_data);
+		ret = ext4l_read_block(bh->b_bdev, bh->b_blocknr, bh->b_size,
+				       bh->b_data);
 		if (ret) {
 			clear_buffer_uptodate(bh);
 			uptodate = 0;
@@ -833,7 +832,8 @@ int submit_bh(int op, struct buffer_head *bh)
 			uptodate = 1;
 		}
 	} else if (op_type == REQ_OP_WRITE) {
-		ret = ext4l_write_block(bh->b_blocknr, bh->b_size, bh->b_data);
+		ret = ext4l_write_block(bh->b_bdev, bh->b_blocknr, bh->b_size,
+					bh->b_data);
 		if (ret) {
 			clear_buffer_uptodate(bh);
 			set_buffer_write_io_error(bh);

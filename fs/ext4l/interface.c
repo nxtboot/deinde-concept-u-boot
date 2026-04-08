@@ -32,29 +32,6 @@
 static struct ext4l_state efs;
 
 /**
- * ext4l_get_blk() - Get the current block device
- *
- * Return: Block device descriptor or NULL if not mounted
- */
-struct udevice *ext4l_get_blk(void)
-{
-	if (!efs.mounted)
-		return NULL;
-
-	return efs.blk;
-}
-
-/**
- * ext4l_get_partition() - Get the current partition info
- *
- * Return: Partition info pointer
- */
-struct disk_partition *ext4l_get_partition(void)
-{
-	return &efs.partition;
-}
-
-/**
  * ext4l_get_uuid() - Get the filesystem UUID
  *
  * @state: Per-mount state
@@ -108,34 +85,6 @@ int ext4l_statfs(struct ext4l_state *state, struct fs_statfs *stats)
 	stats->bfree = ext4_free_blocks_count(es);
 
 	return 0;
-}
-
-/**
- * ext4l_set_blk() - Set the block device for ext4l operations
- *
- * @blk: Block device descriptor
- * @partition: Partition info (can be NULL for whole disk)
- */
-void ext4l_set_blk(struct udevice *blk, struct disk_partition *partition)
-{
-	efs.blk = blk;
-	if (partition)
-		memcpy(&efs.partition, partition, sizeof(efs.partition));
-	else
-		memset(&efs.partition, 0, sizeof(efs.partition));
-	efs.mounted = true;
-}
-
-/**
- * ext4l_clear_blk() - Clear block device (unmount)
- */
-void ext4l_clear_blk(void)
-{
-	/* Clear buffer cache before unmounting */
-	bh_cache_clear();
-
-	efs.blk = NULL;
-	efs.mounted = false;
 }
 
 /**
@@ -209,6 +158,10 @@ static void ext4l_free_sb(struct super_block *sb, bool skip_io)
 	kfree(sbi->s_blockgroup_lock);
 	kfree(sbi);
 
+	/* Clear cached buffers for this device before freeing it */
+	bh_cache_release_jbd(sb->s_bdev);
+	bh_cache_clear(sb->s_bdev);
+
 	/* Free structures allocated in ext4l_mount() */
 	kfree(sb->s_bdev->bd_mapping);
 	kfree(sb->s_bdev);
@@ -235,17 +188,8 @@ static void ext4l_umount_internal(struct ext4l_state *state, bool skip_io)
 		ext4l_free_sb(sb, skip_io);
 
 	state->sb = NULL;
-
-	/*
-	 * Force cleanup of any remaining journal_heads before clearing
-	 * the buffer cache. This ensures no stale journal_head references
-	 * survive to the next mount. This is critical even when skip_io
-	 * is true - we MUST disconnect journal_heads before freeing
-	 * buffer_heads to avoid dangling pointers.
-	 */
-	bh_cache_release_jbd();
-
-	ext4l_clear_blk();
+	state->blk = NULL;
+	state->mounted = false;
 
 	/*
 	 * Clean up ext4 and JBD2 global state so it can be properly
@@ -269,7 +213,7 @@ static void ext4l_umount_internal(struct ext4l_state *state, bool skip_io)
 int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 		struct disk_partition *fs_partition)
 {
-	struct blk_desc *fs_dev_desc = dev_get_uclass_plat(dev);
+	struct blk_desc *desc = dev_get_uclass_plat(dev);
 	struct ext4_fs_context *ctx;
 	struct super_block *sb;
 	struct fs_context *fc;
@@ -336,10 +280,12 @@ int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 
 	/* Initialise super_block fields */
 	sb->s_bdev->bd_super = sb;
+	sb->s_bdev->bd_blk = dev;
+	sb->s_bdev->bd_part_start = fs_partition ? fs_partition->start : 0;
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
 	snprintf(sb->s_id, sizeof(sb->s_id), "ext4l_mmc%d",
-		 fs_dev_desc->devnum);
+		 desc->devnum);
 	sb->s_flags = 0;
 	sb->s_fs_info = NULL;
 
@@ -369,18 +315,18 @@ int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 	}
 
 	/* Calculate partition offset in bytes */
-	part_offset = fs_partition ? (loff_t)fs_partition->start * fs_dev_desc->blksz : 0;
+	part_offset = fs_partition ?
+		(loff_t)fs_partition->start * desc->blksz : 0;
 
 	/* Read sectors containing the superblock */
-	if (blk_dread(fs_dev_desc,
-		      div_u64(part_offset + BLOCK_SIZE, fs_dev_desc->blksz),
-		      2, buf) != 2) {
+	if (blk_read(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
+		     2, buf) != 2) {
 		ret = -EIO;
 		goto err_free_buf;
 	}
 
 	/* Check magic number within superblock */
-	magic = (__le16 *)(buf + (BLOCK_SIZE % fs_dev_desc->blksz) +
+	magic = (__le16 *)(buf + (BLOCK_SIZE % desc->blksz) +
 			   offsetof(struct ext4_super_block, s_magic));
 	if (le16_to_cpu(*magic) != EXT4_SUPER_MAGIC) {
 		ret = -EINVAL;
@@ -388,15 +334,20 @@ int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 	}
 
 	/* Set block device for buffer I/O */
-	ext4l_set_blk(dev, fs_partition);
+	state->blk = dev;
+	if (fs_partition)
+		memcpy(&state->partition, fs_partition,
+		       sizeof(state->partition));
+	else
+		memset(&state->partition, 0, sizeof(state->partition));
+	state->mounted = true;
 
 	/*
 	 * Test if device supports writes by writing back the same data.
 	 * If write returns 0, the device is read-only (e.g. LUKS/blkmap_crypt)
 	 */
-	if (blk_dwrite(fs_dev_desc,
-		       div_u64(part_offset + BLOCK_SIZE, fs_dev_desc->blksz),
-		       2, buf) != 2) {
+	if (blk_write(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
+		      2, buf) != 2) {
 		sb->s_bdev->read_only = true;
 		sb->s_flags |= SB_RDONLY;
 	}
@@ -706,6 +657,12 @@ static int ext4l_resolve_path(struct ext4l_state *state, const char *path,
 	return ext4l_resolve_path_internal(state, path, inodep, 0);
 }
 
+/* Context for ext4l_dir_actor carrying the superblock */
+struct ext4l_ls_ctx {
+	struct dir_context ctx;
+	struct super_block *sb;
+};
+
 /**
  * ext4l_dir_actor() - Directory entry callback for ext4_readdir
  *
@@ -721,6 +678,7 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 			   int namelen, loff_t offset, u64 ino,
 			   unsigned int d_type)
 {
+	struct ext4l_ls_ctx *ls_ctx = container_of(ctx, struct ext4l_ls_ctx, ctx);
 	struct inode *inode;
 	char namebuf[256];
 
@@ -731,7 +689,7 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 	namebuf[namelen] = '\0';
 
 	/* Look up the inode to get file size */
-	inode = ext4_iget(efs.sb, ino, 0);
+	inode = ext4_iget(ls_ctx->sb, ino, 0);
 	if (IS_ERR(inode)) {
 		printf(" %8s   %s\n", "?", namebuf);
 		return 0;
@@ -749,9 +707,9 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 
 int ext4l_ls(struct ext4l_state *state, const char *dirname)
 {
+	struct ext4l_ls_ctx ls_ctx;
 	struct inode *dir;
 	struct file file;
-	struct dir_context ctx;
 	int ret;
 
 	ret = ext4l_resolve_path(state, dirname, &dir);
@@ -770,10 +728,11 @@ int ext4l_ls(struct ext4l_state *state, const char *dirname)
 	if (!file.private_data)
 		return -ENOMEM;
 
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.actor = ext4l_dir_actor;
+	memset(&ls_ctx, 0, sizeof(ls_ctx));
+	ls_ctx.ctx.actor = ext4l_dir_actor;
+	ls_ctx.sb = state->sb;
 
-	ret = ext4_readdir(&file, &ctx);
+	ret = ext4_readdir(&file, &ls_ctx.ctx);
 
 	if (file.private_data)
 		ext4_htree_free_dir_info(file.private_data);
@@ -1435,6 +1394,7 @@ struct ext4l_dir {
 struct ext4l_readdir_ctx {
 	struct dir_context ctx;
 	struct ext4l_dir *dir;
+	struct super_block *sb;
 };
 
 /**
@@ -1487,7 +1447,7 @@ static int ext4l_opendir_actor(struct dir_context *ctx, const char *name,
 	}
 
 	/* Look up inode to get size and other attributes */
-	inode = ext4_iget(efs.sb, ino, 0);
+	inode = ext4_iget(rctx->sb, ino, 0);
 	if (!IS_ERR(inode)) {
 		dent->size = inode->i_size;
 		/* Refine type from inode mode if needed */
@@ -1575,6 +1535,7 @@ int ext4l_readdir(struct ext4l_state *state, struct fs_dir_stream *dirs,
 	/* Set up extended dir_context for this iteration */
 	memset(&ctx, '\0', sizeof(ctx));
 	ctx.ctx.actor = ext4l_opendir_actor;
+	ctx.sb = state->sb;
 	ctx.ctx.pos = dir->file.f_pos;
 	ctx.dir = dir;
 
