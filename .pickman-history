@@ -54796,3 +54796,195 @@ All 4 commits are present. Let me run the final build test to verify everything 
 
 ---
 
+## 2026-04-08: us/next
+
+Branch: cherry-b17c28488b3
+
+Commits:
+- b17c28488b3 net: xgmac: Augment mdio read/write with cl-45 format support
+- 2b30c416f0b gpio: dwapb: Enable SPL support for DWAPB GPIO driver
+- 1feebc36e58 FPGA2SDRAM setup fix
+- ec4b7710f87 configs: agilex5: Enable FAT-based environment storage in defconfig
+- 5eb14e1ea26 spi: cadence: Add driver for xSPI
+- 3ba9b1f7bd7 Cyclone V Board handsoff script
+- 6beb48a3952 nand: denali: enable ONFI detection for SoCFPGA SoC64
+- e291277689f sync socfpga common u-boot dts
+- 5b1fe6ef6b8 Altera SoCFpga Boot Stall Fix
+- 0af9efa7c18 socfpga_vining_fpga: Stop disabling device tree relocation
+- da09bb6a6c1 board: softing: vining: migrate to modern LED framework
+- 83d157e0362 configs: cyclone5: Disable mkeficapsule tool build
+- a2bd59f7c38 mmc: socfpga_dw_mmc: Restore legacy clkmgr address retrieval
+- f85293aac72 spl: Remove ARCH_SOCFPGA from MMC raw mode enablement
+- 5790f5ef335 configs: cyclone5: Enable SPL FAT support
+- cd74c05619f configs: cyclone5: Update boot command for CycloneV
+- 05f72f28e9a configs: cyclone5: Disable SPI in SPL
+- 87cb3183442 Add optimized Makefile support for SoCFPGA handoff
+- c6ee44b5573 Merge tag 'u-boot-socfpga-next-20251201' of https://source.denx.de/u-boot/custodians/u-boot-socfpga
+
+### Conversation log
+The repository is clean with just untracked files, which won't affect cherry-picking. Let me proceed to create and checkout a new branch based on ci/master.
+
+Branch created. Now let me cherry-pick the first commit:
+
+First commit applied successfully. Let me check the delta and run build test:
+
+Delta matches perfectly (2 files, 41 insertions, 20 deletions). Now run build test:
+
+Build passed. Cherry-pick commit 2:
+
+Delta matches. Run build:
+
+Build passed. Continuing with commit 3:
+
+Delta matches. Build test:
+
+Build passed. Commit 4:
+
+Delta matches. Build test:
+
+Build passed. Commit 5:
+
+Delta matches. Build test:
+
+Build passed. Commit 6:
+
+Delta matches. Build test:
+
+Build passed. Commit 7:
+
+Delta matches. Build test:
+
+Build passed. Commit 8:
+
+Delta matches. Build test:
+
+Build passed. Commit 9:
+
+Delta matches. Build test:
+
+Build passed. Commit 10:
+
+Delta matches. Build test:
+
+Build passed. Commit 11:
+
+There are conflicts. Let me check what's conflicting:
+
+Both conflicts are simple - I need to accept all the additions from the incoming commit. Let me resolve them:
+
+I need to resolve the conflicts. The first conflict adds `#include <led.h>` and the second adds the LED initialization code. Let me resolve them:
+
+Now let me look at the defconfig conflict and resolve it. Looking at it, HEAD has `LED_BOOT=y` and the incoming has `LED_GPIO=y`. Based on the original commit, both should be present:
+
+I see. The original commit replaces the old LED_STATUS options with `CONFIG_LED=y` and `CONFIG_LED_GPIO=y`. But our HEAD already has `CONFIG_LED=y` and added `CONFIG_LED_BOOT=y`. We need to keep `LED_BOOT=y` and add `LED_GPIO=y`. Let me check the defconfig:
+
+The conflict is: HEAD has `LED_BOOT=y`, and incoming has `LED_GPIO=y`. We need both since the original commit adds LED_GPIO support and ci/master has LED_BOOT. Let me resolve by keeping both:
+
+There are extra blank lines. Let me clean that up:
+
+Now let me add the resolved files and continue the cherry-pick:
+
+Cherry-pick completed with conflicts resolved. Let me amend the commit message to note the resolution:
+
+Now let me compare the deltas:
+
+The delta is a bit different due to the conflict resolution - original removed 14 lines from defconfig but we only added 1 line because the LED_STATUS lines were already removed in ci/master. This is expected due to the merge resolution. Build test:
+
+Build passed. Commit 12:
+
+Delta matches. Build test:
+
+Build passed. Commit 13:
+
+Delta matches. Build test:
+
+Build passed. Commit 14:
+
+Delta matches. Build test:
+
+Build passed. Commit 15:
+
+Delta matches. Build test:
+
+Build passed. Commit 16:
+
+Delta matches. Build test:
+
+Build passed. Commit 17:
+
+Delta matches. Build test:
+
+Build passed. Commit 18:
+
+Delta matches. Build test:
+
+Build passed. Now for the final commit 19 - this is a merge commit:
+
+Yes it's a merge commit with two parents. I need to use -m 1 --allow-empty:
+
+Let me check the conflict:
+
+I see - the merge commit doesn't have CONFIG_LED_BOOT (which we added in ci/master), so it's conflicting. Since the commit added earlier already preserves LED_BOOT and the merge commit should result in an empty commit (all changes are already applied), let me resolve by keeping our version:
+
+Now let me continue the cherry-pick:
+
+The merge commit results in empty changes (all individual commits were already applied). Per instructions, I should still commit it with --allow-empty to preserve the merge message:
+
+The merge commit is now empty (which is expected since we've cherry-picked all individual commits). Let me run the build test:
+
+Build passed. Now let me verify the final status - all 19 commits should be present:
+
+All 19 commits are present. Let me run the final build test:
+
+All builds passed. Here's the final status:
+
+## Cherry-Pick Summary
+
+**Branch**: `cherry-b17c28488b3` (based on `ci/master`)
+
+**Total commits cherry-picked**: 19 of 19 ✅
+
+**Build status**: OK (sandbox build passed)
+
+### Commits Cherry-Picked:
+
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | b17c28488b3 | net: xgmac: Augment mdio read/write with cl-45 format support | ✅ Clean |
+| 2 | 2b30c416f0b | gpio: dwapb: Enable SPL support for DWAPB GPIO driver | ✅ Clean |
+| 3 | 1feebc36e58 | FPGA2SDRAM setup fix | ✅ Clean |
+| 4 | ec4b7710f87 | configs: agilex5: Enable FAT-based environment storage | ✅ Clean |
+| 5 | 5eb14e1ea26 | spi: cadence: Add driver for xSPI | ✅ Clean |
+| 6 | 3ba9b1f7bd7 | Cyclone V Board handsoff script | ✅ Clean |
+| 7 | 6beb48a3952 | nand: denali: enable ONFI detection for SoCFPGA SoC64 | ✅ Clean |
+| 8 | e291277689f | sync socfpga common u-boot dts | ✅ Clean |
+| 9 | 5b1fe6ef6b8 | Altera SoCFpga Boot Stall Fix | ✅ Clean |
+| 10 | 0af9efa7c18 | socfpga_vining_fpga: Stop disabling device tree relocation | ✅ Clean |
+| 11 | da09bb6a6c1 | board: softing: vining: migrate to modern LED framework | ⚠️ Conflict resolved |
+| 12 | 83d157e0362 | configs: cyclone5: Disable mkeficapsule tool build | ✅ Clean |
+| 13 | a2bd59f7c38 | mmc: socfpga_dw_mmc: Restore legacy clkmgr address retrieval | ✅ Clean |
+| 14 | f85293aac72 | spl: Remove ARCH_SOCFPGA from MMC raw mode enablement | ✅ Clean |
+| 15 | 5790f5ef335 | configs: cyclone5: Enable SPL FAT support | ✅ Clean |
+| 16 | cd74c05619f | configs: cyclone5: Update boot command for CycloneV | ✅ Clean |
+| 17 | 05f72f28e9a | configs: cyclone5: Disable SPI in SPL | ✅ Clean |
+| 18 | 87cb3183442 | Add optimized Makefile support for SoCFPGA handoff | ✅ Clean |
+| 19 | c6ee44b5573 | Merge tag 'u-boot-socfpga-next-20251201' | ✅ Empty (all changes already applied) |
+
+### Fix-ups Made:
+
+1. **Commit 11** (da09bb6a6c1 - board: softing: vining: migrate to modern LED framework):
+   - Conflict in `board/softing/vining_fpga/socfpga.c` - resolved by accepting incoming `#include <led.h>` and LED initialization code
+   - Conflict in `configs/socfpga_vining_fpga_defconfig` - resolved by keeping both `CONFIG_LED_BOOT=y` (from ci/master) and `CONFIG_LED_GPIO=y` (from incoming)
+   - Commit message amended with fix-up note
+
+2. **Commit 19** (c6ee44b5573 - Merge commit):
+   - Resulted in empty commit since all individual commits were already cherry-picked
+   - Preserved with `--allow-empty` to maintain the merge commit message/history
+
+### Deltas with Concerns:
+- None significant. All deltas matched or were explainable by the conflict resolutions.
+
+The branch `cherry-b17c28488b3` is ready for pushing.
+
+---
+
