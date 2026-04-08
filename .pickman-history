@@ -54491,8 +54491,6 @@ All 24 commits are present in the log. Now running the final build test:
 
 The branch `cherry-78dafa8e9e5` is ready for pushing.
 
----
-
 Branch: cherry-8d6f0c787eb
 
 Commits:
@@ -54549,6 +54547,78 @@ All 3 commits are present. Let me run a final build test:
 - No conflicts encountered
 - The merge commit (05ea0a387ff) is preserved as an empty commit, which is expected since its constituent commits were already cherry-picked individually
 - The branch is ready for pushing
+
+---
+
+---
+
+## 2026-04-07: us/next
+
+Branch: cherry-65c843ebe51
+
+Commits:
+- 65c843ebe51 ufs: Keep Makefile and Kconfig sorted one more time
+- d4f80bddc58 ufs: rcar-gen5: Use a unique U_BOOT_DRIVER name
+- 2bc0715b558 Merge tag 'u-boot-ufs-20251119' of https://source.denx.de/u-boot/custodians/u-boot-ufs
+
+### Conversation log
+The repository has untracked files but is otherwise clean (no uncommitted changes). Let me proceed with creating the branch and starting the cherry-picks.
+
+Now let me cherry-pick the first commit:
+
+First cherry-pick successful. Let me verify the delta and run build test:
+
+Delta looks identical (2 files, 16 insertions, 16 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Second cherry-pick successful. Let me verify the delta and run build test:
+
+Delta looks identical (1 file, 1 insertion, 1 deletion). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit (a merge commit):
+
+The merge commit results in an empty commit as expected (the changes were already applied by the previous two commits). Let me commit it with allow-empty as instructed:
+
+All three commits have been cherry-picked. Let me verify the delta for the merge commit:
+
+The cherry-picked merge commit is empty (as expected since the changes were already applied in the previous two commits), while the original merge commit brought in all changes from the merged branch. This is expected behavior for cherry-picking merge commits when the constituent commits have already been applied.
+
+Now let me run the build test:
+
+Build passed. Now let me verify with git log and run the final build:
+
+All 3 commits are present. Let me run the final build test:
+
+## Final Status
+
+**Cherry-pick completed successfully!**
+
+### Summary:
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 65c843ebe51 → e13c688bc36 | ufs: Keep Makefile and Kconfig sorted one more time | ✅ Applied cleanly |
+| 2 | d4f80bddc58 → bfb88d17a56 | ufs: rcar-gen5: Use a unique U_BOOT_DRIVER name | ✅ Applied cleanly |
+| 3 | 2bc0715b558 → e882a6702d6 | Merge tag 'u-boot-ufs-20251119' | ✅ Applied (empty - changes already in previous commits) |
+
+### Build Result: **OK** ✅
+- All builds passed with no warnings or errors
+
+### Fix-ups Made: None
+- All commits applied cleanly without conflicts
+
+### Delta Analysis:
+- Commit 1: Identical delta (2 files, 16+/16-)
+- Commit 2: Identical delta (1 file, 1+/1-)
+- Commit 3: Empty commit (expected for merge commit when constituent commits already applied)
+
+### Current Branch:
+```
+cherry-65c843ebe51 (3 commits ahead of ci/master)
+```
+
+The branch is ready for pushing.
 
 ---
 
