@@ -55064,3 +55064,69 @@ This is an **informational comment** documenting that a pipeline fix was previou
 
 ---
 
+## 2026-04-08: us/next
+
+Branch: cherry-ee5053adcb3
+
+Commits:
+- ee5053adcb3 mtd: rawnand: atmel: set pmecc data setup time
+- ba7721badf0 mtd: rawnand: atmel: atmel_pmecc_create: Remove unused code
+- d35a98834db Merge tag 'u-boot-at91-fixes-2026.01-a' of https://source.denx.de/u-boot/custodians/u-boot-at91
+
+### Conversation log
+The repository has untracked files but is otherwise clean. This is acceptable for cherry-picking. Let me proceed with creating the branch and starting the cherry-pick process.
+
+Branch created successfully. Now let me cherry-pick the first commit:
+
+First cherry-pick successful. Let me check the commit delta and run a build test:
+
+Deltas match perfectly (1 file, 6 lines added). Now let me run the build test:
+
+Build passed. Let me proceed with the second cherry-pick:
+
+Second cherry-pick successful. Let me check the delta:
+
+Deltas match perfectly (2 files, same line counts). Now let me run build test:
+
+Build passed. Now let me cherry-pick the third commit. This is a merge commit (identified by "Merge" in the subject), so I need to use special options:
+
+The merge commit is empty because the changes were already applied. I need to continue with --allow-empty to preserve the merge commit message for history tracking:
+
+The merge commit was created (empty as expected). Let me check the delta comparison:
+
+The merge commit is empty (as expected) because the underlying commits were already cherry-picked individually. The original merge commit shows 2 files changed with 7 insertions and 5 deletions - these changes are already in our branch from the previous two cherry-picks. This is expected behavior for merge commits.
+
+Let me run the build test:
+
+Build passed. Now let me verify all commits are present:
+
+All 3 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick operation completed successfully!**
+
+### Summary:
+
+| Commit | Subject | Status | Delta |
+|--------|---------|--------|-------|
+| ee5053adcb3 → b1cdab21f84 | mtd: rawnand: atmel: set pmecc data setup time | ✅ OK | Match (1 file, +6 lines) |
+| ba7721badf0 → 4b8f6077149 | mtd: rawnand: atmel: atmel_pmecc_create: Remove unused code | ✅ OK | Match (2 files, +2/-6 lines) |
+| d35a98834db → 5ec80eea304 | Merge tag 'u-boot-at91-fixes-2026.01-a' | ✅ OK (empty) | Expected empty - changes from child commits already applied |
+
+### Build Result: ✅ OK
+- All builds passed with no warnings or errors
+
+### Fix-ups Made: None
+- All cherry-picks applied cleanly without conflicts
+
+### Commits with Concerning Deltas: None
+- The merge commit is empty as expected (its child commits were cherry-picked individually first)
+
+### Branch Status:
+- Branch `cherry-ee5053adcb3` is ready for pushing
+- Contains 3 new commits on top of `ci/master`
+- All commits have "(cherry picked from commit ...)" trailers added via `-x` flag
+
+---
+
