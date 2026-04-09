@@ -55369,114 +55369,163 @@ The branch `cherry-209bbc4e003` is ready for pushing with all 9 commits applied 
 
 ---
 
-Branch: cherry-d9a765222da
+## 2026-04-09: us/next
+
+Branch: cherry-b5d592eff12
 
 Commits:
-- d9a765222da Change email addresses for B&R Industrial Automation
-- 97e202a7216 board: BuR: Update MAINTAINERS files
-- 02aa1a56a7c binman: fallback to importlib_resources on Python 3.8
-- a0bf98cedbc test: strlcat: Fix SPDX license
-- c98b6a6dcd1 clk: Remove myself as a maintainer
-- 56778d4c278 tools/logos: Add U-Boot logo with text 'U-Boot'
-- cb8156e9efb doc: add a page for downloading the U-Boot logo
-- 50cbdaba66a doc: pytest: fix hook script environment variable names
-- 18e2a059ff3 doc: pytest: add missing hook script env vars
-- ad53505a486 efi_loader: Fix a memory leak when retrieving device paths from boot vars
-- e5996e3ed35 doc: board: verdin-am62p: Fix boot log output
-- a1feb08d022 Merge tag 'efi-2026-01-rc4' of https://source.denx.de/u-boot/custodians/u-boot-efi
+- b5d592eff12 MAINTAINERS: update my email address
+- bb1c2b46326 update GCC version check after Kbuild bump
+- c7c2c3c0101 arm: mach-k3: j722s: Fix eMMC boot functionality broken by Ethernet boot
+- d3291d35b60 configs: phycore_am64x_a53_defconfig: Drop eMMC HS400 mode
+- f21a301147a configs: Resync with savedefconfig
+- 976c1cb85ff doc: Update urllib3 version for building
+- ae184121e00 omap3_evm: Take over maintainership
+- f2c148e0df3 arm64: versal: Fix LTO for mini_ospi/mini_qspi
+- 543900ab530 MAINTAINERS: update my email address
+- 0e0a198a68b Prepare v2026.01-rc4
+- f0baa0a6685 stm32mp: Fix handling of OPTEE in the middle of DRAM
+- fd26267b4c2 ARM: dts: stm32: Fix 512 MiB DRAM settings for DH STM32MP13xx DHCOR SoM
+- 86ff2cfa80e ARM: dts: stm32: Add 1 GiB DRAM settings for DH STM32MP13xx DHCOR SoM
+- 78e94666dd7 ARM: stm32: Add missing build of debug UART init code on DH STM32MP1 DHSOM
+- fbfaf5f63e9 Merge tag 'u-boot-stm32-20251209' of https://source.denx.de/u-boot/custodians/u-boot-stm
 
 ### Conversation log
-The repository is clean (only untracked files present, which won't affect cherry-picking). Let me proceed with creating the new branch based on ci/master.
+Good, the repository is clean (only untracked files). Let me create and checkout the new branch based on ci/master.
 
-Now let me start cherry-picking the commits one by one. Starting with the first commit:
+Now let's start cherry-picking the commits one by one. First, let me check if the first commit exists and then cherry-pick it. The first commit is `b5d592eff12` which might already be applied as `db17fde0e6e`.
 
-First commit successful. Let me verify the delta and run a build test:
+These are different commits - `b5d592eff12` is about Linus Walleij's email update, while `db17fde0e6e` is about Raymond Mao's email. They are NOT the same commit, so we need to cherry-pick it.
 
-Delta matches (6 files, 7 insertions, 5 deletions). Now run the build test:
+Let me start cherry-picking the first commit:
 
-Build passed. Let me continue with the second commit:
+First commit cherry-picked successfully. Let me verify the delta and run a build test:
 
-Delta matches. Build test:
+The delta is identical (5 files changed, 8 insertions, 7 deletions). Now let me run the build test:
 
-Build passed. Continuing with commit 3:
+Build passed. Now let's proceed with the second commit `bb1c2b46326`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 4:
+Build passed. Now commit 3 `c7c2c3c0101`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 5:
+Build passed. Now commit 4 `d3291d35b60`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 6:
+Build passed. Now commit 5 `f21a301147a` which is marked as [QCONFIG RESYNC] and might already be applied as `b47562c4bb4`. Let me first check if they're the same:
 
-Delta matches. Build test:
+These are completely different commits:
+- `f21a301147a` is a global qconfig.py resync by Tom Rini affecting many defconfigs
+- `b47562c4bb4` is a specific fix for toradex-smarc-imx95 by Max Krummenacher
 
-Build passed. Continuing with commit 7:
+Since this is marked [QCONFIG RESYNC], I should skip the cherry-pick and run `./tools/qconfig.py -s -Cy` instead:
 
-Delta matches. Build test:
+The qconfig.py tool ran successfully and created a commit automatically. Let me verify the commit and run a build test:
 
-Build passed. Continuing with commit 8:
+Build passed. Now commit 6 `976c1cb85ff`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 9:
+Build passed. Now commit 7 `ae184121e00`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 10:
+Build passed. Now commit 8 `f2c148e0df3`:
 
-Delta matches. Build test:
+Identical delta. Build test:
 
-Build passed. Continuing with commit 11:
+Build passed. Now commit 9 `543900ab530` which is marked as potentially already applied as `db17fde0e6e`. Let me check:
 
-Delta matches. Build test:
+These are different commits - `543900ab530` is about Yao Zi's email update while `db17fde0e6e` is about Raymond Mao's email. They're different commits so we need to cherry-pick:
 
-Build passed. Now the last commit - the merge commit. Need to use -m 1 --allow-empty:
+Let me see the conflict:
 
-The merge commit is empty (as expected since the changes were already cherry-picked individually). I need to commit it with --allow-empty to preserve the merge commit message for history tracking:
+This is a simple conflict - we need to add the "Yao Zi" line. The HEAD version is missing "Wolfgang Wallner" line too, which seems to have been removed from ci/master. Let me check if Wolfgang Wallner line exists in ci/master:
 
-Now I need to amend this to add the "(cherry picked from commit ...)" annotation:
+The Wolfgang Wallner line is not in ci/master. So for the resolution, I should only add the Yao Zi line (the new email mapping from the commit being cherry-picked):
 
-Now let me verify all commits are present and run the final build:
+Good, now let me mark it as resolved and continue the cherry-pick:
 
-All 12 commits are present. Let me run the final build:
+Conflict resolved. Now let me amend the commit message to note the fix-up:
 
-All cherry-picks complete successfully. Here's the final status:
+Delta is identical. Build test:
 
-## Cherry-Pick Summary
+Build passed. Now commit 10 `0e0a198a68b`:
 
-**Branch:** `cherry-d9a765222da` (based on `ci/master`)
+Let me see the conflicts:
 
-**All 12 commits cherry-picked successfully:**
+This is a version conflict. The ci/master is at 2026.02 while the cherry-pick is for 2026.01-rc4. This commit doesn't really apply to 2026.02 as it's a version bump for an earlier release. However, the instructions say to cherry-pick all commits, so let me resolve this by keeping HEAD's values (since ci/master is at a later version):
 
-| # | Commit | Subject |
-|---|--------|---------|
-| 1 | 3a8c88107ec | Change email addresses for B&R Industrial Automation |
-| 2 | 87b7d39dd62 | board: BuR: Update MAINTAINERS files |
-| 3 | ac89ccd3c32 | binman: fallback to importlib_resources on Python 3.8 |
-| 4 | 86428815d9f | test: strlcat: Fix SPDX license |
-| 5 | f79af4be63c | clk: Remove myself as a maintainer |
-| 6 | 431d1db7353 | tools/logos: Add U-Boot logo with text 'U-Boot' |
-| 7 | 9044af64db8 | doc: add a page for downloading the U-Boot logo |
-| 8 | 783bb2e18f3 | doc: pytest: fix hook script environment variable names |
-| 9 | 359aa2b928a | doc: pytest: add missing hook script env vars |
-| 10 | 812e7921c8f | efi_loader: Fix a memory leak when retrieving device paths from boot vars |
-| 11 | 3e6fec5efef | doc: board: verdin-am62p: Fix boot log output |
-| 12 | c27eb954e0c | Merge tag 'efi-2026-01-rc4' (empty - changes already applied) |
+The commit is empty because the version bump doesn't apply. Let me create an empty commit to preserve the commit history:
 
-**Build Result:** ✅ OK (all builds passed with no warnings/errors)
+Build passed. Now commit 11 `f0baa0a6685`:
 
-**Fix-ups:** None required
+Identical delta. Build test:
 
-**Delta Verification:** All commits matched their originals exactly
+Build passed. Now commit 12 `fd26267b4c2`:
 
-**Notes:**
-- The merge commit (a1feb08d022) resulted in an empty commit as expected since all the changes were already individually cherry-picked. The commit was preserved with `--allow-empty` to maintain the merge commit message for history tracking.
-- Some commits auto-merged cleanly (MAINTAINERS, doc/develop/pytest/usage.rst, lib/efi_loader/efi_capsule.c)
+Identical delta. Build test:
 
-The branch `cherry-d9a765222da` is ready for pushing.
+Build passed. Now commit 13 `86ff2cfa80e`:
+
+Identical delta. Build test:
+
+Build passed. Now commit 14 `78e94666dd7`:
+
+Identical delta. Build test:
+
+Build passed. Now the last commit 15 `fbfaf5f63e9` which is a merge commit:
+
+Yes, this is a merge commit. Let me cherry-pick it with `-m 1`:
+
+The merge commit is empty because we already cherry-picked all the individual commits it contained. Let me create an empty commit as instructed to preserve the merge history:
+
+All 15 commits cherry-picked. Now let me verify with git log:
+
+All 15 commits are present. Now let me run the final build test:
+
+All builds passed. Let me provide the final status report:
+
+## Final Status Report
+
+**Build result:** ✅ OK (sandbox build passes)
+
+**Cherry-pick summary:**
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | b5d592eff12 | MAINTAINERS: update my email address | ✅ Applied cleanly |
+| 2 | bb1c2b46326 | update GCC version check after Kbuild bump | ✅ Applied cleanly |
+| 3 | c7c2c3c0101 | arm: mach-k3: j722s: Fix eMMC boot functionality broken by Ethernet boot | ✅ Applied cleanly |
+| 4 | d3291d35b60 | configs: phycore_am64x_a53_defconfig: Drop eMMC HS400 mode | ✅ Applied cleanly |
+| 5 | f21a301147a | configs: Resync with savedefconfig [QCONFIG RESYNC] | ✅ Regenerated with qconfig.py (76 defconfigs updated) |
+| 6 | 976c1cb85ff | doc: Update urllib3 version for building | ✅ Applied cleanly |
+| 7 | ae184121e00 | omap3_evm: Take over maintainership | ✅ Applied cleanly |
+| 8 | f2c148e0df3 | arm64: versal: Fix LTO for mini_ospi/mini_qspi | ✅ Applied cleanly |
+| 9 | 543900ab530 | MAINTAINERS: update my email address | ✅ Conflict resolved - added Yao Zi email mapping line |
+| 10 | 0e0a198a68b | Prepare v2026.01-rc4 | ⚪ Empty commit (ci/master already at v2026.02) |
+| 11 | f0baa0a6685 | stm32mp: Fix handling of OPTEE in the middle of DRAM | ✅ Applied cleanly |
+| 12 | fd26267b4c2 | ARM: dts: stm32: Fix 512 MiB DRAM settings for DH STM32MP13xx DHCOR SoM | ✅ Applied cleanly |
+| 13 | 86ff2cfa80e | ARM: dts: stm32: Add 1 GiB DRAM settings for DH STM32MP13xx DHCOR SoM | ✅ Applied cleanly |
+| 14 | 78e94666dd7 | ARM: stm32: Add missing build of debug UART init code on DH STM32MP1 DHSOM | ✅ Applied cleanly |
+| 15 | fbfaf5f63e9 | Merge tag 'u-boot-stm32-20251209' | ⚪ Empty merge commit (individual commits already applied) |
+
+**Fix-ups made:**
+1. **Commit 5 (f21a301147a)**: Skipped cherry-pick and ran `./tools/qconfig.py -s -Cy` instead as per QCONFIG RESYNC instructions. 76 defconfig files were updated.
+2. **Commit 9 (543900ab530)**: Resolved `.mailmap` conflict by adding only the Yao Zi email mapping line (dropped Wolfgang Wallner line not present in ci/master). Commit message amended with note.
+3. **Commit 10 (0e0a198a68b)**: Version bump not applicable since ci/master is already at v2026.02. Created empty commit with note.
+4. **Commit 15 (fbfaf5f63e9)**: Empty merge commit since all individual STM32 commits were already cherry-picked.
+
+**"Maybe already applied" verification:**
+- b5d592eff12 vs db17fde0e6e: **Different** - b5d592eff12 is Linus Walleij's email update, db17fde0e6e is Raymond Mao's. Cherry-picked b5d592eff12.
+- f21a301147a vs b47562c4bb4: **Different** - f21a301147a is global qconfig resync by Tom Rini, b47562c4bb4 is toradex-smarc-imx95 specific fix. Ran qconfig.py instead.
+- 543900ab530 vs db17fde0e6e: **Different** - 543900ab530 is Yao Zi's email update, db17fde0e6e is Raymond Mao's. Cherry-picked 543900ab530.
+
+**Commits with concerning deltas:** None - all applied commits have identical deltas to the originals.
+
+**Branch status:** `cherry-b5d592eff12` is ready for pushing with 15 commits ahead of `ci/master`.
+
 ---
 
