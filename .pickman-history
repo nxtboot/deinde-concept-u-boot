@@ -56003,3 +56003,86 @@ All 6 commits are present. Let me run the final build test:
 
 ---
 
+## 2026-04-09: us/next
+
+Branch: cherry-3147cd713ea
+
+Commits:
+- 3147cd713ea clk: renesas: Do not enable MSTP4 extra modules on R8A77995 D3
+- 06df1a5072a clk: renesas: Do not disable realtime modules on R8A77995 D3
+- 556631ffdea Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+The repository is clean (only untracked files, no modified files). Let me proceed with creating the new branch.
+
+Now let me cherry-pick the first commit:
+
+First cherry-pick succeeded. Let me verify the delta and run the build test:
+
+The deltas match perfectly (1 file changed, 1 insertion, 1 deletion). Now let me run the build test:
+
+Build succeeded. Now let me cherry-pick the second commit:
+
+Second cherry-pick succeeded. Let me verify the delta:
+
+The deltas match perfectly (2 files changed, 14 insertions, 13 deletions). Now let me run the build test:
+
+Build succeeded. Now for the third commit - this is a merge commit and marked as "maybe already applied as 00692307cbd". Let me first verify if it's already applied:
+
+The patches show these are similar merge commits - they both merge changes related to R-Car D3 fixes. The found commit 00692307cbd appears to be a CI merge of the same content. Let me verify the content they merge is the same by checking what actual changes each merge brings:
+
+The commits are quite different. The original merge 556631ffdea only includes the 2 commits we just cherry-picked (3147cd713ea and 06df1a5072a), while 00692307cbd includes a much larger set of commits including R-Car Gen5 support and other changes.
+
+Let me check if there's another merge commit in ci/master that actually corresponds to the original merge more closely:
+
+I see f1066cfafe8 has exactly the same merge subject. Let me compare that:
+
+Hmm, this merge f1066cfafe8 is different - it's the X5H support merge, not the R-Car D3 fix merge. Let me check if the two commits we just cherry-picked are already in ci/master:
+
+The commits were not in ci/master yet, which means we correctly cherry-picked them. Now, since the merge commit 556631ffdea was merging exactly those two commits (3147cd713ea and 06df1a5072a) which we've already cherry-picked individually, the merge will be empty. Let me proceed with the merge commit using --allow-empty:
+
+The merge commit is empty because all its content was already cherry-picked individually. Let me commit it with --allow-empty to preserve the merge commit message:
+
+Now let me verify the cherry-pick and run the final build:
+
+All 3 commits are present. Now let me run the final build test:
+
+Build succeeded. Let me provide the final status:
+
+## Final Status Report
+
+### Cherry-Pick Summary
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | 3147cd713ea | clk: renesas: Do not enable MSTP4 extra modules on R8A77995 D3 | ✅ Successful |
+| 2 | 06df1a5072a | clk: renesas: Do not disable realtime modules on R8A77995 D3 | ✅ Successful |
+| 3 | 556631ffdea | Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh | ✅ Successful (empty - content already cherry-picked) |
+
+### Build Result
+✅ **OK** - Build passed with no warnings or errors
+
+### Fix-ups Made
+None required - all cherry-picks applied cleanly
+
+### Delta Analysis
+- Commit 1: Delta matches perfectly (1 file, +1/-1)
+- Commit 2: Delta matches perfectly (2 files, +14/-13)
+- Commit 3: Empty merge commit (expected, since the content was in commits 1 and 2)
+
+### Notes
+- The merge commit 556631ffdea was merging exactly the two commits we cherry-picked (3147cd713ea and 06df1a5072a), so it resulted in an empty commit as expected
+- The suggested already-applied commit 00692307cbd was NOT the same - it was a different, larger merge that happened to include references to the same URL but contained different content
+- All commits were new to ci/master
+
+### Final Branch State
+```
+0cbf2f8f7b6 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+87f82d13a64 clk: renesas: Do not disable realtime modules on R8A77995 D3
+8b69b70213a clk: renesas: Do not enable MSTP4 extra modules on R8A77995 D3
+```
+
+Branch `cherry-3147cd713ea` is ready for pushing.
+
+---
+
