@@ -55529,3 +55529,94 @@ All builds passed. Let me provide the final status report:
 
 ---
 
+### Pipeline fix: 2026-04-09 (attempt 1)
+
+Branch: cherry-b5d592eff12
+
+Failed jobs:
+- pine64 (sjg-lab)
+
+### Conversation log
+Let me analyze the failure. The test `test_dm_drivers` failed because it's looking for `'wdt_reboot'` but the output shows `'wdt��eboot'` - there's corruption in the output (likely a serial output issue with garbled characters).
+
+Looking at the error:
+```
+AssertionError: assert 'wdt_reboot' in '...wdt��eboot                132 sysreset...'
+```
+
+This appears to be a serial communication/output corruption issue on the pine64 hardware, not a code bug. The driver name `wdt_reboot` is being received as `wdt��eboot` (with garbled characters).
+
+Let me first checkout the branch and check the commits to see if any changes might have affected this:
+
+Now let me analyze the failure more carefully. The error is:
+```
+AssertionError: assert 'wdt_reboot' in '...wdt��eboot...'
+```
+
+This looks like a serial communication issue where the character `_r` is being corrupted to `��`. Let me look at what this test does and whether any commits in this branch might have affected it:
+
+The test is checking that all drivers from `dm compat` are also in `dm drivers`. The failure shows the driver name `wdt_reboot` is appearing corrupted as `wdt��eboot` in the serial output.
+
+This looks like a **hardware/infrastructure issue** - specifically serial communication corruption. The `_r` characters are being garbled to `��`. Let me check if any of the commits in this branch could affect this:
+
+No commits touch driver code, sunxi (pine64) arch code, or tests. Let me also check if there's anything related to serial, wdt, or sysreset:
+
+No changes to serial, wdt, sysreset, or watchdog. Let me check what files were actually modified in the commits:
+
+I see that the commits in this branch only touch:
+- STM32 code (not pine64)
+- MAINTAINERS files
+- Config files (resyncs)
+- Documentation
+
+None of these changes should affect the pine64 board's serial output or the `wdt_reboot` driver.
+
+Let me verify this is truly an infrastructure/transient issue by checking if the `wdt_reboot` driver exists and is properly named:
+
+The driver is correctly named `wdt_reboot`. The failure shows the serial output is corrupted - `wdt_reboot` is being received as `wdt��eboot`. This is clearly a **serial communication/hardware issue** - the characters `_r` are being corrupted.
+
+Let me also check the log more carefully - the corruption happens specifically at position where `_r` should be:
+- Expected: `wdt_reboot`
+- Actual: `wdt��eboot`
+
+The `_r` (underscore + r) has been corrupted to `��` (two garbled characters). This is a classic symptom of:
+1. Serial communication errors (baud rate mismatch, noise, etc.)
+2. Hardware/infrastructure issues on the test device
+
+Let me verify that none of the commits in this branch touch anything that could affect serial communication on pine64:
+
+No changes to pine64, sunxi, or serial drivers. This is clearly an infrastructure/transient issue.
+
+Let me also check if the pine64 config was touched:
+
+No changes to pine64 configs either.
+
+**Conclusion: This is an infrastructure/transient issue**
+
+The failure in the `pine64` job is caused by serial communication corruption on the test hardware. The test `test_dm_drivers` failed because the driver name `wdt_reboot` was received corrupted as `wdt��eboot` (the `_r` characters were garbled).
+
+**Evidence:**
+1. The error clearly shows character corruption: `'wdt_reboot'` was expected but `'wdt��eboot'` was received
+2. None of the commits in this branch touch any code related to:
+   - Pine64/Sunxi architecture
+   - Serial drivers
+   - Watchdog/sysreset drivers  
+   - Test infrastructure
+3. The commits only touch:
+   - STM32 platform code (unrelated to pine64)
+   - MAINTAINERS files
+   - Config file resyncs
+   - Documentation
+4. The `wdt_reboot` driver name is correctly defined in the source code
+
+**Recommendation:** This is a hardware/infrastructure issue (likely serial communication noise, baud rate issues, or a flaky test runner). No code changes are needed. The pipeline should be retried.
+
+---
+
+**Summary:**
+- **Root cause:** Serial communication corruption on the pine64 test hardware - the driver name `wdt_reboot` was received as `wdt��eboot`
+- **Type of failure:** Infrastructure/transient issue (not a code bug)
+- **Action:** No code changes made. The pipeline should be retried to verify this is indeed transient.
+
+---
+
