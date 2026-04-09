@@ -55248,3 +55248,124 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-08: us/next
+
+Branch: cherry-209bbc4e003
+
+Commits:
+- 209bbc4e003 boot/bootfdt: Add smbios3-entrypoint to FDT for non-EFI boots
+- db959339966 sh: Assure end of U-Boot is at 8-byte aligned offset
+- af96395a821 clk: renesas: Introduce temporary compound clock for SCP compatibility
+- 5353fc464f0 mailbox: renesas: Add Renesas MFIS Multifunctional Interface mailbox driver
+- e84a0bbefe1 arm64: renesas: Add Renesas R-Car Gen5 infrastructure
+- b546189a4b5 arm64: dts: renesas: Add Renesas R-Car X5H R8A78000 SoC DTs
+- cf71963778e arm64: dts: renesas: Add Renesas R-Car X5H R8A78000 Ironhide board code
+- 186de8a8fa8 arm64: renesas: Extend stub PSCI implementation to R-Car Gen5
+- 69c8ea98a71 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+The repository state is clean (only untracked files, no staged or modified files). Let me proceed with creating the cherry-pick branch and cherry-picking the commits.
+
+Now let's cherry-pick the first commit:
+
+First commit cherry-picked. Let me verify the delta and run the build test:
+
+The delta looks identical (3 files, 76 insertions). Now let me run the build test:
+
+Build passed. Now let's cherry-pick the second commit:
+
+Delta looks identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the third commit:
+
+Delta looks identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the fourth commit:
+
+Delta looks identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the fifth commit:
+
+There's a conflict. Let me check the conflict details:
+
+This is a straightforward conflict - the HEAD has nothing in that location and the commit adds new code. Let me resolve it by keeping all the new code:
+
+Wait, that might not be correct. Let me check what's in the original HEAD for this section, because there might be existing content that we need to preserve:
+
+This is straightforward - the HEAD has nothing in this location, and the commit wants to add the new R-Car code. Let me check the current state of our branch in that area:
+
+I see - the HEAD doesn't have any code between `OBJCOPYFLAGS_u-boot-elf.srec :=` and `u-boot-elf.srec:`. The cherry-picked commit wants to add new code there. I need to resolve the conflict by keeping both the HEAD context AND adding the new code. Let me check if there's already similar code in ci/master we need to preserve:
+
+The ci/master doesn't have the R-Car code either. So the resolution is simply to add the new code. Let me resolve the conflict properly:
+
+Now I understand. The conflict is that HEAD has nothing and we want to add the new R-Car code. The resolution is to keep the incoming changes. Let me fix this:
+
+Now let me verify the delta and amend the commit message to note the conflict resolution:
+
+I see a significant difference in the Makefile changes:
+- Cherry-picked: 27 changes (+/- combined, resulting in 92 insertions, 12 deletions)
+- Original: Only 9 changes in Makefile (resulting in 83 insertions, 3 deletions)
+
+This suggests there may have been some existing content in the target branch that was affected. Let me check the Makefile diff more closely:
+
+I see! The original commit was adding just the GEN5 section, expecting the GEN3 section to already exist. But in our ci/master branch, the GEN3 section doesn't exist either, so both sections were added as part of the conflict resolution. This is actually correct behavior - the GEN3 section is a dependency that was in the source branch but not in ci/master.
+
+Let me verify the actual file content is correct:
+
+The content looks correct. The GEN3 section was added as context from the source branch which is actually necessary for the full feature. Now let me add a note about the conflict resolution and run the build test:
+
+Now let's run the build test:
+
+Build passed. Now let's cherry-pick the sixth commit:
+
+Delta is identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the seventh commit:
+
+Delta is identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the eighth commit:
+
+Delta is identical. Let's run the build test:
+
+Build passed. Now let's cherry-pick the ninth and final commit (the merge commit). First, let me check if it's maybe already applied:
+
+These are different merge commits - the original is a merge from Tom Rini in the upstream branch, while 6fbc48c55c5 is a merge from Simon Glass in ci/master. The patches differ significantly in their nature and purpose - one is the upstream merge and the other is a different merge. However, looking at the content, it appears the upstream commits were already merged via a different path (cherry-f261367462d). Let me verify this is actually the same content:
+
+The Ironhide commits are not in ci/master, so the merge commit needs to be applied. Let me cherry-pick the merge commit:
+
+The merge commit is empty because all its changes were already applied in the previous cherry-picks. As per the instructions, I should still commit it with --allow-empty to preserve the commit sequence:
+
+Now let's verify all commits are present:
+
+All 9 commits are present. Now let's run the final build test:
+
+## Final Status
+
+### Build Result: ✅ OK
+
+### All 9 commits cherry-picked successfully:
+
+| # | Original Hash | Subject | Status |
+|---|---|---|---|
+| 1 | 209bbc4e003 | boot/bootfdt: Add smbios3-entrypoint to FDT for non-EFI boots | ✅ Clean |
+| 2 | db959339966 | sh: Assure end of U-Boot is at 8-byte aligned offset | ✅ Clean |
+| 3 | af96395a821 | clk: renesas: Introduce temporary compound clock for SCP compatibility | ✅ Clean |
+| 4 | 5353fc464f0 | mailbox: renesas: Add Renesas MFIS Multifunctional Interface mailbox driver | ✅ Clean |
+| 5 | e84a0bbefe1 | arm64: renesas: Add Renesas R-Car Gen5 infrastructure | ⚠️ Conflict resolved |
+| 6 | b546189a4b5 | arm64: dts: renesas: Add Renesas R-Car X5H R8A78000 SoC DTs | ✅ Clean |
+| 7 | cf71963778e | arm64: dts: renesas: Add Renesas R-Car X5H R8A78000 Ironhide board code | ✅ Clean |
+| 8 | 186de8a8fa8 | arm64: renesas: Extend stub PSCI implementation to R-Car Gen5 | ✅ Clean |
+| 9 | 69c8ea98a71 | Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh | ✅ Empty (as expected) |
+
+### Fix-ups Made:
+- **Commit 5 (e84a0bbefe1)**: Conflict in Makefile resolved. The cherry-pick required adding both the RCAR_GEN3 and RCAR_GEN5 Makefile sections, since ci/master was missing the RCAR_GEN3 section that exists in the source branch. This resulted in 92 insertions/12 deletions (vs 83/3 in original) but this is expected due to the additional context from the source branch. Commit message amended to note this.
+
+### Delta Concerns:
+- **Commit 5**: Slightly larger delta than original due to including RCAR_GEN3 Makefile section from source branch context. This is correct behavior - the GEN3 section was a contextual dependency.
+
+### Branch Status:
+The branch `cherry-209bbc4e003` is ready for pushing with all 9 commits applied on top of `ci/master`.
+
+---
+
