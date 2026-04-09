@@ -55824,6 +55824,110 @@ All 8 commits are present. Now let me run the final build test:
 All commits have matching deltas between cherry-picked and original versions (same files and line counts).
 
 The branch `cherry-7da7ca7cf50` is ready for pushing.
+Branch: cherry-87d85139a96
+
+Commits:
+- 87d85139a96 fs: fat: Perform sanity checks on getsize in get_fatent()
+- a4dcf3183ff board: theobroma-systems: update instructions for newer Rockchip rkbin
+- 1bea4284b0f board: theobroma-systems: add instructions for how to use upstream TF-A
+- b3a141846b0 board: theobroma-systems: jaguar_rk3588: explicit UART IOMUX
+- b57363a2b9b rockchip: Move TEXT_BASE to 8 MiB offset from start of DRAM
+- e22335a221f rockchip: Add support for RAM boot from maskrom mode
+- 57dc75fb9be rockchip: sdram: Add rockchip_sdram_type() helper
+- 2df3666a241 rockchip: rock5b-rk3588: Add support for ROCK 5B+
+- 73159af02d0 rockchip: rock5b-rk3588: Add support for Radxa ROCK 5T
+- c9d27133159 rockchip: i2c: fix incorrect STOP flag for the interrupt enable register
+- 1cf8d0b68d6 rockchip: i2c: move ACK comment where it applies
+- 0e5e9808194 rockchip: i2c: fix illegal I2C START/STOP condition
+- 0ed7abc85d1 rockchip: mkimage: enhance comments for v1 header
+- 41eddd89235 Merge tag 'u-boot-rockchip-20251214' of https://source.denx.de/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+The repository has untracked files but the working tree is clean (no modified tracked files). Let me proceed with creating the new branch from ci/master and starting the cherry-picks.
+
+Now let me cherry-pick the first commit:
+
+Delta looks good (1 file, 5 insertions - identical). Now running the build test:
+
+Build passed. Now cherry-pick the second commit:
+
+Delta looks identical. Build test:
+
+Build passed. Third commit:
+
+Build passed. Fourth commit:
+
+Build passed. Fifth commit:
+
+Build passed. Sixth commit:
+
+Build passed. Seventh commit:
+
+Build passed. Eighth commit:
+
+Build passed. Ninth commit:
+
+Build passed. Tenth commit:
+
+Build passed. Eleventh commit:
+
+Build passed. Twelfth commit:
+
+Build passed. Thirteenth commit:
+
+Build passed. Now the fourteenth and last commit - this is a MERGE commit, so I need to use `-m 1 --allow-empty`:
+
+The merge commit is empty because all its contents were already applied via the individual commits. As instructed, I should commit it with `--allow-empty` to preserve the merge commit message:
+
+The merge commit is now empty as expected (all content was cherry-picked via the individual commits). Now let me run the final build test:
+
+Build passed. Now verify the commits:
+
+All 14 commits are present. Let me verify with a count:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Summary
+- **Branch created:** `cherry-87d85139a96` based on `ci/master`
+- **Total commits cherry-picked:** 14 (all 14 commits requested)
+- **Final build result:** ✅ OK (sandbox build passed)
+
+### Commits Applied:
+1. `6b12ba1c30b` fs: fat: Perform sanity checks on getsize in get_fatent()
+2. `1146172413e` board: theobroma-systems: update instructions for newer Rockchip rkbin
+3. `7926db41f1c` board: theobroma-systems: add instructions for how to use upstream TF-A
+4. `d11fa44e712` board: theobroma-systems: jaguar_rk3588: explicit UART IOMUX
+5. `f7ba31ed930` rockchip: Move TEXT_BASE to 8 MiB offset from start of DRAM
+6. `92b6b6d1017` rockchip: Add support for RAM boot from maskrom mode
+7. `d5e5338ceb8` rockchip: sdram: Add rockchip_sdram_type() helper
+8. `f44f8c0422c` rockchip: rock5b-rk3588: Add support for ROCK 5B+
+9. `00dfc31bc5a` rockchip: rock5b-rk3588: Add support for Radxa ROCK 5T
+10. `3be8c4a29a1` rockchip: i2c: fix incorrect STOP flag for the interrupt enable register
+11. `b050301c9d5` rockchip: i2c: move ACK comment where it applies
+12. `57d43f164a6` rockchip: i2c: fix illegal I2C START/STOP condition
+13. `316367c754b` rockchip: mkimage: enhance comments for v1 header
+14. `7f44ba29d32` Merge tag 'u-boot-rockchip-20251214' (empty - all content already cherry-picked)
+
+### Fix-ups Made:
+- None required - all cherry-picks applied cleanly
+
+### Commits with Concerning Deltas:
+- None - all commit deltas matched the originals exactly
+
+### Notes:
+- The final merge commit (41eddd89235) was cherry-picked as an empty commit using `--allow-empty` as instructed, preserving the merge commit message for history tracking
+- Several cherry-picks had automatic merges (no conflicts) in the following files:
+  - fs/fat/fat.c
+  - arch/arm/mach-rockchip/Kconfig
+  - arch/arm/dts/rockchip-u-boot.dtsi
+  - boot/Kconfig
+  - configs/rock5b-rk3588_defconfig
+  - doc/board/rockchip/rockchip.rst
+  - tools/rkcommon.c
+
+The branch `cherry-87d85139a96` is ready for pushing.
 
 ---
 
