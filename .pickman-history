@@ -55931,3 +55931,75 @@ The branch `cherry-87d85139a96` is ready for pushing.
 
 ---
 
+## 2026-04-09: us/next
+
+Branch: cherry-798bef8e832
+
+Commits:
+- 798bef8e832 tools/libfdt/fdt_rw: fix SPDX-License-Identifier
+- 9d08916a575 clk: mediatek: remove duplicate '@parent' field doc
+- 47b50fb1125 cmd: part: Fix part argument description for `part number`
+- 8910efa71b8 net: lwip: tftp: Fix filename handling
+- a8a81af848b cmd: lwip/wget: avoid NULL dereference in _set_cacert()
+- 8d210fa37f4 Merge tag 'net-20251218' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+The repository is clean (just untracked files, which is fine). Let me proceed with creating the cherry-pick branch.
+
+Now let me start cherry-picking the commits one by one. First commit:
+
+First cherry-pick succeeded. Let me verify the delta:
+
+Delta matches perfectly (1 file, 1 insertion, 1 deletion). Now let me run the build test:
+
+Build passed. Now cherry-pick commit 2:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-pick commit 3:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-pick commit 4:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-pick commit 5:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-pick commit 6 (the merge commit):
+
+The merge commit is empty (which is expected since we already cherry-picked the individual commits). Let me commit it as an empty commit to preserve the merge commit message:
+
+The merge commit is empty as expected (since we already cherry-picked the individual commits before). The original merge showed file changes because it brought in those commits, but we already have them. This is correct behavior. Let me run the build test:
+
+Build passed. Now let me verify all commits are present:
+
+All 6 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+**Branch:** `cherry-798bef8e832` (based on `ci/master`)
+
+**Build result:** ✅ OK (no warnings or errors)
+
+**Cherry-picked commits (6 total):**
+
+| # | Hash | Subject | Delta |
+|---|------|---------|-------|
+| 1 | d4fceaabbc2 | tools/libfdt/fdt_rw: fix SPDX-License-Identifier | ✅ Match |
+| 2 | 66127aa6018 | clk: mediatek: remove duplicate '@parent' field doc | ✅ Match |
+| 3 | 65f1435b8cd | cmd: part: Fix part argument description for `part number` | ✅ Match |
+| 4 | 02506d4c3ae | net: lwip: tftp: Fix filename handling | ✅ Match |
+| 5 | adc049af0a3 | cmd: lwip/wget: avoid NULL dereference in _set_cacert() | ✅ Match |
+| 6 | 7a2e00c4027 | Merge tag 'net-20251218' | ✅ Empty (expected) |
+
+**Fix-ups made:** None required
+
+**Commits with concerning deltas:** None - the merge commit (6) is empty because the actual changes were already cherry-picked in commits 4 and 5.
+
+**Summary:** All 6 commits have been successfully cherry-picked. The branch `cherry-798bef8e832` is ready for pushing.
+
+---
+
