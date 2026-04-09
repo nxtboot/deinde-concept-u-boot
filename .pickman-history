@@ -55369,3 +55369,114 @@ The branch `cherry-209bbc4e003` is ready for pushing with all 9 commits applied 
 
 ---
 
+Branch: cherry-d9a765222da
+
+Commits:
+- d9a765222da Change email addresses for B&R Industrial Automation
+- 97e202a7216 board: BuR: Update MAINTAINERS files
+- 02aa1a56a7c binman: fallback to importlib_resources on Python 3.8
+- a0bf98cedbc test: strlcat: Fix SPDX license
+- c98b6a6dcd1 clk: Remove myself as a maintainer
+- 56778d4c278 tools/logos: Add U-Boot logo with text 'U-Boot'
+- cb8156e9efb doc: add a page for downloading the U-Boot logo
+- 50cbdaba66a doc: pytest: fix hook script environment variable names
+- 18e2a059ff3 doc: pytest: add missing hook script env vars
+- ad53505a486 efi_loader: Fix a memory leak when retrieving device paths from boot vars
+- e5996e3ed35 doc: board: verdin-am62p: Fix boot log output
+- a1feb08d022 Merge tag 'efi-2026-01-rc4' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The repository is clean (only untracked files present, which won't affect cherry-picking). Let me proceed with creating the new branch based on ci/master.
+
+Now let me start cherry-picking the commits one by one. Starting with the first commit:
+
+First commit successful. Let me verify the delta and run a build test:
+
+Delta matches (6 files, 7 insertions, 5 deletions). Now run the build test:
+
+Build passed. Let me continue with the second commit:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 3:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 4:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 5:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 6:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 7:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 8:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 9:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 10:
+
+Delta matches. Build test:
+
+Build passed. Continuing with commit 11:
+
+Delta matches. Build test:
+
+Build passed. Now the last commit - the merge commit. Need to use -m 1 --allow-empty:
+
+The merge commit is empty (as expected since the changes were already cherry-picked individually). I need to commit it with --allow-empty to preserve the merge commit message for history tracking:
+
+Now I need to amend this to add the "(cherry picked from commit ...)" annotation:
+
+Now let me verify all commits are present and run the final build:
+
+All 12 commits are present. Let me run the final build:
+
+All cherry-picks complete successfully. Here's the final status:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-d9a765222da` (based on `ci/master`)
+
+**All 12 commits cherry-picked successfully:**
+
+| # | Commit | Subject |
+|---|--------|---------|
+| 1 | 3a8c88107ec | Change email addresses for B&R Industrial Automation |
+| 2 | 87b7d39dd62 | board: BuR: Update MAINTAINERS files |
+| 3 | ac89ccd3c32 | binman: fallback to importlib_resources on Python 3.8 |
+| 4 | 86428815d9f | test: strlcat: Fix SPDX license |
+| 5 | f79af4be63c | clk: Remove myself as a maintainer |
+| 6 | 431d1db7353 | tools/logos: Add U-Boot logo with text 'U-Boot' |
+| 7 | 9044af64db8 | doc: add a page for downloading the U-Boot logo |
+| 8 | 783bb2e18f3 | doc: pytest: fix hook script environment variable names |
+| 9 | 359aa2b928a | doc: pytest: add missing hook script env vars |
+| 10 | 812e7921c8f | efi_loader: Fix a memory leak when retrieving device paths from boot vars |
+| 11 | 3e6fec5efef | doc: board: verdin-am62p: Fix boot log output |
+| 12 | c27eb954e0c | Merge tag 'efi-2026-01-rc4' (empty - changes already applied) |
+
+**Build Result:** ✅ OK (all builds passed with no warnings/errors)
+
+**Fix-ups:** None required
+
+**Delta Verification:** All commits matched their originals exactly
+
+**Notes:**
+- The merge commit (a1feb08d022) resulted in an empty commit as expected since all the changes were already individually cherry-picked. The commit was preserved with `--allow-empty` to maintain the merge commit message for history tracking.
+- Some commits auto-merged cleanly (MAINTAINERS, doc/develop/pytest/usage.rst, lib/efi_loader/efi_capsule.c)
+
+The branch `cherry-d9a765222da` is ready for pushing.
+---
+
