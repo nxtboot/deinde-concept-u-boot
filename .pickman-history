@@ -55180,3 +55180,71 @@ The review comment was a diagnostic report about a pipeline failure (rockpro64 j
 
 ---
 
+## 2026-04-08: us/next
+
+Branch: cherry-710a7c79127
+
+Commits:
+- 710a7c79127 ARM: dts: renesas: Enable R8A779G0 V4H White Hawk RPC SPI DT node
+- 925e0cb3b99 ARM: renesas: Disable CONFIG_ENV_OVERWRITE on all boards
+- 6ec94acd15e arm64: renesas: r8a779g3: Use redundant env on Retronix R-Car V4H Sparrow Hawk board
+- d4a8124805e Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+The repository is mostly clean (just some untracked files). Let me create the new branch and start cherry-picking.
+
+Now let me first verify what we're working with and check the first commit that is marked as "maybe already applied":
+
+The merge commits are different - they have different subjects and different meanings. Let me check if the underlying commits (the ones being merged) are already in ci/master:
+
+Interesting - there's a related commit but with different subject. Let me check more thoroughly by searching with broader terms:
+
+Let me check if the specific commit hashes are in ci/master by checking their abbreviated form:
+
+Good. The commits are not directly in ci/master. Let me proceed with the cherry-picks. First, let me cherry-pick commit 1:
+
+Good - the delta is identical! Now let me run the build test:
+
+Build passed! Now let me cherry-pick the second commit:
+
+Delta matches. Let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit:
+
+Delta matches. Let me run the build test:
+
+Build passed. Now let me cherry-pick the fourth commit (merge commit). First, let me verify if it's actually the same as the suggested already-applied commit:
+
+These are different merge commits with different subjects. The instructions already addressed this - d4a8124805e is the original merge from u-boot-sh, while 6fbc48c55c5 is a different merge. Let me proceed to cherry-pick the merge commit:
+
+The merge commit is empty (which is expected since the individual commits were already cherry-picked). Let me commit it with --allow-empty as instructed:
+
+The merge commit is empty as expected (the changes were already applied via the individual cherry-picks). Now let me run the build test:
+
+Build passed. Now let me verify the final state with git log:
+
+All 4 commits are present. Let me run the final build test:
+
+Excellent! All builds passed with no warnings or errors.
+
+## Summary
+
+**All 4 commits cherry-picked successfully!**
+
+| Commit | Subject | Status |
+|--------|---------|--------|
+| 710a7c79127 | ARM: dts: renesas: Enable R8A779G0 V4H White Hawk RPC SPI DT node | ✓ OK (5906073987c) |
+| 925e0cb3b99 | ARM: renesas: Disable CONFIG_ENV_OVERWRITE on all boards | ✓ OK (7ba89a84fc9) |
+| 6ec94acd15e | arm64: renesas: r8a779g3: Use redundant env on Retronix R-Car V4H Sparrow Hawk board | ✓ OK (4c70f43f94a) |
+| d4a8124805e | Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh | ✓ OK (empty commit, fa61ad99280) |
+
+**Final state:**
+- Branch: `cherry-710a7c79127` (based on ci/master)
+- Build result: **OK** (no warnings/errors)
+- Fix-ups: **None needed**
+- Commit deltas: **All match** (except merge commit which is expected to be empty since individual commits were already cherry-picked first)
+
+The branch is ready for pushing.
+
+---
+
