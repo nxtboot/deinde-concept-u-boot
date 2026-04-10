@@ -56146,3 +56146,91 @@ The branch has been re-pushed to trigger a new pipeline. If the failures persist
 
 ---
 
+## 2026-04-10: us/next
+
+Branch: cherry-eb18217b63b
+
+Commits:
+- eb18217b63b MAINTAINERS: update my email address
+- 9a23c1e5f21 clk: scmi: Fix typo scmi_clk_get_attibute
+- 0e9055b1488 clk: scmi: Fix priv initialization in scmi_clk_gate()
+- 4c3aa5356dd clk: scmi: Remove duplicated scmi_generic_protocol_version() request
+- 228810d0bac Merge tag 'scmi-master-2026-1-5' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+The repository is clean (untracked files are fine). Let me create the new branch and start the cherry-pick process.
+
+Good. Now let me start cherry-picking the commits. The first commit has a note that it may already be applied as `599c882ee2d`. Let me verify this first:
+
+The patches are significantly different. `599c882ee2d` is a pickman history commit, not the same commit as `eb18217b63b` (the MAINTAINERS email update). Let me check if the actual MAINTAINERS email update exists in ci/master by searching for it:
+
+There are two commits with the subject "MAINTAINERS: update my email address". Let me check the author of `eb18217b63b` to see which one matches:
+
+None of these match - we're looking for Jerome Forissier's commit. Let me search more specifically:
+
+Let me search for Jerome Forissier's email update commit directly:
+
+Let me search for the specific email change in MAINTAINERS:
+
+The email change hasn't been applied to ci/master. Let me proceed with the cherry-picks. Let me start with the first commit:
+
+First commit cherry-picked. Let me verify the delta:
+
+Delta matches perfectly (2 files, 4 insertions, 3 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta matches. Build test:
+
+Build passed. Now commit 3:
+
+Delta matches. Build test:
+
+Build passed. Now commit 4:
+
+Delta matches. Build test:
+
+Build passed. Now the last commit which is a merge commit:
+
+Yes, it has two parents so it's a merge commit. Let me cherry-pick it with -m 1 --allow-empty:
+
+The merge commit is empty because all the individual commits were already cherry-picked. Let me commit it with --allow-empty to preserve the merge message:
+
+Now let me amend the commit to add the "(cherry picked from commit ...)" annotation:
+
+Now let me verify all commits are present:
+
+All 5 commits are present. Now let me run the final build test:
+
+All builds passed. Here's the final status report:
+
+## Final Status Report
+
+**Branch:** `cherry-eb18217b63b` (based on `ci/master`)
+
+**Build result:** ✅ OK (sandbox build passes)
+
+**All 5 commits cherry-picked successfully:**
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | eb18217b63b | MAINTAINERS: update my email address | ✅ Applied cleanly |
+| 2 | 9a23c1e5f21 | clk: scmi: Fix typo scmi_clk_get_attibute | ✅ Applied cleanly |
+| 3 | 0e9055b1488 | clk: scmi: Fix priv initialization in scmi_clk_gate() | ✅ Applied cleanly |
+| 4 | 4c3aa5356dd | clk: scmi: Remove duplicated scmi_generic_protocol_version() request | ✅ Applied cleanly |
+| 5 | 228810d0bac | Merge tag 'scmi-master-2026-1-5' | ⚪ Empty merge commit (individual commits already applied) |
+
+**"Maybe already applied" verification:**
+- eb18217b63b vs 599c882ee2d: **Different** - 599c882ee2d is a pickman history commit, not the actual MAINTAINERS email update. Cherry-picked eb18217b63b successfully.
+
+**Fix-ups made:** None
+
+**Commits with concerning deltas:** None - all commits have identical deltas to the originals
+
+**Notes:**
+- The merge commit (228810d0bac) resulted in an empty commit as expected since all the individual changes were already cherry-picked. The commit was preserved with `--allow-empty` to maintain the merge commit message for history tracking.
+
+The branch `cherry-eb18217b63b` is ready for pushing with 5 commits ahead of `ci/master`.
+
+---
+
