@@ -14,6 +14,8 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
+from tests.fs_helper import FsHelper
+
 
 @pytest.mark.buildconfigspec('sandbox')
 @pytest.mark.buildconfigspec('fs_ext4l')
@@ -146,3 +148,35 @@ class TestExt4l:
         """Test that ext4l can rename files and directories."""
         with ubman.log.section('Test ext4l rename'):
             ubman.run_ut('fs', 'fs_test_ext4l_rename', fs_image=ext4_image)
+
+    @pytest.fixture(scope='class')
+    def dual_images(self, u_boot_config):
+        """Create two ext4 images with different content.
+
+        Image A contains id.txt with "alpha\\n".
+        Image B contains id.txt with "bravo\\n".
+
+        Yields:
+            tuple: (path_a, path_b) paths to the two images
+        """
+        helpers = []
+        for label, content in [('a', 'alpha'), ('b', 'bravo')]:
+            fsh = FsHelper(u_boot_config, 'ext4', 64, f'dual_{label}')
+            fsh.setup()
+            with open(os.path.join(fsh.srcdir, 'id.txt'), 'w') as f:
+                f.write(content + '\n')
+            fsh.mk_fs()
+            helpers.append(fsh)
+
+        yield tuple(fsh.fs_img for fsh in helpers)
+
+        for fsh in helpers:
+            fsh.cleanup()
+
+    @pytest.mark.buildconfigspec('cmd_vfs')
+    def test_dual_mount(self, ubman, dual_images):
+        """Test that two ext4l filesystems can be mounted simultaneously."""
+        image_a, image_b = dual_images
+        with ubman.log.section('Test ext4l dual mount'):
+            ubman.run_ut('fs', 'fs_test_ext4l_dual_mount',
+                         fs_image_a=image_a, fs_image_b=image_b)

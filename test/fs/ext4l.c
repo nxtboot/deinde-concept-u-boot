@@ -6,13 +6,19 @@
  * Written by Simon Glass <simon.glass@canonical.com>
  */
 
+#include <blk.h>
 #include <command.h>
+#include <dm.h>
 #include <env.h>
 #include <ext4l.h>
 #include <fs.h>
 #include <fs_legacy.h>
 #include <linux/sizes.h>
+#include <mapmem.h>
+#include <sandbox_host.h>
 #include <u-boot/uuid.h>
+#include <vfs.h>
+#include <dm/device-internal.h>
 #include <test/test.h>
 #include <test/ut.h>
 #include <test/fs.h>
@@ -650,3 +656,79 @@ static int fs_test_ext4l_rename_norun(struct unit_test_state *uts)
 }
 FS_TEST_ARGS(fs_test_ext4l_rename_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
+
+#define EXT4L_ARG_IMAGE_A	0
+#define EXT4L_ARG_IMAGE_B	1
+#define BUF_ADDR		0x10000
+
+/**
+ * fs_test_ext4l_dual_mount_norun() - Test two ext4l mounts simultaneously
+ *
+ * Mount two different ext4 images at /mnt and /mnt2, read a file from
+ * each, and verify they return different content.
+ *
+ * Arguments:
+ *   fs_image_a: Path to first ext4 filesystem image (contains "alpha\n")
+ *   fs_image_b: Path to second ext4 filesystem image (contains "bravo\n")
+ */
+static int fs_test_ext4l_dual_mount_norun(struct unit_test_state *uts)
+{
+	const char *image_a = ut_str(EXT4L_ARG_IMAGE_A);
+	const char *image_b = ut_str(EXT4L_ARG_IMAGE_B);
+	struct udevice *dev_a, *dev_b, *blk;
+	struct blk_desc *desc;
+	char *buf;
+
+	ut_assertok(vfs_init());
+
+	/* Mount first image at /mnt */
+	ut_assertok(host_create_device("ext4a", true, DEFAULT_BLKSZ, &dev_a));
+	ut_assertok(host_attach_file(dev_a, image_a));
+	ut_assertok(blk_get_from_parent(dev_a, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+	ut_assertok(run_commandf("mount host %x:0 /mnt", desc->devnum));
+	ut_assert_console_end();
+
+	/* Mount second image at /mnt2 */
+	ut_assertok(host_create_device("ext4b", true, DEFAULT_BLKSZ, &dev_b));
+	ut_assertok(host_attach_file(dev_b, image_b));
+	ut_assertok(blk_get_from_parent(dev_b, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+	ut_assertok(run_commandf("mount host %x:0 /mnt2", desc->devnum));
+	ut_assert_console_end();
+
+	/* Read from first mount */
+	buf = map_sysmem(BUF_ADDR, 0x100);
+	memset(buf, '\0', 0x100);
+	ut_assertok(run_commandf("load %x /mnt/id.txt", BUF_ADDR));
+	ut_assert_nextline("6 bytes read");
+	ut_assert_console_end();
+	ut_asserteq_str("alpha\n", buf);
+
+	/* Read from second mount */
+	memset(buf, '\0', 0x100);
+	ut_assertok(run_commandf("load %x /mnt2/id.txt", BUF_ADDR));
+	ut_assert_nextline("6 bytes read");
+	ut_assert_console_end();
+	ut_asserteq_str("bravo\n", buf);
+	unmap_sysmem(buf);
+
+	/* Unmount both */
+	ut_assertok(run_command("umount /mnt2", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("umount /mnt", 0));
+	ut_assert_console_end();
+
+	ut_assertok(host_detach_file(dev_b));
+	ut_assertok(device_unbind(dev_b));
+	ut_assertok(host_detach_file(dev_a));
+	ut_assertok(device_unbind(dev_a));
+
+	return 0;
+}
+FS_TEST_ARGS(fs_test_ext4l_dual_mount_norun,
+	     UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
+	     { "fs_image_a", UT_ARG_STR },
+	     { "fs_image_b", UT_ARG_STR });
