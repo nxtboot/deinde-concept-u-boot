@@ -56419,6 +56419,71 @@ All builds passed with no warnings or errors.
 - **d5e2db3a4ab**: Cherry-pick: 11 insertions, 9 deletions vs Original: 9 insertions, 9 deletions (+2 lines difference due to sandbox64_lwip addition) - Acceptable
 
 The branch `cherry-9420160a0d1` is ready for pushing.
+Branch: cherry-2a909c3da71
+
+Commits:
+- 2a909c3da71 mach-k3: am62px: remove fdt_fixup_cpu_freq_nodes_am62p
+- 65a6b83a9b7 mach-k3: refactor A53 speed grade clock-rate fixup
+- d4c0b8fed70 mach-k3: am62a: add support for speed grades
+- 96edadab547 Merge patch series "ti: add speed grades support for AM62a"
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me create the new branch based on ci/master:
+
+Now let me cherry-pick the first commit:
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+Delta matches (1 file, 12 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Second commit cherry-picked with auto-merge. Let me verify the delta:
+
+Delta matches exactly (6 files, +165/-166). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit:
+
+Third commit cherry-picked with auto-merge. Let me verify the delta:
+
+Delta matches exactly (2 files, +43). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the fourth commit (this is a merge commit):
+
+The merge commit is empty (expected since we already cherry-picked all the individual commits). Let me commit it as an empty commit to preserve the history:
+
+Let me verify the delta and run the build test:
+
+The cherry-picked merge commit is empty (which is expected since we already applied all the individual commits, and the merge commit's delta combines all the changes). Now let me run the build test:
+
+Build passed. Now let me verify all 4 commits are present:
+
+All 4 commits are present. Now let me run the final build test:
+
+## Final Status
+
+**All cherry-picks completed successfully!**
+
+### Summary
+
+| Commit | Subject | Status | Delta |
+|--------|---------|--------|-------|
+| 2a909c3da71 → 6a6c182f8c7 | mach-k3: am62px: remove fdt_fixup_cpu_freq_nodes_am62p | ✅ OK | 1 file, -12 lines |
+| 65a6b83a9b7 → df817fd65bc | mach-k3: refactor A53 speed grade clock-rate fixup | ✅ OK (auto-merged) | 6 files, +165/-166 lines |
+| d4c0b8fed70 → 4aba9a3c603 | mach-k3: am62a: add support for speed grades | ✅ OK (auto-merged) | 2 files, +43 lines |
+| 96edadab547 → c3292c0bfe6 | Merge patch series "ti: add speed grades support for AM62a" | ✅ OK (empty commit) | Empty (expected) |
+
+### Build Result
+- **Build: OK** - No warnings or errors
+
+### Fix-ups
+- None required - all commits applied cleanly
+
+### Commits with concerning deltas
+- None - all deltas matched exactly
+
+### Branch Status
+The cherry-pick branch `cherry-2a909c3da71` is ready for pushing with 4 commits ahead of `ci/master`.
 
 ---
 
