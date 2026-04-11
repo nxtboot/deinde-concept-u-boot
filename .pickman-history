@@ -57394,3 +57394,76 @@ The branch has been pushed. Let me verify the final state:
 
 ---
 
+### Review: 2026-04-11
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [sjg]: pickman: For the malloc problem, see below. Try increasing SYS_MALLOC_LEN to 0x8000000
+
+https://conc...
+
+### Conversation log
+Now I understand the task. The reviewer is asking to increase `SYS_MALLOC_LEN` to `0x8000000` for sandbox to address a MALLOC size issue seen in the CI test. The failing test is `ut_dm_dm_test_video_bmp24_32` which seems to be running out of memory.
+
+Let me find the sandbox defconfig or Kconfig where `SYS_MALLOC_LEN` is defined:
+
+Interesting! I see that `sandbox_defconfig` already has `CONFIG_SYS_MALLOC_LEN=0x8000000`, but `sandbox64_defconfig` has `CONFIG_SYS_MALLOC_LEN=0x6000000`. The reviewer is asking to increase to `0x8000000`, which means the sandbox64 defconfig needs to be updated.
+
+Let me check what defconfig CI is using:
+
+I see that `sandbox64_defconfig` has `CONFIG_SYS_MALLOC_LEN=0x6000000`. The reviewer wants this increased to `0x8000000` to match `sandbox_defconfig`. 
+
+Now I need to understand where this change should be made. Looking at the failing test, it's a video test that's failing. The change to `sandbox64_defconfig` makes sense since it has the smaller MALLOC size.
+
+But wait - I need to think about which commit should contain this change. Looking at the branch, the interconnect changes were added and they might have increased memory usage. Let me check if the `sandbox64_defconfig` was modified in any of the commits in this branch:
+
+The commit `2050e731ce2` (interconnect: add DM test suite) modified `sandbox64_defconfig`. This is where the interconnect sandbox support was added. Let me check what changes were made:
+
+Perfect! The commit `2050e731ce2` added `CONFIG_INTERCONNECT=y` and `CONFIG_INTERCONNECT_SANDBOX=y` to `sandbox64_defconfig`. This is the commit that increased memory usage, so this is where the MALLOC_LEN increase should go.
+
+Let me make the change to the defconfig:
+
+Now I need to amend this change into commit `2050e731ce2` (interconnect: add DM test suite). Let me do an interactive rebase. First, let me see the commit structure:
+
+Commit `2050e731ce2` is commit #9 from HEAD. Let me do the rebase:
+
+Rebase succeeded. Now let me verify the change is in place and run the build:
+
+The change is in place. Let me verify the commit delta for the amended commit:
+
+The change is now `4 +++-` (3 insertions, 1 deletion) instead of the original `3 ++++` (3 insertions). This reflects the MALLOC_LEN change (1 line modified = 1 deletion + 1 insertion) plus the 2 new config lines. Now let me run the build test:
+
+Build passed. Now let me create the versioned local branch and push:
+
+Success! Let me verify the final state:
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Review Comment Addressed:**
+- Comment from sjg: Increase `SYS_MALLOC_LEN` to `0x8000000` for sandbox64 to fix memory issues
+
+**Change Made:**
+- Modified `configs/sandbox64_defconfig`: Changed `CONFIG_SYS_MALLOC_LEN` from `0x6000000` to `0x8000000`
+
+**Commit Amended:** `988419e0424` (interconnect: add DM test suite)
+- This is the appropriate commit because it adds the interconnect sandbox test support which increases memory usage
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v4` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Increased `CONFIG_SYS_MALLOC_LEN` from `0x6000000` to `0x8000000` in `sandbox64_defconfig` (now matches `sandbox_defconfig`). The change is in the "interconnect: add DM test suite" commit since that's where sandbox interconnect support is added.
+> 
+> Build passes locally. The pipeline should run automatically.
+
+---
+
