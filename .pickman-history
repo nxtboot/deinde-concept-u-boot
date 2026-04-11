@@ -56670,3 +56670,71 @@ The rebase and push were successful. Here's the summary:
 
 ---
 
+## 2026-04-10: us/next
+
+Branch: cherry-3c2a9475334
+
+Commits:
+- 3c2a9475334 disk/part.c: ensure strings in struct disk_partition are valid after successful get_info
+- 30890051ab2 cmd/part.c: implement "part name" subcommand
+- b8872deb445 Merge patch series "'part name' subcommand and some robustification"
+
+### Conversation log
+The repository state is clean (untracked files don't affect cherry-picks). Now let me create and checkout the new branch based on ci/master:
+
+Now let me cherry-pick the first commit (regular commit):
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+The deltas match exactly (3 files, 55 insertions, 28 deletions). Now let me run the build test:
+
+Build passed for the first commit. Now let me cherry-pick the second commit:
+
+Second commit cherry-picked successfully. Let me verify the delta:
+
+Deltas match exactly (2 files, 28 insertions, 1 deletion). Now let me run the build test:
+
+Build passed for the second commit. Now let me cherry-pick the third commit (merge commit - requires -m 1 --allow-empty):
+
+The merge commit results in an empty commit as expected (the actual changes were already picked in the prior commits). This is normal for merge commits when cherry-picking. Let me commit it with --allow-empty:
+
+All three commits cherry-picked. Let me verify the delta for the merge commit:
+
+The merge commit is correctly empty in the cherry-pick (as expected - all changes came from the two previous commits). The original merge commit shows the aggregate changes from merging both commits. This is expected behavior.
+
+Now let me run the build test and verify the log:
+
+All cherry-picks completed successfully. Let me provide the final status:
+
+## Final Status
+
+### Cherry-pick Summary
+
+| # | Original Hash | Subject | Result |
+|---|---------------|---------|--------|
+| 1 | 3c2a9475334 | disk/part.c: ensure strings in struct disk_partition are valid after successful get_info | ✅ Success |
+| 2 | 30890051ab2 | cmd/part.c: implement "part name" subcommand | ✅ Success |
+| 3 | b8872deb445 | Merge patch series "'part name' subcommand and some robustification" | ✅ Success (empty commit as expected) |
+
+### Build Result
+- **Status**: ✅ OK - All builds passed
+
+### Fix-ups Made
+- None required
+
+### Delta Verification
+- Commit 1: Perfect match (3 files, +55/-28)
+- Commit 2: Perfect match (2 files, +28/-1)
+- Commit 3: Empty commit as expected (merge commit - changes already applied via previous commits)
+
+### Final Branch State
+```
+99da5120e1d Merge patch series "'part name' subcommand and some robustification"
+646c6188931 cmd/part.c: implement "part name" subcommand
+e9abe0ce8c6 disk/part.c: ensure strings in struct disk_partition are valid after successful get_info
+```
+
+The branch `cherry-3c2a9475334` is ready for pushing. All 3 commits from `us/next` have been successfully cherry-picked onto `ci/master`.
+
+---
+
