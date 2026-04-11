@@ -56738,3 +56738,78 @@ The branch `cherry-3c2a9475334` is ready for pushing. All 3 commits from `us/nex
 
 ---
 
+### Review: 2026-04-11
+
+Branch: cherry-3c2a9475334
+
+Comments addressed:
+
+
+### Conversation log
+The ci/master has been updated with new commits. The merge base is `cdb8711d07d`, but ci/master now has 2 additional commits ahead of that. I need to rebase the branch onto the latest ci/master.
+
+There are 2 new commits on ci/master since the branch was created. One of them (`8a9220d9342`) appears to fix the setuptools issue that was causing the CI failures. Let me save the current commit info and perform the rebase:
+
+Now let me perform the rebase:
+
+Rebase completed successfully. Now let me verify the deltas and run build tests:
+
+Now let me verify the deltas match:
+
+All deltas match the original commits:
+- Commit 1: Same files and stats (disk/part.c changes)
+- Commit 2: Same - 2 files, 28 insertions, 1 deletion
+- Commit 3: Empty merge commit (as expected)
+- Commit 4: pickman history file (1 file, 68 insertions)
+
+Now let me run the build test:
+
+Build passed. Now let me check for existing version branches and create the new one:
+
+There's already a -v2 branch, so I need to create -v3:
+
+The branch has been successfully rebased and pushed. Let me provide a summary:
+
+## Summary
+
+### What was done:
+
+1. **Checked out branch**: `cherry-3c2a9475334`
+
+2. **Identified the issue**: The branch was behind `ci/master` by 2 commits:
+   - `8a9220d9342` - CI: Fix setuptools and clang-20 issues for Noble
+   - `19d6b71f9e6` - Merge branch 'fix-ci' into 'master'
+   
+   The first commit fixes the CI infrastructure issue (missing setuptools) that was causing the previous pipeline failures.
+
+3. **Rebased onto ci/master**: Successfully rebased all 4 commits onto the latest `ci/master`.
+
+4. **Verified deltas match**:
+   - Commit 1 (`ec2f5b703ab`): disk/part.c changes - ✅ Match
+   - Commit 2 (`57cd0e68685`): cmd/part.c implement "part name" - 2 files, +28/-1 - ✅ Match  
+   - Commit 3 (`d17f4312858`): Merge commit (empty as expected) - ✅ Match
+   - Commit 4 (`6f67d324bae`): pickman history - 1 file, +68 - ✅ Match
+
+5. **Build test**: ✅ Passed (`buildman -L --board sandbox -w -o /tmp/pickman`)
+
+6. **Created local version branch**: `cherry-3c2a9475334-v3`
+
+7. **Force pushed to remote**: Updated MR !866
+
+### New branch state:
+```
+6f67d324bae pickman: Record cherry-pick of 3 commits from us/next
+d17f4312858 Merge patch series "'part name' subcommand and some robustification"
+57cd0e68685 cmd/part.c: implement "part name" subcommand
+ec2f5b703ab disk/part.c: ensure strings in struct disk_partition are valid after successful get_info
+19d6b71f9e6 Merge branch 'fix-ci' into 'master' [new base]
+8a9220d9342 CI: Fix setuptools and clang-20 issues for Noble [new]
+cdb8711d07d Merge branch 'cherry-2a909c3da71' into 'master' [old base]
+```
+
+### Suggested reply to the MR:
+
+> Rebased onto latest `ci/master` which now includes the fix for the CI infrastructure issues (setuptools and clang-20). The pipeline should pass now. Build verified locally.
+
+---
+
