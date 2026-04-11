@@ -32,6 +32,7 @@ from u_boot_pylib import tout
 from patman import database
 from patman import gmail
 from patman import patchstream
+from patman import workflow
 
 try:
     from claude_agent_sdk import ClaudeAgentOptions
@@ -1821,6 +1822,7 @@ def do_review(args, pwork, cser):
         ctx.comments_path = _write_comments_file(series_data, pwork)
 
         _run_and_store_reviews(ctx, args)
+        workflow.reviewed(cser, ctx.series_id, ctx.svid)
 
         _git_restore(orig_branch, had_stash, ctx.repo_path)
         orig_branch = None

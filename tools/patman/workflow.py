@@ -13,6 +13,7 @@ class Wtype(str, enum.Enum):
     """Types of workflow entry"""
     SENT = 'sent'
     TODO = 'todo'
+    REVIEWED = 'reviewed'
 
 
 def friendly_time(now, when):
@@ -54,6 +55,24 @@ def sent(cser, series_id, ser_ver_id=None):
     ts = cser.get_now().strftime('%Y-%m-%d %H:%M:%S')
     cser.db.workflow_archive(Wtype.SENT, series_id)
     cser.db.workflow_add(Wtype.SENT, series_id, ts, ser_ver_id=ser_ver_id)
+    when = cser.get_now() + timedelta(days=7)
+    todo_ts = when.strftime('%Y-%m-%d %H:%M:%S')
+    cser.db.workflow_archive(Wtype.TODO, series_id)
+    cser.db.workflow_add(Wtype.TODO, series_id, todo_ts)
+    cser.commit()
+
+
+def reviewed(cser, series_id, ser_ver_id=None):
+    """Record that a series was reviewed and create a follow-up todo
+
+    Args:
+        cser (CseriesHelper): Series helper with open database
+        series_id (int): ID of the series that was reviewed
+        ser_ver_id (int or None): ID of the ser_ver record
+    """
+    ts = cser.get_now().strftime('%Y-%m-%d %H:%M:%S')
+    cser.db.workflow_archive(Wtype.REVIEWED, series_id)
+    cser.db.workflow_add(Wtype.REVIEWED, series_id, ts, ser_ver_id=ser_ver_id)
     when = cser.get_now() + timedelta(days=7)
     todo_ts = when.strftime('%Y-%m-%d %H:%M:%S')
     cser.db.workflow_archive(Wtype.TODO, series_id)
