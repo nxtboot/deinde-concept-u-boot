@@ -56813,3 +56813,85 @@ cdb8711d07d Merge branch 'cherry-2a909c3da71' into 'master' [old base]
 
 ---
 
+## 2026-04-11: us/next
+
+Branch: cherry-4988e683bc2
+
+Commits:
+- 4988e683bc2 efi_selftest: expose runtime table address
+- e58a54571e1 efi_selftest: simplify efi_selftest_reset
+- 96db88e6216 efi_selftest: simplify efi_selftest_rtc
+- 178900ab9a8 efi_selftest: simplify efi_selftest_set_virtual_address_map
+- 98838b56cdc efi_selftest: simplify efi_st_query_variable_common
+- bef916c53f4 efi_selftest: simplify efi_selftest_variables
+- e81750779ac efi_selftest: simplify efi_selftest_variables_runtime
+- 6e7d2399c81 Merge tag 'efi-next-2025-11-25' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
+
+### Conversation log
+The repository is clean (untracked files are fine). Now let me create and checkout the new branch based on ci/master.
+
+Good. Now let me cherry-pick the first commit: `4988e683bc2: efi_selftest: expose runtime table address`
+
+First cherry-pick succeeded. Let me check the commit delta and run the build test.
+
+The commit deltas match (2 files, 5 insertions, 4 deletions). Now let me run the build test.
+
+Build passed. Let me continue with the second commit: `e58a54571e1: efi_selftest: simplify efi_selftest_reset`
+
+Commit deltas match. Now build test:
+
+Build passed. Third commit: `96db88e6216: efi_selftest: simplify efi_selftest_rtc`
+
+Deltas match. Build test:
+
+Build passed. Fourth commit: `178900ab9a8: efi_selftest: simplify efi_selftest_set_virtual_address_map`
+
+Deltas match. Build test:
+
+Build passed. Fifth commit: `98838b56cdc: efi_selftest: simplify efi_st_query_variable_common`
+
+Deltas match. Build test:
+
+Build passed. Sixth commit: `bef916c53f4: efi_selftest: simplify efi_selftest_variables`
+
+Deltas match. Build test:
+
+Build passed. Seventh commit: `e81750779ac: efi_selftest: simplify efi_selftest_variables_runtime`
+
+Deltas match. Build test:
+
+Build passed. Now the eighth and final commit, which is a merge commit: `6e7d2399c81: Merge tag 'efi-next-2025-11-25'`
+
+The merge commit is empty (as expected since we already applied the individual commits). Let me commit it as an empty commit to preserve the history:
+
+The merge commit is empty as expected (all the changes were already in the individual commits). Now let me run the build test:
+
+Build passed. Now let me verify all 8 commits are present:
+
+All 8 commits are present. Let me run a final build test:
+
+## Final Status Report
+
+**All 8 cherry-picks completed successfully!**
+
+| # | Original Hash | New Hash | Commit Subject | Status |
+|---|---------------|----------|----------------|--------|
+| 1 | 4988e683bc2 | 0184b8e8d13 | efi_selftest: expose runtime table address | ✅ OK |
+| 2 | e58a54571e1 | 2ae422a287a | efi_selftest: simplify efi_selftest_reset | ✅ OK |
+| 3 | 96db88e6216 | 1ff53450980 | efi_selftest: simplify efi_selftest_rtc | ✅ OK |
+| 4 | 178900ab9a8 | e93be012795 | efi_selftest: simplify efi_selftest_set_virtual_address_map | ✅ OK |
+| 5 | 98838b56cdc | d5d8829dae7 | efi_selftest: simplify efi_st_query_variable_common | ✅ OK |
+| 6 | bef916c53f4 | 1136314561b | efi_selftest: simplify efi_selftest_variables | ✅ OK |
+| 7 | e81750779ac | 8c832df4762 | efi_selftest: simplify efi_selftest_variables_runtime | ✅ OK |
+| 8 | 6e7d2399c81 | 0bf8ed438dc | Merge tag 'efi-next-2025-11-25' (empty merge) | ✅ OK |
+
+**Build result:** ✅ OK - sandbox builds successfully
+
+**Fix-ups made:** None - all commits applied cleanly
+
+**Delta concerns:** None - all commits had matching deltas between original and cherry-picked versions
+
+**Branch status:** `cherry-4988e683bc2` is ready for pushing, containing 8 commits on top of `ci/master`
+
+---
+
