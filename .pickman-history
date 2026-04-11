@@ -56669,7 +56669,7 @@ The rebase and push were successful. Here's the summary:
 > Rebased onto latest ci/master. All commits preserved with identical deltas. Build passes.
 
 ---
-
+<<<<<<< HEAD
 ## 2026-04-10: us/next
 
 Branch: cherry-3c2a9475334
@@ -56810,6 +56810,116 @@ cdb8711d07d Merge branch 'cherry-2a909c3da71' into 'master' [old base]
 ### Suggested reply to the MR:
 
 > Rebased onto latest `ci/master` which now includes the fix for the CI infrastructure issues (setuptools and clang-20). The pipeline should pass now. Build verified locally.
+## 2026-04-11: us/next
+
+Branch: cherry-a264c0454b8
+
+Commits:
+- a264c0454b8 soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() functions
+- 60a99d5ca37 Introduce the Generic System Interconnect Subsystem
+- 9ab7163710d interconnect: add DM test suite
+- 3949b330493 MAINTAINERS: add myself as Maintainer of the Generic System Interconnect Subsystem
+- 591b9e14192 interconnect: add support for the Qualcomm RPMh helpers
+- 8ec059c5ce7 interconnect: add support for the SM8650 SoC
+- e1461a0f538 ufs: qcom: vote for interconnect bandwidth on probe
+- fb3db4aa8df qcom_defconfig: enable interconnect for SM8650
+- 8ff90aa64b7 Merge tag 'interconnect-next-20251120' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon into next
+
+### Conversation log
+The repository is clean (no staged or modified files, just some untracked files which is fine). Now let me create and checkout the new branch based on ci/master:
+
+Branch created successfully. Now let me start cherry-picking the commits one at a time. Let me start with the first commit:
+
+First cherry-pick successful. Let me verify the delta and run a build test:
+
+The deltas match exactly (2 files, 47 insertions). Now let me run the build test:
+
+Build passed. Now let's proceed with the second commit:
+
+Second cherry-pick successful with auto-merges. Let me verify the delta:
+
+Deltas match exactly (10 files, 975 insertions). Build test:
+
+Build passed. Let me continue with commit 3:
+
+Let me verify the delta:
+
+Deltas match (10 files, 658 insertions). Build test:
+
+Build passed. Commit 4 (MAINTAINERS):
+
+Deltas match (1 file, 11 insertions). Build test:
+
+Build passed. Commit 5 (RPMh helpers):
+
+Deltas match (8 files, 728 insertions). Build test:
+
+Build passed. Commit 6 (SM8650 support):
+
+Deltas match (4 files, 1816 insertions). Build test:
+
+Build passed. Commit 7 (ufs: qcom bandwidth vote):
+
+Deltas match (1 file, 13 insertions). Build test:
+
+Build passed. Commit 8 (defconfig):
+
+Deltas match (1 file, 3 insertions). Build test:
+
+Build passed. Now for the final commit (9), which is a merge commit - I need to use special handling:
+
+The merge commit is empty (which is expected since all changes were already applied in the previous commits). I need to commit it with --allow-empty to preserve the merge commit message:
+
+Let me verify the delta and run the build test for this commit:
+
+This is expected - the merge commit on its own shows all 4251 insertions, but our cherry-picked version is empty because all those changes were already applied by the previous 8 commits. This is correct behavior for cherry-picking a merge commit after already applying all its constituent commits. The important thing is that we preserved the merge commit message for history tracking.
+
+Let me run the build test:
+
+Build passed. Now let me verify all 9 commits are present:
+
+All 9 commits are present. Let me run the final build test:
+
+All builds passed. Here is the final status report:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-a264c0454b8` (based on `ci/master`)
+
+**Commits cherry-picked:** 9/9 ✅
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | a264c0454b8 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() functions | ✅ Clean |
+| 2 | 60a99d5ca37 | Introduce the Generic System Interconnect Subsystem | ✅ Auto-merged (4 files) |
+| 3 | 9ab7163710d | interconnect: add DM test suite | ✅ Auto-merged (4 files) |
+| 4 | 3949b330493 | MAINTAINERS: add myself as Maintainer of the Generic System Interconnect Subsystem | ✅ Auto-merged |
+| 5 | 591b9e14192 | interconnect: add support for the Qualcomm RPMh helpers | ✅ Clean |
+| 6 | 8ec059c5ce7 | interconnect: add support for the SM8650 SoC | ✅ Clean |
+| 7 | e1461a0f538 | ufs: qcom: vote for interconnect bandwidth on probe | ✅ Clean |
+| 8 | fb3db4aa8df | qcom_defconfig: enable interconnect for SM8650 | ✅ Auto-merged |
+| 9 | 8ff90aa64b7 | Merge tag 'interconnect-next-20251120' (merge commit) | ✅ Empty commit preserved |
+
+**Build result:** ✅ OK - All builds passed (no warnings or errors)
+
+**Fix-ups made:** None required
+
+**Delta concerns:** None - all commits matched their original stats exactly. The merge commit (9) is correctly empty because all its changes were already applied by the preceding 8 commits.
+
+**New commit hashes on cherry-a264c0454b8:**
+```
+2edc1724d3b Merge tag 'interconnect-next-20251120'...
+3b9fd894be2 qcom_defconfig: enable interconnect for SM8650
+ab56c5f71a6 ufs: qcom: vote for interconnect bandwidth on probe
+0dd3cd8736f interconnect: add support for the SM8650 SoC
+abba2b9123b interconnect: add support for the Qualcomm RPMh helpers
+5a902988622 MAINTAINERS: add myself as Maintainer...
+bcd38b7382e interconnect: add DM test suite
+de900da0d71 Introduce the Generic System Interconnect Subsystem
+539e3b04bcb soc: qcom: cmd-db: Add cmd_db_read_slave_id()...
+```
+
+The branch `cherry-a264c0454b8` is ready for pushing.
 
 ---
 
