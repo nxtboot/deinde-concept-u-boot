@@ -56487,3 +56487,113 @@ The cherry-pick branch `cherry-2a909c3da71` is ready for pushing with 4 commits 
 
 ---
 
+## 2026-04-10: us/next
+
+Branch: cherry-46e372feb78
+
+Commits:
+- 46e372feb78 arm: dts: k3-am642-evm: Remove duplicate node
+- 5d3697b7cf0 remoteproc: k3-r5: cast size to size_t6dd
+- 40768f5ed3e soc: ti: pruss: Fix size ptr type in probe
+- fe114f3662c mach-k3: security: Propagate verified image addr
+- 3a43fc9016c remoteproc: k3-r5: Use verified image address
+- 0c192f52cfb remoteproc: k3-r5: Implement is_running operation
+- abf15eb60c8 Merge patch series "remoteproc: k3-r5: Build fixes and security improvements"
+
+### Conversation log
+The repository has untracked files but is otherwise clean (no staged or modified files). This is acceptable for cherry-picking. Let me proceed with creating the new branch based on ci/master.
+
+Branch created successfully. Now let me cherry-pick the first commit (regular commit, not a merge):
+
+First cherry-pick successful. Let me verify the delta and run the build test:
+
+Delta matches (same file, same lines changed). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Second cherry-pick successful. Let me verify delta:
+
+Delta matches. Now build test:
+
+Build passed. Cherry-pick the third commit:
+
+Third cherry-pick successful. Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick the fourth commit:
+
+Fourth cherry-pick successful. Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick the fifth commit:
+
+Fifth cherry-pick successful. Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick the sixth commit:
+
+Sixth cherry-pick successful. Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Now for the seventh and final commit - this is a merge commit (has "Merge" in the subject), so I need to use `-m 1 --allow-empty`:
+
+The merge commit is empty (which is expected since all the individual commits have already been cherry-picked). I need to commit it with `--allow-empty` as instructed:
+
+Merge commit preserved. Let me verify delta:
+
+The merge commit is now empty (expected - all changes came from individual cherry-picks already applied) but the commit message is preserved. The original merge showed the cumulative changes, but since we cherry-picked each commit individually, the merge commit is empty but still valuable for tracking history.
+
+Let me run the final build test:
+
+Build passed. Now let me verify all commits with `git log --oneline -n 9`:
+
+All 7 commits are present and in the correct order. Let me provide the final status report:
+
+---
+
+## ✅ Cherry-Pick Complete - Final Status
+
+### Branch: `cherry-46e372feb78`
+
+**All 7 commits successfully cherry-picked from `us/next` to `ci/master`:**
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | 46e372feb78 | arm: dts: k3-am642-evm: Remove duplicate node | ✅ OK |
+| 2 | 5d3697b7cf0 | remoteproc: k3-r5: cast size to size_t6dd | ✅ OK |
+| 3 | 40768f5ed3e | soc: ti: pruss: Fix size ptr type in probe | ✅ OK |
+| 4 | fe114f3662c | mach-k3: security: Propagate verified image addr | ✅ OK |
+| 5 | 3a43fc9016c | remoteproc: k3-r5: Use verified image address | ✅ OK |
+| 6 | 0c192f52cfb | remoteproc: k3-r5: Implement is_running operation | ✅ OK |
+| 7 | abf15eb60c8 | Merge patch series "remoteproc: k3-r5: Build fixes..." | ✅ OK (empty) |
+
+### Build Result: ✅ PASSED
+- `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully
+- No warnings or errors
+
+### Fix-ups Made: None
+- All cherry-picks applied cleanly without conflicts
+
+### Delta Concerns: None
+- All commits matched their original file changes and line counts exactly
+- Merge commit (7th) was empty as expected - individual commits already applied their changes
+
+### New Commits on Branch:
+```
+95d6544aa82 Merge patch series "remoteproc: k3-r5: Build fixes and security improvements"
+fb32e23f827 remoteproc: k3-r5: Implement is_running operation
+8333ab43e79 remoteproc: k3-r5: Use verified image address
+e1eb2fa4470 mach-k3: security: Propagate verified image addr
+67f1885942f soc: ti: pruss: Fix size ptr type in probe
+db99df033c8 remoteproc: k3-r5: cast size to size_t6dd
+9670b2e0d3d arm: dts: k3-am642-evm: Remove duplicate node
+```
+
+The branch `cherry-46e372feb78` is ready for pushing.
+
+---
+
