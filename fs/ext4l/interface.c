@@ -10,7 +10,9 @@
  */
 
 #include <blk.h>
+#include <dm.h>
 #include <env.h>
+#include <ext4l.h>
 #include <fs.h>
 #include <fs_legacy.h>
 #include <part.h>
@@ -26,54 +28,21 @@
 #include "ext4_jbd2.h"
 #include "xattr.h"
 
-/* Global state */
-static struct blk_desc *ext4l_dev_desc;
-static struct disk_partition ext4l_part;
-
-/* Global block device tracking for buffer I/O */
-static struct blk_desc *ext4l_blk_dev;
-static struct disk_partition ext4l_partition;
-static int ext4l_mounted;
-
-/* Count of open directory streams (prevents unmount while iterating) */
-static int ext4l_open_dirs;
-
-/* Global super_block pointer for filesystem operations */
-static struct super_block *ext4l_sb;
-
-/**
- * ext4l_get_blk_dev() - Get the current block device
- *
- * Return: Block device descriptor or NULL if not mounted
- */
-struct blk_desc *ext4l_get_blk_dev(void)
-{
-	if (!ext4l_mounted)
-		return NULL;
-	return ext4l_blk_dev;
-}
-
-/**
- * ext4l_get_partition() - Get the current partition info
- *
- * Return: Partition info pointer
- */
-struct disk_partition *ext4l_get_partition(void)
-{
-	return &ext4l_partition;
-}
+/* Global state for the legacy filesystem interface */
+static struct ext4l_state efs;
 
 /**
  * ext4l_get_uuid() - Get the filesystem UUID
  *
+ * @state: Per-mount state
  * @uuid: Buffer to receive the 16-byte UUID
  * Return: 0 on success, -ENODEV if not mounted
  */
-int ext4l_get_uuid(u8 *uuid)
+int ext4l_get_uuid(struct ext4l_state *state, u8 *uuid)
 {
-	if (!ext4l_sb)
+	if (!state->sb)
 		return -ENODEV;
-	memcpy(uuid, ext4l_sb->s_uuid.b, 16);
+	memcpy(uuid, state->sb->s_uuid.b, 16);
 	return 0;
 }
 
@@ -88,7 +57,7 @@ int ext4l_uuid(char *uuid_str)
 	u8 uuid[16];
 	int ret;
 
-	ret = ext4l_get_uuid(uuid);
+	ret = ext4l_get_uuid_legacy(uuid);
 	if (ret)
 		return ret;
 	uuid_bin_to_str(uuid, uuid_str, UUID_STR_FORMAT_STD);
@@ -99,50 +68,23 @@ int ext4l_uuid(char *uuid_str)
 /**
  * ext4l_statfs() - Get filesystem statistics
  *
+ * @state: Per-mount state
  * @stats: Pointer to fs_statfs structure to fill
  * Return: 0 on success, -ENODEV if not mounted
  */
-int ext4l_statfs(struct fs_statfs *stats)
+int ext4l_statfs(struct ext4l_state *state, struct fs_statfs *stats)
 {
 	struct ext4_super_block *es;
 
-	if (!ext4l_sb)
+	if (!state->sb)
 		return -ENODEV;
 
-	es = EXT4_SB(ext4l_sb)->s_es;
-	stats->bsize = ext4l_sb->s_blocksize;
+	es = EXT4_SB(state->sb)->s_es;
+	stats->bsize = state->sb->s_blocksize;
 	stats->blocks = ext4_blocks_count(es);
 	stats->bfree = ext4_free_blocks_count(es);
 
 	return 0;
-}
-
-/**
- * ext4l_set_blk_dev() - Set the block device for ext4l operations
- *
- * @blk_dev: Block device descriptor
- * @partition: Partition info (can be NULL for whole disk)
- */
-void ext4l_set_blk_dev(struct blk_desc *blk_dev, struct disk_partition *partition)
-{
-	ext4l_blk_dev = blk_dev;
-	if (partition)
-		memcpy(&ext4l_partition, partition, sizeof(struct disk_partition));
-	else
-		memset(&ext4l_partition, 0, sizeof(struct disk_partition));
-	ext4l_mounted = 1;
-}
-
-/**
- * ext4l_clear_blk_dev() - Clear block device (unmount)
- */
-void ext4l_clear_blk_dev(void)
-{
-	/* Clear buffer cache before unmounting */
-	bh_cache_clear();
-
-	ext4l_blk_dev = NULL;
-	ext4l_mounted = 0;
 }
 
 /**
@@ -216,43 +158,38 @@ static void ext4l_free_sb(struct super_block *sb, bool skip_io)
 	kfree(sbi->s_blockgroup_lock);
 	kfree(sbi);
 
-	/* Free structures allocated in ext4l_probe() */
+	/* Clear cached buffers for this device before freeing it */
+	bh_cache_release_jbd(sb->s_bdev);
+	bh_cache_clear(sb->s_bdev);
+
+	/* Free structures allocated in ext4l_mount() */
 	kfree(sb->s_bdev->bd_mapping);
 	kfree(sb->s_bdev);
 	kfree(sb);
 }
 
 /**
- * ext4l_close_internal() - Internal close function
+ * ext4l_umount_internal() - Internal close function
+ * @state: Per-mount state to initialise
  * @skip_io: If true, skip all I/O operations (for forced close)
  *
- * When called from the safeguard in ext4l_probe(), the device may be
+ * When called from the safeguard in ext4l_mount(), the device may be
  * invalid (rebound to a different file), so skip_io should be true to
  * avoid crashes when trying to write to the device.
  */
-static void ext4l_close_internal(bool skip_io)
+static void ext4l_umount_internal(struct ext4l_state *state, bool skip_io)
 {
-	struct super_block *sb = ext4l_sb;
+	struct super_block *sb = state->sb;
 
-	if (ext4l_open_dirs > 0)
+	if (state->open_dirs > 0)
 		return;
 
 	if (sb)
 		ext4l_free_sb(sb, skip_io);
 
-	ext4l_dev_desc = NULL;
-	ext4l_sb = NULL;
-
-	/*
-	 * Force cleanup of any remaining journal_heads before clearing
-	 * the buffer cache. This ensures no stale journal_head references
-	 * survive to the next mount. This is critical even when skip_io
-	 * is true - we MUST disconnect journal_heads before freeing
-	 * buffer_heads to avoid dangling pointers.
-	 */
-	bh_cache_release_jbd();
-
-	ext4l_clear_blk_dev();
+	state->sb = NULL;
+	state->blk = NULL;
+	state->mounted = false;
 
 	/*
 	 * Clean up ext4 and JBD2 global state so it can be properly
@@ -273,9 +210,10 @@ static void ext4l_close_internal(bool skip_io)
 	destroy_inodecache();
 }
 
-int ext4l_probe(struct blk_desc *fs_dev_desc,
+int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 		struct disk_partition *fs_partition)
 {
+	struct blk_desc *desc = dev_get_uclass_plat(dev);
 	struct ext4_fs_context *ctx;
 	struct super_block *sb;
 	struct fs_context *fc;
@@ -284,19 +222,10 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	u8 *buf;
 	int ret;
 
-	if (!fs_dev_desc)
-		return -EINVAL;
+	memset(state, '\0', sizeof(*state));
 
-	/*
-	 * Ensure any previous mount is properly closed before mounting again.
-	 * This prevents resource leaks if probe is called without close.
-	 *
-	 * Since we're being called while a previous mount exists, we can't
-	 * trust the old device state (it may have been rebound to a different
-	 * file). Use skip_io=true to skip all I/O during close.
-	 */
-	if (ext4l_sb)
-		ext4l_close_internal(true);
+	if (!dev)
+		return -EINVAL;
 
 	/* Initialise message buffer for recording ext4 messages */
 	ext4l_msg_init();
@@ -351,10 +280,12 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 
 	/* Initialise super_block fields */
 	sb->s_bdev->bd_super = sb;
+	sb->s_bdev->bd_blk = dev;
+	sb->s_bdev->bd_part_start = fs_partition ? fs_partition->start : 0;
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
 	snprintf(sb->s_id, sizeof(sb->s_id), "ext4l_mmc%d",
-		 fs_dev_desc->devnum);
+		 desc->devnum);
 	sb->s_flags = 0;
 	sb->s_fs_info = NULL;
 
@@ -384,39 +315,39 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	}
 
 	/* Calculate partition offset in bytes */
-	part_offset = fs_partition ? (loff_t)fs_partition->start * fs_dev_desc->blksz : 0;
+	part_offset = fs_partition ?
+		(loff_t)fs_partition->start * desc->blksz : 0;
 
 	/* Read sectors containing the superblock */
-	if (blk_dread(fs_dev_desc,
-		      div_u64(part_offset + BLOCK_SIZE, fs_dev_desc->blksz),
-		      2, buf) != 2) {
+	if (blk_read(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
+		     2, buf) != 2) {
 		ret = -EIO;
 		goto err_free_buf;
 	}
 
 	/* Check magic number within superblock */
-	magic = (__le16 *)(buf + (BLOCK_SIZE % fs_dev_desc->blksz) +
+	magic = (__le16 *)(buf + (BLOCK_SIZE % desc->blksz) +
 			   offsetof(struct ext4_super_block, s_magic));
 	if (le16_to_cpu(*magic) != EXT4_SUPER_MAGIC) {
 		ret = -EINVAL;
 		goto err_free_buf;
 	}
 
-	/* Save device info for later operations */
-	ext4l_dev_desc = fs_dev_desc;
-	if (fs_partition)
-		memcpy(&ext4l_part, fs_partition, sizeof(ext4l_part));
-
 	/* Set block device for buffer I/O */
-	ext4l_set_blk_dev(fs_dev_desc, fs_partition);
+	state->blk = dev;
+	if (fs_partition)
+		memcpy(&state->partition, fs_partition,
+		       sizeof(state->partition));
+	else
+		memset(&state->partition, 0, sizeof(state->partition));
+	state->mounted = true;
 
 	/*
 	 * Test if device supports writes by writing back the same data.
 	 * If write returns 0, the device is read-only (e.g. LUKS/blkmap_crypt)
 	 */
-	if (blk_dwrite(fs_dev_desc,
-		       div_u64(part_offset + BLOCK_SIZE, fs_dev_desc->blksz),
-		       2, buf) != 2) {
+	if (blk_write(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
+		      2, buf) != 2) {
 		sb->s_bdev->read_only = true;
 		sb->s_flags |= SB_RDONLY;
 	}
@@ -430,7 +361,7 @@ int ext4l_probe(struct blk_desc *fs_dev_desc,
 	}
 
 	/* Store super_block for later operations */
-	ext4l_sb = sb;
+	state->sb = sb;
 
 	/* Free mount context - no longer needed after successful mount */
 	kfree(ctx);
@@ -457,6 +388,23 @@ err_free_sb:
 err_exit_es:
 	ext4_exit_es();
 	return ret;
+}
+
+int ext4l_probe(struct blk_desc *fs_dev_desc,
+		struct disk_partition *fs_partition)
+{
+	if (!fs_dev_desc)
+		return -EINVAL;
+
+	/*
+	 * The legacy interface may call probe without a preceding close.
+	 * Clean up any previous mount to prevent resource leaks. Use
+	 * skip_io=true because the old device may have been rebound.
+	 */
+	if (efs.sb)
+		ext4l_umount_internal(&efs, true);
+
+	return ext4l_mount(&efs, fs_dev_desc->bdev, fs_partition);
 }
 
 /**
@@ -502,32 +450,18 @@ static int ext4l_read_symlink(struct inode *inode, char *target, size_t max_len)
 	return len;
 }
 
-/* Forward declaration for recursive resolution */
-static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
-				       int depth);
-
-/**
- * ext4l_resolve_path() - Resolve path to inode
- *
- * @path: Path to resolve
- * @inodep: Output inode pointer
- * Return: 0 on success, negative on error
- */
-static int ext4l_resolve_path(const char *path, struct inode **inodep)
-{
-	return ext4l_resolve_path_internal(path, inodep, 0);
-}
-
 /**
  * ext4l_resolve_path_internal() - Resolve path with symlink following
  *
+ * @state: Per-mount state
  * @path: Path to resolve
  * @inodep: Output inode pointer
  * @depth: Current recursion depth (for symlink loop detection)
  * Return: 0 on success, negative on error
  */
-static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
-				       int depth)
+static int ext4l_resolve_path_internal(struct ext4l_state *state,
+				       const char *path,
+				       struct inode **inodep, int depth)
 {
 	struct inode *dir;
 	struct dentry *dentry, *result;
@@ -538,12 +472,12 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 	if (depth > 8)
 		return -ELOOP;
 
-	if (!ext4l_mounted) {
+	if (!state->mounted) {
 		ext4_debug("ext4l_resolve_path: filesystem not mounted\n");
 		return -ENODEV;
 	}
 
-	dir = ext4l_sb->s_root->d_inode;
+	dir = state->sb->s_root->d_inode;
 
 	if (!path || !*path || (strcmp(path, "/") == 0)) {
 		*inodep = dir;
@@ -585,7 +519,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 			}
 			dentry->d_name.name = "..";
 			dentry->d_name.len = 2;
-			dentry->d_sb = ext4l_sb;
+			dentry->d_sb = state->sb;
 			dentry->d_parent = NULL;
 
 			result = ext4_lookup(dir, dentry, 0);
@@ -620,7 +554,7 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 
 		dentry->d_name.name = component;
 		dentry->d_name.len = strlen(component);
-		dentry->d_sb = ext4l_sb;
+		dentry->d_sb = state->sb;
 		dentry->d_parent = NULL;
 
 		result = ext4_lookup(dir, dentry, 0);
@@ -695,8 +629,8 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 			free(path_copy);
 
 			/* Recursively resolve the new path */
-			ret = ext4l_resolve_path_internal(new_path, inodep,
-							  depth + 1);
+			ret = ext4l_resolve_path_internal(state, new_path,
+							  inodep, depth + 1);
 			free(new_path);
 			return ret;
 		}
@@ -708,6 +642,26 @@ static int ext4l_resolve_path_internal(const char *path, struct inode **inodep,
 	*inodep = dir;
 	return 0;
 }
+
+/**
+ * ext4l_resolve_path() - Resolve path to inode
+ *
+ * @state: Per-mount state
+ * @path: Path to resolve
+ * @inodep: Output inode pointer
+ * Return: 0 on success, negative on error
+ */
+static int ext4l_resolve_path(struct ext4l_state *state, const char *path,
+			      struct inode **inodep)
+{
+	return ext4l_resolve_path_internal(state, path, inodep, 0);
+}
+
+/* Context for ext4l_dir_actor carrying the superblock */
+struct ext4l_ls_ctx {
+	struct dir_context ctx;
+	struct super_block *sb;
+};
 
 /**
  * ext4l_dir_actor() - Directory entry callback for ext4_readdir
@@ -724,6 +678,7 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 			   int namelen, loff_t offset, u64 ino,
 			   unsigned int d_type)
 {
+	struct ext4l_ls_ctx *ls_ctx = container_of(ctx, struct ext4l_ls_ctx, ctx);
 	struct inode *inode;
 	char namebuf[256];
 
@@ -734,7 +689,7 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 	namebuf[namelen] = '\0';
 
 	/* Look up the inode to get file size */
-	inode = ext4_iget(ext4l_sb, ino, 0);
+	inode = ext4_iget(ls_ctx->sb, ino, 0);
 	if (IS_ERR(inode)) {
 		printf(" %8s   %s\n", "?", namebuf);
 		return 0;
@@ -750,14 +705,14 @@ static int ext4l_dir_actor(struct dir_context *ctx, const char *name,
 	return 0;
 }
 
-int ext4l_ls(const char *dirname)
+int ext4l_ls(struct ext4l_state *state, const char *dirname)
 {
+	struct ext4l_ls_ctx ls_ctx;
 	struct inode *dir;
 	struct file file;
-	struct dir_context ctx;
 	int ret;
 
-	ret = ext4l_resolve_path(dirname, &dir);
+	ret = ext4l_resolve_path(state, dirname, &dir);
 	if (ret)
 		return ret;
 
@@ -773,10 +728,11 @@ int ext4l_ls(const char *dirname)
 	if (!file.private_data)
 		return -ENOMEM;
 
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.actor = ext4l_dir_actor;
+	memset(&ls_ctx, 0, sizeof(ls_ctx));
+	ls_ctx.ctx.actor = ext4l_dir_actor;
+	ls_ctx.sb = state->sb;
 
-	ret = ext4_readdir(&file, &ctx);
+	ret = ext4_readdir(&file, &ls_ctx.ctx);
 
 	if (file.private_data)
 		ext4_htree_free_dir_info(file.private_data);
@@ -784,25 +740,26 @@ int ext4l_ls(const char *dirname)
 	return ret;
 }
 
-int ext4l_exists(const char *filename)
+int ext4l_exists(struct ext4l_state *state, const char *filename)
 {
 	struct inode *inode;
 
 	if (!filename)
 		return 0;
 
-	if (ext4l_resolve_path(filename, &inode))
+	if (ext4l_resolve_path(state, filename, &inode))
 		return 0;
 
 	return 1;
 }
 
-int ext4l_size(const char *filename, loff_t *sizep)
+int ext4l_size(struct ext4l_state *state, const char *filename,
+	       loff_t *sizep)
 {
 	struct inode *inode;
 	int ret;
 
-	ret = ext4l_resolve_path(filename, &inode);
+	ret = ext4l_resolve_path(state, filename, &inode);
 	if (ret)
 		return ret;
 
@@ -811,8 +768,8 @@ int ext4l_size(const char *filename, loff_t *sizep)
 	return 0;
 }
 
-int ext4l_read(const char *filename, void *buf, loff_t offset, loff_t len,
-	       loff_t *actread)
+int ext4l_read(struct ext4l_state *state, const char *filename, void *buf,
+	       loff_t offset, loff_t len, loff_t *actread)
 {
 	uint copy_len, blk_off, blksize;
 	loff_t bytes_left, file_size;
@@ -824,7 +781,7 @@ int ext4l_read(const char *filename, void *buf, loff_t offset, loff_t len,
 
 	*actread = 0;
 
-	ret = ext4l_resolve_path(filename, &inode);
+	ret = ext4l_resolve_path(state, filename, &inode);
 	if (ret) {
 		printf("** File not found %s **\n", filename);
 		return ret;
@@ -877,6 +834,29 @@ int ext4l_read(const char *filename, void *buf, loff_t offset, loff_t len,
 	return 0;
 }
 
+/* Legacy wrappers that pass the global state */
+
+int ext4l_ls_legacy(const char *dirname)
+{
+	return ext4l_ls(&efs, dirname);
+}
+
+int ext4l_exists_legacy(const char *filename)
+{
+	return ext4l_exists(&efs, filename);
+}
+
+int ext4l_size_legacy(const char *filename, loff_t *sizep)
+{
+	return ext4l_size(&efs, filename, sizep);
+}
+
+int ext4l_read_legacy(const char *filename, void *buf, loff_t offset,
+		      loff_t len, loff_t *actread)
+{
+	return ext4l_read(&efs, filename, buf, offset, len, actread);
+}
+
 /**
  * ext4l_resolve_file() - Resolve a file path for write operations
  * @path: Path to process
@@ -890,7 +870,8 @@ int ext4l_read(const char *filename, void *buf, loff_t offset, loff_t len,
  *
  * Return: 0 on success, negative on error
  */
-static int ext4l_resolve_file(const char *path, struct dentry **dir_dentryp,
+static int ext4l_resolve_file(struct ext4l_state *state, const char *path,
+			      struct dentry **dir_dentryp,
 			      struct dentry **dentryp, char **path_copyp)
 {
 	char *path_copy, *dir_path, *last_slash;
@@ -899,14 +880,14 @@ static int ext4l_resolve_file(const char *path, struct dentry **dir_dentryp,
 	const char *basename;
 	int ret;
 
-	if (!ext4l_sb)
+	if (!state->sb)
 		return -ENODEV;
 
 	if (!path)
 		return -EINVAL;
 
 	/* Check if filesystem is mounted read-write */
-	if (ext4l_sb->s_flags & SB_RDONLY)
+	if (state->sb->s_flags & SB_RDONLY)
 		return -EROFS;
 
 	/* Parse path to get parent directory and basename */
@@ -927,7 +908,7 @@ static int ext4l_resolve_file(const char *path, struct dentry **dir_dentryp,
 	}
 
 	/* Resolve parent directory */
-	ret = ext4l_resolve_path(dir_path, &dir_inode);
+	ret = ext4l_resolve_path(state, dir_path, &dir_inode);
 	if (ret) {
 		free(path_copy);
 		return ret;
@@ -1126,8 +1107,8 @@ out_handle:
 	return ret;
 }
 
-int ext4l_write(const char *filename, void *buf, loff_t offset, loff_t len,
-		loff_t *actwrite)
+int ext4l_write(struct ext4l_state *state, const char *filename, void *buf,
+		loff_t offset, loff_t len, loff_t *actwrite)
 {
 	struct dentry *dir_dentry, *dentry;
 	char *path_copy;
@@ -1136,7 +1117,8 @@ int ext4l_write(const char *filename, void *buf, loff_t offset, loff_t len,
 	if (!buf || !actwrite)
 		return -EINVAL;
 
-	ret = ext4l_resolve_file(filename, &dir_dentry, &dentry, &path_copy);
+	ret = ext4l_resolve_file(state, filename, &dir_dentry, &dentry,
+				 &path_copy);
 	if (ret)
 		return ret;
 
@@ -1157,13 +1139,14 @@ int ext4l_write(const char *filename, void *buf, loff_t offset, loff_t len,
 	return ret;
 }
 
-int ext4l_unlink(const char *filename)
+int ext4l_unlink(struct ext4l_state *state, const char *filename)
 {
 	struct dentry *dentry, *dir_dentry;
 	char *path_copy;
 	int ret;
 
-	ret = ext4l_resolve_file(filename, &dir_dentry, &dentry, &path_copy);
+	ret = ext4l_resolve_file(state, filename, &dir_dentry, &dentry,
+				 &path_copy);
 	if (ret)
 		return ret;
 
@@ -1199,7 +1182,7 @@ int ext4l_unlink(const char *filename)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(state->sb);
 	}
 
 out:
@@ -1209,13 +1192,14 @@ out:
 	return ret;
 }
 
-int ext4l_mkdir(const char *dirname)
+int ext4l_mkdir(struct ext4l_state *state, const char *dirname)
 {
 	struct dentry *dentry, *dir_dentry, *result;
 	char *path_copy;
 	int ret;
 
-	ret = ext4l_resolve_file(dirname, &dir_dentry, &dentry, &path_copy);
+	ret = ext4l_resolve_file(state, dirname, &dir_dentry, &dentry,
+				 &path_copy);
 	if (ret)
 		return ret;
 
@@ -1242,7 +1226,7 @@ int ext4l_mkdir(const char *dirname)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(state->sb);
 	}
 
 out:
@@ -1252,7 +1236,8 @@ out:
 	return ret;
 }
 
-int ext4l_ln(const char *filename, const char *linkname)
+int ext4l_ln(struct ext4l_state *state, const char *filename,
+	     const char *linkname)
 {
 	struct dentry *dentry, *dir_dentry;
 	char *path_copy;
@@ -1266,7 +1251,8 @@ int ext4l_ln(const char *filename, const char *linkname)
 	if (!filename)
 		return -EINVAL;
 
-	ret = ext4l_resolve_file(linkname, &dir_dentry, &dentry, &path_copy);
+	ret = ext4l_resolve_file(state, linkname, &dir_dentry, &dentry,
+				 &path_copy);
 	if (ret)
 		return ret;
 
@@ -1301,7 +1287,7 @@ int ext4l_ln(const char *filename, const char *linkname)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(state->sb);
 	}
 
 out:
@@ -1312,7 +1298,8 @@ out:
 	return ret;
 }
 
-int ext4l_rename(const char *old_path, const char *new_path)
+int ext4l_rename(struct ext4l_state *state, const char *old_path,
+		 const char *new_path)
 {
 	struct dentry *old_dentry, *new_dentry;
 	struct dentry *old_dir_dentry, *new_dir_dentry;
@@ -1323,7 +1310,7 @@ int ext4l_rename(const char *old_path, const char *new_path)
 	if (!new_path)
 		return -EINVAL;
 
-	ret = ext4l_resolve_file(old_path, &old_dir_dentry, &old_dentry,
+	ret = ext4l_resolve_file(state, old_path, &old_dir_dentry, &old_dentry,
 				 &old_path_copy);
 	if (ret)
 		return ret;
@@ -1334,7 +1321,7 @@ int ext4l_rename(const char *old_path, const char *new_path)
 		goto out_old;
 	}
 
-	ret = ext4l_resolve_file(new_path, &new_dir_dentry, &new_dentry,
+	ret = ext4l_resolve_file(state, new_path, &new_dir_dentry, &new_dentry,
 				 &new_path_copy);
 	if (ret)
 		goto out_old;
@@ -1352,7 +1339,7 @@ int ext4l_rename(const char *old_path, const char *new_path)
 		if (sync_ret)
 			ret = sync_ret;
 		/* Commit superblock with updated free counts */
-		ext4_commit_super(ext4l_sb);
+		ext4_commit_super(state->sb);
 	}
 
 out_new:
@@ -1366,9 +1353,14 @@ out_old:
 	return ret;
 }
 
+void ext4l_umount(struct ext4l_state *state)
+{
+	ext4l_umount_internal(state, false);
+}
+
 void ext4l_close(void)
 {
-	ext4l_close_internal(false);
+	ext4l_umount(&efs);
 }
 
 /**
@@ -1382,7 +1374,7 @@ void ext4l_close(void)
  * @skip_last: true if we need to skip the last_ino entry
  *
  * The filesystem stays mounted while directory streams are open (ext4l_close
- * checks ext4l_open_dirs), so we can keep direct pointers to inodes.
+ * checks efs.open_dirs), so we can keep direct pointers to inodes.
  */
 struct ext4l_dir {
 	struct fs_dir_stream parent;
@@ -1402,6 +1394,7 @@ struct ext4l_dir {
 struct ext4l_readdir_ctx {
 	struct dir_context ctx;
 	struct ext4l_dir *dir;
+	struct super_block *sb;
 };
 
 /**
@@ -1454,7 +1447,7 @@ static int ext4l_opendir_actor(struct dir_context *ctx, const char *name,
 	}
 
 	/* Look up inode to get size and other attributes */
-	inode = ext4_iget(ext4l_sb, ino, 0);
+	inode = ext4_iget(rctx->sb, ino, 0);
 	if (!IS_ERR(inode)) {
 		dent->size = inode->i_size;
 		/* Refine type from inode mode if needed */
@@ -1480,16 +1473,17 @@ static int ext4l_opendir_actor(struct dir_context *ctx, const char *name,
 	return 1;
 }
 
-int ext4l_opendir(const char *filename, struct fs_dir_stream **dirsp)
+int ext4l_opendir(struct ext4l_state *state, const char *filename,
+		  struct fs_dir_stream **dirsp)
 {
 	struct ext4l_dir *dir;
 	struct inode *inode;
 	int ret;
 
-	if (!ext4l_mounted)
+	if (!state->mounted)
 		return -ENODEV;
 
-	ret = ext4l_resolve_path(filename, &inode);
+	ret = ext4l_resolve_path(state, filename, &inode);
 	if (ret)
 		return ret;
 
@@ -1514,20 +1508,21 @@ int ext4l_opendir(const char *filename, struct fs_dir_stream **dirsp)
 	}
 
 	/* Increment open dir count to prevent unmount */
-	ext4l_open_dirs++;
+	state->open_dirs++;
 
 	*dirsp = (struct fs_dir_stream *)dir;
 
 	return 0;
 }
 
-int ext4l_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
+int ext4l_readdir(struct ext4l_state *state, struct fs_dir_stream *dirs,
+		  struct fs_dirent **dentp)
 {
 	struct ext4l_dir *dir = (struct ext4l_dir *)dirs;
 	struct ext4l_readdir_ctx ctx;
 	int ret;
 
-	if (!ext4l_mounted)
+	if (!state->mounted)
 		return -ENODEV;
 
 	memset(&dir->dirent, '\0', sizeof(dir->dirent));
@@ -1540,6 +1535,7 @@ int ext4l_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
 	/* Set up extended dir_context for this iteration */
 	memset(&ctx, '\0', sizeof(ctx));
 	ctx.ctx.actor = ext4l_opendir_actor;
+	ctx.sb = state->sb;
 	ctx.ctx.pos = dir->file.f_pos;
 	ctx.dir = dir;
 
@@ -1559,7 +1555,7 @@ int ext4l_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
 	return 0;
 }
 
-void ext4l_closedir(struct fs_dir_stream *dirs)
+void ext4l_closedir(struct ext4l_state *state, struct fs_dir_stream *dirs)
 {
 	struct ext4l_dir *dir = (struct ext4l_dir *)dirs;
 
@@ -1570,6 +1566,59 @@ void ext4l_closedir(struct fs_dir_stream *dirs)
 	}
 
 	/* Decrement open dir count */
-	if (ext4l_open_dirs > 0)
-		ext4l_open_dirs--;
+	if (state->open_dirs > 0)
+		state->open_dirs--;
+}
+
+/* Legacy wrappers for write, dir, uuid, and statfs functions */
+
+int ext4l_get_uuid_legacy(u8 *uuid)
+{
+	return ext4l_get_uuid(&efs, uuid);
+}
+
+int ext4l_statfs_legacy(struct fs_statfs *stats)
+{
+	return ext4l_statfs(&efs, stats);
+}
+
+int ext4l_write_legacy(const char *filename, void *buf, loff_t offset,
+		       loff_t len, loff_t *actwrite)
+{
+	return ext4l_write(&efs, filename, buf, offset, len, actwrite);
+}
+
+int ext4l_unlink_legacy(const char *filename)
+{
+	return ext4l_unlink(&efs, filename);
+}
+
+int ext4l_mkdir_legacy(const char *dirname)
+{
+	return ext4l_mkdir(&efs, dirname);
+}
+
+int ext4l_ln_legacy(const char *filename, const char *linkname)
+{
+	return ext4l_ln(&efs, filename, linkname);
+}
+
+int ext4l_rename_legacy(const char *old_path, const char *new_path)
+{
+	return ext4l_rename(&efs, old_path, new_path);
+}
+
+int ext4l_opendir_legacy(const char *filename, struct fs_dir_stream **dirsp)
+{
+	return ext4l_opendir(&efs, filename, dirsp);
+}
+
+int ext4l_readdir_legacy(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
+{
+	return ext4l_readdir(&efs, dirs, dentp);
+}
+
+void ext4l_closedir_legacy(struct fs_dir_stream *dirs)
+{
+	ext4l_closedir(&efs, dirs);
 }

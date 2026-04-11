@@ -6,13 +6,19 @@
  * Written by Simon Glass <simon.glass@canonical.com>
  */
 
+#include <blk.h>
 #include <command.h>
+#include <dm.h>
 #include <env.h>
 #include <ext4l.h>
 #include <fs.h>
 #include <fs_legacy.h>
 #include <linux/sizes.h>
+#include <mapmem.h>
+#include <sandbox_host.h>
 #include <u-boot/uuid.h>
+#include <vfs.h>
+#include <dm/device-internal.h>
 #include <test/test.h>
 #include <test/ut.h>
 #include <test/fs.h>
@@ -63,7 +69,7 @@ static int fs_test_ext4l_msgs_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Get the UUID and clear the env var now we have the output */
-	ut_assertok(ext4l_get_uuid(uuid));
+	ut_assertok(ext4l_get_uuid_legacy(uuid));
 	uuid_bin_to_str(uuid, uuid_str, UUID_STR_FORMAT_STD);
 	ut_assertok(env_set("ext4l_msgs", NULL));
 
@@ -142,11 +148,11 @@ static int fs_test_ext4l_opendir_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Open root directory */
-	ut_assertok(ext4l_opendir("/", &dirs));
+	ut_assertok(ext4l_opendir_legacy("/", &dirs));
 	ut_assertnonnull(dirs);
 
 	/* Iterate through entries */
-	while (!ext4l_readdir(dirs, &dent)) {
+	while (!ext4l_readdir_legacy(dirs, &dent)) {
 		ut_assertnonnull(dent);
 		count++;
 		if (!strcmp(dent->name, "testfile.txt")) {
@@ -162,7 +168,7 @@ static int fs_test_ext4l_opendir_norun(struct unit_test_state *uts)
 		}
 	}
 
-	ext4l_closedir(dirs);
+	ext4l_closedir_legacy(dirs);
 
 	/* Verify we found expected entries */
 	ut_assert(found_testfile);
@@ -173,11 +179,11 @@ static int fs_test_ext4l_opendir_norun(struct unit_test_state *uts)
 
 	/* Now test reading the subdirectory */
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
-	ut_assertok(ext4l_opendir("/subdir", &dirs));
+	ut_assertok(ext4l_opendir_legacy("/subdir", &dirs));
 	ut_assertnonnull(dirs);
 
 	count = 0;
-	while (!ext4l_readdir(dirs, &dent)) {
+	while (!ext4l_readdir_legacy(dirs, &dent)) {
 		ut_assertnonnull(dent);
 		count++;
 		if (!strcmp(dent->name, "nested.txt")) {
@@ -187,7 +193,7 @@ static int fs_test_ext4l_opendir_norun(struct unit_test_state *uts)
 		}
 	}
 
-	ext4l_closedir(dirs);
+	ext4l_closedir_legacy(dirs);
 
 	ut_assert(found_nested);
 	/* At least ., .., nested.txt */
@@ -199,9 +205,9 @@ FS_TEST_ARGS(fs_test_ext4l_opendir_norun, UTF_SCAN_FDT | UTF_CONSOLE |
 	     UTF_MANUAL, { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_exists_norun() - Test ext4l_exists function
+ * fs_test_ext4l_exists_norun() - Test ext4l_exists_legacy function
  *
- * Verifies that ext4l_exists correctly reports file existence.
+ * Verifies that ext4l_exists_legacy correctly reports file existence.
  *
  * Arguments:
  *   fs_image: Path to the ext4 filesystem image
@@ -215,10 +221,10 @@ static int fs_test_ext4l_exists_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Test existing directory */
-	ut_asserteq(1, ext4l_exists("/"));
+	ut_asserteq(1, ext4l_exists_legacy("/"));
 
 	/* Test non-existent paths */
-	ut_asserteq(0, ext4l_exists("/no/such/path"));
+	ut_asserteq(0, ext4l_exists_legacy("/no/such/path"));
 
 	return 0;
 }
@@ -226,9 +232,9 @@ FS_TEST_ARGS(fs_test_ext4l_exists_norun, UTF_SCAN_FDT | UTF_CONSOLE |
 	     UTF_MANUAL, { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_size_norun() - Test ext4l_size function
+ * fs_test_ext4l_size_norun() - Test ext4l_size_legacy function
  *
- * Verifies that ext4l_size correctly reports file size.
+ * Verifies that ext4l_size_legacy correctly reports file size.
  *
  * Arguments:
  *   fs_image: Path to the ext4 filesystem image
@@ -243,15 +249,15 @@ static int fs_test_ext4l_size_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Test root directory size - one block on a 4K block filesystem */
-	ut_assertok(ext4l_size("/", &size));
+	ut_assertok(ext4l_size_legacy("/", &size));
 	ut_asserteq(SZ_4K, size);
 
 	/* Test file size - testfile.txt contains "hello world\n" */
-	ut_assertok(ext4l_size("/testfile.txt", &size));
+	ut_assertok(ext4l_size_legacy("/testfile.txt", &size));
 	ut_asserteq(12, size);
 
 	/* Test non-existent path returns -ENOENT */
-	ut_asserteq(-ENOENT, ext4l_size("/no/such/path", &size));
+	ut_asserteq(-ENOENT, ext4l_size_legacy("/no/such/path", &size));
 
 	return 0;
 }
@@ -259,7 +265,7 @@ FS_TEST_ARGS(fs_test_ext4l_size_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_read_norun() - Test ext4l_read function
+ * fs_test_ext4l_read_norun() - Test ext4l_read_legacy function
  *
  * Verifies that ext4l can read file contents.
  *
@@ -278,18 +284,20 @@ static int fs_test_ext4l_read_norun(struct unit_test_state *uts)
 
 	/* Read the test file - contains "hello world\n" (12 bytes) */
 	memset(buf, '\0', sizeof(buf));
-	ut_assertok(ext4l_read("/testfile.txt", buf, 0, 0, &actread));
+	ut_assertok(ext4l_read_legacy("/testfile.txt", buf, 0, 0, &actread));
 	ut_asserteq(12, actread);
 	ut_asserteq_str("hello world\n", buf);
 
 	/* Test partial read with offset */
 	memset(buf, '\0', sizeof(buf));
-	ut_assertok(ext4l_read("/testfile.txt", buf, 6, 5, &actread));
+	ut_assertok(ext4l_read_legacy("/testfile.txt", buf, 6, 5, &actread));
 	ut_asserteq(5, actread);
 	ut_asserteq_str("world", buf);
 
 	/* Verify read returns error for non-existent path */
-	ut_asserteq(-ENOENT, ext4l_read("/no/such/file", buf, 0, 10, &actread));
+	ut_asserteq(-ENOENT,
+		    ext4l_read_legacy("/no/such/file", buf, 0, 10,
+				      &actread));
 
 	return 0;
 }
@@ -345,7 +353,7 @@ static int fs_test_ext4l_fsinfo_norun(struct unit_test_state *uts)
 	ut_assertnonnull(fs_image);
 	ut_assertok(run_commandf("host bind 0 %s", fs_image));
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
-	ut_assertok(ext4l_statfs(&stats));
+	ut_assertok(ext4l_statfs_legacy(&stats));
 	used = stats.blocks - stats.bfree;
 
 	console_record_reset_enable();
@@ -367,7 +375,7 @@ FS_TEST_ARGS(fs_test_ext4l_fsinfo_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_statfs_norun() - Test ext4l_statfs function
+ * fs_test_ext4l_statfs_norun() - Test ext4l_statfs_legacy function
  *
  * Verifies that ext4l can return filesystem statistics.
  *
@@ -384,7 +392,7 @@ static int fs_test_ext4l_statfs_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Get filesystem statistics */
-	ut_assertok(ext4l_statfs(&stats));
+	ut_assertok(ext4l_statfs_legacy(&stats));
 
 	/* Verify reasonable values for a 64MB filesystem */
 	ut_asserteq(SZ_4K, stats.bsize);
@@ -398,7 +406,7 @@ FS_TEST_ARGS(fs_test_ext4l_statfs_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_write_norun() - Test ext4l_write function
+ * fs_test_ext4l_write_norun() - Test ext4l_write_legacy function
  *
  * Verifies that ext4l can write file contents to the filesystem.
  *
@@ -419,18 +427,19 @@ static int fs_test_ext4l_write_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Write a new file */
-	ut_assertok(ext4l_write("/newfile.txt", (void *)test_data, 0,
-				test_len, &actwrite));
+	ut_assertok(ext4l_write_legacy("/newfile.txt", (void *)test_data,
+				       0, test_len, &actwrite));
 	ut_asserteq(test_len, actwrite);
 
 	/* Verify the file exists and has correct size */
-	ut_asserteq(1, ext4l_exists("/newfile.txt"));
-	ut_assertok(ext4l_size("/newfile.txt", &size));
+	ut_asserteq(1, ext4l_exists_legacy("/newfile.txt"));
+	ut_assertok(ext4l_size_legacy("/newfile.txt", &size));
 	ut_asserteq(test_len, size);
 
 	/* Read back and verify contents */
 	memset(read_buf, '\0', sizeof(read_buf));
-	ut_assertok(ext4l_read("/newfile.txt", read_buf, 0, 0, &actread));
+	ut_assertok(ext4l_read_legacy("/newfile.txt", read_buf, 0, 0,
+				      &actread));
 	ut_asserteq(test_len, actread);
 	ut_asserteq_str(test_data, read_buf);
 
@@ -440,7 +449,7 @@ FS_TEST_ARGS(fs_test_ext4l_write_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_unlink_norun() - Test ext4l_unlink function
+ * fs_test_ext4l_unlink_norun() - Test ext4l_unlink_legacy function
  *
  * Verifies that ext4l can delete files from the filesystem.
  *
@@ -459,21 +468,21 @@ static int fs_test_ext4l_unlink_norun(struct unit_test_state *uts)
 	ut_assertok(fs_set_blk_dev("host", "0", FS_TYPE_ANY));
 
 	/* Create a new file to unlink */
-	ut_assertok(ext4l_write("/unlinkme.txt", (void *)test_data, 0,
-				test_len, &actwrite));
+	ut_assertok(ext4l_write_legacy("/unlinkme.txt", (void *)test_data,
+				       0, test_len, &actwrite));
 	ut_asserteq(test_len, actwrite);
 
 	/* Verify file exists (same mount) */
-	ut_asserteq(1, ext4l_exists("/unlinkme.txt"));
+	ut_asserteq(1, ext4l_exists_legacy("/unlinkme.txt"));
 
 	/* Unlink the file */
-	ut_assertok(ext4l_unlink("/unlinkme.txt"));
+	ut_assertok(ext4l_unlink_legacy("/unlinkme.txt"));
 
 	/* Verify file no longer exists */
-	ut_asserteq(0, ext4l_exists("/unlinkme.txt"));
+	ut_asserteq(0, ext4l_exists_legacy("/unlinkme.txt"));
 
 	/* Verify unlinking non-existent file returns -ENOENT */
-	ut_asserteq(-ENOENT, ext4l_unlink("/nonexistent"));
+	ut_asserteq(-ENOENT, ext4l_unlink_legacy("/nonexistent"));
 
 	return 0;
 }
@@ -481,7 +490,7 @@ FS_TEST_ARGS(fs_test_ext4l_unlink_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_mkdir_norun() - Test ext4l_mkdir function
+ * fs_test_ext4l_mkdir_norun() - Test ext4l_mkdir_legacy function
  *
  * Verifies that ext4l can create directories on the filesystem.
  *
@@ -506,21 +515,21 @@ static int fs_test_ext4l_mkdir_norun(struct unit_test_state *uts)
 	test_counter++;
 
 	/* Create a new directory */
-	ret = ext4l_mkdir(dir_name);
+	ret = ext4l_mkdir_legacy(dir_name);
 	ut_assertok(ret);
 
 	/* Verify directory exists */
-	ut_asserteq(1, ext4l_exists(dir_name));
+	ut_asserteq(1, ext4l_exists_legacy(dir_name));
 
 	/* Verify creating duplicate returns -EEXIST */
-	ut_asserteq(-EEXIST, ext4l_mkdir(dir_name));
+	ut_asserteq(-EEXIST, ext4l_mkdir_legacy(dir_name));
 
 	/* Create nested directory */
-	ut_assertok(ext4l_mkdir(subdir_name));
-	ut_asserteq(1, ext4l_exists(subdir_name));
+	ut_assertok(ext4l_mkdir_legacy(subdir_name));
+	ut_asserteq(1, ext4l_exists_legacy(subdir_name));
 
 	/* Verify creating directory in non-existent parent returns -ENOENT */
-	ut_asserteq(-ENOENT, ext4l_mkdir("/nonexistent/dir"));
+	ut_asserteq(-ENOENT, ext4l_mkdir_legacy("/nonexistent/dir"));
 
 	return 0;
 }
@@ -528,7 +537,7 @@ FS_TEST_ARGS(fs_test_ext4l_mkdir_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_ln_norun() - Test ext4l_ln function
+ * fs_test_ext4l_ln_norun() - Test ext4l_ln_legacy function
  *
  * Verifies that ext4l can create symbolic links on the filesystem.
  *
@@ -554,33 +563,33 @@ static int fs_test_ext4l_ln_norun(struct unit_test_state *uts)
 	test_counter++;
 
 	/*
-	 * Create a symbolic link. ext4l_ln follows U-Boot's ln command
-	 * convention: ext4l_ln(target, linkname) creates linkname pointing
-	 * to target.
+	 * Create a symbolic link. ext4l_ln_legacy follows U-Boot's ln command
+	 * convention: ext4l_ln_legacy(target, linkname) creates linkname
+	 * pointing to target.
 	 */
-	ut_assertok(ext4l_ln(target, link_name));
+	ut_assertok(ext4l_ln_legacy(target, link_name));
 
 	/* Verify symlink exists */
-	ut_asserteq(1, ext4l_exists(link_name));
+	ut_asserteq(1, ext4l_exists_legacy(link_name));
 
 	/*
 	 * Size through symlink should be target file's size (12 bytes),
 	 * since ext4l_resolve_path follows symlinks (like stat, not lstat)
 	 */
-	ut_assertok(ext4l_size(link_name, &size));
+	ut_assertok(ext4l_size_legacy(link_name, &size));
 	ut_asserteq(12, size);
 
 	/* Verify we can read through the symlink */
 	memset(buf, '\0', sizeof(buf));
-	ut_assertok(ext4l_read(link_name, buf, 0, 0, &actread));
+	ut_assertok(ext4l_read_legacy(link_name, buf, 0, 0, &actread));
 	ut_asserteq(12, actread);
 	ut_asserteq_str("hello world\n", buf);
 
 	/* Verify creating duplicate succeeds (like ln -sf) */
-	ut_assertok(ext4l_ln(target, link_name));
+	ut_assertok(ext4l_ln_legacy(target, link_name));
 
 	/* Verify creating symlink in non-existent parent returns -ENOENT */
-	ut_asserteq(-ENOENT, ext4l_ln(target, "/nonexistent/link"));
+	ut_asserteq(-ENOENT, ext4l_ln_legacy(target, "/nonexistent/link"));
 
 	return 0;
 }
@@ -588,7 +597,7 @@ FS_TEST_ARGS(fs_test_ext4l_ln_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
 
 /**
- * fs_test_ext4l_rename_norun() - Test ext4l_rename function
+ * fs_test_ext4l_rename_norun() - Test ext4l_rename_legacy function
  *
  * Verifies that ext4l can rename files and directories on the filesystem.
  *
@@ -616,34 +625,110 @@ static int fs_test_ext4l_rename_norun(struct unit_test_state *uts)
 	test_counter++;
 
 	/* Create a file to rename */
-	ut_assertok(ext4l_write(old_name, (void *)test_data, 0,
-				test_len, &actwrite));
+	ut_assertok(ext4l_write_legacy(old_name, (void *)test_data,
+				       0, test_len, &actwrite));
 	ut_asserteq(test_len, actwrite);
 
 	/* Verify file exists */
-	ut_asserteq(1, ext4l_exists(old_name));
+	ut_asserteq(1, ext4l_exists_legacy(old_name));
 
 	/* Rename the file */
-	ut_assertok(ext4l_rename(old_name, new_name));
+	ut_assertok(ext4l_rename_legacy(old_name, new_name));
 
 	/* Verify old name no longer exists, new name does */
-	ut_asserteq(0, ext4l_exists(old_name));
-	ut_asserteq(1, ext4l_exists(new_name));
+	ut_asserteq(0, ext4l_exists_legacy(old_name));
+	ut_asserteq(1, ext4l_exists_legacy(new_name));
 
 	/* Verify file size is preserved */
-	ut_assertok(ext4l_size(new_name, &size));
+	ut_assertok(ext4l_size_legacy(new_name, &size));
 	ut_asserteq(test_len, size);
 
 	/* Verify renaming non-existent file returns -ENOENT */
-	ut_asserteq(-ENOENT, ext4l_rename("/nonexistent", "/newname"));
+	ut_asserteq(-ENOENT, ext4l_rename_legacy("/nonexistent", "/newname"));
 
 	/* Test cross-directory rename */
-	ut_assertok(ext4l_mkdir(subdir_name));
-	ut_assertok(ext4l_rename(new_name, moved_name));
-	ut_asserteq(0, ext4l_exists(new_name));
-	ut_asserteq(1, ext4l_exists(moved_name));
+	ut_assertok(ext4l_mkdir_legacy(subdir_name));
+	ut_assertok(ext4l_rename_legacy(new_name, moved_name));
+	ut_asserteq(0, ext4l_exists_legacy(new_name));
+	ut_asserteq(1, ext4l_exists_legacy(moved_name));
 
 	return 0;
 }
 FS_TEST_ARGS(fs_test_ext4l_rename_norun, UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
 	     { "fs_image", UT_ARG_STR });
+
+#define EXT4L_ARG_IMAGE_A	0
+#define EXT4L_ARG_IMAGE_B	1
+#define BUF_ADDR		0x10000
+
+/**
+ * fs_test_ext4l_dual_mount_norun() - Test two ext4l mounts simultaneously
+ *
+ * Mount two different ext4 images at /mnt and /mnt2, read a file from
+ * each, and verify they return different content.
+ *
+ * Arguments:
+ *   fs_image_a: Path to first ext4 filesystem image (contains "alpha\n")
+ *   fs_image_b: Path to second ext4 filesystem image (contains "bravo\n")
+ */
+static int fs_test_ext4l_dual_mount_norun(struct unit_test_state *uts)
+{
+	const char *image_a = ut_str(EXT4L_ARG_IMAGE_A);
+	const char *image_b = ut_str(EXT4L_ARG_IMAGE_B);
+	struct udevice *dev_a, *dev_b, *blk;
+	struct blk_desc *desc;
+	char *buf;
+
+	ut_assertok(vfs_init());
+
+	/* Mount first image at /mnt */
+	ut_assertok(host_create_device("ext4a", true, DEFAULT_BLKSZ, &dev_a));
+	ut_assertok(host_attach_file(dev_a, image_a));
+	ut_assertok(blk_get_from_parent(dev_a, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+	ut_assertok(run_commandf("mount host %x:0 /mnt", desc->devnum));
+	ut_assert_console_end();
+
+	/* Mount second image at /mnt2 */
+	ut_assertok(host_create_device("ext4b", true, DEFAULT_BLKSZ, &dev_b));
+	ut_assertok(host_attach_file(dev_b, image_b));
+	ut_assertok(blk_get_from_parent(dev_b, &blk));
+	ut_assertok(device_probe(blk));
+	desc = dev_get_uclass_plat(blk);
+	ut_assertok(run_commandf("mount host %x:0 /mnt2", desc->devnum));
+	ut_assert_console_end();
+
+	/* Read from first mount */
+	buf = map_sysmem(BUF_ADDR, 0x100);
+	memset(buf, '\0', 0x100);
+	ut_assertok(run_commandf("load %x /mnt/id.txt", BUF_ADDR));
+	ut_assert_nextline("6 bytes read");
+	ut_assert_console_end();
+	ut_asserteq_str("alpha\n", buf);
+
+	/* Read from second mount */
+	memset(buf, '\0', 0x100);
+	ut_assertok(run_commandf("load %x /mnt2/id.txt", BUF_ADDR));
+	ut_assert_nextline("6 bytes read");
+	ut_assert_console_end();
+	ut_asserteq_str("bravo\n", buf);
+	unmap_sysmem(buf);
+
+	/* Unmount both */
+	ut_assertok(run_command("umount /mnt2", 0));
+	ut_assert_console_end();
+	ut_assertok(run_command("umount /mnt", 0));
+	ut_assert_console_end();
+
+	ut_assertok(host_detach_file(dev_b));
+	ut_assertok(device_unbind(dev_b));
+	ut_assertok(host_detach_file(dev_a));
+	ut_assertok(device_unbind(dev_a));
+
+	return 0;
+}
+FS_TEST_ARGS(fs_test_ext4l_dual_mount_norun,
+	     UTF_SCAN_FDT | UTF_CONSOLE | UTF_MANUAL,
+	     { "fs_image_a", UT_ARG_STR },
+	     { "fs_image_b", UT_ARG_STR });

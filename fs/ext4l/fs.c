@@ -22,17 +22,42 @@
 #include <dm/device-internal.h>
 
 /**
+ * struct ext4l_fs_priv - Private data for ext4l UCLASS_FS devices
+ *
+ * @state: Per-mount state
+ */
+struct ext4l_fs_priv {
+	struct ext4l_state state;
+};
+
+/**
  * struct ext4l_dir_priv - Private info for ext4l directory devices
  *
- * @strm: Directory stream from ext4l_opendir(), or NULL. Only one listing
- *	at a time is supported per directory device
+ * @strm: Directory stream from ext4l_opendir_legacy(), or NULL. Only one
+ *	listing at a time is supported per directory device
  */
 struct ext4l_dir_priv {
 	struct fs_dir_stream *strm;
 };
 
+/**
+ * ext4l_get_fs_dev() - Get the UCLASS_FS device from a child
+ *
+ * Walks up from a DIR or FILE device to find its UCLASS_FS parent.
+ *
+ * Return: UCLASS_FS device (always valid for properly constructed trees)
+ */
+static struct udevice *ext4l_get_fs_dev(struct udevice *dev)
+{
+	while (device_get_uclass_id(dev) != UCLASS_FS)
+		dev = dev_get_parent(dev);
+
+	return dev;
+}
+
 static int ext4l_vfs_mount(struct udevice *dev)
 {
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
 	struct fs_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct fs_plat *plat = dev_get_uclass_plat(dev);
 	int ret;
@@ -43,7 +68,7 @@ static int ext4l_vfs_mount(struct udevice *dev)
 	if (!plat->desc)
 		return log_msg_ret("emd", -ENODEV);
 
-	ret = ext4l_probe(plat->desc, &plat->part);
+	ret = ext4l_mount(&priv->state, plat->desc->bdev, &plat->part);
 	if (ret)
 		return log_msg_ret("emp", ret);
 
@@ -54,12 +79,13 @@ static int ext4l_vfs_mount(struct udevice *dev)
 
 static int ext4l_vfs_unmount(struct udevice *dev)
 {
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
 	struct fs_priv *uc_priv = dev_get_uclass_priv(dev);
 
 	if (!uc_priv->mounted)
 		return log_msg_ret("euu", -ENOTCONN);
 
-	ext4l_close();
+	ext4l_umount(&priv->state);
 	uc_priv->mounted = false;
 
 	return 0;
@@ -83,28 +109,38 @@ static int ext4l_vfs_lookup_dir(struct udevice *dev, const char *path,
 static int ext4l_vfs_ln(struct udevice *dev, const char *path,
 			const char *target)
 {
-	return ext4l_ln(target, path);
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
+
+	return ext4l_ln(&priv->state, target, path);
 }
 
 static int ext4l_vfs_rename(struct udevice *dev, const char *old_path,
 			    const char *new_path)
 {
-	return ext4l_rename(old_path, new_path);
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
+
+	return ext4l_rename(&priv->state, old_path, new_path);
 }
 
 static int ext4l_vfs_statfs(struct udevice *dev, struct fs_statfs *stats)
 {
-	return ext4l_statfs(stats);
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
+
+	return ext4l_statfs(&priv->state, stats);
 }
 
 static int ext4l_vfs_unlink(struct udevice *dev, const char *path)
 {
-	return ext4l_unlink(path);
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
+
+	return ext4l_unlink(&priv->state, path);
 }
 
 static int ext4l_vfs_mkdir(struct udevice *dev, const char *path)
 {
-	return ext4l_mkdir(path);
+	struct ext4l_fs_priv *priv = dev_get_priv(dev);
+
+	return ext4l_mkdir(&priv->state, path);
 }
 
 static const struct fs_ops ext4l_vfs_ops = {
@@ -119,15 +155,18 @@ static const struct fs_ops ext4l_vfs_ops = {
 };
 
 U_BOOT_DRIVER(ext4_fs) = {
-	.name	= "ext4_fs",
-	.id	= UCLASS_FS,
-	.ops	= &ext4l_vfs_ops,
+	.name		= "ext4_fs",
+	.id		= UCLASS_FS,
+	.ops		= &ext4l_vfs_ops,
+	.priv_auto	= sizeof(struct ext4l_fs_priv),
 };
 
 /* ext4l directory driver */
 
 static int ext4l_dir_open(struct udevice *dev, struct fs_dir_stream *strm)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dev);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct ext4l_dir_priv *priv = dev_get_priv(dev);
 	struct dir_uc_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct fs_dir_stream *ext4_strm;
@@ -135,7 +174,7 @@ static int ext4l_dir_open(struct udevice *dev, struct fs_dir_stream *strm)
 	int ret;
 
 	path = *uc_priv->path ? uc_priv->path : "/";
-	ret = ext4l_opendir(path, &ext4_strm);
+	ret = ext4l_opendir(&fspriv->state, path, &ext4_strm);
 	if (ret)
 		return log_msg_ret("edo", ret);
 
@@ -147,11 +186,13 @@ static int ext4l_dir_open(struct udevice *dev, struct fs_dir_stream *strm)
 static int ext4l_dir_read(struct udevice *dev, struct fs_dir_stream *strm,
 			  struct fs_dirent *dent)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dev);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct ext4l_dir_priv *priv = dev_get_priv(dev);
 	struct fs_dirent *ext4_dent;
 	int ret;
 
-	ret = ext4l_readdir(priv->strm, &ext4_dent);
+	ret = ext4l_readdir(&fspriv->state, priv->strm, &ext4_dent);
 	if (ret)
 		return ret;
 
@@ -162,9 +203,11 @@ static int ext4l_dir_read(struct udevice *dev, struct fs_dir_stream *strm,
 
 static int ext4l_dir_close(struct udevice *dev, struct fs_dir_stream *strm)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dev);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct ext4l_dir_priv *priv = dev_get_priv(dev);
 
-	ext4l_closedir(priv->strm);
+	ext4l_closedir(&fspriv->state, priv->strm);
 	priv->strm = NULL;
 
 	return 0;
@@ -184,11 +227,13 @@ struct ext4l_file_priv {
 static ssize_t ext4l_read_iter(struct udevice *dev, struct iov_iter *iter,
 			       loff_t pos)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dev);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct ext4l_file_priv *priv = dev_get_priv(dev);
 	loff_t actual;
 	int ret;
 
-	ret = ext4l_read(priv->path, iter_iov_ptr(iter), pos,
+	ret = ext4l_read(&fspriv->state, priv->path, iter_iov_ptr(iter), pos,
 			 iter_iov_avail(iter), &actual);
 	if (ret)
 		return log_msg_ret("efr", ret);
@@ -200,11 +245,14 @@ static ssize_t ext4l_read_iter(struct udevice *dev, struct iov_iter *iter,
 static ssize_t ext4l_write_iter(struct udevice *dev, struct iov_iter *iter,
 				loff_t pos)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dev);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct ext4l_file_priv *priv = dev_get_priv(dev);
 	loff_t actual;
 	int ret;
 
-	ret = ext4l_write(priv->path, (void *)iter_iov_ptr(iter), pos,
+	ret = ext4l_write(&fspriv->state, priv->path,
+			  (void *)iter_iov_ptr(iter), pos,
 			  iter_iov_avail(iter), &actual);
 	if (ret)
 		return log_msg_ret("efw", ret);
@@ -229,6 +277,8 @@ static int ext4l_dir_open_file(struct udevice *dir, const char *leaf,
 			       enum dir_open_flags_t oflags,
 			       struct udevice **filp)
 {
+	struct udevice *fsdev = ext4l_get_fs_dev(dir);
+	struct ext4l_fs_priv *fspriv = dev_get_priv(fsdev);
 	struct dir_uc_priv *uc_priv = dev_get_uclass_priv(dir);
 	struct ext4l_file_priv *priv;
 	struct udevice *dev;
@@ -243,9 +293,9 @@ static int ext4l_dir_open_file(struct udevice *dir, const char *leaf,
 
 	/* For read, verify the file exists and get its size */
 	if (oflags == DIR_O_RDONLY) {
-		if (!ext4l_exists(path))
+		if (!ext4l_exists(&fspriv->state, path))
 			return log_msg_ret("eoe", -ENOENT);
-		ret = ext4l_size(path, &size);
+		ret = ext4l_size(&fspriv->state, path, &size);
 		if (ret)
 			return log_msg_ret("eos", ret);
 	}
