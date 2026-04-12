@@ -1452,6 +1452,46 @@ class Database:  # pylint:disable=R0904
             'WHERE sv.link = ?', (str(link),))
         return res.fetchone()
 
+    def series_search(self, query, include_archived=False):
+        """Search for series by subject fragment
+
+        Matches series against the given query string in three places:
+         - Series description (cover letter title)
+         - ser_ver description (per-version title)
+         - Patch subjects (pcommit.subject)
+
+        Args:
+            query (str): Text to search for (case-insensitive substring)
+            include_archived (bool): True to include archived series
+
+        Return:
+            list of tuple: (series_id, name, desc, version, link, match_type,
+                match_text) where match_type is 'series', 'version' or
+                'patch', ordered by series name and version
+        """
+        pat = f'%{query}%'
+        cond = '' if include_archived else ' AND s.archived = 0'
+
+        sql = (
+            "SELECT s.id, s.name, s.desc, sv.version, sv.link, "
+            "'series' AS mtype, s.desc AS mtext "
+            'FROM series s JOIN ser_ver sv ON sv.series_id = s.id '
+            f'WHERE s.desc LIKE ?{cond} '
+            'UNION '
+            "SELECT s.id, s.name, s.desc, sv.version, sv.link, "
+            "'version' AS mtype, sv.desc AS mtext "
+            'FROM series s JOIN ser_ver sv ON sv.series_id = s.id '
+            f'WHERE sv.desc LIKE ?{cond} '
+            'UNION '
+            "SELECT s.id, s.name, s.desc, sv.version, sv.link, "
+            "'patch' AS mtype, pc.subject AS mtext "
+            'FROM series s JOIN ser_ver sv ON sv.series_id = s.id '
+            'JOIN pcommit pc ON pc.svid = sv.id '
+            f'WHERE pc.subject LIKE ?{cond} '
+            'ORDER BY 2, 4')
+        res = self.execute(sql, (pat, pat, pat))
+        return res.fetchall()
+
     def series_find_review_by_name(self, name):
         """Find a review series by its description
 

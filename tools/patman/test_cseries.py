@@ -4461,7 +4461,6 @@ Date:   .*
         svid2 = cser.db.ser_ver_add(series_id, 2, desc='Second version desc')
 
         # Add patches to v1
-        from patman.database import Pcommit
         cser.db.pcommit_add_list(svid1, [
             Pcommit(idnum=None, seq=0, subject='Fix the widget',
                     svid=svid1, change_id=None, state=None,
@@ -4490,6 +4489,57 @@ Date:   .*
         self.assertIn('Version 2:', output)
         self.assertIn('Second version desc', output)
         self.assertIn('Notes: Fixed review feedback', output)
+
+    def test_series_find(self):
+        """Test the series find command"""
+        cser = self.get_database()
+
+        # Create two series: one with patches matching 'widget', one with
+        # matching cover description, one with neither
+        alpha_id = cser.db.series_add('alpha', 'Widget subsystem refresh')
+        alpha_svid = cser.db.ser_ver_add(alpha_id, 1)
+        cser.db.pcommit_add_list(alpha_svid, [
+            Pcommit(idnum=None, seq=0, subject='Fix the widget',
+                    svid=alpha_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+
+        beta_id = cser.db.series_add('beta', 'Unrelated cleanup')
+        beta_svid = cser.db.ser_ver_add(beta_id, 1,
+                                         desc='Touch up the widget driver')
+        cser.db.pcommit_add_list(beta_svid, [
+            Pcommit(idnum=None, seq=0, subject='cleanup',
+                    svid=beta_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+
+        gamma_id = cser.db.series_add('gamma', 'Something different')
+        gamma_svid = cser.db.ser_ver_add(gamma_id, 1)
+        cser.db.pcommit_add_list(gamma_svid, [
+            Pcommit(idnum=None, seq=0, subject='other work',
+                    svid=gamma_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+        cser.commit()
+
+        # Match on cover-letter description and per-version description
+        with terminal.capture() as (out, _):
+            cser.series_find('widget')
+        output = out.getvalue()
+        self.assertIn('2 match(es)', output)
+        self.assertIn('alpha', output)
+        self.assertIn('beta', output)
+        self.assertNotIn('gamma', output)
+
+        # Match only on patch subject
+        with terminal.capture() as (out, _):
+            cser.series_find('Fix the')
+        output = out.getvalue()
+        self.assertIn('1 match(es)', output)
+        self.assertIn('alpha', output)
+
+        # No matches
+        with terminal.capture() as (out, _):
+            cser.series_find('nonexistent')
+        output = out.getvalue()
+        self.assertIn("No series match 'nonexistent'", output)
 
     # Series link used by the review tests
     REVIEW_LINK = 497923

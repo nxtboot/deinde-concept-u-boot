@@ -492,6 +492,49 @@ class Cseries(cser_helper.CseriesHelper):
                   f'{ups:2}  {vlist}')
         print(border)
 
+    def series_find(self, query, include_archived=False):
+        """Search for series by subject fragment
+
+        Args:
+            query (str): Text to search for in series/version/patch
+                subjects
+            include_archived (bool): True to include archived series
+        """
+        col = self.col
+        rows = self.db.series_search(query, include_archived)
+        if not rows:
+            tout.notice(f"No series match '{query}'")
+            return
+
+        # Deduplicate: for each (series_id, version), keep the best match
+        # priority: series > version > patch
+        priority = {'series': 0, 'version': 1, 'patch': 2}
+        best = {}
+        for sid, name, desc, version, link, mtype, mtext in rows:
+            key = (sid, version)
+            prev = best.get(key)
+            if prev is None or priority[mtype] < priority[prev[5]]:
+                best[key] = (sid, name, desc, version, link, mtype, mtext)
+
+        with terminal.pager():
+            terminal.tprint(f"{len(best)} match(es) for '{query}':",
+                            colour=col.WHITE, col=col)
+            last_sid = None
+            for key in sorted(best,
+                              key=lambda k: (best[k][1], best[k][3])):
+                sid, name, desc, version, link, mtype, mtext = best[key]
+                if sid != last_sid:
+                    terminal.tprint('')
+                    terminal.tprint(f'{name}', colour=col.YELLOW,
+                                    col=col)
+                    terminal.tprint(f'  {desc or "(no description)"}',
+                                    col=col)
+                    last_sid = sid
+                link_str = link or '(no link)'
+                terminal.tprint(f'  v{version} [{link_str}]',
+                                colour=col.BLUE, col=col, newline=False)
+                terminal.tprint(f' {mtype}: {mtext}', col=col)
+
     def list_patches(self, series, version, show_commit=False,
                      show_patch=False):
         """List patches in a series

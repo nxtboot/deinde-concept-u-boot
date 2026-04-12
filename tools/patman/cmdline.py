@@ -229,6 +229,7 @@ def add_series_subparser(subparsers):
                                    help='Manage series of patches')
     series.defaults_cmds = [
         ['set-link', 'fred'],
+        ['find', 'dummy'],
     ]
     series.add_argument(
         '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
@@ -291,6 +292,11 @@ def add_series_subparser(subparsers):
     _add_gather(sall)
     _add_show_comments(sall)
     _add_show_cover_comments(sall)
+
+    find = series_subparsers.add_parser(
+        'find', help='Search for series by subject fragment')
+    find.add_argument('query', help='Text to search for')
+    _add_archived(find)
 
     series_subparsers.add_parser('get-link')
     series_subparsers.add_parser('inc')

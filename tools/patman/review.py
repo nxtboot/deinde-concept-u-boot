@@ -1144,10 +1144,8 @@ def search_patch(pwork, title):
 
     async def _query():
         query = quote_plus(title, safe=':')
-        subpath = (f'patches/?project={pwork.proj_id}&q={query}'
-                   '&order=-date&per_page=20')
         async with aiohttp.ClientSession() as client:
-            return await pwork._request(client, subpath)
+            return await pwork.search_patches(client, query)
 
     loop = asyncio.get_event_loop()
     results = loop.run_until_complete(_query())

@@ -745,11 +745,25 @@ Here is a short overview of the available subcommands:
         removing that version from the data. If you use this comment on branch
         'video3' Patman will delete version 3 and branch 'video3'.
 
+    find
+        Search the database for series matching a subject fragment.
+        Matches against the series description, per-version description,
+        and individual patch subjects. Use ``-A`` to include archived
+        series. Example::
+
+            patman series find 'fs loader'
+
     get-link
         Shows the Patchwork link for a series/version
 
+    info
+        Show detailed information about a series, including each
+        version's link, description, patches and any stored reviews.
+        Use ``-r`` to include review text.
+
     ls
-        Lists the series in the database
+        Lists the series in the database. Use ``-r`` to show only
+        review series (series fetched by ``patman review``).
 
     mark
         Mark a series with 'Change-Id' tags so that Patman can track patches
