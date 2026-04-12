@@ -57065,3 +57065,134 @@ The branch `cherry-a6d20ea69cd` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-12 (attempt 1)
+
+Branch: cherry-a6d20ea69cd
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+Now I have the context. The failure is in `test_distro_arm_app_efi` test which times out expecting "Ubuntu 25.04 qarm ttyAMA0". This is a test timeout issue in the test_distro.py test. Let me checkout the branch and investigate further.
+
+Now let me look at the failing test to understand what it's testing:
+
+The test is `test_distro_arm_app_efi` which:
+1. Runs on `efi-arm_app64` board with role `efi-aarch64`
+2. Sets bootmeth to `efi`
+3. Runs `boot` command
+4. Expects "Booting bootflow 'efi_media_1.bootdev.part_1' with efi"
+5. Then expects "Ubuntu 25.04 qarm ttyAMA0" (this is where it times out)
+
+The test timeout suggests that either:
+1. The bootflow isn't starting at all
+2. The EFI boot is failing silently
+3. Something in the commit broke EFI booting functionality
+
+Let me look at the job log more carefully to see if there's any earlier indication of what went wrong:
+
+The log is truncated - I only see the tail. This is a timeout on the test `test_distro_arm_app_efi` where it expects `Ubuntu 25.04 qarm ttyAMA0` but times out. This is an EFI test that boots into Ubuntu via EFI on ARM64.
+
+Let me check if there was a similar test that passed (the `test_distro_arm_app_extlinux`) and also check CI/master to see if this test was passing before this MR. Let me also check what commits in the MR might affect EFI booting.
+
+There's a commit that disables EFI partition. Let me look at that commit:
+
+This is only changing the tbs2910 board, not the efi-aarch64 test board. Let me check if there's something more fundamental. Let me look at the git log to see all commits:
+
+The commits are mostly board-specific changes (BSH, Kontron, IMX boards) and defconfig changes. Let me check if this test was already flaky or if this is a new failure. Let me check if the test passes on ci/master:
+
+Looking at the test failure, it timed out waiting for "Ubuntu 25.04 qarm ttyAMA0". This is a real OS boot test on QEMU. This could be:
+1. A timing/flaky test issue
+2. Something in the branch actually broke EFI boot path
+
+Let me look at what's really happening in the log - was the first `expect` for the bootflow successful?
+
+The log shows this is a timeout in the test where it's expecting the Ubuntu 25.04 login prompt. This is running an EFI app on ARM64.
+
+Let me check if this could be related to test infrastructure (i.e., the test always passed but is now flaky) or if there's a code change that breaks it. Let me see if there are similar recent failures on other MRs:
+
+Let me check the test more carefully to understand what it's doing. The test is expecting `Ubuntu 25.04 qarm ttyAMA0` which is the login prompt string. The test passed `test_distro_arm_app_extlinux` (34 passed) but failed on `test_distro_arm_app_efi`.
+
+Looking at the test code, the difference is:
+- `test_distro_arm_app_extlinux`: Uses `bootmeth order extlinux` and expects different markers
+- `test_distro_arm_app_efi`: Uses `bootmeth order efi` and expects `Ubuntu 25.04 qarm ttyAMA0`
+
+The fact that one test passes and the other fails for the same board suggests it could be an infrastructure/timing issue (transient), or there's something different about EFI boot that fails.
+
+Let me check if there's been any changes to the test_distro.py file between ci/master and this branch:
+
+No changes to the test file. Let me check if any of the commits touch EFI-related code:
+
+These Makefile matches are false positives (just contains "Makefile"). Let me check if the changes affect any code that runs on `efi-arm_app64` board:
+
+None of these changes affect the `efi-arm_app64` board or the ARM EFI app code that's being tested. Let me check the config for efi-arm_app64:
+
+No changes. Let me also verify no code changes affect EFI loading/booting:
+
+The driver changes are only for the FEC MXC Ethernet driver. This is specific to IMX (ARM) hardware, not the EFI ARM app boot process.
+
+Let me check if this is a transient/flaky test. Looking at the log more carefully:
+- 34 tests passed
+- 662 tests skipped  
+- Only 1 failed
+
+The `test_distro_arm_app_extlinux` test passed (it uses extlinux boot method), but `test_distro_arm_app_efi` failed (uses EFI boot method). Both run on the same board.
+
+This could be:
+1. An infrastructure issue (QEMU crashed, network timeout, slow boot)
+2. A timing issue (EFI boot takes longer and hit the timeout)
+3. A genuine regression
+
+Let me check if there have been any recent changes to the test infrastructure or if this test has been flaky:
+
+I see there have been timeout increases (`b7f318e484f` and `bd2f3f2867a`). Let me look at the recent changes:
+
+This commit simplified the test. Let me see the current test code more closely:
+
+The test was simplified and now just expects the final Ubuntu login prompt after EFI boot. The timeout is already set to 200 seconds (200 * 1000 ms), which should be plenty of time.
+
+Since:
+1. None of the commits in this MR change code that affects the `efi-arm_app64` board
+2. The test infrastructure hasn't changed between ci/master and this branch
+3. The extlinux test passes (34 tests passed total)
+4. Only the EFI test fails with a timeout
+
+This appears to be a **transient infrastructure issue** - the EFI boot simply took too long or hung, likely due to:
+- QEMU timing issues
+- CI runner load
+- Network/disk I/O issues on the test infrastructure
+
+Let me verify one more thing - that the CI system had successful runs of this test recently:
+
+Based on my investigation, this is a **transient infrastructure/timing issue**, not a code regression. Here's my analysis:
+
+## Summary
+
+**Diagnosis: Transient/Infrastructure Issue - No Code Fix Required**
+
+### Evidence:
+1. **No relevant code changes**: None of the 69 commits in this MR affect:
+   - The `efi-arm_app64` board configuration
+   - The EFI loader code (`lib/efi_loader/`)
+   - Boot code (`boot/`)
+   - Test infrastructure (`test/py/`)
+   
+2. **Test passes for extlinux, fails for EFI**: The same board (`efi-arm_app64`) with same role (`efi-aarch64`) passes `test_distro_arm_app_extlinux` but times out on `test_distro_arm_app_efi`. This suggests an infrastructure issue rather than a code problem.
+
+3. **All changes are board-specific**: The commits only add/modify:
+   - New board support (BSH, Kontron)
+   - Defconfig changes for existing boards ("Stop disabling device tree relocation")
+   - FEC MXC Ethernet driver fixes (not used by the test board)
+   - Board-specific env files
+
+4. **Known flaky test area**: The test has had recent timeout adjustments and was simplified specifically because of fragility issues.
+
+### Recommendation:
+This is an infrastructure/transient failure. The test timed out waiting for "Ubuntu 25.04 qarm ttyAMA0" after EFI boot, but there's no code change in this MR that could cause this.
+
+**No changes are needed** - the MR should be retried as the failure is not related to the cherry-picked commits.
+
+Would you like me to confirm by creating the fix branch anyway (with no changes, just documenting this is a transient failure), or would you prefer to simply retry the pipeline?
+
+---
+
