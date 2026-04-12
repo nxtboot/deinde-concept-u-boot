@@ -56895,3 +56895,173 @@ All 8 commits are present. Let me run a final build test:
 
 ---
 
+## 2026-04-12: us/next
+
+Branch: cherry-a6d20ea69cd
+
+Commits:
+- a6d20ea69cd bsh: make common configuration for m2
+- 1817467e483 bsh: add support for imx6ulz_smm_m2d
+- dfafac3207b imx: Add support for Kontron i.MX8MP OSM-S SoM and BL carrier board
+- b9e48705e0b arm: imx: imx9: Use arch override for env_get_location()
+- 8cad37db366 imx: Add support for Kontron i.MX93 OSM-S SoM and BL carrier board
+- 3a4c79dd2fd imx95_evk: Initialize the ELE RNG context
+- e38dab69164 board: tbs2910: Disable EFI partition, MP, sysboot, bind commands
+- 7b8c8929c3a opos6uldev: Stop disabling device tree relocation
+- ff134dcb022 gw_ventana: Stop disabling device tree relocation
+- 2ba03286657 imx6dl-sielaff: Stop disabling device tree relocation
+- 370fea51c1a bk4r1: Stop disabling device tree relocation
+- c7cfe90d08f cl-som-imx7: Stop disabling device tree relocation
+- c299598ad0e cm_fx6: Stop disabling device tree relocation
+- b4fa14b1901 dart_6ul: Stop disabling device tree relocation
+- 29d7291e8d9 display5: Stop disabling device tree relocation
+- 8df8461f4f6 imx6-engicam: Stop disabling device tree relocation
+- 4b85163d92b imx6dl-mamoj: Stop disabling device tree relocation
+- 12baa1935f4 kp_imx53: Stop disabling device tree relocation
+- c2b5fcd5509 kp_imx6q_tpc: Stop disabling device tree relocation
+- 199a24d8cc3 mccmon6: Stop disabling device tree relocation
+- dc85196c899 mx53cx9020: Stop disabling device tree relocation
+- 06dd6311c17 mx6sabre: Stop disabling device tree relocation
+- 3f9d92ac70a mx6slevk: Stop disabling device tree relocation
+- f8968210d1f mx6sllevk: Stop disabling device tree relocation
+- 261aa08c6a7 mx6sxsabreauto: Stop disabling device tree relocation
+- 061af376eec mx6sxsabresd: Stop disabling device tree relocation
+- d028fb54597 mx6ul_14x14_evk: Stop disabling device tree relocation
+- 7c7b2833a17 mx6ullevk: Stop disabling device tree relocation
+- d74ceba7ce5 mx7dsabresd: Stop disabling device tree relocation
+- 8ea29e5c748 mx7ulp_com: Stop disabling device tree relocation
+- 55224db4828 mx7ulp_evk: Stop disabling device tree relocation
+- 62fd11c414f mys_6ulx: Stop disabling device tree relocation
+- 2d10e53c262 nitrogen6x: Stop disabling device tree relocation
+- 59b034fa8f0 novena: Stop disabling device tree relocation
+- 9f26d624003 pico-imx6: Stop disabling device tree relocation
+- 76c838e86ee pico-imx6ul: Stop disabling device tree relocation
+- 32c2d85620b pico-imx7d: Stop disabling device tree relocation
+- 2f319d523e7 tqma6: Stop disabling device tree relocation
+- 5fc4bf4615b udoo: Stop disabling device tree relocation
+- 8d5de0ac09d udoo_neo: Stop disabling device tree relocation
+- 5c089f165ad wandboard: Stop disabling device tree relocation
+- 7a125a06420 warp7: Stop disabling device tree relocation
+- 5da84c1c37d capricorn: Stop disabling device tree relocation
+- 3bef4458bee imx8mq_phanbell: Stop disabling device tree relocation
+- 4e329f7db9b imx8qm_mek: Stop disabling device tree relocation
+- 9aaef14c127 imx8qxp_mek: Stop disabling device tree relocation
+- 8d083351e91 liteboard: Stop disabling device tree relocation
+- 7245b11d917 pcl063: Stop disabling device tree relocation
+- 107bb531d09 pcl063_ull: Stop disabling device tree relocation
+- e873a06fe6e pico-imx8mq: Stop disabling device tree relocation
+- 4253b90923f net: fec_mxc: respect return value of phy_config
+- 2aa6880bc58 net: fec-mxc: prevent crash if no MAC address is set
+- 206f38e8dd3 net: fec_mxc: fix probe of MDIO bus for DM_MDIO
+- aafdd856941 net: fec_mxc: fix remove with DM_MDIO
+- fc199c481c6 net: fec_mxc: rewrite fallback MDIO Bus allocation
+- f4434ae02d5 net: fec_mxc: fix usage of DM_MDIO and DM_ETH_PHY
+- c5d3f7ac8e7 net: fec_mxc: add unique bus and device names for DM_MDIO
+- 349288b7b9d net: fec_mxc.c: improve readability of dm_fec_bind_mdio
+- e94645a8d30 tqma6: Remove empty function tqma6_iomuxc_spi()
+- 8694a0523e4 board: tqma6: style fixes
+- 34937dbf590 board: [cosmetic] tqma6: adjust SPDX tag
+- 659efd24cda board: tqma6: update MAINTAINERS
+- b44120257bc phytec: adapt env to ampliphy-boot bootscripts for imx8 boards
+- 67a65832408 phytec: add emmc_dev and sd_dev env vars for imx8 boards
+- 27d6ea35619 phytec: set bootdevices and bootmeths in devicetree for imx8 boards
+- 76612e93c3c phytec: change preferred bootdevice dynamically
+- 1ccb4f0de69 phytec: use fdtoverlay_addr_r
+- c8daa0abdb3 phytec: sort .env files alphabetically for imx8 boards
+- 65a13153107 Merge tag 'u-boot-imx-next-20251129' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+The repository has untracked files but nothing staged, so it's clean enough to proceed. Let me create the new branch based on ci/master.
+
+Now let me start cherry-picking the commits one by one. Starting with the first commit:
+
+Delta looks identical. Let me run the build test:
+
+Build passed. Let me continue with the second commit:
+
+Continuing with commit 3:
+
+Commit 4:
+
+Commit 5:
+
+Commit 6:
+
+Commit 7:
+
+There's a slight difference in the delta (1+/2- vs 3+/2-). Let me check the actual diff:
+
+I see - the original commit also adds `# CONFIG_CMD_BIND is not set` and `CONFIG_CMD_DM=y` lines, but those seem to already be present in the ci/master branch version. The key changes (disabling SYSBOOT, EFI_PARTITION, adding CMD_MP not set) are all present, so this is just a context difference. The cherry-pick was successful. Let me continue:
+
+Commit 8:
+
+Let me continue cherry-picking the rest of the commits. I'll go faster and batch the verification since these are straightforward defconfig changes:
+
+There's a conflict. Let me analyze it:
+
+The file `board/siemens/capricorn/capricorn_default.env` was deleted in ci/master but the commit tries to modify it. This means the capricorn board was removed from ci/master. Since the file doesn't exist, we should skip this change by removing the file and making an empty commit:
+
+Continuing with the next commits:
+
+Now the FEC network driver commits:
+
+Now the tqma6 commits:
+
+Now the last commit - the merge commit:
+
+The merge commit has the same conflict with the capricorn board. Let me resolve it:
+
+Now let me verify the total count:
+
+All 69 commits are present. Now let me run the final build test:
+
+Let me also verify the commit count:
+
+Exactly 69 commits as expected. Let me now provide the final status report:
+
+---
+
+## Cherry-Pick Summary
+
+### Final Status: ✅ SUCCESS
+
+**Branch:** `cherry-a6d20ea69cd` (based on `ci/master`)  
+**Total Commits:** 69  
+**Build Result:** OK (sandbox build passes)
+
+### Fix-ups Made:
+
+1. **Commit 43 (5da84c1c37d) - capricorn: Stop disabling device tree relocation**
+   - **Issue:** The file `board/siemens/capricorn/capricorn_default.env` was deleted in ci/master (the capricorn board was removed)
+   - **Resolution:** Created an empty commit with a note explaining the file was removed upstream
+
+2. **Commit 69 (65a13153107) - Merge tag 'u-boot-imx-next-20251129'**
+   - **Issue:** Same conflict with the deleted capricorn file, plus the merge is empty since all content was already cherry-picked
+   - **Resolution:** Created an empty merge commit with a note explaining all changes were already applied in preceding cherry-picks
+
+### All Commits Cherry-Picked:
+
+| # | Original Hash | Subject |
+|---|---------------|---------|
+| 1 | a6d20ea69cd | bsh: make common configuration for m2 |
+| 2 | 1817467e483 | bsh: add support for imx6ulz_smm_m2d |
+| 3 | dfafac3207b | imx: Add support for Kontron i.MX8MP OSM-S SoM and BL carrier board |
+| 4 | b9e48705e0b | arm: imx: imx9: Use arch override for env_get_location() |
+| 5 | 8cad37db366 | imx: Add support for Kontron i.MX93 OSM-S SoM and BL carrier board |
+| 6 | 3a4c79dd2fd | imx95_evk: Initialize the ELE RNG context |
+| 7 | e38dab69164 | board: tbs2910: Disable EFI partition, MP, sysboot, bind commands |
+| 8-42 | ... | Various "Stop disabling device tree relocation" commits |
+| 43 | 5da84c1c37d | capricorn: Stop disabling device tree relocation [EMPTY - file removed] |
+| 44-50 | ... | More "Stop disabling device tree relocation" commits |
+| 51-58 | ... | net: fec_mxc driver improvements |
+| 59-62 | ... | tqma6 board updates |
+| 63-68 | ... | phytec imx8 board updates |
+| 69 | 65a13153107 | Merge tag 'u-boot-imx-next-20251129' [EMPTY merge] |
+
+### Delta Concerns:
+- **Commit 7 (tbs2910):** Minor delta difference (1+/2- vs 3+/2-) due to context already present in ci/master. Verified that the actual semantic changes were correctly applied.
+
+The branch `cherry-a6d20ea69cd` is ready for pushing.
+
+---
+
