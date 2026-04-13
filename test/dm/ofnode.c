@@ -1379,6 +1379,7 @@ static int dm_test_ofnode_too_many(struct unit_test_state *uts)
 		 */
 		if (of_live_active() || i < max_trees - 1) {
 			ut_assertok(ret);
+			free_oftree(tree);
 		} else {
 			/*
 			 * tree should be invalid when we try to register too
