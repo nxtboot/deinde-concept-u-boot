@@ -1682,7 +1682,7 @@ static int bootstd_adhoc(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootstd_adhoc, UTF_CONSOLE);
+BOOTSTD_TEST(bootstd_adhoc, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check scanning extlinux, adjusting cmdline and booting */
 static int bootflow_scan_extlinux(struct unit_test_state *uts)
