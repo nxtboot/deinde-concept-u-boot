@@ -864,6 +864,22 @@ static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
 #endif
 
 /**
+ * malloc_mcheck_overflow() - Check whether the mcheck registry filled
+ *
+ * The mcheck code registers each allocation's header in a fixed-size array so
+ * that leak reporting and pedantic checking can find it. If the array is ever
+ * exhausted, later allocations are still returned but their caller info cannot
+ * be recovered.
+ *
+ * Return: true if the registry has overflowed at any point
+ */
+#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+bool malloc_mcheck_overflow(void);
+#else
+static inline bool malloc_mcheck_overflow(void) { return false; }
+#endif
+
+/**
  * malloc_chunk_size() - Return the dlmalloc chunk size for an allocation
  *
  * Given a pointer returned by malloc(), return the size of the underlying

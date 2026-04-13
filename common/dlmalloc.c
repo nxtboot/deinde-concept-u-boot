@@ -6010,6 +6010,11 @@ bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
 #endif
 }
 
+bool malloc_mcheck_overflow(void)
+{
+	return mcheck_registry_full;
+}
+
 static const char *mcheck_caller(void)
 {
 #if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)

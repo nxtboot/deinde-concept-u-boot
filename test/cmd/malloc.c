@@ -63,6 +63,12 @@ static int cmd_test_malloc_leak(struct unit_test_state *uts)
 	void *ptr;
 	int ret;
 
+	/*
+	 * If the mcheck registry ever overflowed, later allocations are not
+	 * registered and leak reports cannot recover the caller string.
+	 */
+	ut_assert(!malloc_mcheck_overflow());
+
 	/* Take a snapshot, then check with no leaks */
 	ut_assertok(malloc_leak_check_start(&snap));
 	ut_assert(snap.count > 0);
