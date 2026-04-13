@@ -243,7 +243,7 @@ U_BOOT_DRIVER(virtio_scsi) = {
 	.priv_auto	= sizeof(struct virtio_scsi_priv),
 	.ops		= &virtio_scsi_ops,
 	.probe		= virtio_scsi_probe,
-	.remove		= virtio_reset,
+	.remove		= virtio_remove,
 	.bind		= virtio_scsi_bind,
 	.flags		= DM_FLAG_ACTIVE_DMA,
 };
