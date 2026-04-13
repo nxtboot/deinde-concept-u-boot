@@ -118,7 +118,7 @@ host save hostfs 0 %(loadables2_addr)x %(loadables2_out)s %(loadables2_size)x
 '''
 
 @pytest.mark.boardspec('sandbox')
-@pytest.mark.buildconfigspec('fit_signature')
+@pytest.mark.buildconfigspec('fit')
 @pytest.mark.requiredtool('dtc')
 class TestFitImage:
     """Test class for FIT image handling in U-Boot
