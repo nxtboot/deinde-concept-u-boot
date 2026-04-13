@@ -375,6 +375,12 @@ static void run_threads(void)
 		return;
 	while (!uthread_grp_done(grp_id))
 		uthread_schedule();
+	/*
+	 * uthread_schedule() only frees 'done' threads it walks past
+	 * on the way to the next runnable one. Call it again so it
+	 * drains the tail of the list and releases the last thread.
+	 */
+	uthread_schedule();
 	nthr = 0;
 	grp_id = 0;
 #endif
