@@ -71,7 +71,7 @@
 #define PADDINGFLOOD	((char)0x58)
 
 // Full test suite can exceed 10000 concurrent allocations
-#define REGISTRY_SZ	20000
+#define REGISTRY_SZ	40000
 #define CANARY_DEPTH	2
 
 // avoid problems with BSS at early stage:
