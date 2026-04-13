@@ -1629,6 +1629,10 @@ static int dm_test_oftree_to_fdt(struct unit_test_state *uts)
 	ut_asserteq(abuf_size(&buf), abuf_size(&buf2));
 	ut_asserteq_mem(abuf_data(&buf), abuf_data(&buf2), abuf_size(&buf));
 
+	oftree_dispose(check);
+	abuf_uninit(&buf);
+	abuf_uninit(&buf2);
+
 	return 0;
 }
 DM_TEST(dm_test_oftree_to_fdt, UTF_SCAN_FDT);
