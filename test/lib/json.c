@@ -539,6 +539,7 @@ static int lib_test_json_to_fdt_luks2(struct unit_test_state *uts)
 	/* Check keyslots_size (stored as string in JSON) */
 	ut_asserteq_str("3145728", ofnode_read_string(config, "keyslots_size"));
 
+	oftree_dispose(tree);
 	abuf_uninit(&buf);
 
 	return 0;
