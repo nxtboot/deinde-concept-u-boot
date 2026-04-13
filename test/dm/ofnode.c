@@ -1510,6 +1510,8 @@ static int dm_test_oftree_new(struct unit_test_state *uts)
 	check = ofnode_find_subnode(node, "edmund");
 	ut_asserteq(check.of_offset, subnode.of_offset);
 
+	oftree_dispose(tree);
+
 	return 0;
 }
 DM_TEST(dm_test_oftree_new, UTF_SCAN_FDT);
