@@ -352,6 +352,8 @@ static int upl_test_base(struct unit_test_state *uts)
 
 	ut_assertok(upl_read_handoff(&check, check_tree));
 	ut_assertok(compare_upl(uts, &upl, &check));
+	oftree_dispose(check_tree);
+	oftree_dispose(tree);
 	abuf_uninit(&buf);
 
 	return 0;
