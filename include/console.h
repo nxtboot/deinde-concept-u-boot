@@ -227,6 +227,11 @@ int console_remove_by_name(const char *name);
  */
 int calc_check_console_lines(void);
 
+/**
+ * console_flush_stdin() - drops all pending characters from stdin
+ */
+void console_flush_stdin(void);
+
 /*
  * CONSOLE multiplexing.
  */
