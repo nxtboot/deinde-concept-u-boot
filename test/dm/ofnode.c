@@ -1492,6 +1492,8 @@ static int dm_test_livetree_ensure(struct unit_test_state *uts)
 	ut_asserteq_str("sandbox-other2",
 			ofnode_read_string(node, "compatible"));
 
+	oftree_dispose(tree);
+
 	return 0;
 }
 DM_TEST(dm_test_livetree_ensure, UTF_SCAN_FDT);
