@@ -1,0 +1,157 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# U-Boot-specific rules for embedding binary data via .incbin
+# These are split out of Makefile.lib to simplify kbuild re-syncs.
+
+# Fonts
+# ---------------------------------------------------------------------------
+
+# Generate an assembly file to wrap the font data
+quiet_cmd_S_ttf= TTF     $@
+# Modified for U-Boot
+cmd_S_ttf=						\
+(							\
+	echo '.section .rodata.ttf.init,"a"';		\
+	echo '.balign 16';				\
+	echo '.global __ttf_$(*F)_begin';		\
+	echo '__ttf_$(*F)_begin:';			\
+	echo '.incbin "$(src)/$(notdir $<)" ';				\
+	echo '__ttf_$(*F)_end:';			\
+	echo '.global __ttf_$(*F)_end';			\
+	echo '.balign 16';				\
+) > $@
+
+$(obj)/%.S: $(src)/%.ttf
+	$(call cmd,S_ttf)
+
+# TKey signer binary
+# ---------------------------------------------------------------------------
+
+# Generate an assembly file to wrap the TKey signer binary
+quiet_cmd_S_signer= SIGNER  $@
+cmd_S_signer=						\
+(							\
+	echo '.section .rodata.signer.init,"a"';	\
+	echo '.balign 16';				\
+	echo '.global __signer_$(subst .,_,$(*F))_begin';		\
+	echo '__signer_$(subst .,_,$(*F))_begin:';			\
+	echo '.incbin "$(src)/$(notdir $<)" ';				\
+	echo '__signer_$(subst .,_,$(*F))_end:';			\
+	echo '.global __signer_$(subst .,_,$(*F))_end';		\
+	echo '.balign 16';				\
+) > $@
+
+$(obj)/signer-%.S: $(src)/signer.bin-v%
+	$(call cmd,S_signer)
+
+# Splash logos
+# ---------------------------------------------------------------------------
+
+# Generate an assembly file to wrap the splash data
+quiet_cmd_S_splash= SPLASH  $@
+# Modified for U-Boot
+cmd_S_splash=						\
+(							\
+	echo '.section .rodata.splash.init,"a"';		\
+	echo '.balign 16';				\
+	echo '.global __splash_$(*F)_logo_begin';		\
+	echo '__splash_$(*F)_logo_begin:';			\
+	echo '.incbin "$(src)/$(notdir $<)" ';				\
+	echo '__splash_$(*F)_logo_end:';			\
+	echo '.global __splash_$(*F)_logo_end';			\
+	echo '.balign 16';				\
+) > $@
+
+$(obj)/%_logo.S: $(src)/%_logo.bmp
+	$(call cmd,S_splash)
+
+# Handle image files in drivers/video/images without _logo suffix
+# Generate an assembly file to wrap the image data and create a linker-list entry
+quiet_cmd_S_image= IMAGE   $@
+cmd_S_image=						\
+(							\
+	echo '\#include <video_defs.h>';		\
+	echo '.section .rodata.image.init,"a"';		\
+	echo '.balign 16';				\
+	echo '.global __image_$(*F)_begin';		\
+	echo '__image_$(*F)_begin:';			\
+	echo '.incbin "$(src)/$(notdir $<)" ';				\
+	echo '__image_$(*F)_end:';			\
+	echo '.global __image_$(*F)_end';		\
+	echo '.balign 16';				\
+	echo '';					\
+	echo '/* Linker list entry for this image */';	\
+	echo '.section __u_boot_list_2_video_image_2_$(*F), "aw"'; \
+	echo '.balign 8';				\
+	echo '.global _u_boot_list_2_video_image_2_$(*F)'; \
+	echo '_u_boot_list_2_video_image_2_$(*F):';	\
+	echo '\#ifdef __LP64__';			\
+	echo '.quad __image_$(*F)_begin';		\
+	echo '.quad __image_$(*F)_end';			\
+	echo '.asciz "'$(*F)'"';			\
+	echo '.org _u_boot_list_2_video_image_2_$(*F) + 16 + VIDEO_IMAGE_NAMELEN'; \
+	echo '\#else';					\
+	echo '.long __image_$(*F)_begin';		\
+	echo '.long __image_$(*F)_end';			\
+	echo '.asciz "'$(*F)'"';			\
+	echo '.org _u_boot_list_2_video_image_2_$(*F) + 8 + VIDEO_IMAGE_NAMELEN'; \
+	echo '\#endif';					\
+) > $@
+
+ifneq ($(filter %drivers/video/images,$(obj)),)
+$(obj)/%.S: $(src)/%.bmp
+	$(call cmd,S_image)
+endif
+
+# EFI applications
+# A Makefile target *.efi is built as EFI application.
+# A Makefile target *_efi.S wraps *.efi as built-in EFI application.
+# ---------------------------------------------------------------------------
+
+# Generate an assembly file to wrap the EFI app
+cmd_S_efi=					\
+(						\
+	echo '.section .rodata.$*.init,"a"';	\
+	echo '.balign 16';			\
+	echo '.global __efi_$*_begin';		\
+	echo '__efi_$*_begin:';			\
+	echo '.incbin "$(src)/$(notdir $<)" ';			\
+	echo '__efi_$*_end:';			\
+	echo '.global __efi_$*_end';		\
+	echo '.balign 16';			\
+) > $@
+
+$(obj)/%_efi.S: $(obj)/%.efi
+	$(call cmd,S_efi)
+
+quiet_cmd_efi_objcopy = OBJCOPY $@
+cmd_efi_objcopy = $(OBJCOPY) -j .header -j .text -j .sdata -j .data \
+		-j .dynamic -j .dynstr  -j .dynsym -j .rel* -j .reloc \
+		$(if $(EFI_TARGET),$(EFI_TARGET),-O binary) $^ $@
+
+$(obj)/%.efi: $(obj)/%_efi.so
+	$(call cmd,efi_objcopy)
+
+KBUILD_EFILDFLAGS = -nostdlib -zexecstack -znocombreloc -znorelro
+KBUILD_EFILDFLAGS += $(call ld-option,--no-warn-rwx-segments)
+quiet_cmd_efi_ld = LD      $@
+cmd_efi_ld = $(LD) $(KBUILD_EFILDFLAGS) -L $(srctree) -T $(EFI_LDS_PATH) \
+		-shared -Bsymbolic -s $^ $(PLATFORM_LIBGCC) -o $@
+
+EFI_LDS_PATH = arch/$(ARCH)/lib/$(EFI_LDS)
+
+$(obj)/efi_crt0.o: $(srctree)/arch/$(ARCH)/lib/$(EFI_CRT0:.o=.S) FORCE
+	$(call if_changed_dep,as_o_S)
+
+$(obj)/efi_reloc.o: $(srctree)/arch/$(ARCH)/lib/$(EFI_RELOC:.o=.c) $(recordmcount_source) FORCE
+	$(call cmd,force_checksrc)
+	$(call if_changed_rule,cc_o_c)
+
+$(obj)/%_efi.so: $(obj)/%.o $(obj)/efi_crt0.o $(obj)/efi_reloc.o $(obj)/efi_freestanding.o
+	$(call cmd,efi_ld)
+
+targets += $(obj)/efi_crt0.o $(obj)/efi_reloc.o $(obj)/efi_freestanding.o
+
+CFLAGS_REMOVE_efi_reloc.o := $(LTO_CFLAGS)
+CFLAGS_REMOVE_efi_freestanding.o := $(LTO_CFLAGS)
+
