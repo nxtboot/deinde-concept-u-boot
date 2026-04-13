@@ -7833,21 +7833,15 @@ static void print_new_allocs(struct malloc_leak_snap *snap)
 
 #if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
 				/*
-				 * Read the caller directly from the mcheck
-				 * header at the start of the chunk rather
-				 * than searching the registry, which may
-				 * have overflowed. Validate the canary first
-				 * to avoid printing garbage from chunks
-				 * allocated without mcheck (e.g. when mcheck
-				 * was temporarily disabled).
+				 * For memalign()ed chunks the header is
+				 * offset by aln_skip, so use the registry-
+				 * based lookup rather than assuming the
+				 * header is at chunk2mem(q).
 				 */
-				struct mcheck_hdr *hdr = mem;
-				int j;
+				struct mcheck_hdr *hdr;
 
-				for (j = 0; j < CANARY_DEPTH; j++)
-					if (hdr->canary.elems[j] != MAGICWORD)
-						break;
-				if (j == CANARY_DEPTH && hdr->caller[0])
+				hdr = find_mcheck_hdr_in_chunk(mem, sz);
+				if (hdr && hdr->caller[0])
 					caller = hdr->caller;
 #endif
 				printf("  %lx %zx %s\n", (ulong)mem, sz,
