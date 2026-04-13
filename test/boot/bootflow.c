@@ -1303,7 +1303,7 @@ static int bootflow_cmdline(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmdline, UTF_CONSOLE);
+BOOTSTD_TEST(bootflow_cmdline, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* test a few special changes to a long command line */
 static int bootflow_cmdline_special(struct unit_test_state *uts)
