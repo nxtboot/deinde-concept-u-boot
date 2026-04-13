@@ -223,17 +223,20 @@ class TestFitImage:
         Exceptions:
             ValueError: If match is not found
 
-        >>> find_matching(['first line:10', 'second_line:20'], 'first line:')
-        '10'
-        >>> find_matching(['first line:10', 'second_line:20'], 'second line')
-        Traceback (most recent call last):
-          ...
-        ValueError: Test aborted
-        >>> find_matching('first line:10\', 'second_line:20'], 'second_line:')
-        '20'
-        >>> find_matching('first line:10\', 'second_line:20\nthird_line:30'],
+        Examples::
+
+            find_matching(['first line:10', 'second_line:20'], 'first line:')
+            -> '10'
+
+            find_matching(['first line:10', 'second_line:20'], 'second line')
+            -> raises ValueError
+
+            find_matching(['first line:10', 'second_line:20'], 'second_line:')
+            -> '20'
+
+            find_matching(['first line:10', 'second_line:20\\nthird_line:30'],
                           'third_line:')
-        '30'
+            -> '30'
         """
         # pylint: disable=W0612
         __tracebackhide__ = True
@@ -367,9 +370,7 @@ class TestFitImage:
         Args:
             ubman (ConsoleBase): U-Boot fixture
             fsetup (dict): Information about the test setup
-            kwargs (dict): Changes to make to the default params
-                key (str): parameter to change
-                val (str): f-string to evaluate to get the parameter value
+            kwargs (dict): Mapping from parameter name to an f-string which is evaluated to obtain the parameter value
 
         Return:
             tuple:
