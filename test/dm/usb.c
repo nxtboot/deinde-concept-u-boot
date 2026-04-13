@@ -152,6 +152,14 @@ static int dm_test_usb_stop(struct unit_test_state *uts)
 {
 	struct udevice *dev;
 
+	/*
+	 * A previous test (e.g. bootctl_logic_tkey) may have left the
+	 * global usb_started flag set while the USB uclass was then
+	 * destroyed by dm_test_post_run(). Reset it here so usb_init()
+	 * actually scans the buses, rather than short-circuiting.
+	 */
+	usb_started = false;
+
 	/* Scan and check that all devices are present */
 	state_set_skip_delays(true);
 	ut_assertok(usb_init());
