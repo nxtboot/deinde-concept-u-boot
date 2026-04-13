@@ -435,6 +435,16 @@ static const struct udevice_id sstate_ids[] = {
 	{ }
 };
 
+static int sstate_remove(struct udevice *dev)
+{
+	struct sstate_priv *priv = dev_get_priv(dev);
+
+	clear_vals(priv);
+	alist_uninit(&priv->items);
+
+	return 0;
+}
+
 U_BOOT_DRIVER(simple_state) = {
 	.name		= "simple_state",
 	.id		= UCLASS_BOOTCTL_STATE,
@@ -442,6 +452,7 @@ U_BOOT_DRIVER(simple_state) = {
 	.ops		= &ops,
 	.bind		= sstate_bind,
 	.probe		= sstate_probe,
+	.remove		= sstate_remove,
 	.of_to_plat	= sstate_of_to_plat,
 	.priv_auto	= sizeof(struct sstate_priv),
 };
