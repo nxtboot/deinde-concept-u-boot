@@ -131,6 +131,15 @@ static int virtio_blk_emul_probe(struct udevice *dev)
 	return 0;
 }
 
+static int virtio_blk_emul_remove(struct udevice *dev)
+{
+	struct virtio_blk_emul_priv *priv = dev_get_priv(dev);
+
+	free(priv->disk_data);
+
+	return 0;
+}
+
 static struct virtio_emul_ops blk_emul_ops = {
 	.process_request = blk_emul_process_request,
 	.get_config = blk_emul_get_config,
@@ -148,6 +157,7 @@ U_BOOT_DRIVER(virtio_blk_emul) = {
 	.id	= UCLASS_VIRTIO_EMUL,
 	.of_match = virtio_blk_emul_ids,
 	.probe	= virtio_blk_emul_probe,
+	.remove	= virtio_blk_emul_remove,
 	.ops	= &blk_emul_ops,
 	.priv_auto	= sizeof(struct virtio_blk_emul_priv),
 };
