@@ -283,7 +283,10 @@ static int sandbox_emul_of_to_plat(struct udevice *dev)
 
 static int sandbox_emul_remove(struct udevice *dev)
 {
+	struct sandbox_emul_priv *priv = dev_get_priv(dev);
+
 	sandbox_mmio_remove(dev);
+	free(priv->mmio.base);
 
 	return 0;
 }
