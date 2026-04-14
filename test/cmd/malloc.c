@@ -28,6 +28,8 @@ static int cmd_test_malloc_info(struct unit_test_state *uts)
 	ut_assert_nextlinen("malloc count  = ");
 	ut_assert_nextlinen("free count    = ");
 	ut_assert_nextlinen("realloc count = ");
+	if (IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION))
+		ut_assert_nextlinen("mcheck count  = ");
 	ut_assert_console_end();
 
 	return 0;

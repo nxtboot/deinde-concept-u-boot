@@ -875,8 +875,10 @@ static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
  */
 #if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
 bool malloc_mcheck_overflow(void);
+size_t malloc_mcheck_count(void);
 #else
 static inline bool malloc_mcheck_overflow(void) { return false; }
+static inline size_t malloc_mcheck_count(void) { return 0; }
 #endif
 
 /**

@@ -6015,6 +6015,11 @@ bool malloc_mcheck_overflow(void)
 	return mcheck_registry_full;
 }
 
+size_t malloc_mcheck_count(void)
+{
+	return mcheck_chunk_count;
+}
+
 static const char *mcheck_caller(void)
 {
 #if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
