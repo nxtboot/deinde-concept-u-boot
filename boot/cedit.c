@@ -268,6 +268,8 @@ int cedit_run(struct expo *exp)
 		}
 	} while (!exp->done);
 
+	expo_exit_mode(exp);
+
 	if (ret)
 		return log_msg_ret("end", ret);
 	if (!exp->save)
