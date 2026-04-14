@@ -1214,6 +1214,12 @@ static int dm_test_video_silence(struct unit_test_state *uts)
 	sdev = stdio_get_by_name("vidconsole");
 	ut_assertnonnull(sdev);
 	con = sdev->priv;
+	/*
+	 * Restore the default font so an earlier test that left a different
+	 * one selected does not change the pixels written by the messages
+	 * below.
+	 */
+	ut_assertok(vidconsole_select_font(con, NULL, NULL, 0));
 	ut_assertok(vidconsole_clear_and_reset(con));
 	ut_unsilence_console(uts);
 
