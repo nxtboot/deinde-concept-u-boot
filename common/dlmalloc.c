@@ -7900,6 +7900,35 @@ void malloc_leak_check_free(struct malloc_leak_snap *snap)
 	snap->count = 0;
 }
 
+size_t malloc_largest_free(void)
+{
+	size_t largest = 0;
+	mstate m = gm;
+	msegmentptr s;
+
+	if (m->topsize > largest)
+		largest = m->topsize;
+	if (m->dvsize > largest)
+		largest = m->dvsize;
+
+	for (s = &m->seg; s != 0; s = s->next) {
+		mchunkptr q = align_as_chunk(s->base);
+
+		while (segment_holds(s, q) && q != m->top &&
+		       q->head != FENCEPOST_HEAD) {
+			if (!is_inuse(q)) {
+				size_t sz = chunksize(q);
+
+				if (sz > largest)
+					largest = sz;
+			}
+			q = next_chunk(q);
+		}
+	}
+
+	return largest > CHUNK_OVERHEAD ? largest - CHUNK_OVERHEAD : 0;
+}
+
 int initf_malloc(void)
 {
 #if CONFIG_IS_ENABLED(SYS_MALLOC_F)

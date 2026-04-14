@@ -24,6 +24,7 @@ static int do_malloc_info(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	printf("total bytes   = %s\n", format_size(buf, info.total_bytes));
 	printf("in use bytes  = %s\n", format_size(buf, info.in_use_bytes));
+	printf("largest free  = %s\n", format_size(buf, malloc_largest_free()));
 	printf("malloc count  = %lu\n", info.malloc_count);
 	printf("free count    = %lu\n", info.free_count);
 	printf("realloc count = %lu\n", info.realloc_count);

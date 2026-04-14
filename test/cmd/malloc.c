@@ -25,6 +25,7 @@ static int cmd_test_malloc_info(struct unit_test_state *uts)
 	ut_assertok(run_command("malloc info", 0));
 	ut_assert_nextlinen("total bytes   = ");
 	ut_assert_nextlinen("in use bytes  = ");
+	ut_assert_nextlinen("largest free  = ");
 	ut_assert_nextlinen("malloc count  = ");
 	ut_assert_nextlinen("free count    = ");
 	ut_assert_nextlinen("realloc count = ");

@@ -893,6 +893,19 @@ static inline size_t malloc_mcheck_count(void) { return 0; }
 size_t malloc_chunk_size(void *ptr);
 
 /**
+ * malloc_largest_free() - Return the size of the largest free chunk
+ *
+ * Walks the heap and returns the largest contiguous free region that
+ * malloc() could currently hand out, minus the per-chunk dlmalloc
+ * overhead. Any mcheck header/canary overhead still comes off the top
+ * of the caller's request. Useful for tests that want to allocate "as
+ * much as possible" without tripping over fragmentation.
+ *
+ * Return: approximate largest request bytes malloc() would satisfy
+ */
+size_t malloc_largest_free(void);
+
+/**
  * malloc_mcheck_hdr_size() - Return the size of the mcheck header
  *
  * When CONFIG_MCHECK_HEAP_PROTECTION is enabled, each allocation has a
