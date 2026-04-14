@@ -1618,6 +1618,9 @@ static int dm_test_video_sync_damage(struct unit_test_state *uts)
 	/* Check priv->damage after sync - should be reset to inverted/empty */
 	ut_assert(!vid_bbox_valid(&priv->damage));
 
+	/* Restore auto-sync so later tests see the default behaviour */
+	video_set_manual_sync(false);
+
 	return 0;
 }
 DM_TEST(dm_test_video_sync_damage, UTF_SCAN_PDATA | UTF_SCAN_FDT);
