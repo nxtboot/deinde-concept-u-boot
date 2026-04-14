@@ -263,7 +263,20 @@ static int dm_test_pre_run(struct unit_test_state *uts)
 	if (fdt_action() == FDTCHK_CHECKSUM)
 		uts->fdt_chksum = crc8(0, gd->fdt_blob,
 				       fdt_totalsize(gd->fdt_blob));
+
+	/*
+	 * Save the global driver-model state so it can be restored after the
+	 * test. Snapshot the uclass list head and the pointer to it, and
+	 * detach the existing list. The old uclasses are left intact in
+	 * memory but are no longer reachable, so a fresh dm_init() can build
+	 * up a private list for the test without disturbing them.
+	 */
+	uts->saved_dm_root = gd->dm_root;
+	uts->saved_uclass_root = gd->uclass_root_s;
+	uts->saved_uclass_root_ptr = gd->uclass_root;
 	gd->dm_root = NULL;
+	INIT_LIST_HEAD(&gd->uclass_root_s);
+
 	malloc_disable_testing();
 	if (CONFIG_IS_ENABLED(UT_DM) && !CONFIG_IS_ENABLED(OF_PLATDATA))
 		memset(dm_testdrv_op_count, '\0', sizeof(dm_testdrv_op_count));
@@ -329,6 +342,19 @@ static int dm_test_post_run(struct unit_test_state *uts)
 			ut_assertok(uclass_destroy(uc));
 		}
 	}
+
+	/*
+	 * Restore the global driver-model state that was saved by
+	 * dm_test_pre_run(). Writing the saved list_head back reconnects
+	 * the saved list because the uclasses' sibling_node pointers still
+	 * reference &gd->uclass_root_s at the same address. A test may have
+	 * zeroed gd->uclass_root (e.g. dm_test_uclass_before_ready) so put
+	 * the pointer back as well.
+	 */
+	gd->dm_root = uts->saved_dm_root;
+	gd->uclass_root_s = uts->saved_uclass_root;
+	gd->uclass_root = uts->saved_uclass_root_ptr;
+	uts->saved_dm_root = NULL;
 
 	return 0;
 }
@@ -434,21 +460,17 @@ static bool ut_list_has_dm_tests(struct unit_test *tests, int count,
 /**
  * dm_test_restore() Put things back to normal so sandbox works as expected
  *
+ * dm_test_pre_run()/dm_test_post_run() save and restore the global driver
+ * model state across each UTF_DM test, so the global root is already back
+ * in place by the time we get here. Only restore the live-tree root, which
+ * per-test setup leaves pointing at the test's own tree.
+ *
  * @of_root: Value to set for of_root
  * Return: 0 if OK, -ve on error
  */
 static int dm_test_restore(struct device_node *of_root)
 {
-	int ret;
-
 	gd_set_of_root(of_root);
-	gd->dm_root = NULL;
-	ret = dm_init(CONFIG_IS_ENABLED(OF_LIVE));
-	if (ret)
-		return ret;
-	dm_scan_plat(false);
-	if (!CONFIG_IS_ENABLED(OF_PLATDATA))
-		dm_extended_scan(false);
 
 	return 0;
 }
