@@ -8,6 +8,7 @@
 
 #include <blk.h>
 #include <bootstage.h>
+#include <bootstd.h>
 #include <console.h>
 #include <cyclic.h>
 #include <dm.h>
@@ -608,9 +609,24 @@ static int test_pre_run(struct unit_test_state *uts, struct unit_test *test)
  */
 static int test_post_run(struct unit_test_state *uts, struct unit_test *test)
 {
+	struct bootstd_priv *std;
+
 	ut_unsilence_console(uts);
 	if (test->flags & UTF_DM)
 		ut_assertok(dm_test_post_run(uts));
+
+	/*
+	 * Drop any reference to the currently selected bootflow. The bootflow
+	 * may be inside an alist buffer that a later test re-grows (and
+	 * therefore frees); leaving the pointer behind turns the on_bootargs
+	 * env callback into a use-after-free.
+	 */
+	if (CONFIG_IS_ENABLED(BOOTSTD)) {
+		std = bootstd_try_priv();
+		if (std)
+			std->cur_bootflow = NULL;
+	}
+
 	ut_assertok(cyclic_unregister_all());
 	ut_assertok(event_uninit());
 
