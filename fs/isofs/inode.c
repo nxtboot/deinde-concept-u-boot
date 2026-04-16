@@ -131,28 +131,7 @@ static const struct dentry_operations isofs_dentry_ops[] = {
 #endif
 };
 
-struct isofs_options{
-	unsigned int rock:1;
-	unsigned int joliet:1;
-	unsigned int cruft:1;
-	unsigned int hide:1;
-	unsigned int showassoc:1;
-	unsigned int nocompress:1;
-	unsigned int overriderockperm:1;
-	unsigned int uid_set:1;
-	unsigned int gid_set:1;
-	unsigned char map;
-	unsigned char check;
-	unsigned int blocksize;
-	umode_t fmode;
-	umode_t dmode;
-	kgid_t gid;
-	kuid_t uid;
-	char *iocharset;
-	/* LVE */
-	s32 session;
-	s32 sbsector;
-};
+/* struct isofs_options is defined in isofs.h */
 
 /*
  * Compute the hash for the isofs name corresponding to the dentry.

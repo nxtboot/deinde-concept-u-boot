@@ -202,6 +202,32 @@ isofs_normalize_block_and_offset(struct iso_directory_record *de,
 	}
 }
 
+/*
+ * Mount options - defined here so interface.c can set them up.
+ */
+struct isofs_options{
+	unsigned int rock:1;
+	unsigned int joliet:1;
+	unsigned int cruft:1;
+	unsigned int hide:1;
+	unsigned int showassoc:1;
+	unsigned int nocompress:1;
+	unsigned int overriderockperm:1;
+	unsigned int uid_set:1;
+	unsigned int gid_set:1;
+	unsigned char map;
+	unsigned char check;
+	unsigned int blocksize;
+	umode_t fmode;
+	umode_t dmode;
+	kgid_t gid;
+	kuid_t uid;
+	char *iocharset;
+	/* LVE */
+	s32 session;
+	s32 sbsector;
+};
+
 extern const struct inode_operations isofs_dir_inode_operations;
 extern const struct file_operations isofs_dir_operations;
 extern const struct address_space_operations isofs_symlink_aops;
