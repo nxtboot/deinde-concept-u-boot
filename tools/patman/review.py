@@ -389,6 +389,14 @@ Rules:
 
     This include is unnecessary.
 - Quote enough context from the diff to identify the location
+- CRITICAL: Every quoted line MUST be copied EXACTLY from the output
+  of 'git show {commit_hash}'. Do NOT reconstruct, paraphrase, or
+  combine lines from memory. Do NOT mix content between nearby macros,
+  functions or files. If you need to check a line before quoting it,
+  run 'git show {commit_hash}' again and copy the characters exactly,
+  including whitespace, punctuation, and backslashes. A comment that
+  points at a problem in a quoted line that does not actually exist
+  in the patch is worse than no comment at all.
 - Be specific and constructive, but brief — use as few words as
   possible to make the point. Avoid restating what the code does;
 - NEVER use backticks — this is plain-text email, not markdown.
