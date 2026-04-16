@@ -2,6 +2,7 @@
 
 include:
   - local: '.gitlab-ci-release.yml'
+  - local: '.gitlab-ci-sage-lab.yml'
 
 workflow:
   rules:
@@ -18,6 +19,7 @@ variables:
   PYTEST: "1"
   TEST_SPEC: ""
   WORLD: "1"
+  SAGE_LAB: ""
   SJG_LAB: ""
   PLATFORM: linux/amd64,linux/arm64
   GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_RUNNER_ID/$CI_CONCURRENT_ID/u-boot
@@ -36,6 +38,7 @@ default:
 stages:
   - test_suites
   - test.py
+  - sage-lab
   - sjg-lab
   - world_build
   - version_bump
@@ -828,6 +831,7 @@ coreboot test.py:
     TEST_PY_TEST_SPEC: "not sleep"
     TEST_PY_ID: "--id qemu"
   <<: *buildman_and_testpy_dfn
+
 
 .sjg_lab_template: &sjg_lab_dfn
   stage: sjg-lab
