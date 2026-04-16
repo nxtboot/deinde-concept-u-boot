@@ -58421,3 +58421,58 @@ The branch `cherry-29a7fe55c55` is ready for pushing with 12 commits ahead of `c
 
 ---
 
+### Review: 2026-04-16
+
+Branch: cherry-a6d20ea69cd
+
+Comments addressed:
+
+
+### Conversation log
+The branch needs rebasing onto ci/master. Let me perform the rebase:
+
+Now let me perform the rebase onto ci/master:
+
+The rebase completed successfully. Now let me verify the commit count and check the build:
+
+The rebase completed successfully with all 71 commits (69 original + 2 pickman metadata). Now let me run the build test:
+
+Build passes. Now let me check the delta of a few key commits to ensure the rebase is correct:
+
+The commits look good. Now let me create the -v2 branch and push:
+
+The rebase completed successfully and the branch has been pushed. Let me provide a summary:
+
+## Summary
+
+### Rebase Completed Successfully ✅
+
+**Branch:** `cherry-a6d20ea69cd` (rebased onto `ci/master`)  
+**Total Commits:** 71 (69 cherry-picked + 2 pickman metadata)  
+**Build Result:** OK (sandbox build passes)
+
+### What was done:
+
+1. Checked out branch `cherry-a6d20ea69cd`
+2. Rebased onto latest `ci/master` (26c3513a1a3) with `--keep-empty` to preserve empty merge commits
+3. All 71 commits rebased cleanly without conflicts
+4. Verified build passes with `buildman -L --board sandbox -w -o /tmp/pickman`
+5. Created local branch `cherry-a6d20ea69cd-v2`
+6. Force pushed to remote branch `cherry-a6d20ea69cd` to update the MR
+
+### New commit range:
+- **Base:** `26c3513a1a3` (Merge branch 'fsc' into 'master')
+- **Head:** `5f088a89832` (pickman: Record pipeline fix for cherry-a6d20ea69cd)
+
+The MR pipeline will be automatically triggered by GitLab.
+
+---
+
+## Reply to post on the MR:
+
+```
+Rebased onto latest `ci/master` (26c3513a1a3). All 71 commits rebased cleanly without conflicts. Build verified with sandbox.
+```
+
+---
+
