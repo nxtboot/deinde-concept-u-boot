@@ -175,9 +175,9 @@ static int do_isofs_readdir(struct inode *inode, struct file *file,
 
 		/* Handle the case of the '.' directory */
 		if (de->name_len[0] == 1 && de->name[0] == 0) {
+			ctx->pos += de_len;
 			if (!dir_emit_dot(file, ctx))
 				break;
-			ctx->pos += de_len;
 			continue;
 		}
 
@@ -185,9 +185,9 @@ static int do_isofs_readdir(struct inode *inode, struct file *file,
 
 		/* Handle the case of the '..' directory */
 		if (de->name_len[0] == 1 && de->name[0] == 1) {
+			ctx->pos += de_len;
 			if (!dir_emit_dotdot(file, ctx))
 				break;
-			ctx->pos += de_len;
 			continue;
 		}
 
@@ -232,11 +232,11 @@ static int do_isofs_readdir(struct inode *inode, struct file *file,
 				len = de->name_len[0];
 			}
 		}
+		ctx->pos += de_len;
 		if (len > 0) {
 			if (!dir_emit(ctx, p, len, inode_number, DT_UNKNOWN))
 				break;
 		}
-		ctx->pos += de_len;
 	}
 	if (bh)
 		brelse(bh);
