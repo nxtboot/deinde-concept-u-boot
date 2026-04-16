@@ -37,6 +37,13 @@ config VFS
 	  Provides a virtual filesystem layer with a mount table and
 	  unified path namespace. Includes a root filesystem at "/".
 
+config FS_LINUX
+	bool
+	help
+	  Common Linux VFS compatibility functions shared by Linux-ported
+	  filesystem drivers (ext4l, isofs). Selected automatically when
+	  any Linux-ported FS is enabled.
+
 config FS_LEGACY
 	def_bool y
 	help
@@ -63,6 +70,8 @@ source "fs/ext4/Kconfig"
 source "fs/ext4l/Kconfig"
 
 source "fs/fat/Kconfig"
+
+source "fs/isofs/Kconfig"
 
 source "fs/jffs2/Kconfig"
 

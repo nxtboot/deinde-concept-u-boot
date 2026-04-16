@@ -5,6 +5,7 @@
 # Copyright (c) 2012, NVIDIA CORPORATION.  All rights reserved.
 
 obj-$(CONFIG_$(PHASE_)FS_LEGACY) += fs_legacy.o fs_internal.o
+obj-$(CONFIG_FS_LINUX) += linux_fs.o
 obj-$(CONFIG_$(PHASE_)FS) += fs-uclass.o
 obj-$(CONFIG_$(PHASE_)DIR) += dir-uclass.o
 obj-$(CONFIG_$(PHASE_)FILE) += file-uclass.o
@@ -25,6 +26,7 @@ obj-$(CONFIG_FS_EXT4) += ext4/
 obj-$(CONFIG_FS_EXT4L) += ext4l/
 obj-$(CONFIG_EXT4_JOURNAL) += jbd2/
 obj-$(CONFIG_FS_FAT) += fat/
+obj-$(CONFIG_FS_ISOFS) += isofs/
 obj-$(CONFIG_FS_JFFS2) += jffs2/
 obj-$(CONFIG_SANDBOX) += sandbox/
 obj-$(CONFIG_SEMIHOSTING) += semihostingfs.o

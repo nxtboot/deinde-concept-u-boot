@@ -24,7 +24,8 @@ Depending on the build targets further packages maybe needed
 .. code-block:: bash
 
     sudo apt-get install acpica-tools bc bison build-essential coccinelle \
-      device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
+      device-tree-compiler dfu-util efitools flex gdisk genisoimage \
+      graphviz imagemagick \
       libgnutls28-dev libguestfs-tools libncurses-dev \
       libpython3-dev libsdl2-dev libssl-dev lz4 lzma lzma-alone openssl \
       pkg-config python3 python3-asteval python3-coverage python3-filelock \

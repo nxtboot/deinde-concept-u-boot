@@ -1,0 +1,19 @@
+config FS_ISOFS
+	bool "ISO 9660 filesystem support (Linux port)"
+	depends on FS
+	select FS_LINUX
+	help
+	  Support for reading ISO 9660 CD-ROM/DVD filesystems. This is a port
+	  of the Linux kernel isofs driver, providing full read-only access
+	  including Rock Ridge extensions for POSIX filenames and permissions.
+
+	  This driver uses the same porting approach as ext4l, keeping the
+	  Linux source files nearly identical.
+
+config JOLIET
+	bool "Microsoft Joliet CD-ROM extensions"
+	depends on FS_ISOFS
+	help
+	  Support for Microsoft Joliet CD-ROM extensions which provide
+	  Unicode filenames on ISO 9660 filesystems. This requires NLS
+	  (National Language Support) for character set conversion.

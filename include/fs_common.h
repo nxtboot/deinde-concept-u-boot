@@ -22,6 +22,7 @@ enum fs_type_t {
 	FS_TYPE_SEMIHOSTING,
 	FS_TYPE_EXFAT,
 	FS_TYPE_VIRTIO,
+	FS_TYPE_ISO,
 };
 
 /*

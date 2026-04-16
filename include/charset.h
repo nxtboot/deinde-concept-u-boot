@@ -303,6 +303,26 @@ size_t u16_strlcat(u16 *dest, const u16 *src, size_t count);
  */
 uint8_t *utf16_to_utf8(uint8_t *dest, const uint16_t *src, size_t size);
 
+enum utf16_endian;
+
+/**
+ * utf16s_to_utf8s() - convert a UTF-16 string to UTF-8 with explicit endianness
+ *
+ * Linux NLS-compatible interface that wraps utf16_to_utf8(). Converts at
+ * most @inlen UTF-16 code units from @pwcs to UTF-8, stopping at a null
+ * character or when @maxout bytes have been written. Surrogate pairs are
+ * handled by the underlying utf16_to_utf8() implementation.
+ *
+ * @pwcs:	source UTF-16 string
+ * @inlen:	number of UTF-16 code units to convert
+ * @endian:	byte order of the source string (UTF16_BIG_ENDIAN, etc.)
+ * @s:		destination buffer for UTF-8 output
+ * @maxout:	size of the destination buffer in bytes
+ * Return:	number of bytes written to @s
+ */
+int utf16s_to_utf8s(const u16 *pwcs, int inlen, enum utf16_endian endian,
+		    u8 *s, int maxout);
+
 /**
  * utf_to_cp() - translate Unicode code point to 8bit codepage
  *

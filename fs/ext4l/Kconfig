@@ -6,6 +6,7 @@
 config FS_EXT4L
 	bool "Enable ext4 filesystem support (Linux port)"
 	depends on FS
+	select FS_LINUX
 	select RBTREE
 	select CRC32C
 	help

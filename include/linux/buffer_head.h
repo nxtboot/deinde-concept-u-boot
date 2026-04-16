@@ -283,7 +283,8 @@ static inline void end_buffer_read_sync(struct buffer_head *bh, int uptodate)
 #define try_to_free_buffers(f)		({ (void)(f); true; })
 #define block_commit_write(f, f2, t)	do { } while (0)
 #define block_page_mkwrite(v, f, g)	((vm_fault_t)0)
-#define map_bh(bh, sb, block)		do { } while (0)
+#define map_bh(bh, sb, blk) \
+	do { (bh)->b_blocknr = (blk); set_buffer_mapped(bh); } while (0)
 #define block_read_full_folio(folio, get_block) \
 	({ (void)(folio); (void)(get_block); 0; })
 
