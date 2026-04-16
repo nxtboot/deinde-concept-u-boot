@@ -111,6 +111,7 @@ static void scsi_setup_write_ext(const struct blk_desc *desc,
 				 lbaint_t blocks)
 {
 	scsi_setup_cmd(desc, pccb, SCSI_WRITE10);
+	pccb->cmd[1] |= 0x08; /* Set FUA bit to bypass write cache */
 	pccb->cmd[2] = (unsigned char)(start >> 24) & 0xff;
 	pccb->cmd[3] = (unsigned char)(start >> 16) & 0xff;
 	pccb->cmd[4] = (unsigned char)(start >> 8) & 0xff;
