@@ -5,10 +5,9 @@
  *  (C) 1992, 1993  Eric Youngdale
  *
  *  Rock Ridge Extensions to iso9660
+ *
+ * Ported to U-Boot with minimal modifications.
  */
-
-#include <linux/slab.h>
-#include <linux/pagemap.h>
 
 #include "isofs.h"
 #include "rock.h"

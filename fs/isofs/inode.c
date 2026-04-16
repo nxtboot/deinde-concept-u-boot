@@ -10,23 +10,9 @@
  *	1998  Eric Lammerts - ISO 9660 Level 3
  *	2004  Paul Serice - Inode Support pushed out from 4GB to 128GB
  *	2004  Paul Serice - NFS Export Operations
+ *
+ * Ported to U-Boot with minimal modifications.
  */
-
-#include <linux/init.h>
-#include <linux/module.h>
-
-#include <linux/slab.h>
-#include <linux/cred.h>
-#include <linux/nls.h>
-#include <linux/ctype.h>
-#include <linux/statfs.h>
-#include <linux/cdrom.h>
-#include <linux/mpage.h>
-#include <linux/user_namespace.h>
-#include <linux/seq_file.h>
-#include <linux/blkdev.h>
-#include <linux/fs_context.h>
-#include <linux/fs_parser.h>
 
 #include "isofs.h"
 #include "zisofs.h"

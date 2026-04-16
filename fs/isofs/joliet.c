@@ -5,10 +5,10 @@
  *  (C) 1996 Gordon Chaffee
  *
  *  Joliet: Microsoft's Unicode extensions to iso9660
+ *
+ * Ported to U-Boot with minimal modifications.
  */
 
-#include <linux/types.h>
-#include <linux/nls.h>
 #include "isofs.h"
 
 /*

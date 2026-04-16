@@ -10,9 +10,9 @@
  *  (stephen@askone.demon.co.uk)      : 21st June 1996
  *
  *  isofs directory handling functions
+ *
+ * Ported to U-Boot with minimal modifications.
  */
-#include <linux/gfp.h>
-#include <linux/filelock.h>
 #include "isofs.h"
 
 int isofs_name_translate(struct iso_directory_record *de, char *new, struct inode *inode)

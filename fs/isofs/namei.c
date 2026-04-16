@@ -5,9 +5,10 @@
  *  (C) 1992  Eric Youngdale Modified for ISO 9660 filesystem.
  *
  *  (C) 1991  Linus Torvalds - minix filesystem
+ *
+ * Ported to U-Boot with minimal modifications.
  */
 
-#include <linux/gfp.h>
 #include "isofs.h"
 
 /*

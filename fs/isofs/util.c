@@ -3,7 +3,6 @@
  *  linux/fs/isofs/util.c
  */
 
-#include <linux/time.h>
 #include "isofs.h"
 
 /* 
@@ -52,7 +51,7 @@ struct timespec64 iso_date(u8 *p, int flags)
 
 		/* sign extend */
 		if (tz & 0x80)
-			tz |= (-1 << 8);
+			tz |= ~0U << 8;
 
 		/* 
 		 * The timezone offset is unreliable on some disks,
