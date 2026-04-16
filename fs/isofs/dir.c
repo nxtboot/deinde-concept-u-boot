@@ -272,7 +272,6 @@ const struct file_operations isofs_dir_operations =
 	.llseek = generic_file_llseek,
 	.read = generic_read_dir,
 	.iterate_shared = isofs_readdir,
-	.setlease = generic_setlease,
 };
 
 /*
