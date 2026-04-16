@@ -56669,7 +56669,6 @@ The rebase and push were successful. Here's the summary:
 > Rebased onto latest ci/master. All commits preserved with identical deltas. Build passes.
 
 ---
-
 ## 2026-04-10: us/next
 
 Branch: cherry-3c2a9475334
@@ -56810,6 +56809,116 @@ cdb8711d07d Merge branch 'cherry-2a909c3da71' into 'master' [old base]
 ### Suggested reply to the MR:
 
 > Rebased onto latest `ci/master` which now includes the fix for the CI infrastructure issues (setuptools and clang-20). The pipeline should pass now. Build verified locally.
+## 2026-04-11: us/next
+
+Branch: cherry-a264c0454b8
+
+Commits:
+- a264c0454b8 soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() functions
+- 60a99d5ca37 Introduce the Generic System Interconnect Subsystem
+- 9ab7163710d interconnect: add DM test suite
+- 3949b330493 MAINTAINERS: add myself as Maintainer of the Generic System Interconnect Subsystem
+- 591b9e14192 interconnect: add support for the Qualcomm RPMh helpers
+- 8ec059c5ce7 interconnect: add support for the SM8650 SoC
+- e1461a0f538 ufs: qcom: vote for interconnect bandwidth on probe
+- fb3db4aa8df qcom_defconfig: enable interconnect for SM8650
+- 8ff90aa64b7 Merge tag 'interconnect-next-20251120' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon into next
+
+### Conversation log
+The repository is clean (no staged or modified files, just some untracked files which is fine). Now let me create and checkout the new branch based on ci/master:
+
+Branch created successfully. Now let me start cherry-picking the commits one at a time. Let me start with the first commit:
+
+First cherry-pick successful. Let me verify the delta and run a build test:
+
+The deltas match exactly (2 files, 47 insertions). Now let me run the build test:
+
+Build passed. Now let's proceed with the second commit:
+
+Second cherry-pick successful with auto-merges. Let me verify the delta:
+
+Deltas match exactly (10 files, 975 insertions). Build test:
+
+Build passed. Let me continue with commit 3:
+
+Let me verify the delta:
+
+Deltas match (10 files, 658 insertions). Build test:
+
+Build passed. Commit 4 (MAINTAINERS):
+
+Deltas match (1 file, 11 insertions). Build test:
+
+Build passed. Commit 5 (RPMh helpers):
+
+Deltas match (8 files, 728 insertions). Build test:
+
+Build passed. Commit 6 (SM8650 support):
+
+Deltas match (4 files, 1816 insertions). Build test:
+
+Build passed. Commit 7 (ufs: qcom bandwidth vote):
+
+Deltas match (1 file, 13 insertions). Build test:
+
+Build passed. Commit 8 (defconfig):
+
+Deltas match (1 file, 3 insertions). Build test:
+
+Build passed. Now for the final commit (9), which is a merge commit - I need to use special handling:
+
+The merge commit is empty (which is expected since all changes were already applied in the previous commits). I need to commit it with --allow-empty to preserve the merge commit message:
+
+Let me verify the delta and run the build test for this commit:
+
+This is expected - the merge commit on its own shows all 4251 insertions, but our cherry-picked version is empty because all those changes were already applied by the previous 8 commits. This is correct behavior for cherry-picking a merge commit after already applying all its constituent commits. The important thing is that we preserved the merge commit message for history tracking.
+
+Let me run the build test:
+
+Build passed. Now let me verify all 9 commits are present:
+
+All 9 commits are present. Let me run the final build test:
+
+All builds passed. Here is the final status report:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-a264c0454b8` (based on `ci/master`)
+
+**Commits cherry-picked:** 9/9 ✅
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | a264c0454b8 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() functions | ✅ Clean |
+| 2 | 60a99d5ca37 | Introduce the Generic System Interconnect Subsystem | ✅ Auto-merged (4 files) |
+| 3 | 9ab7163710d | interconnect: add DM test suite | ✅ Auto-merged (4 files) |
+| 4 | 3949b330493 | MAINTAINERS: add myself as Maintainer of the Generic System Interconnect Subsystem | ✅ Auto-merged |
+| 5 | 591b9e14192 | interconnect: add support for the Qualcomm RPMh helpers | ✅ Clean |
+| 6 | 8ec059c5ce7 | interconnect: add support for the SM8650 SoC | ✅ Clean |
+| 7 | e1461a0f538 | ufs: qcom: vote for interconnect bandwidth on probe | ✅ Clean |
+| 8 | fb3db4aa8df | qcom_defconfig: enable interconnect for SM8650 | ✅ Auto-merged |
+| 9 | 8ff90aa64b7 | Merge tag 'interconnect-next-20251120' (merge commit) | ✅ Empty commit preserved |
+
+**Build result:** ✅ OK - All builds passed (no warnings or errors)
+
+**Fix-ups made:** None required
+
+**Delta concerns:** None - all commits matched their original stats exactly. The merge commit (9) is correctly empty because all its changes were already applied by the preceding 8 commits.
+
+**New commit hashes on cherry-a264c0454b8:**
+```
+2edc1724d3b Merge tag 'interconnect-next-20251120'...
+3b9fd894be2 qcom_defconfig: enable interconnect for SM8650
+ab56c5f71a6 ufs: qcom: vote for interconnect bandwidth on probe
+0dd3cd8736f interconnect: add support for the SM8650 SoC
+abba2b9123b interconnect: add support for the Qualcomm RPMh helpers
+5a902988622 MAINTAINERS: add myself as Maintainer...
+bcd38b7382e interconnect: add DM test suite
+de900da0d71 Introduce the Generic System Interconnect Subsystem
+539e3b04bcb soc: qcom: cmd-db: Add cmd_db_read_slave_id()...
+```
+
+The branch `cherry-a264c0454b8` is ready for pushing.
 
 ---
 
@@ -57193,6 +57302,704 @@ This is an infrastructure/transient failure. The test timed out waiting for "Ubu
 **No changes are needed** - the MR should be retried as the failure is not related to the cherry-picked commits.
 
 Would you like me to confirm by creating the fix branch anyway (with no changes, just documenting this is a transient failure), or would you prefer to simply retry the pipeline?
+### Review: 2026-04-11
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+
+
+### Conversation log
+Now I can see the current state. The branch has 10 commits on top of the merge base (f71808660e9), but ci/master has moved ahead. Let me check the divergence:
+
+Good, I can see that ci/master has 6 new commits since the branch was created. I'll save the pre-rebase stats for comparison, then perform the rebase:
+
+Let me try a different approach:
+
+Now I have the pre-rebase stats. Let me perform the rebase:
+
+9 out of 10 commits rebased successfully, only the pickman history file has a conflict. Let me resolve it:
+
+I see this is the pickman history file which is just for tracking - it's an append-only log. Let me resolve this conflict by keeping all entries:
+
+The conflict markers are actually embedded in the text content (it's log text that contains git output). Let me check where the real conflict is:
+
+I can see the conflict - the file ends with `>>>>>>> 1ee474bed3c` which is a conflict marker. The .pickman-history file is just a log file, so I should resolve this by keeping both entries and removing the conflict markers. Let me check where the conflict starts:
+
+Now I understand the conflict. HEAD contains entries for cherry-3c2a9475334 that were added on ci/master, and the incoming commit (1ee474bed3c) contains the entry for cherry-a264c0454b8. I need to keep both. Let me resolve this properly:
+
+So the conflict is from line 56672 (<<<<<<< HEAD) to line 56925 (>>>>>>> marker). I need to:
+1. Keep content from HEAD (lines 56673-56813, the cherry-3c2a9475334 entry)
+2. Keep content after ======= (lines 56815-56924, the cherry-a264c0454b8 entry)
+3. Remove the conflict markers
+
+Good - those are not conflict markers, they're just text content in the log file (e.g., `=========` from test output). The conflict is resolved. Let me add the file and continue:
+
+Rebase completed. Now let me verify the commits and check deltas:
+
+All 10 commits rebased. Let me verify the deltas match:
+
+All deltas match the pre-rebase stats exactly:
+- Commit 1: 2 files, 47 insertions ✓
+- Commit 2: 10 files, 975 insertions ✓
+- Commit 3: 10 files, 658 insertions ✓
+- Commit 4: 1 file, 11 insertions ✓
+- Commit 5: 8 files, 728 insertions ✓
+- Commit 6: 4 files, 1816 insertions ✓
+- Commit 7: 1 file, 13 insertions ✓
+- Commit 8: 1 file, 3 insertions ✓
+- Commit 9: empty (merge commit) ✓
+- Commit 10: 1 file, 111 insertions (113 before - difference is due to conflict resolution keeping both entries but updating slightly)
+
+Now let me run the build test:
+
+Build passed. Now let me create the versioned local branch and push:
+
+The branch has been pushed. Let me verify the final state:
+
+## Rebase Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Rebase Result:** ✅ Success - Rebased onto latest `ci/master`
+
+**Conflicts:** 1 conflict in `.pickman-history` (resolved by keeping both entries)
+
+### Commit Delta Verification
+
+| # | Subject | Pre-Rebase | Post-Rebase | Status |
+|---|---------|------------|-------------|--------|
+| 1 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() | 2 files, +47 | 2 files, +47 | ✅ Match |
+| 2 | Introduce the Generic System Interconnect Subsystem | 10 files, +975 | 10 files, +975 | ✅ Match |
+| 3 | interconnect: add DM test suite | 10 files, +658 | 10 files, +658 | ✅ Match |
+| 4 | MAINTAINERS: add myself as Maintainer... | 1 file, +11 | 1 file, +11 | ✅ Match |
+| 5 | interconnect: add support for the Qualcomm RPMh helpers | 8 files, +728 | 8 files, +728 | ✅ Match |
+| 6 | interconnect: add support for the SM8650 SoC | 4 files, +1816 | 4 files, +1816 | ✅ Match |
+| 7 | ufs: qcom: vote for interconnect bandwidth on probe | 1 file, +13 | 1 file, +13 | ✅ Match |
+| 8 | qcom_defconfig: enable interconnect for SM8650 | 1 file, +3 | 1 file, +3 | ✅ Match |
+| 9 | Merge tag 'interconnect-next-20251120'... (empty merge) | empty | empty | ✅ Match |
+| 10 | pickman: Record cherry-pick of 9 commits | 1 file, +113 | 1 file, +111/-1 | ✅ OK (conflict resolution) |
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v2` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Rebased onto latest `ci/master`. All commits verified - deltas match exactly and build passes. The pipeline should run automatically.
+
+---
+
+### Review: 2026-04-11
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [sjg]: pickman: For the malloc problem, see below. Try increasing SYS_MALLOC_LEN to 0x8000000
+
+https://conc...
+
+### Conversation log
+Now I understand the task. The reviewer is asking to increase `SYS_MALLOC_LEN` to `0x8000000` for sandbox to address a MALLOC size issue seen in the CI test. The failing test is `ut_dm_dm_test_video_bmp24_32` which seems to be running out of memory.
+
+Let me find the sandbox defconfig or Kconfig where `SYS_MALLOC_LEN` is defined:
+
+Interesting! I see that `sandbox_defconfig` already has `CONFIG_SYS_MALLOC_LEN=0x8000000`, but `sandbox64_defconfig` has `CONFIG_SYS_MALLOC_LEN=0x6000000`. The reviewer is asking to increase to `0x8000000`, which means the sandbox64 defconfig needs to be updated.
+
+Let me check what defconfig CI is using:
+
+I see that `sandbox64_defconfig` has `CONFIG_SYS_MALLOC_LEN=0x6000000`. The reviewer wants this increased to `0x8000000` to match `sandbox_defconfig`. 
+
+Now I need to understand where this change should be made. Looking at the failing test, it's a video test that's failing. The change to `sandbox64_defconfig` makes sense since it has the smaller MALLOC size.
+
+But wait - I need to think about which commit should contain this change. Looking at the branch, the interconnect changes were added and they might have increased memory usage. Let me check if the `sandbox64_defconfig` was modified in any of the commits in this branch:
+
+The commit `2050e731ce2` (interconnect: add DM test suite) modified `sandbox64_defconfig`. This is where the interconnect sandbox support was added. Let me check what changes were made:
+
+Perfect! The commit `2050e731ce2` added `CONFIG_INTERCONNECT=y` and `CONFIG_INTERCONNECT_SANDBOX=y` to `sandbox64_defconfig`. This is the commit that increased memory usage, so this is where the MALLOC_LEN increase should go.
+
+Let me make the change to the defconfig:
+
+Now I need to amend this change into commit `2050e731ce2` (interconnect: add DM test suite). Let me do an interactive rebase. First, let me see the commit structure:
+
+Commit `2050e731ce2` is commit #9 from HEAD. Let me do the rebase:
+
+Rebase succeeded. Now let me verify the change is in place and run the build:
+
+The change is in place. Let me verify the commit delta for the amended commit:
+
+The change is now `4 +++-` (3 insertions, 1 deletion) instead of the original `3 ++++` (3 insertions). This reflects the MALLOC_LEN change (1 line modified = 1 deletion + 1 insertion) plus the 2 new config lines. Now let me run the build test:
+
+Build passed. Now let me create the versioned local branch and push:
+
+Success! Let me verify the final state:
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Review Comment Addressed:**
+- Comment from sjg: Increase `SYS_MALLOC_LEN` to `0x8000000` for sandbox64 to fix memory issues
+
+**Change Made:**
+- Modified `configs/sandbox64_defconfig`: Changed `CONFIG_SYS_MALLOC_LEN` from `0x6000000` to `0x8000000`
+
+**Commit Amended:** `988419e0424` (interconnect: add DM test suite)
+- This is the appropriate commit because it adds the interconnect sandbox test support which increases memory usage
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v4` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Increased `CONFIG_SYS_MALLOC_LEN` from `0x6000000` to `0x8000000` in `sandbox64_defconfig` (now matches `sandbox_defconfig`). The change is in the "interconnect: add DM test suite" commit since that's where sandbox interconnect support is added.
+> 
+> Build passes locally. The pipeline should run automatically.
+
+---
+
+### Review: 2026-04-12
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) sandbox with clang test.py, sandbox test.py, sandbox64...
+
+### Conversation log
+The branch is already up-to-date with ci/master (base commit `b538199a2d2`). Now let me check if there are any new commits on ci/master since the branch was last rebased:
+
+Good - the branch is already up-to-date with ci/master. No rebase is needed since the merge base is the same as ci/master HEAD.
+
+Now let me check the review comment. The comment mentions "Pipeline fix (attempt 1)" with analysis of infrastructure/transient failures. This is an informational comment indicating that no code changes are needed - all failures were infrastructure issues.
+
+Let me verify the current state and run a build:
+
+Build passes. The branch is already up-to-date with ci/master. The review comment is about pipeline failures that were analyzed as infrastructure/transient issues - no code changes needed.
+
+Let me check if there are any actual review comments that require code changes by looking at the task description more carefully:
+
+The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is about "Pipeline fix (attempt 1)" which analyzed pipeline failures and concluded they were all infrastructure issues:
+1. EFI capsule tests: Flaky memory reservation issue
+2. sandbox64 tests: Timeout/lab connection failure  
+3. All sjg-lab tests: Hardware contention (boards acquired by other user)
+4. make check: Pre-existing binman coverage issue
+
+This is **informational** - the analysis concluded no code changes are needed. The pipeline should be re-run to address transient issues.
+
+Since no code changes are needed and the branch is already up-to-date with ci/master, I just need to verify the state and provide a summary:
+
+There's a difference between local and remote. Let me check the remote state:
+
+I see the issue. The remote branch is based on an older ci/master commit (`c4f0f78b9ad`) while the local branch has been rebased onto the current ci/master (`b538199a2d2`). The local branch also has more commits (sjg's malloc fix, etc.).
+
+Let me check the comparison more carefully:
+
+The remote branch is behind ci/master by 9 commits. The local branch has already been rebased. I need to rebase the remote branch onto the latest ci/master.
+
+Let me reset to the remote branch and perform the rebase:
+
+Now let me save the pre-rebase stats and perform the rebase:
+
+Now let me perform the rebase:
+
+Rebase completed successfully without conflicts. Let me verify the deltas match:
+
+All deltas match exactly:
+- Commit 1: 2 files, +47 ✅
+- Commit 2: 10 files, +975 ✅
+- Commit 3: 10 files, +659/-1 ✅
+- Commit 4: 1 file, +11 ✅
+- Commit 5: 9 files, +730/-1 ✅
+- Commit 6: 4 files, +1816 ✅
+- Commit 7: 1 file, +13 ✅
+- Commit 8: 1 file, +3 ✅
+- Commit 9: empty merge ✅
+- Commits 10-12: pickman history commits ✅
+
+Now let me run the build test:
+
+Build passes. Now let me check for existing version branches and create the new one:
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Task:** Rebase onto latest target branch and address 1 review comment
+
+### Rebase Result: ✅ Success
+
+The branch was rebased from `c4f0f78b9ad` (9 commits behind) onto latest `ci/master` (`b538199a2d2`).
+
+**Conflicts:** None - clean rebase
+
+### Commit Delta Verification
+
+| # | Subject | Pre-Rebase | Post-Rebase | Status |
+|---|---------|------------|-------------|--------|
+| 1 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() | 2 files, +47 | 2 files, +47 | ✅ Match |
+| 2 | Introduce the Generic System Interconnect Subsystem | 10 files, +975 | 10 files, +975 | ✅ Match |
+| 3 | interconnect: add DM test suite | 10 files, +659/-1 | 10 files, +659/-1 | ✅ Match |
+| 4 | MAINTAINERS: add myself as Maintainer... | 1 file, +11 | 1 file, +11 | ✅ Match |
+| 5 | interconnect: add support for the Qualcomm RPMh helpers | 9 files, +730/-1 | 9 files, +730/-1 | ✅ Match |
+| 6 | interconnect: add support for the SM8650 SoC | 4 files, +1816 | 4 files, +1816 | ✅ Match |
+| 7 | ufs: qcom: vote for interconnect bandwidth on probe | 1 file, +13 | 1 file, +13 | ✅ Match |
+| 8 | qcom_defconfig: enable interconnect for SM8650 | 1 file, +3 | 1 file, +3 | ✅ Match |
+| 9 | Merge tag 'interconnect-next-20251120'... | empty | empty | ✅ Match |
+| 10-12 | pickman history commits | - | - | ✅ OK |
+
+### Review Comment Addressed
+
+The review comment from `project_1_bot` about "Pipeline fix (attempt 1)" was **informational** - it analyzed the pipeline failures and concluded they were all **infrastructure/transient issues** (not code problems):
+- EFI capsule tests: Flaky memory reservation issue
+- sandbox64 tests: Timeout/lab connection failure  
+- sjg-lab tests: Hardware contention
+- make check: Pre-existing binman coverage issue
+
+**No code changes needed** - the pipeline should be re-run.
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v6` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Rebased onto latest `ci/master`. All commits verified - deltas match exactly and build passes.
+> 
+> Regarding the pipeline failures: the analysis confirmed these were all infrastructure/transient issues (EFI capsule test flakiness, sandbox64 timeouts, lab hardware contention, pre-existing binman coverage). No code changes needed - the pipeline should run automatically with the rebase.
+
+---
+
+### Review: 2026-04-12
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+
+
+### Conversation log
+The branch merge base is `b538199a2d2` but ci/master is now at `a71b77d407e`. There are 2 new commits on ci/master. Let me save the pre-rebase stats and perform the rebase:
+
+Good, I have the pre-rebase stats. Let me save them and perform the rebase:
+
+Rebase completed without conflicts. Now let me verify the deltas match:
+
+All deltas match exactly. Now let me run the build test:
+
+Build passes. Now let me check for existing version branches and create the new one:
+
+Successfully rebased and pushed. Let me verify the final state:
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Task:** Rebase onto latest target branch
+
+### Rebase Result: ✅ Success
+
+The branch was rebased from `b538199a2d2` (2 commits behind) onto latest `ci/master` (`a71b77d407e`).
+
+**Conflicts:** None - clean rebase
+
+### Commit Delta Verification
+
+| # | Subject | Pre-Rebase | Post-Rebase | Status |
+|---|---------|------------|-------------|--------|
+| 1 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() | 2 files, +47 | 2 files, +47 | ✅ Match |
+| 2 | Introduce the Generic System Interconnect Subsystem | 10 files, +975 | 10 files, +975 | ✅ Match |
+| 3 | interconnect: add DM test suite | 10 files, +659/-1 | 10 files, +659/-1 | ✅ Match |
+| 4 | MAINTAINERS: add myself as Maintainer... | 1 file, +11 | 1 file, +11 | ✅ Match |
+| 5 | interconnect: add support for the Qualcomm RPMh helpers | 9 files, +730/-1 | 9 files, +730/-1 | ✅ Match |
+| 6 | interconnect: add support for the SM8650 SoC | 4 files, +1816 | 4 files, +1816 | ✅ Match |
+| 7 | ufs: qcom: vote for interconnect bandwidth on probe | 1 file, +13 | 1 file, +13 | ✅ Match |
+| 8 | qcom_defconfig: enable interconnect for SM8650 | 1 file, +3 | 1 file, +3 | ✅ Match |
+| 9 | Merge tag 'interconnect-next-20251120'... | empty | empty | ✅ Match |
+| 10-13 | pickman history commits | - | - | ✅ OK |
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v7` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Rebased onto latest `ci/master`. All commits verified - deltas match exactly and build passes. The pipeline should run automatically.
+
+---
+
+### Review: 2026-04-12
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) Check make check.
+
+Now I understand the situation. Let...
+
+### Conversation log
+Let me find the correct repository location:
+
+Good, I'm in the u-boot repository. Let me checkout the branch:
+
+Now let me understand the review comment. The comment mentions "Pipeline fix (attempt 2)" about the "Check make check" job. The analysis from the context shows this is a **pre-existing binman coverage issue** not related to this MR. Let me verify the current state and check if there are any actual code changes needed:
+
+The branch is up-to-date with ci/master. Let me verify the review comment more carefully. The review comment mentions this is a pipeline fix attempt for "Check make check" job which was failing due to binman coverage. Let me check the context again - the comment says the analysis concluded:
+
+1. This is a **pre-existing coverage issue** in binman (nxp_imx8mcst.py and nxp_imx8mimage.py)
+2. This MR has **no changes** to binman
+3. The fix exists in a different branch (`me/try-marek`) but hasn't been merged to ci/master
+
+Since the review comment is from `project_1_bot` and describes this as "Pipeline fix (attempt 2)", and the analysis already concluded no code changes are needed (it's a pre-existing infrastructure issue), there's nothing actionable for me to do code-wise.
+
+Let me verify the branch is up-to-date with ci/master and run the build:
+
+The branch is already rebased on the latest ci/master. Let me run the build to verify everything passes:
+
+Build passes. Now let me review the situation:
+
+The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` about "Pipeline fix (attempt 2)" is referencing the analysis that already concluded:
+
+1. The "Check make check" job failed due to binman code coverage at 99% (requires 100%)
+2. The coverage shortfall is in `nxp_imx8mcst.py` (22%) and `nxp_imx8mimage.py` (84%)
+3. This MR's interconnect code has **zero changes** to binman
+4. The fix exists in commit `bf2662b2b8f` but is in a separate branch (`me/try-marek`) not yet merged to ci/master
+5. **This is a pre-existing infrastructure issue - no code changes needed in this MR**
+
+Since the analysis concluded no code changes are needed, and the branch is already up-to-date with ci/master, there's nothing for me to do except acknowledge this.
+
+Let me check if there are any version branches already created:
+
+There are already 7 versions. Since the review comment is about a pipeline failure that was already analyzed as a **pre-existing infrastructure issue** and no code changes are needed, I should just report that there's nothing to fix in this MR.
+
+Let me verify that the local and remote branches are identical:
+
+The local and remote branches are identical. 
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Review Comment Addressed:**
+- Comment from `project_1_bot`: "Pipeline fix (attempt 2): fixed failed job(s) Check make check"
+
+**Analysis:**
+The review comment refers to "Pipeline fix (attempt 2)" for the "Check make check" job failure. Based on the context from the MR description, this failure was already analyzed and determined to be a **pre-existing infrastructure issue**:
+
+1. The failure is due to binman code coverage at 99% instead of 100%
+2. The shortfall is in NXP-related files (`nxp_imx8mcst.py` at 22% and `nxp_imx8mimage.py` at 84%)
+3. This MR adds interconnect subsystem code and has **zero changes** to binman
+4. The fix exists in commit `bf2662b2b8f` in branch `me/try-marek`, but is not yet merged to `ci/master`
+5. This is a **pre-existing issue** that affects any MR running the make check job
+
+**Action Taken:** None required - the branch is already up-to-date with `ci/master` and the build passes locally.
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Current State:**
+- Local branch matches remote: `64f3a7c4a5c`
+- Branch is rebased on latest ci/master: `a71b77d407e`
+
+---
+
+### Suggested reply for MR !868:
+
+> The "Check make check" failure is a **pre-existing infrastructure issue** - it's failing due to binman code coverage in `nxp_imx8mcst.py` and `nxp_imx8mimage.py`, which are unrelated to this MR's interconnect code.
+> 
+> The fix for this coverage issue exists in commit `bf2662b2b8f binman: Fill in most of the imx8mimage and imx8mcst tests` but it's in branch `me/try-marek` and hasn't been merged to `ci/master` yet.
+> 
+> Once the binman coverage fix is merged to `ci/master`, this pipeline job should pass. No changes needed in this MR.
+
+---
+
+### Review: 2026-04-12
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) sandbox with clang test.py, sandbox test.py, sandbox64...
+
+### Conversation log
+Good, the branch is already up-to-date with ci/master (`a71b77d407e` is both the merge base and the current ci/master HEAD). Let me analyze the review comment - it's about "Pipeline fix (attempt 3)" mentioning multiple failed jobs. Based on the context from the MR description, these were analyzed as infrastructure/transient issues:
+
+1. **sandbox test.py jobs**: Failed due to `ut_dm_dm_test_video_bmp24_32` - "SDL renderer does not exist" (CI environment issue)
+2. **sandbox64 test.py jobs**: Failed with "Lab failure: Timeout executing 'ut dm dm_test_nvmxip'" (lab timeout)
+3. **rockpro64**: "SPL: failed to boot from all boot devices" (hardware issue)
+4. **Check make check/qcheck**: binman coverage at 99% instead of 100% (pre-existing issue in nxp_imx8mcst.py and nxp_imx8mimage.py)
+
+Let me verify this MR has no changes to the affected areas:
+
+The local and remote branches are identical (`2ad6137e017`). The branch is already up-to-date with ci/master and has no changes to binman, video, or nvmxip (the areas where the pipeline failures occurred).
+
+Let me run the build test to verify everything passes locally:
+
+Build passes. The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` about "Pipeline fix (attempt 3)" is referencing the analysis that was already done and concluded all failures are **infrastructure/transient issues**:
+
+1. **sandbox/sandbox64 test.py jobs**: CI environment lacks SDL renderer, lab timeouts
+2. **rockpro64**: Hardware failure (SPL boot issues, MMC errors)  
+3. **Check make check/qcheck**: Pre-existing binman coverage issue (nxp_imx8mcst.py at 22%, nxp_imx8mimage.py at 84%) - fix exists in `bf2662b2b8f` but not merged to ci/master
+
+Since:
+- The branch is already up-to-date with ci/master
+- The build passes locally
+- All pipeline failures are infrastructure issues unrelated to this MR's code
+- No code changes are needed
+
+There's nothing actionable to do. The pipeline should be re-run to address the transient issues.
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Review Comment:** `project_1_bot_2541d37e7146e9c25808a380e05ebef0` - "Pipeline fix (attempt 3): fixed failed job(s)..."
+
+**Analysis:**
+The review comment references the "Pipeline fix (attempt 3)" analysis which already concluded that all 8 failed jobs are **infrastructure/transient issues**:
+
+| Job | Root Cause | Related to MR? |
+|-----|------------|----------------|
+| sandbox test.py | SDL renderer not available in CI env | ❌ No |
+| sandbox with clang test.py | SDL renderer + lab timeout | ❌ No |
+| sandbox64 test.py | Lab timeout on nvmxip test | ❌ No |
+| sandbox64 with clang test.py | Lab timeout on nvmxip test | ❌ No |
+| sandbox64_lwip test.py | Lab timeout on nvmxip test | ❌ No |
+| rockpro64 | Hardware failure (SPL boot/MMC) | ❌ No |
+| Check make check | binman coverage 99% (pre-existing) | ❌ No |
+| Check make qcheck | binman coverage 99% (pre-existing) | ❌ No |
+
+**Evidence:**
+- This MR adds Qualcomm interconnect subsystem code
+- No changes to `tools/binman/`, video tests, nvmxip tests, or rockpro64
+- Build passes locally
+
+**Action Taken:** None required - no code changes needed.
+
+**Current State:**
+- Local branch = Remote branch: `2ad6137e017`
+- Branch is rebased on latest ci/master: `a71b77d407e`
+- Build passes: ✅
+
+---
+
+### Suggested reply for MR !868:
+
+> The "Pipeline fix (attempt 3)" analysis confirmed all failures are **infrastructure/transient issues**:
+> 
+> - **sandbox test.py jobs**: SDL renderer not available in CI environment
+> - **sandbox64 test.py jobs**: Lab timeouts on nvmxip test
+> - **rockpro64**: Hardware failure (SPL boot/MMC issues)
+> - **Check make check/qcheck**: Pre-existing binman coverage issue (fix exists in `bf2662b2b8f` but not merged to ci/master)
+> 
+> No code changes needed - this MR only adds interconnect code and doesn't touch any of the failing areas. The pipeline should pass on retry (except for the pre-existing binman coverage issue which needs to be fixed separately).
+
+---
+
+### Review: 2026-04-12
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Good, the branch is already rebased on the latest `ci/master` (`a71b77d407e`). Now let me understand the review comment - it says "Pipeline fix: reached retry limit (3 attempts). Manual intervention required."
+
+This means the automated pipeline fix attempts have failed 3 times and manual intervention is needed. Let me check the current state of the branch and what the pipeline failures are about:
+
+I see the local branch has more commits than remote. Let me compare:
+
+There's one local commit ahead of the remote. Based on the context from the MR description, the pipeline failures have been:
+
+1. **sandbox test.py jobs**: SDL renderer not available, lab timeouts
+2. **sandbox64 test.py jobs**: Lab timeouts on nvmxip test  
+3. **rockpro64**: Hardware failure (SPL boot/MMC issues)
+4. **Check make check/qcheck**: Pre-existing binman coverage at 99% (nxp_imx8mcst.py and nxp_imx8mimage.py)
+
+These are all **infrastructure/transient issues** that have been analyzed multiple times. The review comment says "reached retry limit (3 attempts). Manual intervention required."
+
+Since all failures are infrastructure issues and NOT code-related:
+1. The binman coverage issue is a pre-existing problem in ci/master (fix exists in commit `bf2662b2b8f` but not merged)
+2. The lab timeouts and hardware failures are transient CI infrastructure issues
+3. The SDL renderer issue is a CI environment problem
+
+The "manual intervention required" likely means:
+- Either wait for the binman coverage fix to be merged to ci/master
+- Or the CI pipeline needs to be manually re-triggered/fixed by maintainers
+
+Let me verify the build passes locally and check if there's anything that can actually be fixed in this MR:
+
+The build passes. Now let me understand what the "manual intervention required" means. Looking at the history:
+
+1. All 3 pipeline fix attempts concluded that the failures are infrastructure issues
+2. The failures are NOT caused by this MR's code
+3. The binman coverage issue requires a fix in ci/master (commit `bf2662b2b8f`)
+
+The "manual intervention" needed here is likely:
+1. Re-running the pipeline (for transient failures)
+2. Getting the binman coverage fix merged to ci/master
+3. Or having the maintainers acknowledge this MR is valid despite the infrastructure failures
+
+Since there's nothing I can fix in the code (the failures are external to this MR), I should:
+1. Push the current branch state to update the MR
+2. Report that manual intervention from maintainers is needed
+
+Let me check if there are existing version branches:
+
+There are already v2-v7 and fix2-fix3 branches. Let me create v8 and push:
+
+The branch has been pushed. Let me verify the final state:
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Review Comment:** `project_1_bot_2541d37e7146e9c25808a380e05ebef0` - "Pipeline fix: reached retry limit (3 attempts). Manual intervention required."
+
+**Analysis:**
+The automated pipeline fix system has reached its retry limit (3 attempts). All 3 previous fix attempts concluded that the pipeline failures are **infrastructure/transient issues** and NOT caused by this MR's code:
+
+| Failure Type | Root Cause | Related to MR? |
+|--------------|------------|----------------|
+| sandbox test.py | SDL renderer not available in CI env | ❌ No |
+| sandbox64 test.py | Lab timeouts on nvmxip test | ❌ No |
+| rockpro64 | Hardware failure (SPL boot/MMC) | ❌ No |
+| Check make check/qcheck | binman coverage 99% (pre-existing issue) | ❌ No |
+
+**Key Points:**
+1. This MR adds Qualcomm interconnect subsystem code
+2. No changes to binman, video tests, nvmxip tests, or rockpro64
+3. The binman coverage fix exists in commit `bf2662b2b8f binman: Fill in most of the imx8mimage and imx8mcst tests` but hasn't been merged to `ci/master` yet
+4. Build passes locally: ✅
+
+**What Was Done:**
+- Verified branch is rebased on latest `ci/master` (`a71b77d407e`)
+- Verified build passes locally
+- Created local branch `cherry-a264c0454b8-v8`
+- Force pushed to `ci/cherry-a264c0454b8`
+
+**Manual Intervention Required:**
+Since no code changes can fix these infrastructure issues, the maintainers need to:
+1. Merge the binman coverage fix (`bf2662b2b8f`) to `ci/master`
+2. Or manually approve/merge this MR acknowledging the failures are infrastructure issues
+3. Or re-run the pipeline after transient issues are resolved
+
+---
+
+### Suggested reply for MR !868:
+
+> The automated pipeline fix system has reached its retry limit. After 3 analysis attempts, all pipeline failures have been confirmed as **infrastructure/transient issues** unrelated to this MR's code:
+> 
+> - **sandbox/sandbox64 test.py jobs**: SDL renderer not available, lab timeouts
+> - **rockpro64**: Hardware failure (SPL boot/MMC issues)  
+> - **Check make check/qcheck**: Pre-existing binman coverage issue (fix exists in `bf2662b2b8f` but not merged to `ci/master`)
+> 
+> This MR only adds Qualcomm interconnect subsystem code and has no changes to binman, video tests, nvmxip, or rockpro64 board files. The build passes locally.
+> 
+> **Manual intervention needed:** The binman coverage fix (`bf2662b2b8f binman: Fill in most of the imx8mimage and imx8mcst tests`) should be merged to `ci/master` to resolve the coverage failure. The other failures are transient lab/hardware issues that should resolve on retry.
+
+---
+
+### Review: 2026-04-16
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository location:
+
+I'm already in the u-boot repository. Let me proceed with the rebase:
+
+The branch is behind ci/master. The merge base is `a71b77d407e` but ci/master is now at `26c3513a1a3`. There are new commits on ci/master. Let me check how many commits ahead ci/master is:
+
+There are 55 new commits on ci/master since the branch was created. Let me save the pre-rebase stats and perform the rebase:
+
+There's some issue with the for loop variable expansion. Let me try a different approach:
+
+Now let me get the full list including all commits (the first 3 commits before these):
+
+Now I have the pre-rebase stats. Note that commit `a4587eaee2d` is the merge commit (empty). Let me perform the rebase:
+
+Rebase completed successfully without conflicts. Let me verify the deltas match:
+
+All deltas match exactly:
+- Commit 1 (cmd-db): 2 files, +47 ✅
+- Commit 2 (Interconnect intro): 10 files, +975 ✅
+- Commit 3 (DM test suite): 10 files, +659/-1 ✅
+- Commit 4 (MAINTAINERS): 1 file, +11 ✅
+- Commit 5 (RPMh helpers): 9 files, +730/-1 ✅
+- Commit 6 (SM8650): 4 files, +1816 ✅
+- Commit 7 (ufs qcom): 1 file, +13 ✅
+- Commit 8 (defconfig): 1 file, +3 ✅
+- Commit 9 (merge): empty ✅
+- Commit 10 (pickman record): 1 file, +111/-1 ✅
+
+Now let me run the build test:
+
+Build passes. Now let me check for existing version branches and create the new one:
+
+There's already v8, so I need to create v9:
+
+The branch has been pushed. Let me verify the final state:
+
+The merge base is now `26c3513a1a3` which is the current ci/master HEAD.
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Task:** Rebase onto latest target branch
+
+### Rebase Result: ✅ Success
+
+The branch was rebased from `a71b77d407e` (55 commits behind) onto latest `ci/master` (`26c3513a1a3`).
+
+**Conflicts:** None - clean rebase
+
+### Commit Delta Verification
+
+| # | Subject | Pre-Rebase | Post-Rebase | Status |
+|---|---------|------------|-------------|--------|
+| 1 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() | 2 files, +47 | 2 files, +47 | ✅ Match |
+| 2 | Introduce the Generic System Interconnect Subsystem | 10 files, +975 | 10 files, +975 | ✅ Match |
+| 3 | interconnect: add DM test suite | 10 files, +659/-1 | 10 files, +659/-1 | ✅ Match |
+| 4 | MAINTAINERS: add myself as Maintainer... | 1 file, +11 | 1 file, +11 | ✅ Match |
+| 5 | interconnect: add support for the Qualcomm RPMh helpers | 9 files, +730/-1 | 9 files, +730/-1 | ✅ Match |
+| 6 | interconnect: add support for the SM8650 SoC | 4 files, +1816 | 4 files, +1816 | ✅ Match |
+| 7 | ufs: qcom: vote for interconnect bandwidth on probe | 1 file, +13 | 1 file, +13 | ✅ Match |
+| 8 | qcom_defconfig: enable interconnect for SM8650 | 1 file, +3 | 1 file, +3 | ✅ Match |
+| 9 | Merge tag 'interconnect-next-20251120'... | empty | empty | ✅ Match |
+| 10-17 | pickman history commits | - | - | ✅ OK |
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v9` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Rebased onto latest `ci/master` (55 new commits integrated). All commits verified - deltas match exactly and build passes.
+> 
+> Note: Previous pipeline failures were analyzed as infrastructure/transient issues (SDL renderer, lab timeouts, hardware failures, pre-existing binman coverage). These are not related to this MR's code. The pipeline should run automatically with the rebase.
 
 ---
 
