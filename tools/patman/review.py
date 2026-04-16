@@ -511,6 +511,9 @@ Rules:
   quote identifiers that are obviously code (e.g. CONFIG_FOO)
 - Never put a period directly after a code identifier — rephrase,
   omit the period, or use an em dash to start the next clause
+- Do NOT quote code fragments in the cover-letter reply — code
+  belongs in the per-patch reviews. Describe series-level issues in
+  prose only.
 - Use {ctx.spelling} spelling
 - Be brief — only raise series-level concerns, not per-patch nits
 - Do NOT repeat issues that belong on individual patches
