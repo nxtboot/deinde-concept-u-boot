@@ -57914,3 +57914,92 @@ Since no code changes can fix these infrastructure issues, the maintainers need 
 
 ---
 
+### Review: 2026-04-16
+
+Branch: cherry-a264c0454b8
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository location:
+
+I'm already in the u-boot repository. Let me proceed with the rebase:
+
+The branch is behind ci/master. The merge base is `a71b77d407e` but ci/master is now at `26c3513a1a3`. There are new commits on ci/master. Let me check how many commits ahead ci/master is:
+
+There are 55 new commits on ci/master since the branch was created. Let me save the pre-rebase stats and perform the rebase:
+
+There's some issue with the for loop variable expansion. Let me try a different approach:
+
+Now let me get the full list including all commits (the first 3 commits before these):
+
+Now I have the pre-rebase stats. Note that commit `a4587eaee2d` is the merge commit (empty). Let me perform the rebase:
+
+Rebase completed successfully without conflicts. Let me verify the deltas match:
+
+All deltas match exactly:
+- Commit 1 (cmd-db): 2 files, +47 ✅
+- Commit 2 (Interconnect intro): 10 files, +975 ✅
+- Commit 3 (DM test suite): 10 files, +659/-1 ✅
+- Commit 4 (MAINTAINERS): 1 file, +11 ✅
+- Commit 5 (RPMh helpers): 9 files, +730/-1 ✅
+- Commit 6 (SM8650): 4 files, +1816 ✅
+- Commit 7 (ufs qcom): 1 file, +13 ✅
+- Commit 8 (defconfig): 1 file, +3 ✅
+- Commit 9 (merge): empty ✅
+- Commit 10 (pickman record): 1 file, +111/-1 ✅
+
+Now let me run the build test:
+
+Build passes. Now let me check for existing version branches and create the new one:
+
+There's already v8, so I need to create v9:
+
+The branch has been pushed. Let me verify the final state:
+
+The merge base is now `26c3513a1a3` which is the current ci/master HEAD.
+
+## Summary
+
+**Branch:** `cherry-a264c0454b8` (MR !868)
+
+**Task:** Rebase onto latest target branch
+
+### Rebase Result: ✅ Success
+
+The branch was rebased from `a71b77d407e` (55 commits behind) onto latest `ci/master` (`26c3513a1a3`).
+
+**Conflicts:** None - clean rebase
+
+### Commit Delta Verification
+
+| # | Subject | Pre-Rebase | Post-Rebase | Status |
+|---|---------|------------|-------------|--------|
+| 1 | soc: qcom: cmd-db: Add cmd_db_read_slave_id() & cmd_db_read_aux_data() | 2 files, +47 | 2 files, +47 | ✅ Match |
+| 2 | Introduce the Generic System Interconnect Subsystem | 10 files, +975 | 10 files, +975 | ✅ Match |
+| 3 | interconnect: add DM test suite | 10 files, +659/-1 | 10 files, +659/-1 | ✅ Match |
+| 4 | MAINTAINERS: add myself as Maintainer... | 1 file, +11 | 1 file, +11 | ✅ Match |
+| 5 | interconnect: add support for the Qualcomm RPMh helpers | 9 files, +730/-1 | 9 files, +730/-1 | ✅ Match |
+| 6 | interconnect: add support for the SM8650 SoC | 4 files, +1816 | 4 files, +1816 | ✅ Match |
+| 7 | ufs: qcom: vote for interconnect bandwidth on probe | 1 file, +13 | 1 file, +13 | ✅ Match |
+| 8 | qcom_defconfig: enable interconnect for SM8650 | 1 file, +3 | 1 file, +3 | ✅ Match |
+| 9 | Merge tag 'interconnect-next-20251120'... | empty | empty | ✅ Match |
+| 10-17 | pickman history commits | - | - | ✅ OK |
+
+**Build Result:** ✅ PASSED - `buildman -L --board sandbox -w -o /tmp/pickman`
+
+**Local branch:** `cherry-a264c0454b8-v9` created
+
+**Remote push:** ✅ Force pushed to `ci/cherry-a264c0454b8`
+
+---
+
+### Suggested reply for MR !868:
+
+> Rebased onto latest `ci/master` (55 new commits integrated). All commits verified - deltas match exactly and build passes.
+> 
+> Note: Previous pipeline failures were analyzed as infrastructure/transient issues (SDL renderer, lab timeouts, hardware failures, pre-existing binman coverage). These are not related to this MR's code. The pipeline should run automatically with the rebase.
+
+---
+
