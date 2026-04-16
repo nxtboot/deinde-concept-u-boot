@@ -96,6 +96,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	inetutils-telnet \
 	iputils-ping \
 	libconfuse-dev \
+	libengine-pkcs11-openssl \
 	libgit2-dev \
 	libjson-glib-dev \
 	libguestfs-tools \
@@ -147,6 +148,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	sudo \
 	swig \
 	texinfo \
+	trace-cmd \
 	util-linux \
 	uuid-dev \
 	vboot-kernel-utils \
@@ -167,12 +169,12 @@ RUN for pkg in ovmf-ia32 qemu-efi-riscv64; do \
 RUN chmod +r /boot/vmlinu*
 
 # Build GRUB UEFI targets for ARM & RISC-V, 32-bit and 64-bit
-RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
+RUN git clone https://https.git.savannah.gnu.org/git/grub.git /tmp/grub && \
 	cd /tmp/grub && \
 	git checkout grub-2.12 && \
 	git config --global user.name "GitLab CI Runner" && \
 	git config --global user.email trini@konsulko.com && \
-	./bootstrap && \
+	GNULIB_URL=https://https.git.savannah.gnu.org/git/gnulib.git ./bootstrap && \
 	mkdir -p /opt/grub && \
 	./configure --target=aarch64 --with-platform=efi \
 	CC=gcc \
@@ -241,7 +243,7 @@ RUN git clone git://git.savannah.gnu.org/grub.git /tmp/grub && \
 
 RUN git clone https://gitlab.com/qemu-project/qemu.git /tmp/qemu && \
 	cd /tmp/qemu && \
-	git checkout v10.0.6 && \
+	git checkout v10.1.2 && \
 	# config user.name and user.email to make 'git am' happy
 	git config user.name u-boot && \
 	git config user.email u-boot@denx.de && \
@@ -333,32 +335,10 @@ RUN git clone https://github.com/stefanberger/swtpm /tmp/swtpm && \
 	make install && \
 	rm -rf /tmp/swtpm
 
-# Build trace-cmd
-# Pin to commits from Oct 2025 to avoid libtraceevent 1.9+ BTF dependency
-# which requires kernel headers newer than Jammy's 5.15
-RUN mkdir /tmp/trace && \
-    git clone https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git /tmp/trace/libtraceevent && \
-    cd /tmp/trace/libtraceevent && \
-    git checkout b3f5849 && \
-    make && \
-    sudo make install prefix=/usr && \
-    sudo ldconfig && \
-    git clone --branch libtracefs-1.8.1 --depth 1 https://git.kernel.org/pub/scm/libs/libtrace/libtracefs.git /tmp/trace/libtracefs && \
-    cd /tmp/trace/libtracefs && \
-    make && \
-    sudo make install prefix=/usr && \
-    sudo ldconfig && \
-    git clone https://github.com/rostedt/trace-cmd.git /tmp/trace/trace-cmd && \
-    cd /tmp/trace/trace-cmd && \
-    git checkout 364faec && \
-    make && \
-    sudo make install && \
-    rm -rf /tmp/trace
-
 # Build coreboot
 RUN wget -O - https://coreboot.org/releases/coreboot-25.03.tar.xz | tar -C /tmp -xJ && \
     cd /tmp/coreboot-25.03 && \
-    make crossgcc-i386 CPUS=$(nproc) && \
+    make BUILDGCC_OPTIONS="--mirror" crossgcc-i386 CPUS=$(nproc) && \
     make -C payloads/coreinfo olddefconfig && \
     make -C payloads/coreinfo && \
     make olddefconfig && \
