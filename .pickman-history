@@ -58522,3 +58522,43 @@ The build completed successfully - only the hardware test phase failed due to th
 
 ---
 
+### Pipeline fix: 2026-04-16 (attempt 1)
+
+Branch: cherry-f8d245f3698
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Based on my analysis of the job log, this is an **infrastructure/transient issue**, not a code problem.
+
+## Root Cause Analysis
+
+The job failure is caused by a **hardware lab timeout** in the CI test infrastructure:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The error occurs in the labgrid test framework when trying to communicate with the physical Orange Pi PC board (`opi_pc`):
+
+1. The U-Boot build itself **succeeded** (the log shows "Building U-Boot in pytest-source dir for orangepi_pc" and "Bootstrapping U-Boot from dirs...")
+2. The failure happened when the test harness tried to flash and boot the board, and it couldn't get a U-Boot prompt within 15 seconds
+3. This is a hardware/connectivity issue with the physical test board, not a code issue
+
+## Evidence
+
+1. The MR description confirms all cherry-picks were successful and **builds passed** for all commits
+2. The job log shows the build completed and artifacts were created
+3. The failure is specifically in `labgrid/driver/ubootdriver.py` waiting for the board to respond
+4. The message "Lab failure: Marking connection bad - no other tests will run" indicates this is a recognized transient lab issue
+
+## Recommendation
+
+**No code changes are needed.** This is a transient infrastructure issue where the physical Orange Pi PC test board failed to respond. The appropriate action is to **retry the CI job** or wait for the lab connection to be restored.
+
+The code changes in this MR (UFS config renames) are unrelated to the Orange Pi PC board, which doesn't even use UFS storage - this further confirms the failure is not caused by the code changes.
+
+---
+
