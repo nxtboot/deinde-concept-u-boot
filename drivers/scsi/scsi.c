@@ -85,23 +85,6 @@ static void scsi_setup_inquiry(const struct blk_desc *desc,
 	pccb->msgout[0] = SCSI_IDENTIFY; /* NOT USED */
 }
 
-static void scsi_setup_sync_cache(struct scsi_cmd *pccb, lbaint_t start,
-				  lbaint_t blocks)
-{
-	pccb->cmd[0] = SCSI_SYNC_CACHE;
-	pccb->cmd[1] = 0;
-	pccb->cmd[2] = (unsigned char)(start >> 24) & 0xff;
-	pccb->cmd[3] = (unsigned char)(start >> 16) & 0xff;
-	pccb->cmd[4] = (unsigned char)(start >> 8) & 0xff;
-	pccb->cmd[5] = (unsigned char)start & 0xff;
-	pccb->cmd[6] = 0;
-	pccb->cmd[7] = (unsigned char)(blocks >> 8) & 0xff;
-	pccb->cmd[8] = (unsigned char)blocks & 0xff;
-	pccb->cmd[9] = 0;
-	pccb->cmdlen = 10;
-	pccb->msgout[0] = SCSI_IDENTIFY; /* NOT USED */
-}
-
 static void scsi_setup_read_ext(const struct blk_desc *desc,
 				struct scsi_cmd *pccb, lbaint_t start,
 				lbaint_t blocks)
@@ -315,11 +298,6 @@ static ulong scsi_write(struct udevice *dev, lbaint_t blknr, lbaint_t blkcnt,
 		start += to_write;
 		blks -= to_write;
 	} while (blks);
-
-	/* Flush the SCSI cache so we don't lose data on board reset. */
-	scsi_setup_sync_cache(pccb, 0, 0);
-	if (scsi_exec(bdev, pccb))
-		scsi_print_error(pccb);
 
 	debug("%s: end startblk " LBAF ", blccnt " LBAF " buffer %lX\n",
 	      __func__, start, blocks, buf_addr);
