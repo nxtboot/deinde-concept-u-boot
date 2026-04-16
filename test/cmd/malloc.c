@@ -25,9 +25,12 @@ static int cmd_test_malloc_info(struct unit_test_state *uts)
 	ut_assertok(run_command("malloc info", 0));
 	ut_assert_nextlinen("total bytes   = ");
 	ut_assert_nextlinen("in use bytes  = ");
+	ut_assert_nextlinen("largest free  = ");
 	ut_assert_nextlinen("malloc count  = ");
 	ut_assert_nextlinen("free count    = ");
 	ut_assert_nextlinen("realloc count = ");
+	if (IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION))
+		ut_assert_nextlinen("mcheck count  = ");
 	ut_assert_console_end();
 
 	return 0;
@@ -62,6 +65,12 @@ static int cmd_test_malloc_leak(struct unit_test_state *uts)
 	size_t chunk_sz;
 	void *ptr;
 	int ret;
+
+	/*
+	 * If the mcheck registry ever overflowed, later allocations are not
+	 * registered and leak reports cannot recover the caller string.
+	 */
+	ut_assert(!malloc_mcheck_overflow());
 
 	/* Take a snapshot, then check with no leaks */
 	ut_assertok(malloc_leak_check_start(&snap));

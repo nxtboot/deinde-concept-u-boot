@@ -545,15 +545,17 @@ static int common_test_malloc_very_large(struct unit_test_state *uts)
 	before = get_alloced_size();
 
 	/*
-	 * When mcheck is enabled, it adds overhead per allocation (header +
-	 * canaries). With large CONFIG_MCHECK_CALLER_LEN, this can be
-	 * significant. Use a larger margin to account for mcheck overhead.
+	 * Target the largest free chunk rather than the whole pool, so earlier
+	 * test leaks that fragment the heap do not turn this into a flakily
+	 * failing test. When mcheck is enabled, allow for the per-allocation
+	 * header and canaries; otherwise a smaller margin for dlmalloc's own
+	 * chunk alignment is enough.
 	 */
 	if (CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION))
 		margin = SZ_256K;
 	else
 		margin = SZ_64K;
-	size = TOTAL_MALLOC_LEN - before - margin;
+	size = malloc_largest_free() - margin;
 
 	ptr = malloc(size);
 	ut_assertnonnull(ptr);
@@ -582,6 +584,7 @@ static int common_test_malloc_fill_pool(struct unit_test_state *uts)
 {
 	int alloc_size, before, count, i, total;
 	const int ptr_table_size = 0x100000;
+	size_t largest;
 	void **ptrs;
 	void *ptr;
 
@@ -593,6 +596,14 @@ static int common_test_malloc_fill_pool(struct unit_test_state *uts)
 		return -EAGAIN;
 
 	before = get_alloced_size();
+
+	/*
+	 * Record the largest contiguous free region up front. Earlier tests
+	 * may have left scattered leaks that fragment the heap, so cap the
+	 * assertion below against what is actually available rather than the
+	 * whole pool.
+	 */
+	largest = malloc_largest_free();
 
 	/* Use memory outside malloc pool to store pointers */
 	ptrs = map_sysmem(0x1000, ptr_table_size);
@@ -616,10 +627,10 @@ static int common_test_malloc_fill_pool(struct unit_test_state *uts)
 	       ptr_table_size);
 
 	/*
-	 * Should have allocated most of the pool - if we can't allocate 1MB,
-	 * then at most 1MB is available, so we must have allocated at least
-	 * (pool_size - 1MB). Save the peak before freeing so an assertion
-	 * failure does not leak the entire pool.
+	 * Should have allocated most of the available pool - if we can't
+	 * allocate 1 MB, then at most 1 MB is available, so we must have
+	 * allocated at least (available - 1 MB). Save the peak before
+	 * freeing so an assertion failure does not leak the entire pool.
 	 */
 	ut_assert(count > 0);
 	ut_assert(count < ptr_table_size / sizeof(void *));
@@ -632,13 +643,13 @@ static int common_test_malloc_fill_pool(struct unit_test_state *uts)
 	for (i = 0; i < count; i++)
 		free(ptrs[i]);
 
-	ut_assert(alloc_size >= TOTAL_MALLOC_LEN - SZ_1M);
+	ut_assert(alloc_size - before >= largest - SZ_1M);
 
 	/* Should be back to starting state */
 	ut_asserteq(before, get_alloced_size());
 
-	/* Verify we can allocate large blocks again */
-	ptr = malloc(TOTAL_MALLOC_LEN / 2);
+	/* Verify we can allocate a large block again */
+	ptr = malloc(largest / 2);
 	ut_assertnonnull(ptr);
 	free(ptr);
 

@@ -864,6 +864,24 @@ static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
 #endif
 
 /**
+ * malloc_mcheck_overflow() - Check whether the mcheck registry filled
+ *
+ * The mcheck code registers each allocation's header in a fixed-size array so
+ * that leak reporting and pedantic checking can find it. If the array is ever
+ * exhausted, later allocations are still returned but their caller info cannot
+ * be recovered.
+ *
+ * Return: true if the registry has overflowed at any point
+ */
+#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+bool malloc_mcheck_overflow(void);
+size_t malloc_mcheck_count(void);
+#else
+static inline bool malloc_mcheck_overflow(void) { return false; }
+static inline size_t malloc_mcheck_count(void) { return 0; }
+#endif
+
+/**
  * malloc_chunk_size() - Return the dlmalloc chunk size for an allocation
  *
  * Given a pointer returned by malloc(), return the size of the underlying
@@ -873,6 +891,19 @@ static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
  * Return: chunk size in bytes
  */
 size_t malloc_chunk_size(void *ptr);
+
+/**
+ * malloc_largest_free() - Return the size of the largest free chunk
+ *
+ * Walks the heap and returns the largest contiguous free region that
+ * malloc() could currently hand out, minus the per-chunk dlmalloc
+ * overhead. Any mcheck header/canary overhead still comes off the top
+ * of the caller's request. Useful for tests that want to allocate "as
+ * much as possible" without tripping over fragmentation.
+ *
+ * Return: approximate largest request bytes malloc() would satisfy
+ */
+size_t malloc_largest_free(void);
 
 /**
  * malloc_mcheck_hdr_size() - Return the size of the mcheck header

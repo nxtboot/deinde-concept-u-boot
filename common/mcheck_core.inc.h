@@ -71,7 +71,7 @@
 #define PADDINGFLOOD	((char)0x58)
 
 // Full test suite can exceed 10000 concurrent allocations
-#define REGISTRY_SZ	20000
+#define REGISTRY_SZ	40000
 #define CANARY_DEPTH	2
 
 // avoid problems with BSS at early stage:
@@ -79,6 +79,7 @@ static char mcheck_pedantic_flag __section(".data") = 0;
 static void *mcheck_registry[REGISTRY_SZ] __section(".data") = {0};
 static size_t mcheck_chunk_count __section(".data") = 0;
 static size_t mcheck_chunk_count_max __section(".data") = 0;
+static bool mcheck_registry_full __section(".data");
 
 typedef unsigned long long mcheck_elem;
 typedef struct {
@@ -200,7 +201,6 @@ static void *mcheck_allocated_helper(void *altoghether_ptr, size_t customer_sz,
 				     size_t alignment, int clean_content,
 				     const char *caller)
 {
-	static bool overflow_msg_shown;
 	const size_t slop = alignment ?
 		mcheck_evaluate_memalign_prefix_size(alignment) - sizeof(struct mcheck_hdr) : 0;
 	struct mcheck_hdr *hdr = (struct mcheck_hdr *)((char *)altoghether_ptr + slop);
@@ -239,8 +239,8 @@ static void *mcheck_allocated_helper(void *altoghether_ptr, size_t customer_sz,
 			return payload; // normal end
 		}
 
-	if (!overflow_msg_shown) {
-		overflow_msg_shown = true;
+	if (!mcheck_registry_full) {
+		mcheck_registry_full = true;
 		printf("\n\nERROR: mcheck registry overflow, pedantic check would be incomplete!\n\n");
 	}
 	return payload;

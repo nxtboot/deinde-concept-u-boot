@@ -6010,6 +6010,16 @@ bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
 #endif
 }
 
+bool malloc_mcheck_overflow(void)
+{
+	return mcheck_registry_full;
+}
+
+size_t malloc_mcheck_count(void)
+{
+	return mcheck_chunk_count;
+}
+
 static const char *mcheck_caller(void)
 {
 #if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
@@ -7823,21 +7833,15 @@ static void print_new_allocs(struct malloc_leak_snap *snap)
 
 #if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
 				/*
-				 * Read the caller directly from the mcheck
-				 * header at the start of the chunk rather
-				 * than searching the registry, which may
-				 * have overflowed. Validate the canary first
-				 * to avoid printing garbage from chunks
-				 * allocated without mcheck (e.g. when mcheck
-				 * was temporarily disabled).
+				 * For memalign()ed chunks the header is
+				 * offset by aln_skip, so use the registry-
+				 * based lookup rather than assuming the
+				 * header is at chunk2mem(q).
 				 */
-				struct mcheck_hdr *hdr = mem;
-				int j;
+				struct mcheck_hdr *hdr;
 
-				for (j = 0; j < CANARY_DEPTH; j++)
-					if (hdr->canary.elems[j] != MAGICWORD)
-						break;
-				if (j == CANARY_DEPTH && hdr->caller[0])
+				hdr = find_mcheck_hdr_in_chunk(mem, sz);
+				if (hdr && hdr->caller[0])
 					caller = hdr->caller;
 #endif
 				printf("  %lx %zx %s\n", (ulong)mem, sz,
@@ -7888,6 +7892,35 @@ void malloc_leak_check_free(struct malloc_leak_snap *snap)
 #endif
 	snap->addr = NULL;
 	snap->count = 0;
+}
+
+size_t malloc_largest_free(void)
+{
+	size_t largest = 0;
+	mstate m = gm;
+	msegmentptr s;
+
+	if (m->topsize > largest)
+		largest = m->topsize;
+	if (m->dvsize > largest)
+		largest = m->dvsize;
+
+	for (s = &m->seg; s != 0; s = s->next) {
+		mchunkptr q = align_as_chunk(s->base);
+
+		while (segment_holds(s, q) && q != m->top &&
+		       q->head != FENCEPOST_HEAD) {
+			if (!is_inuse(q)) {
+				size_t sz = chunksize(q);
+
+				if (sz > largest)
+					largest = sz;
+			}
+			q = next_chunk(q);
+		}
+	}
+
+	return largest > CHUNK_OVERHEAD ? largest - CHUNK_OVERHEAD : 0;
 }
 
 int initf_malloc(void)

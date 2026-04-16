@@ -754,6 +754,7 @@ void bootflow_free(struct bootflow *bflow)
 	free(bflow->fname);
 	if (!(bflow->flags & BOOTFLOWF_STATIC_BUF))
 		free(bflow->buf);
+	free(bflow->logo);
 	free(bflow->os_name);
 	free(bflow->fdt_fname);
 	/* bootmeth_priv is only set when method is set */

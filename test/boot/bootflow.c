@@ -1303,7 +1303,7 @@ static int bootflow_cmdline(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmdline, UTF_CONSOLE);
+BOOTSTD_TEST(bootflow_cmdline, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* test a few special changes to a long command line */
 static int bootflow_cmdline_special(struct unit_test_state *uts)
@@ -1662,7 +1662,7 @@ static int bootstd_images(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootstd_images, UTF_CONSOLE);
+BOOTSTD_TEST(bootstd_images, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check creation of ad-hoc images */
 static int bootstd_adhoc(struct unit_test_state *uts)
@@ -1682,7 +1682,7 @@ static int bootstd_adhoc(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootstd_adhoc, UTF_CONSOLE);
+BOOTSTD_TEST(bootstd_adhoc, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check scanning extlinux, adjusting cmdline and booting */
 static int bootflow_scan_extlinux(struct unit_test_state *uts)

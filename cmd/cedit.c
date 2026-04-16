@@ -62,6 +62,8 @@ static int do_cedit_load(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_FAILURE;
 	}
 
+	if (cur_exp)
+		expo_destroy(cur_exp);
 	cur_exp = exp;
 
 	return 0;

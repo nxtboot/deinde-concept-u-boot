@@ -360,6 +360,7 @@ static int setexpr_test_str_long(struct unit_test_state *uts)
 	ut_asserteq(64 << 10, strlen(val));
 
 	unmap_sysmem(buf);
+	env_set("fred", NULL);
 
 	return 0;
 }

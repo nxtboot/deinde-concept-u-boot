@@ -295,6 +295,14 @@ int virtio_set_status(struct udevice *vdev, u8 status);
 int virtio_reset(struct udevice *vdev);
 
 /**
+ * virtio_remove() - remove a virtio device by deleting its vqs and resetting it
+ *
+ * @vdev:	the real virtio device
+ * Return: 0 if OK, -ve on error
+ */
+int virtio_remove(struct udevice *vdev);
+
+/**
  * virtio_get_features() - get the array of feature bits for this device
  *
  * @vdev:	the real virtio device

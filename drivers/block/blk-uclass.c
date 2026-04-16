@@ -808,6 +808,7 @@ static int part_create_block_devices(struct udevice *blk_dev)
 					 strdup(devname), &dev);
 		if (ret)
 			return ret;
+		device_set_name_alloced(dev);
 
 		part_data = dev_get_uclass_plat(dev);
 		part_data->partnum = part;

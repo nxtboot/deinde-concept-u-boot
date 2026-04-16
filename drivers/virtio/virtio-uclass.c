@@ -105,6 +105,13 @@ int virtio_reset(struct udevice *vdev)
 	return ops->reset(vdev->parent);
 }
 
+int virtio_remove(struct udevice *vdev)
+{
+	virtio_del_vqs(vdev);
+
+	return virtio_reset(vdev);
+}
+
 int virtio_get_features(struct udevice *vdev, u64 *features)
 {
 	struct dm_virtio_ops *ops;

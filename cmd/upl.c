@@ -68,6 +68,7 @@ static int do_upl_write(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	log_debug("Flattening\n");
 	ret = oftree_to_fdt(tree, &buf);
+	oftree_dispose(tree);
 	if (ret) {
 		log_err("Failed to write (err=%dE)\n", ret);
 		return CMD_RET_FAILURE;
@@ -100,6 +101,7 @@ static int do_upl_read(struct cmd_tbl *cmdtp, int flag, int argc,
 	printf("Reading UPL at %lx\n", addr);
 	tree = oftree_from_fdt(map_sysmem(addr, 0));
 	ret = upl_read_handoff(upl, tree);
+	oftree_dispose(tree);
 	if (ret) {
 		log_err("Failed to read (err=%dE)\n", ret);
 		return CMD_RET_FAILURE;

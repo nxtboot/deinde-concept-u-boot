@@ -191,6 +191,15 @@ int bootdev_find_in_blk(struct udevice *dev, struct udevice *blk,
 	log_debug("using method %s\n", bflow->method->name);
 	ret = bootmeth_read_bootflow(bflow->method, bflow);
 	log_debug("method %s returned ret=%d\n", bflow->method->name, ret);
+
+	/*
+	 * Close any filesystem left mounted by the bootmeth. This is a no-op
+	 * if the last fs operation already closed, but ensures a dangling
+	 * mount (e.g. from fs_set_blk_dev_with_part() above when the
+	 * bootmeth performed no fs_size()/fs_read()) is released.
+	 */
+	fs_close();
+
 	if (ret)
 		return log_msg_ret("method", ret);
 

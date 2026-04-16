@@ -1379,6 +1379,7 @@ static int dm_test_ofnode_too_many(struct unit_test_state *uts)
 		 */
 		if (of_live_active() || i < max_trees - 1) {
 			ut_assertok(ret);
+			free_oftree(tree);
 		} else {
 			/*
 			 * tree should be invalid when we try to register too
@@ -1492,6 +1493,8 @@ static int dm_test_livetree_ensure(struct unit_test_state *uts)
 	ut_asserteq_str("sandbox-other2",
 			ofnode_read_string(node, "compatible"));
 
+	oftree_dispose(tree);
+
 	return 0;
 }
 DM_TEST(dm_test_livetree_ensure, UTF_SCAN_FDT);
@@ -1507,6 +1510,8 @@ static int dm_test_oftree_new(struct unit_test_state *uts)
 	ut_assertok(ofnode_add_subnode(node, "edmund", &subnode));
 	check = ofnode_find_subnode(node, "edmund");
 	ut_asserteq(check.of_offset, subnode.of_offset);
+
+	oftree_dispose(tree);
 
 	return 0;
 }
@@ -1623,6 +1628,10 @@ static int dm_test_oftree_to_fdt(struct unit_test_state *uts)
 	ut_assert(abuf_size(&buf2) > SZ_16K);
 	ut_asserteq(abuf_size(&buf), abuf_size(&buf2));
 	ut_asserteq_mem(abuf_data(&buf), abuf_data(&buf2), abuf_size(&buf));
+
+	oftree_dispose(check);
+	abuf_uninit(&buf);
+	abuf_uninit(&buf2);
 
 	return 0;
 }

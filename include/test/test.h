@@ -9,6 +9,7 @@
 #include <abuf.h>
 #include <malloc.h>
 #include <linux/bitops.h>
+#include <linux/list.h>
 
 #define UT_MAX_ARGS	8
 #define UT_PRIV_SIZE	256
@@ -78,6 +79,12 @@ struct ut_arg {
  * @start: Store the starting mallinfo when doing leak test
  * @of_live: true to use livetree if available, false to use flattree
  * @of_root: Record of the livetree root node (used for setting up tests)
+ * @saved_dm_root: Global dm_root swapped out while a UTF_DM test runs
+ * @saved_uclass_root: Global uclass-root list head swapped out while a
+ *	UTF_DM test runs, so the pre-test state can be restored afterwards
+ * @saved_uclass_root_ptr: Saved value of gd->uclass_root (the pointer to
+ *	the uclass-root list head). Restored alongside the list head above
+ *	in case a test zeros the pointer (e.g. dm_test_uclass_before_ready)
  * @root: Root device
  * @testdev: Test device
  * @force_fail_alloc: Force all memory allocs to fail
@@ -115,6 +122,9 @@ struct unit_test_state {
 	int worst_ms;
 	struct mallinfo start;
 	struct device_node *of_root;
+	struct udevice *saved_dm_root;
+	struct list_head saved_uclass_root;
+	struct list_head *saved_uclass_root_ptr;
 	bool of_live;
 	struct udevice *root;
 	struct udevice *testdev;
