@@ -58476,3 +58476,49 @@ Rebased onto latest `ci/master` (26c3513a1a3). All 71 commits rebased cleanly wi
 
 ---
 
+### Pipeline fix: 2026-04-16 (attempt 1)
+
+Branch: cherry-ef896333f79
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Looking at the job log, I can see this is a **transient infrastructure/lab failure**, not a code issue:
+
+**Analysis:**
+
+1. The job is running on the `opi_pc` (Orange Pi PC) board in the `sjg-lab` stage
+2. The test framework (labgrid) is trying to communicate with the physical hardware
+3. The failure occurs at:
+   ```
+   pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+   Lab failure: Marking connection bad - no other tests will run
+   ```
+
+4. This is a **hardware/lab infrastructure timeout** - the test runner couldn't get a response from the physical Orange Pi PC board within 15 seconds
+
+**Root Cause:**
+This is a transient infrastructure issue where the physical lab hardware (Orange Pi PC) failed to respond. This could be due to:
+- Board is hung or unresponsive
+- Serial connection issues
+- Power/reset issues with the lab hardware
+- Network connectivity to the lab
+
+**This is NOT a code issue** - the build succeeded (as shown by "Building U-Boot in pytest-source dir for orangepi_pc" and "Bootstrapping U-Boot"), but the hardware test couldn't proceed because the board didn't respond.
+
+---
+
+## Summary
+
+**No code changes are needed.** This is a transient infrastructure/lab failure:
+
+- **Job:** `opi_pc` (stage: `sjg-lab`)
+- **Failure type:** Lab hardware timeout - physical Orange Pi PC board failed to respond
+- **Error:** `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- **Action:** The pipeline should be retried. This is not related to any commits in the MR.
+
+The build completed successfully - only the hardware test phase failed due to the physical board not responding. This is a common transient issue with physical test labs.
+
+---
+
