@@ -74,7 +74,7 @@ static void init_once(void *foo)
 	inode_init_once(&ei->vfs_inode);
 }
 
-static int __init init_inodecache(void)
+int isofs_init_inodecache(void)
 {
 	isofs_inode_cachep = kmem_cache_create("isofs_inode_cache",
 					sizeof(struct iso_inode_info),
@@ -86,12 +86,8 @@ static int __init init_inodecache(void)
 	return 0;
 }
 
-static void destroy_inodecache(void)
+void isofs_destroy_inodecache(void)
 {
-	/*
-	 * Make sure all delayed rcu free inodes are flushed before we
-	 * destroy cache.
-	 */
 	rcu_barrier();
 	kmem_cache_destroy(isofs_inode_cachep);
 }
@@ -244,61 +240,11 @@ isofs_dentry_cmpi_ms(const struct dentry *dentry,
 #endif
 
 /*
- * look if the driver can tell the multi session redirection value
- *
- * don't change this if you don't know what you do, please!
- * Multisession is legal only with XA disks.
- * A non-XA disk with more than one volume descriptor may do it right, but
- * usually is written in a nowhere standardized "multi-partition" manner.
- * Multisession uses absolute addressing (solely the first frame of the whole
- * track is #0), multi-partition uses relative addressing (each first frame of
- * each track is #0), and a track is not a session.
- *
- * A broken CDwriter software or drive firmware does not set new standards,
- * at least not if conflicting with the existing ones.
- *
- * emoenke@gwdg.de
+ * U-Boot: Multi-session support is not available.
  */
-#define WE_OBEY_THE_WRITTEN_STANDARDS 1
-
 static unsigned int isofs_get_last_session(struct super_block *sb, s32 session)
 {
-	struct cdrom_device_info *cdi = disk_to_cdi(sb->s_bdev->bd_disk);
-	unsigned int vol_desc_start = 0;
-
-	if (session > 0) {
-		struct cdrom_tocentry te;
-
-		if (!cdi)
-			return 0;
-
-		te.cdte_track = session;
-		te.cdte_format = CDROM_LBA;
-		if (cdrom_read_tocentry(cdi, &te) == 0) {
-			printk(KERN_DEBUG "ISOFS: Session %d start %d type %d\n",
-				session, te.cdte_addr.lba,
-				te.cdte_ctrl & CDROM_DATA_TRACK);
-			if ((te.cdte_ctrl & CDROM_DATA_TRACK) == 4)
-				return te.cdte_addr.lba;
-		}
-
-		printk(KERN_ERR "ISOFS: Invalid session number or type of track\n");
-	}
-
-	if (cdi) {
-		struct cdrom_multisession ms_info;
-
-		ms_info.addr_format = CDROM_LBA;
-		if (cdrom_multisession(cdi, &ms_info) == 0) {
-#if WE_OBEY_THE_WRITTEN_STANDARDS
-			/* necessary for a valid ms_info.addr */
-			if (ms_info.xa_flag)
-#endif
-				vol_desc_start = ms_info.addr.lba;
-		}
-	}
-
-	return vol_desc_start;
+	return 0;
 }
 
 /*
@@ -332,7 +278,7 @@ static bool rootdir_empty(struct super_block *sb, unsigned long block)
 /*
  * Initialize the superblock and read the root inode.
  */
-static int isofs_fill_super(struct super_block *s, struct fs_context *fc)
+int isofs_fill_super(struct super_block *s, struct fs_context *fc)
 {
 	struct buffer_head *bh = NULL, *pri_bh = NULL;
 	struct hs_primary_descriptor *h_pri = NULL;
@@ -348,7 +294,6 @@ static int isofs_fill_super(struct super_block *s, struct fs_context *fc)
 	int orig_zonesize;
 	int table, error = -EINVAL;
 	unsigned int vol_desc_start;
-	int silent = fc->sb_flags & SB_SILENT;
 
 	sbi = kzalloc_obj(*sbi);
 	if (!sbi)
@@ -356,26 +301,11 @@ static int isofs_fill_super(struct super_block *s, struct fs_context *fc)
 	s->s_fs_info = sbi;
 
 	/*
-	 * First of all, get the hardware blocksize for this device.
-	 * If we don't know what it is, or the hardware blocksize is
-	 * larger than the blocksize the user specified, then use
-	 * that value.
+	 * U-Boot: Use the configured blocksize directly (no bdev query).
 	 */
-	/*
-	 * What if bugger tells us to go beyond page size?
-	 */
-	if (bdev_logical_block_size(s->s_bdev) > 2048) {
-		printk(KERN_WARNING
-		       "ISOFS: unsupported/invalid hardware sector size %d\n",
-			bdev_logical_block_size(s->s_bdev));
-		goto out_freesbi;
-	}
-	opt->blocksize = sb_min_blocksize(s, opt->blocksize);
-	if (!opt->blocksize) {
-		printk(KERN_ERR
-		       "ISOFS: unable to set blocksize\n");
-		goto out_freesbi;
-	}
+	if (!opt->blocksize)
+		opt->blocksize = ISOFS_BLOCK_SIZE;
+	sb_set_blocksize(s, opt->blocksize);
 
 	sbi->s_high_sierra = 0; /* default is iso9660 */
 	sbi->s_session = opt->session;
@@ -463,12 +393,6 @@ static int isofs_fill_super(struct super_block *s, struct fs_context *fc)
 	pri_bh = NULL;
 
 root_found:
-	/* We don't support read-write mounts */
-	if (!sb_rdonly(s)) {
-		error = -EACCES;
-		goto out_freebh;
-	}
-
 	if (joliet_level && (!pri || !opt->rock)) {
 		/* This is the case of Joliet with the norock mount flag.
 		 * A disc with both Joliet and Rock Ridge is handled later
@@ -525,9 +449,6 @@ root_found:
 	s->s_time_min = mktime64(1900, 1, 1, 0, 0, 0) - MAX_TZ_OFFSET;
 	s->s_time_max = mktime64(U8_MAX+1900, 12, 31, 23, 59, 59) + MAX_TZ_OFFSET;
 
-	/* Set this for reference. Its not currently used except on write
-	   which we don't have .. */
-
 	first_data_zone = isonum_733(rootp->extent) +
 			  isonum_711(rootp->ext_attr_length);
 	sbi->s_firstdatazone = first_data_zone;
@@ -563,21 +484,7 @@ root_found:
 	brelse(bh);
 
 	/*
-	 * Force the blocksize to 512 for 512 byte sectors.  The file
-	 * read primitives really get it wrong in a bad way if we don't
-	 * do this.
-	 *
-	 * Note - we should never be setting the blocksize to something
-	 * less than the hardware sector size for the device.  If we
-	 * do, we would end up having to read larger buffers and split
-	 * out portions to satisfy requests.
-	 *
-	 * Note2- the idea here is that we want to deal with the optimal
-	 * zonesize in the filesystem.  If we have it set to something less,
-	 * then we have horrible problems with trying to piece together
-	 * bits of adjacent blocks in order to properly read directory
-	 * entries.  By forcing the blocksize in this way, we ensure
-	 * that we will never be required to do this.
+	 * Force the blocksize to the zone size.
 	 */
 	sb_set_blocksize(s, orig_zonesize);
 
@@ -732,8 +639,8 @@ out_no_inode:
 #endif
 	goto out_freesbi;
 out_no_read:
-	printk(KERN_WARNING "%s: bread failed, dev=%s, iso_blknum=%d, block=%d\n",
-		__func__, s->s_id, iso_blknum, block);
+	printk(KERN_WARNING "%s: bread failed, iso_blknum=%d, block=%d\n",
+		__func__, iso_blknum, block);
 	goto out_freebh;
 out_bad_zone_size:
 	printk(KERN_WARNING "ISOFS: Bad logical zone size %ld\n",
@@ -744,8 +651,7 @@ out_bad_size:
 		orig_zonesize, opt->blocksize);
 	goto out_freebh;
 out_unknown_format:
-	if (!silent)
-		printk(KERN_WARNING "ISOFS: Unable to identify CD-ROM format.\n");
+	printk(KERN_WARNING "ISOFS: Unable to identify CD-ROM format.\n");
 
 out_freebh:
 	brelse(bh);
@@ -1145,8 +1051,6 @@ static int isofs_read_inode(struct inode *inode, int relocated)
 			inode->i_ino);
 	}
 
-	/* I have no idea what other flag bits are used for, so
-	   we will flag it for now */
 #ifdef DEBUG
 	if((de->flags[-high_sierra] & ~2)!= 0){
 		printk(KERN_DEBUG "ISOFS: Unusual flag settings for ISO file "
@@ -1192,7 +1096,6 @@ static int isofs_read_inode(struct inode *inode, int relocated)
 		switch (ei->i_file_format) {
 #ifdef CONFIG_ZISOFS
 		case isofs_file_compressed:
-			inode->i_data.a_ops = &zisofs_aops;
 			break;
 #endif
 		default:
