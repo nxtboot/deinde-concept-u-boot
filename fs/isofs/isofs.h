@@ -1,16 +1,21 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-#include <linux/fs.h>
-#include <linux/buffer_head.h>
-#include <linux/exportfs.h>
+#ifndef _ISOFS_ISOFS_H
+#define _ISOFS_ISOFS_H
+/*
+ * isofs internal header - based on Linux 6.18
+ *
+ * Modifications for U-Boot:
+ * - Replace includes with isofs_uboot.h
+ */
+#include "isofs_uboot.h"
 #include <linux/iso_fs.h>
-#include <linux/unaligned.h>
 
 enum isofs_file_format {
 	isofs_file_normal = 0,
 	isofs_file_sparse = 1,
 	isofs_file_compressed = 2,
 };
-	
+
 /*
  * iso fs inode data in memory
  */
@@ -35,7 +40,7 @@ struct isofs_sb_info {
 	unsigned long s_firstdatazone;
 	unsigned long s_log_zone_size;
 	unsigned long s_max_size;
-	
+
 	int           s_rock_offset; /* offset of SUSP fields within SU area */
 	s32           s_sbsector;
 	unsigned char s_joliet_level;
@@ -185,7 +190,7 @@ static inline unsigned long isofs_get_ino(unsigned long block,
  * affected making it safe to call even for non-directory file
  * types. */
 static inline void
-isofs_normalize_block_and_offset(struct iso_directory_record* de,
+isofs_normalize_block_and_offset(struct iso_directory_record *de,
 				 unsigned long *block,
 				 unsigned long *offset)
 {
@@ -201,3 +206,5 @@ extern const struct inode_operations isofs_dir_inode_operations;
 extern const struct file_operations isofs_dir_operations;
 extern const struct address_space_operations isofs_symlink_aops;
 extern const struct export_operations isofs_export_ops;
+
+#endif /* _ISOFS_ISOFS_H */

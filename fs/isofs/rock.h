@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+#ifndef _ISOFS_ROCK_H
+#define _ISOFS_ROCK_H
 /*
  * These structs are used by the system-use-sharing protocol, in which the
  * Rock Ridge extensions are embedded.  It is quite possible that other
@@ -117,3 +119,5 @@ struct rock_ridge {
 #define RR_PL 32		/* Parent link */
 #define RR_RE 64		/* Relocation directory */
 #define RR_TF 128		/* Timestamps */
+
+#endif /* _ISOFS_ROCK_H */

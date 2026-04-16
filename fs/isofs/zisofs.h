@@ -1,16 +1,12 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-/* ----------------------------------------------------------------------- *
- *   
- *   Copyright 2001 H. Peter Anvin - All Rights Reserved
- *
- * ----------------------------------------------------------------------- */
-
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Prototypes for functions exported from the compressed isofs subsystem
+ * ZISOFS stub header for U-Boot
+ * Transparent decompression not supported in U-Boot.
  */
+#ifndef _ISOFS_ZISOFS_H
+#define _ISOFS_ZISOFS_H
 
-#ifdef CONFIG_ZISOFS
-extern const struct address_space_operations zisofs_aops;
-extern int __init zisofs_init(void);
-extern void zisofs_cleanup(void);
+static inline int zisofs_init(void) { return 0; }
+static inline void zisofs_cleanup(void) { }
+
 #endif
