@@ -369,11 +369,25 @@ VERDICT: changes_needed
 
 Rules:
 - Always start with GREETING: (first name or empty)
-- Each COMMENT: block MUST include the diff header lines (the
-  'diff --git' and '@@' lines) before the quoted code, so the file
-  and line number are clear
-- Each COMMENT: block starts with quoted diff lines (using '> ' prefix),
-  followed by a blank line, then your comment text
+- Each COMMENT: block MUST start with the two diff header lines
+  copied VERBATIM from 'git show {commit_hash}':
+    > diff --git a/<path> b/<path>
+    > @@ -<old>,<n> +<new>,<m> @@ <function-context>
+  then the quoted code lines (with '> ' prefix), then a blank line,
+  then your comment. This is NOT optional — without the headers, the
+  reader cannot tell which file or function the comment refers to.
+  BAD:
+    COMMENT:
+    > +#include <foo.h>
+
+    This include is unnecessary.
+  GOOD:
+    COMMENT:
+    > diff --git a/drivers/clk/qcom/clock-ipq5210.c b/drivers/clk/qcom/clock-ipq5210.c
+    > @@ -0,0 +1,97 @@
+    > +#include <foo.h>
+
+    This include is unnecessary.
 - Quote enough context from the diff to identify the location
 - Be specific and constructive, but brief — use as few words as
   possible to make the point. Avoid restating what the code does;
