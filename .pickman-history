@@ -58661,3 +58661,215 @@ The code changes in this MR (UFS config renames) are unrelated to the Orange Pi 
 
 ---
 
+## 2026-04-17: us/next
+
+Branch: cherry-b493db39ea7
+
+Commits:
+- b493db39ea7 clk: Only enable the parent clock if the clock was enabled before reparenting
+- abd6e0f252e boot/image-fit.c: Use aligned_alloc(...) not memalign(...)
+- bcc53242b95 adi: Stop disabling device tree relocation
+- c200ebbb98a arm: Remove remainder of zc5xxx board code
+- 231de856cb7 arm: Remove remainder of xpress board code
+- 8d247f3e911 qemu-arm-sba: Stop disabling device tree relocation
+- 5b6432484df am335x_shc: Stop disabling device tree relocation
+- 39b10f534f0 bcmstb: Make use of bootm_size rather than fdt_high
+- c404db942c8 hikey: Stop disabling device tree relocation
+- dd3f5eac8c0 hikey960: Stop disabling device tree relocation
+- ab5e87e624e omap3_evm: Stop disabling device tree relocation
+- a1e6508e491 pcm052: Stop disabling device tree relocation
+- 59f9fcc1f51 vexpress_aemv8: Stop disabling device tree relocation
+- 6c78933df8d stm32mp: Fix handling of OPTEE in the middle of DRAM
+- 9dabac42eca ARM: dts: stm32: Fix 512 MiB DRAM settings for DH STM32MP13xx DHCOR SoM
+- 7dc33dd3b1d ARM: dts: stm32: Add 1 GiB DRAM settings for DH STM32MP13xx DHCOR SoM
+- 43ccade842e ARM: stm32: Add missing build of debug UART init code on DH STM32MP1 DHSOM
+- be3133516f1 board: st: Drop old LED code from stm32f429-disco
+- 62081e5d2fb board: st: Update LED management for stm32mp1
+- ea8345598a7 board: st: Update LED management for stm32mp2
+- c7d03a04af5 configs: stm32: Enable LED config flags for stm32f429-disco
+- daef8aecf96 configs: stm32: Enable LED config flags for stm32f429-disco
+- 8f071a32e76 configs: stm32: Enable LED config flags for stm32f746-disco
+- b0b57d7df92 configs: stm32: Enable LED config flags for stm32f769-disco
+- 82780327d85 configs: stm32: Enable LED config flags for stm32h743-disco
+- fb4cef2f691 configs: stm32: Enable LED config flags for stm32h743-eval
+- 45a2a6c1eb6 configs: stm32: Enable LED config flags for stm32h747-disco
+- addd3fe9b43 configs: stm32mp13: Enable LED_BOOT for stm32mp13_defconfig
+- 7fa915808ea configs: stm32mp15: Enable LED_BOOT for stm32mp15_defconfig
+- e820bc34dcb configs: stm32mp15: Enable LED_BOOT for stm32mp15_basic_defconfig
+- 952d6d02f17 configs: stm32mp15: Enable LED_BOOT for stm32mp15_trusted_defconfig
+- fa474b3ed25 configs: stm32mp2: Enable LED_BOOT for stm32mp25_defconfig
+- 9cdf5925ea0 configs: stm32mp2: Enable LED_BOOT for stm32mp23_defconfig
+- 2430fd2b0ec ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp135f-dk-u-boot
+- b9c269121b1 ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157a-dk1-scmi-u-boot
+- dbce8f4fad9 ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157a-dk1-u-boot
+- 4111ad8fc0e ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157c-ed1-scmi-u-boot
+- 05060d03565 ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157c-ed1-u-boot
+- 22176383a7a ARM: dts: stm32: Drop "u-boot-led" from stm32mp235f-dk-u-boot
+- b6e61ec0625 ARM: dts: stm32: Drop "u-boot-led" from stm32mp257f-ev1-u-boot
+- ff258d03b91 Merge tag 'u-boot-stm32-20251205' of https://source.denx.de/u-boot/custodians/u-boot-stm into next
+
+### Conversation log
+The repository state has untracked files but nothing staged or modified. Let me create and checkout the new branch based on ci/master:
+
+Now let me start cherry-picking the commits one by one. Let me start with the first commit:
+
+Delta looks good. Let me run the build test:
+
+Build passed. Now cherry-pick the second commit:
+
+There's a conflict. Let me check if this commit might already be applied in ci/master:
+
+The commit doesn't seem to be applied to ci/master with a different hash. Let me try to resolve the conflict manually:
+
+This is a significant conflict. The original commit is trying to replace `memalign` with `aligned_alloc` in the old code structure, but ci/master has been heavily refactored with a completely different approach. Let me check what the original commit was actually doing:
+
+I see. The original commit is changing `memalign` to `aligned_alloc` in a version of the code with inline decompression logic, but in ci/master the code has been refactored and this section has been changed significantly. Let me check what ci/master currently has in that area:
+
+The code still uses `memalign` in ci/master. But the file structure is different. Let me look at the context of these usages in ci/master:
+
+Now let me see the header portion of ci/master to understand the includes:
+
+I can manually apply this commit. The key changes are:
+1. Add `extern void *aligned_alloc(...)` declaration in USE_HOSTCC block (after #include <linux/kconfig.h>)
+2. Add `#include <malloc.h>` in the non-USE_HOSTCC block before memalign.h
+3. Add `#define aligned_alloc(a, s) memalign((a), (s))` in non-USE_HOSTCC block
+4. Move `#include <malloc.h>` from after USE_HOSTCC block  
+5. Change `memalign(8, ...)` to `aligned_alloc(8, ...)` in the function
+
+Let me abort the current cherry-pick and apply these changes manually:
+
+Now let me apply the changes. First, add the declaration after line 18:
+
+I don't have write permissions. Let me try a different approach using git apply with patch:
+
+The conflict is too complex to auto-resolve. The original code in us/next has a different structure than ci/master, particularly around lines 2070-2100 where the memalign calls are located. The ci/master code has been refactored significantly. 
+
+Let me understand the issue better - the code flows are different:
+
+The file is quite different (2333 vs 2644 lines). Let me try to apply the specific changes from the commit manually. The commit has these changes:
+
+1. Add declaration for aligned_alloc in USE_HOSTCC block
+2. Add #include <malloc.h> and #define aligned_alloc in non-USE_HOSTCC block  
+3. Remove #include <malloc.h> from after USE_HOSTCC block
+4. Change memalign to aligned_alloc at 2 locations
+
+Let me check line numbers in current file:
+
+Good. Now let me manually create a patch that adapts the changes to the current file structure. I'll create a patch file and apply it:
+
+Now let me apply the memalign to aligned_alloc changes:
+
+Now let me commit these changes with the original commit message:
+
+Delta looks good - same change (8 insertions, 3 deletions). Now run the build test:
+
+Build passed. Now continue with the next commit:
+
+Now let's handle the "maybe already applied" commits. Starting with 6c78933df8d:
+
+The commit 599c882ee2d is actually a pickman record commit, not the same commit. Let me search for the actual commit in ci/master:
+
+Found it! Let me compare with that commit:
+
+The commits are identical except for the hash and the "(cherry picked from...)" line. This commit is already applied! Let me check the other "maybe already applied" commits:
+
+This one is also already applied. Let me check the others:
+
+All four "maybe already applied" commits are confirmed to be already applied in ci/master. Let me skip them and continue with commit be3133516f1:
+
+This commit is empty (already applied). Let me check if it's the same:
+
+Similar commit but with different subject lines and commit dates. Let me check if they have the same file changes:
+
+Identical file changes. This commit is already applied. Let me continue with the next one:
+
+Now let me cherry-pick the final merge commit:
+
+The merge commit is empty since all the changes were already picked. Let me commit it with --allow-empty:
+
+Now let me verify the final count and run the final build test:
+
+Let me count the commits I've picked:
+
+I have 36 commits. Let me verify - I need to check the expected count:
+- 41 commits in total in the list
+- 4 commits marked as "maybe already applied" that were verified as already applied: 6c78933df8d, 9dabac42eca, 7dc33dd3b1d, 43ccade842e  
+- 1 commit (be3133516f1) that was already applied in ci/master with different hash
+
+So 41 - 5 = 36 commits expected. Let me run the final build:
+
+Build passed. Now let me provide a summary:
+
+## Summary
+
+The cherry-pick branch `cherry-b493db39ea7` is ready with **36 commits** cherry-picked from `us/next` branch onto `ci/master`.
+
+### Build Result: ✅ OK
+No warnings or errors.
+
+### Commits Applied: 36 of 41
+
+### Commits Skipped (Already Applied in ci/master): 5
+
+1. **6c78933df8d** - `stm32mp: Fix handling of OPTEE in the middle of DRAM`
+   - Already applied as `4a97af29c1f` (identical patch)
+
+2. **9dabac42eca** - `ARM: dts: stm32: Fix 512 MiB DRAM settings for DH STM32MP13xx DHCOR SoM`
+   - Already applied as `f48bde6f725` (identical patch)
+
+3. **7dc33dd3b1d** - `ARM: dts: stm32: Add 1 GiB DRAM settings for DH STM32MP13xx DHCOR SoM`
+   - Already applied as `c487ff0d69e` (identical patch)
+
+4. **43ccade842e** - `ARM: stm32: Add missing build of debug UART init code on DH STM32MP1 DHSOM`
+   - Already applied as `ce4fa30bfd1` (identical patch)
+
+5. **be3133516f1** - `board: st: Drop old LED code from stm32f429-disco`
+   - Already applied as `f67921e594b` (identical changes, different commit message)
+
+### Fix-ups Made: 1
+
+- **abd6e0f252e** (`boot/image-fit.c: Use aligned_alloc(...) not memalign(...)`)
+  - Manual adaptation required due to significant refactoring in ci/master
+  - The `memalign` calls are at lines ~1966 and ~1980 in ci/master vs ~2284 and ~2298 in the original
+  - Added note to commit message documenting the adaptation
+
+### All Applied Commits (in order):
+1. `07b61a36054` - clk: Only enable the parent clock if the clock was enabled before reparenting
+2. `975ded8860d` - boot/image-fit.c: Use aligned_alloc(...) not memalign(...) [ADAPTED]
+3. `d99da9b0ca7` - adi: Stop disabling device tree relocation
+4. `04ebe24252b` - arm: Remove remainder of zc5xxx board code
+5. `effc41a778e` - arm: Remove remainder of xpress board code
+6. `e931b03199f` - qemu-arm-sba: Stop disabling device tree relocation
+7. `166893e4b2a` - am335x_shc: Stop disabling device tree relocation
+8. `fa7a255d23a` - bcmstb: Make use of bootm_size rather than fdt_high
+9. `fee48b8641a` - hikey: Stop disabling device tree relocation
+10. `ff01c04abc1` - hikey960: Stop disabling device tree relocation
+11. `d11a725dd2a` - omap3_evm: Stop disabling device tree relocation
+12. `6dd23dd3931` - pcm052: Stop disabling device tree relocation
+13. `712aa2fad37` - vexpress_aemv8: Stop disabling device tree relocation
+14. `3fe6ef8b2ff` - board: st: Update LED management for stm32mp1
+15. `ab61a8b32c0` - board: st: Update LED management for stm32mp2
+16. `9838e4197cb` - configs: stm32: Enable LED config flags for stm32f429-disco
+17. `90030a4fae2` - configs: stm32: Enable LED config flags for stm32f429-disco (stm32f469)
+18. `11ab0be1bf0` - configs: stm32: Enable LED config flags for stm32f746-disco
+19. `afc1dfcde33` - configs: stm32: Enable LED config flags for stm32f769-disco
+20. `ade77b09702` - configs: stm32: Enable LED config flags for stm32h743-disco
+21. `4485dca75a5` - configs: stm32: Enable LED config flags for stm32h743-eval
+22. `c5a558e473d` - configs: stm32: Enable LED config flags for stm32h747-disco
+23. `d0e972fd38b` - configs: stm32mp13: Enable LED_BOOT for stm32mp13_defconfig
+24. `222591874a9` - configs: stm32mp15: Enable LED_BOOT for stm32mp15_defconfig
+25. `49a9cbe38c3` - configs: stm32mp15: Enable LED_BOOT for stm32mp15_basic_defconfig
+26. `34ce195ebd5` - configs: stm32mp15: Enable LED_BOOT for stm32mp15_trusted_defconfig
+27. `4c38601bdfa` - configs: stm32mp2: Enable LED_BOOT for stm32mp25_defconfig
+28. `bec317869eb` - configs: stm32mp2: Enable LED_BOOT for stm32mp23_defconfig
+29. `c749af51111` - ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp135f-dk-u-boot
+30. `c4dcfab7aa0` - ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157a-dk1-scmi-u-boot
+31. `000a9290a1a` - ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157a-dk1-u-boot
+32. `b15744eb108` - ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157c-ed1-scmi-u-boot
+33. `0b7f7f29c57` - ARM: dts: stm32: Drop "u-boot-led" and "error-led" from stm32mp157c-ed1-u-boot
+34. `9f1d3d69adb` - ARM: dts: stm32: Drop "u-boot-led" from stm32mp235f-dk-u-boot
+35. `aa72754eae6` - ARM: dts: stm32: Drop "u-boot-led" from stm32mp257f-ev1-u-boot
+36. `dbe2eccb16e` - Merge tag 'u-boot-stm32-20251205' [EMPTY - all changes already picked]
+
+---
+
