@@ -7,7 +7,7 @@
 #ifndef _LINUX_REFCOUNT_H
 #define _LINUX_REFCOUNT_H
 
-#include <asm-generic/atomic.h>
+#include <asm/atomic.h>
 
 /**
  * typedef refcount_t - reference count type

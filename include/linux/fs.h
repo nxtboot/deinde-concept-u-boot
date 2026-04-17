@@ -14,7 +14,7 @@
 #include <linux/cred.h>
 #include <linux/rwsem.h>
 #include <linux/time.h>
-#include <asm-generic/atomic.h>
+#include <asm/atomic.h>
 
 /* Forward declarations */
 struct buffer_head;
