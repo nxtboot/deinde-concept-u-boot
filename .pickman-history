@@ -59052,3 +59052,226 @@ The branch `cherry-c448c933b9c` is ready for pushing.
 
 ---
 
+## 2026-04-17: us/next
+
+Branch: cherry-abc34fa944a
+
+Commits:
+- abc34fa944a led: remove code guarded by always false conditions
+- c31f51d502a led: remove coloured_LED_init, yellow and blue status LEDs in legacy API
+- 914acbdba3c arm: omap3: remove leftover from CM_T35 support removal
+- 715107089fb net: remove unreachable legacy LED code
+- 43093811a40 powerpc: remove unused legacy LED API
+- 1a5e3be3aca Merge patch series "led: remove unused legacy LED code"
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me create the new branch based on ci/master:
+
+Now let me cherry-pick the first commit:
+
+There's a conflict on the first cherry-pick. Following the instructions, I need to check if these commits are already present in ci/master with different hashes. Let me check each commit:
+
+The commits weren't found by subject search. Let me try a more general search for similar commits related to LED code removal:
+
+I can see that there's already been LED-related cleanup in ci/master. Let me check if status_led.h exists in ci/master:
+
+The status_led.h file doesn't exist in ci/master - it was already deleted! Let me check the commit that deleted it:
+
+Interesting! I can see that the commit c31f51d502a (one of the commits we're trying to cherry-pick) is actually in the history. Let me verify this more thoroughly:
+
+The exact commits aren't in ci/master history. But the status_led.h file was already deleted by a different commit. Let me compare the patches to see if they're doing the same work:
+
+The first commit modifies status_led.h, but that file was already deleted in ci/master. Let me check all the commits in our series more thoroughly:
+
+Now let me check if the same changes exist in ci/master with different hashes. The key files are include/status_led.h (deleted entirely from ci/master). Let me search for similar commits:
+
+Let me check if there's a previous similar merge that brought in these changes:
+
+This looks like a separate series. Let me check if there's a pickman record for our target commits:
+
+The commits are not in pickman history. Now let me check if the functionality in these commits was already incorporated into ci/master by a different series. Let me check the current state of each file:
+
+Interesting! Some changes have been applied and some haven't:
+- CM_T35 still exists in ci/master (not yet applied)
+- SYS_FAULT_ECHO_LINK_DOWN still exists in ci/master (not yet applied)
+- miiphy_link still exists in ci/master (not yet applied)
+- status_led in interrupts.c is already removed
+- status_led.h is already deleted from ci/master
+
+Let me check what happened to powerpc interrupts.c:
+
+So the changes to powerpc interrupts.c were already made by a different (earlier) commit. Let me check the mpc83xx_timer.c:
+
+Now let me check what's left to be applied by comparing the patches more carefully:
+
+Let me check if files from commit c31f51d502a still exist in ci/master:
+
+Now let me check if the changes from our commits to the remaining files have already been applied:
+
+So YELLOW/BLUE LEDs are still in ci/master's drivers/led/Kconfig. The changes from our commits are NOT fully applied. The issue is that our commits modify files that have been modified differently in ci/master (some deleted entirely, some modified differently).
+
+This means these commits cannot be cleanly cherry-picked because:
+1. abc34fa944a modifies include/status_led.h which is already deleted
+2. c31f51d502a modifies files that are partially deleted
+
+Let me abort this cherry-pick and check more thoroughly whether a different commit series achieved the same goals:
+
+Let me check if the merge commit itself exists in ci/master in some form:
+
+The merge commit doesn't exist in ci/master. Let me check if the files that are being modified have been part of a larger LED cleanup that supersedes our commits:
+
+I see there's a merge of a series that dropped the status_led.h file. Let me find where it was deleted:
+
+So there's a different LED cleanup series that was already merged. The commit 5f10f9427ea "led: Drop status_led header file" is in the history, and it deleted the entire status_led.h file. This was a separate, larger cleanup that supersedes our commits.
+
+Let me check if this was part of a larger series and if all the changes from our target commits are covered:
+
+There was a complete LED cleanup series from Simon Glass that removed the entire legacy LED API! Let me check the merge commit:
+
+There's a complete series from Simon Glass that deleted the entire legacy LED infrastructure (misc/status_led driver, the status_led.h header, and all related code). This is a superset of what the commits from us/next are trying to do.
+
+Let me verify the commits in our target series and compare to what's already in ci/master:
+
+The net/net.c changes from commit 715107089fb were already applied via commit cc9c289a05a "net: Drop status-LED code". Let me verify:
+
+Now I have a clearer picture. The Simon Glass series removed most of the LED status code, but:
+1. CM_T35 in omap3/Kconfig is still there
+2. miiphy_link and SYS_FAULT_ECHO_LINK_DOWN are still there (but the code in net/net.c that used them is gone)
+
+Our commits from us/next are partially superseded by Simon's cleanup series. The conflict is because our commits 1, 2 try to modify status_led.h which was completely deleted by Simon's series.
+
+Let me check if the remaining changes (CM_T35, miiphy_link, SYS_FAULT configs) can be applied separately:
+
+The omap3 diff shows there's also another change (`VIDEO_DAMAGE`) that seems unrelated and came in after our commits. Let me check what changes from our commits 3 and 4 can apply cleanly:
+
+Based on my analysis:
+
+**Summary of the situation:**
+- Commits abc34fa944a and c31f51d502a modify files that have been **deleted** in ci/master (status_led.h, legacy_led.c, gpio_led.c) by Simon Glass's complete LED cleanup series
+- Commit 43093811a40 has conflicts because the powerpc code was already cleaned up differently
+- Commits 914acbdba3c and 715107089fb can apply cleanly
+
+The fundamental issue is that our series ("led: remove unused legacy LED code") partially overlaps with and has been superseded by a more comprehensive cleanup by Simon Glass that completely removed the legacy LED system. 
+
+However, since the commits are not exactly the same (different authors, different scopes), and our series is incomplete (some parts not applied), this is NOT a case of "already applied" but rather a **conflict due to parallel changes**.
+
+Let me try a different approach - cherry-pick each commit individually and handle conflicts:
+
+Now let me attempt the first commit - it will conflict because status_led.h is deleted:
+
+The conflict is that status_led.h was already deleted in ci/master. The change this commit wants to make (removing 22 lines of dead code) is already effectively done since the entire file was deleted. The resolution is to accept that the file is deleted:
+
+This commit is empty now because the only file it modified (status_led.h) is already deleted. This is expected - the commit's changes are effectively already applied by the file deletion. I should complete this as an empty commit with a note:
+
+Now let's check the stats and run the build:
+
+Commit 1 is done (empty commit, build passed). Now let's cherry-pick commit 2:
+
+Multiple conflicts. Let me check each:
+
+Let me look at the conflicts one by one:
+
+I see the conflict in crt0.S. The commit was trying to REMOVE a call to `coloured_LED_init`, but ci/master has already evolved differently. Looking at the HEAD version (lines 192-197 with conflict markers), the code has changed. Let me check what this commit was trying to do:
+
+The commit wanted to remove `bl coloured_LED_init`. Let me check what the current ci/master state of this file is:
+
+Both LED calls were already removed from ci/master. So the conflict is that our commit wanted to remove `coloured_LED_init` leaving `red_led_on`, but ci/master already removed both. The resolution is to accept ci/master's version (both removed):
+
+Now let's check the common/board_f.c conflict:
+
+The commit was trying to remove `coloured_LED_init` from the LED functions, but ci/master already removed all of them (the red/green LED functions). The resolution is to accept ci/master's version:
+
+Now let's handle the deleted files (cmd/legacy_led.c, drivers/misc/gpio_led.c, include/status_led.h):
+
+Good, all conflicts are resolved. The meaningful changes are in doc/api/led.rst and drivers/led/Kconfig. Let me check what changes are staged:
+
+Good - these are the real changes from this commit that weren't already applied in ci/master. Let me compare with the original commit:
+
+The original removed 87 lines from 7 files. Our resolved version removes 34 lines from 2 files. This is expected because the other 5 files have either been deleted (cmd/legacy_led.c, drivers/misc/gpio_led.c, include/status_led.h) or had the changes already applied differently (arch/arm/lib/crt0.S, common/board_f.c).
+
+The delta is significant but understandable - it's a partial commit due to prior cleanup. Let me continue the cherry-pick with a note:
+
+Now let me amend the commit to add a note about the partial changes:
+
+Now let's verify and build:
+
+Commit 2 done, build passes. Now commit 3:
+
+Clean cherry-pick. Let me check the delta and build:
+
+Perfect match. Build test:
+
+Commit 3 done, build passes. Now commit 4:
+
+Clean cherry-pick. Let me verify delta and build:
+
+The cherry-picked commit removes 42 lines, while the original removed 74 lines. The difference is in net/net.c (3 vs 35 lines). This is because net/net.c was already modified by Simon's LED cleanup (commit cc9c289a05a). Let me check what changes actually went in:
+
+The only change applied to net/net.c was removing 3 lines of a stale include. The rest of the net/net.c changes (removing the LED status code) were already applied by Simon's cleanup. This is expected and the delta is acceptable.
+
+Let me add a note to this commit:
+
+Commit 4 done, build passes. Now commit 5:
+
+There's a conflict in interrupts.c. Let me check it:
+
+The conflict is that ci/master (HEAD) has an empty line, while the commit was trying to remove code that had already been removed (the `#if defined(CONFIG_LED_STATUS)` block). Let me check what the original commit was removing:
+
+I see - the commit was trying to remove `#include <status_led.h>` and the `status_led_tick()` call. Both have already been removed by Simon's cleanup (commit 73efc9b2347). The conflict is just about an empty line. Let me check ci/master's current state:
+
+The changes are already applied. Accept ci/master's version:
+
+The commit is now empty. Let me check if there's anything from mpc83xx_timer.c:
+
+Nothing staged - the commit is empty (all changes from this commit were already applied in ci/master). Let me create an empty commit to preserve history:
+
+Commit 5 done, build passes. Now the final commit - the merge commit:
+
+The merge commit has the same conflicts as the individual commits. Since we've already applied all the constituent commits, this merge commit should be empty. Let me resolve all conflicts by accepting the current state:
+
+The merge commit is now empty (as expected since all constituent commits were already cherry-picked). Let me create it as an empty commit:
+
+Now let me verify all 6 commits are present:
+
+All 6 commits are present. Now let me run the final build:
+
+All builds pass. Let me provide a final summary:
+
+---
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-abc34fa944a` (based on `ci/master`)
+
+### Commits Cherry-picked (6 total):
+
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | `abc34fa944a` | led: remove code guarded by always false conditions | ⚠️ Empty commit - status_led.h already deleted |
+| 2 | `c31f51d502a` | led: remove coloured_LED_init, yellow and blue status LEDs in legacy API | ⚠️ Partial - 2/7 files changed |
+| 3 | `914acbdba3c` | arm: omap3: remove leftover from CM_T35 support removal | ✅ Clean |
+| 4 | `715107089fb` | net: remove unreachable legacy LED code | ⚠️ Partial - net/net.c changes already applied |
+| 5 | `43093811a40` | powerpc: remove unused legacy LED API | ⚠️ Empty commit - changes already applied |
+| 6 | `1a5e3be3aca` | Merge patch series "led: remove unused legacy LED code" | ⚠️ Empty commit |
+
+### Build Result: ✅ OK
+All builds passed with no warnings or errors.
+
+### Fix-ups Made:
+1. **Commits 1, 5, 6**: Created as empty commits because the changes were already applied by Simon Glass's comprehensive LED cleanup series (commits 5f10f9427ea, 73efc9b2347, a32db5f8a57, cc9c289a05a, etc.)
+
+2. **Commit 2**: Partial application - only `doc/api/led.rst` and `drivers/led/Kconfig` were modified. Files `arch/arm/lib/crt0.S`, `common/board_f.c`, `cmd/legacy_led.c`, `drivers/misc/gpio_led.c`, and `include/status_led.h` were either already modified or deleted.
+
+3. **Commit 4**: Partial application - `net/net.c` LED status code was already removed. Only the `miiphy_link` function removal and Kconfig changes were applied.
+
+### Commits with Concerning Deltas:
+- **Commit 2**: Original 87 lines removed → Cherry-picked 34 lines removed (61% reduction)
+- **Commit 4**: Original 74 lines removed → Cherry-picked 42 lines removed (43% reduction)
+
+These deltas are expected because Simon Glass's LED cleanup series in ci/master had already removed the legacy LED API infrastructure (status_led.h header, gpio_led driver, legacy_led command, etc.) before this series was cherry-picked.
+
+### Notes:
+The commits from us/next partially overlap with a more comprehensive LED cleanup by Simon Glass that was merged into ci/master via a different path. All cherry-pick notes have been added to commit messages to document this.
+
+---
+

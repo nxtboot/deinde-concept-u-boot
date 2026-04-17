@@ -88,9 +88,6 @@
 #include <image.h>
 #include <led.h>
 #include <log.h>
-#if defined(CONFIG_LED_STATUS)
-#include <miiphy.h>
-#endif
 #include <net.h>
 #include <net6.h>
 #include <ndisc.h>
