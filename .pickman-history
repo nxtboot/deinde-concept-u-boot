@@ -59659,6 +59659,66 @@ None - all commits applied cleanly with no manual conflict resolution needed.
 None - all deltas matched closely between original and cherry-picked commits.
 
 The branch `cherry-5f141da1a9c` is ready for pushing.
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+
+
+### Conversation log
+Let me check if our branch's base commit is behind ci/master:
+
+Our branch is behind ci/master. Let me save the original commits' deltas before rebasing so I can compare them after:
+
+Now I'll perform the rebase:
+
+Good, most commits rebased cleanly, only the pickman record commit had a conflict (which is expected since it touches .pickman-history). Let me check the conflict:
+
+The .pickman-history file has conflict markers. Let me look at the conflict:
+
+I see the .pickman-history file has a lot of history. Let me find where the conflict markers are:
+
+I see the conflict. It's between the existing history (cherry-272e356b179) and our commit (cherry-5207e1ff20f). We need to keep both entries. Let me resolve this by including both:
+
+The rebase completed successfully. Now let me verify the rebased commits and check their deltas:
+
+Now let me compare the deltas of each commit before/after rebase:
+
+All deltas look correct. Now let me run the build test:
+
+Build passes. Now let me create the v2 branch and push to the remote:
+
+The rebase was successful and the MR has been updated. Let me verify the final state:
+
+## Summary
+
+The rebase was completed successfully.
+
+**What was done:**
+1. Checked out branch `cherry-5207e1ff20f`
+2. Rebased onto latest `ci/master` using `git rebase --keep-empty ci/master`
+3. Resolved a conflict in `.pickman-history` (expected conflict from the pickman record commit - resolved by keeping both the HEAD content and our commit content)
+4. Verified all commit deltas are unchanged from before the rebase
+5. Ran build verification - **passed**
+6. Created local branch `cherry-5207e1ff20f-v2` for backup
+7. Force pushed to remote branch `cherry-5207e1ff20f` to update the MR
+
+**Commits rebased (6 total):**
+
+| # | New Hash | Subject |
+|---|----------|---------|
+| 1 | c5bd6a8a8b4 | fit: support signing with only an engine_id |
+| 2 | fd223929195 | tools: binman: mkimage: add support for passing the engine |
+| 3 | 1749fca79f5 | tools: binman: fit: add support for OpenSSL engines |
+| 4 | 07b88bc704a | tools: binman: fit: add tests for signing with an OpenSSL engine |
+| 5 | 3fc0b88aa57 | Merge patch series "fit: allow signing with an OpenSSL engine" |
+| 6 | 1a882a12417 | pickman: Record cherry-pick of 5 commits from us/next |
+
+**Build result:** ✅ OK
+
+**Reply to post on MR:**
+> Rebased onto latest ci/master. The branch has been force-pushed. No changes to the actual commits - only the `.pickman-history` recording commit had a trivial merge conflict that was resolved.
 
 ---
 
