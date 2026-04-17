@@ -58298,3 +58298,126 @@ The branch `cherry-f8d245f3698` is ready for pushing with 5 commits ahead of `ci
 
 ---
 
+## 2026-04-16: us/next
+
+Branch: cherry-29a7fe55c55
+
+Commits:
+- 29a7fe55c55 cmd: led: fix help text for blink subcommand
+- e8bc1419238 doc: move legacy API documented in README.LED to doc/api/led.rst
+- b8c35fa9c58 doc: cmd: document the led shell command
+- b0f39c085dc doc: dt-bindings: remove duplicates with dts/upstream
+- f8c3a6ddc62 arm: dts: rockchip: rk3188-radxarock: remove unused u-boot,boot-led
+- 7759839fb29 rockchip: rk3188: remove setup_led from xPL
+- cf8e0d58ced arm: dts: rockchip: rk3399-puma: remove u-boot,boot-led
+- 0636153fb19 arm: dts: rockchip: px30-ringneck: remove u-boot,boot-led
+- d1ad89ad56a arm: dts: rockchip: rk3066a-mk808: remove unused u-boot,boot-led
+- 98be3062088 sam9x60-curiosity: migrate Boot LED setup to use /options/u-boot/boot-led
+- eb02d87c757 doc: remove u-boot,boot-led and u-boot,error-led from "binding"
+- d300702c5be Merge patch series "led: remove u-boot,boot-led and u-boot,error-led + add cmd doc"
+
+### Conversation log
+The repository is clean (only untracked files). Now let me create the new branch based on ci/master:
+
+Now let me start cherry-picking the commits one by one. Starting with the first commit:
+
+First cherry-pick successful. Let me verify the delta and run the build test:
+
+Both show 1 file changed, 4 insertions, 7 deletions - delta matches. Now running the build test:
+
+Build passed. Now continuing with the second commit:
+
+Delta matches (1 file, 88 ins, 1 del). Build test:
+
+Build passed. Continuing with third commit:
+
+Delta matches (1 file, 95 insertions). Build test:
+
+Build passed. Fourth commit:
+
+Delta matches (4 files, 362 deletions). Build test:
+
+Build passed. Fifth commit:
+
+Delta matches (1 file, 5 deletions). Build test:
+
+Build passed. Sixth commit:
+
+Commit succeeded with auto-merge. Let me verify the delta:
+
+Both show 2 files changed, 37 deletions. Delta matches. Build test:
+
+Build passed. Seventh commit:
+
+Delta matches (1 file, 1 deletion). Build test:
+
+Build passed. Eighth commit:
+
+Delta matches (1 file, 1 deletion). Build test:
+
+Build passed. Ninth commit:
+
+Delta matches (1 file, 6 deletions). Build test:
+
+Build passed. Tenth commit:
+
+Delta matches (2 files, 7 ins, 18 del). Build test:
+
+Build passed. Eleventh commit:
+
+Delta matches (1 file, 5 deletions). Build test:
+
+Build passed. Twelfth and last commit - this is a merge commit:
+
+Conflict on the merge commit. Let me check the conflict:
+
+This is a simple conflict - just a typo fix (duplicate "with with" -> "with"). Let me resolve it:
+
+The merge commit succeeded. Let me verify the delta:
+
+The delta is different - the original merge commit brings all the changes from the series together, while our cherry-picked version only has the conflict resolution (1 file, 1 ins, 1 del - fixing "with with" to "with"). This is expected for a merge commit cherry-pick when the individual commits were already applied. The important thing is that our cherry-pick includes just the additional fix-up that happened in the merge.
+
+Let me run the build test:
+
+Build passed. Now let me verify all commits are in place:
+
+All 12 commits are present. Now let me run the final build test:
+
+Excellent! All tests pass.
+
+## Final Status Report
+
+### Cherry-pick Summary
+
+All 12 commits have been successfully cherry-picked from `us/next` to the new branch `cherry-29a7fe55c55` based on `ci/master`:
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | 29a7fe55c55 | cmd: led: fix help text for blink subcommand | ✅ OK |
+| 2 | e8bc1419238 | doc: move legacy API documented in README.LED to doc/api/led.rst | ✅ OK |
+| 3 | b8c35fa9c58 | doc: cmd: document the led shell command | ✅ OK |
+| 4 | b0f39c085dc | doc: dt-bindings: remove duplicates with dts/upstream | ✅ OK |
+| 5 | f8c3a6ddc62 | arm: dts: rockchip: rk3188-radxarock: remove unused u-boot,boot-led | ✅ OK |
+| 6 | 7759839fb29 | rockchip: rk3188: remove setup_led from xPL | ✅ OK (auto-merged) |
+| 7 | cf8e0d58ced | arm: dts: rockchip: rk3399-puma: remove u-boot,boot-led | ✅ OK |
+| 8 | 0636153fb19 | arm: dts: rockchip: px30-ringneck: remove u-boot,boot-led | ✅ OK |
+| 9 | d1ad89ad56a | arm: dts: rockchip: rk3066a-mk808: remove unused u-boot,boot-led | ✅ OK |
+| 10 | 98be3062088 | sam9x60-curiosity: migrate Boot LED setup to use /options/u-boot/boot-led | ✅ OK |
+| 11 | eb02d87c757 | doc: remove u-boot,boot-led and u-boot,error-led from "binding" | ✅ OK |
+| 12 | d300702c5be | Merge patch series "led: remove u-boot,boot-led..." | ✅ OK (conflict resolved) |
+
+### Build Result
+- **Status**: ✅ OK - Build passes with no warnings or errors
+
+### Fix-ups Made
+1. **Commit #12 (merge commit d300702c5be)**: Resolved simple conflict in `doc/api/led.rst` - a typo fix changing "with with" to "with" (duplicate word removed)
+
+### Delta Concerns
+- All individual commits had matching deltas between original and cherry-picked versions
+- The merge commit (d300702c5be) had a smaller delta as expected - the merge itself only contributed a 1-line typo fix that resolved the conflict
+
+### Branch Status
+The branch `cherry-29a7fe55c55` is ready for pushing with 12 commits ahead of `ci/master`.
+
+---
+
