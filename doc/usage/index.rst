@@ -42,6 +42,7 @@ Booting OS
    :maxdepth: 1
 
    os/plan9
+   os/ubuntu-live
    os/vxworks
 
 File Systems
