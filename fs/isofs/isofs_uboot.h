@@ -29,7 +29,6 @@
 /* Linux headers */
 #include <asm/byteorder.h>
 #include <asm-generic/unaligned.h>
-#include <asm-generic/atomic.h>
 #include <linux/bitops.h>
 #include <linux/bug.h>
 #include <linux/err.h>
