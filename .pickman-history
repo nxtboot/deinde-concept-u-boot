@@ -58421,3 +58421,144 @@ The branch `cherry-29a7fe55c55` is ready for pushing with 12 commits ahead of `c
 
 ---
 
+### Review: 2026-04-16
+
+Branch: cherry-a6d20ea69cd
+
+Comments addressed:
+
+
+### Conversation log
+The branch needs rebasing onto ci/master. Let me perform the rebase:
+
+Now let me perform the rebase onto ci/master:
+
+The rebase completed successfully. Now let me verify the commit count and check the build:
+
+The rebase completed successfully with all 71 commits (69 original + 2 pickman metadata). Now let me run the build test:
+
+Build passes. Now let me check the delta of a few key commits to ensure the rebase is correct:
+
+The commits look good. Now let me create the -v2 branch and push:
+
+The rebase completed successfully and the branch has been pushed. Let me provide a summary:
+
+## Summary
+
+### Rebase Completed Successfully ✅
+
+**Branch:** `cherry-a6d20ea69cd` (rebased onto `ci/master`)  
+**Total Commits:** 71 (69 cherry-picked + 2 pickman metadata)  
+**Build Result:** OK (sandbox build passes)
+
+### What was done:
+
+1. Checked out branch `cherry-a6d20ea69cd`
+2. Rebased onto latest `ci/master` (26c3513a1a3) with `--keep-empty` to preserve empty merge commits
+3. All 71 commits rebased cleanly without conflicts
+4. Verified build passes with `buildman -L --board sandbox -w -o /tmp/pickman`
+5. Created local branch `cherry-a6d20ea69cd-v2`
+6. Force pushed to remote branch `cherry-a6d20ea69cd` to update the MR
+
+### New commit range:
+- **Base:** `26c3513a1a3` (Merge branch 'fsc' into 'master')
+- **Head:** `5f088a89832` (pickman: Record pipeline fix for cherry-a6d20ea69cd)
+
+The MR pipeline will be automatically triggered by GitLab.
+
+---
+
+## Reply to post on the MR:
+
+```
+Rebased onto latest `ci/master` (26c3513a1a3). All 71 commits rebased cleanly without conflicts. Build verified with sandbox.
+```
+
+---
+
+### Pipeline fix: 2026-04-16 (attempt 1)
+
+Branch: cherry-ef896333f79
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Looking at the job log, I can see this is a **transient infrastructure/lab failure**, not a code issue:
+
+**Analysis:**
+
+1. The job is running on the `opi_pc` (Orange Pi PC) board in the `sjg-lab` stage
+2. The test framework (labgrid) is trying to communicate with the physical hardware
+3. The failure occurs at:
+   ```
+   pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+   Lab failure: Marking connection bad - no other tests will run
+   ```
+
+4. This is a **hardware/lab infrastructure timeout** - the test runner couldn't get a response from the physical Orange Pi PC board within 15 seconds
+
+**Root Cause:**
+This is a transient infrastructure issue where the physical lab hardware (Orange Pi PC) failed to respond. This could be due to:
+- Board is hung or unresponsive
+- Serial connection issues
+- Power/reset issues with the lab hardware
+- Network connectivity to the lab
+
+**This is NOT a code issue** - the build succeeded (as shown by "Building U-Boot in pytest-source dir for orangepi_pc" and "Bootstrapping U-Boot"), but the hardware test couldn't proceed because the board didn't respond.
+
+---
+
+## Summary
+
+**No code changes are needed.** This is a transient infrastructure/lab failure:
+
+- **Job:** `opi_pc` (stage: `sjg-lab`)
+- **Failure type:** Lab hardware timeout - physical Orange Pi PC board failed to respond
+- **Error:** `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- **Action:** The pipeline should be retried. This is not related to any commits in the MR.
+
+The build completed successfully - only the hardware test phase failed due to the physical board not responding. This is a common transient issue with physical test labs.
+
+---
+
+### Pipeline fix: 2026-04-16 (attempt 1)
+
+Branch: cherry-f8d245f3698
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Based on my analysis of the job log, this is an **infrastructure/transient issue**, not a code problem.
+
+## Root Cause Analysis
+
+The job failure is caused by a **hardware lab timeout** in the CI test infrastructure:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The error occurs in the labgrid test framework when trying to communicate with the physical Orange Pi PC board (`opi_pc`):
+
+1. The U-Boot build itself **succeeded** (the log shows "Building U-Boot in pytest-source dir for orangepi_pc" and "Bootstrapping U-Boot from dirs...")
+2. The failure happened when the test harness tried to flash and boot the board, and it couldn't get a U-Boot prompt within 15 seconds
+3. This is a hardware/connectivity issue with the physical test board, not a code issue
+
+## Evidence
+
+1. The MR description confirms all cherry-picks were successful and **builds passed** for all commits
+2. The job log shows the build completed and artifacts were created
+3. The failure is specifically in `labgrid/driver/ubootdriver.py` waiting for the board to respond
+4. The message "Lab failure: Marking connection bad - no other tests will run" indicates this is a recognized transient lab issue
+
+## Recommendation
+
+**No code changes are needed.** This is a transient infrastructure issue where the physical Orange Pi PC test board failed to respond. The appropriate action is to **retry the CI job** or wait for the lab connection to be restored.
+
+The code changes in this MR (UFS config renames) are unrelated to the Orange Pi PC board, which doesn't even use UFS storage - this further confirms the failure is not caused by the code changes.
+
+---
+
