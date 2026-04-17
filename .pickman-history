@@ -59428,3 +59428,108 @@ All 14 commits are present (14 cherry-picked + the ci/master history before). No
 
 ---
 
+## 2026-04-17: us/next
+
+Branch: cherry-5f141da1a9c
+
+Commits:
+- 5f141da1a9c imx93-u-boot: move binman description
+- 3ffae6c14a5 imx93-u-boot: use nxp-imx9image etype for binman node
+- e2829b8ccab imx9: scmi: soc: USB instance number change for silicon revision B0
+- 5656e5f0590 configs: apalis-imx8: use default for SYS_MALLOC_F_LEN
+- 3273fba5f2b configs: colibri-imx8x: use default for SYS_MALLOC_F_LEN
+- 3a686ef1492 nitrogen6x: change maintainer
+- 2d964cb7257 board: phytec: phycore-imx93: Switch to standard boot
+- 8f4d74929d0 board: phytec: phycore-imx93: Set boot_targets dynamically
+- 76948dd22d7 board: phytec: phycore-imx93: env: Add required uuu variables
+- 06e1e2e271a Merge tag 'u-boot-imx-next-20251206' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me create and checkout the new branch based on ci/master.
+
+Good, the branch is created. Now let me start cherry-picking the commits one by one. First, let me cherry-pick the first commit:
+
+First commit succeeded. Let me verify the delta and run the build test:
+
+Delta looks identical (1 file, 62 insertions, 64 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now cherry-pick the third commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now cherry-pick the fourth commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now cherry-pick the fifth commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now the sixth commit is marked as "maybe already applied as 0d8c32dd282". Let me check if this commit is already applied:
+
+The patches are completely different - different authors, dates, and different maintainer changes. 0d8c32dd282 is an old commit from 2015 that changed maintainer from Eric Nelson to Troy Kisky, while 3a686ef1492 is a new commit that changes maintainer from Troy Kisky to Simon Gaynor. These are NOT the same commit, so I should proceed with the cherry-pick:
+
+Delta looks identical. Build test:
+
+Build passed. Now cherry-pick the seventh commit:
+
+The delta shows a slight difference in configs/imx93-phycore_defconfig (8 vs 10 lines changed). Let me check if it's a concern:
+
+The differences are minor - just some context differences due to different base. The actual changes (FIT, FIT_SIGNATURE, BOOTSTD_FULL, etc.) are the same. The delta is acceptable. Build test:
+
+Build passed. Now cherry-pick the eighth commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now cherry-pick the ninth commit:
+
+Delta looks identical. Build test:
+
+Build passed. Now the last commit is a merge commit, so I need to use `-m 1 --allow-empty`:
+
+The merge commit is now empty (as expected since all the individual commits were already cherry-picked). Let me commit it with --allow-empty to preserve the merge commit message:
+
+All 10 commits cherry-picked. Let me verify with git log and run the final build:
+
+All 10 commits are present. Now let me run the final build test:
+
+## Summary
+
+All cherry-picks completed successfully. Here is the final status:
+
+### Build Result
+**OK** - sandbox build passes with no warnings or errors
+
+### Commits Cherry-picked (10 total)
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | 6fa37aac42d | imx93-u-boot: move binman description | ✓ Clean |
+| 2 | f367e8b7b00 | imx93-u-boot: use nxp-imx9image etype for binman node | ✓ Clean |
+| 3 | 2a022a9dc17 | imx9: scmi: soc: USB instance number change for silicon revision B0 | ✓ Clean |
+| 4 | 55e74e97f38 | configs: apalis-imx8: use default for SYS_MALLOC_F_LEN | ✓ Auto-merged |
+| 5 | b4cf5cf4a29 | configs: colibri-imx8x: use default for SYS_MALLOC_F_LEN | ✓ Auto-merged |
+| 6 | a92d05bfcf4 | nitrogen6x: change maintainer | ✓ Clean (note: 0d8c32dd282 was a different commit) |
+| 7 | 31a4badb4c5 | board: phytec: phycore-imx93: Switch to standard boot | ✓ Auto-merged |
+| 8 | 1c2c4e18f5a | board: phytec: phycore-imx93: Set boot_targets dynamically | ✓ Auto-merged |
+| 9 | de9dfb287f7 | board: phytec: phycore-imx93: env: Add required uuu variables | ✓ Clean |
+| 10 | b40b977d314 | Merge tag 'u-boot-imx-next-20251206' | ✓ Empty (as expected) |
+
+### Notes
+- **Commit 6 (nitrogen6x: change maintainer)**: Verified that 0d8c32dd282 was a *different* commit from 2015 (Eric Nelson → Troy Kisky), while 3a686ef1492 is a new 2025 commit (Troy Kisky → Simon Gaynor). Cherry-picked successfully.
+- **Commit 7 (phycore-imx93 switch to standard boot)**: Minor delta difference in defconfig (context only), actual changes identical.
+- **Commit 10 (Merge commit)**: Resulted in empty commit as expected (all changes already applied via individual commits). Preserved with --allow-empty for history tracking.
+
+### Fix-ups Made
+None - all commits applied cleanly with no manual conflict resolution needed.
+
+### Commits with Concerning Deltas
+None - all deltas matched closely between original and cherry-picked commits.
+
+The branch `cherry-5f141da1a9c` is ready for pushing.
+
+---
+
