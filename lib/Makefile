@@ -93,6 +93,7 @@ obj-$(CONFIG_$(PHASE_)SHA1_LEGACY) += sha1.o
 obj-$(CONFIG_$(PHASE_)SHA256) += sha256_common.o
 obj-$(CONFIG_$(PHASE_)SHA256_LEGACY) += sha256.o
 obj-$(CONFIG_$(PHASE_)SHA512_LEGACY) += sha512.o
+obj-$(CONFIG_$(PHASE_)SM3) += sm3.o
 
 obj-$(CONFIG_CRYPT_PW) += crypt/
 obj-$(CONFIG_ARGON2) += argon2/

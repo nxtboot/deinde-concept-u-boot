@@ -58472,6 +58472,105 @@ The MR pipeline will be automatically triggered by GitLab.
 
 ```
 Rebased onto latest `ci/master` (26c3513a1a3). All 71 commits rebased cleanly without conflicts. Build verified with sandbox.
+## 2026-04-17: us/next
+
+Branch: cherry-6a0c939b88f
+
+Commits:
+- 6a0c939b88f lib: Import rol32 function from Linux
+- 41c0131b950 lib: import sm3 256 hash parts from linux
+- c4ab316269d lib: sm3: implement U-Boot parts
+- 213601a600f test: cmd: hash: add unit test for sm3_256
+- 7c3f05ad51e tpm2: add sm3 256 hash support
+- b30557b3b46 test: cmd: fix a typo in md5 test
+- 33750d8d88d Merge patch series "Add support for SM3 secure hash"
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me proceed with creating and checking out the new branch.
+
+Now let me start cherry-picking the commits one by one. Starting with the first commit:
+
+The first cherry-pick has conflicts. Before aborting, let me check if these commits are already present in ci/master with different hashes.
+
+Let me search for the other commits to see if the SM3 series is already in ci/master:
+
+The SM3 commits are not already in ci/master. Let me look at the conflict and try to resolve it:
+
+I can see the conflict. The ci/master branch already has `rol32` function using `u32` type, while the incoming commit uses `__u32` type. The ci/master also has an additional `ror32` function that the incoming commit doesn't have. Let me check what the incoming commit should add:
+
+Now let me check what ci/master already has for rol32:
+
+I see - ci/master already has rol32 (with `u32` instead of `__u32`) and also has ror32. The commit we're cherry-picking is basically already present with a slightly different type. The functionality is the same. 
+
+The resolution is to keep HEAD's version (ci/master) since it already has the rol32 function and also includes ror32 which we'd want to keep. Let me resolve this conflict:
+
+The commit becomes empty because the rol32 function is already present in ci/master. Let me commit it as empty to preserve the history as instructed:
+
+Good, the first cherry-pick is done (as an empty commit with fixup note). Let me verify and build:
+
+Build passed. Now let me proceed with the second commit:
+
+The delta is the same (5 files, 228 insertions). Let me run the build test:
+
+Build passed. Continuing with the third commit:
+
+The delta matches (8 files, 240 insertions, 1 deletion). Build test:
+
+Build passed. Continuing with the fourth commit:
+
+Delta matches. Build test:
+
+Build passed. Continuing with the fifth commit:
+
+Delta matches. Build test:
+
+Build passed. Continuing with the sixth commit:
+
+Delta matches. Build test:
+
+Build passed. Now the seventh and final commit - this is a merge commit, so I need to use the special flags:
+
+There's a conflict again in bitops.h. Let me check what's happening:
+
+Same conflict as before - we want to keep HEAD's version (which has both rol32 and ror32):
+
+There's a delta discrepancy here. The original merge commit shows many more files because it's a merge commit that brings in all the changes from the patch series. When cherry-picked with -m 1, it only picks the diff against the first parent.
+
+Looking at the cherry-picked result, we have `common/hash.c` with 11 insertions - this is expected because we already have the individual commits applied. The merge commit on top just has the conflict resolution for hash.c that wasn't captured in the individual commits. Let me run the build:
+
+Build passed. Now let me verify all 7 commits are present:
+
+All 7 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Build result:** ✅ OK - Build passed with no warnings or errors
+
+**Cherry-pick summary:**
+All 7 commits successfully cherry-picked:
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 6a0c939b88f | lib: Import rol32 function from Linux | ✅ Empty commit (rol32 already present in ci/master) |
+| 2 | 41c0131b950 | lib: import sm3 256 hash parts from linux | ✅ Clean |
+| 3 | c4ab316269d | lib: sm3: implement U-Boot parts | ✅ Clean |
+| 4 | 213601a600f | test: cmd: hash: add unit test for sm3_256 | ✅ Clean |
+| 5 | 7c3f05ad51e | tpm2: add sm3 256 hash support | ✅ Clean |
+| 6 | b30557b3b46 | test: cmd: fix a typo in md5 test | ✅ Clean |
+| 7 | 33750d8d88d | Merge patch series "Add support for SM3 secure hash" | ✅ Conflict resolved |
+
+**Fix-ups made:**
+1. **Commit 1 (6a0c939b88f):** Created as empty commit because `rol32` function is already present in ci/master via commit `f6f3d40c2b5 ext4l: Move rol32 to linux/bitops.h`. Added fixup note to commit message.
+
+2. **Commit 7 (33750d8d88d - merge):** Conflict in `include/linux/bitops.h` resolved by keeping HEAD's version which includes both `rol32` and `ror32` functions (the incoming merge only had `rol32`).
+
+**Delta concerns:**
+- Commit 1 has no delta (empty) vs original 11 lines - **Expected** since rol32 already existed
+- Commit 7 (merge) shows 11 insertions vs original 554 insertions - **Expected** for merge commit cherry-pick with -m 1, where we already applied the individual commits
+
+**Branch ready for pushing:**
+```
+cherry-6a0c939b88f
 ```
 
 ---
