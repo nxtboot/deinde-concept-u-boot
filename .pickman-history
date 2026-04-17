@@ -58870,6 +58870,185 @@ No warnings or errors.
 34. `9f1d3d69adb` - ARM: dts: stm32: Drop "u-boot-led" from stm32mp235f-dk-u-boot
 35. `aa72754eae6` - ARM: dts: stm32: Drop "u-boot-led" from stm32mp257f-ev1-u-boot
 36. `dbe2eccb16e` - Merge tag 'u-boot-stm32-20251205' [EMPTY - all changes already picked]
+---
+
+## 2026-04-17: us/next
+
+Branch: cherry-c448c933b9c
+
+Commits:
+- c448c933b9c test: Let pytest indicate skipped C unit tests
+- 3144be7f405 test: cmd/bdinfo: consider ARM architecture specific info
+- ae7bcf60671 test: print_display_buffer must consider 64bit support
+- 3f8cefc0d4e test: don't test for CONFIG_UNIT_TEST twice
+- a63bd541d61 test: print_do_hex_dump test depends on HEXDUMP
+- 728c7172682 test: bdinfo: correct expected X86 arch info
+- 1acf7ebf501 test: cmd_exit_test depends on CONFIG_HUSH_PARSER
+- 85713aee969 test: do not assume memory size 256 MiB in cmd_test_meminfo
+- 24bf56f36d0 ppce500: increase SYS_MALLOC_F_LEN to 0x800
+- 061cdb247cb test: the cmd/font test requires the sandbox
+- 0978f3287c1 test: correct comments in test/cmd/font.c
+- 7dbcc4d806c test: fix bdinfo_test_all boot_params expectation
+- ad7f706ec79 malta: increase SYS_MALLOC_F_LEN and SYS_MALLOC_LEN
+- 44217491465 test: consider endianness in print_display_buffer
+- 6b0997c98c0 test: fix cmt/msr test
+- 3338e2e4637 test: relax cread_test time constraint
+- c2ee1e3c4a7 test: cmd/bdinfo: consider PPC architecture specific info
+- 21fbda84b39 cmd: fix 'fdt get value'
+- e3d4ab52869 test: let UNIT_TEST imply CONSOLE_RECORD
+- b3835a812fd Merge patch series "test: let UNIT_TEST imply CONSOLE_RECORD"
+
+### Conversation log
+Good, I found the u-boot repository. Now let me check the git status:
+
+The repository has some untracked files, but no staged or modified tracked files, so it's clean enough to proceed. Let me create and checkout the new branch based on ci/master:
+
+Good. Now let me cherry-pick the first commit:
+
+First commit cherry-picked. Let me check the delta and run the build:
+
+Commit 1 passed. Now cherry-pick commit 2:
+
+Commit 2 passed. Now cherry-pick commit 3:
+
+Commit 3 passed. Now cherry-pick commit 4:
+
+Commit 4 passed. Now cherry-pick commit 5:
+
+Commit 5 passed. Now cherry-pick commit 6:
+
+There's a conflict. Let me check the conflicting file:
+
+I can see the conflict - the incoming change (728c7172682) adds more detailed X86 checks, while the current code just has a simple check. I should use the incoming version which is more complete. Let me resolve this:
+
+Good, conflict is resolved. Let me verify the fix looks correct:
+
+I see there's a duplicate comment line. Let me fix that:
+
+Good. Now let me add the file and continue the cherry-pick:
+
+Let me amend the commit to add a note about the conflict resolution:
+
+The delta looks similar. Now let me run the build test:
+
+Commit 6 passed. Now cherry-pick commit 7:
+
+Commit 7 passed. Now cherry-pick commit 8:
+
+Commit 8 passed. Now cherry-pick commit 9:
+
+Commit 9 passed. Now cherry-pick commit 10:
+
+I see - the incoming commit (061cdb247cb) removes some lines, but the current branch already has similar lines. Let me check what the original commit does:
+
+I see - the commit moves the font.o line from one place to another (into the SANDBOX block). In our current version, it's already conditionally in SANDBOX. Let me check the current state:
+
+I see - the font.o is already present in two places - one inside an ifdef CONFIG_SANDBOX block near line 27, and another later on (line 46). The incoming commit is trying to:
+1. Remove it from line 27
+2. Add it inside the SANDBOX block at line 46
+
+But in our version, it's ALREADY inside the first SANDBOX block at line 27. So the change looks redundant (it's in both places now).
+
+Let me see if it's present later in the file too:
+
+So font.o appears twice - we need to keep only the one inside SANDBOX block. The conflict resolution should:
+1. Remove the first occurrence (since HEAD already has it inside SANDBOX, we should remove this duplicate structure)
+2. Keep the second occurrence (which is inside the SANDBOX block at line 46+)
+
+Let me resolve this conflict by taking the incoming version which removes the first block:
+
+Good, now there's only one font.o entry. Let me verify it's inside the SANDBOX block:
+
+Good, it's correctly inside the `ifdef CONFIG_SANDBOX` block. Now let's complete the cherry-pick:
+
+The delta is slightly different (we removed more lines due to the duplicate structure) but the end result is correct. Let me run the build test:
+
+Commit 10 passed. Now cherry-pick commit 11:
+
+Commit 11 passed. Now cherry-pick commit 12:
+
+Commit 12 passed. Now cherry-pick commit 13:
+
+Commit 13 passed. Now cherry-pick commit 14:
+
+Commit 14 passed. Now cherry-pick commit 15:
+
+I see - the incoming changes make the test more flexible by checking just the beginning of the line. Let me resolve the conflicts:
+
+Let me resolve the conflicts by taking the incoming version (which is more flexible):
+
+Hmm, the sed removed both conflicting sections at once. Let me check the file:
+
+I see the second conflict was replaced with the same string "0000" instead of "0   Y     Back". Let me fix that:
+
+That's wrong - now both are "0   Y     Back". Let me check the original intended state and fix it properly:
+
+Good, now I can see the correct state. Line 15 should be "0000", line 22 should be "0   Y     Back". Let me fix the file:
+
+This matches the intended state. Now let's complete the cherry-pick:
+
+Commit 15 passed. Now cherry-pick commit 16:
+
+Commit 16 passed. Now cherry-pick commit 17:
+
+Commit 17 passed. Now cherry-pick commit 18:
+
+Commit 18 passed. Now cherry-pick commit 19:
+
+Commit 19 passed. Now cherry-pick commit 20 (the merge commit):
+
+The merge commit is empty (as expected, since we cherry-picked all its component commits). I need to commit it as an empty commit to preserve the history:
+
+Now let's verify all 20 commits are present:
+
+All 20 commits are present. Now let's run the final build:
+
+All cherry-picks completed successfully. Here is the final status:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-c448c933b9c` (based on `ci/master`)
+
+**Build Result:** ✅ OK - All builds passed
+
+**All 20 commits cherry-picked successfully:**
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | c448c933b9c | test: Let pytest indicate skipped C unit tests | ✅ Clean |
+| 2 | 3144be7f405 | test: cmd/bdinfo: consider ARM architecture specific info | ✅ Clean |
+| 3 | ae7bcf60671 | test: print_display_buffer must consider 64bit support | ✅ Clean |
+| 4 | 3f8cefc0d4e | test: don't test for CONFIG_UNIT_TEST twice | ✅ Clean |
+| 5 | a63bd541d61 | test: print_do_hex_dump test depends on HEXDUMP | ✅ Clean |
+| 6 | 728c7172682 | test: bdinfo: correct expected X86 arch info | ⚠️ Conflict resolved |
+| 7 | 1acf7ebf501 | test: cmd_exit_test depends on CONFIG_HUSH_PARSER | ✅ Clean |
+| 8 | 85713aee969 | test: do not assume memory size 256 MiB in cmd_test_meminfo | ✅ Clean |
+| 9 | 24bf56f36d0 | ppce500: increase SYS_MALLOC_F_LEN to 0x800 | ✅ Clean |
+| 10 | 061cdb247cb | test: the cmd/font test requires the sandbox | ⚠️ Conflict resolved |
+| 11 | 0978f3287c1 | test: correct comments in test/cmd/font.c | ✅ Clean |
+| 12 | 7dbcc4d806c | test: fix bdinfo_test_all boot_params expectation | ✅ Clean |
+| 13 | ad7f706ec79 | malta: increase SYS_MALLOC_F_LEN and SYS_MALLOC_LEN | ✅ Clean |
+| 14 | 44217491465 | test: consider endianness in print_display_buffer | ✅ Clean |
+| 15 | 6b0997c98c0 | test: fix cmt/msr test | ⚠️ Conflict resolved |
+| 16 | 3338e2e4637 | test: relax cread_test time constraint | ✅ Clean |
+| 17 | c2ee1e3c4a7 | test: cmd/bdinfo: consider PPC architecture specific info | ✅ Clean |
+| 18 | 21fbda84b39 | cmd: fix 'fdt get value' | ✅ Clean |
+| 19 | e3d4ab52869 | test: let UNIT_TEST imply CONSOLE_RECORD | ✅ Clean |
+| 20 | b3835a812fd | Merge patch series "test: let UNIT_TEST imply CONSOLE_RECORD" | ✅ Empty commit (expected) |
+
+**Fix-ups made:**
+
+1. **Commit 6** (728c7172682): Resolved conflict in `test/cmd/bdinfo.c` - X86 check code was already partially present in ci/master. Took incoming version with expanded X86 checks.
+
+2. **Commit 10** (061cdb247cb): Resolved conflict in `test/cmd/Makefile` - font.o was already inside SANDBOX block in ci/master. Removed duplicate entry to match intended state.
+
+3. **Commit 15** (6b0997c98c0): Resolved conflict in `test/cmd/msr.c` - Expected test values differed from ci/master. Applied incoming changes to make tests more flexible.
+
+**Deltas:**
+- All commits have matching or nearly matching deltas (same files, similar line changes)
+- Commit 10 shows a slightly larger delta (removed 3 lines vs original 1 line change) due to duplicate cleanup
+
+The branch `cherry-c448c933b9c` is ready for pushing.
 
 ---
 
