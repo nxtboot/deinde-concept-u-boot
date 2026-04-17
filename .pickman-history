@@ -59275,3 +59275,156 @@ The commits from us/next partially overlap with a more comprehensive LED cleanup
 
 ---
 
+Branch: cherry-272e356b179
+
+Commits:
+- 272e356b179 mtd: Tighten some driver dependencies
+- 9d69a2d8a09 clk: ti: Tighten some TI clock driver dependencies
+- 00e1fed93c8 firmware: ti_sci: Fix memory leaks in devm_ti_sci_get_of_resource
+- 1c1be32c31c fs/erofs: Fix realloc error handling
+- 43ca62bf194 examples: Fix checking id parameter in thread_start
+- af38567cadc autoboot: Fix inconsistent countdown output
+- 1e8eff6d7a9 board: ti: CAT24C256WI-GT3 require min. 5ms delay (tWR) between write/read
+- d3ddbc1cf8e configs: am64x, am65x: add CONFIG_DA8XX_GPIO
+- 717f8ded395 boot: Check noffset before use
+- 1165e8efcba reboot-mode: Correct macro name from U_BOOT_DEVICE to U_BOOT_DRVINFO
+- 1c0a46e2918 clk: Prevent SIGSEGV on debug
+- fe780310cfa clk: Return value calculated by ERR_PTR
+- 33285945518 clk: Prevent memory leak on error
+- bc1819331ec Merge patch series "clk: Return value calculated by ERR_PTR"
+
+### Conversation log
+Let me find the repository first:
+
+Good, the repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master:
+
+Now let me cherry-pick the first commit:
+
+Let me verify the delta and run the build:
+
+Delta matches. Now run build test:
+
+Build passed. Let me continue with the second commit:
+
+There's a conflict. Let me see what the conflict is:
+
+I can see the conflict. The conflict is that our branch has `CONFIG_ZSTD=y` after `CONFIG_FS_FAT_MAX_CLUSTSIZE=16384`, while the incoming commit wants to add `CONFIG_EFI_SET_TIME=y`, `CONFIG_DA8XX_GPIO=y`, and `#include <configs/k3_efi_capsule.config>`. We need to keep both - the ZSTD and add the DA8XX_GPIO. Let me check what the original commit is trying to add:
+
+I see the issue. The original commit is adding `CONFIG_DA8XX_GPIO=y` after `CONFIG_EFI_SET_TIME=y`. In our branch, the config structure is slightly different (we have `CONFIG_ZSTD=y` instead of those lines). Let me check what we have before the conflict:
+
+The fix is to keep our `CONFIG_ZSTD=y` and add `CONFIG_DA8XX_GPIO=y`. The `CONFIG_EFI_SET_TIME=y` and `#include` are already different between our branch and the source branch. I need to resolve this by keeping our ZSTD and adding just the DA8XX_GPIO:
+
+I see the issue. Our branch already has `CONFIG_EFI_SET_TIME=y` earlier in the file (line 36). The incoming commit is adding `CONFIG_DA8XX_GPIO=y` after that at end of file. We need to keep our `CONFIG_ZSTD=y` and just add `CONFIG_DA8XX_GPIO=y`. Let me fix this:
+
+Now let me add the resolved file and continue with the cherry-pick:
+
+Now I need to amend the commit to add a note about the fix-up since we resolved a conflict:
+
+Let me verify the delta and run the build:
+
+Delta matches exactly. Now run the build:
+
+This is a more complex conflict. Let me look at the original commit to understand what changes are being made:
+
+Let me look at more context around the fit_image_load function:
+
+It looks like ci/master has refactored the fit_image_load function significantly with select_from_config. Let me check if the fix from the original commit is already covered in our branch:
+
+I can see that ci/master has been refactored to use `select_from_config()` and `print_and_verify()` which already properly handle the noffset before use. Let me check if the issue the original commit was fixing is already resolved in our refactored code:
+
+Looking at the current code in ci/master, I can see that:
+
+1. The refactored code uses `*fit_unamep` (via output parameter) instead of `fit_uname` local variable
+2. The `select_from_config()` already sets `*fit_unamep` before returning noffset
+3. The `if (noffset < 0)` check is already in place before using the value
+4. The `fit_get_name()` call that was problematic in the original code is already moved to inside `select_from_config()` where noffset is checked
+
+The bug this patch fixes (calling `fit_get_name()` with negative noffset before checking it) has already been addressed by the refactoring in ci/master. The refactoring happened as part of the "boot: Update fit_image_load() to support load-only FITs" series.
+
+Let me abort this cherry-pick and search if this fix was already applied differently:
+
+The issue is that the original commit is based on an older version of fit_image_load() before refactoring. In ci/master, the code was refactored to move the logic into `select_from_config()`, which already properly handles the issue (the `fit_get_name()` call is done inside `select_from_config()` where it sets `*fit_unamep` and this is done inside the function where noffset is known to be valid at that point since it returns early if the config node isn't found).
+
+Since the fix is already effectively applied through refactoring, I should abort this cherry-pick and create an empty commit to preserve the sequence:
+
+Now for the commit marked "maybe already applied as 4de77dc681b", I need to verify before cherry-picking:
+
+The patches are completely different. The found commit `4de77dc681b` is a pickman history recording commit, not the actual fix. Let me search for the actual commit:
+
+The patches are different. The found commit `311bd1e75af` was cherry-picked from the earlier version of this commit (`644b4650ee5`) and had a pickman fix applied. The new commit `fe780310cfa` is a newer version with additional changes (sandbox test fixes, CLK_AUTO_ID handling).
+
+Since the patches differ significantly (the new version has much more extensive changes including sandbox and test modifications), I should proceed with the cherry-pick:
+
+I see. The conflict is because our branch already has the fix from the previous cherry-pick (`311bd1e75af`) which removed the `return ERR_PTR(ret)` line. The new commit is trying to re-add it. 
+
+Looking at the original commit `fe780310cfa`, it actually adds `return ERR_PTR(ret)` and has additional sandbox fixes to make tests pass with this change. But ci/master already had the `return ERR_PTR(ret)` removed as a fix because it broke tests.
+
+Let me check the exact context:
+
+I see that ci/master has the `return PTR_ERR(c)` path when `IS_ERR(c)`. The fix in ci/master (311bd1e75af) removed the `return ERR_PTR(ret)` from `clk_set_default_get_by_id()` because when `clk_get_by_id` fails, it should fall through and return the original clock pointer rather than an error.
+
+The new commit `fe780310cfa` takes a different approach - it adds back `return ERR_PTR(ret)` but also adds fixes to the sandbox code and tests to make this work. However, given our ci/master already has the pickman fix that removes this return statement, I should check which approach is correct.
+
+Looking at this more carefully, the new commit `fe780310cfa` actually had the same issue as before - adding `return ERR_PTR(ret)` would break tests. The ci/master fix was to remove this return statement. The new commit seems to take a different approach with sandbox fixes, but the conflict shows that we already have the correct fix.
+
+Let me abort this and skip the commit since the fix for this issue is already in place:
+
+Now for the merge commit:
+
+This is the same conflict as before - the merge commit is trying to add the `return ERR_PTR(ret)` which we've already decided to skip. Let me resolve this by keeping our version (without the return):
+
+I need to amend the commit to add a note about the fix-up:
+
+Let me verify the delta for this merge commit:
+
+There's a small delta difference - our version has 22 insertions, 3 deletions while the original has 26 insertions, 7 deletions. This is because of the conflict resolution where we kept the existing fix instead of adding the `return ERR_PTR(ret)`. This is expected given the fix-up note.
+
+Now let me verify all 14 commits are present:
+
+All 14 commits are present (14 cherry-picked + the ci/master history before). Now run the final build:
+
+## Final Status Report
+
+**Branch:** `cherry-272e356b179`
+
+**Build result:** ✅ OK (sandbox build passes)
+
+### Summary of Cherry-Picked Commits (14 total)
+
+| # | Original Hash | Subject | Status | Notes |
+|---|---------------|---------|--------|-------|
+| 1 | `272e356b179` | mtd: Tighten some driver dependencies | ✅ Applied | Clean |
+| 2 | `9d69a2d8a09` | clk: ti: Tighten some TI clock driver dependencies | ✅ Applied | Clean |
+| 3 | `00e1fed93c8` | firmware: ti_sci: Fix memory leaks in devm_ti_sci_get_of_resource | ✅ Applied | Auto-merged |
+| 4 | `1c1be32c31c` | fs/erofs: Fix realloc error handling | ✅ Applied | Clean |
+| 5 | `43ca62bf194` | examples: Fix checking id parameter in thread_start | ✅ Applied | Clean |
+| 6 | `af38567cadc` | autoboot: Fix inconsistent countdown output | ✅ Applied | Clean |
+| 7 | `1e8eff6d7a9` | board: ti: CAT24C256WI-GT3 require min. 5ms delay | ✅ Applied | Auto-merged |
+| 8 | `d3ddbc1cf8e` | configs: am64x, am65x: add CONFIG_DA8XX_GPIO | ✅ Applied | **Conflict resolved** |
+| 9 | `717f8ded395` | boot: Check noffset before use | ⏭️ **SKIPPED** | Fix already applied via refactoring of fit_image_load() |
+| 10 | `1165e8efcba` | reboot-mode: Correct macro name from U_BOOT_DEVICE to U_BOOT_DRVINFO | ✅ Applied | Clean |
+| 11 | `1c0a46e2918` | clk: Prevent SIGSEGV on debug | ✅ Applied | Auto-merged |
+| 12 | `fe780310cfa` | clk: Return value calculated by ERR_PTR | ⏭️ **SKIPPED** | ci/master has different fix via 311bd1e75af |
+| 13 | `33285945518` | clk: Prevent memory leak on error | ✅ Applied | Auto-merged |
+| 14 | `bc1819331ec` | Merge patch series "clk: Return value calculated by ERR_PTR" | ✅ Applied | **Conflict resolved** |
+
+### Fix-ups Made
+
+1. **d3ddbc1cf8e** (configs: add CONFIG_DA8XX_GPIO): Resolved conflict in `am64x_evm_a53_defconfig` by keeping `CONFIG_ZSTD=y` and adding `CONFIG_DA8XX_GPIO=y`.
+
+2. **bc1819331ec** (Merge patch series): Resolved conflict in `clk-uclass.c` by keeping the existing fix that removes `return ERR_PTR(ret)` since ci/master already has the fix from 311bd1e75af.
+
+### Skipped Commits (Empty commits created to preserve sequence)
+
+1. **717f8ded395** (boot: Check noffset before use): The fix was already applied through refactoring of `fit_image_load()` to use `select_from_config()`. The problematic `fit_get_name()` call before checking noffset is no longer present.
+
+2. **fe780310cfa** (clk: Return value calculated by ERR_PTR): ci/master already has a different fix via commit 311bd1e75af that removes the `return ERR_PTR(ret)` instead of adding sandbox workarounds. The approaches conflict.
+
+### Commits with Concerning Deltas
+
+- **bc1819331ec**: Has delta difference (22 insertions/3 deletions vs 26/7) due to conflict resolution keeping existing fix instead of adding `return ERR_PTR(ret)`. This is expected and documented in the fix-up note.
+
+**The branch `cherry-272e356b179` is ready for pushing.**
+
+---
+

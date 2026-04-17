@@ -10,6 +10,7 @@
 #include <extension_board.h>
 #include <string.h>
 #include <vsprintf.h>
+#include <linux/delay.h>
 
 #include "cape_detect.h"
 
@@ -44,6 +45,8 @@ static int ti_extension_board_scan(struct udevice *dev,
 
 		/* Move the read cursor to the beginning of the EEPROM */
 		dm_i2c_write(dev, 0, &cursor, 1);
+		/* Need 5ms (tWR) to complete internal write */
+		mdelay(6);
 		ret = dm_i2c_read(dev, 0, (uint8_t *)&eeprom_header,
 				  sizeof(struct am335x_cape_eeprom_id));
 		if (ret) {
