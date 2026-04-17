@@ -243,6 +243,7 @@ void bh_cache_clear(struct block_device *bdev)
  */
 void bh_cache_release_jbd(struct block_device *bdev)
 {
+#if IS_ENABLED(CONFIG_FS_EXT4L)
 	int i;
 	struct bh_cache_entry *entry;
 
@@ -264,6 +265,7 @@ void bh_cache_release_jbd(struct block_device *bdev)
 			}
 		}
 	}
+#endif
 }
 
 /**
