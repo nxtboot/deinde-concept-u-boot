@@ -59425,6 +59425,135 @@ All 14 commits are present (14 cherry-picked + the ci/master history before). No
 - **bc1819331ec**: Has delta difference (22 insertions/3 deletions vs 26/7) due to conflict resolution keeping existing fix instead of adding `return ERR_PTR(ret)`. This is expected and documented in the fix-up note.
 
 **The branch `cherry-272e356b179` is ready for pushing.**
+## 2026-04-17: us/next
+
+Branch: cherry-5207e1ff20f
+
+Commits:
+- 5207e1ff20f fit: support signing with only an engine_id
+- 9f9de386c1e tools: binman: mkimage: add support for passing the engine
+- fc75d216f01 tools: binman: fit: add support for OpenSSL engines
+- 564c6682fa9 tools: binman: fit: add tests for signing with an OpenSSL engine
+- 7f053fc40ae Merge patch series "fit: allow signing with an OpenSSL engine"
+
+### Conversation log
+The repository has some untracked files but is otherwise clean (no staged or uncommitted changes). I can proceed.
+
+Branch created. Now let me cherry-pick the first commit:
+
+The first cherry-pick has a conflict. Before aborting, I need to check if these commits are already applied in ci/master with different hashes.
+
+The grep searches didn't find matching subjects in ci/master. Let me try searching with partial subjects and also examine what subjects might be similar:
+
+The commits don't seem to be already applied in ci/master. Let me look at the conflict to see if I can resolve it:
+
+I can see the conflict. It appears that the ci/master branch has been refactored to use `struct imgtool *itl` instead of `struct image_tool_params *params`. This is a significant refactor that makes the conflict complex.
+
+Let me check if there's a similar function in the original commit to understand what the upstream commit was trying to add:
+
+Now let me check the current state of these files in ci/master to understand the refactoring:
+
+I can see that ci/master has already been refactored and doesn't have `fit_estimate_hash_sig_size` function. The original upstream commit modifies a function that no longer exists in this form in ci/master.
+
+Let me check if there's a different function handling the signing check in ci/master:
+
+The function doesn't exist. Let me check if it's somewhere else now:
+
+The function was likely removed or renamed. Let me check the image-host.c file to see if the changes there would also conflict:
+
+The image-host.c still has the original logic that needs updating. Now let me look at the current state after the conflict - is image-host.c properly merged?
+
+Good - image-host.c was merged successfully. I need to resolve the fit_image.c conflict. The conflict is because the original commit adds changes to a function `fit_estimate_hash_sig_size` which doesn't exist in ci/master.
+
+Let me look at the entire conflict region more carefully and see if there's something equivalent:
+
+I understand the conflict now. The original commit added the `fit_estimate_hash_sig_size` function and modified it to include `engine_id`, but in ci/master this function has been removed entirely (the estimation logic has likely been moved elsewhere or removed).
+
+Since the function doesn't exist in ci/master, the change to add `|| params->engine_id` in that function isn't needed. The resolution is to simply keep the HEAD version (ci/master) which doesn't have this function.
+
+Let me resolve this conflict by keeping the HEAD version:
+
+Now let me continue the cherry-pick:
+
+Good, the first commit is cherry-picked. Now let me verify the delta and run the build test:
+
+The delta differs: the original commit modified 2 files (`tools/fit_image.c` and `tools/image-host.c`), but the cherry-pick only affected `tools/image-host.c`. This is expected because the `fit_image.c` change was for a function that doesn't exist in ci/master (the function was removed in a refactoring). The core fix (adding `|| engine_id` to the signing conditions) was still applied to `tools/image-host.c`.
+
+The delta is significant but explainable - the fit_image.c changes were for a function that no longer exists. Let me amend the commit message to note this:
+
+Now let me run the build test for the first commit:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta matches exactly. Let me run the build test:
+
+Build passed. Now cherry-pick the third commit:
+
+Delta matches exactly. Let me run the build test:
+
+Build passed. Now cherry-pick the fourth commit:
+
+There's a conflict. Let me examine it:
+
+I can see two conflicts in the Makefile. The ci/master branch has added `elf_sections_tee` which the upstream doesn't have. I need to keep both changes - the `elf_sections_tee` from HEAD and the `dummy-rsa-engine.so` from the commit being cherry-picked.
+
+I need to keep both - the elf_sections_tee rule and the dummy-rsa-engine.so rule:
+
+Good, no conflicts remaining. Let me verify the Makefile looks correct:
+
+The Makefile looks correct. Now let me stage the resolved file and continue the cherry-pick:
+
+Now let me verify the delta and amend the commit message to note the fix-up:
+
+The delta matches exactly (same files, same line counts). The conflict was just a textual merge issue, not a logical problem. Let me amend the commit to note the conflict resolution:
+
+Now let me run the build test:
+
+Build passed. Now let me cherry-pick the last commit - the merge commit:
+
+The merge commit has conflicts. Let me check what the merge commit actually contains:
+
+The merge commit is bringing in all the changes from the series. Since we've already cherry-picked all the individual commits, this merge should result in an empty commit (all changes already applied). Let me check the conflicts and resolve them:
+
+Since we've already cherry-picked all the individual commits, the merge commit's changes should already be present. Let me use the current state (ours) for both conflicting files:
+
+Good, the merge commit is now empty (as expected since all changes were in the individual commits). I should commit it anyway with --allow-empty as per the instructions:
+
+Good, the merge commit was created (empty as expected). Now let me verify the delta:
+
+The merge commit is empty as expected. Let me run the build test:
+
+Build passed. Now let me verify the final state:
+
+All 5 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Build result:** ✅ OK (no warnings or errors)
+
+**All 5 commits cherry-picked successfully:**
+
+| # | Original Hash | Cherry-picked Hash | Subject |
+|---|---------------|-------------------|---------|
+| 1 | 5207e1ff20f | 34aecce26b1 | fit: support signing with only an engine_id |
+| 2 | 9f9de386c1e | a97f750a056 | tools: binman: mkimage: add support for passing the engine |
+| 3 | fc75d216f01 | 1b03d9b1fca | tools: binman: fit: add support for OpenSSL engines |
+| 4 | 564c6682fa9 | 77d02a0b7b3 | tools: binman: fit: add tests for signing with an OpenSSL engine |
+| 5 | 7f053fc40ae | eb0bf9bc9c1 | Merge patch series "fit: allow signing with an OpenSSL engine" |
+
+**Fix-ups made:**
+
+1. **Commit 1 (5207e1ff20f):** Dropped `tools/fit_image.c` changes because the `fit_estimate_hash_sig_size()` function no longer exists in ci/master (removed during refactoring to use `struct imgtool`). The core fix (adding `|| engine_id` to signing conditions) was still applied to `tools/image-host.c`. This is a **significant delta** but intentional - the functional change is preserved where applicable.
+
+2. **Commit 4 (564c6682fa9):** Resolved Makefile conflict - kept `elf_sections_tee` target from ci/master while adding the `dummy-rsa-engine.so` target from the upstream commit.
+
+3. **Commit 5 (7f053fc40ae - merge commit):** Created as empty commit (--allow-empty) since all changes were already present from the individual cherry-picks. Conflicts in `tools/binman/test/Makefile` and `tools/fit_image.c` were resolved by keeping the current state.
+
+**Commits with concerning deltas:**
+
+- **Commit 1:** Original modified 2 files (`fit_image.c` and `image-host.c`), cherry-pick only modified 1 file (`image-host.c`). This is expected because `fit_estimate_hash_sig_size()` was removed in ci/master's refactoring.
+
+The branch `cherry-5207e1ff20f` is ready for pushing.
 
 ---
 
