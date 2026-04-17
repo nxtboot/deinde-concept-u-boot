@@ -25,7 +25,7 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/bio.h>
-#include <asm-generic/atomic.h>
+#include <asm/atomic.h>
 
 #if IS_ENABLED(CONFIG_FS_EXT4L)
 #include "../fs/ext4l/ext4_uboot.h"
