@@ -25,6 +25,7 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/bio.h>
+#include <linux/blk_types.h>
 #include <asm/atomic.h>
 
 #if IS_ENABLED(CONFIG_FS_EXT4L)
