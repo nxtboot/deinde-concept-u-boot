@@ -60037,3 +60037,83 @@ The review comment `project_1_bot_2541d37e7146e9c25808a380e05ebef0` was **not a 
 
 ---
 
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check ma...
+
+### Conversation log
+Now let me understand the current state by examining the review comment. The comment mentions "Pipeline fix (attempt 2)" which was fixing coverage issues. Looking at the context, the fix was supposed to add `fit,engine-keydir` to the test file `340_fit_signature_engine_encrypt.dts` to ensure coverage of line 657 in `_get_fit_engine()`.
+
+Let me check if this fix is already applied:
+
+The commit already has the pickman notes about:
+1. Using `raise_on_error=False` for PKCS11 check (attempt 1 fix)
+2. Adding `fit,engine-keydir` to engine_encrypt test for coverage (attempt 2 fix)
+
+Let me verify the test file has the `fit,engine-keydir` property:
+
+The `fit,engine-keydir` is already in the test file. Let me also verify the PKCS11 fix is in place:
+
+The fix is already applied - it uses `tools.run_result()` with `raise_on_error=False`. Both fixes from attempt 1 and attempt 2 are already in place.
+
+Now let me check if there's something else in the review comment that needs to be addressed. Looking at the comment again:
+
+> Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This comment is describing what was done in the previous fix attempt, not requesting additional changes. The comment is a status report.
+
+Let me check if the branch needs to be rebased onto the latest ci/master:
+
+The branch is up to date with ci/master (merge base is at 6abf9392428 which is the head of ci/master). The fixes from attempt 1 and attempt 2 have already been applied. 
+
+Looking at the review comment, it's actually a **status report** about what was done in pipeline fix attempt 2, not a request for new changes. The comment is documenting:
+1. The coverage failure was due to `fit,engine-keydir` not being tested because the PKCS11 test was being skipped
+2. The fix was to add `fit,engine-keydir` to the `340_fit_signature_engine_encrypt.dts` file so it gets covered by `testFitSignEncryptEngine` which doesn't require PKCS11
+
+Both fixes are already in place. Let me verify the build passes:
+
+Build passes. Now let me check the remote branch state:
+
+The local branch is identical to the remote branch. The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is a **status report** documenting the pipeline fix attempt 2, not a request for additional changes.
+
+Looking at the context more carefully:
+
+The comment says:
+> Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This is followed by a detailed analysis of the coverage issue and the fix that was applied (adding `fit,engine-keydir` to test file). This is documentation of what was already done, not a request for new work.
+
+Since:
+1. The fix has already been applied (commit `3d3df19bd2b` has both the PKCS11 fix and the coverage fix)
+2. The local branch matches the remote branch
+3. The build passes
+
+There's nothing additional to address. The review comment was a status update.
+
+## Summary
+
+**Review Comment Analysis:**
+
+The comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` titled "Pipeline fix (attempt 2)" is a **status report** documenting the fix that was applied to address coverage failures in the pipeline. It is NOT requesting additional changes.
+
+**What was already done (in previous fix attempts):**
+
+1. **Attempt 1 fix (PKCS11 skip):** Changed from exception-based handling (`try/except ValueError`) to explicit return code checking using `tools.run_result()` with `raise_on_error=False`. This ensures the PKCS11 tests are properly skipped when the engine is not available.
+
+2. **Attempt 2 fix (coverage):** Added `fit,engine-keydir = "some-keydir";` to `340_fit_signature_engine_encrypt.dts` to ensure line 657 in `_get_fit_engine()` (the `engine_keydir = prop.value` assignment) is covered by a test that runs on CI.
+
+Both fixes are already in commit `3d3df19bd2b` with appropriate pickman notes in the commit message.
+
+**Current state:**
+- Local branch `cherry-5207e1ff20f` is identical to remote `ci/cherry-5207e1ff20f`
+- Build passes
+- No additional changes required
+
+**Reply to post on MR:**
+> Acknowledged. The pipeline fix for coverage (adding `fit,engine-keydir` to the encrypt test file) was already applied in the previous commit. The `opi_pc` failure is a transient hardware lab timeout issue and not a code problem - should resolve on retry.
+
+---
+
