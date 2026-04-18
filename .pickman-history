@@ -60986,3 +60986,200 @@ All builds pass. Let me verify the commit count and provide a summary:
 
 ---
 
+## 2026-04-18: us/next
+
+Branch: cherry-3c43ca3025e
+
+Commits:
+- 3c43ca3025e clk: fixed_rate: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+- 00967665f6f gpio: sandbox: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+- 5b968372e21 i2c: Inline i2c_chip_of_to_plat() into i2c_child_post_bind()
+- 48e56ac26dd i2c: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+- 9235da9446e boot: Warn users about fdt_high=~0 usage
+- ff1932daab1 video: mxsfb: fix pixel clock polarity
+- d4863fcca8d imx8ulp_evk: Convert to standard boot
+- 0da3a8a939e imx8ulp_evk: Move environment variables to .env file
+- ede2e565ee7 imx8ulp_evk: Switch to use devicetree imported from Linux kernel release
+- e71d109e7bf arm64: dts: add NXP FRDM-IMX91 device tree
+- e4eccb860aa imx: Support i.MX91 11x11 FRDM board
+- dff2ca4131a video: imx: ipuv3: remove undefined function declarations
+- 43830bd27b1 video: imx: ipuv3: apply clang-format
+- 450f1cf6967 video: imx: ipuv3: prefer kernel types
+- ac5616a8717 video: imx: ipuv3: fix camel cases
+- d8e5f8d24a1 video: imx: ipuv3: add names to clk function identifiers
+- a5afc0287b9 video: imx: ipuv3: use CONFIG_IS_ENABLED
+- f0109936060 video: imx: ipuv3: refactor to use dm-managed state
+- 253a96ffb66 Makefile: Make flash.bin target available on i.MX9
+- 4df43f4474d Merge tag 'u-boot-imx-next-20251229' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+The repository has untracked files but no uncommitted changes, so it's clean enough to proceed. Let me create the new branch based on ci/master.
+
+Now let me cherry-pick the first commit:
+
+Deltas match (1 file, 1 insertion, 1 deletion). Let me run the build test:
+
+Build passed. Let me continue with the second commit:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 3:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 4:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 5:
+
+There's a conflict. Let me examine the conflict and try to resolve it:
+
+The conflict is clear. The commit adds a warning message and more extensive handling. Let me also check what the original commit looks like:
+
+I see the issue. The original commit expects `addr = map_to_sysmem(fdt_blob);` and `lmb_alloc_mem` code to already exist, but in our base (ci/master), we have `lmb_reserve(map_to_sysmem(of_start), of_len, LMB_NONE);` instead. This is a significant code structure difference.
+
+Let me check the current state of the file in ci/master:
+
+Now I see the issue - the base code in ci/master uses `lmb_reserve()`, while the upstream code uses `lmb_alloc_mem()` with error handling. This is a structural difference.
+
+Let me resolve this conflict by taking the incoming changes (from the cherry-pick) since the warning message is the key feature. But I need to check if there's a version of this that works with our code base:
+
+Let me look at the upstream parent of this change in us/next:
+
+That's a lot of history. The issue is that ci/master has an older version of image-fdt.c that uses `lmb_reserve()` while the upstream us/next uses the newer `lmb_alloc_mem()` API. The patch adds a warning between `addr = map_to_sysmem(fdt_blob);` and the `lmb_alloc_mem()` call, but our ci/master doesn't have those lines.
+
+Looking at the conflict, I can adapt the patch to work with our code. The core purpose is to add a warning when `fdt_high=~0`. I'll take our version's `lmb_reserve()` call and add the warning before it:
+
+I can see the conflict. The resolve is to add the warning message before our existing `lmb_reserve()` call. Let me fix this:
+
+Good, the conflict is resolved. Now let me add the file and continue the cherry-pick:
+
+I need to amend the commit message to add a note about the fix-up. Let me do that:
+
+Now let me compare deltas and run the build test:
+
+The deltas are very close (5 vs 6 insertions) - the difference is due to the different API used. The essential change (adding the warning message) is preserved. Let me run the build test:
+
+Build passed. Continue with commit 6:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 7:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 8:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 9:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 10:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 11:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 12:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 13:
+
+Another conflict. Let me check it:
+
+I see - the clang-format commit wants to delete the includes and then add them in a different order. However, it looks like the HEAD side has includes that the incoming change expected to be there but that the change wants to reorder. Let me look at what the original commit is trying to do:
+
+This is a code reformatting commit. The conflict is minor - it's just about the include reordering. I'll resolve this by taking the incoming changes (the new include order) since that's the purpose of the commit:
+
+I see - the includes got duplicated. Let me fix this properly:
+
+Now let me add the file and continue:
+
+Very close - 879 vs 878 deletions (1 line difference). This is acceptable. Build test:
+
+Build passed. Continue with commit 14:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 15:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 16:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 17:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 18:
+
+Deltas match. Build test:
+
+Build passed. Continue with commit 19:
+
+Deltas match. Build test:
+
+Build passed. Now for the final commit (merge commit 20):
+
+The merge commit results in an empty commit as expected. Let me commit it with --allow-empty:
+
+The merge commit is now applied (empty since all changes were already cherry-picked individually). Now let me run the build test and verify the commits:
+
+Build passed. Now let me verify all 20 commits are present:
+
+All 20 commits are present. Let me run the final build test to make sure everything works together:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!** 
+
+### Summary:
+- **Branch:** `cherry-3c43ca3025e` (based on `ci/master`)
+- **Total commits:** 20 commits cherry-picked
+- **Build result:** OK (sandbox builds cleanly)
+
+### Commits cherry-picked (in order):
+1. `908d5a2c890` - clk: fixed_rate: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+2. `3875933176e` - gpio: sandbox: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+3. `0714fea0f71` - i2c: Inline i2c_chip_of_to_plat() into i2c_child_post_bind()
+4. `29f2ddeb684` - i2c: Avoid calling dev_read_*() if CONFIG_OF_PLATDATA=y
+5. `dba0f1b1ddc` - boot: Warn users about fdt_high=~0 usage ⚠️ **Fix-up applied**
+6. `a687652fafc` - video: mxsfb: fix pixel clock polarity
+7. `fd538237d6f` - imx8ulp_evk: Convert to standard boot
+8. `b371171539d` - imx8ulp_evk: Move environment variables to .env file
+9. `35c5be9ad06` - imx8ulp_evk: Switch to use devicetree imported from Linux kernel release
+10. `d220ba62661` - arm64: dts: add NXP FRDM-IMX91 device tree
+11. `cbfc71a5df4` - imx: Support i.MX91 11x11 FRDM board
+12. `9b26043f235` - video: imx: ipuv3: remove undefined function declarations
+13. `428ef6e21ea` - video: imx: ipuv3: apply clang-format
+14. `afb6ee1630b` - video: imx: ipuv3: prefer kernel types
+15. `4df06250af5` - video: imx: ipuv3: fix camel cases
+16. `f5f7d936b4f` - video: imx: ipuv3: add names to clk function identifiers
+17. `6c7a0375f7c` - video: imx: ipuv3: use CONFIG_IS_ENABLED
+18. `9d1cee22067` - video: imx: ipuv3: refactor to use dm-managed state
+19. `9504858d099` - Makefile: Make flash.bin target available on i.MX9
+20. `e510de6d820` - Merge tag 'u-boot-imx-next-20251229' (empty merge commit)
+
+### Fix-ups made:
+1. **Commit 5 (boot: Warn users about fdt_high=~0 usage)**: Had conflict due to different LMB API in ci/master (`lmb_reserve()`) vs us/next (`lmb_alloc_mem()`). The warning message was added before the existing `lmb_reserve()` call. The commit message was amended with a note explaining the adaptation.
+
+2. **Commit 13 (video: imx: ipuv3: apply clang-format)**: Had minor conflict in include ordering in `ipu_common.c`. Resolved by taking the incoming (theirs) version, resulting in a 1-line difference (879 vs 878 deletions).
+
+### Concerning deltas:
+- None - all deltas match or have minor acceptable differences due to conflict resolution.
+
+### Merge commit:
+- The merge commit (`4df43f4474d`) was cherry-picked with `--allow-empty` since all its changes were already included via the individual commits.
+
+The branch `cherry-3c43ca3025e` is ready for pushing.
+
+---
+
