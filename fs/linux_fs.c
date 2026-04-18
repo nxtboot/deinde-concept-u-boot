@@ -25,7 +25,8 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/bio.h>
-#include <asm-generic/atomic.h>
+#include <linux/blk_types.h>
+#include <asm/atomic.h>
 
 #if IS_ENABLED(CONFIG_FS_EXT4L)
 #include "../fs/ext4l/ext4_uboot.h"
@@ -242,6 +243,7 @@ void bh_cache_clear(struct block_device *bdev)
  */
 void bh_cache_release_jbd(struct block_device *bdev)
 {
+#if IS_ENABLED(CONFIG_FS_EXT4L)
 	int i;
 	struct bh_cache_entry *entry;
 
@@ -263,6 +265,7 @@ void bh_cache_release_jbd(struct block_device *bdev)
 			}
 		}
 	}
+#endif
 }
 
 /**

@@ -13,7 +13,7 @@
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/errno.h>
-#include <asm-generic/atomic.h>
+#include <asm/atomic.h>
 
 enum bh_state_bits {
 	BH_Uptodate,	/* Contains valid data */

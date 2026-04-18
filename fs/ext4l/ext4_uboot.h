@@ -75,7 +75,7 @@
 #define no_printk(fmt, ...)	({ 0; })
 
 /* More Linux headers (alphabetical) */
-#include <asm-generic/atomic.h>
+#include <asm/atomic.h>
 #include <asm-generic/bitops/le.h>
 #include <asm-generic/bitops/lock.h>
 #include <asm-generic/timex.h>

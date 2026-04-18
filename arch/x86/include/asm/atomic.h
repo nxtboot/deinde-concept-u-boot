@@ -91,6 +91,23 @@ static inline void atomic_dec(atomic_t *v)
 }
 
 /**
+ * atomic_dec_and_test - decrement and test
+ * @v: pointer of type atomic_t
+ *
+ * Atomically decrements @v by 1 and returns true if the result is 0,
+ * or false for all other cases.
+ */
+static inline int atomic_dec_and_test(atomic_t *v)
+{
+	unsigned char c;
+
+	asm volatile(LOCK_PREFIX "decl %0; sete %1"
+		     : "+m" (v->counter), "=qm" (c)
+		     : : "memory");
+	return c != 0;
+}
+
+/**
  * atomic_inc_short - increment of a short integer
  * @v: pointer to type int
  *
