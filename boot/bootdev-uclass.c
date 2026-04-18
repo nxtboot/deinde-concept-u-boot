@@ -167,10 +167,16 @@ int bootdev_find_in_blk(struct udevice *dev, struct udevice *blk,
 		 * for filesystems or partition contents on this disk
 		 */
 
-	/* if there are bootable partitions, scan only those */
+	/*
+	 * If there are bootable partitions, scan only those, plus any Boot
+	 * Loader Specification target partitions (ESP, XBOOTLDR, MBR 0xea)
+	 * which BLS discovery requires regardless of the bootable attribute.
+	 */
 	} else if ((iter->flags & BOOTFLOWIF_ONLY_BOOTABLE) &&
 		   iter->first_bootable >= 0 &&
-		   (iter->first_bootable ? !info.bootable : iter->part != 1)) {
+		   (iter->first_bootable ? !info.bootable : iter->part != 1) &&
+		   !(CONFIG_IS_ENABLED(BOOTMETH_BLS) &&
+		     part_is_bls_target(&info))) {
 		log_debug("Skipping non-bootable partition %d\n", iter->part);
 		return log_msg_ret("boot", -EINVAL);
 	} else {
