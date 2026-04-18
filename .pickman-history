@@ -60197,6 +60197,7 @@ All 5 commits were successfully cherry-picked from `us/next` to branch `cherry-d
 
 ### Branch Status
 The branch `cherry-d2f0eadb199` is ready for pushing with 5 new commits ahead of `ci/master`.
+
 ---
 
 ## 2026-04-18: us/next
@@ -60216,21 +60217,212 @@ Commits:
 - 802fbe0a287 Merge tag 'mmc-next-2025-12-11' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
 
 ### Conversation log
-(content omitted in rebase)
+Good, the repository is clean (only untracked files). Now let me create a new branch based on ci/master:
+
+Now let's start cherry-picking the commits one by one. Starting with the first commit:
+
+First cherry-pick succeeded. Now let me check the delta and run the build test:
+
+Delta looks identical (1 file changed, 6 insertions). Now let me run the build test:
+
+Build passed. Let's continue with commit 2:
+
+Commit 2 passed. Now commit 3:
+
+Commit 3 passed. Now commit 4:
+
+Commit 4 passed. Now commit 5:
+
+Commit 5 passed. Now commit 6:
+
+Commit 6 passed. Now commit 7:
+
+Commit 7 passed. Now commit 8:
+
+Commit 8 passed. Now commit 9:
+
+Commit 9 passed. Now commit 10, which is a merge commit. I need to use `-m 1 --allow-empty`:
+
+The merge commit resulted in an empty commit (as expected since all changes were in the individual commits). I need to explicitly commit it with `--allow-empty`:
+
+Now let me verify all 10 commits are present:
+
+All 10 commits are present. Now let me run the final build to verify everything works together:
+
+All builds passed. Let me provide the final status report:
+
+## Final Status Report
+
+### Cherry-Pick Summary
+Successfully cherry-picked all 10 commits from `us/next` onto new branch `cherry-b033255a579` (based on `ci/master`).
+
+### Commits Applied (in order):
+| # | Hash (new) | Original Hash | Subject | Status |
+|---|------------|---------------|---------|--------|
+| 1 | d33fb0fd92f | b033255a579 | mmc: sdhci-cadence: Add reset control support | ✅ |
+| 2 | 7ae515880d6 | aebb523a238 | mmc: mmc-uclass: Use max-frequency from device tree with default handling | ✅ |
+| 3 | a2f326d7393 | 1e40e419aeb | mmc: sdhci-cadence: Use max-frequency property from device tree | ✅ |
+| 4 | 9a8cd48aa69 | fa7e82127fa | mmc: sdhci-cadence: Set controller and PHY speed modes for SD and eMMC cards | ✅ |
+| 5 | b52ae26f0e5 | 90f43c7edc6 | mmc: sdhci: Add SDHCI_SPEC_400, _410, and _420 version defines | ✅ |
+| 6 | 55d26241e1b | 7d52b66b9b8 | mmc: sdhci-cadence: Use hardware version field for Cadence SDHCI controller | ✅ |
+| 7 | b6878d6cc65 | 3dafdeface9 | mmc: sdhci-cadence: Enable software tuning for both SD and eMMC interfaces | ✅ |
+| 8 | 2673f41b48f | 7c2ba8a2024 | mmc: sdhci-cadence6: socfpga: Fix DT property naming convention | ✅ |
+| 9 | a67074de21e | ed0e33cec09 | mmc: sdhci-cadence6: Add DLL master control and improve tuning reliability | ✅ |
+| 10 | 5ab084c5211 | 802fbe0a287 | Merge tag 'mmc-next-2025-12-11' (empty, as expected) | ✅ |
+
+### Build Result: **OK** ✅
+- No warnings or errors
+- All 10 intermediate builds passed
+- Final build passed
+
+### Fix-ups Made: **None**
+- All commits applied cleanly with no conflicts
+- All deltas matched exactly between original and cherry-picked commits
+
+### Concerning Deltas: **None**
+- All commit deltas matched exactly (same files changed, same line counts)
+
+### Branch Status:
+- Branch `cherry-b033255a579` is ready for pushing
+- Branch is 10 commits ahead of `ci/master`
 
 ---
 
 ## 2026-04-18: us/next
 
-Branch: cherry-aff0f4d30ec
+Branch: cherry-85a3ee15e03
 
 Commits:
-- aff0f4d30ec Revert "clk: Return value calculated by ERR_PTR"
-- 447bd8f1e5c simple-pm-bus: Make clocks optional
-- 86d2747a9c9 power: domain: Add ti-omap-prm stub
-- 6f2d0090f98 clk: ti: Split common omap2plus functions into new symbol
-- f75f8397e81 clk: ti: omap4-cm: Add Kconfig symbol
-- f4b50e75014 Merge patch series "clk: ti: Cleanup common functions and omap-cm"
+- 85a3ee15e03 configs: cyclone5: Enable random MAC address
+- 029e6f250cd Revert "arch: arm: dts: agilex5: Set SDIO_SEL GPIO pin as output"
+- eb367367301 arm: dts: socfpga: agilex5: Upgrade SDHCI controller from SD4HC to SD6HC
+- 77387f05c06 configs: socfpga_agilex5: Enable MMC and Cadence SDHCI support
+- ed7725c25e4 arm: dts: socfpga: agilex5: Add dedicated eMMC device tree support
+- 26eb2cda399 configs: arria10: Disable mkeficapsule tool build
+- 136d750c2ed spi: designware: Allow disabling designware driver in SPL
+- a47b1e165e6 spl: Kconfig: Add missing SPL_LOAD_BLOCK for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE
+- 94d0c1d3edb spl: mmc: Account for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE being a choice
+- 62584916c9f spl: mmc: Respect sector value passed to mmc_load_image_raw_partition
+- 1cf1b504f41 arch: arm: mach-socfpga: Adjust a raw sectors for MMC loading of U-Boot from SPL
+- 217eb9b119c configs: socfpga: Fix de0_nano_soc boot
+- 6f419247baa configs: socfpga: Permit EFI booting
+- 930eff5416e Merge tag 'u-boot-socfpga-next-20251217' of https://source.denx.de/u-boot/custodians/u-boot-socfpga into next
 
 ### Conversation log
-(content omitted in rebase)
+The repository is clean (only untracked files present, which is fine). Now let me create the branch based on ci/master:
+
+Now let me start cherry-picking the commits one by one. First commit:
+
+Let me verify the delta and run build test:
+
+Delta matches. Let me run the build test:
+
+Build passed. Now cherry-pick the second commit:
+
+Delta matches. Build test:
+
+Build passed. Third commit:
+
+Delta matches. Build test:
+
+Build passed. Fourth commit:
+
+Delta matches. Build test:
+
+Build passed. Fifth commit:
+
+Delta matches. Build test:
+
+Build passed. Sixth commit:
+
+Delta matches. Build test:
+
+Build passed. Seventh commit:
+
+Delta matches. Build test:
+
+Build passed. Eighth commit:
+
+Delta matches. Build test:
+
+Build passed. Ninth commit:
+
+Delta matches. Build test:
+
+Build passed. Tenth commit:
+
+Delta matches. Build test:
+
+Build passed. Eleventh commit:
+
+Delta matches. Build test:
+
+Build passed. Twelfth commit:
+
+Delta matches. Build test:
+
+Build passed. Thirteenth commit:
+
+Delta matches. Build test:
+
+Build passed. Now the final commit (14th) - this is a merge commit so I need to use `-m 1 --allow-empty`:
+
+There are conflicts. Let me check them:
+
+Let me examine the conflicts:
+
+Now let me check if uuid.c has simple conflict markers:
+
+The uuid.c conflict is about structure format - one has NULL prefix, the other doesn't. Let me check the current state in ci/master to see which format is expected:
+
+The format in ci/master doesn't have NULL prefixes. So we should use HEAD version (without NULL). Let me resolve the conflicts:
+
+The merge commit resulted in an empty commit (which is expected since we already applied all the individual commits). Let me commit it with --allow-empty as required:
+
+Now let me verify the merge commit delta:
+
+The merge commit was expected to be empty since all the individual commits were already cherry-picked. The original merge commit shows many unrelated files because it brought in the whole u-boot-socfpga branch. Our empty merge is correct behavior. Now let me run the build test:
+
+Build passed. Now let me verify all 14 commits are present:
+
+All 14 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Summary
+- **Branch:** `cherry-85a3ee15e03` (based on `ci/master`)
+- **Total commits:** 14 (all present)
+- **Build result:** OK (sandbox builds successfully)
+
+### Commits cherry-picked (in order):
+1. `a64f55f36ec` - configs: cyclone5: Enable random MAC address
+2. `e5b78338c91` - Revert "arch: arm: dts: agilex5: Set SDIO_SEL GPIO pin as output"
+3. `aa2bd49e0e8` - arm: dts: socfpga: agilex5: Upgrade SDHCI controller from SD4HC to SD6HC
+4. `5ba4eb52a49` - configs: socfpga_agilex5: Enable MMC and Cadence SDHCI support
+5. `e435e75ece0` - arm: dts: socfpga: agilex5: Add dedicated eMMC device tree support
+6. `fdf00a0d7d0` - configs: arria10: Disable mkeficapsule tool build
+7. `3563b646f2b` - spi: designware: Allow disabling designware driver in SPL
+8. `0e5a79c247e` - spl: Kconfig: Add missing SPL_LOAD_BLOCK for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE
+9. `ffa8042db96` - spl: mmc: Account for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE being a choice
+10. `8c025516431` - spl: mmc: Respect sector value passed to mmc_load_image_raw_partition
+11. `c733dd758c0` - arch: arm: mach-socfpga: Adjust a raw sectors for MMC loading of U-Boot from SPL
+12. `f9b1f68c220` - configs: socfpga: Fix de0_nano_soc boot
+13. `b0064d48a9c` - configs: socfpga: Permit EFI booting
+14. `ef85c768ce2` - Merge tag 'u-boot-socfpga-next-20251217' *(empty merge commit)*
+
+### Fix-ups made:
+- **Merge commit (930eff5416e):** Resolved conflicts in `configs/am43xx_hs_evm_defconfig` and `lib/uuid.c` by keeping the current tree's version (which uses the correct format without NULL prefixes). The merge commit was empty after resolution because all individual commits were already cherry-picked.
+
+### Delta verification:
+- All 13 regular commits matched their original deltas exactly (same files, same line counts)
+- Merge commit was correctly empty (its changes are already present via the individual commits)
+
+### Commits with concerning deltas:
+- None - all deltas matched expectations
+
+The branch `cherry-85a3ee15e03` is ready for pushing.
+
+---
+
