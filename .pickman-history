@@ -60197,7 +60197,6 @@ All 5 commits were successfully cherry-picked from `us/next` to branch `cherry-d
 
 ### Branch Status
 The branch `cherry-d2f0eadb199` is ready for pushing with 5 new commits ahead of `ci/master`.
-
 ---
 
 ## 2026-04-18: us/next
@@ -60217,511 +60216,145 @@ Commits:
 - 802fbe0a287 Merge tag 'mmc-next-2025-12-11' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
 
 ### Conversation log
-Good, the repository is clean (only untracked files). Now let me create a new branch based on ci/master:
-
-Now let's start cherry-picking the commits one by one. Starting with the first commit:
-
-First cherry-pick succeeded. Now let me check the delta and run the build test:
-
-Delta looks identical (1 file changed, 6 insertions). Now let me run the build test:
-
-Build passed. Let's continue with commit 2:
-
-Commit 2 passed. Now commit 3:
-
-Commit 3 passed. Now commit 4:
-
-Commit 4 passed. Now commit 5:
-
-Commit 5 passed. Now commit 6:
-
-Commit 6 passed. Now commit 7:
-
-Commit 7 passed. Now commit 8:
-
-Commit 8 passed. Now commit 9:
-
-Commit 9 passed. Now commit 10, which is a merge commit. I need to use `-m 1 --allow-empty`:
-
-The merge commit resulted in an empty commit (as expected since all changes were in the individual commits). I need to explicitly commit it with `--allow-empty`:
-
-Now let me verify all 10 commits are present:
-
-All 10 commits are present. Now let me run the final build to verify everything works together:
-
-All builds passed. Let me provide the final status report:
-
-## Final Status Report
-
-### Cherry-Pick Summary
-Successfully cherry-picked all 10 commits from `us/next` onto new branch `cherry-b033255a579` (based on `ci/master`).
-
-### Commits Applied (in order):
-| # | Hash (new) | Original Hash | Subject | Status |
-|---|------------|---------------|---------|--------|
-| 1 | d33fb0fd92f | b033255a579 | mmc: sdhci-cadence: Add reset control support | ✅ |
-| 2 | 7ae515880d6 | aebb523a238 | mmc: mmc-uclass: Use max-frequency from device tree with default handling | ✅ |
-| 3 | a2f326d7393 | 1e40e419aeb | mmc: sdhci-cadence: Use max-frequency property from device tree | ✅ |
-| 4 | 9a8cd48aa69 | fa7e82127fa | mmc: sdhci-cadence: Set controller and PHY speed modes for SD and eMMC cards | ✅ |
-| 5 | b52ae26f0e5 | 90f43c7edc6 | mmc: sdhci: Add SDHCI_SPEC_400, _410, and _420 version defines | ✅ |
-| 6 | 55d26241e1b | 7d52b66b9b8 | mmc: sdhci-cadence: Use hardware version field for Cadence SDHCI controller | ✅ |
-| 7 | b6878d6cc65 | 3dafdeface9 | mmc: sdhci-cadence: Enable software tuning for both SD and eMMC interfaces | ✅ |
-| 8 | 2673f41b48f | 7c2ba8a2024 | mmc: sdhci-cadence6: socfpga: Fix DT property naming convention | ✅ |
-| 9 | a67074de21e | ed0e33cec09 | mmc: sdhci-cadence6: Add DLL master control and improve tuning reliability | ✅ |
-| 10 | 5ab084c5211 | 802fbe0a287 | Merge tag 'mmc-next-2025-12-11' (empty, as expected) | ✅ |
-
-### Build Result: **OK** ✅
-- No warnings or errors
-- All 10 intermediate builds passed
-- Final build passed
-
-### Fix-ups Made: **None**
-- All commits applied cleanly with no conflicts
-- All deltas matched exactly between original and cherry-picked commits
-
-### Concerning Deltas: **None**
-- All commit deltas matched exactly (same files changed, same line counts)
-
-### Branch Status:
-- Branch `cherry-b033255a579` is ready for pushing
-- Branch is 10 commits ahead of `ci/master`
+(content omitted in rebase)
 
 ---
 
 ## 2026-04-18: us/next
 
-Branch: cherry-85a3ee15e03
+Branch: cherry-aff0f4d30ec
 
 Commits:
-- 85a3ee15e03 configs: cyclone5: Enable random MAC address
-- 029e6f250cd Revert "arch: arm: dts: agilex5: Set SDIO_SEL GPIO pin as output"
-- eb367367301 arm: dts: socfpga: agilex5: Upgrade SDHCI controller from SD4HC to SD6HC
-- 77387f05c06 configs: socfpga_agilex5: Enable MMC and Cadence SDHCI support
-- ed7725c25e4 arm: dts: socfpga: agilex5: Add dedicated eMMC device tree support
-- 26eb2cda399 configs: arria10: Disable mkeficapsule tool build
-- 136d750c2ed spi: designware: Allow disabling designware driver in SPL
-- a47b1e165e6 spl: Kconfig: Add missing SPL_LOAD_BLOCK for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE
-- 94d0c1d3edb spl: mmc: Account for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE being a choice
-- 62584916c9f spl: mmc: Respect sector value passed to mmc_load_image_raw_partition
-- 1cf1b504f41 arch: arm: mach-socfpga: Adjust a raw sectors for MMC loading of U-Boot from SPL
-- 217eb9b119c configs: socfpga: Fix de0_nano_soc boot
-- 6f419247baa configs: socfpga: Permit EFI booting
-- 930eff5416e Merge tag 'u-boot-socfpga-next-20251217' of https://source.denx.de/u-boot/custodians/u-boot-socfpga into next
+- aff0f4d30ec Revert "clk: Return value calculated by ERR_PTR"
+- 447bd8f1e5c simple-pm-bus: Make clocks optional
+- 86d2747a9c9 power: domain: Add ti-omap-prm stub
+- 6f2d0090f98 clk: ti: Split common omap2plus functions into new symbol
+- f75f8397e81 clk: ti: omap4-cm: Add Kconfig symbol
+- f4b50e75014 Merge patch series "clk: ti: Cleanup common functions and omap-cm"
 
 ### Conversation log
-The repository is clean (only untracked files present, which is fine). Now let me create the branch based on ci/master:
+(content omitted in rebase)
+## 2026-04-18: us/next
 
-Now let me start cherry-picking the commits one by one. First commit:
+Branch: cherry-24308102cdc
 
-Let me verify the delta and run build test:
-
-Delta matches. Let me run the build test:
-
-Build passed. Now cherry-pick the second commit:
-
-Delta matches. Build test:
-
-Build passed. Third commit:
-
-Delta matches. Build test:
-
-Build passed. Fourth commit:
-
-Delta matches. Build test:
-
-Build passed. Fifth commit:
-
-Delta matches. Build test:
-
-Build passed. Sixth commit:
-
-Delta matches. Build test:
-
-Build passed. Seventh commit:
-
-Delta matches. Build test:
-
-Build passed. Eighth commit:
-
-Delta matches. Build test:
-
-Build passed. Ninth commit:
-
-Delta matches. Build test:
-
-Build passed. Tenth commit:
-
-Delta matches. Build test:
-
-Build passed. Eleventh commit:
-
-Delta matches. Build test:
-
-Build passed. Twelfth commit:
-
-Delta matches. Build test:
-
-Build passed. Thirteenth commit:
-
-Delta matches. Build test:
-
-Build passed. Now the final commit (14th) - this is a merge commit so I need to use `-m 1 --allow-empty`:
-
-There are conflicts. Let me check them:
-
-Let me examine the conflicts:
-
-Now let me check if uuid.c has simple conflict markers:
-
-The uuid.c conflict is about structure format - one has NULL prefix, the other doesn't. Let me check the current state in ci/master to see which format is expected:
-
-The format in ci/master doesn't have NULL prefixes. So we should use HEAD version (without NULL). Let me resolve the conflicts:
-
-The merge commit resulted in an empty commit (which is expected since we already applied all the individual commits). Let me commit it with --allow-empty as required:
-
-Now let me verify the merge commit delta:
-
-The merge commit was expected to be empty since all the individual commits were already cherry-picked. The original merge commit shows many unrelated files because it brought in the whole u-boot-socfpga branch. Our empty merge is correct behavior. Now let me run the build test:
-
-Build passed. Now let me verify all 14 commits are present:
-
-All 14 commits are present. Let me run the final build test:
-
-## Final Status Report
-
-**Cherry-pick completed successfully!**
-
-### Summary
-- **Branch:** `cherry-85a3ee15e03` (based on `ci/master`)
-- **Total commits:** 14 (all present)
-- **Build result:** OK (sandbox builds successfully)
-
-### Commits cherry-picked (in order):
-1. `a64f55f36ec` - configs: cyclone5: Enable random MAC address
-2. `e5b78338c91` - Revert "arch: arm: dts: agilex5: Set SDIO_SEL GPIO pin as output"
-3. `aa2bd49e0e8` - arm: dts: socfpga: agilex5: Upgrade SDHCI controller from SD4HC to SD6HC
-4. `5ba4eb52a49` - configs: socfpga_agilex5: Enable MMC and Cadence SDHCI support
-5. `e435e75ece0` - arm: dts: socfpga: agilex5: Add dedicated eMMC device tree support
-6. `fdf00a0d7d0` - configs: arria10: Disable mkeficapsule tool build
-7. `3563b646f2b` - spi: designware: Allow disabling designware driver in SPL
-8. `0e5a79c247e` - spl: Kconfig: Add missing SPL_LOAD_BLOCK for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE
-9. `ffa8042db96` - spl: mmc: Account for SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE being a choice
-10. `8c025516431` - spl: mmc: Respect sector value passed to mmc_load_image_raw_partition
-11. `c733dd758c0` - arch: arm: mach-socfpga: Adjust a raw sectors for MMC loading of U-Boot from SPL
-12. `f9b1f68c220` - configs: socfpga: Fix de0_nano_soc boot
-13. `b0064d48a9c` - configs: socfpga: Permit EFI booting
-14. `ef85c768ce2` - Merge tag 'u-boot-socfpga-next-20251217' *(empty merge commit)*
-
-### Fix-ups made:
-- **Merge commit (930eff5416e):** Resolved conflicts in `configs/am43xx_hs_evm_defconfig` and `lib/uuid.c` by keeping the current tree's version (which uses the correct format without NULL prefixes). The merge commit was empty after resolution because all individual commits were already cherry-picked.
-
-### Delta verification:
-- All 13 regular commits matched their original deltas exactly (same files, same line counts)
-- Merge commit was correctly empty (its changes are already present via the individual commits)
-
-### Commits with concerning deltas:
-- None - all deltas matched expectations
-
-The branch `cherry-85a3ee15e03` is ready for pushing.
-
----
-
-### Pipeline fix: 2026-04-18 (attempt 1)
-
-Branch: cherry-85a3ee15e03
-
-Failed jobs:
-- efi-aarch64 (sjg-lab)
-- opi_pc (sjg-lab)
+Commits:
+- 24308102cdc board: xilinx: Update ESRT after copying GUID
+- 16f0332b180 clk: versal: Use __data macro for moving variable to data section
+- 2b7255cfa06 clk: versal: Add support for CLK_AUTO_ID
+- ac9494e96bd clk: versal: Cleanup driver
+- a078ebb86f6 firmware: xilinx: Add support for enhancement SMC format
+- 7c1e0370483 clk: versal: Enable clock driver for Versal Gen 2
+- 55e097ec88a spi: cadence: Remove cdns,is-dma DT property
+- b2a8ac78202 arm64: xilinx: Remove unnecessary #address/size-cells
+- 66a9a431ee6 board: xilinx: Retry FRU EEPROM read on timeout
+- 16eaf907d58 common: memtop: Update the MEM_RGN_COUNT macro to 64
+- 358b5e62018 xilinx: amd: Enable the PCA9541 I2C Bus arbiter
+- 9d5b4f63beb arm64: versal2: Enable USB5744 usb hub
+- a4b96effecf arm64: versal2: Update the text base and dtb address
+- b869d317975 arm64: versal2: Enable reset and poweroff via sysreset framework
+- 857a3b49c36 cadence_qspi: Remove duplicated return
+- b6391d1d9b3 cadence_qspi: Update the delays for flash reset
+- 29427fdf719 arm64: versal2: Read and show multiboot value
+- e9ce819f935 xilinx: versal: Get rid of xlnx-versal-power.h from bindings
+- 38e3f9658ef i2c: cdns: Add timeout for RXDV status bit polling
+- e94fe1c16d8 xilinx: mbv32: Disable floating point
+- 794cbdb08c6 xilinx: mbv: Disable SPL GZIP
+- 3af56e2e55f xilinx: mbv: Remove debug UART support
+- c8898f12d30 board: xilinx: add SPL boot device support
+- 6b743f66d83 xilinx: mbv: Update defconfigs as per memory map
+- 0b880fc95db arch/arm/mach-zynqmp: configure default BL32_LOAD_ADDR
+- 2aeaa3c4f53 Merge tag 'xilinx-for-v2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-microblaze into next
 
 ### Conversation log
-Let me analyze the logs:
+Now I need to check if commits a4b96effecf and b869d317975 are already applied. Let me compare them with the suggested hashes:
 
-**Job: efi-aarch64** - The key error is:
-```
-aarch64-linux-objcopy: u-boot[.text]: file truncated
-make[1]: *** [Makefile:1331: u-boot.srec] Error 1
-```
+The patches are different - they change different things. Let me check what changes are in each:
 
-This is a build failure during `scripts/build-efi` for efi-arm_app64 target.
+The commits have the same subject but different changes - the original adds XILINX_OF_BOARD_DTB_ADDR while the found commit changes TEXT_BASE. These are different commits, so I should proceed with the cherry-pick:
 
-**Job: opi_pc** - The key error is:
-```
-pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
-Lab failure: Marking connection bad - no other tests will run
-```
+Now let me check commit 14 (b869d317975) vs the possibly already applied commit (cae2647add5):
 
-This is a lab/infrastructure timeout issue - the hardware didn't respond to the U-Boot prompt.
+The patches differ - the original adds 1 line (SYSRESET_CMD_POWEROFF) while the found adds 3 lines (including CMD_POWEROFF, SYSRESET, and SYSRESET_PSCI). These are different - let me proceed with the cherry-pick:
 
-Let me checkout the branch and investigate further:
+The conflict is straightforward - there's a conflict about SPL_MAX_SIZE. Looking at the conflict:
+- HEAD (our branch) has CONFIG_SPL_MAX_SIZE=0x40000 (line 21)
+- The incoming commit wants CONFIG_SPL_MAX_SIZE=0xf000 (line 32-33)
 
-Looking at the error logs again:
+The incoming commit wants to update the value. The conflict arises because the line exists in a different position. I'll resolve this by keeping the incoming change since it's the intended update:
 
-1. **efi-aarch64 job** - `aarch64-linux-objcopy: u-boot[.text]: file truncated` - This is a build failure during efi-arm_app64 target.
+But wait - I need to look at the original commit to understand what it intended to change:
 
-2. **opi_pc job** - `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` - This is a lab hardware timeout - the board didn't respond.
+Let me check what the original commit changed:
 
-The opi_pc failure looks like an infrastructure/transient issue - the hardware lab board didn't boot properly. The efi-aarch64 failure is a build failure that needs investigation.
+I see - the `--theirs` will give me the original version from `us/next`, but we need the changes from commit 6b743f66d83 applied to the current state. Let me check the current state after accepting `--theirs`:
 
-Let me try to reproduce the efi-aarch64 build failure:
+This looks incorrect - it's accepting the original file from `us/next` instead of applying the changes. Let me reset and redo:
 
-The orangepi_pc board builds fine. The efi-aarch64 is not a regular board - it's an EFI test that uses the `scripts/build-efi` script. Let me look at the error more closely.
+Good, cherry-pick was aborted. Now let me re-attempt and manually resolve the conflict:
 
-The error was:
-```
-aarch64-linux-objcopy: u-boot[.text]: file truncated
-make[1]: *** [Makefile:1331: u-boot.srec] Error 1
-```
+I see - the conflict is about placing `CONFIG_SPL_MAX_SIZE=0xf000` after `# CONFIG_BOARD_LATE_INIT is not set`. However, there's already a `CONFIG_SPL_MAX_SIZE=0x40000` at line 21. The original commit wants to:
+1. Remove CONFIG_SPL_MAX_SIZE from line 21 (value 0x40000)
+2. Add CONFIG_SPL_MAX_SIZE=0xf000 after CONFIG_BOARD_LATE_INIT
 
-This could be a flaky build issue or related to disk space/timing. Let me check if there's a pattern with commits that might cause this.
+But due to earlier commits, the structure changed. Let me:
+1. Remove line 21 (CONFIG_SPL_MAX_SIZE=0x40000)
+2. Accept the incoming change (SPL_MAX_SIZE=0xf000 after BOARD_LATE_INIT)
 
-The efi-aarch64 build succeeds locally. Let me also do a sandbox build as a sanity check:
+The delta matches (8 insertions, 4 deletions). However, I need to amend the commit to add a note about the conflict resolution:
 
-Both builds pass locally. Let me analyze the failures more carefully:
+Now the last commit - the merge commit:
 
-1. **efi-aarch64**: The error `aarch64-linux-objcopy: u-boot[.text]: file truncated` is typically caused by parallel build race conditions or disk space issues. This looks like a transient CI infrastructure issue rather than a code bug.
+All 26 commits are present. Let me run the final build:
 
-2. **opi_pc**: The error `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` is a hardware lab timeout - the board hardware didn't boot or respond in time. This is also clearly an infrastructure/transient issue.
+All cherry-picks completed successfully. Let me provide a summary:
 
-Let me verify there are no obvious code issues by checking what the commits touched:
+## Cherry-Pick Summary
 
-Looking at the commits:
-- Most are config changes for socfpga boards
-- Changes to SPL MMC loading code
-- Changes to SPI designware driver
-- Changes to agilex5 device tree
+### Branch: `cherry-24308102cdc` (based on `ci/master`)
 
-None of these would affect efi-aarch64 or orangepi_pc builds directly. The efi-aarch64 test is about building an EFI application (efi-arm_app64) which is a generic build, not specific to socfpga.
+**Build Result:** ✅ OK (no errors or warnings)
 
-Let me double-check by trying to build some additional boards:
+### Commits Cherry-Picked (26 total):
 
-All builds pass locally. The warnings about missing blobs (bl1, fip, fw_dynamic) are expected and not errors.
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | 54295d52389 | board: xilinx: Update ESRT after copying GUID | ✅ Clean |
+| 2 | 6d6be7f055b | clk: versal: Use __data macro for moving variable to data section | ✅ Clean |
+| 3 | d98d68ec821 | clk: versal: Add support for CLK_AUTO_ID | ✅ Clean |
+| 4 | 01006fe27b6 | clk: versal: Cleanup driver | ✅ Clean |
+| 5 | 5129d19d2e2 | firmware: xilinx: Add support for enhancement SMC format | ✅ Clean |
+| 6 | 0647af43495 | clk: versal: Enable clock driver for Versal Gen 2 | ✅ Clean |
+| 7 | 7c9f65739a7 | spi: cadence: Remove cdns,is-dma DT property | ✅ Clean |
+| 8 | 60adb99821d | arm64: xilinx: Remove unnecessary #address/size-cells | ✅ Clean |
+| 9 | 6e7800e0283 | board: xilinx: Retry FRU EEPROM read on timeout | ✅ Clean |
+| 10 | 486b8496501 | common: memtop: Update the MEM_RGN_COUNT macro to 64 | ✅ Clean |
+| 11 | b595b741ea9 | xilinx: amd: Enable the PCA9541 I2C Bus arbiter | ✅ Clean |
+| 12 | cc01d987521 | arm64: versal2: Enable USB5744 usb hub | ✅ Clean |
+| 13 | ba8a1459a0b | arm64: versal2: Update the text base and dtb address | ✅ Cherry-picked (different from 7e722b2b8ca - this adds XILINX_OF_BOARD_DTB_ADDR, not TEXT_BASE) |
+| 14 | 3f36a1ebff6 | arm64: versal2: Enable reset and poweroff via sysreset framework | ✅ Cherry-picked (different from cae2647add5 - adds only SYSRESET_CMD_POWEROFF, not full sysreset config) |
+| 15 | 360631eea3e | cadence_qspi: Remove duplicated return | ✅ Clean |
+| 16 | dfaeefbb8eb | cadence_qspi: Update the delays for flash reset | ✅ Clean |
+| 17 | 700ba9aa299 | arm64: versal2: Read and show multiboot value | ✅ Clean |
+| 18 | 23c15478fd9 | xilinx: versal: Get rid of xlnx-versal-power.h from bindings | ✅ Clean |
+| 19 | 0e00213de72 | i2c: cdns: Add timeout for RXDV status bit polling | ✅ Clean |
+| 20 | ae2f4e338a2 | xilinx: mbv32: Disable floating point | ✅ Clean |
+| 21 | 52557e31741 | xilinx: mbv: Disable SPL GZIP | ✅ Clean |
+| 22 | 525de2af216 | xilinx: mbv: Remove debug UART support | ✅ Clean |
+| 23 | cb01909e4ee | board: xilinx: add SPL boot device support | ✅ Clean |
+| 24 | 2667cf79fbf | xilinx: mbv: Update defconfigs as per memory map | ⚠️ **Conflict resolved** (CONFIG_SPL_MAX_SIZE reordering) |
+| 25 | fa7793a6dfc | arch/arm/mach-zynqmp: configure default BL32_LOAD_ADDR | ✅ Clean |
+| 26 | eb9f102b7fa | Merge tag 'xilinx-for-v2026.04-rc1' | ✅ Empty merge (expected) |
 
-Let me analyze the situation:
+### Fix-ups Made:
+- **Commit 24 (2667cf79fbf)**: Resolved conflict in `configs/xilinx_mbv32_defconfig` where `CONFIG_SPL_MAX_SIZE` appeared in two locations due to prior commits. Removed the duplicate and kept the new value at the correct position.
 
-1. **efi-aarch64 job**: The error `aarch64-linux-objcopy: u-boot[.text]: file truncated` at Makefile:1331 (u-boot.srec) is a known transient issue that can happen during parallel builds when objcopy runs while the u-boot binary is still being linked. This is a race condition in the build system that happens intermittently in CI environments.
+### Notes on "Maybe Already Applied" Commits:
+- **a4b96effecf vs 7e722b2b8ca**: These are **different commits** - the original adds `XILINX_OF_BOARD_DTB_ADDR`, while 7e722b2b8ca changes `TEXT_BASE`. Both were cherry-picked.
+- **b869d317975 vs cae2647add5**: These are **different commits** - the original adds only `SYSRESET_CMD_POWEROFF`, while cae2647add5 adds multiple sysreset options. Both were cherry-picked.
 
-2. **opi_pc job**: The `pexpect.exceptions.TIMEOUT` is clearly a lab hardware issue - the Orange Pi PC board didn't respond within the 15 second timeout. This is an infrastructure issue with the test lab.
-
-Both failures are transient/infrastructure issues, not code bugs. The builds pass locally and there's nothing in the commits that would specifically cause these failures.
-
-Let me report this finding:
-
-## Summary
-
-**Both pipeline failures are infrastructure/transient issues, not code bugs.**
-
-### Job: efi-aarch64
-- **Error**: `aarch64-linux-objcopy: u-boot[.text]: file truncated`
-- **Root cause**: This is a known intermittent build race condition where objcopy tries to process the u-boot binary while it's still being linked. It happens occasionally in parallel builds on CI runners.
-- **Evidence**: The `scripts/build-efi -a arm -n` build completes successfully locally.
-
-### Job: opi_pc  
-- **Error**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
-- **Root cause**: The Orange Pi PC hardware in the test lab didn't boot or respond within the timeout period. This is a lab infrastructure issue.
-- **Evidence**: The `orangepi_pc` board builds successfully locally.
-
-### Verification
-- All relevant boards build successfully locally:
-  - `scripts/build-efi -a arm -n` ✓
-  - `um build sandbox` ✓
-  - `buildman orangepi_pc` ✓
-  - `buildman qemu` (19 boards) ✓
-
-### Recommendation
-No code changes are needed. The CI pipeline should be retried. Both failures are transient:
-1. The efi-aarch64 build failure is a race condition that typically resolves on retry
-2. The opi_pc lab timeout is a hardware/infrastructure issue that may resolve on retry or requires lab maintenance
-
-**No fix branch created** since these are infrastructure issues, not code bugs.
-
----
-
-### Review: 2026-04-18
-
-Branch: cherry-85a3ee15e03
-
-Comments addressed:
-- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc.
-
-Let me analyze the logs:
-
-**Job:...
-
-### Conversation log
-Now let me understand the review comment. The comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` mentions "Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc." 
-
-Looking at the conversation log, I can see that the previous analysis concluded that both failures were infrastructure/transient issues:
-1. **efi-aarch64**: Build race condition - `file truncated` error
-2. **opi_pc**: Lab hardware timeout
-
-The previous assessment was that "No code changes are needed" and "No fix branch created since these are infrastructure issues, not code bugs."
-
-However, the review comment is asking me to address this. Let me re-read the comment more carefully - it says "fixed failed job(s)" which implies someone has already fixed something, or it's asking me to attempt a fix.
-
-Let me check if there are any actual issues that could be fixed, or if this is simply a request to retry the pipeline:
-
-I see - there's already a "pickman: Record pipeline fix" commit on the branch. Let me re-read the review comment. The comment says "Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc."
-
-Looking at the format of this comment, it appears to be a bot message that is recording the status of a pipeline fix attempt. The previous analysis determined the failures were infrastructure issues, not code bugs.
-
-Since the review comment is from a bot recording the pipeline fix attempt, and the failures were identified as transient infrastructure issues (not code bugs), the appropriate response would be to:
-
-1. Verify there are no actual code issues to fix
-2. Report that the failures are transient and require a pipeline retry
-
-Let me verify the build passes locally:
-
-The build passes. Now let me understand what action is needed for the review comment. Looking at the task description again: "address 1 review comment(s)".
-
-The review comment is from a bot, and it's essentially a status message about pipeline fix attempt 1. The previous analysis concluded the failures were transient infrastructure issues (build race condition and hardware timeout), not code bugs.
-
-Given this situation, the appropriate action is:
-1. Confirm that no code changes are needed
-2. The pipeline should simply be retried
-
-Let me check if there's anything else I need to do here. Since the review comment is essentially a status message from a bot (not a request for code changes), the appropriate response would be to acknowledge the situation and recommend retrying the pipeline.
-
-Let me check if the branch needs to be updated or if this is just a matter of providing a response:
-
-The branch is clean (no staged or unstaged changes to commit). 
-
-Looking at this situation:
-- The review comment is from a bot recording a "Pipeline fix (attempt 1)" status
-- The previous analysis determined both failures (efi-aarch64, opi_pc) were infrastructure/transient issues
-- No code changes were made or needed
-- The build passes locally
-
-This is essentially a "no action needed" situation from a code perspective. The appropriate response is to acknowledge that the failures are transient and recommend retrying the pipeline.
-
-## Summary Report
-
-**Review Comment Addressed:**
-The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` states: "Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc."
-
-**Analysis:**
-This comment is a bot status message recording a previous pipeline fix attempt. According to the conversation log, the failed jobs were analyzed and determined to be:
-
-1. **efi-aarch64**: `aarch64-linux-objcopy: u-boot[.text]: file truncated` - A transient build race condition where objcopy runs while the u-boot binary is still being linked.
-
-2. **opi_pc**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` - A lab hardware timeout issue where the Orange Pi PC board didn't respond.
-
-**Verification:**
-- The sandbox build passes locally: ✓
-- No code changes are required since both failures are infrastructure/transient issues
-
-**Action Taken:**
-No code changes were made because:
-- The failures are infrastructure issues, not code bugs
-- The branch already has the correct code
-- The appropriate remedy is to retry the CI pipeline
-
-**Reply to post to the MR:**
-
-> The pipeline failures in jobs `efi-aarch64` and `opi_pc` were analyzed and determined to be transient infrastructure issues, not code bugs:
->
-> 1. **efi-aarch64**: The error `aarch64-linux-objcopy: u-boot[.text]: file truncated` is a known intermittent build race condition that occurs in CI parallel builds.
->
-> 2. **opi_pc**: The error `pexpect.exceptions.TIMEOUT` is a lab hardware timeout - the test board didn't respond within the timeout period.
->
-> No code changes are needed. Local builds pass successfully. Recommend retrying the CI pipeline.
-
----
-
-### Review: 2026-04-18
-
-Branch: cherry-85a3ee15e03
-
-Comments addressed:
-- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, colibrimx8, opi_pc.
-
-Now let me analyze t...
-
-### Conversation log
-Now let me understand the review comment. Looking at the context, this is "Pipeline fix (attempt 2)" and the bot is recording that the failed jobs were efi-aarch64, colibrimx8, and opi_pc. 
-
-According to the conversation log, the previous analysis (in the context) concluded all three failures are transient infrastructure issues:
-
-1. **efi-aarch64**: Build race condition (`aarch64-linux-objcopy: u-boot[.text]: file truncated`)
-2. **colibrimx8**: Flaky timing test - sleep test exceeded margin by 0.07 seconds
-3. **opi_pc**: Lab hardware timeout
-
-Let me verify the builds pass locally and determine what action to take:
-
-The sandbox build passes. Let me also check the local branch status and see if there's a -v2 branch already:
-
-There's already a `-fix2` branch. Since this is attempt 2 and the failures are all transient/infrastructure issues, I need to understand what action is expected. Let me look at the review comment more carefully.
-
-The review comment from the bot says: "Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, colibrimx8, opi_pc."
-
-This appears to be a bot recording the status. The key question is: are there actual code changes needed, or is this just a pipeline retry situation?
-
-Looking at the three failures again:
-1. **efi-aarch64**: `file truncated` - classic build race condition, transient
-2. **colibrimx8**: `test_sleep` failed - timing flakiness on real hardware
-3. **opi_pc**: `pexpect.exceptions.TIMEOUT` - lab hardware didn't boot
-
-All three are infrastructure/transient issues. The colibrimx8 sleep test failure is interesting - let me check if this is something we could potentially address:
-
-I can see the sleep test has a configurable margin (`env__sleep_margin`) that defaults to 0.25 seconds. The test failure was `assert 3.322519063949585 < (3 + 0.25)` - the elapsed time was 3.32s but the max allowed was 3.25s.
-
-This is a test configuration issue on the CI lab, not something we can fix in this branch. The fix would be to configure `env__sleep_margin` to a larger value on the colibrimx8 board configuration in the lab.
-
-Since all three failures are infrastructure/transient issues, the appropriate action is to:
-1. Record that these are transient issues
-2. Recommend a pipeline retry
-3. No code changes needed
-
-Let me check if there are any existing -v2, -v3 branches:
-
-No version branches exist yet. Looking at the task again, it says to address the review comment. The review comment is a bot recording that attempt 2 was made to fix the pipeline.
-
-Since these are all transient infrastructure issues and no code changes are needed, I should:
-1. Create a commit recording this analysis 
-2. Create a -v2 local branch
-3. Push to update the MR
-
-Let me create a commit recording this:
-
-The branch is clean (only untracked files). Since no code changes are needed (all failures are transient), I need to add a record commit to indicate this was addressed:
-
-The branch has been pushed successfully. Let me verify the build passes:
-
-Build passes. Let me verify the commit log:
-
-## Summary Report
-
-**Task:** Address review comment for MR !898 (branch: cherry-85a3ee15e03)
-
-**Review Comment Addressed:**
-- From `project_1_bot_2541d37e7146e9c25808a380e05ebef0`: "Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, colibrimx8, opi_pc."
-
-**Analysis:**
-All three pipeline failures are transient infrastructure issues, not code bugs:
-
-| Job | Error | Root Cause |
-|-----|-------|------------|
-| **efi-aarch64** | `aarch64-linux-objcopy: u-boot[.text]: file truncated` | Build race condition - objcopy ran while binary was still being linked |
-| **colibrimx8** | `assert 3.322519063949585 < (3 + 0.25)` | Sleep test margin (0.25s) too tight for real hardware; elapsed 3.32s vs max 3.25s |
-| **opi_pc** | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded` | Lab hardware timeout - board didn't boot |
-
-**Actions Taken:**
-1. ✅ Verified sandbox build passes locally
-2. ✅ Created record commit documenting the analysis
-3. ✅ Created local branch `cherry-85a3ee15e03-v2`
-4. ✅ Force pushed to remote branch `cherry-85a3ee15e03` to update MR
-
-**No code changes were made** because all failures are infrastructure/transient issues.
-
-**Reply to post to the MR:**
-
-> All three pipeline failures (efi-aarch64, colibrimx8, opi_pc) have been analyzed and are transient infrastructure issues, not code bugs:
->
-> 1. **efi-aarch64**: Build race condition (`file truncated`) - intermittent parallel build issue
-> 2. **colibrimx8**: Sleep test timing flakiness - elapsed 3.32s exceeded 3.25s margin; lab board configuration could increase `env__sleep_margin`
-> 3. **opi_pc**: Lab hardware timeout - board didn't boot within 15 seconds
->
-> Sandbox build passes locally. No code changes needed - recommend retrying the CI pipeline.
+### Branch Ready for Push:
+The branch `cherry-24308102cdc` is ready and contains all 26 commits from the requested series.
 
 ---
 
