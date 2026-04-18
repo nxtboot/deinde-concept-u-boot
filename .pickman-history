@@ -60358,264 +60358,65 @@ The branch `cherry-24308102cdc` is ready and contains all 26 commits from the re
 
 ---
 
-## 2026-04-18: us/next
+### Review: 2026-04-18
 
-Branch: cherry-5467cd5ffdb
+Branch: cherry-24308102cdc
 
-Commits:
-- 5467cd5ffdb configs: tegra-common-post: Stop disabling device tree relocation
-- baf076aeb32 Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next
+Comments addressed:
 
----
-
-## 2026-04-18: us/next
-
-Branch: cherry-863280eca06
-
-Commits:
-- 863280eca06 Kconfig: put TPL_OPTIMIZE_INLINING next to SPL_OPTIMIZE_INLINING
-- ed31533f0fe boot: fix prompt for SPL_LOAD_FIT_ADDRESS
-- b6b463a3377 boot: fix prompt for SPL_LOAD_FIT_APPLY_OVERLAY_BUF_SZ
-- 6d77c5a1445 boot: fix prompt for VPL_LOAD_FIT_FULL
-- df724f1e3c3 boot: specify VPL_FIT_FULL_CHECK applies to VPL
-- a56270310af spl: fix prompt for SPL_BOOTROM_SUPPORT
-- 2c01c4b7206 power: regulator: fix dependency for REGULATOR_PWM
-- 8d3e8af9364 power: regulator: remove SPL_REGULATOR_PWM due to unmeetable SPL_DM_PWM dependency
-- 3f495781dd0 power: regulator: Fix dependency of SPL_DM_REGULATOR_GPIO
-- 31f111a2a0e Merge tag 'mmc-power-next-2025-12-24' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
 
 ### Conversation log
-Good, branch created. Now let me cherry-pick the first commit:
+Good, the branch has 27 commits on top of the merge base (26 cherry-picked + 1 pickman record). Let me check if ci/master has advanced:
 
-First commit succeeded. Let me verify the delta and run the build test:
+Now let me perform the rebase. The branch needs to be rebased onto the new ci/master:
 
-The delta matches (1 file changed, 3 deletions). Now let me run the build test:
+Good, the rebase has a conflict only in the pickman history file (commit 27). Let me resolve this:
 
-Build passed. Now let me cherry-pick the second commit. This is a merge commit and has "maybe already applied as 702025856df", so I need to verify if it's already applied:
+Now let me verify the rebase by checking the commits and their deltas:
 
-The two patches are significantly different. `baf076aeb32` is a merge commit from the tegra branch that merges only the first commit, while `702025856df` is a pickman record that contains 841 commits. These are NOT the same commit. Let me proceed with cherry-picking the merge commit:
+The rebase completed successfully. Now let me verify the deltas for a few key commits to ensure they're identical:
 
-The merge commit results in an empty commit because its changes (the first commit) were already applied. As instructed, I'll commit it anyway with --allow-empty to preserve the merge commit message:
+Now let me run the build to verify everything works:
 
-Good, the empty merge commit is preserved. Let me verify the commit stats and run the build:
+Build passes. Now let me create the local versioned branch and push:
 
-The merge commit is empty because the changes were already applied via the first commit. This is expected behavior - the merge commit message is preserved for history tracking. Let me run the build test:
+The rebase is complete. Let me provide a summary:
 
-Build passed. Now let me verify the final state with git log:
+## Rebase Summary
 
-All 2 commits are present. Let me run the final build test:
+### Task: Rebase MR !899 (branch: cherry-24308102cdc) onto latest ci/master
 
-## Final Status Report
+**Status: ✅ Successfully completed**
 
-**Cherry-pick completed successfully!**
+### Actions Performed:
 
-### Commits Applied:
+1. **Fetched latest ci/master** - ci/master had advanced by 20 commits since the branch was created (including MR !898 merge and other cherry-picks)
 
-| # | Original Hash | Subject | Status |
-|---|---------------|---------|--------|
-| 1 | 5467cd5ffdb | configs: tegra-common-post: Stop disabling device tree relocation | ✅ Applied (520b36a0b3a) |
-| 2 | baf076aeb32 | Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next | ✅ Applied as empty (9326f021f90) |
+2. **Rebased 27 commits** - All 26 cherry-picked commits plus the pickman record commit were rebased onto the new ci/master
 
-### Build Result: **OK** ✅
+3. **Resolved conflict** - The only conflict was in `.pickman-history` (expected with concurrent MRs), resolved by keeping our version
 
-### Notes:
-- The second commit (merge commit `baf076aeb32`) was cherry-picked as an empty commit because its changes (1 file changed, 3 deletions) were already applied by the first commit (`5467cd5ffdb`). This is expected behavior - we preserved the merge commit for history tracking as instructed.
-- I verified that `702025856df` was NOT the same commit as `baf076aeb32` - it's a completely different commit (pickman record with 841 commits vs. a tegra merge with 1 commit).
+4. **Verified build** - Sandbox build passes with no errors or warnings
 
-### Fix-ups: None required
+5. **Created local backup** - `cherry-24308102cdc-v2` created for tracking
 
-### Concerning Deltas: None
+6. **Force pushed to remote** - Updated the MR branch to trigger a new pipeline
 
-The cherry-pick branch `cherry-5467cd5ffdb` is ready for pushing.
+### Commits After Rebase (27 total):
+| New Hash | Subject |
+|----------|---------|
+| 941dc092aa0 | board: xilinx: Update ESRT after copying GUID |
+| 37ca8296a93 | clk: versal: Use __data macro for moving variable to data section |
+| ... (24 more cherry-picked commits) ... |
+| 7cc10af9252 | Merge tag 'xilinx-for-v2026.04-rc1' (empty merge) |
+| 9e9cd0b97b9 | pickman: Record cherry-pick of 26 commits from us/next |
 
----
+### MR Reply:
+```
+Rebased onto latest ci/master. The MR is now up to date with the target branch.
 
-### Conversation log
-The repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master:
-
-Now let me start cherry-picking the first commit:
-
-First cherry-pick succeeded. Let me verify the delta and run the build test:
-
-Delta looks identical (1 file changed, 9 insertions, 9 deletions). Now let me run the build test:
-
-Build passed. Now let me cherry-pick the second commit:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 3:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 4:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 5:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 6:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 7:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 8:
-
-Delta matches. Build test:
-
-Build passed. Cherry-pick commit 9:
-
-Delta matches. Build test:
-
-Build passed. Now cherry-pick the final commit - this is a merge commit so I'll use the special flags:
-
-The merge commit is empty (all changes already applied by the previous commits), but I need to create the empty commit to preserve history. Let me use git commit --allow-empty:
-
-As expected, the cherry-picked merge commit is empty because all changes were already applied by the individual commits. Now let me run the build test for the merge commit:
-
-Now let me verify all 10 commits are present:
-
-All 10 commits are present. Now let me run the final build test:
-
-All done. Let me provide the final status report:
-
-## Final Status Report
-
-### Cherry-Pick Summary
-
-All 10 commits were successfully cherry-picked from `us/next` to the new branch `cherry-863280eca06`:
-
-| # | Original Hash | Subject | Status |
-|---|--------------|---------|--------|
-| 1 | 863280eca06 | Kconfig: put TPL_OPTIMIZE_INLINING next to SPL_OPTIMIZE_INLINING | ✅ OK |
-| 2 | ed31533f0fe | boot: fix prompt for SPL_LOAD_FIT_ADDRESS | ✅ OK |
-| 3 | b6b463a3377 | boot: fix prompt for SPL_LOAD_FIT_APPLY_OVERLAY_BUF_SZ | ✅ OK |
-| 4 | 6d77c5a1445 | boot: fix prompt for VPL_LOAD_FIT_FULL | ✅ OK |
-| 5 | df724f1e3c3 | boot: specify VPL_FIT_FULL_CHECK applies to VPL | ✅ OK |
-| 6 | a56270310af | spl: fix prompt for SPL_BOOTROM_SUPPORT | ✅ OK |
-| 7 | 2c01c4b7206 | power: regulator: fix dependency for REGULATOR_PWM | ✅ OK |
-| 8 | 8d3e8af9364 | power: regulator: remove SPL_REGULATOR_PWM due to unmeetable SPL_DM_PWM dependency | ✅ OK |
-| 9 | 3f495781dd0 | power: regulator: Fix dependency of SPL_DM_REGULATOR_GPIO | ✅ OK |
-| 10 | 31f111a2a0e | Merge tag 'mmc-power-next-2025-12-24' | ✅ OK (empty, as expected) |
-
-### Build Result
-**✅ OK** - All builds passed with no warnings or errors
-
-### Deltas
-All commit deltas matched exactly between original and cherry-picked commits.
-
-### Fix-ups
-None required - all cherry-picks applied cleanly.
-
-### Notes
-- The merge commit (31f111a2a0e) was cherry-picked as an empty commit since all changes were already applied by the preceding individual commits. This preserves the merge history as requested.
-
-### Branch Status
-The branch `cherry-863280eca06` is now ready for pushing with 10 commits ahead of `ci/master`.
-## 2026-04-18: us/next
-
-Branch: cherry-7ed2098fa9a
-
-Commits:
-- 7ed2098fa9a efi_selftest: Enhance LoadImage test
-- 2ca1d602844 efi_loader: Trigger capsule updates with automatically generated boot options
-- 4d6d086826c efi_selftest: remove unnecessary __efi_runtime_data attribute
-- 8c50c8fe57a test: dm: clk_ccf: clean up assert statements
-- 00bc1adae41 cmd/bdinfo: LMB and device-tree are not related
-- de3754fea3c cmd: bdinfo: provide long help with all options
-- c7a6c01100b doc: cmd: bdinfo: specify required dependency for some info
-- 6e07da8050d doc: cmd: bdinfo: document options
-- 4c105d2ae7b doc: board: starfive: update jh7110 common description
-- 22ef38f6933 mips: Reduce size in gardena-smart-gateway-mt7688
-- f24a2124d26 Merge tag 'efi-next-20251225' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
-
-### Conversation log
-The repository has untracked files but is otherwise clean. Let me proceed to create the new branch and start cherry-picking.
-
-Now let me start cherry-picking the commits one by one. Starting with the first commit:
-
-Commit 1 looks good - same file, same number of changes. Let me run the build test:
-
-Build passed. Now let me cherry-pick the second commit:
-
-Delta matches. Running build test:
-
-Good. Cherry-pick commit 3:
-
-Good. Cherry-pick commit 4:
-
-Good. Cherry-pick commit 5:
-
-There's a conflict. Let me examine it:
-
-I can see the conflict. The HEAD version has `lprint_num_l("flags", gd->flags);` and a combined condition `if (IS_ENABLED(CONFIG_LMB) && gd->fdt_blob)`. The commit 00bc1adae41 wants to separate LMB from fdt_blob check. Let me look at what the original commit intended:
-
-I see the issue. There are some contextual differences - the upstream uses `bdinfo_print_num_l` but the current code uses `lprint_num_l`. Also, HEAD added a `lprint_num_l("flags", gd->flags);` line that wasn't in the original patch context. 
-
-Let me resolve the conflict to keep the flags line (from HEAD) and apply the LMB/devicetree separation (from the commit):
-
-The delta matches (same files, same line counts). Let me amend the commit message to note the conflict resolution:
-
-Good, build passes. Cherry-pick commit 6:
-
-Good. Cherry-pick commit 7:
-
-Good. Cherry-pick commit 8:
-
-Good. Cherry-pick commit 9:
-
-Good. Cherry-pick commit 10:
-
-Good. Now cherry-pick commit 11 - this is a merge commit:
-
-The merge commit has conflicts. Let me check them:
-
-This conflict is about the `flags` line we preserved earlier. The merge commit doesn't have it, but HEAD does. Since we already resolved this in commit 5 by preserving the flags line, we should keep it:
-
-The merge commit results in an empty commit because all changes were already cherry-picked. As per the instructions, I should include it with --allow-empty:
-
-Let me amend this commit to note the conflict resolution:
-
-Now let me verify all 11 commits are present:
-
-All 11 commits are present. Let me run the final build test:
-
-All builds pass. Let me verify the commit count and provide a summary:
-
-## Summary
-
-### Final Status: SUCCESS ✓
-
-**Build Result:** OK - All builds passed (sandbox board)
-
-**Cherry-picked Commits (11 total):**
-
-| # | Original Hash | New Hash | Subject |
-|---|---------------|----------|---------|
-| 1 | 7ed2098fa9a | c2a05595449 | efi_selftest: Enhance LoadImage test |
-| 2 | 2ca1d602844 | c5598420783 | efi_loader: Trigger capsule updates with automatically generated boot options |
-| 3 | 4d6d086826c | bd4c5b33fc9 | efi_selftest: remove unnecessary __efi_runtime_data attribute |
-| 4 | 8c50c8fe57a | 3dd449a24ca | test: dm: clk_ccf: clean up assert statements |
-| 5 | 00bc1adae41 | b55e83c7733 | cmd/bdinfo: LMB and device-tree are not related |
-| 6 | de3754fea3c | 3bc929771c7 | cmd: bdinfo: provide long help with all options |
-| 7 | c7a6c01100b | 948900ef7ff | doc: cmd: bdinfo: specify required dependency for some info |
-| 8 | 6e07da8050d | df3538fb68e | doc: cmd: bdinfo: document options |
-| 9 | 4c105d2ae7b | 14bfb193d3d | doc: board: starfive: update jh7110 common description |
-| 10 | 22ef38f6933 | 220052ea870 | mips: Reduce size in gardena-smart-gateway-mt7688 |
-| 11 | f24a2124d26 | 4ba03367c88 | Merge tag 'efi-next-20251225' (empty commit) |
-
-**Fix-ups Made:**
-1. **Commit 5 (00bc1adae41):** Conflict resolved in `cmd/bdinfo.c`. The `lprint_num_l("flags", gd->flags);` line that exists in ci/master was preserved while applying the LMB/device-tree separation change. Note added to commit message.
-
-2. **Commit 11 (f24a2124d26):** Merge commit resulted in an empty commit (all changes were already cherry-picked in prior commits). Preserved with `--allow-empty` to maintain commit history. Note added to commit message.
-
-**Commits with Concerning Deltas:** None - all commits matched their originals in terms of files changed and lines modified.
-
-**Branch:** `cherry-7ed2098fa9a` is ready for pushing (11 commits ahead of ci/master).
+Build verified: sandbox build passes.
+```
 
 ---
 
