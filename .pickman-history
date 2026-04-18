@@ -60725,3 +60725,59 @@ All three pipeline failures are transient infrastructure issues, not code bugs:
 
 ---
 
+## 2026-04-18: us/next
+
+Branch: cherry-5467cd5ffdb
+
+Commits:
+- 5467cd5ffdb configs: tegra-common-post: Stop disabling device tree relocation
+- baf076aeb32 Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next
+
+### Conversation log
+The repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master:
+
+Good, branch created. Now let me cherry-pick the first commit:
+
+First commit succeeded. Let me verify the delta and run the build test:
+
+The delta matches (1 file changed, 3 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit. This is a merge commit and has "maybe already applied as 702025856df", so I need to verify if it's already applied:
+
+The two patches are significantly different. `baf076aeb32` is a merge commit from the tegra branch that merges only the first commit, while `702025856df` is a pickman record that contains 841 commits. These are NOT the same commit. Let me proceed with cherry-picking the merge commit:
+
+The merge commit results in an empty commit because its changes (the first commit) were already applied. As instructed, I'll commit it anyway with --allow-empty to preserve the merge commit message:
+
+Good, the empty merge commit is preserved. Let me verify the commit stats and run the build:
+
+The merge commit is empty because the changes were already applied via the first commit. This is expected behavior - the merge commit message is preserved for history tracking. Let me run the build test:
+
+Build passed. Now let me verify the final state with git log:
+
+All 2 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Commits Applied:
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | 5467cd5ffdb | configs: tegra-common-post: Stop disabling device tree relocation | ✅ Applied (520b36a0b3a) |
+| 2 | baf076aeb32 | Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next | ✅ Applied as empty (9326f021f90) |
+
+### Build Result: **OK** ✅
+
+### Notes:
+- The second commit (merge commit `baf076aeb32`) was cherry-picked as an empty commit because its changes (1 file changed, 3 deletions) were already applied by the first commit (`5467cd5ffdb`). This is expected behavior - we preserved the merge commit for history tracking as instructed.
+- I verified that `702025856df` was NOT the same commit as `baf076aeb32` - it's a completely different commit (pickman record with 841 commits vs. a tegra merge with 1 commit).
+
+### Fix-ups: None required
+
+### Concerning Deltas: None
+
+The cherry-pick branch `cherry-5467cd5ffdb` is ready for pushing.
+
+---
+
