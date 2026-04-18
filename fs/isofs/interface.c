@@ -478,8 +478,13 @@ int isofs_read(const char *filename, void *buf, loff_t offset, loff_t len,
 		block = offset / blksize;
 		blk_off = offset % blksize;
 
-		/* Read the block using isofs_bread (handles block mapping) */
-		bh = isofs_bread(inode, block);
+		/*
+		 * Use the uncached read path: the buffer cache is shared
+		 * across the whole VFS layer, and populating it from a
+		 * streaming file read of an arbitrarily large file would
+		 * exhaust the malloc heap before the read completes.
+		 */
+		bh = isofs_bread_uncached(inode, block);
 		if (!bh)
 			return -EIO;
 

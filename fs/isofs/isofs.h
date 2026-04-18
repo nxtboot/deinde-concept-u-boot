@@ -126,6 +126,22 @@ int get_acorn_filename(struct iso_directory_record *, char *, struct inode *);
 
 extern struct dentry *isofs_lookup(struct inode *, struct dentry *, unsigned int flags);
 extern struct buffer_head *isofs_bread(struct inode *, sector_t);
+
+/**
+ * isofs_bread_uncached() - Read a file block without populating the cache
+ *
+ * Mirrors isofs_bread() but uses sb_bread_uncached() so the block is freed
+ * the moment the caller drops its reference. Useful for streaming large
+ * files (e.g. the casper kernel/initrd), where caching every block would
+ * exhaust the U-Boot malloc heap long before the read completes.
+ *
+ * @inode: Inode the block belongs to
+ * @block: Logical block number within the inode
+ * Return: buffer_head with the block contents, or NULL if the logical
+ *	   block does not map to a disk block
+ */
+extern struct buffer_head *isofs_bread_uncached(struct inode *inode,
+						sector_t block);
 extern int isofs_get_blocks(struct inode *, sector_t, struct buffer_head **, unsigned long);
 
 struct inode *__isofs_iget(struct super_block *sb,
