@@ -59425,6 +59425,135 @@ All 14 commits are present (14 cherry-picked + the ci/master history before). No
 - **bc1819331ec**: Has delta difference (22 insertions/3 deletions vs 26/7) due to conflict resolution keeping existing fix instead of adding `return ERR_PTR(ret)`. This is expected and documented in the fix-up note.
 
 **The branch `cherry-272e356b179` is ready for pushing.**
+## 2026-04-17: us/next
+
+Branch: cherry-5207e1ff20f
+
+Commits:
+- 5207e1ff20f fit: support signing with only an engine_id
+- 9f9de386c1e tools: binman: mkimage: add support for passing the engine
+- fc75d216f01 tools: binman: fit: add support for OpenSSL engines
+- 564c6682fa9 tools: binman: fit: add tests for signing with an OpenSSL engine
+- 7f053fc40ae Merge patch series "fit: allow signing with an OpenSSL engine"
+
+### Conversation log
+The repository has some untracked files but is otherwise clean (no staged or uncommitted changes). I can proceed.
+
+Branch created. Now let me cherry-pick the first commit:
+
+The first cherry-pick has a conflict. Before aborting, I need to check if these commits are already applied in ci/master with different hashes.
+
+The grep searches didn't find matching subjects in ci/master. Let me try searching with partial subjects and also examine what subjects might be similar:
+
+The commits don't seem to be already applied in ci/master. Let me look at the conflict to see if I can resolve it:
+
+I can see the conflict. It appears that the ci/master branch has been refactored to use `struct imgtool *itl` instead of `struct image_tool_params *params`. This is a significant refactor that makes the conflict complex.
+
+Let me check if there's a similar function in the original commit to understand what the upstream commit was trying to add:
+
+Now let me check the current state of these files in ci/master to understand the refactoring:
+
+I can see that ci/master has already been refactored and doesn't have `fit_estimate_hash_sig_size` function. The original upstream commit modifies a function that no longer exists in this form in ci/master.
+
+Let me check if there's a different function handling the signing check in ci/master:
+
+The function doesn't exist. Let me check if it's somewhere else now:
+
+The function was likely removed or renamed. Let me check the image-host.c file to see if the changes there would also conflict:
+
+The image-host.c still has the original logic that needs updating. Now let me look at the current state after the conflict - is image-host.c properly merged?
+
+Good - image-host.c was merged successfully. I need to resolve the fit_image.c conflict. The conflict is because the original commit adds changes to a function `fit_estimate_hash_sig_size` which doesn't exist in ci/master.
+
+Let me look at the entire conflict region more carefully and see if there's something equivalent:
+
+I understand the conflict now. The original commit added the `fit_estimate_hash_sig_size` function and modified it to include `engine_id`, but in ci/master this function has been removed entirely (the estimation logic has likely been moved elsewhere or removed).
+
+Since the function doesn't exist in ci/master, the change to add `|| params->engine_id` in that function isn't needed. The resolution is to simply keep the HEAD version (ci/master) which doesn't have this function.
+
+Let me resolve this conflict by keeping the HEAD version:
+
+Now let me continue the cherry-pick:
+
+Good, the first commit is cherry-picked. Now let me verify the delta and run the build test:
+
+The delta differs: the original commit modified 2 files (`tools/fit_image.c` and `tools/image-host.c`), but the cherry-pick only affected `tools/image-host.c`. This is expected because the `fit_image.c` change was for a function that doesn't exist in ci/master (the function was removed in a refactoring). The core fix (adding `|| engine_id` to the signing conditions) was still applied to `tools/image-host.c`.
+
+The delta is significant but explainable - the fit_image.c changes were for a function that no longer exists. Let me amend the commit message to note this:
+
+Now let me run the build test for the first commit:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta matches exactly. Let me run the build test:
+
+Build passed. Now cherry-pick the third commit:
+
+Delta matches exactly. Let me run the build test:
+
+Build passed. Now cherry-pick the fourth commit:
+
+There's a conflict. Let me examine it:
+
+I can see two conflicts in the Makefile. The ci/master branch has added `elf_sections_tee` which the upstream doesn't have. I need to keep both changes - the `elf_sections_tee` from HEAD and the `dummy-rsa-engine.so` from the commit being cherry-picked.
+
+I need to keep both - the elf_sections_tee rule and the dummy-rsa-engine.so rule:
+
+Good, no conflicts remaining. Let me verify the Makefile looks correct:
+
+The Makefile looks correct. Now let me stage the resolved file and continue the cherry-pick:
+
+Now let me verify the delta and amend the commit message to note the fix-up:
+
+The delta matches exactly (same files, same line counts). The conflict was just a textual merge issue, not a logical problem. Let me amend the commit to note the conflict resolution:
+
+Now let me run the build test:
+
+Build passed. Now let me cherry-pick the last commit - the merge commit:
+
+The merge commit has conflicts. Let me check what the merge commit actually contains:
+
+The merge commit is bringing in all the changes from the series. Since we've already cherry-picked all the individual commits, this merge should result in an empty commit (all changes already applied). Let me check the conflicts and resolve them:
+
+Since we've already cherry-picked all the individual commits, the merge commit's changes should already be present. Let me use the current state (ours) for both conflicting files:
+
+Good, the merge commit is now empty (as expected since all changes were in the individual commits). I should commit it anyway with --allow-empty as per the instructions:
+
+Good, the merge commit was created (empty as expected). Now let me verify the delta:
+
+The merge commit is empty as expected. Let me run the build test:
+
+Build passed. Now let me verify the final state:
+
+All 5 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Build result:** ✅ OK (no warnings or errors)
+
+**All 5 commits cherry-picked successfully:**
+
+| # | Original Hash | Cherry-picked Hash | Subject |
+|---|---------------|-------------------|---------|
+| 1 | 5207e1ff20f | 34aecce26b1 | fit: support signing with only an engine_id |
+| 2 | 9f9de386c1e | a97f750a056 | tools: binman: mkimage: add support for passing the engine |
+| 3 | fc75d216f01 | 1b03d9b1fca | tools: binman: fit: add support for OpenSSL engines |
+| 4 | 564c6682fa9 | 77d02a0b7b3 | tools: binman: fit: add tests for signing with an OpenSSL engine |
+| 5 | 7f053fc40ae | eb0bf9bc9c1 | Merge patch series "fit: allow signing with an OpenSSL engine" |
+
+**Fix-ups made:**
+
+1. **Commit 1 (5207e1ff20f):** Dropped `tools/fit_image.c` changes because the `fit_estimate_hash_sig_size()` function no longer exists in ci/master (removed during refactoring to use `struct imgtool`). The core fix (adding `|| engine_id` to signing conditions) was still applied to `tools/image-host.c`. This is a **significant delta** but intentional - the functional change is preserved where applicable.
+
+2. **Commit 4 (564c6682fa9):** Resolved Makefile conflict - kept `elf_sections_tee` target from ci/master while adding the `dummy-rsa-engine.so` target from the upstream commit.
+
+3. **Commit 5 (7f053fc40ae - merge commit):** Created as empty commit (--allow-empty) since all changes were already present from the individual cherry-picks. Conflicts in `tools/binman/test/Makefile` and `tools/fit_image.c` were resolved by keeping the current state.
+
+**Commits with concerning deltas:**
+
+- **Commit 1:** Original modified 2 files (`fit_image.c` and `image-host.c`), cherry-pick only modified 1 file (`image-host.c`). This is expected because `fit_estimate_hash_sig_size()` was removed in ci/master's refactoring.
+
+The branch `cherry-5207e1ff20f` is ready for pushing.
 
 ---
 
@@ -59530,6 +59659,66 @@ None - all commits applied cleanly with no manual conflict resolution needed.
 None - all deltas matched closely between original and cherry-picked commits.
 
 The branch `cherry-5f141da1a9c` is ready for pushing.
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+
+
+### Conversation log
+Let me check if our branch's base commit is behind ci/master:
+
+Our branch is behind ci/master. Let me save the original commits' deltas before rebasing so I can compare them after:
+
+Now I'll perform the rebase:
+
+Good, most commits rebased cleanly, only the pickman record commit had a conflict (which is expected since it touches .pickman-history). Let me check the conflict:
+
+The .pickman-history file has conflict markers. Let me look at the conflict:
+
+I see the .pickman-history file has a lot of history. Let me find where the conflict markers are:
+
+I see the conflict. It's between the existing history (cherry-272e356b179) and our commit (cherry-5207e1ff20f). We need to keep both entries. Let me resolve this by including both:
+
+The rebase completed successfully. Now let me verify the rebased commits and check their deltas:
+
+Now let me compare the deltas of each commit before/after rebase:
+
+All deltas look correct. Now let me run the build test:
+
+Build passes. Now let me create the v2 branch and push to the remote:
+
+The rebase was successful and the MR has been updated. Let me verify the final state:
+
+## Summary
+
+The rebase was completed successfully.
+
+**What was done:**
+1. Checked out branch `cherry-5207e1ff20f`
+2. Rebased onto latest `ci/master` using `git rebase --keep-empty ci/master`
+3. Resolved a conflict in `.pickman-history` (expected conflict from the pickman record commit - resolved by keeping both the HEAD content and our commit content)
+4. Verified all commit deltas are unchanged from before the rebase
+5. Ran build verification - **passed**
+6. Created local branch `cherry-5207e1ff20f-v2` for backup
+7. Force pushed to remote branch `cherry-5207e1ff20f` to update the MR
+
+**Commits rebased (6 total):**
+
+| # | New Hash | Subject |
+|---|----------|---------|
+| 1 | c5bd6a8a8b4 | fit: support signing with only an engine_id |
+| 2 | fd223929195 | tools: binman: mkimage: add support for passing the engine |
+| 3 | 1749fca79f5 | tools: binman: fit: add support for OpenSSL engines |
+| 4 | 07b88bc704a | tools: binman: fit: add tests for signing with an OpenSSL engine |
+| 5 | 3fc0b88aa57 | Merge patch series "fit: allow signing with an OpenSSL engine" |
+| 6 | 1a882a12417 | pickman: Record cherry-pick of 5 commits from us/next |
+
+**Build result:** ✅ OK
+
+**Reply to post on MR:**
+> Rebased onto latest ci/master. The branch has been force-pushed. No changes to the actual commits - only the `.pickman-history` recording commit had a trivial merge conflict that was resolved.
 
 ---
 
@@ -59781,6 +59970,150 @@ a8b5651c257 Merge patch series "Azure: Rework world build to directly use the co
 ```
 
 The cherry-pick branch `cherry-cf3d4da03f3` is ready for pushing.
+
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, opi_pc, Check make tcheck, Check make qch...
+
+### Conversation log
+I can see the branch is already at a state with some fix attempts. Looking at the review comment, it references a "Pipeline fix (attempt 1)" which was already applied. Let me understand what needs to be done now by examining the current state of the test file:
+
+Good, I can see that the fix has already been applied to both tests. The tests now use `tools.run_result()` with `raise_on_error=False` and check `result.return_code` to decide whether to skip. This is the fix that was described in the context.
+
+Let me check if the branch needs a rebase or if there are any other issues:
+
+The branch appears to be up to date with ci/master. Now let me verify the build passes:
+
+The build passes. Now let me check if we need to look at the original review comment more carefully. Looking at the context, the review comment was:
+
+> Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This indicates the fix was already applied. Let me check the current state of the branch to see if there's anything else that needs to be done:
+
+I can see that the branch already has:
+1. The fix applied in commit `adac4ad97f5` - which uses `tools.run_result()` with `raise_on_error=False`
+2. A "pickman: Record review handling" commit (`1d7bf806f8b`) - indicating the review was already addressed
+
+Let me verify the fix is in the commit by checking the diff:
+
+The fix is already applied. The commit message shows `[pickman] Use raise_on_error=False for PKCS11 check to avoid exception handling issues in concurrent test environments`.
+
+Now I need to check if the branch needs to be pushed/rebased. Let me check the remote state:
+
+The local branch is identical to the remote branch. The fix has already been applied and pushed. 
+
+Looking at the review comment more carefully, the comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` was actually a **response** describing what was done to fix the pipeline, not a request for additional changes. The comment describes:
+
+1. The analysis of the failures
+2. The root cause (PKCS#11 tests failing because the engine is not installed on CI runners)
+3. The fix that was applied (using `raise_on_error=False` instead of exception handling)
+
+Since this is a status update/response comment rather than a request for changes, there's nothing additional to address. The fix has already been applied to the branch.
+
+Let me verify once more that the branch is up to date and the build passes:
+
+No differences. The branch is already up to date with the fix applied.
+
+## Summary
+
+The review comment `project_1_bot_2541d37e7146e9c25808a380e05ebef0` was **not a request for changes** but rather a **status report** describing the pipeline fix that was already applied. The comment documents:
+
+1. **Infrastructure issues** (qemu-x86_64 lock conflict, opi_pc timeout) - these are transient CI infrastructure issues that don't require code changes
+2. **Test failures** - The PKCS#11 tests were failing because the `pkcs11.so` engine was not installed on CI runners
+3. **The fix applied** - Changed from exception-based handling (`try/except ValueError`) to explicit return code checking using `tools.run_result()` with `raise_on_error=False`
+
+**What was already done:**
+- The fix was applied in commit `adac4ad97f5` which includes the note: `[pickman] Use raise_on_error=False for PKCS11 check to avoid exception handling issues in concurrent test environments`
+- The branch was pushed with a "Record review handling" commit (`1d7bf806f8b`)
+- The local branch matches the remote branch exactly
+
+**No additional action required** - the review comment was documenting work already completed, not requesting new changes.
+
+**Reply to post on MR:**
+> The pipeline fix has already been applied. The PKCS#11 test availability check now uses `tools.run_result()` with `raise_on_error=False` to avoid exception handling issues in concurrent test environments. The infrastructure issues (qemu-x86_64 lock conflict and opi_pc timeout) are transient CI issues that should resolve on retry.
+
+---
+
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check ma...
+
+### Conversation log
+Now let me understand the current state by examining the review comment. The comment mentions "Pipeline fix (attempt 2)" which was fixing coverage issues. Looking at the context, the fix was supposed to add `fit,engine-keydir` to the test file `340_fit_signature_engine_encrypt.dts` to ensure coverage of line 657 in `_get_fit_engine()`.
+
+Let me check if this fix is already applied:
+
+The commit already has the pickman notes about:
+1. Using `raise_on_error=False` for PKCS11 check (attempt 1 fix)
+2. Adding `fit,engine-keydir` to engine_encrypt test for coverage (attempt 2 fix)
+
+Let me verify the test file has the `fit,engine-keydir` property:
+
+The `fit,engine-keydir` is already in the test file. Let me also verify the PKCS11 fix is in place:
+
+The fix is already applied - it uses `tools.run_result()` with `raise_on_error=False`. Both fixes from attempt 1 and attempt 2 are already in place.
+
+Now let me check if there's something else in the review comment that needs to be addressed. Looking at the comment again:
+
+> Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This comment is describing what was done in the previous fix attempt, not requesting additional changes. The comment is a status report.
+
+Let me check if the branch needs to be rebased onto the latest ci/master:
+
+The branch is up to date with ci/master (merge base is at 6abf9392428 which is the head of ci/master). The fixes from attempt 1 and attempt 2 have already been applied. 
+
+Looking at the review comment, it's actually a **status report** about what was done in pipeline fix attempt 2, not a request for new changes. The comment is documenting:
+1. The coverage failure was due to `fit,engine-keydir` not being tested because the PKCS11 test was being skipped
+2. The fix was to add `fit,engine-keydir` to the `340_fit_signature_engine_encrypt.dts` file so it gets covered by `testFitSignEncryptEngine` which doesn't require PKCS11
+
+Both fixes are already in place. Let me verify the build passes:
+
+Build passes. Now let me check the remote branch state:
+
+The local branch is identical to the remote branch. The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is a **status report** documenting the pipeline fix attempt 2, not a request for additional changes.
+
+Looking at the context more carefully:
+
+The comment says:
+> Pipeline fix (attempt 2): fixed failed job(s) opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This is followed by a detailed analysis of the coverage issue and the fix that was applied (adding `fit,engine-keydir` to test file). This is documentation of what was already done, not a request for new work.
+
+Since:
+1. The fix has already been applied (commit `3d3df19bd2b` has both the PKCS11 fix and the coverage fix)
+2. The local branch matches the remote branch
+3. The build passes
+
+There's nothing additional to address. The review comment was a status update.
+
+## Summary
+
+**Review Comment Analysis:**
+
+The comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` titled "Pipeline fix (attempt 2)" is a **status report** documenting the fix that was applied to address coverage failures in the pipeline. It is NOT requesting additional changes.
+
+**What was already done (in previous fix attempts):**
+
+1. **Attempt 1 fix (PKCS11 skip):** Changed from exception-based handling (`try/except ValueError`) to explicit return code checking using `tools.run_result()` with `raise_on_error=False`. This ensures the PKCS11 tests are properly skipped when the engine is not available.
+
+2. **Attempt 2 fix (coverage):** Added `fit,engine-keydir = "some-keydir";` to `340_fit_signature_engine_encrypt.dts` to ensure line 657 in `_get_fit_engine()` (the `engine_keydir = prop.value` assignment) is covered by a test that runs on CI.
+
+Both fixes are already in commit `3d3df19bd2b` with appropriate pickman notes in the commit message.
+
+**Current state:**
+- Local branch `cherry-5207e1ff20f` is identical to remote `ci/cherry-5207e1ff20f`
+- Build passes
+- No additional changes required
+
+**Reply to post on MR:**
+> Acknowledged. The pipeline fix for coverage (adding `fit,engine-keydir` to the encrypt test file) was already applied in the previous commit. The `opi_pc` failure is a transient hardware lab timeout issue and not a code problem - should resolve on retry.
 
 ---
 
