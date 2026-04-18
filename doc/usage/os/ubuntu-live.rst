@@ -65,6 +65,12 @@ The script:
    which replaces the original ESP and adds ``/loader/entry.conf`` to
    the ISO 9660 tree. The kernel and initrd stay in ``/casper/`` on the
    ISO 9660 tree; U-Boot reads them directly via its isofs driver.
+4. Strips the shim, GRUB and MOK manager binaries
+   (``/EFI/boot/{bootx64,grubx64,mmx64}.efi``) from the ISO 9660 tree.
+   The UEFI firmware loads ``BOOTX64.EFI`` from the appended ESP, so
+   the ISO 9660 copies are unused dead weight. The BIOS El Torito
+   image under ``/boot/grub/`` is left in place, so legacy-BIOS boot
+   still chains into GRUB as before.
 
 Relevant options:
 

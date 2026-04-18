@@ -140,7 +140,13 @@ def repack_iso(
 
     -boot_image any replay preserves every other boot record (BIOS El Torito,
     grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten,
-    plus /loader/entry.conf is added to the ISO 9660 tree.
+    plus /loader/entry.conf is added to the ISO 9660 tree, and the shim,
+    GRUB and MokManager copies under /EFI/boot/ are removed since U-Boot
+    supplies the UEFI boot path via the appended ESP. The BIOS El Torito
+    path still uses /boot/grub/ so legacy boot continues to work.
+
+    -find is tolerant of missing files: if a distribution does not ship
+    one of these binaries, the call is a no-op.
     """
     command.run(
         'xorriso',
@@ -149,6 +155,9 @@ def repack_iso(
         '-boot_image', 'any', 'replay',
         '-append_partition', '2', esp_guid, str(esp_img),
         '-map', str(entry_conf), '/loader/entry.conf',
+        '-find', '/EFI/boot', '-name', 'bootx64.efi', '-exec', 'rm', '--',
+        '-find', '/EFI/boot', '-name', 'grubx64.efi', '-exec', 'rm', '--',
+        '-find', '/EFI/boot', '-name', 'mmx64.efi', '-exec', 'rm', '--',
         '-commit',
     )
 
