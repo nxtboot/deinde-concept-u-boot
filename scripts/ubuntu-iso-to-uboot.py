@@ -8,17 +8,18 @@ the EFI system partition. Each entry names a kernel, initrd and command
 line; U-Boot's BOOTMETH_BLS scans the ESP and presents them in its boot
 menu, replacing the shim/grub chain that Ubuntu ships by default.
 
-The ISO's appended EFI System Partition is replaced with a fresh ESP
-containing:
+Two things change in the rewritten ISO:
 
-    /EFI/BOOT/BOOTX64.EFI   U-Boot EFI app (built with CONFIG_BOOTMETH_BLS=y)
-    /casper/vmlinuz         copied from the input ISO
-    /casper/initrd          copied from the input ISO
-    /loader/entry.conf      BLS Type #1 entry pointing at the above
+    EFI system partition  /EFI/BOOT/BOOTX64.EFI  replaced with the U-Boot
+                                                 EFI app
+    ISO 9660 tree         /loader/entry.conf     added, pointing at the
+                                                 existing /casper/vmlinuz
+                                                 and /casper/initrd
 
-The ISO9660 tree is preserved unchanged, so casper still finds its squashfs
-by disc label at runtime. All other boot records (BIOS El Torito, grub2 MBR,
-GPT layout) are preserved by xorriso's -boot_image any replay.
+The kernel and initrd stay where Ubuntu put them. U-Boot reads them off
+the ISO 9660 partition directly via its isofs driver. All other boot
+records (BIOS El Torito, grub2 MBR, GPT layout) are preserved by
+xorriso's -boot_image any replay.
 
 Quick start (run from the root of the U-Boot tree)::
 
@@ -114,65 +115,32 @@ def parse_boot_report(iso: Path) -> tuple[str, str]:
     return m_vol.group(1), m_esp.group(1)
 
 
-def extract_from_iso(iso: Path, src: str, dst: Path) -> None:
-    """Pull a single file out of the ISO9660 tree via xorriso -osirrox"""
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    command.run(
-        'xorriso', '-osirrox', 'on', '-indev', str(iso),
-        '-extract', f'/{src.lstrip("/")}', str(dst),
-    )
-
-
-def build_esp(
-    esp_path: Path,
-    size_mib: int,
-    uboot_efi: Path,
-    vmlinuz: Path,
-    initrd: Path,
-    entry_conf: str,
-) -> None:
-    """Create a fresh FAT32 ESP at esp_path populated with BLS + kernel.
+def build_esp(esp_path: Path, size_mib: int, uboot_efi: Path) -> None:
+    """Create a fresh FAT ESP containing only the U-Boot EFI application.
 
     Args:
         esp_path (Path): Output file to hold the new ESP image
         size_mib (int): Size of the ESP in mebibytes
         uboot_efi (Path): U-Boot EFI app to install as /EFI/BOOT/BOOTX64.EFI
-        vmlinuz (Path): Kernel image to install under /casper/vmlinuz
-        initrd (Path): Initrd image to install under /casper/initrd
-        entry_conf (str): Contents for /loader/entry.conf (BLS Type #1)
     """
     with esp_path.open('wb') as f:
         f.truncate(size_mib * MIB)
-    command.output('mkfs.vfat', '-F32', '-n', 'ESP', str(esp_path))
-    command.run('mmd', '-i', str(esp_path),
-                '::EFI', '::EFI/BOOT', '::loader', '::casper')
-
-    def put(src: Path, dst: str) -> None:
-        command.run('mcopy', '-i', str(esp_path), str(src), f'::{dst}')
-
-    put(uboot_efi, 'EFI/BOOT/BOOTX64.EFI')
-    put(vmlinuz, 'casper/vmlinuz')
-    put(initrd, 'casper/initrd')
-
-    entry = Path(esp_path.parent) / 'entry.conf'
-    entry.write_text(entry_conf)
-    put(entry, 'loader/entry.conf')
-
-
-def auto_esp_size(files: list[Path], headroom_mib: int = 16) -> int:
-    """Sum file sizes + headroom, round up to MiB, floor at 64 MiB (FAT32)"""
-    total = sum(f.stat().st_size for f in files) + headroom_mib * MIB
-    mib = (total + MIB - 1) // MIB
-    return max(mib, 64)
+    # FAT12 is enough for the small ESP we emit (just a U-Boot binary).
+    command.output('mkfs.vfat', '-F12', '-n', 'ESP', str(esp_path))
+    command.run('mmd', '-i', str(esp_path), '::EFI', '::EFI/BOOT')
+    command.run('mcopy', '-i', str(esp_path), str(uboot_efi),
+                '::EFI/BOOT/BOOTX64.EFI')
 
 
 def repack_iso(
     in_iso: Path, out_iso: Path, esp_img: Path, esp_guid: str,
+    entry_conf: Path,
 ) -> None:
-    """Stream the input ISO to a new ISO, replacing partition 2's data.
+    """Stream the input ISO to a new ISO with the ESP and BLS entry replaced.
 
     -boot_image any replay preserves every other boot record (BIOS El Torito,
-    grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten
+    grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten,
+    plus /loader/entry.conf is added to the ISO 9660 tree.
     """
     command.run(
         'xorriso',
@@ -180,6 +148,7 @@ def repack_iso(
         '-outdev', str(out_iso),
         '-boot_image', 'any', 'replay',
         '-append_partition', '2', esp_guid, str(esp_img),
+        '-map', str(entry_conf), '/loader/entry.conf',
         '-commit',
     )
 
@@ -202,7 +171,7 @@ def main() -> None:
     p.add_argument('-t', '--title', default=None,
                    help='BLS entry title (default: derived from volume label)')
     p.add_argument('-s', '--esp-size', type=int, default=None,
-                   help='ESP size in MiB (default: auto-size to fit)')
+                   help='ESP size in MiB (default: 4 MiB)')
     args = p.parse_args()
 
     if not args.iso.is_file():
@@ -220,27 +189,22 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix='iso2uboot.') as td:
         work = Path(td)
-        vmlinuz = work / 'vmlinuz'
-        initrd = work / 'initrd'
 
-        print(f'=> Extracting /{args.kernel} and /{args.initrd}')
-        extract_from_iso(args.iso, args.kernel, vmlinuz)
-        extract_from_iso(args.iso, args.initrd, initrd)
-
-        esp_mib = args.esp_size or auto_esp_size([vmlinuz, initrd, args.uboot])
+        esp_mib = args.esp_size or 4
         print(f'=> Building {esp_mib} MiB ESP')
-
-        entry_conf = f'''\
-title {title}
-linux /casper/vmlinuz
-initrd /casper/initrd
-options {args.cmdline}
-'''
         esp = work / 'esp.img'
-        build_esp(esp, esp_mib, args.uboot, vmlinuz, initrd, entry_conf)
+        build_esp(esp, esp_mib, args.uboot)
+
+        entry = work / 'entry.conf'
+        entry.write_text(
+            f'title {title}\n'
+            f'linux /{args.kernel}\n'
+            f'initrd /{args.initrd}\n'
+            f'options {args.cmdline}\n'
+        )
 
         print(f'=> Repacking to {args.out}')
-        repack_iso(args.iso, args.out, esp, esp_guid)
+        repack_iso(args.iso, args.out, esp, esp_guid, entry)
 
     size_mib = args.out.stat().st_size / MIB
     print(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
