@@ -59971,5 +59971,69 @@ a8b5651c257 Merge patch series "Azure: Rework world build to directly use the co
 
 The cherry-pick branch `cherry-cf3d4da03f3` is ready for pushing.
 
+### Review: 2026-04-17
+
+Branch: cherry-5207e1ff20f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, opi_pc, Check make tcheck, Check make qch...
+
+### Conversation log
+I can see the branch is already at a state with some fix attempts. Looking at the review comment, it references a "Pipeline fix (attempt 1)" which was already applied. Let me understand what needs to be done now by examining the current state of the test file:
+
+Good, I can see that the fix has already been applied to both tests. The tests now use `tools.run_result()` with `raise_on_error=False` and check `result.return_code` to decide whether to skip. This is the fix that was described in the context.
+
+Let me check if the branch needs a rebase or if there are any other issues:
+
+The branch appears to be up to date with ci/master. Now let me verify the build passes:
+
+The build passes. Now let me check if we need to look at the original review comment more carefully. Looking at the context, the review comment was:
+
+> Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, opi_pc, Check make tcheck, Check make qcheck, Check make check, Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites.
+
+This indicates the fix was already applied. Let me check the current state of the branch to see if there's anything else that needs to be done:
+
+I can see that the branch already has:
+1. The fix applied in commit `adac4ad97f5` - which uses `tools.run_result()` with `raise_on_error=False`
+2. A "pickman: Record review handling" commit (`1d7bf806f8b`) - indicating the review was already addressed
+
+Let me verify the fix is in the commit by checking the diff:
+
+The fix is already applied. The commit message shows `[pickman] Use raise_on_error=False for PKCS11 check to avoid exception handling issues in concurrent test environments`.
+
+Now I need to check if the branch needs to be pushed/rebased. Let me check the remote state:
+
+The local branch is identical to the remote branch. The fix has already been applied and pushed. 
+
+Looking at the review comment more carefully, the comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` was actually a **response** describing what was done to fix the pipeline, not a request for additional changes. The comment describes:
+
+1. The analysis of the failures
+2. The root cause (PKCS#11 tests failing because the engine is not installed on CI runners)
+3. The fix that was applied (using `raise_on_error=False` instead of exception handling)
+
+Since this is a status update/response comment rather than a request for changes, there's nothing additional to address. The fix has already been applied to the branch.
+
+Let me verify once more that the branch is up to date and the build passes:
+
+No differences. The branch is already up to date with the fix applied.
+
+## Summary
+
+The review comment `project_1_bot_2541d37e7146e9c25808a380e05ebef0` was **not a request for changes** but rather a **status report** describing the pipeline fix that was already applied. The comment documents:
+
+1. **Infrastructure issues** (qemu-x86_64 lock conflict, opi_pc timeout) - these are transient CI infrastructure issues that don't require code changes
+2. **Test failures** - The PKCS#11 tests were failing because the `pkcs11.so` engine was not installed on CI runners
+3. **The fix applied** - Changed from exception-based handling (`try/except ValueError`) to explicit return code checking using `tools.run_result()` with `raise_on_error=False`
+
+**What was already done:**
+- The fix was applied in commit `adac4ad97f5` which includes the note: `[pickman] Use raise_on_error=False for PKCS11 check to avoid exception handling issues in concurrent test environments`
+- The branch was pushed with a "Record review handling" commit (`1d7bf806f8b`)
+- The local branch matches the remote branch exactly
+
+**No additional action required** - the review comment was documenting work already completed, not requesting new changes.
+
+**Reply to post on MR:**
+> The pipeline fix has already been applied. The PKCS#11 test availability check now uses `tools.run_result()` with `raise_on_error=False` to avoid exception handling issues in concurrent test environments. The infrastructure issues (qemu-x86_64 lock conflict and opi_pc timeout) are transient CI issues that should resolve on retry.
+
 ---
 
