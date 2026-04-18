@@ -60117,3 +60117,106 @@ Both fixes are already in commit `3d3df19bd2b` with appropriate pickman notes in
 
 ---
 
+## 2026-04-17: us/next
+
+Branch: cherry-2da3af2f9ee
+
+Commits:
+- 2da3af2f9ee boot: android: Always use 8-byte aligned DT with libfdt
+- 42ee514ed04 test/py: android: Point fdt command to aligned addresses
+- 57ff26c4240 fs/jffs2: Make depend on !64BIT
+- 5425350bf53 configs: am335x_hs_evm_spi_defconfig: Remove duplicate symbols
+- 8c5166e9fea arch: arm: dts: k3-am625-phyboard-lyra: Drop bootph properties
+- 90dc6a8b10f arch: arm: dts: k3-am642-phyboard-electra: Drop bootph properties
+- 66be03b7ee1 binman: blob_dtb: improve error message when SPL is not found
+- 386f22e117c Merge tag 'u-boot-dfu-next-20251211' of https://source.denx.de/u-boot/custodians/u-boot-dfu into next
+
+### Conversation log
+The repository state is clean (untracked files don't affect cherry-pick). Let me create and checkout the new branch based on ci/master:
+
+Branch created. Now let me cherry-pick the first commit:
+
+First commit cherry-picked. Let me verify the delta and run build test:
+
+The delta matches (1 file, 31 insertions, 11 deletions). Now let me run the build test:
+
+Build passed. Let me continue with the second commit:
+
+Auto-merged successfully. Let me verify the delta:
+
+Delta matches. Build test:
+
+Build passed. Third commit:
+
+Auto-merged. Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Fourth commit:
+
+Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Fifth commit:
+
+Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Sixth commit:
+
+Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Seventh commit:
+
+Verify delta:
+
+Delta matches. Build test:
+
+Build passed. Now the eighth and final commit (which is a merge commit):
+
+The merge commit is empty but we need to preserve it. Let me commit it as an empty commit:
+
+Now let me verify the delta and build:
+
+The merge commit is empty on cherry-pick because the actual changes were already brought in by the first two commits (which were part of the merge). This is expected - the merge commit preserves the merge point history. Build test:
+
+Build passed. Now let me verify all 8 commits are present:
+
+All 8 commits are present. Let me run the final build test to confirm everything works together:
+
+## Final Status
+
+**All 8 commits successfully cherry-picked onto branch `cherry-2da3af2f9ee`**
+
+### Commits Applied:
+| # | Hash | Subject |
+|---|------|---------|
+| 1 | 106bd9624e0 | boot: android: Always use 8-byte aligned DT with libfdt |
+| 2 | 99535f1f402 | test/py: android: Point fdt command to aligned addresses |
+| 3 | 561e691eea6 | fs/jffs2: Make depend on !64BIT |
+| 4 | a6c22cf13b4 | configs: am335x_hs_evm_spi_defconfig: Remove duplicate symbols |
+| 5 | ea0aa3c9cb1 | arch: arm: dts: k3-am625-phyboard-lyra: Drop bootph properties |
+| 6 | e1a14eec965 | arch: arm: dts: k3-am642-phyboard-electra: Drop bootph properties |
+| 7 | 54680753255 | binman: blob_dtb: improve error message when SPL is not found |
+| 8 | 230dfaaee1f | Merge tag 'u-boot-dfu-next-20251211'... (empty - changes already in #1 & #2) |
+
+### Build Result: ✅ OK
+- All builds passed without warnings or errors
+- Final sandbox build completed successfully
+
+### Fix-ups Made: None
+- All commits applied cleanly (some with auto-merge in non-conflicting areas)
+
+### Commits with Concerning Deltas: None
+- All deltas matched between original and cherry-picked versions
+
+### Notes:
+- Commit #8 (merge commit) is empty because the actual changes were already applied via commits #1 and #2. The merge commit preserves the commit history record and was kept with `--allow-empty` as instructed.
+- The branch `cherry-2da3af2f9ee` is ready for pushing.
+
+---
+
