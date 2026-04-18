@@ -60733,9 +60733,25 @@ Commits:
 - 5467cd5ffdb configs: tegra-common-post: Stop disabling device tree relocation
 - baf076aeb32 Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next
 
-### Conversation log
-The repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master:
+---
 
+## 2026-04-18: us/next
+
+Branch: cherry-863280eca06
+
+Commits:
+- 863280eca06 Kconfig: put TPL_OPTIMIZE_INLINING next to SPL_OPTIMIZE_INLINING
+- ed31533f0fe boot: fix prompt for SPL_LOAD_FIT_ADDRESS
+- b6b463a3377 boot: fix prompt for SPL_LOAD_FIT_APPLY_OVERLAY_BUF_SZ
+- 6d77c5a1445 boot: fix prompt for VPL_LOAD_FIT_FULL
+- df724f1e3c3 boot: specify VPL_FIT_FULL_CHECK applies to VPL
+- a56270310af spl: fix prompt for SPL_BOOTROM_SUPPORT
+- 2c01c4b7206 power: regulator: fix dependency for REGULATOR_PWM
+- 8d3e8af9364 power: regulator: remove SPL_REGULATOR_PWM due to unmeetable SPL_DM_PWM dependency
+- 3f495781dd0 power: regulator: Fix dependency of SPL_DM_REGULATOR_GPIO
+- 31f111a2a0e Merge tag 'mmc-power-next-2025-12-24' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
 Good, branch created. Now let me cherry-pick the first commit:
 
 First commit succeeded. Let me verify the delta and run the build test:
@@ -60778,6 +60794,95 @@ All 2 commits are present. Let me run the final build test:
 ### Concerning Deltas: None
 
 The cherry-pick branch `cherry-5467cd5ffdb` is ready for pushing.
+
+---
+
+### Conversation log
+The repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master:
+
+Now let me start cherry-picking the first commit:
+
+First cherry-pick succeeded. Let me verify the delta and run the build test:
+
+Delta looks identical (1 file changed, 9 insertions, 9 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 3:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 4:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 5:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 6:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 7:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 8:
+
+Delta matches. Build test:
+
+Build passed. Cherry-pick commit 9:
+
+Delta matches. Build test:
+
+Build passed. Now cherry-pick the final commit - this is a merge commit so I'll use the special flags:
+
+The merge commit is empty (all changes already applied by the previous commits), but I need to create the empty commit to preserve history. Let me use git commit --allow-empty:
+
+As expected, the cherry-picked merge commit is empty because all changes were already applied by the individual commits. Now let me run the build test for the merge commit:
+
+Now let me verify all 10 commits are present:
+
+All 10 commits are present. Now let me run the final build test:
+
+All done. Let me provide the final status report:
+
+## Final Status Report
+
+### Cherry-Pick Summary
+
+All 10 commits were successfully cherry-picked from `us/next` to the new branch `cherry-863280eca06`:
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | 863280eca06 | Kconfig: put TPL_OPTIMIZE_INLINING next to SPL_OPTIMIZE_INLINING | ✅ OK |
+| 2 | ed31533f0fe | boot: fix prompt for SPL_LOAD_FIT_ADDRESS | ✅ OK |
+| 3 | b6b463a3377 | boot: fix prompt for SPL_LOAD_FIT_APPLY_OVERLAY_BUF_SZ | ✅ OK |
+| 4 | 6d77c5a1445 | boot: fix prompt for VPL_LOAD_FIT_FULL | ✅ OK |
+| 5 | df724f1e3c3 | boot: specify VPL_FIT_FULL_CHECK applies to VPL | ✅ OK |
+| 6 | a56270310af | spl: fix prompt for SPL_BOOTROM_SUPPORT | ✅ OK |
+| 7 | 2c01c4b7206 | power: regulator: fix dependency for REGULATOR_PWM | ✅ OK |
+| 8 | 8d3e8af9364 | power: regulator: remove SPL_REGULATOR_PWM due to unmeetable SPL_DM_PWM dependency | ✅ OK |
+| 9 | 3f495781dd0 | power: regulator: Fix dependency of SPL_DM_REGULATOR_GPIO | ✅ OK |
+| 10 | 31f111a2a0e | Merge tag 'mmc-power-next-2025-12-24' | ✅ OK (empty, as expected) |
+
+### Build Result
+**✅ OK** - All builds passed with no warnings or errors
+
+### Deltas
+All commit deltas matched exactly between original and cherry-picked commits.
+
+### Fix-ups
+None required - all cherry-picks applied cleanly.
+
+### Notes
+- The merge commit (31f111a2a0e) was cherry-picked as an empty commit since all changes were already applied by the preceding individual commits. This preserves the merge history as requested.
+
+### Branch Status
+The branch `cherry-863280eca06` is now ready for pushing with 10 commits ahead of `ci/master`.
 
 ---
 
