@@ -60197,7 +60197,6 @@ All 5 commits were successfully cherry-picked from `us/next` to branch `cherry-d
 
 ### Branch Status
 The branch `cherry-d2f0eadb199` is ready for pushing with 5 new commits ahead of `ci/master`.
-
 ---
 
 ## 2026-04-18: us/next
@@ -60217,74 +60216,21 @@ Commits:
 - 802fbe0a287 Merge tag 'mmc-next-2025-12-11' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
 
 ### Conversation log
-Good, the repository is clean (only untracked files). Now let me create a new branch based on ci/master:
-
-Now let's start cherry-picking the commits one by one. Starting with the first commit:
-
-First cherry-pick succeeded. Now let me check the delta and run the build test:
-
-Delta looks identical (1 file changed, 6 insertions). Now let me run the build test:
-
-Build passed. Let's continue with commit 2:
-
-Commit 2 passed. Now commit 3:
-
-Commit 3 passed. Now commit 4:
-
-Commit 4 passed. Now commit 5:
-
-Commit 5 passed. Now commit 6:
-
-Commit 6 passed. Now commit 7:
-
-Commit 7 passed. Now commit 8:
-
-Commit 8 passed. Now commit 9:
-
-Commit 9 passed. Now commit 10, which is a merge commit. I need to use `-m 1 --allow-empty`:
-
-The merge commit resulted in an empty commit (as expected since all changes were in the individual commits). I need to explicitly commit it with `--allow-empty`:
-
-Now let me verify all 10 commits are present:
-
-All 10 commits are present. Now let me run the final build to verify everything works together:
-
-All builds passed. Let me provide the final status report:
-
-## Final Status Report
-
-### Cherry-Pick Summary
-Successfully cherry-picked all 10 commits from `us/next` onto new branch `cherry-b033255a579` (based on `ci/master`).
-
-### Commits Applied (in order):
-| # | Hash (new) | Original Hash | Subject | Status |
-|---|------------|---------------|---------|--------|
-| 1 | d33fb0fd92f | b033255a579 | mmc: sdhci-cadence: Add reset control support | ✅ |
-| 2 | 7ae515880d6 | aebb523a238 | mmc: mmc-uclass: Use max-frequency from device tree with default handling | ✅ |
-| 3 | a2f326d7393 | 1e40e419aeb | mmc: sdhci-cadence: Use max-frequency property from device tree | ✅ |
-| 4 | 9a8cd48aa69 | fa7e82127fa | mmc: sdhci-cadence: Set controller and PHY speed modes for SD and eMMC cards | ✅ |
-| 5 | b52ae26f0e5 | 90f43c7edc6 | mmc: sdhci: Add SDHCI_SPEC_400, _410, and _420 version defines | ✅ |
-| 6 | 55d26241e1b | 7d52b66b9b8 | mmc: sdhci-cadence: Use hardware version field for Cadence SDHCI controller | ✅ |
-| 7 | b6878d6cc65 | 3dafdeface9 | mmc: sdhci-cadence: Enable software tuning for both SD and eMMC interfaces | ✅ |
-| 8 | 2673f41b48f | 7c2ba8a2024 | mmc: sdhci-cadence6: socfpga: Fix DT property naming convention | ✅ |
-| 9 | a67074de21e | ed0e33cec09 | mmc: sdhci-cadence6: Add DLL master control and improve tuning reliability | ✅ |
-| 10 | 5ab084c5211 | 802fbe0a287 | Merge tag 'mmc-next-2025-12-11' (empty, as expected) | ✅ |
-
-### Build Result: **OK** ✅
-- No warnings or errors
-- All 10 intermediate builds passed
-- Final build passed
-
-### Fix-ups Made: **None**
-- All commits applied cleanly with no conflicts
-- All deltas matched exactly between original and cherry-picked commits
-
-### Concerning Deltas: **None**
-- All commit deltas matched exactly (same files changed, same line counts)
-
-### Branch Status:
-- Branch `cherry-b033255a579` is ready for pushing
-- Branch is 10 commits ahead of `ci/master`
+(content omitted in rebase)
 
 ---
 
+## 2026-04-18: us/next
+
+Branch: cherry-aff0f4d30ec
+
+Commits:
+- aff0f4d30ec Revert "clk: Return value calculated by ERR_PTR"
+- 447bd8f1e5c simple-pm-bus: Make clocks optional
+- 86d2747a9c9 power: domain: Add ti-omap-prm stub
+- 6f2d0090f98 clk: ti: Split common omap2plus functions into new symbol
+- f75f8397e81 clk: ti: omap4-cm: Add Kconfig symbol
+- f4b50e75014 Merge patch series "clk: ti: Cleanup common functions and omap-cm"
+
+### Conversation log
+(content omitted in rebase)
