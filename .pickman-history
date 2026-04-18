@@ -59533,3 +59533,71 @@ The branch `cherry-5f141da1a9c` is ready for pushing.
 
 ---
 
+## 2026-04-17: us/next
+
+Branch: cherry-9ce3d264e3b
+
+Commits:
+- 9ce3d264e3b board: phytec: phytec_som_detection: Add missing assignment
+- 7bcf0160901 board: phytec: phytec_som_detection: Add support for phyFLEX
+- 9ecb7dc4b1b Merge patch series "board: phytec: phytec_som_detection: Add missing assignment"
+
+### Conversation log
+The repository has untracked files but no changes to tracked files, so it's clean enough to proceed. Now let me create and checkout the new branch based on ci/master.
+
+Branch created successfully. Now let me cherry-pick the first commit (9ce3d264e3b - a regular commit):
+
+First commit cherry-picked successfully. Let me verify the commit delta and run the build test:
+
+The deltas match exactly (1 file changed, 2 insertions, 2 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit (7bcf0160901 - also a regular commit):
+
+Second commit cherry-picked successfully. Let me verify the delta and run the build:
+
+Deltas match exactly (2 files changed, 41 insertions, 5 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit (9ecb7dc4b1b - this is a merge commit, so I need to use -m 1 --allow-empty):
+
+The merge commit is empty (as expected since the patches were already applied in the previous cherry-picks), but we need to preserve it. Let me commit it with --allow-empty:
+
+The merge commit was created. Let me verify the delta and run the build:
+
+As expected, the cherry-picked merge commit is empty (no file changes shown) because the changes were already included in the previous two cherry-picks. The original merge commit showed file changes because it merged the branch. This is the expected behavior when cherry-picking a merge commit when the component commits have already been cherry-picked.
+
+Now let me run the build test:
+
+Build passed. Now let me verify all 3 commits are present:
+
+All 3 commits are present in the correct order. Let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Summary:
+
+| Commit | Subject | Status |
+|--------|---------|--------|
+| 9ce3d264e3b | board: phytec: phytec_som_detection: Add missing assignment | ✅ Cherry-picked as c829db9824f |
+| 7bcf0160901 | board: phytec: phytec_som_detection: Add support for phyFLEX | ✅ Cherry-picked as 74904b945c5 |
+| 9ecb7dc4b1b | Merge patch series "board: phytec: phytec_som_detection: Add missing assignment" | ✅ Cherry-picked as 8cf6ce39a30 (empty, as expected) |
+
+### Build Result: ✅ OK
+- All builds passed (sandbox board)
+- No warnings or errors
+
+### Fix-ups: None required
+- All cherry-picks applied cleanly with no conflicts
+
+### Delta Verification:
+- Commit 1: Identical (1 file, +2/-2)
+- Commit 2: Identical (2 files, +41/-5)
+- Commit 3: Empty (expected - merge commit after individual patches already applied)
+
+### Branch Status:
+- Branch `cherry-9ce3d264e3b` is ready for pushing
+- Currently ahead of `ci/master` by 3 commits
+
+---
+
