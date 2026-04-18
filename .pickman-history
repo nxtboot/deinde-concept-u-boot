@@ -60883,6 +60883,106 @@ None required - all cherry-picks applied cleanly.
 
 ### Branch Status
 The branch `cherry-863280eca06` is now ready for pushing with 10 commits ahead of `ci/master`.
+## 2026-04-18: us/next
+
+Branch: cherry-7ed2098fa9a
+
+Commits:
+- 7ed2098fa9a efi_selftest: Enhance LoadImage test
+- 2ca1d602844 efi_loader: Trigger capsule updates with automatically generated boot options
+- 4d6d086826c efi_selftest: remove unnecessary __efi_runtime_data attribute
+- 8c50c8fe57a test: dm: clk_ccf: clean up assert statements
+- 00bc1adae41 cmd/bdinfo: LMB and device-tree are not related
+- de3754fea3c cmd: bdinfo: provide long help with all options
+- c7a6c01100b doc: cmd: bdinfo: specify required dependency for some info
+- 6e07da8050d doc: cmd: bdinfo: document options
+- 4c105d2ae7b doc: board: starfive: update jh7110 common description
+- 22ef38f6933 mips: Reduce size in gardena-smart-gateway-mt7688
+- f24a2124d26 Merge tag 'efi-next-20251225' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
+
+### Conversation log
+The repository has untracked files but is otherwise clean. Let me proceed to create the new branch and start cherry-picking.
+
+Now let me start cherry-picking the commits one by one. Starting with the first commit:
+
+Commit 1 looks good - same file, same number of changes. Let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Delta matches. Running build test:
+
+Good. Cherry-pick commit 3:
+
+Good. Cherry-pick commit 4:
+
+Good. Cherry-pick commit 5:
+
+There's a conflict. Let me examine it:
+
+I can see the conflict. The HEAD version has `lprint_num_l("flags", gd->flags);` and a combined condition `if (IS_ENABLED(CONFIG_LMB) && gd->fdt_blob)`. The commit 00bc1adae41 wants to separate LMB from fdt_blob check. Let me look at what the original commit intended:
+
+I see the issue. There are some contextual differences - the upstream uses `bdinfo_print_num_l` but the current code uses `lprint_num_l`. Also, HEAD added a `lprint_num_l("flags", gd->flags);` line that wasn't in the original patch context. 
+
+Let me resolve the conflict to keep the flags line (from HEAD) and apply the LMB/devicetree separation (from the commit):
+
+The delta matches (same files, same line counts). Let me amend the commit message to note the conflict resolution:
+
+Good, build passes. Cherry-pick commit 6:
+
+Good. Cherry-pick commit 7:
+
+Good. Cherry-pick commit 8:
+
+Good. Cherry-pick commit 9:
+
+Good. Cherry-pick commit 10:
+
+Good. Now cherry-pick commit 11 - this is a merge commit:
+
+The merge commit has conflicts. Let me check them:
+
+This conflict is about the `flags` line we preserved earlier. The merge commit doesn't have it, but HEAD does. Since we already resolved this in commit 5 by preserving the flags line, we should keep it:
+
+The merge commit results in an empty commit because all changes were already cherry-picked. As per the instructions, I should include it with --allow-empty:
+
+Let me amend this commit to note the conflict resolution:
+
+Now let me verify all 11 commits are present:
+
+All 11 commits are present. Let me run the final build test:
+
+All builds pass. Let me verify the commit count and provide a summary:
+
+## Summary
+
+### Final Status: SUCCESS ✓
+
+**Build Result:** OK - All builds passed (sandbox board)
+
+**Cherry-picked Commits (11 total):**
+
+| # | Original Hash | New Hash | Subject |
+|---|---------------|----------|---------|
+| 1 | 7ed2098fa9a | c2a05595449 | efi_selftest: Enhance LoadImage test |
+| 2 | 2ca1d602844 | c5598420783 | efi_loader: Trigger capsule updates with automatically generated boot options |
+| 3 | 4d6d086826c | bd4c5b33fc9 | efi_selftest: remove unnecessary __efi_runtime_data attribute |
+| 4 | 8c50c8fe57a | 3dd449a24ca | test: dm: clk_ccf: clean up assert statements |
+| 5 | 00bc1adae41 | b55e83c7733 | cmd/bdinfo: LMB and device-tree are not related |
+| 6 | de3754fea3c | 3bc929771c7 | cmd: bdinfo: provide long help with all options |
+| 7 | c7a6c01100b | 948900ef7ff | doc: cmd: bdinfo: specify required dependency for some info |
+| 8 | 6e07da8050d | df3538fb68e | doc: cmd: bdinfo: document options |
+| 9 | 4c105d2ae7b | 14bfb193d3d | doc: board: starfive: update jh7110 common description |
+| 10 | 22ef38f6933 | 220052ea870 | mips: Reduce size in gardena-smart-gateway-mt7688 |
+| 11 | f24a2124d26 | 4ba03367c88 | Merge tag 'efi-next-20251225' (empty commit) |
+
+**Fix-ups Made:**
+1. **Commit 5 (00bc1adae41):** Conflict resolved in `cmd/bdinfo.c`. The `lprint_num_l("flags", gd->flags);` line that exists in ci/master was preserved while applying the LMB/device-tree separation change. Note added to commit message.
+
+2. **Commit 11 (f24a2124d26):** Merge commit resulted in an empty commit (all changes were already cherry-picked in prior commits). Preserved with `--allow-empty` to maintain commit history. Note added to commit message.
+
+**Commits with Concerning Deltas:** None - all commits matched their originals in terms of files changed and lines modified.
+
+**Branch:** `cherry-7ed2098fa9a` is ready for pushing (11 commits ahead of ci/master).
 
 ---
 
