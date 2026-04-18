@@ -472,6 +472,32 @@ struct buffer_head *sb_bread(struct super_block *sb, sector_t block)
 	return bh;
 }
 
+struct buffer_head *sb_bread_uncached(struct super_block *sb, sector_t block)
+{
+	struct buffer_head *bh;
+	int ret;
+
+	if (!sb)
+		return NULL;
+
+	bh = alloc_buffer_head_with_data(sb->s_blocksize);
+	if (!bh)
+		return NULL;
+
+	bh->b_blocknr = block;
+	bh->b_bdev = sb->s_bdev;
+
+	ret = linux_fs_read_block(sb, block, sb->s_blocksize, bh->b_data);
+	if (ret) {
+		free_buffer_head(bh);
+		return NULL;
+	}
+
+	set_buffer_uptodate(bh);
+
+	return bh;
+}
+
 /**
  * bdev_getblk() - Get buffer via block_device
  * @bdev: Block device
