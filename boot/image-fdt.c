@@ -188,6 +188,11 @@ int boot_relocate_fdt(char **of_flat_tree, ulong *of_size)
 		if (desired_addr == ~0UL) {
 			/* All ones means use fdt in place */
 			of_start = fdt_blob;
+			printf("WARNING:\n"
+			       "The 'fdt_high' environment variable is set to ~0. This is known to cause\n"
+			       "boot failures due to placement of DT at non-8-byte-aligned addresses.\n"
+			       "This system will likely fail to boot. Unset the 'fdt_high' environment\n"
+			       "variable and submit a fix upstream.\n");
 			lmb_reserve(map_to_sysmem(of_start), of_len, LMB_NONE);
 			disable_relocation = 1;
 		} else if (desired_addr) {
