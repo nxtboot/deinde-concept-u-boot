@@ -61041,3 +61041,96 @@ Branch `cherry-c2ef9e1b0cb` is ready for pushing, ahead of `ci/master` by 11 com
 
 ---
 
+## 2026-04-18: us/next
+
+Branch: cherry-f74beb8dcf3
+
+Commits:
+- f74beb8dcf3 watchdog: npcm: Support more timeout value
+- 78dbe92cb0b pinctrl: npcm8xx: Add smb11ddc pin config
+- 05d60262951 pinctrl: npcm8xx: Remove incorrect spi0cs2_pins and spi0cs3_pins
+- 73a7155ba3e dts: fix typo in the pin name of GPIO191/GPIO192
+- 1f6b701959a gpio: sgpio: modify persist check condition
+- 80430530996 arm: dts: Add SGPIO node in dts
+- 601733e7087 Merge patch series "modify npcm7xx/8xx feature and bug fixed"
+
+### Conversation log
+The repository is clean (no uncommitted changes, just untracked files). Let me create and checkout the new branch based on ci/master:
+
+Now let me cherry-pick the first commit:
+
+Let me verify the cherry-pick and run the build test:
+
+The delta is identical. Now let me run the build test:
+
+Build passed. Let me proceed with the second cherry-pick:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Let me proceed with the third cherry-pick:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Let me proceed with the fourth cherry-pick:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Let me proceed with the fifth cherry-pick:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Let me proceed with the sixth cherry-pick:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Now let me handle the seventh cherry-pick which is a merge commit. First let me check if it may already be applied as d2c113482bd:
+
+The patches are different merge commits. The merge commit d2c113482bd has a different message and appears to be a GitLab merge that combined similar changes. Let me check if the actual content is the same by looking at the history:
+
+I see there's already a merge that says "modify npcm7xx/8xx feature and bug fixed" in ci/master. Let me examine the merge commit I'm being asked to cherry-pick more closely:
+
+The merge commit 601733e7087 brings in all the same changes that we've already cherry-picked (commits 1-6). Let me cherry-pick it with -m 1 --allow-empty since we've already applied all the component commits:
+
+The cherry-pick is empty since all the changes were already applied in commits 1-6. As instructed, I need to commit the empty commit to preserve the merge commit message:
+
+Now let me run the build test for this commit:
+
+Build passed. Now let me verify all 7 commits are present:
+
+All 7 commits are present. Let me run the final build test:
+
+All builds passed. Here's the final status:
+
+## Summary
+
+**Cherry-pick completed successfully!**
+
+### Branch: `cherry-f74beb8dcf3`
+
+All 7 commits have been cherry-picked from `us/next` to a new branch based on `ci/master`:
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | f74beb8dcf3 | watchdog: npcm: Support more timeout value | ✅ Applied |
+| 2 | 78dbe92cb0b | pinctrl: npcm8xx: Add smb11ddc pin config | ✅ Applied |
+| 3 | 05d60262951 | pinctrl: npcm8xx: Remove incorrect spi0cs2_pins and spi0cs3_pins | ✅ Applied |
+| 4 | 73a7155ba3e | dts: fix typo in the pin name of GPIO191/GPIO192 | ✅ Applied |
+| 5 | 1f6b701959a | gpio: sgpio: modify persist check condition | ✅ Applied |
+| 6 | 80430530996 | arm: dts: Add SGPIO node in dts | ✅ Applied |
+| 7 | 601733e7087 | Merge patch series "modify npcm7xx/8xx feature and bug fixed" | ✅ Applied (empty - changes already in commits 1-6) |
+
+### Build Result: **OK** ✅
+- All incremental builds passed
+- Final build passed
+
+### Fix-ups: None required
+- All cherry-picks applied cleanly without conflicts
+
+### Delta Analysis: All commits matched exactly
+- All 7 commits had identical file/line changes between original and cherry-picked versions
+
+### Notes:
+- The merge commit (commit 7) resulted in an empty commit because all its changes were already applied via commits 1-6. The merge commit was preserved with `--allow-empty` to maintain the history record.
+
+---
+
