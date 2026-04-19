@@ -6,7 +6,7 @@
 #include <env.h>
 #include <hexdump.h>
 #include <malloc.h>
-#include <uuid.h>
+#include <u-boot/uuid.h>
 
 /* Set a U-Boot environment variable to the contents of a UEFI variable */
 int do_efi_get_env(struct cmd_tbl *cmdtb, int flat, int argc, char *const argv[])
