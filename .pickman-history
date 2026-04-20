@@ -62207,3 +62207,80 @@ No changes made - the branch `cherry-88de22a4db0` is already in the correct stat
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-21cdfd19922
+
+Commits:
+- 21cdfd19922 mmc: Fix missing 1 ms delay after mmc power up
+- 3f208e1a992 mmc: mmc_spi: Select CRC16 if CRC checking is enabled
+- c4f5b1d4b03 Revert "mmc: mmc-uclass: Use max-frequency from device tree with default handling"
+- ed4ec707e06 Merge tag 'mmc-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-mmc
+
+### Conversation log
+The repository has some untracked files but is otherwise clean. Let me proceed with creating and checking out the new branch based on ci/master.
+
+Good, branch created. Now let me start cherry-picking the first commit:
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+Delta looks identical (1 file changed, 10 insertions, 3 deletions). Now let me run the build test:
+
+Build successful. Now let me cherry-pick the second commit:
+
+Second commit cherry-picked successfully with auto-merge. Let me verify the delta:
+
+Delta identical. Now let me run the build test:
+
+Build successful. Now let me cherry-pick the third commit:
+
+Third commit cherry-picked successfully. Let me verify the delta:
+
+Delta identical. Now let me run the build test:
+
+Build successful. Now let me cherry-pick the fourth commit, which is a merge commit (identified by "Merge" in subject):
+
+The merge commit is now empty (which is expected since we already cherry-picked all the commits that were part of it). Let me commit it with --allow-empty as instructed:
+
+Fourth commit cherry-picked (empty as expected since the individual commits were already applied). Let me verify the delta and run the build test:
+
+The original merge commit had changes, but since we already cherry-picked all the individual commits, the merge commit is now empty which is the expected behavior. Let me run the build test:
+
+Build successful. Now let me verify the final state with git log:
+
+All 4 commits are present. Let me run the final build:
+
+## Final Status Report
+
+### Cherry-pick Summary
+
+All 4 commits successfully cherry-picked from `us/next` to branch `cherry-21cdfd19922` (based on `ci/master`):
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | 21cdfd19922 | mmc: Fix missing 1 ms delay after mmc power up | ✅ Success |
+| 2 | 3f208e1a992 | mmc: mmc_spi: Select CRC16 if CRC checking is enabled | ✅ Success (auto-merged) |
+| 3 | c4f5b1d4b03 | Revert "mmc: mmc-uclass: Use max-frequency from device tree with default handling" | ✅ Success |
+| 4 | ed4ec707e06 | Merge tag 'mmc-for-2026.04-rc1' | ✅ Success (empty - expected) |
+
+### Build Result
+**✅ OK** - All builds passed with no warnings or errors
+
+### Fix-ups Made
+- None required
+
+### Concerning Deltas
+- Commit #4 (merge commit) is empty because all individual commits were already cherry-picked. This is expected behavior when cherry-picking a merge commit after already applying its constituent commits.
+
+### Final Branch State
+```
+8a20b218533 Merge tag 'mmc-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-mmc
+c85bff06c8e Revert "mmc: mmc-uclass: Use max-frequency from device tree with default handling"
+365f767296a mmc: mmc_spi: Select CRC16 if CRC checking is enabled
+7c6e1a7e850 mmc: Fix missing 1 ms delay after mmc power up
+```
+
+The branch `cherry-21cdfd19922` is ready for pushing.
+
+---
+
