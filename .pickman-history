@@ -62281,6 +62281,89 @@ c85bff06c8e Revert "mmc: mmc-uclass: Use max-frequency from device tree with def
 ```
 
 The branch `cherry-21cdfd19922` is ready for pushing.
+Branch: cherry-13c9c975e79
+
+Commits:
+- 13c9c975e79 usb: xhci: avoid noisy 'Starting the controller' message.
+- 218ad7ba3f1 usb: dwc3-generic: allow fallback of dr_mode property to "otg"
+- 14d9e84fc54 usb: dwc3-generic: add support for exynos7870
+- c05dba22f1f Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The repository is clean (untracked files don't affect cherry-picking). Now let me create the branch and checkout.
+
+Now let me cherry-pick the first commit:
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+Delta looks good - same 2 files, 3 insertions, 3 deletions. Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Let me verify the delta:
+
+Delta matches. Now let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit:
+
+Let me verify the delta:
+
+Delta matches perfectly. Now let me run the build test:
+
+Build passed. Now the fourth commit is a merge commit, and it's marked as "maybe already applied as 6f633e8e31f". Let me first verify if it's actually already applied by comparing the patches:
+
+The merge commits are related - 6f633e8e31f appears to be the merge from a previous cherry-pick of this same series to ci/master. Let me verify that 6f633e8e31f is actually in ci/master and contains the same changes:
+
+The merge 6f633e8e31f is already in our current branch (cherry-13c9c975e79) since it's based on ci/master. Let me verify if ci/master contains this merge:
+
+The merge commit 6f633e8e31f is already in ci/master. The diff shows that 6f633e8e31f is a different merge commit that was made by Simon Glass to bring in the same USB changes via a different merge mechanism (GitLab merge request !844). Looking at the message content in the found commit:
+- "Merge branch 'cherry-642a9e716e1' into 'master'"
+- "[pickman] Merge branch 'master' of git://source.denx.de/u-boot-usb"
+
+This is essentially the same content - it's a merge that brought in the USB tree changes. Since the merge 6f633e8e31f is already in ci/master, the original merge c05dba22f1f was effectively already applied. Let me try cherry-picking it anyway to see if it's an empty commit:
+
+The cherry-pick resulted in an empty commit because the merge content is already applied. As instructed, I should still include the merge commit for history tracking. Let me commit it as an empty commit:
+
+The merge commit is preserved as an empty commit. Let me verify the delta:
+
+The cherry-picked merge commit is empty (no files changed) which is expected since the content was already applied via 6f633e8e31f. The original merge commit shows 3 files changed because it was merging the branch that introduced those changes. This is correct behavior.
+
+Now let me run the build test:
+
+Build passed. Let me verify all commits are present with the log:
+
+All 4 commits are present:
+1. `63606c259c1` - usb: xhci: avoid noisy 'Starting the controller' message.
+2. `48c781088d0` - usb: dwc3-generic: allow fallback of dr_mode property to "otg"
+3. `a73da4882d1` - usb: dwc3-generic: add support for exynos7870
+4. `8899a4ff0fe` - Merge branch 'master' of git://source.denx.de/u-boot-usb (empty merge commit)
+
+Now let me run the final build test:
+
+Excellent! Final build passed.
+
+## Summary
+
+All 4 commits have been successfully cherry-picked to branch `cherry-13c9c975e79`:
+
+| # | Original Hash | New Hash | Subject | Status |
+|---|--------------|----------|---------|--------|
+| 1 | 13c9c975e79 | 63606c259c1 | usb: xhci: avoid noisy 'Starting the controller' message. | ✅ Applied |
+| 2 | 218ad7ba3f1 | 48c781088d0 | usb: dwc3-generic: allow fallback of dr_mode property to "otg" | ✅ Applied |
+| 3 | 14d9e84fc54 | a73da4882d1 | usb: dwc3-generic: add support for exynos7870 | ✅ Applied |
+| 4 | c05dba22f1f | 8899a4ff0fe | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Applied (empty - content already in ci/master via 6f633e8e31f) |
+
+**Build result:** ✅ OK (no warnings or errors)
+
+**Fix-ups:** None needed
+
+**Deltas:** All commits have matching deltas:
+- Commit 1: 2 files, +3/-3 ✓
+- Commit 2: 1 file, +7/-2 ✓
+- Commit 3: 1 file, +1/-0 ✓
+- Commit 4: Empty merge commit (expected - content already applied via previous merge 6f633e8e31f) ✓
+
+The branch `cherry-13c9c975e79` is ready for pushing.
 
 ---
 
