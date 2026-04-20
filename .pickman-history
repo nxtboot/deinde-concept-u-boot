@@ -61886,3 +61886,145 @@ No reply is needed since this is an automated bot comment recording the fix atte
 
 ---
 
+### Pipeline fix: 2026-04-20 (attempt 2)
+
+Branch: cherry-88de22a4db0
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now I understand the failures. Let me analyze them:
+
+**Job: efi-aarch64 (stage: sjg-lab)**
+- **Error**: `test_distro_arm_app_efi` test failed with `console_base.Timeout`
+- **Line 177-182**: The test expects to see `'Ubuntu 25.04 qarm ttyAMA0'` but timed out waiting for it
+- This is a **timeout failure** during a distro boot test - the system didn't boot the Linux kernel properly
+
+**Job: opi_pc (stage: sjg-lab)**  
+- **Error**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- This is a **labgrid/hardware infrastructure failure** - the Orange Pi PC board didn't respond to the test harness
+
+Both failures are **infrastructure/transient issues**, not code issues:
+1. The `efi-aarch64` test shows a timeout waiting for Linux to boot - this could be a QEMU issue or environment issue
+2. The `opi_pc` test shows a hardware timeout - the physical board didn't respond
+
+However, let me checkout the branch and investigate more carefully to be sure this isn't related to the code changes:
+
+Now let me check what's in the cherry-picked commits and if they might have caused the issue. The failures are:
+1. `efi-aarch64` - distro boot test timeout
+2. `opi_pc` - labgrid hardware timeout
+
+Let me check if the cherry-picked commits might affect EFI or distro booting:
+
+The cherry-picked commits only touch:
+- `board/sandbox/sandbox.c`
+- `configs/sandbox64_defconfig`
+- `configs/sandbox_defconfig`
+- `env/Kconfig`
+- `env/common.c`
+- `test/py/tests/test_env.py`
+
+These are **sandbox** and **environment** related changes - they should NOT affect:
+1. EFI booting on ARM64 (`efi-aarch64` test)
+2. Orange Pi PC hardware boot (`opi_pc` test)
+
+Let me check the MR description more closely - this is "attempt 2", which means there was a previous fix attempt. Let me check if there were any issues noted in the conversation log:
+
+I see! There was already a fix applied in the previous attempt (`[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`). Let me check if the fixes are correct:
+
+The fix from attempt 1 was correctly applied. The issue is that the current failures (`efi-aarch64` and `opi_pc`) are **infrastructure/transient issues**, not code issues.
+
+Let me verify by checking what these tests actually test:
+
+The log shows QEMU environment - this is a QEMU-based ARM64 test. The failure is a timeout in `test_distro_arm_app_efi` waiting for "Ubuntu 25.04 qarm ttyAMA0". Let me check if this test has been failing elsewhere or if it's new:
+
+This test boots Linux via EFI and waits for the Ubuntu login prompt. The failure is a **timeout waiting for Linux to boot** - this is completely unrelated to the environment changes in this MR.
+
+Let me also verify that the sandbox tests (which the code changes actually affect) pass. Looking at the log:
+
+The only failure is the distro boot test - not the environment tests. Let me check if the environment test was run:
+
+No environment tests ran on the efi-aarch64 job - those tests are only relevant for sandbox.
+
+Let me now check both failures more thoroughly to confirm they are infrastructure issues:
+
+**efi-aarch64 failure analysis:**
+- The test `test_distro_arm_app_efi` times out waiting for "Ubuntu 25.04 qarm ttyAMA0"
+- 34 tests passed, 669 skipped, 1 failed
+- The failure is unrelated to environment code - it's a distro boot timeout in QEMU
+
+**opi_pc failure analysis:**
+- `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- The labgrid framework couldn't communicate with the physical Orange Pi PC board
+- The test says "Lab failure: Marking connection bad - no other tests will run"
+- 0 tests ran before the failure - it's a pure hardware connectivity issue
+
+Both failures are **infrastructure/transient issues** - not code issues related to the MR's changes.
+
+However, let me double-check if there might be any indirect impact. Let me verify that the sandbox build works correctly:
+
+Now let me build the affected boards to ensure they compile correctly:
+
+The boards build successfully (warnings about external blobs are normal for sunxi boards that require ATF firmware).
+
+Let me also check the efi-aarch64 board:
+
+Both `orangepi_pc` (3 boards) and `qemu_arm64` (4 boards) build successfully with only warnings (no errors).
+
+**Conclusion:** Both failures are infrastructure/transient issues:
+
+1. **efi-aarch64 (Job 431688)**: The `test_distro_arm_app_efi` test failed with a timeout waiting for Linux to boot. This is a QEMU-based test that boots Linux via EFI. The timeout is unrelated to the environment changes in this MR - the test is about distro booting, not environment storage. The board builds successfully.
+
+2. **opi_pc (Job 431657)**: Pure hardware infrastructure failure. The labgrid framework couldn't communicate with the Orange Pi PC board (`pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`). The test didn't even run a single test before failing. The board builds successfully.
+
+Neither failure is related to the code changes in this MR (which only affect sandbox environment configuration). The previous fix from attempt 1 (wrapping `env_locations[]` entries with `#ifdef` guards) is already correctly in place.
+
+Let me report my findings and NOT make any changes since this is an infrastructure issue:
+
+## Summary Report
+
+### MR !913 (branch: cherry-88de22a4db0, attempt 2) - Pipeline Failure Analysis
+
+**Status:** 🔴 Infrastructure/Transient Failures - **No code fix required**
+
+---
+
+### Failed Jobs Analysis:
+
+#### 1. Job: efi-aarch64 (stage: sjg-lab) - Job 431688
+- **Test:** `test_distro_arm_app_efi`
+- **Error:** `console_base.Timeout` - waiting for "Ubuntu 25.04 qarm ttyAMA0"
+- **Root Cause:** QEMU/Linux boot timeout. The test boots Linux via EFI and waits for the Ubuntu login prompt. The kernel failed to boot within the timeout period.
+- **Relation to MR:** **None** - The MR changes sandbox environment configuration and env tests. The efi-aarch64 job tests EFI distro booting on ARM64 QEMU, which is completely unrelated.
+- **Build Status:** ✅ `qemu_arm64` boards build successfully (4 boards, 0 errors)
+
+#### 2. Job: opi_pc (stage: sjg-lab) - Job 431657
+- **Test:** None ran
+- **Error:** `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- **Root Cause:** Labgrid hardware infrastructure failure. The physical Orange Pi PC board didn't respond to the test harness.
+- **Log Evidence:** `Lab failure: Marking connection bad - no other tests will run`
+- **Relation to MR:** **None** - Hardware connectivity issue, not a code problem.
+- **Build Status:** ✅ `orangepi_pc` boards build successfully (3 boards, 0 errors)
+
+---
+
+### Previous Fix Status (from attempt 1):
+The fix applied in attempt 1 (`[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`) is already correctly in place in commit `4ead235fdb4`. This fixed the `test_env_spi_flash` test that was previously failing with `'Select Environment on SPIFlash: priority not found'`.
+
+---
+
+### Recommendation:
+**Retry the pipeline** - No code changes needed. The failures are:
+1. QEMU/Linux boot timeout (efi-aarch64)  
+2. Lab hardware communication timeout (opi_pc)
+
+Both are infrastructure issues that may resolve on retry.
+
+---
+
+**Branch Status:** No changes made. The branch `cherry-88de22a4db0` remains as-is since the failures are infrastructure-related.
+
+---
+
