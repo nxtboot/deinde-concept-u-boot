@@ -61639,3 +61639,67 @@ The branch `cherry-e21edf26207` is ready for pushing. It contains 9 new commits 
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-2dd6c145aba
+
+Commits:
+- 2dd6c145aba i2c: samsung: add support for Exynos7 HS-I2C
+- 94a4e845dbd Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+
+### Conversation log
+The repository has untracked files but no staged changes - this is clean enough to proceed. Now let me create and checkout the new branch based on ci/master:
+
+Branch created successfully. Now let me cherry-pick the first commit (regular commit):
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+The delta matches exactly (2 files, 96 insertions, 20 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit, which is a merge commit:
+
+The merge commit is empty (which is expected since the changes are already present). As instructed, I need to commit it with --allow-empty to preserve the merge commit message:
+
+The merge commit was created (empty as expected). Let me verify the delta and run build test:
+
+The original merge commit shows 2 files changed (96 insertions, 20 deletions), but the cherry-picked version is empty. This is expected because the first commit (2dd6c145aba) was already cherry-picked before the merge commit, so the merge has no additional changes to bring in. The commit message is preserved which is important for history tracking.
+
+Let me run the build test:
+
+Build passed. Now let me verify all cherry-picks with git log:
+
+Both commits are present. Let me run the final build test:
+
+All done. Here's the final status:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-2dd6c145aba` (based on `ci/master`)
+
+### Commits Cherry-Picked (2 of 2):
+
+| # | Original Hash | New Hash | Subject | Status |
+|---|---------------|----------|---------|--------|
+| 1 | `2dd6c145aba` | `36a2f9d437a` | i2c: samsung: add support for Exynos7 HS-I2C | ✅ OK |
+| 2 | `94a4e845dbd` | `70c45802bfb` | Merge tag 'i2c-updates-for-2026.04-rc1' of u-boot-i2c | ✅ OK (empty) |
+
+### Build Result: ✅ OK
+- No warnings or errors
+
+### Fix-ups Made:
+- None required
+
+### Delta Notes:
+- **Commit 1:** Delta matched exactly (2 files, +96/-20)
+- **Commit 2:** This merge commit is empty in the cherry-pick because its changes (from commit 2dd6c145aba) were already applied by cherry-picking the first commit. The merge commit message was preserved with `--allow-empty` to maintain history tracking.
+
+### Final State:
+```
+70c45802bfb Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+36a2f9d437a i2c: samsung: add support for Exynos7 HS-I2C
+```
+
+The branch `cherry-2dd6c145aba` is ready for pushing.
+
+---
+
