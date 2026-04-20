@@ -61537,3 +61537,105 @@ The cherry-pick branch `cherry-36aeeb591b0` is ready for pushing.
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-e21edf26207
+
+Commits:
+- e21edf26207 clk: mediatek: remove CLOCK_PARENT_* aliases
+- eea1c6ec4ea checkpatch: Add check for space indentation in Kconfig
+- 81b3558e74a test: The LMB test depends on CONFIG_LMB
+- 75a5404a588 .gitignore: add vpl/
+- 726d11289f2 scripts/Makefile.autoconf: use abs_srctree for out-of-tree symlink
+- e7797f450ad lzma: Add Kconfig options to optimize for size
+- 33c9db62d49 lzma: Update LZMA SDK code from 9.20 to 25.01
+- 45c5bc2ca51 lzma: Add SPDX-License-Identifier lines
+- 53c0d5b3879 Merge patch series "lzma: Add Kconfig options to optimize for size"
+
+### Conversation log
+The repository has untracked files but is otherwise clean. Let me proceed with creating the new branch from ci/master.
+
+Branch created. Now let me cherry-pick the first commit.
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test.
+
+Deltas match. Now let me run the build test.
+
+Build passed. Now cherry-pick the second commit.
+
+Second commit cherry-picked with auto-merge. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Cherry-pick the third commit.
+
+Third commit cherry-picked. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Cherry-pick the fourth commit.
+
+Fourth commit cherry-picked. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Cherry-pick the fifth commit.
+
+Fifth commit cherry-picked. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Cherry-pick the sixth commit.
+
+Sixth commit cherry-picked. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Cherry-pick the seventh commit.
+
+Seventh commit cherry-picked. Let me verify delta and build.
+
+Deltas match exactly. Running build test.
+
+Build passed. Cherry-pick the eighth commit.
+
+Eighth commit cherry-picked. Let me verify delta and build.
+
+Deltas match. Running build test.
+
+Build passed. Now cherry-pick the ninth commit - this is a merge commit so I need to use special flags.
+
+The merge commit is empty because we've already picked the individual commits. I need to create an empty commit with the merge message.
+
+All 9 commits have been cherry-picked. Let me verify with git log and run the final build test.
+
+All 9 commits are present. Now let me run the final build test.
+
+## Summary
+
+All 9 commits have been successfully cherry-picked from `us/next` branch to the new `cherry-e21edf26207` branch (based on `ci/master`).
+
+### Final Status:
+
+| # | Commit | Subject | Status | Delta |
+|---|--------|---------|--------|-------|
+| 1 | e21edf26207 → 772e139ca68 | clk: mediatek: remove CLOCK_PARENT_* aliases | ✅ OK | Match |
+| 2 | eea1c6ec4ea → 45702b63a65 | checkpatch: Add check for space indentation in Kconfig | ✅ OK | Match |
+| 3 | 81b3558e74a → 45929ed162f | test: The LMB test depends on CONFIG_LMB | ✅ OK | Match |
+| 4 | 75a5404a588 → 0332a36526c | .gitignore: add vpl/ | ✅ OK | Match |
+| 5 | 726d11289f2 → a00ebec0f48 | scripts/Makefile.autoconf: use abs_srctree for out-of-tree symlink | ✅ OK | Match |
+| 6 | e7797f450ad → 362d9d4de85 | lzma: Add Kconfig options to optimize for size | ✅ OK | Match |
+| 7 | 33c9db62d49 → 76ebbe323b1 | lzma: Update LZMA SDK code from 9.20 to 25.01 | ✅ OK | Match |
+| 8 | 45c5bc2ca51 → 6e519c9271d | lzma: Add SPDX-License-Identifier lines | ✅ OK | Match |
+| 9 | 53c0d5b3879 → d61b0cb963f | Merge patch series "lzma: Add Kconfig options to optimize for size" | ✅ OK (empty) | N/A |
+
+### Results:
+- **Build result**: ✅ OK - All builds passed
+- **Fix-ups**: None required - all cherry-picks applied cleanly with auto-merge
+- **Concerning deltas**: None - all deltas matched exactly
+- **Conflicts**: None
+
+The branch `cherry-e21edf26207` is ready for pushing. It contains 9 new commits on top of `ci/master`.
+
+---
+

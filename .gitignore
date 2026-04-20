@@ -72,6 +72,7 @@ fit-dtb.blob*
 #
 /spl/
 /tpl/
+/vpl/
 /defconfig
 /generated_defconfig
 /Test*
