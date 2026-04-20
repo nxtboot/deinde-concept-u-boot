@@ -2104,10 +2104,14 @@ config OF_STDOUT_VIA_ALIAS
 
 config FDT_FIXUP_PARTITIONS
 	bool "Overwrite MTD partitions in DTS through defined in 'mtdparts'"
+	depends on CMD_MTDPARTS
 	help
 	  Allow overwriting defined partitions in the device tree blob
 	  using partition info defined in the 'mtdparts' environment
 	  variable.
+
+	  The fixup reads the parsed partition list via mtdparts_init() and
+	  device_find(), which are only compiled with CMD_MTDPARTS.
 
 config FDT_SIMPLEFB
 	bool "FDT tools for simplefb support"
