@@ -24,7 +24,13 @@ int do_terminal(struct cmd_tbl *cmd, int flag, int argc, char *const argv[])
 	if (!dev)
 		return -1;
 
-	if (IS_ENABLED(CONFIG_SERIAL))
+	/*
+	 * serial_reinit_all() lives in drivers/serial/serial.c, which is
+	 * only built for the legacy (non-DM) serial path.  With DM serial
+	 * the call is unnecessary; each device is reinit'd via its own
+	 * probe.
+	 */
+	if (!CONFIG_IS_ENABLED(DM_SERIAL))
 		serial_reinit_all();
 
 	printf("Entering terminal mode for port %s\n", dev->name);
