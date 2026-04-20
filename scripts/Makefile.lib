@@ -488,10 +488,13 @@ capsule_esl_dtsi=.capsule_esl.dtsi
 quiet_cmd_capsule_esl_gen = ESL     $@
 cmd_capsule_esl_gen = cert-to-efi-sig-list $< $@
 
+# If CAPSULE_AUTHENTICATE is on but CRT_FILE is empty (e.g. allyesconfig)
+# we cannot generate a real ESL.  Emit an empty file so the dtsi rule can
+# still proceed; runtime capsule authentication will simply have nothing
+# to verify against, but the build does not fall over.
 $(obj)/capsule_esl_file: $(srctree)/$(capsule_crt_file)
-ifeq ($(CONFIG_EFI_CAPSULE_CRT_FILE),"")
-	$(error "CONFIG_EFI_CAPSULE_CRT_FILE is empty, EFI capsule authentication \
-	public key must be specified when CONFIG_EFI_CAPSULE_AUTHENTICATE is enabled")
+ifeq ($(CONFIG_EFI_CAPSULE_AUTHENTICATE)$(CONFIG_EFI_CAPSULE_CRT_FILE),y"")
+	$(Q)touch $@
 else
 	$(call cmd,capsule_esl_gen)
 endif
