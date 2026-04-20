@@ -992,6 +992,53 @@ extern ulong mem_malloc_brk;
  */
 void mem_malloc_init(ulong start, ulong size);
 
+/*
+ * The legacy allocator does not provide the backtrace / leak-check /
+ * mcheck helpers that common/dlmalloc.c exposes.  Provide no-op stubs
+ * so callers that reference these identifiers unconditionally (e.g.
+ * common/stackprot.c, test/test-main.c, test/common/malloc.c) still
+ * compile when CONFIG_SYS_MALLOC_LEGACY is selected.
+ */
+struct malloc_leak_snap {
+	unsigned long *addr;
+	int count;
+};
+
+static inline void malloc_backtrace_skip(bool skip) {}
+static inline void malloc_backtrace_unbusy(void) {}
+static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
+{
+	if (skipp)
+		*skipp = false;
+	if (busyp)
+		*busyp = false;
+
+	return false;
+}
+
+static inline size_t malloc_largest_free(void) { return 0; }
+static inline size_t malloc_chunk_size(void *ptr) { return 0; }
+static inline size_t malloc_mcheck_hdr_size(void) { return 0; }
+static inline bool malloc_mcheck_overflow(void) { return false; }
+static inline size_t malloc_mcheck_count(void) { return 0; }
+
+static inline int malloc_leak_check_start(struct malloc_leak_snap *snap)
+{
+	return 0;
+}
+
+static inline int malloc_leak_check_end(struct malloc_leak_snap *snap)
+{
+	return 0;
+}
+
+static inline int malloc_leak_check_count(struct malloc_leak_snap *snap)
+{
+	return 0;
+}
+
+static inline void malloc_leak_check_free(struct malloc_leak_snap *snap) {}
+
 #ifdef __cplusplus
 };  /* end of extern "C" */
 #endif
