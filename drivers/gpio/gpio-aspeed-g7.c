@@ -141,8 +141,8 @@ static const struct udevice_id aspeed_gpio_ids[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(gpio_aspeed) = {
-	.name   = "gpio-aspeed",
+U_BOOT_DRIVER(gpio_aspeed_g7) = {
+	.name   = "gpio-aspeed-g7",
 	.id     = UCLASS_GPIO,
 	.of_match = aspeed_gpio_ids,
 	.ops    = &aspeed_gpio_ops,
