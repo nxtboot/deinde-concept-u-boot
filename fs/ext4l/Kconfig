@@ -171,13 +171,19 @@ config EXT4_FAST_COMMIT_REPLAY
 
 config EXT4_FS_POSIX_ACL
 	bool "Enable ext4 POSIX Access Control Lists"
-	depends on FS_EXT4L && EXT4_XATTR
+	depends on FS_EXT4L && EXT4_XATTR && BROKEN
 	help
 	  Enable POSIX Access Control Lists (ACLs) support for ext4
 	  filesystems. ACLs provide more fine-grained access control
 	  than the standard Unix permission model.
 
 	  ACLs require extended attributes support (EXT4_XATTR).
+
+	  Note: U-Boot does not currently provide the posix_acl.h
+	  definitions (ACL_TYPE_DEFAULT, struct posix_acl, ...) that
+	  fs/ext4l/ialloc.c expects, so this option is gated on BROKEN
+	  until the missing infrastructure is imported.
+
 	  If unsure, say N.
 
 config EXT4_FS_SECURITY
