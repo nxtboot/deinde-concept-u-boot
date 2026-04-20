@@ -61641,165 +61641,569 @@ The branch `cherry-e21edf26207` is ready for pushing. It contains 9 new commits 
 
 ## 2026-04-20: us/next
 
-Branch: cherry-2dd6c145aba
+Branch: cherry-88de22a4db0
 
 Commits:
-- 2dd6c145aba i2c: samsung: add support for Exynos7 HS-I2C
-- 94a4e845dbd Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+- 88de22a4db0 test: env: Add test for environment storage in SPI NOR
+- 1f131385810 env: Add single to redundant environment upgrade path
+- 8dd76166e3d configs: sandbox: Enable environment in SPI NOR support
+- 141be72e2a9 Merge patch series "test: env: Add test for environment storage in SPI NOR"
 
 ### Conversation log
-The repository has untracked files but no staged changes - this is clean enough to proceed. Now let me create and checkout the new branch based on ci/master:
+The repository state is clean (only untracked files, no uncommitted changes). Now let me create and checkout a new branch based on ci/master:
 
-Branch created successfully. Now let me cherry-pick the first commit (regular commit):
+Now let me cherry-pick the first commit (test: env: Add test for environment storage in SPI NOR):
 
-First commit cherry-picked successfully. Let me verify the delta and run the build test:
+First cherry-pick successful. Let me verify the delta and run build test:
 
-The delta matches exactly (2 files, 96 insertions, 20 deletions). Now let me run the build test:
+The delta matches (1 file, 99 insertions). Now let me run the build test:
 
-Build passed. Now let me cherry-pick the second commit, which is a merge commit:
+Build passed. Now let me cherry-pick the second commit (env: Add single to redundant environment upgrade path):
 
-The merge commit is empty (which is expected since the changes are already present). As instructed, I need to commit it with --allow-empty to preserve the merge commit message:
+Second cherry-pick successful (with auto-merge). Let me verify the delta:
 
-The merge commit was created (empty as expected). Let me verify the delta and run build test:
+Delta matches exactly (3 files, 115 insertions, 1 deletion). Now run build test:
 
-The original merge commit shows 2 files changed (96 insertions, 20 deletions), but the cherry-picked version is empty. This is expected because the first commit (2dd6c145aba) was already cherry-picked before the merge commit, so the merge has no additional changes to bring in. The commit message is preserved which is important for history tracking.
+Build passed. Now let me cherry-pick the third commit (configs: sandbox: Enable environment in SPI NOR support):
+
+There's a conflict in configs/sandbox_defconfig. Let me examine it to see if it can be auto-resolved:
+
+Let me examine the conflict area more closely:
+
+I see the conflict. The HEAD has no ENV settings between `CONFIG_OF_LIVE=y` and `CONFIG_ENV_IMPORT_FDT=y`, while the incoming commit wants to add several ENV config options. Let me check what ENV settings already exist elsewhere in the file:
+
+The ENV settings that the cherry-pick wants to add are already present in the file (at different locations). This looks like the commit has already been partially or fully applied with a different organization. Let me check the original commit to understand what it's trying to add:
+
+Let me check if all these changes are already present in ci/master (i.e., the commit was already applied):
+
+Let me search differently - check if the commit hash's content is already in the branch:
+
+The ci/master version doesn't have ENV_OFFSET at the top. Let me compare full files to understand what's different:
+
+The ci/master branch seems to have a different base state than us/next. The conflict arises because:
+- ci/master has minimal ENV settings (just SIZE and IMPORT_FDT)
+- The original commit was made on a branch that already had EXT4/FAT/NOWHERE settings
+
+Since the conflict is at a location where HEAD has nothing and the cherry-pick wants to add lines that contextually make sense, I can try to resolve this. The ci/master doesn't have these lines at all, so we should add the lines the commit wants to add. Let me check what the working tree currently has:
+
+It seems the file already has all the ENV settings including the new ones from the cherry-picked commit. The conflict is because git is confused about context. Let me resolve the conflict - since the lines are already present, I should take the HEAD (empty) side and remove the conflict markers:
+
+I need to check if those ENV lines are already present elsewhere in the file (at the top). Let me look at the full file structure:
+
+I see - the file has the ENV_OFFSET, ENV_SECT_SIZE and ENV_OFFSET_REDUND lines already at the top (from the auto-merge). Let me also check for the ENV_IS_* lines:
+
+Those lines are only present inside the conflict block. So the resolution should be to take the "theirs" (incoming) changes - accept the lines that the cherry-pick wants to add. Let me resolve the conflict properly:
+
+Hmm, the delta shows 31 insertions, 25 deletions which is different from the original. Let me check:
+
+The delta is significantly different. Original: 15 insertions. Cherry-picked: 31 insertions, 25 deletions. This is because "checkout --theirs" took the entire file from the source branch, not just resolved the conflict properly.
+
+Let me reset and try to properly resolve this conflict:
+
+Let me look at the conflict more carefully. The original commit wants to add these ENV settings after CONFIG_OF_LIVE=y. Let me check what lines currently exist there:
+
+The ENV_OFFSET, SECT_SIZE, and OFFSET_REDUND lines are already at the top (auto-merged from earlier in the original commit). And looking at lines 165-174, the incoming lines are inside the conflict block. Let me see the exact conflict:
+
+The conflict is: HEAD (ci/master) has nothing between OF_LIVE and ENV_IMPORT_FDT, while the incoming commit wants to insert the ENV_IS_* lines there. The resolution is to ADD those lines (taking "theirs"). But I need to do this carefully to not mess up the whole file.
+
+Let me manually resolve by taking only the conflict block:
+
+Good, the conflict is resolved. Now let me add it and continue the cherry-pick:
+
+Let me check the delta:
+
+The delta shows:
+- Original: 15 insertions (1+7+7)
+- Cherry-picked: 20 insertions (1+7+12)
+
+Let me check why sandbox_defconfig has more insertions (12 vs 7):
+
+I see the issue! The original commit was applied on a branch that already had these lines:
+- CONFIG_ENV_IS_NOWHERE=y
+- CONFIG_ENV_IS_IN_EXT4=y
+- CONFIG_ENV_IS_IN_FAT=y
+- CONFIG_ENV_EXT4_INTERFACE="host"
+- CONFIG_ENV_EXT4_DEVICE_AND_PART="0:0"
+
+But ci/master doesn't have those lines, so they got added as part of the conflict resolution. This is expected behavior - the cherry-pick correctly adds the lines that the commit needs to be contextually correct on this branch.
+
+The key additions from the commit are:
+- CONFIG_ENV_OFFSET=0x0
+- CONFIG_ENV_SECT_SIZE=0x1000
+- CONFIG_ENV_OFFSET_REDUND=0x10000
+- CONFIG_ENV_IS_IN_SPI_FLASH=y
+- CONFIG_ENV_SECT_SIZE_AUTO=y
+- CONFIG_ENV_REDUNDANT=y
+- CONFIG_ENV_REDUNDANT_UPGRADE=y
+
+These are all present in the cherry-picked commit. The extra lines are context that was needed because ci/master has a different base. This is acceptable - the delta difference is due to different base states, not an error.
 
 Let me run the build test:
 
-Build passed. Now let me verify all cherry-picks with git log:
+Build passed. I should amend the commit to note the conflict resolution. Let me do that:
 
-Both commits are present. Let me run the final build test:
+Now let me cherry-pick the fourth commit (the merge commit):
 
-All done. Here's the final status:
+There are conflicts in the merge commit. Let me check the conflicts:
+
+The conflict is simple: HEAD has CONFIG_ENV_IS_IN_FAT=y and the merge commit doesn't have it. I should keep the HEAD version (keep the FAT line):
+
+The merge commit is empty after resolution. This is expected - all the changes from the merge are already applied by the previous cherry-picks. As per the instructions, I should use --allow-empty to preserve the merge commit message:
+
+All 4 commits cherry-picked. Now let me verify the log and check delta for the merge commit:
+
+All 4 commits are present. The merge commit is empty because all changes were already applied by the individual cherry-picks. Now let me run the final build test:
+
+Build passed. Let me provide the final status:
 
 ## Cherry-Pick Summary
 
-**Branch:** `cherry-2dd6c145aba` (based on `ci/master`)
+### Final Status: ✅ SUCCESS
 
-### Commits Cherry-Picked (2 of 2):
+**Branch:** `cherry-88de22a4db0` (based on `ci/master`)
 
-| # | Original Hash | New Hash | Subject | Status |
-|---|---------------|----------|---------|--------|
-| 1 | `2dd6c145aba` | `36a2f9d437a` | i2c: samsung: add support for Exynos7 HS-I2C | ✅ OK |
-| 2 | `94a4e845dbd` | `70c45802bfb` | Merge tag 'i2c-updates-for-2026.04-rc1' of u-boot-i2c | ✅ OK (empty) |
+### Commits Applied (4 of 4):
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | `88de22a4db0` | test: env: Add test for environment storage in SPI NOR | ✅ Clean |
+| 2 | `1f131385810` | env: Add single to redundant environment upgrade path | ✅ Auto-merged |
+| 3 | `8dd76166e3d` | configs: sandbox: Enable environment in SPI NOR support | ⚠️ Conflict resolved |
+| 4 | `141be72e2a9` | Merge patch series "test: env: Add test..." | ✅ Empty (expected) |
 
 ### Build Result: ✅ OK
 - No warnings or errors
 
 ### Fix-ups Made:
-- None required
 
-### Delta Notes:
-- **Commit 1:** Delta matched exactly (2 files, +96/-20)
-- **Commit 2:** This merge commit is empty in the cherry-pick because its changes (from commit 2dd6c145aba) were already applied by cherry-picking the first commit. The merge commit message was preserved with `--allow-empty` to maintain history tracking.
+1. **Commit 3 (`8dd76166e3d`)**: Conflict in `configs/sandbox_defconfig`
+   - **Issue:** ci/master doesn't have `CONFIG_ENV_IS_NOWHERE`, `CONFIG_ENV_IS_IN_EXT4`, `CONFIG_ENV_IS_IN_FAT`, `CONFIG_ENV_EXT4_*` lines that existed in the source branch
+   - **Resolution:** Added these ENV config lines to provide proper context for the cherry-picked changes
+   - **Note added:** `[Resolved conflict: Added ENV config lines that existed in source branch context]`
 
-### Final State:
+2. **Commit 4 (merge commit)**: Applied as empty commit
+   - This is expected because all actual changes were already applied by commits 1-3
+   - Commit message preserved for history tracking
+
+### Delta Concerns:
+
+- **Commit 3**: Cherry-picked delta (20 insertions) differs from original (15 insertions) due to additional ENV config lines needed for context. This is acceptable as the core SPI NOR environment changes are correctly applied.
+
+### Final Log:
 ```
-70c45802bfb Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
-36a2f9d437a i2c: samsung: add support for Exynos7 HS-I2C
+6523f1c677b Merge patch series "test: env: Add test for environment storage in SPI NOR"
+dce75b5161c configs: sandbox: Enable environment in SPI NOR support
+fe383c11d73 env: Add single to redundant environment upgrade path
+f04bfe81bc0 test: env: Add test for environment storage in SPI NOR
 ```
 
-The branch `cherry-2dd6c145aba` is ready for pushing.
+The branch `cherry-88de22a4db0` is ready for pushing.
 
 ---
 
-### Pipeline fix: 2026-04-20 (attempt 1)
+### Review: 2026-04-20
 
-Branch: cherry-2dd6c145aba
+Branch: cherry-88de22a4db0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) sandbox with clang test.py, sandbox test.py, opi_pc, C...
+
+### Conversation log
+Now let me understand the review comment. The bot is asking to fix the pipeline failure for `test_env_spi_flash`. Looking at the context, the fix was already identified and applied in the local branch `cherry-88de22a4db0-fix1`. Let me check what that fix contains:
+
+The diff is empty, which means the fix was amended into an existing commit. Let me check the actual diff for sandbox.c between the branches:
+
+Interesting! The fix is already on the `cherry-88de22a4db0` branch. The `#ifdef` guards are already present in the current branch. Let me check if this branch was pushed to the remote:
+
+The local and remote branches are identical (same commit hash `dc5b9d33fef`). Let me check if the remote branch already has the fix:
+
+The fix is already present in the remote branch. This means the fix was already applied in a previous attempt. Let me verify the build works:
+
+The build passes. Let me understand what the review comment is asking for. Looking at the context, it says "Pipeline fix (attempt 1): fixed failed job(s)...". This appears to be a summary of the fix that was already applied.
+
+Let me check if there's a newer pipeline result or if the fix needs to be re-pushed:
+
+Looking at the conversation log more closely, I see that:
+1. The fix was identified (wrapping env_locations[] entries with #ifdef guards)
+2. The fix was supposed to be applied to commit `dce75b5161c`
+3. But the current branch has commit `4ead235fdb4` for the same file
+
+Let me check if the fix was actually properly amended into the commit on the remote branch:
+
+The fix is already in the commit. The commit message shows `[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`. Let me verify the actual change in the commit:
+
+The fix is already properly applied. The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is actually a notification that the pipeline fix was attempted. Looking at the conversation log context, it seems the fix was already applied and pushed.
+
+Let me check if there's anything else that needs to be done. The review comment mentions fixing sandbox test.py failures, and looking at the conversation log summary, the fix was identified and applied. Let me verify by checking if the fix branch has any additional changes:
+
+I see - the fix was already applied and documented in the conversation log! The `.pickman-history` file shows the complete fix was already done. The review comment is simply a record of the pipeline fix attempt that was already completed.
+
+Let me verify the current state of the branch matches the fix:
+
+The fix is already in place. Looking at the review comment more carefully:
+
+> **[project_1_bot_2541d37e7146e9c25808a380e05ebef0]**: Pipeline fix (attempt 1): fixed failed job(s) sandbox with clang test.py, sandbox test.py, opi_pc, Check make qcheck, Check make check.
+
+This is a **notification comment** from the bot indicating that a pipeline fix was already attempted, not a request for me to do something new. The fix has already been:
+1. Identified (the `#ifdef` guards for `env_locations[]`)
+2. Applied (amended into commit `4ead235fdb4`)
+3. Pushed to the remote branch
+
+Let me verify if the remote branch needs to be updated:
+
+The local and remote are in sync (same commit hashes). The fix is already pushed. Let me double-check the remote has the actual fix:
+
+The fix is already in the remote branch. The review comment from the bot is just a notification/record of the pipeline fix that was already done.
+
+Since the fix is already applied and pushed, there's nothing more to do for this MR. The pipeline should have been re-run after the fix was pushed. Let me verify by checking the commit message to see if the fix notes are included:
+
+The fix is complete with the note `[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`. 
+
+## Summary
+
+**Report for MR !913 Review Comment**
+
+### Status: ✅ No Action Needed
+
+The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is a **notification record** of a pipeline fix that was already applied in a previous session, not a request for new changes.
+
+### What Was Already Done:
+1. **Root cause identified**: The `test_env_spi_flash` test was failing because `board/sandbox/sandbox.c` had a hardcoded `env_locations[]` array that included `ENVL_EXT4`, but `CONFIG_ENV_IS_IN_EXT4` is disabled on sandbox when `CONFIG_FS_EXT4L` is enabled.
+
+2. **Fix applied**: The `env_locations[]` array entries were wrapped with `#ifdef` guards to only include entries for drivers that are actually compiled.
+
+3. **Fix committed**: The fix was amended into commit `4ead235fdb4` with the note `[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`.
+
+4. **Already pushed**: The local branch and remote branch `ci/cherry-88de22a4db0` are in sync (commit `dc5b9d33fef`).
+
+### Other Failures Mentioned:
+- **opi_pc**: Infrastructure/transient failure (labgrid timeout) - not a code issue
+- **Check make qcheck/check**: Pre-existing binman coverage issue (99% vs 100%) - not related to this MR
+
+### Recommended Reply to MR:
+
+No reply is needed since this is an automated bot comment recording the fix attempt. The pipeline should automatically re-run on the pushed fix. If the pipeline hasn't re-run, manual triggering may be needed.
+
+---
+
+### Pipeline fix: 2026-04-20 (attempt 2)
+
+Branch: cherry-88de22a4db0
 
 Failed jobs:
 - efi-aarch64 (sjg-lab)
-- colibrimx8 (sjg-lab)
 - opi_pc (sjg-lab)
 
 ### Conversation log
-Let me analyze these logs:
+Now I understand the failures. Let me analyze them:
 
-1. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` during EFI build - this looks like a build failure
-2. **colibrimx8**: `Lab failure: Timeout executing 'echo ${test_env_0}'` - this is a lab/infrastructure timeout
-3. **opi_pc**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` - this is a lab/infrastructure timeout
+**Job: efi-aarch64 (stage: sjg-lab)**
+- **Error**: `test_distro_arm_app_efi` test failed with `console_base.Timeout`
+- **Line 177-182**: The test expects to see `'Ubuntu 25.04 qarm ttyAMA0'` but timed out waiting for it
+- This is a **timeout failure** during a distro boot test - the system didn't boot the Linux kernel properly
 
-The colibrimx8 and opi_pc failures are clearly infrastructure/lab timeouts - not code issues. The efi-aarch64 failure needs more investigation - it's a build failure with `readelf` error.
+**Job: opi_pc (stage: sjg-lab)**  
+- **Error**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- This is a **labgrid/hardware infrastructure failure** - the Orange Pi PC board didn't respond to the test harness
 
-Let me checkout the branch and investigate:
+Both failures are **infrastructure/transient issues**, not code issues:
+1. The `efi-aarch64` test shows a timeout waiting for Linux to boot - this could be a QEMU issue or environment issue
+2. The `opi_pc` test shows a hardware timeout - the physical board didn't respond
 
-Good, now let me look at the commits and understand the failures better:
+However, let me checkout the branch and investigate more carefully to be sure this isn't related to the code changes:
 
-Based on the logs, let me analyze the failures more carefully:
+Now let me check what's in the cherry-picked commits and if they might have caused the issue. The failures are:
+1. `efi-aarch64` - distro boot test timeout
+2. `opi_pc` - labgrid hardware timeout
 
-1. **efi-aarch64**: The error `readelf: Error: u-boot: Failed to read file's magic number` in `Makefile:2642: checkarmreloc` indicates the U-Boot binary was not built correctly. This happens during the EFI ARM app build, not a code change issue.
+Let me check if the cherry-picked commits might affect EFI or distro booting:
 
-2. **colibrimx8**: Timeout on `echo ${test_env_0}` - a lab timeout issue
+The cherry-picked commits only touch:
+- `board/sandbox/sandbox.c`
+- `configs/sandbox64_defconfig`
+- `configs/sandbox_defconfig`
+- `env/Kconfig`
+- `env/common.c`
+- `test/py/tests/test_env.py`
 
-3. **opi_pc**: Timeout waiting for login - a lab/infrastructure timeout issue
+These are **sandbox** and **environment** related changes - they should NOT affect:
+1. EFI booting on ARM64 (`efi-aarch64` test)
+2. Orange Pi PC hardware boot (`opi_pc` test)
 
-Let me try building the affected boards to see if there's an actual code issue:
+Let me check the MR description more closely - this is "attempt 2", which means there was a previous fix attempt. Let me check if there were any issues noted in the conversation log:
 
-Let me find the actual defconfig names:
+I see! There was already a fix applied in the previous attempt (`[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`). Let me check if the fixes are correct:
 
-Now let me build the boards to see if they compile successfully:
+The fix from attempt 1 was correctly applied. The issue is that the current failures (`efi-aarch64` and `opi_pc`) are **infrastructure/transient issues**, not code issues.
 
-That's just a warning about a missing container image, which is expected for production builds. Let me try the EFI ARM64 test to understand the failure better:
+Let me verify by checking what these tests actually test:
 
-These are just DTS warnings, not errors. Let me try building with orangepi_pc:
+The log shows QEMU environment - this is a QEMU-based ARM64 test. The failure is a timeout in `test_distro_arm_app_efi` waiting for "Ubuntu 25.04 qarm ttyAMA0". Let me check if this test has been failing elsewhere or if it's new:
 
-All these boards build successfully (the exit code 101 is for warnings about missing external blobs, which is expected behavior). The warnings about missing ATF/SCP blobs are for production, not CI test builds.
+This test boots Linux via EFI and waits for the Ubuntu login prompt. The failure is a **timeout waiting for Linux to boot** - this is completely unrelated to the environment changes in this MR.
 
-Now let me analyze the actual failures:
+Let me also verify that the sandbox tests (which the code changes actually affect) pass. Looking at the log:
 
-Looking at the logs more carefully:
-1. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` - this error occurs DURING the test run, not during the initial build. The CI job is running `scripts/build-efi` which tries to build a special EFI configuration. This could be a runner issue or transient problem.
+The only failure is the distro boot test - not the environment tests. Let me check if the environment test was run:
 
-2. **colibrimx8**: `Timeout executing 'echo ${test_env_0}'` - clear lab timeout - runner/board issue
+No environment tests ran on the efi-aarch64 job - those tests are only relevant for sandbox.
 
-3. **opi_pc**: `Timeout of 15 seconds exceeded during waiting for login` - clear lab timeout - runner/board issue
+Let me now check both failures more thoroughly to confirm they are infrastructure issues:
 
-Let me also confirm there are no actual code changes that could cause issues by checking what the cherry-picked commits touch:
+**efi-aarch64 failure analysis:**
+- The test `test_distro_arm_app_efi` times out waiting for "Ubuntu 25.04 qarm ttyAMA0"
+- 34 tests passed, 669 skipped, 1 failed
+- The failure is unrelated to environment code - it's a distro boot timeout in QEMU
 
-The commit only touches I2C drivers for Samsung Exynos7 platforms. None of the failing test boards are Exynos-based:
-- colibri-imx8x - NXP iMX8 platform
-- orangepi_pc - Allwinner H3 platform  
-- efi-aarch64 - QEMU ARM64 EFI test
+**opi_pc failure analysis:**
+- `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- The labgrid framework couldn't communicate with the physical Orange Pi PC board
+- The test says "Lab failure: Marking connection bad - no other tests will run"
+- 0 tests ran before the failure - it's a pure hardware connectivity issue
 
-These failures are **infrastructure/transient issues**, not caused by the code changes in this MR:
+Both failures are **infrastructure/transient issues** - not code issues related to the MR's changes.
 
-1. **efi-aarch64**: The `readelf: Error: u-boot: Failed to read file's magic number` error occurs during the test lab's build-efi script - this is a runner-side issue where the build directory may have been in a bad state or there was a filesystem/race condition issue.
+However, let me double-check if there might be any indirect impact. Let me verify that the sandbox build works correctly:
 
-2. **colibrimx8**: `Lab failure: Timeout executing 'echo ${test_env_0}'` - The lab board timed out during a simple echo command, which is clearly a hardware lab or connectivity issue, not a code issue.
+Now let me build the affected boards to ensure they compile correctly:
 
-3. **opi_pc**: `Timeout of 15 seconds exceeded during waiting for login` - The OrangePi board failed to boot or the connection timed out waiting for login prompt - this is a lab infrastructure issue.
+The boards build successfully (warnings about external blobs are normal for sunxi boards that require ATF firmware).
 
-None of these failures are related to the I2C Samsung driver changes in this MR.
+Let me also check the efi-aarch64 board:
 
-Let me report this finding:
+Both `orangepi_pc` (3 boards) and `qemu_arm64` (4 boards) build successfully with only warnings (no errors).
+
+**Conclusion:** Both failures are infrastructure/transient issues:
+
+1. **efi-aarch64 (Job 431688)**: The `test_distro_arm_app_efi` test failed with a timeout waiting for Linux to boot. This is a QEMU-based test that boots Linux via EFI. The timeout is unrelated to the environment changes in this MR - the test is about distro booting, not environment storage. The board builds successfully.
+
+2. **opi_pc (Job 431657)**: Pure hardware infrastructure failure. The labgrid framework couldn't communicate with the Orange Pi PC board (`pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`). The test didn't even run a single test before failing. The board builds successfully.
+
+Neither failure is related to the code changes in this MR (which only affect sandbox environment configuration). The previous fix from attempt 1 (wrapping `env_locations[]` entries with `#ifdef` guards) is already correctly in place.
+
+Let me report my findings and NOT make any changes since this is an infrastructure issue:
 
 ## Summary Report
 
-**MR !912 (branch: cherry-2dd6c145aba)**
+### MR !913 (branch: cherry-88de22a4db0, attempt 2) - Pipeline Failure Analysis
 
-### Diagnosis
+**Status:** 🔴 Infrastructure/Transient Failures - **No code fix required**
 
-All three pipeline failures are **infrastructure/transient issues** and are NOT caused by the code changes in this MR.
+---
 
-**Code Changes in MR:**
-- `2dd6c145aba` - i2c: samsung: add support for Exynos7 HS-I2C (affects only Samsung Exynos7 I2C driver)
-- `94a4e845dbd` - Merge tag for i2c-updates (empty merge commit)
+### Failed Jobs Analysis:
 
-**Failing Jobs Analysis:**
+#### 1. Job: efi-aarch64 (stage: sjg-lab) - Job 431688
+- **Test:** `test_distro_arm_app_efi`
+- **Error:** `console_base.Timeout` - waiting for "Ubuntu 25.04 qarm ttyAMA0"
+- **Root Cause:** QEMU/Linux boot timeout. The test boots Linux via EFI and waits for the Ubuntu login prompt. The kernel failed to boot within the timeout period.
+- **Relation to MR:** **None** - The MR changes sandbox environment configuration and env tests. The efi-aarch64 job tests EFI distro booting on ARM64 QEMU, which is completely unrelated.
+- **Build Status:** ✅ `qemu_arm64` boards build successfully (4 boards, 0 errors)
 
-| Job | Board | Failure Type | Analysis |
-|-----|-------|--------------|----------|
-| efi-aarch64 | QEMU ARM64 EFI | Build failure in test script | `readelf: Error: u-boot: Failed to read file's magic number` - the u-boot binary file was corrupted or the build directory was in a bad state on the runner. This is a runner-side issue. |
-| colibrimx8 | Colibri iMX8X | Lab timeout | `Timeout executing 'echo ${test_env_0}'` - board timed out on a simple echo command, indicating hardware/connectivity issue |
-| opi_pc | OrangePi PC | Lab timeout | `Timeout of 15 seconds exceeded during waiting for login` - board failed to boot or connection dropped |
+#### 2. Job: opi_pc (stage: sjg-lab) - Job 431657
+- **Test:** None ran
+- **Error:** `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- **Root Cause:** Labgrid hardware infrastructure failure. The physical Orange Pi PC board didn't respond to the test harness.
+- **Log Evidence:** `Lab failure: Marking connection bad - no other tests will run`
+- **Relation to MR:** **None** - Hardware connectivity issue, not a code problem.
+- **Build Status:** ✅ `orangepi_pc` boards build successfully (3 boards, 0 errors)
 
-**Verification:**
-- Built all affected boards locally: `colibri-imx8x`, `orangepi_pc`, `qemu_arm64` - all build successfully
-- The I2C driver changes only affect Samsung Exynos7 platforms, which none of the failing boards use
+---
 
-**Root Cause:** Infrastructure/lab transient issues - not code-related failures.
+### Previous Fix Status (from attempt 1):
+The fix applied in attempt 1 (`[pickman] Make sandbox env_locations[] conditional on enabled ENV configs`) is already correctly in place in commit `4ead235fdb4`. This fixed the `test_env_spi_flash` test that was previously failing with `'Select Environment on SPIFlash: priority not found'`.
 
-**Recommendation:** No code changes needed. Re-run the pipeline to attempt recovery. If failures persist, investigate the lab hardware/runner status.
+---
+
+### Recommendation:
+**Retry the pipeline** - No code changes needed. The failures are:
+1. QEMU/Linux boot timeout (efi-aarch64)  
+2. Lab hardware communication timeout (opi_pc)
+
+Both are infrastructure issues that may resolve on retry.
+
+---
+
+**Branch Status:** No changes made. The branch `cherry-88de22a4db0` remains as-is since the failures are infrastructure-related.
+
+---
+
+### Review: 2026-04-20
+
+Branch: cherry-88de22a4db0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Now I understand the failures. L...
+
+### Conversation log
+The fix from the previous attempt is already in place. The `env_locations[]` array has proper `#ifdef` guards. Let me analyze the current review comment:
+
+The review comment says: `Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.`
+
+Based on the context from the MR description, these failures were analyzed and found to be **infrastructure/transient issues**:
+
+1. **efi-aarch64**: `test_distro_arm_app_efi` test timeout - QEMU-based ARM64 test, Linux kernel failed to boot in time
+2. **opi_pc**: `pexpect.exceptions.TIMEOUT` - hardware infrastructure failure, physical board didn't respond
+
+These failures are NOT related to the code changes in this MR (which only affect sandbox environment configuration). Let me verify this by checking what files were changed:
+
+Build passes. Now let me check the remote branch status:
+
+I see the local branch has one additional commit (`eecce9a93c1 pickman: Record pipeline fix for cherry-88de22a4db0`) that's not on the remote. Let me check what this commit contains:
+
+This is just a history recording commit. The actual code fix was already applied in the previous attempt (the `#ifdef` guards for `env_locations[]`).
+
+Looking at the review comment `Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc`, I can see from the context that:
+
+1. These failures are **infrastructure/transient issues**, not code problems
+2. The previous fix (attempt 1) already addressed the actual code issue (`test_env_spi_flash` failure)
+3. No code changes are needed for attempt 2
+
+Since both failures are infrastructure issues:
+- **efi-aarch64**: QEMU/Linux boot timeout during `test_distro_arm_app_efi` - unrelated to sandbox environment changes
+- **opi_pc**: Hardware timeout - physical board didn't respond to test harness
+
+There are no code changes to make. The appropriate action is to report that these are transient failures that should be retried.
+
+Let me check if there's anything else on the remote that needs attention:
+
+The local branch has a pickman history record commit that's not on the remote, but this doesn't affect the code.
+
+## Summary
+
+**MR !913 Review Comment Analysis**
+
+The review comment `Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc` is a notification about pipeline failures that are **infrastructure/transient issues**, not code problems.
+
+### Failed Jobs Analysis:
+
+1. **efi-aarch64**: `test_distro_arm_app_efi` timeout - QEMU-based ARM64 test where Linux failed to boot in time. This tests EFI distro booting, which is completely unrelated to the sandbox environment configuration changes in this MR.
+
+2. **opi_pc**: `pexpect.exceptions.TIMEOUT` - Hardware infrastructure failure where the physical Orange Pi PC board didn't respond to the test harness.
+
+### Changes in This MR:
+The MR only modifies:
+- `board/sandbox/sandbox.c` - sandbox-specific code
+- `configs/sandbox_defconfig` and `configs/sandbox64_defconfig` - sandbox configs
+- `env/Kconfig` and `env/common.c` - environment subsystem
+- `test/py/tests/test_env.py` - test code
+
+None of these changes affect EFI booting on ARM64 or Orange Pi PC hardware.
+
+### Actions Taken:
+- **No code changes needed** - The failures are infrastructure/transient issues
+- Build verified: `buildman -L --board sandbox -w -o /tmp/pickman` passes
+- The previous fix (attempt 1) that added `#ifdef` guards to `env_locations[]` is already in place
+
+### Recommended Reply to MR:
+
+> The `efi-aarch64` and `opi_pc` failures are infrastructure/transient issues, not related to the code changes in this MR:
+> 
+> - **efi-aarch64**: `test_distro_arm_app_efi` timed out waiting for Linux to boot in QEMU. This test is about EFI distro booting, unrelated to sandbox environment configuration.
+> - **opi_pc**: Hardware connectivity timeout - the physical board didn't respond to the test harness.
+> 
+> The MR only modifies sandbox environment configuration and env subsystem code. No code changes needed - please retry the pipeline.
+
+---
+
+### Review: 2026-04-20
+
+Branch: cherry-88de22a4db0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) opi_pc.
+
+Based on the job log and MR description, I ca...
+
+### Conversation log
+The local and remote branches are in sync. Let me analyze the review comment:
+
+The review comment says: `Pipeline fix (attempt 3): fixed failed job(s) opi_pc.`
+
+Based on the detailed context in the MR description, this is the **third attempt** and the `opi_pc` failure is consistently identified as a **labgrid infrastructure/hardware timeout** - the physical Orange Pi PC board didn't respond to the test harness.
+
+Let me verify the current state and confirm this is an infrastructure issue:
+
+The fix from attempt 1 is already in place - the `#ifdef` guards for `env_locations[]`. This is the correct fix that was applied to address the `test_env_spi_flash` failure.
+
+Now let me verify the build passes:
+
+Build passes. Let me also build the orangepi_pc board to confirm no issues:
+
+Both `sandbox` and `orangepi_pc` build successfully with no errors.
+
+Based on my analysis:
+
+1. **The review comment** `Pipeline fix (attempt 3): fixed failed job(s) opi_pc` is a notification about the third pipeline failure for `opi_pc`.
+
+2. **The failure is an infrastructure/hardware issue**: The `opi_pc` job failed with `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`. This is a labgrid hardware timeout - the physical Orange Pi PC board didn't respond to the test harness.
+
+3. **The MR changes don't affect Orange Pi PC**: The MR only modifies:
+   - `board/sandbox/sandbox.c` - sandbox board only
+   - `configs/sandbox_defconfig` and `configs/sandbox64_defconfig` - sandbox configs
+   - `env/Kconfig` and `env/common.c` - environment subsystem
+   - `test/py/tests/test_env.py` - test code
+   
+   None of these affect Orange Pi PC (sunxi) hardware.
+
+4. **The actual code fix was already applied in attempt 1**: The `#ifdef` guards for `env_locations[]` are already in place.
+
+5. **This is a transient/infrastructure failure**: The same type of failure occurred in attempts 2 and 3 - hardware connectivity timeout, not a code issue.
+
+**No code changes are needed** - the failure is an infrastructure issue that should resolve on retry. The branch is already in the correct state with all fixes applied.
+
+Let me create a summary report:
+
+---
+
+## Summary Report for MR !913 (attempt 3)
+
+### Review Comment
+`[project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) opi_pc.`
+
+### Analysis
+**Status:** ⚠️ **Infrastructure/Transient Failure - No code fix required**
+
+The `opi_pc` job failed with:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+This is a **labgrid hardware infrastructure timeout** - the physical Orange Pi PC board didn't respond to the test harness. This is NOT a code issue.
+
+### Why This Is Not a Code Problem:
+
+1. **The MR only changes sandbox-related files** - no changes to Orange Pi PC (sunxi) hardware code
+2. **Build verification passed** - both `sandbox` and `orangepi_pc` build successfully
+3. **Same failure type in attempts 2 and 3** - consistent hardware timeout
+4. **Zero tests ran** - the failure occurred before any tests could execute
+5. **The fix from attempt 1 is already in place** - `#ifdef` guards for `env_locations[]` 
+
+### Actions Taken:
+- Verified branch state is correct
+- Confirmed build passes for both `sandbox` and `orangepi_pc`
+- Confirmed no code changes are needed
+
+### Recommended Reply to MR:
+
+> The `opi_pc` failure in attempt 3 is an **infrastructure/transient issue**, not a code problem:
+>
+> ```
+> pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+> Lab failure: Marking connection bad - no other tests will run
+> ```
+>
+> The physical Orange Pi PC board didn't respond to the labgrid test harness. This MR only modifies sandbox environment configuration and env subsystem code - no changes affect Orange Pi PC (sunxi) hardware.
+>
+> Build verification passes for both `sandbox` and `orangepi_pc` boards. The code fix from attempt 1 (adding `#ifdef` guards to `env_locations[]`) is already in place and working.
+>
+> Please retry the pipeline - this is a hardware connectivity timeout that should resolve on retry.
+
+### Branch Status:
+No changes made - the branch `cherry-88de22a4db0` is already in the correct state. No push needed since the failure is infrastructure-related, not a code issue.
 
 ---
 

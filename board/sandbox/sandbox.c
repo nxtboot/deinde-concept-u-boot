@@ -89,9 +89,18 @@ unsigned long timer_read_counter(void)
 
 /* specific order for sandbox: nowhere is the first value, used by default */
 static enum env_location env_locations[] = {
+#ifdef CONFIG_ENV_IS_NOWHERE
 	ENVL_NOWHERE,
+#endif
+#ifdef CONFIG_ENV_IS_IN_EXT4
 	ENVL_EXT4,
+#endif
+#ifdef CONFIG_ENV_IS_IN_FAT
 	ENVL_FAT,
+#endif
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
+	ENVL_SPI_FLASH,
+#endif
 };
 
 enum env_location env_get_location(enum env_operation op, int prio)
