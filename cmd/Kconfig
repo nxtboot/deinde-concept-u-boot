@@ -3236,7 +3236,7 @@ config CMD_MALLOC
 
 config CMD_MALLOC_LEAK
 	bool "malloc leak - Detect heap leaks"
-	depends on CMD_MALLOC && SANDBOX
+	depends on CMD_MALLOC && SANDBOX && !SYS_MALLOC_LEGACY
 	default y
 	help
 	  This adds the 'malloc leak' subcommand which snapshots the heap

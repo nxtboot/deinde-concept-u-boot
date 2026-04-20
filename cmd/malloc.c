@@ -65,10 +65,11 @@ static int __maybe_unused do_malloc_log(struct cmd_tbl *cmdtp, int flag,
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(CMD_MALLOC_LEAK)
 static struct malloc_leak_snap leak_snap;
 
-static int __maybe_unused do_malloc_leak(struct cmd_tbl *cmdtp, int flag,
-					 int argc, char *const argv[])
+static int do_malloc_leak(struct cmd_tbl *cmdtp, int flag,
+			  int argc, char *const argv[])
 {
 	if (argc < 2) {
 		int leaks;
@@ -116,7 +117,6 @@ static int __maybe_unused do_malloc_leak(struct cmd_tbl *cmdtp, int flag,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CMD_MALLOC_LEAK)
 #define MALLOC_LEAK_HELP \
 	"malloc leak [start|end] - detect heap leaks\n" \
 	"    start - snapshot current heap allocations\n" \
