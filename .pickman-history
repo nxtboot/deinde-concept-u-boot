@@ -62749,3 +62749,117 @@ Successfully rebased branch `cherry-ce19a4af0ad` onto the latest `ci/master`.
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-488c396e711
+
+Commits:
+- 488c396e711 mt8365_evk_defconfig: enable clk command
+- 32087f61ada clk: mediatek: mt8365: fix missing and out of order clocks
+- a694df199a4 clk: mediatek: add separate gates_offs for cg gates
+- 9e84e145e37 clk: mediatek: fix fixed clock parents
+- 72f56becc00 clk: mediatek: mt8365: fix some clock parents
+- 4cc0f1b3185 clk: mediatek: mt8365: split struct mtk_clk_tree
+- 8aeeeff50d4 clk: mediatek: allow gates in topckgen drivers
+- ba207d7f54f clk: mediatek: mt8365: remove separate topckgen-cg driver
+- 682528df206 clk: mediatek: mt8365: fix missing topckgen IDs
+- 2d8d220d70a Merge patch series "clk: mediatek: mt8365: fix clocks"
+
+### Conversation log
+The repository is clean (no staged or modified files, only untracked files which won't interfere). Let me create and checkout the new branch based on ci/master.
+
+Now let me start cherry-picking the commits in order. First commit:
+
+First commit cherry-picked successfully. Let me verify the delta and run a build test:
+
+The deltas match (1 file, 1 insertion). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Second commit successful. Let me verify the delta:
+
+Deltas match. Now build test:
+
+Build passed. Now cherry-pick the third commit:
+
+Third commit successful. Let me verify the delta:
+
+Deltas match. Build test:
+
+Build passed. Fourth commit:
+
+Fourth commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Fifth commit:
+
+Fifth commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Sixth commit:
+
+Sixth commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Seventh commit:
+
+Seventh commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Eighth commit:
+
+Eighth commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Ninth commit:
+
+Ninth commit successful. Verify delta:
+
+Deltas match. Build test:
+
+Build passed. Tenth commit (this is a merge commit, so I need to use -m 1 --allow-empty):
+
+The merge commit is empty (as expected, since all the changes were already cherry-picked individually). I need to commit it as an empty commit to preserve the merge commit message:
+
+Now let me verify the final state with the commit log:
+
+All 10 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick completed successfully!**
+
+### Build Result: ✅ OK
+- All sandbox builds passed without warnings or errors
+
+### Commits Applied (10 total):
+| # | Hash (new) | Subject |
+|---|------------|---------|
+| 1 | 3a5f6647082 | mt8365_evk_defconfig: enable clk command |
+| 2 | b79a631fd1b | clk: mediatek: mt8365: fix missing and out of order clocks |
+| 3 | d53950ce8e9 | clk: mediatek: add separate gates_offs for cg gates |
+| 4 | 8c78a7ae877 | clk: mediatek: fix fixed clock parents |
+| 5 | 9b79702a506 | clk: mediatek: mt8365: fix some clock parents |
+| 6 | 1e067a5e73e | clk: mediatek: mt8365: split struct mtk_clk_tree |
+| 7 | 0fee33277af | clk: mediatek: allow gates in topckgen drivers |
+| 8 | 39d480af805 | clk: mediatek: mt8365: remove separate topckgen-cg driver |
+| 9 | 1e24146f34e | clk: mediatek: mt8365: fix missing topckgen IDs |
+| 10 | 41a7c00fdf8 | Merge patch series "clk: mediatek: mt8365: fix clocks" |
+
+### Fix-ups Made: None
+- All commits cherry-picked cleanly without conflicts
+
+### Commits with Concerning Deltas: None
+- All cherry-picked commits matched their original commit deltas exactly
+
+### Notes:
+- The merge commit (commit #10) was applied as an empty commit using `--allow-empty` since all its changes were already applied by the individual commits. This preserves the merge history tracking.
+- The branch `cherry-488c396e711` is ready for pushing and is based on `ci/master` (9 commits ahead).
+
+---
+
