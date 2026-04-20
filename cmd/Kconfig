@@ -3292,7 +3292,7 @@ config CMD_AVB
 
 config CMD_STACKPROTECTOR_TEST
 	bool "Test command for stack protector"
-	depends on STACKPROTECTOR
+	depends on STACKPROTECTOR && !SYS_MALLOC_LEGACY
 	help
 	  Enable stackprot_test command
 	  The stackprot_test command will force a stack overrun to test
