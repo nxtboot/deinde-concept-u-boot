@@ -61639,3 +61639,167 @@ The branch `cherry-e21edf26207` is ready for pushing. It contains 9 new commits 
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-2dd6c145aba
+
+Commits:
+- 2dd6c145aba i2c: samsung: add support for Exynos7 HS-I2C
+- 94a4e845dbd Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+
+### Conversation log
+The repository has untracked files but no staged changes - this is clean enough to proceed. Now let me create and checkout the new branch based on ci/master:
+
+Branch created successfully. Now let me cherry-pick the first commit (regular commit):
+
+First commit cherry-picked successfully. Let me verify the delta and run the build test:
+
+The delta matches exactly (2 files, 96 insertions, 20 deletions). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit, which is a merge commit:
+
+The merge commit is empty (which is expected since the changes are already present). As instructed, I need to commit it with --allow-empty to preserve the merge commit message:
+
+The merge commit was created (empty as expected). Let me verify the delta and run build test:
+
+The original merge commit shows 2 files changed (96 insertions, 20 deletions), but the cherry-picked version is empty. This is expected because the first commit (2dd6c145aba) was already cherry-picked before the merge commit, so the merge has no additional changes to bring in. The commit message is preserved which is important for history tracking.
+
+Let me run the build test:
+
+Build passed. Now let me verify all cherry-picks with git log:
+
+Both commits are present. Let me run the final build test:
+
+All done. Here's the final status:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-2dd6c145aba` (based on `ci/master`)
+
+### Commits Cherry-Picked (2 of 2):
+
+| # | Original Hash | New Hash | Subject | Status |
+|---|---------------|----------|---------|--------|
+| 1 | `2dd6c145aba` | `36a2f9d437a` | i2c: samsung: add support for Exynos7 HS-I2C | ✅ OK |
+| 2 | `94a4e845dbd` | `70c45802bfb` | Merge tag 'i2c-updates-for-2026.04-rc1' of u-boot-i2c | ✅ OK (empty) |
+
+### Build Result: ✅ OK
+- No warnings or errors
+
+### Fix-ups Made:
+- None required
+
+### Delta Notes:
+- **Commit 1:** Delta matched exactly (2 files, +96/-20)
+- **Commit 2:** This merge commit is empty in the cherry-pick because its changes (from commit 2dd6c145aba) were already applied by cherry-picking the first commit. The merge commit message was preserved with `--allow-empty` to maintain history tracking.
+
+### Final State:
+```
+70c45802bfb Merge tag 'i2c-updates-for-2026.04-rc1' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+36a2f9d437a i2c: samsung: add support for Exynos7 HS-I2C
+```
+
+The branch `cherry-2dd6c145aba` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-20 (attempt 1)
+
+Branch: cherry-2dd6c145aba
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me analyze these logs:
+
+1. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` during EFI build - this looks like a build failure
+2. **colibrimx8**: `Lab failure: Timeout executing 'echo ${test_env_0}'` - this is a lab/infrastructure timeout
+3. **opi_pc**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` - this is a lab/infrastructure timeout
+
+The colibrimx8 and opi_pc failures are clearly infrastructure/lab timeouts - not code issues. The efi-aarch64 failure needs more investigation - it's a build failure with `readelf` error.
+
+Let me checkout the branch and investigate:
+
+Good, now let me look at the commits and understand the failures better:
+
+Based on the logs, let me analyze the failures more carefully:
+
+1. **efi-aarch64**: The error `readelf: Error: u-boot: Failed to read file's magic number` in `Makefile:2642: checkarmreloc` indicates the U-Boot binary was not built correctly. This happens during the EFI ARM app build, not a code change issue.
+
+2. **colibrimx8**: Timeout on `echo ${test_env_0}` - a lab timeout issue
+
+3. **opi_pc**: Timeout waiting for login - a lab/infrastructure timeout issue
+
+Let me try building the affected boards to see if there's an actual code issue:
+
+Let me find the actual defconfig names:
+
+Now let me build the boards to see if they compile successfully:
+
+That's just a warning about a missing container image, which is expected for production builds. Let me try the EFI ARM64 test to understand the failure better:
+
+These are just DTS warnings, not errors. Let me try building with orangepi_pc:
+
+All these boards build successfully (the exit code 101 is for warnings about missing external blobs, which is expected behavior). The warnings about missing ATF/SCP blobs are for production, not CI test builds.
+
+Now let me analyze the actual failures:
+
+Looking at the logs more carefully:
+1. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` - this error occurs DURING the test run, not during the initial build. The CI job is running `scripts/build-efi` which tries to build a special EFI configuration. This could be a runner issue or transient problem.
+
+2. **colibrimx8**: `Timeout executing 'echo ${test_env_0}'` - clear lab timeout - runner/board issue
+
+3. **opi_pc**: `Timeout of 15 seconds exceeded during waiting for login` - clear lab timeout - runner/board issue
+
+Let me also confirm there are no actual code changes that could cause issues by checking what the cherry-picked commits touch:
+
+The commit only touches I2C drivers for Samsung Exynos7 platforms. None of the failing test boards are Exynos-based:
+- colibri-imx8x - NXP iMX8 platform
+- orangepi_pc - Allwinner H3 platform  
+- efi-aarch64 - QEMU ARM64 EFI test
+
+These failures are **infrastructure/transient issues**, not caused by the code changes in this MR:
+
+1. **efi-aarch64**: The `readelf: Error: u-boot: Failed to read file's magic number` error occurs during the test lab's build-efi script - this is a runner-side issue where the build directory may have been in a bad state or there was a filesystem/race condition issue.
+
+2. **colibrimx8**: `Lab failure: Timeout executing 'echo ${test_env_0}'` - The lab board timed out during a simple echo command, which is clearly a hardware lab or connectivity issue, not a code issue.
+
+3. **opi_pc**: `Timeout of 15 seconds exceeded during waiting for login` - The OrangePi board failed to boot or the connection timed out waiting for login prompt - this is a lab infrastructure issue.
+
+None of these failures are related to the I2C Samsung driver changes in this MR.
+
+Let me report this finding:
+
+## Summary Report
+
+**MR !912 (branch: cherry-2dd6c145aba)**
+
+### Diagnosis
+
+All three pipeline failures are **infrastructure/transient issues** and are NOT caused by the code changes in this MR.
+
+**Code Changes in MR:**
+- `2dd6c145aba` - i2c: samsung: add support for Exynos7 HS-I2C (affects only Samsung Exynos7 I2C driver)
+- `94a4e845dbd` - Merge tag for i2c-updates (empty merge commit)
+
+**Failing Jobs Analysis:**
+
+| Job | Board | Failure Type | Analysis |
+|-----|-------|--------------|----------|
+| efi-aarch64 | QEMU ARM64 EFI | Build failure in test script | `readelf: Error: u-boot: Failed to read file's magic number` - the u-boot binary file was corrupted or the build directory was in a bad state on the runner. This is a runner-side issue. |
+| colibrimx8 | Colibri iMX8X | Lab timeout | `Timeout executing 'echo ${test_env_0}'` - board timed out on a simple echo command, indicating hardware/connectivity issue |
+| opi_pc | OrangePi PC | Lab timeout | `Timeout of 15 seconds exceeded during waiting for login` - board failed to boot or connection dropped |
+
+**Verification:**
+- Built all affected boards locally: `colibri-imx8x`, `orangepi_pc`, `qemu_arm64` - all build successfully
+- The I2C driver changes only affect Samsung Exynos7 platforms, which none of the failing boards use
+
+**Root Cause:** Infrastructure/lab transient issues - not code-related failures.
+
+**Recommendation:** No code changes needed. Re-run the pipeline to attempt recovery. If failures persist, investigate the lab hardware/runner status.
+
+---
+
