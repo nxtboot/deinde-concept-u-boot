@@ -62596,3 +62596,63 @@ All 5 commits were successfully cherry-picked from `us/next` branch to the new b
 
 ---
 
+### Review: 2026-04-20
+
+Branch: cherry-ce19a4af0ad
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository location:
+
+I'm already in the u-boot repository at `/home/sglass/dev/u-boot`. Let me proceed:
+
+Good, ci/master has been updated. Let me check the current state and how many commits behind we are:
+
+The branch is 6 commits behind ci/master. Let me save the current commit hashes and stats before rebasing so I can compare afterward:
+
+I have the baseline stats. Now let me perform the rebase:
+
+Rebase completed successfully. Let me verify each commit's stats and run build tests:
+
+Now let me verify each commit's delta against the original:
+
+All deltas match exactly. Now let me run the build test:
+
+Build passed. Now let me create the local branch with -v2 suffix and check if there's an existing -v2:
+
+No existing versioned branches. Let me create the -v2 branch:
+
+Now let me force push to the original remote branch to update the MR:
+
+The rebase is complete. Let me provide a summary:
+
+## Summary
+
+Successfully rebased branch `cherry-ce19a4af0ad` onto the latest `ci/master`.
+
+### What was done:
+1. **Fetched latest ci/master** - The branch was 6 commits behind
+2. **Rebased 6 commits** - All rebased cleanly with no conflicts
+3. **Verified deltas** - All commit statistics match exactly before/after rebase
+4. **Build test passed** - `buildman -L --board sandbox` completed successfully
+5. **Created local backup** - `cherry-ce19a4af0ad-v2`
+6. **Force pushed to remote** - MR !916 updated
+
+### Commits after rebase:
+| New Hash | Subject |
+|----------|---------|
+| 079d3d5dbdc | configs: am62[ap]x_evm_r5: enable SUPPORT_EMMC_BOOT |
+| a6c347451f1 | Gitlab CI: Add BeagleBone Black to sage lab |
+| f3e71c5ef00 | x86: Increase SYS_MALLOC_F_LEN to 0x1000 |
+| 5218e47569c | dm: core: Default to using DEVRES outside of xPL |
+| c960cc6ce92 | Merge patch series "Enable / require DEVRES..." |
+| 157322cc960 | pickman: Record cherry-pick of 5 commits |
+
+### Suggested reply to post on the MR:
+
+> Rebased onto latest ci/master. All commits rebased cleanly with matching deltas and build passes.
+
+---
+
