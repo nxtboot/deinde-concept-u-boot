@@ -355,6 +355,7 @@ config SYS_MALLOC_LEN
 
 config MALLOC_DEBUG
 	bool "Enable malloc debugging"
+	depends on !SYS_MALLOC_LEGACY
 	default y if UNIT_TEST && !CPU_RISCV
 	help
 	  Enable debugging features in the malloc implementation. This
