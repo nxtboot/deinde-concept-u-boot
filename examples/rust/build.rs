@@ -68,6 +68,17 @@ fn main() {
 
         // Link with libbacktrace for backtrace support on sandbox
         println!("cargo:rustc-link-arg=-lbacktrace");
+
+        // When libu-boot.a is built with AddressSanitizer or coverage, its
+        // objects reference __asan_*/__gcov_* symbols that come from libasan
+        // and libgcov respectively. rust-lld does not pull these in via
+        // -fsanitize=address, so list the libraries explicitly.
+        if env::var("UBOOT_ASAN").as_deref() == Ok("y") {
+            println!("cargo:rustc-link-arg=-lasan");
+        }
+        if env::var("UBOOT_COVERAGE").as_deref() == Ok("y") {
+            println!("cargo:rustc-link-arg=-lgcov");
+        }
     }
 
     // For dynamic linking, link required system libraries normally

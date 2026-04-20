@@ -18,6 +18,8 @@ OUTDIR ?= .
 
 # Export for build.rs
 export UBOOT_BUILD
+export UBOOT_ASAN
+export UBOOT_COVERAGE
 
 # Common source dependencies
 RUST_SOURCES = Cargo.toml src/demo.rs build.rs

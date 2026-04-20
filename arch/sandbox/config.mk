@@ -26,6 +26,9 @@ endif
 SANITIZERS :=
 ifdef CONFIG_ASAN
 SANITIZERS	+= -fsanitize=address
+# Anything that links libu-boot.a with --whole-archive (ulib tests, examples)
+# pulls in AddressSanitizer-instrumented objects, so must also link libasan.
+PLATFORM_LIBS	+= -lasan
 endif
 ifdef CONFIG_FUZZ
 SANITIZERS	+= -fsanitize=fuzzer
