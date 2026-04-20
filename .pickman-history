@@ -62367,3 +62367,91 @@ The branch `cherry-13c9c975e79` is ready for pushing.
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-3d54f47ae50
+
+Commits:
+- 3d54f47ae50 clk: mediatek: add array size fields to clk trees
+- 538f72f4038 clk: mediatek: add array size fields to cg gates
+- 6094f0a0407 clk: mediatek: add array size field for id_offs_map
+- 159825bdd5e clk: mediatek: organize infrasys functions
+- b1358915728 clk: mediatek: add of_xlate ops
+- cc1a458a3d3 clk: mediatek: clarify mapped vs. unmapped ID
+- eb2bf2bc832 clk: mediatek: mt7623: set unmapped IDs to -1
+- c8ebe42b3f5 clk: mediatek: implement dump callbacks
+- 8cfb0ad1a0c Merge patch series "clk: mediatek: implement of_xlate and dump"
+
+### Conversation log
+The repository is clean (just some untracked files). Now let me create and checkout the new branch based on ci/master:
+
+Now let's start cherry-picking the commits one by one. First commit:
+
+Let me check the delta and run build test:
+
+Delta matches perfectly. Now running build test:
+
+Build passed. Now cherry-pick second commit:
+
+Delta matches. Build test:
+
+Build passed. Third commit:
+
+Delta matches. Build test:
+
+Build passed. Fourth commit:
+
+Delta matches. Build test:
+
+Build passed. Fifth commit:
+
+Delta matches. Build test:
+
+Build passed. Sixth commit:
+
+Delta matches. Build test:
+
+Build passed. Seventh commit:
+
+Delta matches. Build test:
+
+Build passed. Eighth commit:
+
+Delta matches. Build test:
+
+Build passed. Now the ninth commit - this is a merge commit, so I need to use special flags:
+
+The merge commit is empty (as expected since all changes were already cherry-picked individually). I need to commit it as an empty commit to preserve the history:
+
+All 9 commits cherry-picked. Now let's verify the log and run the final build:
+
+All 9 commits are present. Now let's run the final build:
+
+## Final Status Report
+
+**Branch:** `cherry-3d54f47ae50` (based on `ci/master`)
+
+**Build result:** ✅ OK - All builds passed without warnings or errors
+
+**Commits cherry-picked:** All 9 commits successfully applied
+
+| # | Original Hash | New Hash | Subject | Delta |
+|---|--------------|----------|---------|-------|
+| 1 | 3d54f47ae50 | fda759609de | clk: mediatek: add array size fields to clk trees | ✅ Match |
+| 2 | 538f72f4038 | 9b27d40bf2a | clk: mediatek: add array size fields to cg gates | ✅ Match |
+| 3 | 6094f0a0407 | d26e98daee2 | clk: mediatek: add array size field for id_offs_map | ✅ Match |
+| 4 | 159825bdd5e | 79ae5cab4fe | clk: mediatek: organize infrasys functions | ✅ Match |
+| 5 | b1358915728 | 38e471c0826 | clk: mediatek: add of_xlate ops | ✅ Match |
+| 6 | cc1a458a3d3 | 7c75dc192a0 | clk: mediatek: clarify mapped vs. unmapped ID | ✅ Match |
+| 7 | eb2bf2bc832 | 46c69afde99 | clk: mediatek: mt7623: set unmapped IDs to -1 | ✅ Match |
+| 8 | c8ebe42b3f5 | b6968cc0c31 | clk: mediatek: implement dump callbacks | ✅ Match |
+| 9 | 8cfb0ad1a0c | 3dd0a170b96 | Merge patch series "clk: mediatek: implement of_xlate and dump" | ✅ Empty (expected) |
+
+**Fix-ups:** None required - all cherry-picks applied cleanly
+
+**Commits with concerning deltas:** None - all deltas matched perfectly
+
+The branch `cherry-3d54f47ae50` is ready for pushing.
+
+---
+
