@@ -14,6 +14,7 @@
 #ifndef _LINUX_SLAB_H
 #define _LINUX_SLAB_H
 
+#include <limits.h>
 #include <malloc.h>
 #include <linux/types.h>
 #include <linux/string.h>
