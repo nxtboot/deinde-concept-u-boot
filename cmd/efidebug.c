@@ -1842,11 +1842,8 @@ static int do_efidebug(struct cmd_tbl *cmdtp, int flag,
 	if (cp->cmd != do_efi_show_log) {
 		/* Initialize UEFI drivers */
 		r = efi_init_obj_list();
-		if (r != EFI_SUCCESS) {
-			printf("Error: Cannot initialize UEFI sub-system, r = %lu\n",
-			       r & ~EFI_ERROR_MASK);
+		if (r != EFI_SUCCESS)
 			return CMD_RET_FAILURE;
-		}
 	}
 
 	return cp->cmd(cmdtp, flag, argc, argv);
