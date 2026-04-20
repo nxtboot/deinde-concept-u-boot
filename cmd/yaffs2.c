@@ -15,6 +15,8 @@
 
 #include <config.h>
 #include <command.h>
+#include <string.h>
+#include <vsprintf.h>
 
 #ifdef YAFFS2_DEBUG
 #define PRINTF(fmt, args...) printf(fmt, ##args)
