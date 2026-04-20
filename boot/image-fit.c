@@ -1945,8 +1945,9 @@ static int obtain_data(const void *fit, int noffset, const char *prop_name,
 int decomp_image(const void *fit, int noffset, const char *prop_name,
 		 void *buf, ulong size, enum image_type_t image_type,
 		 enum fit_load_op load_op, int bootstage_id, ulong data,
-		 ulong load, ulong load_end)
+		 ulong *loadp, ulong load_end)
 {
+	ulong load = *loadp;
 	void *loadbuf;
 	uint8_t comp;
 
@@ -1985,6 +1986,8 @@ int decomp_image(const void *fit, int noffset, const char *prop_name,
 		loadbuf = map_sysmem(load, size);
 		memcpy(loadbuf, buf, size);
 	}
+
+	*loadp = load;
 
 	if (image_type == IH_TYPE_RAMDISK && comp != IH_COMP_NONE)
 		puts("WARNING: 'compression' nodes for ramdisks are deprecated,"
@@ -2067,7 +2070,7 @@ static int handle_load_op(const void *fit, int noffset, const char *prop_name,
 	}
 
 	ret = decomp_image(fit, noffset, prop_name, buf, size, image_type,
-			   load_op, bootstage_id, data, load, load_end);
+			   load_op, bootstage_id, data, &load, load_end);
 	log_debug("Decomp ret %d\n", ret);
 	if (ret)
 		return ret;

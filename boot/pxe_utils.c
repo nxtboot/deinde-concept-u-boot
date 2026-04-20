@@ -345,9 +345,13 @@ static void label_load_fdtoverlays(struct pxe_context *ctx,
 		}
 		overlay->addr = addr;
 
-		/* Move to next address if using fixed addresses */
+		/*
+		 * Move to next address if using fixed addresses.  libfdt
+		 * requires the blob to be 8-byte aligned, so round up so the
+		 * next overlay lands on a suitable boundary.
+		 */
 		if (!use_lmb)
-			fdtoverlay_addr = addr + size;
+			fdtoverlay_addr = ALIGN(addr + size, 8);
 	}
 }
 

@@ -39,10 +39,18 @@ SECTIONS
 
 	. = ALIGN(4);
 
+	/*
+	 * libfdt requires any FDT it inspects to sit at an 8-byte aligned
+	 * address (-FDT_ERR_ALIGNMENT since Linux 6.1 libfdt sync).  The DTB
+	 * is concatenated to u-boot-spl-nodtb.bin right at its end, so pad
+	 * inside .binman_sym_table so the raw binary length (and the
+	 * _image_binary_end symbol) are both 8-byte aligned.
+	 */
 	.binman_sym_table : {
 		__binman_sym_start = .;
 		KEEP(*(SORT(.binman_sym*)));
 		__binman_sym_end = .;
+		. = ALIGN(8);
 	} > .spl_mem
 
 	_end = .;
