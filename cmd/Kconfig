@@ -2020,7 +2020,7 @@ config CMD_XXD
 
 endmenu
 
-if NET_LEGACY || NET_LWIP
+if NET
 
 menuconfig CMD_NET
 	bool "Network commands"
@@ -2396,7 +2396,7 @@ config CMD_PXE
 
 endif  # if CMD_NET
 
-endif # NET_LEGACY || NET_LWIP
+endif # NET
 
 menu "Misc commands"
 
