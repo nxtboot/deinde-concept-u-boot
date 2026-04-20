@@ -65,7 +65,7 @@ struct page {
 	struct inode *inode;
 };
 
-void iput(struct inode *inode);
+void ubifs_iput_save(struct inode *inode);
 
 /* linux/include/time.h */
 #define get_seconds()	0
