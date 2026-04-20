@@ -119,8 +119,10 @@ config TEGRA_KEYBOARD
 
 config TWL4030_INPUT
 	bool "Enable TWL4030 Input controller"
+	depends on TWL4030_POWER
 	help
-	  Enable TWL4030 Input controller
+	  Enable TWL4030 Input controller.  Uses the i2c helpers in
+	  drivers/power/twl4030.c.
 
 config MOUSE
 	bool "Support for mice and other pointing devices"

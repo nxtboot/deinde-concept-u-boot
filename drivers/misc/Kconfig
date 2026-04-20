@@ -524,8 +524,10 @@ config USB_HUB_USB251XB
 
 config TWL4030_LED
 	bool "Enable TWL4030 LED controller"
+	depends on TWL4030_POWER
 	help
 	  Enable this to add support for the TWL4030 LED controller.
+	  Uses the i2c helpers in drivers/power/twl4030.c.
 
 config WINBOND_W83627
 	bool "Enable Winbond Super I/O driver"
