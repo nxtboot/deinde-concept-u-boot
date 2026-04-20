@@ -401,9 +401,9 @@ Rules:
   possible to make the point. Avoid restating what the code does;
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
-  'malloc()' or `malloc`. For other identifiers (variables, struct
-  names, filenames) use single quotes: 'my_var' not "my_var", unless
-  it is a string literal (use double quotes for strings). Do not
+  'malloc()' or `malloc`. For all other quoting (identifiers,
+  filenames, string literals, misspelled words, etc.) use single
+  quotes: 'my_var' and 'handoff' not "my_var" or "handoff". Do not
   quote identifiers that are obviously code (e.g. CONFIG_FOO)
 - Never put a period directly after a code identifier — rephrase,
   omit the period, or use an em dash to start the next clause
@@ -505,9 +505,9 @@ VERDICT: changes_needed
 Rules:
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
-  'malloc()' or `malloc`. For other identifiers (variables, struct
-  names, filenames) use single quotes: 'my_var' not "my_var", unless
-  it is a string literal (use double quotes for strings). Do not
+  'malloc()' or `malloc`. For all other quoting (identifiers,
+  filenames, string literals, misspelled words, etc.) use single
+  quotes: 'my_var' and 'handoff' not "my_var" or "handoff". Do not
   quote identifiers that are obviously code (e.g. CONFIG_FOO)
 - Never put a period directly after a code identifier — rephrase,
   omit the period, or use an em dash to start the next clause
@@ -758,6 +758,14 @@ def cleanup_review_text(text):
 
     # Remove double quotes around function references: "func()" -> func()
     text = re.sub(r'"(\w+\(\))"', r'\1', text)
+
+    # Convert double-quoted short tokens to single quotes:
+    # "handoff" -> 'handoff'. Leave longer quoted text (full sentences
+    # or phrases) alone, since they may be intentional quotations.
+    text = re.sub(r'"([^"\n]{1,40})"',
+                  lambda m: f"'{m.group(1)}'"
+                  if ' ' not in m.group(1) else m.group(0),
+                  text)
 
     return text
 
