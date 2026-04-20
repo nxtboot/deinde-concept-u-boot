@@ -188,11 +188,16 @@ config EXT4_FS_POSIX_ACL
 
 config EXT4_FS_SECURITY
 	bool "Enable ext4 security labels"
-	depends on FS_EXT4L && EXT4_XATTR
+	depends on FS_EXT4L && EXT4_XATTR && BROKEN
 	help
 	  Enable security labels support for ext4 filesystems. This
 	  provides an extended attribute handler for file security
 	  labels used by security modules like SELinux.
 
 	  Security labels require extended attributes support (EXT4_XATTR).
+
+	  Note: U-Boot does not currently provide struct xattr or the
+	  security_inode_init_security() signature that xattr_security.c
+	  expects, so this option is gated on BROKEN until the missing
+	  infrastructure is imported.
 	  If unsure, say N.
