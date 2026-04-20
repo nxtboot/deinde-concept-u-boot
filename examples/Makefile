@@ -7,9 +7,9 @@ subdir-ccflags-y += -finstrument-functions -DFTRACE
 endif
 
 subdir-$(EXAMPLES_STANDALONE) += standalone
-subdir-$(CONFIG_LEGACY_API) += api
-# Sandbox examples use the standalone Makefile; other archs use kbuild
+# examples/legacy_api/crt0.S is bare-metal only; skip on sandbox.
 ifndef CONFIG_SANDBOX
+subdir-$(CONFIG_LEGACY_API) += legacy_api
 subdir-$(CONFIG_ULIB) += ulib
 endif
 endif

@@ -1927,7 +1927,7 @@ static struct fsck_inode *add_inode(struct ubifs_info *c,
 		fscki->xattr_sz = ui->xattr_size;
 		fscki->xattr_nms = ui->xattr_names;
 		fscki->mode = inode->i_mode;
-		iput(inode);
+		ubifs_iput_save(inode);
 	}
 
 	if (S_ISDIR(fscki->mode)) {

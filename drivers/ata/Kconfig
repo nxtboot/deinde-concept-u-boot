@@ -149,7 +149,7 @@ config SATA_SIL
 
 config SYS_SATA_MAX_DEVICE
 	int "Maximum number of SATA devices"
-	depends on !AHCI || FSL_SATA || SATA_MV || API
+	depends on !AHCI || FSL_SATA || SATA_MV || LEGACY_API
 	help
 	  Sets the maximum number of SATA devices which can be supported
 	  by U-Boot.

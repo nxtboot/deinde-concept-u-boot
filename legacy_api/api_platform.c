@@ -7,7 +7,7 @@
  * This file contains a routine to fetch data from the global_data structure.
  */
 
-#include <api_public.h>
+#include <legacy_api_public.h>
 #include <asm/global_data.h>
 #include "api_private.h"
 

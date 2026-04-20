@@ -49,6 +49,10 @@ void mcheck_on_ramrelocation(size_t offset);
  *
  * @disabled: true to disable mcheck, false to enable
  */
+#if !CONFIG_IS_ENABLED(SYS_MALLOC_LEGACY)
 void mcheck_set_disabled(bool disabled);
+#else
+static inline void mcheck_set_disabled(bool disabled) {}
+#endif
 
 #endif

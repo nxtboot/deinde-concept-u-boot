@@ -355,6 +355,7 @@ config SYS_MALLOC_LEN
 
 config MALLOC_DEBUG
 	bool "Enable malloc debugging"
+	depends on !SYS_MALLOC_LEGACY
 	default y if UNIT_TEST && !CPU_RISCV
 	help
 	  Enable debugging features in the malloc implementation. This
@@ -363,7 +364,7 @@ config MALLOC_DEBUG
 
 config MCHECK_HEAP_PROTECTION
 	bool "Enable mcheck heap protection"
-	depends on !TRACE
+	depends on !TRACE && !SYS_MALLOC_LEGACY
 	help
 	  Enable heap protection using the mcheck library. This adds canary
 	  values before and after each allocation to detect buffer overflows

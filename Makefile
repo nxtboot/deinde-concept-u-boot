@@ -2205,9 +2205,14 @@ include/u-boot-api.h: $(srctree)/lib/ulib/rename.syms \
 	$(call if_changed,u-boot-api.h)
 
 # Build ulib_test that links with shared library
+# ulib_test.o itself is built with the same KBUILD_CFLAGS as libu-boot, so it
+# also references __asan_*/__gcov_* symbols; name libasan and libgcov on the
+# link line when the corresponding options are set.
 quiet_cmd_ulib_test = HOSTCC  $@
       cmd_ulib_test = $(HOSTCC) $(HOSTCFLAGS) \
 	-I$(srctree)/arch/sandbox/include -o $@ $< -L$(obj) -lu-boot \
+	$(if $(CONFIG_ASAN),-lasan) \
+	$(if $(CONFIG_CC_COVERAGE),-lgcov) \
 	-Wl,-rpath,$(obj)
 
 test/ulib/ulib_test: test/ulib/ulib_test.o libu-boot.so FORCE
@@ -2247,6 +2252,8 @@ examples_rust: libu-boot.a $(if $(CONFIG_ULIB_SHARED_LIB),libu-boot.so) FORCE
 	@if command -v cargo >/dev/null 2>&1; then \
 		$(MAKE) -C $(srctree)/examples/rust \
 			UBOOT_BUILD=$(abspath $(obj)) \
+			UBOOT_ASAN=$(CONFIG_ASAN) \
+			UBOOT_COVERAGE=$(CONFIG_CC_COVERAGE) \
 			OUTDIR=$(abspath $(obj)/examples/rust) \
 			srctree="$(abspath $(srctree))"; \
 	else \

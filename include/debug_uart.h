@@ -62,6 +62,12 @@
 void debug_uart_init(void);
 
 #ifdef CONFIG_DEBUG_UART_BOARD_INIT
+/*
+ * Boards that need early init before the debug UART speaks override
+ * this function.  The weak default lives in drivers/serial/ns16550.c so
+ * builds that enable DEBUG_UART_BOARD_INIT (e.g. allyesconfig) do not
+ * fail to link when no board-specific implementation is provided.
+ */
 void board_debug_uart_init(void);
 #else
 static inline void board_debug_uart_init(void)

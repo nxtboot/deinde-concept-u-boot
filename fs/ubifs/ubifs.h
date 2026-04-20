@@ -65,7 +65,7 @@ struct page {
 	struct inode *inode;
 };
 
-void iput(struct inode *inode);
+void ubifs_iput_save(struct inode *inode);
 
 /* linux/include/time.h */
 #define get_seconds()	0
@@ -2101,8 +2101,16 @@ int ubifs_read_node(const struct ubifs_info *c, void *buf, int type, int len,
 		    int lnum, int offs);
 int ubifs_read_node_wbuf(struct ubifs_wbuf *wbuf, void *buf, int type, int len,
 			 int lnum, int offs);
+#ifndef __UBOOT__
 int ubifs_write_node(struct ubifs_info *c, void *node, int len, int lnum,
 		     int offs);
+#else
+static inline int ubifs_write_node(struct ubifs_info *c, void *node, int len,
+				   int lnum, int offs)
+{
+	return 0;
+}
+#endif
 int ubifs_check_node(const struct ubifs_info *c, const void *buf, int lnum,
 		     int offs, int quiet, int must_chk_crc);
 void ubifs_prepare_node(struct ubifs_info *c, void *buf, int len, int pad);
@@ -2250,8 +2258,14 @@ unsigned long ubifs_shrink_count(struct shrinker *shrink,
 
 /* commit.c */
 int ubifs_bg_thread(void *info);
+#ifndef __UBOOT__
 void ubifs_commit_required(struct ubifs_info *c);
 void ubifs_request_bg_commit(struct ubifs_info *c);
+#else
+/* commit.c is not compiled for U-Boot; background commits are a no-op */
+static inline void ubifs_commit_required(struct ubifs_info *c) {}
+static inline void ubifs_request_bg_commit(struct ubifs_info *c) {}
+#endif
 int ubifs_run_commit(struct ubifs_info *c);
 void ubifs_recovery_commit(struct ubifs_info *c);
 int ubifs_gc_should_commit(struct ubifs_info *c);
@@ -2259,7 +2273,11 @@ void ubifs_wait_for_commit(struct ubifs_info *c);
 
 /* master.c */
 int ubifs_read_master(struct ubifs_info *c);
+#ifndef __UBOOT__
 int ubifs_write_master(struct ubifs_info *c);
+#else
+static inline int ubifs_write_master(struct ubifs_info *c) { return 0; }
+#endif
 
 /* sb.c */
 int ubifs_read_superblock(struct ubifs_info *c);

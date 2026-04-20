@@ -1337,7 +1337,7 @@ void ubifs_destroy_size_tree(struct ubifs_info *c)
 
 	rbtree_postorder_for_each_entry_safe(e, n, &c->size_tree, rb) {
 		if (e->inode)
-			iput(e->inode);
+			ubifs_iput_save(e->inode);
 		kfree(e);
 	}
 
@@ -1534,7 +1534,7 @@ int ubifs_recover_size(struct ubifs_info *c)
 					this = rb_next(this);
 					continue;
 				}
-				iput(inode);
+				ubifs_iput_save(inode);
 #ifndef __UBOOT__
 			} else {
 				/* Fix the size in place */
@@ -1542,7 +1542,7 @@ int ubifs_recover_size(struct ubifs_info *c)
 				if (err)
 					return err;
 				if (e->inode)
-					iput(e->inode);
+					ubifs_iput_save(e->inode);
 #endif
 			}
 		}

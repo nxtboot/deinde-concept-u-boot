@@ -143,7 +143,7 @@ int __weak aquantia_read_fw(struct phy_device *phydev,
 	}
 
 	ret = request_firmware_into_buf_via_script(
-		microcode, CONFIG_PHY_AQUANTIA_FW_MAX_SIZE,
+		(void **)&microcode, CONFIG_PHY_AQUANTIA_FW_MAX_SIZE,
 		"aqr_phy_load_firmware", fw_length);
 	if (ret) {
 		free(microcode);

@@ -315,7 +315,11 @@ void ubifs_dump_pnode(struct ubifs_info *c, struct ubifs_pnode *pnode,
 		      struct ubifs_nnode *parent, int iip);
 void ubifs_dump_tnc(struct ubifs_info *c);
 void ubifs_dump_index(struct ubifs_info *c);
+#ifndef __UBOOT__
 void ubifs_dump_lpt_lebs(const struct ubifs_info *c);
+#else
+static inline void ubifs_dump_lpt_lebs(const struct ubifs_info *c) {}
+#endif
 
 int dbg_walk_index(struct ubifs_info *c, dbg_leaf_callback leaf_cb,
 		   dbg_znode_callback znode_cb, void *priv);
@@ -327,9 +331,18 @@ int dbg_check_lprops(struct ubifs_info *c);
 int dbg_old_index_check_init(struct ubifs_info *c, struct ubifs_zbranch *zroot);
 int dbg_check_old_index(struct ubifs_info *c, struct ubifs_zbranch *zroot);
 int dbg_check_cats(struct ubifs_info *c);
+#ifndef __UBOOT__
 int dbg_check_ltab(struct ubifs_info *c);
 int dbg_chk_lpt_free_spc(struct ubifs_info *c);
 int dbg_chk_lpt_sz(struct ubifs_info *c, int action, int len);
+#else
+static inline int dbg_check_ltab(struct ubifs_info *c) { return 0; }
+static inline int dbg_chk_lpt_free_spc(struct ubifs_info *c) { return 0; }
+static inline int dbg_chk_lpt_sz(struct ubifs_info *c, int action, int len)
+{
+	return 0;
+}
+#endif
 int dbg_check_synced_i_size(const struct ubifs_info *c, struct inode *inode);
 int dbg_check_dir(struct ubifs_info *c, const struct inode *dir);
 int dbg_check_tnc(struct ubifs_info *c, int extra);

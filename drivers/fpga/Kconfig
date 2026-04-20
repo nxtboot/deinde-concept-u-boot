@@ -72,11 +72,13 @@ config FPGA_ZYNQMPPL
 config FPGA_VERSALPL
 	bool "Enable Xilinx FPGA driver for Versal"
 	depends on FPGA_XILINX
+	depends on ZYNQMP_FIRMWARE
 	help
 	  Enable FPGA driver for loading bitstream in PDI format on Xilinx
 	  Versal device. PDI is a new programmable device image format for
 	  Versal. The bitstream will only be generated as PDI for Versal
-	  platform.
+	  platform.  Uses xilinx_pm_request() from the ZynqMP firmware
+	  driver.
 
 config FPGA_SPARTAN2
 	bool "Enable Spartan2 FPGA driver"

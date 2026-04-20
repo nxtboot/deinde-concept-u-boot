@@ -59,7 +59,7 @@ int set_anon_super(struct super_block *s, void *data)
 	return 0;
 }
 
-struct inode *iget_locked(struct super_block *sb, unsigned long ino)
+static struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 {
 	struct inode *inode;
 
@@ -75,7 +75,7 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 	return inode;
 }
 
-void iget_failed(struct inode *inode)
+static void iget_failed(struct inode *inode)
 {
 }
 
@@ -88,9 +88,12 @@ int ubifs_iput(struct inode *inode)
 }
 
 /*
- * Lock (save) inode in inode array for readback after recovery
+ * Lock (save) inode in inode array for readback after recovery.
+ *
+ * Named ubifs_iput_save to avoid colliding with other filesystems'
+ * plain iput() helpers in allyesconfig builds.
  */
-void iput(struct inode *inode)
+void ubifs_iput_save(struct inode *inode)
 {
 	int i;
 	struct inode *ino;

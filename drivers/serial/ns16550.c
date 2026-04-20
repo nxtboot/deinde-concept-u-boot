@@ -367,6 +367,11 @@ static inline void _debug_uart_putc(int ch)
 	serial_dout(&com_port->thr, ch);
 }
 
+#ifdef CONFIG_DEBUG_UART_BOARD_INIT
+/* Empty default so builds link even when no board overrides the hook. */
+__weak void board_debug_uart_init(void) {}
+#endif
+
 DEBUG_UART_FUNCS
 
 #endif

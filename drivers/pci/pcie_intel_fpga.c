@@ -180,7 +180,8 @@ static int tlp_read_packet(struct intel_fpga_pcie *pcie, u32 *value)
 		udelay(5);
 	}
 
-	dev_err(pcie->dev, "read TLP packet timed out\n");
+	dev_err(pcie->bus, "read TLP packet timed out\n");
+
 	return -ENODEV;
 }
 
@@ -295,7 +296,7 @@ static int _pcie_intel_fpga_read_config(struct intel_fpga_pcie *pcie,
 	if (ret)
 		return ret;
 
-	dev_dbg(pcie->dev, "(addr,size,val)=(0x%04x, %d, 0x%08x)\n",
+	dev_dbg(pcie->bus, "(addr,size,val)=(0x%04x, %d, 0x%08x)\n",
 		offset, size, data);
 	*valuep = pci_conv_32_to_size(data, offset, size);
 
@@ -309,9 +310,9 @@ static int _pcie_intel_fpga_write_config(struct intel_fpga_pcie *pcie,
 	u32 data;
 	u8 byte_en;
 
-	dev_dbg(pcie->dev, "PCIE CFG write: (b.d.f)=(%02d.%02d.%02d)\n",
+	dev_dbg(pcie->bus, "PCIE CFG write: (b.d.f)=(%02d.%02d.%02d)\n",
 		PCI_BUS(bdf), PCI_DEV(bdf), PCI_FUNC(bdf));
-	dev_dbg(pcie->dev, "(addr,size,val)=(0x%04x, %d, 0x%08lx)\n",
+	dev_dbg(pcie->bus, "(addr,size,val)=(0x%04x, %d, 0x%08lx)\n",
 		offset, size, value);
 
 	/* Uses memory mapped method to read rootport config registers */
@@ -332,7 +333,7 @@ static int pcie_intel_fpga_read_config(const struct udevice *bus, pci_dev_t bdf,
 {
 	struct intel_fpga_pcie *pcie = dev_get_priv(bus);
 
-	dev_dbg(pcie->dev, "PCIE CFG read:  (b.d.f)=(%02d.%02d.%02d)\n",
+	dev_dbg(pcie->bus, "PCIE CFG read:  (b.d.f)=(%02d.%02d.%02d)\n",
 		PCI_BUS(bdf), PCI_DEV(bdf), PCI_FUNC(bdf));
 
 	if (intel_fpga_pcie_hide_rc_bar(pcie, bdf, offset)) {

@@ -9,6 +9,7 @@
 #define LOG_CATEGORY UCLASS_BOOTSTD
 
 #include <bls.h>
+#include <errno.h>
 #include <log.h>
 #include <malloc.h>
 #include <linux/ctype.h>

@@ -22,11 +22,20 @@
 
 	EXPORT_FUNC(irq_free_handler, void, free_hdlr, int)
 #endif
+#ifdef USE_DL_PREFIX
+	EXPORT_FUNC(dlmalloc, void *, malloc, size_t)
+	EXPORT_FUNC(dlrealloc, void *, realloc, void *, size_t)
+	EXPORT_FUNC(dlcalloc, void *, calloc, size_t, size_t)
+#if !CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
+	EXPORT_FUNC(dlfree, void, free, void *)
+#endif
+#else
 	EXPORT_FUNC(malloc, void *, malloc, size_t)
 	EXPORT_FUNC(realloc, void *, realloc, void *, size_t)
 	EXPORT_FUNC(calloc, void *, calloc, size_t, size_t)
 #if !CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
 	EXPORT_FUNC(free, void, free, void *)
+#endif
 #endif
 	EXPORT_FUNC(mdelay, void, mdelay, unsigned long msec)
 	EXPORT_FUNC(udelay, void, udelay, unsigned long)
