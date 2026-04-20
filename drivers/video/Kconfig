@@ -740,10 +740,14 @@ config VIDEO_LCD_HITACHI_TX10D07VM0BAA
 
 config VIDEO_LCD_HITACHI_TX18D42VM
 	bool "Hitachi tx18d42vm LVDS LCD panel support"
+	depends on SUNXI_GPIO
 	---help---
 	Support for Hitachi tx18d42vm LVDS LCD panels, these panels have a
 	lcd controller which needs to be initialized over SPI, once that is
 	done they work like a regular LVDS panel.
+
+	Uses sunxi_name_to_gpio() from drivers/gpio/sunxi_gpio.c to resolve
+	the SPI / reset pin names, so it depends on SUNXI_GPIO.
 
 config VIDEO_LCD_SONY_L4F00430T01
 	tristate "Sony L4F00430T01 480x800 LCD panel support"
