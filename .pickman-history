@@ -61408,3 +61408,132 @@ The branch has been force-pushed to update the MR. Let me verify the final state
 
 ---
 
+## 2026-04-19: us/next
+
+Branch: cherry-36aeeb591b0
+
+Commits:
+- 36aeeb591b0 configs: Resync with savedefconfig
+- 03f2be416bb spi: Correct dependencies on AIROHA_SNFI_SPI
+- 1d59479362c CI: Add "allyesconfig" to one of the build jobs
+- 633e5602aa3 arm: mediatek: add support for MediaTek MT8188 SoC
+- 11f3cc46322 clk: mediatek: add MT8188 clock driver
+- f646b7749a0 Merge patch series "Add support for MT8188"
+
+### Conversation log
+The repository is clean (only untracked files). Now let me create and checkout the new branch based on ci/master.
+
+Now let me start cherry-picking the commits. The first commit is marked as "maybe already applied as 599c882ee2d" and is a [QCONFIG RESYNC] commit. Let me first verify if it's already applied.
+
+The commits are very different. 599c882ee2d is a pickman merge commit, not a resync. The original commit 36aeeb591b0 is a genuine savedefconfig resync. Since this is a [QCONFIG RESYNC] commit, I need to handle it specially by running qconfig.py instead of cherry-picking.
+
+Let me proceed with the special handling for this [QCONFIG RESYNC] commit:
+
+The qconfig.py tool completed and created a commit. Let me verify it was created correctly:
+
+The qconfig resync commit is in place. Now let me run the build test for this commit:
+
+Build passed. Now let's cherry-pick the second commit: `03f2be416bb: spi: Correct dependencies on AIROHA_SNFI_SPI`
+
+Let me verify the delta and run build test:
+
+Delta matches exactly. Now build test:
+
+Build passed. Now cherry-pick commit 3: `1d59479362c: CI: Add "allyesconfig" to one of the build jobs`
+
+There's a conflict. Let me examine it:
+
+Let me see the original commit to understand what changes are needed:
+
+Now I understand the conflict. The HEAD version has additional changes around the `needs` line (skip-pytest rules, etc.) while the incoming commit just changes the `needs` dependency. Let me view the full conflict:
+
+I can see there are two conflicts in the file. The resolution is:
+1. For the `needs` line: Keep the HEAD version's structure (with comments and rules) but update the dependency name to "Build allyesconfig, tools-only and envtools"
+2. For the job name: Rename from "Build tools-only and envtools" to "Build allyesconfig, tools-only and envtools" while keeping HEAD's tags
+
+Let me resolve this conflict:
+
+Now I understand the conflicts. Let me resolve them. First, I'll fix the file:
+
+Now I can see both conflicts. Let me resolve them properly:
+
+1. First conflict (lines 50-69): Keep HEAD's structure with the comment, rules block but update the needs dependency name
+2. Second conflict (lines 306-314): Keep HEAD's structure with tags but update the job name
+
+Let me use sed to fix the conflict markers:
+
+Now I need to update the script section to add the allyesconfig commands. Let me check what the original commit adds:
+
+Now let me check what the current script section looks like and update it:
+
+I need to update the script section to add the allyesconfig commands. Let me do this with a more complex sed:
+
+Now let me also check the .azure-pipelines.yml file which was also part of the cherry-pick:
+
+The .azure-pipelines.yml changes were auto-merged correctly. Now let me add the files and continue the cherry-pick:
+
+Let me amend the commit message to note the conflict resolution:
+
+Now verify the delta and run the build test:
+
+The stats match exactly. Now run the build test:
+
+Build passed. Now cherry-pick commit 4: `633e5602aa3: arm: mediatek: add support for MediaTek MT8188 SoC`
+
+Let me verify the delta and run build test:
+
+Stats match exactly. Build test:
+
+Build passed. Now cherry-pick commit 5: `11f3cc46322: clk: mediatek: add MT8188 clock driver`
+
+Let me verify the delta and run build test:
+
+Stats match exactly. Build test:
+
+Build passed. Now cherry-pick the final commit 6: `f646b7749a0: Merge patch series "Add support for MT8188"` - this is a merge commit:
+
+The merge commit is empty because all its changes were already applied in the previous commits. As instructed, I need to commit it anyway with --allow-empty to preserve the merge commit message:
+
+Now let me verify the log shows all 6 commits:
+
+All 6 commits are present. Now let me run the final build test:
+
+All builds passed. Let me provide a final summary:
+
+## Final Status Report
+
+### Branch: `cherry-36aeeb591b0`
+
+All 6 commits have been successfully cherry-picked from `us/next`:
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 17c75ec649e | configs: Resync with savedefconfig | ✅ Applied via qconfig.py (special handling for [QCONFIG RESYNC]) |
+| 2 | 2a8c1ed5e77 | spi: Correct dependencies on AIROHA_SNFI_SPI | ✅ Clean cherry-pick |
+| 3 | 373d43b4731 | CI: Add "allyesconfig" to one of the build jobs | ✅ Conflict resolved in .gitlab-ci.yml |
+| 4 | 02a5569a2b2 | arm: mediatek: add support for MediaTek MT8188 SoC | ✅ Clean cherry-pick |
+| 5 | 8095ca10bd2 | clk: mediatek: add MT8188 clock driver | ✅ Clean cherry-pick |
+| 6 | 69c1539b87f | Merge patch series "Add support for MT8188" | ✅ Empty commit (all changes in prior commits) |
+
+### Build Result: ✅ OK
+- All sandbox builds passed successfully
+
+### Fix-ups Made:
+1. **Commit 1 (qconfig resync)**: Skipped direct cherry-pick, used `./tools/qconfig.py -s -Cy` to regenerate defconfig changes based on current Kconfig state. The original commit 36aeeb591b0 was verified to be different from 599c882ee2d (a pickman merge, not a resync).
+
+2. **Commit 3 (CI allyesconfig)**: Resolved conflict in `.gitlab-ci.yml`:
+   - Kept HEAD's extra rules block (skip-pytest rules) 
+   - Updated `needs` dependency to "Build allyesconfig, tools-only and envtools"
+   - Renamed job from "Build tools-only and envtools" to "Build allyesconfig, tools-only and envtools"
+   - Added allyesconfig build commands to the script section
+   - Commit message amended with fix-up note
+
+3. **Commit 6 (merge commit)**: Created as empty commit with `--allow-empty` since all MT8188 changes were already applied in commits 4 and 5
+
+### Delta Concerns: None
+- All commit deltas matched the original commits exactly
+
+The cherry-pick branch `cherry-36aeeb591b0` is ready for pushing.
+
+---
+
