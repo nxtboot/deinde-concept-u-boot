@@ -147,7 +147,13 @@ def repack_iso(
 
     -find is tolerant of missing files: if a distribution does not ship
     one of these binaries, the call is a no-op.
+
+    xorriso refuses to write to an existing non-empty file when -indev
+    and -outdev differ (it would treat the outdev as a session to
+    extend), so unlink any stale output first.
     """
+    if out_iso.exists():
+        out_iso.unlink()
     command.run(
         'xorriso',
         '-indev', str(in_iso),
