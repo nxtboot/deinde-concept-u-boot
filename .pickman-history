@@ -63426,3 +63426,70 @@ The branch `cherry-8241bd6a82e` is ready for pushing.
 
 ---
 
+### Review: 2026-04-21
+
+Branch: cherry-8241bd6a82e
+
+Comments addressed:
+
+
+### Conversation log
+Let me check if there are commits between the current branch base and ci/master that need to be rebased:
+
+Now I'll store the original commit hashes and their deltas before rebasing, so I can verify them after rebase:
+
+Good. I've captured the stats for all commits before rebase. Now let me perform the rebase:
+
+Rebase completed successfully. Now let me verify the rebased commits and compare their deltas:
+
+All deltas are identical before and after rebase:
+
+| # | Subject | Before | After | Match |
+|---|---------|--------|-------|-------|
+| 1 | configs: mt8365: remove empty header file | 2 files, 13 deletions | 2 files, 13 deletions | ✅ |
+| 2 | fs: prevent integer overflow in fs.c do_mv | 1 file, +13/-3 | 1 file, +13/-3 | ✅ |
+| 3 | fs: prevent integer overflow in zfs_nvlist_lookup | 1 file, +5/-1 | 1 file, +5/-1 | ✅ |
+| 4 | fs: prevent integer overflow in sqfs_concat | 1 file, +5/-1 | 1 file, +5/-1 | ✅ |
+| 5 | fs: prevent integer overflow in ext4fs_get_bgdtable | 1 file, +7/-1 | 1 file, +7/-1 | ✅ |
+| 6 | Merge patch series (empty) | empty | empty | ✅ |
+| 7 | pickman: Record cherry-pick | 1 file, 86 insertions | 1 file, 86 insertions | ✅ |
+
+Now let me run the build test:
+
+Build passed. Now let me create the local -v2 branch and then force push to the original remote branch:
+
+The rebase and push completed successfully. Let me provide a summary:
+
+## Rebase Summary for MR !925 (branch: cherry-8241bd6a82e)
+
+### Actions Completed:
+1. ✅ Checked out branch `cherry-8241bd6a82e`
+2. ✅ Rebased onto latest `ci/master` (0d0ee2ce7ae)
+3. ✅ All 7 commits rebased successfully with no conflicts
+4. ✅ Verified all commit deltas are identical before/after rebase
+5. ✅ Build test passed
+6. ✅ Created local branch `cherry-8241bd6a82e-v2`
+7. ✅ Force pushed to update MR
+
+### Commit Mapping (old → new):
+
+| Subject | Old Hash | New Hash |
+|---------|----------|----------|
+| configs: mt8365: remove empty header file | 0e26cd48dd0 | 6b263020feb |
+| fs: prevent integer overflow in fs.c do_mv | c8c2989154b | 3c482434e01 |
+| fs: prevent integer overflow in zfs_nvlist_lookup | 8ef630c38e4 | b5a5d80c5b7 |
+| fs: prevent integer overflow in sqfs_concat | 67bd4b1e377 | 059be1a0cf4 |
+| fs: prevent integer overflow in ext4fs_get_bgdtable | fd052ee8b3c | 2325521002a |
+| Merge patch series "fix integer overflows..." | 796d5d2a2ee | 18a95836016 |
+| pickman: Record cherry-pick of 6 commits | d902d45394c | ddbe4436e34 |
+
+### Build Result: **PASSED** ✅
+
+---
+
+### Suggested Reply for MR:
+
+> Rebased onto latest ci/master. All commits and their deltas are preserved. Build passes.
+
+---
+
