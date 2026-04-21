@@ -344,7 +344,6 @@ size_t strcspn(const char *s, const char *reject)
 }
 #endif
 
-#ifndef __HAVE_ARCH_STRDUP
 char * strdup(const char *s)
 {
 	char *new;
@@ -410,8 +409,6 @@ void kfree_const(const void *x)
 	if (!is_kernel_rodata((unsigned long)x))
 		free((void *)x);
 }
-
-#endif
 
 #ifndef __HAVE_ARCH_STRSPN
 /**
