@@ -62832,3 +62832,83 @@ Now let me run the final build test:
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-637942ac8e0
+
+Commits:
+- 637942ac8e0 test.py: check ubconfig exists before using it
+- c85d302bf23 doc: pytest: mention additional requirements for venv
+- 487ab1c991d pylibfdt: add requirements.txt for setuptools
+- 21e64d0c925 Merge patch series "a few test.py improvements"
+
+### Conversation log
+The repository has some untracked files but no uncommitted changes, so it's in a clean state for cherry-picking. Let me create and checkout the new branch based on ci/master.
+
+Now let's cherry-pick the first commit (637942ac8e0: test.py: check ubconfig exists before using it):
+
+The first cherry-pick succeeded. Let me verify the delta and run a build test:
+
+The delta differs slightly: original shows 5 lines changed (3+/2-) vs cherry-picked shows 2 lines changed (1+/1-). This is a significant difference. Let me check if the commit was auto-merged somehow differently. Let me compare the actual content:
+
+I see - the delta difference is because some parts of the original commit (adding `ubconfig = None` and the `if ubconfig and` check) were already present in ci/master. The cherry-pick only applied the comment change because the other changes already exist. This is a normal auto-merge result that shows ci/master has already evolved with similar changes. Let me run the build test:
+
+Build passed. Now let's cherry-pick the second commit (c85d302bf23: doc: pytest: mention additional requirements for venv):
+
+Let me verify the delta:
+
+Delta matches (1 file, 4 insertions). Let me run the build test:
+
+Build passed. Now let's cherry-pick the third commit (487ab1c991d: pylibfdt: add requirements.txt for setuptools):
+
+Let me verify the delta:
+
+Delta matches (1 file, 1 insertion). Let me run the build test:
+
+Build passed. Now let's cherry-pick the fourth commit (21e64d0c925: Merge patch series "a few test.py improvements"). This is a merge commit, so I need to use `-m 1 --allow-empty`:
+
+The merge commit is empty (as expected since we already cherry-picked the individual commits). The message says "all conflicts fixed" and suggests using `--allow-empty`. Let me commit it as an empty commit to preserve the merge commit message:
+
+The merge commit was preserved. Let me verify the delta:
+
+The cherry-picked merge is empty (as expected since we already applied all the individual patches), while the original shows the combined delta of all the patches. This is correct behavior for merge commits. Let me run the build test:
+
+Build passed. Now let me verify that all 4 commits are present:
+
+All 4 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Cherry-pick branch:** `cherry-637942ac8e0` (based on `ci/master`)
+
+### Build Result: ✅ OK
+All builds passed with no warnings or errors.
+
+### Commits Applied (4 total):
+
+| # | Original Hash | New Hash | Subject | Delta Status |
+|---|---------------|----------|---------|--------------|
+| 1 | 637942ac8e0 | 0aeb8af455b | test.py: check ubconfig exists before using it | ⚠️ Partial (auto-merged) |
+| 2 | c85d302bf23 | 331e5c440da | doc: pytest: mention additional requirements for venv | ✅ Exact match |
+| 3 | 487ab1c991d | 15c8e41a92f | pylibfdt: add requirements.txt for setuptools | ✅ Exact match |
+| 4 | 21e64d0c925 | 6fda1220e97 | Merge patch series "a few test.py improvements" | ✅ Empty (expected) |
+
+### Notes:
+
+1. **Commit 637942ac8e0 (test.py: check ubconfig exists before using it):**
+   - Original: 5 lines changed (3+/2-)
+   - Cherry-picked: 2 lines changed (1+/1-)
+   - The difference is expected: ci/master already has `ubconfig = None` and the `if ubconfig and` guard. Only the comment change was applied. This is normal auto-merge behavior.
+
+2. **Merge commit (21e64d0c925):** Cherry-picked as an empty commit since all individual patches were already applied. The commit message is preserved for tracking history.
+
+### Fix-ups Made:
+None required.
+
+### Commits with Concerning Deltas:
+- Commit 1 had a delta difference but this is expected due to ci/master already having some of the changes applied via a different path. The auto-merge correctly applied only the missing portion (comment update).
+
+The cherry-pick branch `cherry-637942ac8e0` is ready for pushing.
+
+---
+

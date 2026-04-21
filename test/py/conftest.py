@@ -28,7 +28,7 @@ import sys
 from console_base import BootFail, Timeout, Unexpected, handle_exception
 import time
 
-# Globals: The HTML log file, and the top-level fixture
+# Globals: The HTML log file, the top-level fixture and the config container
 log = None
 ubman_fix = None
 ubconfig = None
