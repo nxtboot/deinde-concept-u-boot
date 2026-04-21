@@ -63490,6 +63490,148 @@ The rebase and push completed successfully. Let me provide a summary:
 ### Suggested Reply for MR:
 
 > Rebased onto latest ci/master. All commits and their deltas are preserved. Build passes.
+Branch: cherry-81e8c5315ce
+
+Commits:
+- 81e8c5315ce usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible
+- feb62582bf2 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The repository has untracked files but is otherwise clean (no staged or modified files). Let me proceed with creating the new branch and starting the cherry-pick process.
+
+Now let me cherry-pick the first commit:
+
+First commit was successful. Let me verify the commit delta and run the build test:
+
+The commit delta is identical (1 file changed, 1 insertion). Now let me run the build test:
+
+Build passed. Now let me proceed with the second commit. This is a merge commit, so I need to check if it's already applied as indicated. Let me first compare the patches:
+
+These are different commits. The found commit (68dde171e15) is a different merge (cherry pick merge with different parent and subject). Let me check what the original merge commit contains:
+
+Let me also check if the underlying change (the 81e8c5315ce commit we just cherry-picked) was part of this merge:
+
+The original merge feb62582bf2 contains the same commit we just cherry-picked (81e8c5315ce). Since we've already cherry-picked that commit individually, the merge commit would be empty if we try to cherry-pick it. Let me check if the parent commit 68dde171e15 actually represents a similar "pickman" merge that already applied the same content:
+
+Interesting - the grep matched but it's showing the pickman merge. Let me check what content that merge contains:
+
+These are different merges entirely:
+- The original merge (feb62582bf2) only touches `drivers/usb/host/xhci-dwc3.c` (the same file as commit 81e8c5315ce which we already cherry-picked)
+- The found merge (68dde171e15) touches different files
+
+The merge feb62582bf2 only contained the commit 81e8c5315ce which we've already cherry-picked. Since we've already applied the underlying change, cherry-picking this merge would result in an empty commit. Per the instructions, we should still preserve the merge commit message. Let me proceed:
+
+As expected, the cherry-pick is empty because the content was already applied. Per instructions, we need to use `--allow-empty` to commit it anyway:
+
+The merge commit was created (empty but preserved for history). Let me verify the commit delta and run the build test:
+
+The cherry-picked merge commit is empty (no file changes shown) because the underlying content (81e8c5315ce) was already applied as the first commit. This is expected behavior - the merge commit message is preserved for history tracking.
+
+Now let me run the build test:
+
+Build passed. Now let me verify the commit log:
+
+All 2 commits are present. Let me run the final build to confirm everything works together:
+
+## Final Status
+
+**Cherry-pick completed successfully!**
+
+### Summary
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 81e8c5315ce → f60d4094bed | usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible | ✅ Applied |
+| 2 | feb62582bf2 → 56f9c8907e1 | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Applied (empty - content already in commit 1) |
+
+### Build Result
+- **Status**: ✅ OK (sandbox build passed)
+- **Warnings/Errors**: None
+
+### Fix-ups Made
+- None required
+
+### Notes
+- Commit 2 (merge commit) was applied as an empty commit because the underlying change (81e8c5315ce) was already cherry-picked as commit 1. The merge commit message was preserved for history tracking using `--allow-empty`.
+- The commit 68dde171e15 mentioned as "maybe already applied" was verified to be a different commit (a pickman merge touching different files), so it was not considered a duplicate.
+
+### Branch Status
+The branch `cherry-81e8c5315ce` is ready for pushing with 2 commits ahead of `ci/master`.
+
+---
+
+### Review: 2026-04-21
+
+Branch: cherry-81e8c5315ce
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository path:
+
+Good, I'm already in the u-boot repository at `/home/sglass/dev/u-boot`. Let me checkout the branch and check its status:
+
+Let me record the state of commits before rebasing:
+
+Good. Now let me perform the rebase:
+
+There's a conflict in `.pickman-history`. Let me check the status and resolve it:
+
+The conflict is only in `.pickman-history`. This is a log file that should keep both changes. Let me resolve it by accepting both versions:
+
+The `.pickman-history` file is just a log file. Let me view the conflict markers:
+
+This is a typical conflict in the `.pickman-history` file where both branches added different entries. I need to keep both entries. Let me resolve this by keeping both sections:
+
+Good, the conflict markers are removed. Now let me add the file and continue the rebase:
+
+Rebase completed. Now let me verify the commits and their deltas after rebase:
+
+Now let me verify the deltas after rebase match what we had before:
+
+The deltas match:
+- **Commit 1 (xhci-dwc3)**: `1 file changed, 1 insertion(+)` - same as before (f60d4094bed)
+- **Commit 2 (merge)**: Empty (no diff shown) - same as before (56f9c8907e1)
+
+Now let me run the build test:
+
+Build passed. Now let me create the local -v2 branch and push to update the MR:
+
+No existing version branches. Let me create -v2 and push:
+
+The rebase and push completed successfully. Let me provide a summary:
+
+## Rebase Summary for MR !927 (branch: cherry-81e8c5315ce)
+
+### Actions Completed:
+1. ✅ Checked out branch `cherry-81e8c5315ce`
+2. ✅ Rebased onto latest `ci/master` (e56c51a3e5c)
+3. ✅ Resolved conflict in `.pickman-history` (merge conflict keeping both history entries)
+4. ✅ All 3 commits rebased successfully
+5. ✅ Verified commit deltas are identical before/after rebase
+6. ✅ Build test passed (sandbox)
+7. ✅ Created local branch `cherry-81e8c5315ce-v2`
+8. ✅ Force pushed to update MR
+
+### Commit Mapping (old → new):
+
+| Subject | Old Hash | New Hash | Delta |
+|---------|----------|----------|-------|
+| usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible | f60d4094bed | 3bfbc4400c6 | 1 file, +1 ✅ |
+| Merge branch 'master' of git://source.denx.de/u-boot-usb | 56f9c8907e1 | 4cac808fd1f | empty ✅ |
+| pickman: Record cherry-pick of 2 commits | 5b5e8370c3f | c40ab02fb92 | 1 file, +67 ✅ |
+
+### Build Result: **PASSED** ✅
+
+### Conflict Resolution:
+- `.pickman-history`: Merge conflict resolved by keeping both history entries (HEAD version for cherry-8241bd6a82e and incoming version for cherry-81e8c5315ce)
+
+---
+
+### Suggested Reply for MR:
+
+> Rebased onto latest ci/master. All commits and deltas preserved. Build passes.
 
 ---
 
