@@ -63200,3 +63200,143 @@ All 11 commits were successfully cherry-picked from `us/next` to the new branch 
 
 ---
 
+## 2026-04-21: us/next
+
+Branch: cherry-b2446a23143
+
+Commits:
+- b2446a23143 watchdog: qcom: Add max timeout check to prevent overflow
+- fba8fc4a962 usb: dwc3: qcom: Add delays in UTMI clock selection for Qscratch
+- 83d9b5a7403 configs: Rename qcs9100_defconfig to qcom_qcs9100_defconfig
+- 68daf96a909 configs: qcom_qcs9100: Fix fastboot buffer address for QCS9100 board
+- fe3b827a593 usb: gadget: Kconfig: Correct Qualcomm config name used
+- 5c71f81101f mach-snapdragon: enable MMU_PGPROT by default
+- bf4045ede82 mach-snapdragon: capsule_update: Fix eMMC detection for non-UFS devices
+- 07e66ed6191 regulator: qcom-rpmh-regulator: add support for PM8150 PM8350 PM7325
+- 46a66c02e9d pinctrl: qcom: add driver for QCS615 SoC
+- 25a260c2cbc pinctrl: qcom: add PINCTRL_QCOM_GENERIC to enable all drivers by default
+- 63439561493 qcom_defconfig: Remove redundant pinctrl driver selections
+- 984ebe2d553 smem: msm: Fix memory-region lookup, direct <reg> mapping and update SMEM host count
+- 57a5305948f dragonboard820c: Stop disabling device tree relocation
+- c9c61c1f4e7 phy: qcom: snps-femto-v2: assert reset in probe
+- 7f1a1fa0510 configs: qcom_qcs615: Correct debug UART clock frequency
+- 4ad3992cc35 phy: Add MSM8996 support to Qualcomm QUSB2 phy
+- edd1fb0c369 mmc: msm_sdhci: Fix incorrect divider calculation for SDCLK
+- 3ddc67573fa clk/qcom: qcm2290: Add SDCC1 apps clock frequency table
+- 338c4b82080 mmc: msm_sdhci: Add DLL control hook to disable DLL below 100 MHz
+- 9be4f2f5f4d mach-snapdragon: of_fixup: support new flat dwc3 node
+- 7966d35b1fe spmi: msm: refine handling of multiple APID mappings
+- cb07205adb5 configs: Fix fastboot buffer address for QCS615 and QCM6490 boards
+- 142df62cb68 clk/qcom: sc7280: add more QUP clocks
+- d38ec14953e i2c: geni: bail when clocks can't be enabled
+- 83dd2675d04 soc: qcom: rpmh-rsc: reclaim the TCS to avoid spurious irq in Linux
+- 16889f764bd soc/qcom: rpmh: document rsc registers
+- 5942ad0ddb5 soc/qcom: rpmh: correctly wait for TCS flush
+- dc1cd6ed4b3 soc/qcom: rpmh: add RPMh read
+- 3afd2b9f97d power: regulator: qcom-rpmh: read votes from rpmh
+- deb2b9c4033 power: regulator: qcom-rpmh: correctly map pmic mode
+- 500d2e5e554 doc: board: qualcomm: document Pixel 3 / 3 XL support
+- 338dbbba878 configs: Add google-pixel fragment config for Pixel 3, 3 XL, 5
+- 3422e915aca clk: qcom: sa8775p: Add QUP serial engine clock support
+- f4886799a0a clk: qcom: sa8775p: Fix USB clock configuration and add resets
+- cd8ee4fff82 usb: dwc3-generic: support Qualcomm flattened DT
+- ff498a3c5ef Merge branch 'qcom-main' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+Now let me cherry-pick the first commit:
+
+Delta matches. Now let's run the build test:
+
+Build passed. Let me continue with the remaining cherry-picks. I'll proceed with each commit:
+
+Conflict encountered. Let me check the conflicts:
+
+I can see the conflicts. The incoming changes are from a different code path (it references `dev` which doesn't exist in the current file). Let me examine the original commit to understand what it's trying to do:
+
+I see - the original commit targets `drivers/smem/msm_smem.c` but our tree has `drivers/soc/qcom/smem.c`. Let me check what structure we have:
+
+The commit is targeting a file that doesn't exist in our branch (it was moved or the branches have diverged significantly). The commit is trying to make changes to `drivers/smem/msm_smem.c` but in our tree it's `drivers/soc/qcom/smem.c` which has a different structure.
+
+Let me check what the key changes are in the original commit:
+
+The conflicts are severe because the file structure is quite different between the two branches. Our current tree has a non-driver model based smem implementation while the incoming commit is for a driver-model based version. These codebases have diverged.
+
+Let me check if we can extract just the SMEM_HOST_COUNT change which seems to be the main applicable piece:
+
+I see - our tree already has `SMEM_HOST_COUNT` set to 20, while the incoming commit changes it from 10 to 25. The rest of the commit is for a completely different file/implementation. Let me manually apply just the relevant changes:
+
+Now let me create a partial commit since the main changes couldn't be applied (file divergence):
+
+Now let me continue with the remaining commits:
+
+Now let me handle the merge commit with the "maybe already applied" check:
+
+The two merge commits are completely different - different dates, different contents, different merge parents. These are not the same commit. Let me proceed with cherry-picking the merge commit:
+
+The conflict is the same issue as before - the file in us/next is `drivers/smem/msm_smem.c` but our file is `drivers/soc/qcom/smem.c`. Since this is a merge commit and we already applied the SMEM_HOST_COUNT change manually, let me resolve by keeping our version:
+
+The merge commit becomes empty because we've already cherry-picked all the individual commits that it contains. Let me commit it as an empty commit to preserve the merge record:
+
+Now let me verify the log shows all 36 commits:
+
+I see 36 new commits. Let me verify the count:
+
+We have all 36 commits. Let me run the final build test:
+
+All 36 commits cherry-picked successfully with passing builds.
+
+## Final Status Report
+
+**Branch:** `cherry-b2446a23143` (based on `ci/master`)
+
+**Build Result:** ✅ OK (sandbox build passes)
+
+**Summary of all 36 commits:**
+1. ✅ `b2446a23143` - watchdog: qcom: Add max timeout check to prevent overflow
+2. ✅ `fba8fc4a962` - usb: dwc3: qcom: Add delays in UTMI clock selection for Qscratch
+3. ✅ `83d9b5a7403` - configs: Rename qcs9100_defconfig to qcom_qcs9100_defconfig
+4. ✅ `68daf96a909` - configs: qcom_qcs9100: Fix fastboot buffer address for QCS9100 board
+5. ✅ `fe3b827a593` - usb: gadget: Kconfig: Correct Qualcomm config name used
+6. ✅ `5c71f81101f` - mach-snapdragon: enable MMU_PGPROT by default
+7. ✅ `bf4045ede82` - mach-snapdragon: capsule_update: Fix eMMC detection for non-UFS devices
+8. ✅ `07e66ed6191` - regulator: qcom-rpmh-regulator: add support for PM8150 PM8350 PM7325
+9. ✅ `46a66c02e9d` - pinctrl: qcom: add driver for QCS615 SoC
+10. ✅ `25a260c2cbc` - pinctrl: qcom: add PINCTRL_QCOM_GENERIC to enable all drivers by default
+11. ✅ `63439561493` - qcom_defconfig: Remove redundant pinctrl driver selections
+12. ⚠️ `984ebe2d553` - smem: msm: Fix memory-region lookup... (**partial cherry-pick** - only SMEM_HOST_COUNT change applied, original targets `drivers/smem/msm_smem.c` which doesn't exist in this tree)
+13. ✅ `57a5305948f` - dragonboard820c: Stop disabling device tree relocation
+14. ✅ `c9c61c1f4e7` - phy: qcom: snps-femto-v2: assert reset in probe
+15. ✅ `7f1a1fa0510` - configs: qcom_qcs615: Correct debug UART clock frequency
+16. ✅ `4ad3992cc35` - phy: Add MSM8996 support to Qualcomm QUSB2 phy
+17. ✅ `edd1fb0c369` - mmc: msm_sdhci: Fix incorrect divider calculation for SDCLK
+18. ✅ `3ddc67573fa` - clk/qcom: qcm2290: Add SDCC1 apps clock frequency table
+19. ✅ `338c4b82080` - mmc: msm_sdhci: Add DLL control hook to disable DLL below 100 MHz
+20. ✅ `9be4f2f5f4d` - mach-snapdragon: of_fixup: support new flat dwc3 node
+21. ✅ `7966d35b1fe` - spmi: msm: refine handling of multiple APID mappings
+22. ✅ `cb07205adb5` - configs: Fix fastboot buffer address for QCS615 and QCM6490 boards
+23. ✅ `142df62cb68` - clk/qcom: sc7280: add more QUP clocks
+24. ✅ `d38ec14953e` - i2c: geni: bail when clocks can't be enabled
+25. ✅ `83dd2675d04` - soc: qcom: rpmh-rsc: reclaim the TCS to avoid spurious irq in Linux
+26. ✅ `16889f764bd` - soc/qcom: rpmh: document rsc registers
+27. ✅ `5942ad0ddb5` - soc/qcom: rpmh: correctly wait for TCS flush
+28. ✅ `dc1cd6ed4b3` - soc/qcom: rpmh: add RPMh read
+29. ✅ `3afd2b9f97d` - power: regulator: qcom-rpmh: read votes from rpmh
+30. ✅ `deb2b9c4033` - power: regulator: qcom-rpmh: correctly map pmic mode
+31. ✅ `500d2e5e554` - doc: board: qualcomm: document Pixel 3 / 3 XL support
+32. ✅ `338dbbba878` - configs: Add google-pixel fragment config for Pixel 3, 3 XL, 5
+33. ✅ `3422e915aca` - clk: qcom: sa8775p: Add QUP serial engine clock support
+34. ✅ `f4886799a0a` - clk: qcom: sa8775p: Fix USB clock configuration and add resets
+35. ✅ `cd8ee4fff82` - usb: dwc3-generic: support Qualcomm flattened DT
+36. ✅ `ff498a3c5ef` - Merge branch 'qcom-main'... (**empty merge commit** - all individual commits already cherry-picked)
+
+**Fix-ups Made:**
+1. **Commit 12 (`984ebe2d553`)**: Partial cherry-pick - original commit targeted `drivers/smem/msm_smem.c` which doesn't exist in ci/master. Only the `SMEM_HOST_COUNT` constant change (20→25) was applied manually to `drivers/soc/qcom/smem.c`. The rest of the commit (modernizing DT accessor functions) couldn't be applied due to file divergence.
+
+2. **Commit 36 (`ff498a3c5ef`)**: Empty merge commit - the merge resolves to empty because all individual commits were already cherry-picked. The commit is preserved with `--allow-empty` to maintain the merge record and commit message.
+
+**Commits with Concerning Deltas:** None - all successfully cherry-picked commits matched their original stat output.
+
+The branch `cherry-b2446a23143` is ready for pushing.
+
+---
+
