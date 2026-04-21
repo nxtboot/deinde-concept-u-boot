@@ -63490,6 +63490,73 @@ The rebase and push completed successfully. Let me provide a summary:
 ### Suggested Reply for MR:
 
 > Rebased onto latest ci/master. All commits and their deltas are preserved. Build passes.
+Branch: cherry-81e8c5315ce
+
+Commits:
+- 81e8c5315ce usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible
+- feb62582bf2 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The repository has untracked files but is otherwise clean (no staged or modified files). Let me proceed with creating the new branch and starting the cherry-pick process.
+
+Now let me cherry-pick the first commit:
+
+First commit was successful. Let me verify the commit delta and run the build test:
+
+The commit delta is identical (1 file changed, 1 insertion). Now let me run the build test:
+
+Build passed. Now let me proceed with the second commit. This is a merge commit, so I need to check if it's already applied as indicated. Let me first compare the patches:
+
+These are different commits. The found commit (68dde171e15) is a different merge (cherry pick merge with different parent and subject). Let me check what the original merge commit contains:
+
+Let me also check if the underlying change (the 81e8c5315ce commit we just cherry-picked) was part of this merge:
+
+The original merge feb62582bf2 contains the same commit we just cherry-picked (81e8c5315ce). Since we've already cherry-picked that commit individually, the merge commit would be empty if we try to cherry-pick it. Let me check if the parent commit 68dde171e15 actually represents a similar "pickman" merge that already applied the same content:
+
+Interesting - the grep matched but it's showing the pickman merge. Let me check what content that merge contains:
+
+These are different merges entirely:
+- The original merge (feb62582bf2) only touches `drivers/usb/host/xhci-dwc3.c` (the same file as commit 81e8c5315ce which we already cherry-picked)
+- The found merge (68dde171e15) touches different files
+
+The merge feb62582bf2 only contained the commit 81e8c5315ce which we've already cherry-picked. Since we've already applied the underlying change, cherry-picking this merge would result in an empty commit. Per the instructions, we should still preserve the merge commit message. Let me proceed:
+
+As expected, the cherry-pick is empty because the content was already applied. Per instructions, we need to use `--allow-empty` to commit it anyway:
+
+The merge commit was created (empty but preserved for history). Let me verify the commit delta and run the build test:
+
+The cherry-picked merge commit is empty (no file changes shown) because the underlying content (81e8c5315ce) was already applied as the first commit. This is expected behavior - the merge commit message is preserved for history tracking.
+
+Now let me run the build test:
+
+Build passed. Now let me verify the commit log:
+
+All 2 commits are present. Let me run the final build to confirm everything works together:
+
+## Final Status
+
+**Cherry-pick completed successfully!**
+
+### Summary
+
+| # | Commit | Subject | Status |
+|---|--------|---------|--------|
+| 1 | 81e8c5315ce → f60d4094bed | usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible | ✅ Applied |
+| 2 | feb62582bf2 → 56f9c8907e1 | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Applied (empty - content already in commit 1) |
+
+### Build Result
+- **Status**: ✅ OK (sandbox build passed)
+- **Warnings/Errors**: None
+
+### Fix-ups Made
+- None required
+
+### Notes
+- Commit 2 (merge commit) was applied as an empty commit because the underlying change (81e8c5315ce) was already cherry-picked as commit 1. The merge commit message was preserved for history tracking using `--allow-empty`.
+- The commit 68dde171e15 mentioned as "maybe already applied" was verified to be a different commit (a pickman merge touching different files), so it was not considered a duplicate.
+
+### Branch Status
+The branch `cherry-81e8c5315ce` is ready for pushing with 2 commits ahead of `ci/master`.
 
 ---
 
