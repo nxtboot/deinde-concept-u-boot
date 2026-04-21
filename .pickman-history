@@ -62977,3 +62977,154 @@ The branch `cherry-711150fc6fe` is now ready for pushing.
 
 ---
 
+## 2026-04-20: us/next
+
+Branch: cherry-60f5170c1fe
+
+Commits:
+- 60f5170c1fe panel: Add missing comment for the timing argument
+- 36829e951bf panel: Lightweight support of get_modes()
+- fe2547b78d0 video: simple_panel: Add tfc_s9700rtwv43tr_01b
+- de3f687e6e8 video: ti: am335x: Support OF graph
+- 7cb79f8d3d5 arm: dts: an7581: set r_smpl for MMC in U-Boot
+- 28485532028 bootstd: rauc: Free memory during error handling
+- dc82599c45b arm: mediatek: remove extra gpio header
+- cb1d775d253 spl: fix incorrect dependency for SPL_NET
+- 03893b263a6 Merge patch series "video: simple_panel support for am335x evm panel"
+
+### Conversation log
+The repository has untracked files but is otherwise clean (nothing staged or modified). Let me proceed with creating the new branch.
+
+Good. Now let me cherry-pick the first commit:
+
+First cherry-pick successful. Let me verify the delta and run the build:
+
+Deltas match (1 file, 2 insertions, 1 deletion). Now let me run the build:
+
+Build passed. Let me proceed with the second commit:
+
+Deltas match. Run build:
+
+Build passed. Third commit:
+
+Deltas match. Run build:
+
+Build passed. Fourth commit:
+
+Deltas match. Run build:
+
+Build passed. Fifth commit:
+
+Deltas match. Run build:
+
+Build passed. Sixth commit:
+
+There's a conflict. Let me check the conflicting file:
+
+Let me see the conflict:
+
+This is a simple conflict. The original commit wants to use the common error handling path (goto rauc_read_bootflow_err) but ci/master already has inline error handling. Looking at the original commit, the fix is about using the error handling path. The ci/master version already frees things before returning, but the original commit wants to use the goto for consistency. Let me look at the original commit:
+
+I can see the original commit adds an error handling section at the bottom and makes the distro_rauc_scan_parts error use goto. Looking at ci/master's version, it appears the goto label already exists (I saw it in the conflict), so the base has been partially modified. Let me see the current state better:
+
+I see! The error handling label `rauc_read_bootflow_err:` already exists in the base. The HEAD version has additional cleanup (free(priv), bflow->bootmeth_priv = NULL) that's not in the label. But looking more carefully:
+- HEAD version: calls `distro_rauc_priv_free(priv)`, then `free(priv)`, then `bflow->bootmeth_priv = NULL`, then `free(boot_order_copy)`
+- The error label: calls `distro_rauc_priv_free(priv)`, `free(boot_order_copy)`, `free(partitions)`
+
+The original commit wants to use the goto to the error label. But HEAD has some additions that should probably go to the error label. Looking at the context, the ci/master code has extra cleanups (free(priv) and setting bflow->bootmeth_priv = NULL) that might need to be added to the error handling label.
+
+However, the original commit is specifically about making sure the goto path is used consistently. Let me check if the error label needs to also free priv and set bootmeth_priv to NULL. Looking at the label, it calls `distro_rauc_priv_free(priv)` which likely frees the slots but maybe not priv itself.
+
+For a simple resolution: The original commit wants `goto rauc_read_bootflow_err;` instead of inline cleanup. The HEAD has more cleanup that should arguably be in the error path. The safest resolution is to keep the original commit's intent (use the goto) but ensure the error label handles everything properly. Since ci/master seems to have some additional cleanup, I'll take the HEAD's additional frees and add them to the error label.
+
+Let me resolve this conflict:
+
+`distro_rauc_priv_free` frees slots but NOT priv itself. So HEAD is correct to also `free(priv)`. The error label in the current code does NOT free priv. This is a bug in the original commit or there's something I'm missing.
+
+Let me look at the whole error label area:
+
+Looking at this more carefully, the error label doesn't free priv itself, but HEAD's version does. This suggests ci/master has a fix that the original commit doesn't have. The safest is to:
+
+1. Use the goto from the incoming commit (as that's the point of the commit)
+2. Keep HEAD's additional cleanup in the error label (add `free(priv)` and `bflow->bootmeth_priv = NULL`)
+
+Let me resolve this properly. First I'll choose the incoming version for the conflict area:
+
+Now I need to also add the additional cleanup from HEAD to the error label (free(priv) and bflow->bootmeth_priv = NULL):
+
+Now let me add the missing cleanups to the error label. Looking at HEAD's version, it additionally had:
+- `free(priv);`
+- `bflow->bootmeth_priv = NULL;`
+
+Let me add those:
+
+The sed didn't work as expected (it doesn't handle multi-line patterns well by default). Let me try a different approach:
+
+Now let me add the file and continue:
+
+Now I need to amend the commit to add a note about the fix-up:
+
+Now let me check the delta and build:
+
+Original: 40 insertions, 11 deletions
+Cherry-picked: 42 insertions, 13 deletions
+
+The difference is 2 extra insertions and 2 extra deletions, which is due to the fix-up adding `free(priv); bflow->bootmeth_priv = NULL;`. This is acceptable. Run the build:
+
+Build passed. Seventh commit:
+
+Deltas match exactly. Run build:
+
+Build passed. Eighth commit:
+
+Deltas match exactly. Run build:
+
+Build passed. Now the ninth and final commit - this is a MERGE commit:
+
+The merge commit is empty (as expected - all content was already cherry-picked). I need to commit it anyway to preserve the history:
+
+Good. Let me verify the delta:
+
+The cherry-picked merge commit is empty (no files), while the original shows the aggregate of merged changes. This is expected because all the changes were already applied via the individual cherry-picks. Run build:
+
+Build passed. Now let me verify with git log:
+
+All 9 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+### Cherry-pick Summary
+
+All 9 commits have been successfully cherry-picked from `us/next` branch to the new branch `cherry-60f5170c1fe`:
+
+| # | Original Hash | Subject | Status |
+|---|---------------|---------|--------|
+| 1 | 60f5170c1fe | panel: Add missing comment for the timing argument | ✅ Clean |
+| 2 | 36829e951bf | panel: Lightweight support of get_modes() | ✅ Clean |
+| 3 | fe2547b78d0 | video: simple_panel: Add tfc_s9700rtwv43tr_01b | ✅ Clean |
+| 4 | de3f687e6e8 | video: ti: am335x: Support OF graph | ✅ Clean |
+| 5 | 7cb79f8d3d5 | arm: dts: an7581: set r_smpl for MMC in U-Boot | ✅ Clean |
+| 6 | 28485532028 | bootstd: rauc: Free memory during error handling | ⚠️ Conflict resolved |
+| 7 | dc82599c45b | arm: mediatek: remove extra gpio header | ✅ Clean |
+| 8 | cb1d775d253 | spl: fix incorrect dependency for SPL_NET | ✅ Clean |
+| 9 | 03893b263a6 | Merge patch series "video: simple_panel support..." | ✅ Empty (as expected) |
+
+### Build Result
+**OK** - Build completed successfully with no warnings or errors
+
+### Fix-ups Made
+1. **Commit 6 (28485532028)**: Conflict in `boot/bootmeth_rauc.c`
+   - The conflict was in the error handling path for `distro_rauc_scan_parts()` 
+   - Resolution: Used the incoming `goto rauc_read_bootflow_err;` path as intended by the commit
+   - Added `free(priv);` and `bflow->bootmeth_priv = NULL;` to the error label to match ci/master's cleanup requirements
+   - Commit message amended with a note about this fix-up
+
+### Commits with Concerning Deltas
+- **Commit 6**: Original had 40+/11-, cherry-picked has 42+/13- (small difference due to fix-up additions - acceptable)
+- **Commit 9 (Merge)**: Empty commit as expected - the content was already applied through the individual cherry-picks
+
+### Branch Status
+The branch `cherry-60f5170c1fe` is ready for pushing with 9 commits ahead of `ci/master`.
+
+---
+
