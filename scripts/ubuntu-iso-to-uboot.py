@@ -76,8 +76,52 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
 from u_boot_pylib import command
 from u_boot_pylib import tout
 
-REQUIRED_TOOLS = ('xorriso', 'mcopy', 'mmd', 'mkfs.vfat')
+REQUIRED_TOOLS = (
+    'xorriso', 'mcopy', 'mmd', 'mkfs.vfat',
+    'unsquashfs', 'mksquashfs', 'fakeroot',
+)
 MIB = 1024 * 1024
+
+# First-boot systemd unit + helper script written into the install
+# squashfs so kernel-install manages BLS entries on the installed
+# system. ConditionPathExists=!/cdrom keeps the unit dormant inside
+# the live session, and the done-file stops it re-running on every
+# subsequent boot.
+FIRST_BOOT_SCRIPT = '''\
+#!/bin/sh
+# Set up BLS entries for future kernel updates
+set -e
+apt-get update
+apt-get install -y systemd-boot-efi
+mkdir -p /boot/loader/entries
+# Force kernel-install's BLS layout: with the default layout=auto
+# the heuristic can pick 'other' on Ubuntu and skip the
+# 90-loaderentry.install plugin
+grep -q '^layout=' /etc/kernel/install.conf 2>/dev/null \\
+	|| echo layout=bls >> /etc/kernel/install.conf
+for k in /usr/lib/modules/*; do
+	v=$(basename "$k")
+	kernel-install add "$v" "/boot/vmlinuz-$v" || true
+done
+touch /var/lib/ubuntu-iso-to-uboot-bls-setup.done
+'''
+
+FIRST_BOOT_UNIT = '''\
+[Unit]
+Description=Set up BLS entries for future kernel updates
+ConditionPathExists=!/var/lib/ubuntu-iso-to-uboot-bls-setup.done
+ConditionPathExists=!/cdrom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ubuntu-iso-to-uboot-bls-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+'''
 
 
 def _quiet() -> bool:
@@ -180,16 +224,17 @@ def build_esp(esp_path: Path, size_mib: int, uboot_efi: Path) -> None:
 
 def repack_iso(
     in_iso: Path, out_iso: Path, esp_img: Path, esp_guid: str,
-    entry_conf: Path,
+    file_maps: list[tuple[Path, str]],
 ) -> None:
     """Stream the input ISO to a new ISO with the ESP and BLS entry replaced.
 
     -boot_image any replay preserves every other boot record (BIOS El Torito,
     grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten,
-    plus /loader/entry.conf is added to the ISO 9660 tree, and the shim,
-    GRUB and MokManager copies under /EFI/boot/ are removed since U-Boot
-    supplies the UEFI boot path via the appended ESP. The BIOS El Torito
-    path still uses /boot/grub/ so legacy boot continues to work.
+    plus each (src, dst) pair in @file_maps is added to the ISO 9660 tree,
+    and the shim, GRUB and MokManager copies under /EFI/boot/ are removed
+    since U-Boot supplies the UEFI boot path via the appended ESP. The
+    BIOS El Torito path still uses /boot/grub/ so legacy boot continues
+    to work.
 
     -find is tolerant of missing files: if a distribution does not ship
     one of these binaries, the call is a no-op.
@@ -200,17 +245,131 @@ def repack_iso(
     """
     if out_iso.exists():
         out_iso.unlink()
-    _run(
+    cmd = [
         'xorriso',
         '-indev', str(in_iso),
         '-outdev', str(out_iso),
         '-boot_image', 'any', 'replay',
         '-append_partition', '2', esp_guid, str(esp_img),
-        '-map', str(entry_conf), '/loader/entry.conf',
+    ]
+    for src, dst in file_maps:
+        cmd += ['-map', str(src), dst]
+    cmd += [
         '-find', '/EFI/boot', '-name', 'bootx64.efi', '-exec', 'rm', '--',
         '-find', '/EFI/boot', '-name', 'grubx64.efi', '-exec', 'rm', '--',
         '-find', '/EFI/boot', '-name', 'mmx64.efi', '-exec', 'rm', '--',
         '-commit',
+    ]
+    _run(*cmd)
+
+
+def inject_first_boot_unit(
+    iso: Path, sqfs_in_iso: str, work: Path,
+) -> Path:
+    """Unpack the install squashfs, drop in a first-boot BLS-setup unit
+    plus its helper script, and repack.
+
+    The whole unpack/modify/repack cycle runs under one fakeroot
+    invocation so ownership survives round-tripping through a regular
+    user filesystem. Compression matches the original (xz) to keep the
+    resulting ISO close to the source in size; that does mean the
+    rewrite takes several minutes.
+
+    Returns the path to the modified squashfs.
+    """
+    extracted = work / 'orig.squashfs'
+    modified = work / 'modified.squashfs'
+    stage = work / 'sqfs-stage'
+    aux = work / 'aux'
+    aux.mkdir()
+    script_src = aux / 'ubuntu-iso-to-uboot-bls-setup'
+    script_src.write_text(FIRST_BOOT_SCRIPT)
+    script_src.chmod(0o755)
+    unit_src = aux / 'ubuntu-iso-to-uboot-bls-setup.service'
+    unit_src.write_text(FIRST_BOOT_UNIT)
+
+    tout.notice(f'=> Extracting {sqfs_in_iso}')
+    _run(
+        'xorriso', '-osirrox', 'on', '-indev', str(iso),
+        '-extract', '/' + sqfs_in_iso.lstrip('/'), str(extracted),
+    )
+
+    tout.notice('=> Unpacking, injecting unit, repacking (xz, slow)')
+    shell = f'''
+set -e
+unsquashfs -d '{stage}' '{extracted}'
+install -D -m 755 -o root -g root '{script_src}' \\
+    '{stage}/usr/local/sbin/ubuntu-iso-to-uboot-bls-setup'
+install -D -m 644 -o root -g root '{unit_src}' \\
+    '{stage}/etc/systemd/system/ubuntu-iso-to-uboot-bls-setup.service'
+mkdir -p '{stage}/etc/systemd/system/multi-user.target.wants'
+ln -sf ../ubuntu-iso-to-uboot-bls-setup.service \\
+    '{stage}/etc/systemd/system/multi-user.target.wants/ubuntu-iso-to-uboot-bls-setup.service'
+chown -h root:root \\
+    '{stage}/etc/systemd/system/multi-user.target.wants/ubuntu-iso-to-uboot-bls-setup.service'
+mksquashfs '{stage}' '{modified}' -noappend -comp xz -no-progress
+'''
+    _run('fakeroot', 'sh', '-c', shell)
+    return modified
+
+
+def autoinstall_yaml() -> str:
+    """Return an autoinstall snippet that seeds BLS entries on the
+    installed ESP.
+
+    The Ubuntu installer (ubiquity/subiquity) reads /autoinstall.yaml from the
+    install media when autoinstall mode is invoked; the file is ignored in plain
+    interactive installs, so shipping it by default is harmless. When
+    autoinstall runs, the late-commands here write a BLS Type #1 entry to
+    /boot/efi/loader/entries/<v>.conf for every kernel the installer has
+    unpacked and copy the kernel and initrd alongside on the ESP, so U-Boot's
+    bootmeth_bls finds the entry on the ESP partition before the EFI bootmeth on
+    the same partition chain-loads U-Boot's BOOTX64.EFI fallback into a loop.
+
+    The kernel-install path is bypassed because curtin's chroot has /boot/efi as
+    a plain directory rather than the ESP mountpoint, so systemd-boot-efi's
+    90-loaderentry.install plugin silently exits without writing entries.
+    """
+    return (
+        '#cloud-config\n'
+        'autoinstall:\n'
+        '  version: 1\n'
+        '  late-commands:\n'
+        # Write BLS entries to the install target's ESP. The kernel
+        # and initrd are copied alongside on the ESP so the entry can
+        # reference them by ESP-relative paths. We place the entries
+        # on the ESP rather than /boot/loader/entries on the rootfs
+        # because U-Boot's bootflow iterator advances per-partition:
+        # the ESP is the lower-numbered partition and EFI bootmeth
+        # finds our BOOTX64.EFI fallback there before BLS reaches the
+        # rootfs further down. Putting the entries on the ESP lets
+        # BLS win on that partition before EFI has a turn. We also
+        # write a /loader/entry.conf (singular) fallback matching the
+        # format the live ISO already uses, so U-Boot picks the entry
+        # whether its scan prefers the entries/ directory or the
+        # singular file.
+        '''    - |
+      curtin in-target -- sh -c 'set -e;\
+ ESP=/boot/efi;\
+ mkdir -p "$ESP/loader/entries";\
+ uuid=$(findmnt -no UUID /);\
+ last_v="";\
+ for k in /usr/lib/modules/*; do\
+ v=$(basename "$k");\
+ cp "/boot/vmlinuz-$v" "$ESP/vmlinuz-$v";\
+ cp "/boot/initrd.img-$v" "$ESP/initrd.img-$v";\
+ printf "title Ubuntu (%s)\\n\
+linux /vmlinuz-%s\\n\
+initrd /initrd.img-%s\\n\
+options root=UUID=%s ro console=ttyS0,115200 console=tty0\\n"\
+ "$v" "$v" "$v" "$uuid"\
+ > "$ESP/loader/entries/$v.conf";\
+ last_v="$v";\
+ done;\
+ if [ -n "$last_v" ]; then\
+ cp "$ESP/loader/entries/$last_v.conf" "$ESP/loader/entry.conf";\
+ fi'
+'''
     )
 
 
@@ -234,6 +393,15 @@ def main() -> None:
                    help='BLS entry title (default: derived from volume label)')
     p.add_argument('-s', '--esp-size', type=int, default=None,
                    help='ESP size in MiB (default: 4 MiB)')
+    p.add_argument('-N', '--no-target-bls', action='store_true',
+                   help='do not ship an autoinstall snippet or modify '
+                        'the install squashfs to wire kernel-install + '
+                        'BLS into the installed system')
+    p.add_argument('-I', '--install-squashfs',
+                   default='casper/minimal.squashfs',
+                   help='path inside the ISO of the install squashfs to '
+                        'modify for interactive installs '
+                        '(default: %(default)s; set to empty to skip)')
     p.add_argument('-v', '--verbose', action='store_true',
                    help='show progress markers and subprocess output')
     args = p.parse_args()
@@ -275,8 +443,21 @@ def main() -> None:
             f'options {cmdline}\n'
         )
 
+        file_maps = [(entry, '/loader/entry.conf')]
+        if not args.no_target_bls:
+            ai = work / 'autoinstall.yaml'
+            ai.write_text(autoinstall_yaml())
+            file_maps.append((ai, '/autoinstall.yaml'))
+            if args.install_squashfs:
+                modified_sqfs = inject_first_boot_unit(
+                    args.iso, args.install_squashfs, work,
+                )
+                file_maps.append(
+                    (modified_sqfs, '/' + args.install_squashfs.lstrip('/')),
+                )
+
         tout.notice(f'=> Repacking to {args.out}')
-        repack_iso(args.iso, args.out, esp, esp_guid, entry)
+        repack_iso(args.iso, args.out, esp, esp_guid, file_maps)
 
     size_mib = args.out.stat().st_size / MIB
     tout.notice(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
