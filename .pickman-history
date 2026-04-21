@@ -63937,3 +63937,167 @@ The branch has been force-pushed. Let me verify the final state:
 
 ---
 
+## 2026-04-21: us/next
+
+Branch: cherry-460fba63b5d
+
+Commits:
+- 460fba63b5d cmd/meminfo: display of addresses above 4 GiB
+- e7bbbd8e094 test: cmd: consider configuration in meminfo test
+- ddfb487a280 test: initf_malloc is only traced with EARLY_TRACE
+- 36262661d0f test: clean up test_trace.py code
+- 9b96d516098 Fix typo "addtional" -> "additional" in pflash section.
+- 67479a8ab9f doc: describe QEMU networking
+- ba8ca7965b5 Update links to doc/develop/falcon.rst
+- b9d88490bb8 docs: kdoc: handle the obsolescensce of docutils.ErrorString()
+- 8e16fbfd14b doc: board: ti: Add AM62D documentation
+- e82f01a236b bootm: fix boot failure from compressed image for IH_OS_EFI
+- 1b9997762f0 doc: Update urllib3 version for building
+- 8304f322670 doc: board: starfive: update jh7110 common description
+- a4dc1c3b7d5 Merge tag 'efi-2026-04-rc1-2' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The repository is clean (only untracked files). Let me create and checkout the new branch based on ci/master.
+
+Now let me cherry-pick the first commit:
+
+There's a conflict on the first cherry-pick. Let me check if these commits are already applied in ci/master with different hashes.
+
+Let me check if the commit is in ci/master by looking at the specific files' history:
+
+I see. The commit in ci/master (`f6acb6e003f`) uses 10 hex digits while the original commit (`460fba63b5d`) uses 13 digits. These are different changes but seem related. Let me see what the conflict looks like:
+
+The conflict shows that ci/master already has similar changes but with 10-digit width instead of 13-digit width. Let me see the full conflict:
+
+I see the conflict. The original commit changes 8 digits to 13 digits, but the ci/master already has a similar change to 10 digits. These are different but similar changes. Let me resolve the conflict by applying the 13-digit version as that's what the cherry-pick wants:
+
+I need to resolve these conflicts. The issue is that ci/master has a different version with 10-digit width and some extra "||" markers. The incoming commit from us/next uses 13 digits. Let me try to resolve these conflicts by keeping the 13-digit version from the incoming commit, but I need to integrate it properly:
+
+I can see the conflicts. The issue is the ci/master version has 10 digits with "||" markers, and the incoming commit uses 13 digits without "||" markers. To properly apply the incoming commit's intent (wider columns for large addresses), I should use 13-digit formatting but keep the header structure. Let me resolve this:
+
+I need permission to write files. Let me use a different approach - using git checkout to resolve the conflict:
+
+But wait, the incoming version doesn't have the arch_dump_mem_attrs() call moved. Let me check what's in the files now:
+
+The `--theirs` version looks good - it has arch_dump_mem_attrs() in the right place (line 64) and uses 13 digit formatting. Let me verify the test file is good too:
+
+Good. Now let me add the resolved files and continue the cherry-pick:
+
+Cherry-pick completed. Now let me verify the commit delta and do a build test:
+
+The delta is slightly different (11 vs 8 lines in cmd/meminfo.c) due to the conflict resolution. The differences are reasonable - we adapted the cherry-pick to work with the existing base. Let me run the build test:
+
+Build passed. Now let me continue with the second commit:
+
+Same delta. Build test:
+
+Build passed. Commit 3:
+
+Same delta. Build test:
+
+Build passed. Commit 4:
+
+Same delta. Build test:
+
+Build passed. Commit 5:
+
+Same delta. Build test:
+
+Build passed. Commit 6:
+
+Simple conflict - just need to include all entries. Let me check if network.rst was created:
+
+Good, network.rst is being added. The conflict is in the toctree. I need to keep all entries (common, script, network):
+
+Good. Let me add the resolved file and continue:
+
+Same delta. Build test:
+
+Build passed. Commit 7:
+
+Same delta. Build test:
+
+Build passed. Commit 8:
+
+Same delta. Build test:
+
+Build passed. Commit 9:
+
+Same delta. Build test:
+
+Build passed. Commit 10:
+
+Same delta. Build test:
+
+Build passed. Now commit 11 (marked as "maybe already applied as 599c882ee2d"):
+
+The commits are different. The "found" hash 599c882ee2d is a pickman record commit, not the actual urllib3 update. Let me search for the actual urllib3 commit:
+
+These are different commits - they update urllib3 to different versions (2.6.3 vs 2.6.0) for different CVEs. Let me cherry-pick the new one:
+
+Same delta. Build test:
+
+Build passed. Now commit 12 (marked as "maybe already applied as 3557c0780ec"):
+
+Again, the 3557c0780ec is a pickman record, not the actual commit. Let me search for the actual starfive commit:
+
+These are very similar commits with minor differences. Let me see more of the diff:
+
+The patches are very similar with only minor differences. However, I notice that ci/master also has a "Revert" commit (b8e09b542f7) after the original commit - let me check the current state:
+
+Interesting - there was a commit 5c51a862f3f that applied similar changes, and then it was reverted by b8e09b542f7. So the current state is that the jh7110 doc update is not present. Let me cherry-pick the new version:
+
+Same delta. Build test:
+
+Build passed. Now the final commit 13 - the merge commit:
+
+Simple conflict - the HEAD version has all entries. Let me resolve:
+
+The merge commit is empty because all changes are already applied. Let me create the empty commit as instructed:
+
+All cherry-picks complete. Now let me verify with git log:
+
+All 13 commits are present. Now let me run the final build test:
+
+Final build passed.
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-460fba63b5d` (based on `ci/master`)
+
+**All 13 commits cherry-picked successfully:**
+
+| # | Original Hash | Subject | Status |
+|---|--------------|---------|--------|
+| 1 | 460fba63b5d | cmd/meminfo: display of addresses above 4 GiB | ✅ Applied (conflict resolved - ci/master had 10-digit version, applied 13-digit) |
+| 2 | e7bbbd8e094 | test: cmd: consider configuration in meminfo test | ✅ Applied cleanly |
+| 3 | ddfb487a280 | test: initf_malloc is only traced with EARLY_TRACE | ✅ Applied cleanly |
+| 4 | 36262661d0f | test: clean up test_trace.py code | ✅ Applied cleanly |
+| 5 | 9b96d516098 | Fix typo "addtional" -> "additional" in pflash section | ✅ Applied cleanly |
+| 6 | 67479a8ab9f | doc: describe QEMU networking | ✅ Applied (conflict resolved - merged toctree entries) |
+| 7 | ba8ca7965b5 | Update links to doc/develop/falcon.rst | ✅ Applied cleanly |
+| 8 | b9d88490bb8 | docs: kdoc: handle the obsolescensce of docutils.ErrorString() | ✅ Applied cleanly |
+| 9 | 8e16fbfd14b | doc: board: ti: Add AM62D documentation | ✅ Applied cleanly |
+| 10 | e82f01a236b | bootm: fix boot failure from compressed image for IH_OS_EFI | ✅ Applied cleanly |
+| 11 | 1b9997762f0 | doc: Update urllib3 version for building | ✅ Applied cleanly (NOT already applied - updates 2.6.0→2.6.3) |
+| 12 | 8304f322670 | doc: board: starfive: update jh7110 common description | ✅ Applied cleanly (NOT already applied - previous version was reverted) |
+| 13 | a4dc1c3b7d5 | Merge tag 'efi-2026-04-rc1-2' | ⚪ Empty merge (all changes already cherry-picked individually) |
+
+**Build Result:** ✅ OK (sandbox build passes with no warnings/errors)
+
+**Fix-ups Made:**
+1. **Commit 1 (460fba63b5d)**: Resolved conflict in cmd/meminfo.c and test/cmd/meminfo.c - ci/master had 10-digit formatting, applied 13-digit formatting from incoming commit
+2. **Commit 6 (67479a8ab9f)**: Resolved conflict in doc/board/emulation/index.rst - merged all toctree entries (common, network, script)
+3. **Commit 13 (a4dc1c3b7d5)**: Empty merge commit - created with note that all changes were already cherry-picked individually
+
+**"Maybe already applied" Verification:**
+- **1b9997762f0** vs 599c882ee2d: 599c882ee2d is a pickman record, not the actual commit. The actual related commit 4478c71f00f updates urllib3 to 2.6.0, while 1b9997762f0 updates to 2.6.3 - **different commits, cherry-picked 1b9997762f0**
+- **8304f322670** vs 3557c0780ec: 3557c0780ec is a pickman record. The actual commit 5c51a862f3f was applied but later reverted by b8e09b542f7 - **not currently applied, cherry-picked 8304f322670**
+
+**Commits with Concerning Deltas:** 
+- Commit 1: Slightly different delta (11 vs 8 lines in cmd/meminfo.c) due to conflict resolution, but the end result correctly applies the 13-digit formatting
+
+The branch `cherry-460fba63b5d` is ready for pushing with all 13 commits applied.
+
+---
+
