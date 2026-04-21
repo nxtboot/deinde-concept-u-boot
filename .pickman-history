@@ -64173,3 +64173,123 @@ Since no code changes are needed and the comment is simply a record of infrastru
 
 ---
 
+## 2026-04-21: us/next
+
+Branch: cherry-ea4bab00531
+
+Commits:
+- ea4bab00531 arm64: zynqmp: Enable pci root port driver
+- bf744b22362 ufs: amd-versal2: Fix clock name with binding
+- feb121db3e8 ufs: amd-versal2: Fix reset names with binding
+- e55a57715d9 amd: versal2: Align distro boot variables with default memory map
+- 7a2764721af board: zynqmp: allow env in fat/ext when booting out of qspi
+- d9049a2142f PCI: xilinx-nwl: Avoid crashing if configuring when the link is down
+- aa9d6f8b0a3 arm64: zynqmp: Remove ina260 IIO description
+- d4a973d8d1a arm64: xilinx: Fix DT coding style violations
+- 690e2f9c63d arch: dts: zynqmp: align cpu_opp_table with linux
+- 4bdaad9dee6 board: zynqmp: add cmd for getting boot auth state
+- 0320459cbf8 phy: zynqmp: Allow variation in refclk rate
+- 8c3e514d66d phy: zynqmp: Enable reference clock correctly
+- 7440a28528f phy: zynqmp: Store instance instead of type
+- 6f58580391d phy: zynqmp: Only wait for PLL lock "primary" instances
+- af5c2b759e7 arm64: versal2: Fix emmc boot mode boot_target issue
+- 8a532b5a221 microblaze: Fix SPL device support
+- 9441ad8715d Revert "arm: dts: an7581: set r_smpl for MMC in U-Boot"
+- 6f42057c67f tools: amlimage: include <inttypes.h>
+- 8f16767dccf test/py, buildman: Update filelock package version
+- 55ca2110d74 Merge tag 'xilinx-for-v2026.04-rc1-v2' of https://source.denx.de/u-boot/custodians/u-boot-microblaze
+
+### Conversation log
+Let me find the correct working directory:
+
+The repository has some untracked files but is otherwise clean. Let me now create and checkout the new branch based on ci/master:
+
+Branch created successfully. Now let me start cherry-picking the commits one by one. Let me first verify these commits exist in us/next:
+
+Let me search for the specific commits we need:
+
+All commits are found in us/next. Now let me start cherry-picking them one by one:
+
+First cherry-pick successful. Let me verify the delta and run a build test:
+
+Delta matches. Now build test:
+
+Build passed. Let me continue with the next commits:
+
+There's a conflict - the file `tools/amlimage.c` was deleted in ci/master but the commit modifies it. Let me check if this commit is already applied via a different mechanism:
+
+The file `tools/amlimage.c` was deleted in ci/master but the commit wants to modify it. Let me check if the file exists in the current tree in ci/master and check what happened to it:
+
+The file was deleted in ci/master. Let me look for what happened:
+
+I see - the file was created by 18c1654567d and the fix 6f42057c67f was applied to it, but that file doesn't exist in ci/master. The entire amlimage feature was never added to ci/master. In this case, since the file the commit is trying to modify doesn't exist and won't exist in ci/master, this commit is irrelevant and can be skipped. Let me resolve this by removing the file and continuing:
+
+The cherry-pick is empty because the file doesn't exist in ci/master. Since this commit doesn't apply (the amlimage feature isn't in ci/master), let me skip it:
+
+Now let me cherry-pick commit 19: filelock package version update. First let me check if this might be already applied:
+
+The commit was already applied as `a657817e2d9`. Let me compare the patches to confirm:
+
+I see - the patches are actually different! The already applied a657817e2d9 updates from 3.0.12 to 3.20.1, while 8f16767dccf updates from 3.20.1 to 3.20.3. This is a newer fix on top of the previous one - so I should still apply it. Let me try:
+
+Now for the last commit, the merge commit:
+
+The merge commit is empty because we've already cherry-picked all the commits it contained. Per the instructions, we need to preserve the merge commit message even if it's empty. Let me commit it:
+
+All cherry-picks complete. Now let me verify the final log and run a build test:
+
+We have 19 commits cherry-picked (the first 19 entries minus the merge commit which is the top one = 19 actual commits). We skipped 1 commit (6f42057c67f - the amlimage commit) because the file doesn't exist in ci/master.
+
+Let me now run the final build test:
+
+## Final Status Report
+
+### Summary
+
+Successfully cherry-picked commits from us/next to branch `cherry-ea4bab00531` based on ci/master.
+
+### Build Result: ✅ OK
+
+All builds pass for sandbox board.
+
+### Commits Cherry-Picked (19 of 20 requested):
+
+| # | Hash | Subject | Status |
+|---|------|---------|--------|
+| 1 | ea4bab00531 | arm64: zynqmp: Enable pci root port driver | ✅ Applied |
+| 2 | bf744b22362 | ufs: amd-versal2: Fix clock name with binding | ✅ Applied |
+| 3 | feb121db3e8 | ufs: amd-versal2: Fix reset names with binding | ✅ Applied |
+| 4 | e55a57715d9 | amd: versal2: Align distro boot variables | ✅ Applied |
+| 5 | 7a2764721af | board: zynqmp: allow env in fat/ext when booting out of qspi | ✅ Applied |
+| 6 | d9049a2142f | PCI: xilinx-nwl: Avoid crashing if link is down | ✅ Applied |
+| 7 | aa9d6f8b0a3 | arm64: zynqmp: Remove ina260 IIO description | ✅ Applied |
+| 8 | d4a973d8d1a | arm64: xilinx: Fix DT coding style violations | ✅ Applied |
+| 9 | 690e2f9c63d | arch: dts: zynqmp: align cpu_opp_table with linux | ✅ Applied |
+| 10 | 4bdaad9dee6 | board: zynqmp: add cmd for getting boot auth state | ✅ Applied |
+| 11 | 0320459cbf8 | phy: zynqmp: Allow variation in refclk rate | ✅ Applied |
+| 12 | 8c3e514d66d | phy: zynqmp: Enable reference clock correctly | ✅ Applied |
+| 13 | 7440a28528f | phy: zynqmp: Store instance instead of type | ✅ Applied |
+| 14 | 6f58580391d | phy: zynqmp: Only wait for PLL lock "primary" instances | ✅ Applied |
+| 15 | af5c2b759e7 | arm64: versal2: Fix emmc boot mode boot_target issue | ✅ Applied |
+| 16 | 8a532b5a221 | microblaze: Fix SPL device support | ✅ Applied |
+| 17 | 9441ad8715d | Revert "arm: dts: an7581: set r_smpl for MMC in U-Boot" | ✅ Applied |
+| 18 | 6f42057c67f | tools: amlimage: include <inttypes.h> | ⏭️ **SKIPPED** |
+| 19 | 8f16767dccf | test/py, buildman: Update filelock package version | ✅ Applied |
+| 20 | 55ca2110d74 | Merge tag 'xilinx-for-v2026.04-rc1-v2' | ✅ Applied (empty) |
+
+### Skipped Commit:
+- **6f42057c67f** (tools: amlimage: include <inttypes.h>): Skipped because `tools/amlimage.c` does not exist in ci/master. The amlimage feature was never merged to ci/master, so this fix is not applicable.
+
+### Notes:
+- Commit 8f16767dccf (filelock update): Although a657817e2d9 was mentioned as "maybe already applied", the actual changes are different - a657817e2d9 updates filelock 3.0.12→3.20.1 while 8f16767dccf updates 3.20.1→3.20.3. This is a newer CVE fix (CVE-2026-22701), so it was applied.
+- Commit 55ca2110d74 (merge): Applied as empty commit to preserve the merge history, as all the commits it contained were already cherry-picked.
+
+### Fix-ups: None
+
+### Commits with Concerning Deltas: None
+
+### Branch Status:
+Branch `cherry-ea4bab00531` is ready for review/pushing with 19 new commits ahead of ci/master.
+
+---
+
