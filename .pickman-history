@@ -63560,3 +63560,78 @@ The branch `cherry-81e8c5315ce` is ready for pushing with 2 commits ahead of `ci
 
 ---
 
+### Review: 2026-04-21
+
+Branch: cherry-81e8c5315ce
+
+Comments addressed:
+
+
+### Conversation log
+Let me find the correct repository path:
+
+Good, I'm already in the u-boot repository at `/home/sglass/dev/u-boot`. Let me checkout the branch and check its status:
+
+Let me record the state of commits before rebasing:
+
+Good. Now let me perform the rebase:
+
+There's a conflict in `.pickman-history`. Let me check the status and resolve it:
+
+The conflict is only in `.pickman-history`. This is a log file that should keep both changes. Let me resolve it by accepting both versions:
+
+The `.pickman-history` file is just a log file. Let me view the conflict markers:
+
+This is a typical conflict in the `.pickman-history` file where both branches added different entries. I need to keep both entries. Let me resolve this by keeping both sections:
+
+Good, the conflict markers are removed. Now let me add the file and continue the rebase:
+
+Rebase completed. Now let me verify the commits and their deltas after rebase:
+
+Now let me verify the deltas after rebase match what we had before:
+
+The deltas match:
+- **Commit 1 (xhci-dwc3)**: `1 file changed, 1 insertion(+)` - same as before (f60d4094bed)
+- **Commit 2 (merge)**: Empty (no diff shown) - same as before (56f9c8907e1)
+
+Now let me run the build test:
+
+Build passed. Now let me create the local -v2 branch and push to update the MR:
+
+No existing version branches. Let me create -v2 and push:
+
+The rebase and push completed successfully. Let me provide a summary:
+
+## Rebase Summary for MR !927 (branch: cherry-81e8c5315ce)
+
+### Actions Completed:
+1. ✅ Checked out branch `cherry-81e8c5315ce`
+2. ✅ Rebased onto latest `ci/master` (e56c51a3e5c)
+3. ✅ Resolved conflict in `.pickman-history` (merge conflict keeping both history entries)
+4. ✅ All 3 commits rebased successfully
+5. ✅ Verified commit deltas are identical before/after rebase
+6. ✅ Build test passed (sandbox)
+7. ✅ Created local branch `cherry-81e8c5315ce-v2`
+8. ✅ Force pushed to update MR
+
+### Commit Mapping (old → new):
+
+| Subject | Old Hash | New Hash | Delta |
+|---------|----------|----------|-------|
+| usb: xhci-dwc3: Add "apple,t8103-dwc3" compatible | f60d4094bed | 3bfbc4400c6 | 1 file, +1 ✅ |
+| Merge branch 'master' of git://source.denx.de/u-boot-usb | 56f9c8907e1 | 4cac808fd1f | empty ✅ |
+| pickman: Record cherry-pick of 2 commits | 5b5e8370c3f | c40ab02fb92 | 1 file, +67 ✅ |
+
+### Build Result: **PASSED** ✅
+
+### Conflict Resolution:
+- `.pickman-history`: Merge conflict resolved by keeping both history entries (HEAD version for cherry-8241bd6a82e and incoming version for cherry-81e8c5315ce)
+
+---
+
+### Suggested Reply for MR:
+
+> Rebased onto latest ci/master. All commits and deltas preserved. Build passes.
+
+---
+
