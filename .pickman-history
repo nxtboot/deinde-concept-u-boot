@@ -63340,3 +63340,156 @@ The branch `cherry-b2446a23143` is ready for pushing.
 
 ---
 
+## 2026-04-21: us/next
+
+Branch: cherry-8241bd6a82e
+
+Commits:
+- 8241bd6a82e configs: mt8365: remove empty header file
+- 99416665f00 fs: prevent integer overflow in fs.c do_mv
+- c8f0294285f fs: prevent integer overflow in zfs_nvlist_lookup
+- 870aff99a27 fs: prevent integer overflow in sqfs_concat
+- fc16c847a1c fs: prevent integer overflow in ext4fs_get_bgdtable
+- adccdb22ebd Merge patch series "fix integer overflows in filesystem code"
+
+### Conversation log
+The repository has some untracked files but no changes to commit - that's clean enough for our purposes. Now let me create and checkout the new branch based on ci/master:
+
+Now let me cherry-pick the first commit:
+
+First commit succeeded. Now let me verify the delta and run the build test:
+
+Delta looks identical (same files, same line counts). Now let me run the build test:
+
+Build passed. Now let me cherry-pick the second commit:
+
+Second commit succeeded (with auto-merge). Let me verify the delta:
+
+I notice the original commit modified `fs/fs.c` but the cherry-picked version modified `fs/fs_legacy.c`. This is likely due to file renaming in ci/master. The line counts are the same (13 insertions, 3 deletions). Let me verify this is correct by checking if the changes are equivalent:
+
+The patches are identical except for the file name (`fs/fs_legacy.c` vs `fs/fs.c`) and line numbers, which is expected due to file renaming in ci/master. The actual code changes are the same. Let me run the build test:
+
+Build passed. Now let me cherry-pick the third commit:
+
+Third commit succeeded. Let me verify the delta:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Now let me cherry-pick the fourth commit:
+
+Fourth commit succeeded (with auto-merge). Let me verify the delta:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Now let me cherry-pick the fifth commit:
+
+Fifth commit succeeded (with auto-merge). Let me verify the delta:
+
+Delta is identical. Let me run the build test:
+
+Build passed. Now let me cherry-pick the sixth commit (the merge commit):
+
+The merge commit is now empty (which is expected since all the content was already cherry-picked in the individual commits). Let me commit it with --allow-empty to preserve the merge commit message:
+
+All 6 commits have been cherry-picked. Let me verify the delta for the merge commit and run the build:
+
+The merge commit is empty (as expected since all changes were applied in the individual commits). The original merge commit shows the cumulative diff of all the patches in the series. This is expected behavior. Let me run the build test:
+
+Build passed. Now let me verify the final log with all 6 commits:
+
+All 6 commits are present. Let me run the final build verification:
+
+## Final Status Report
+
+All 6 commits have been successfully cherry-picked to branch `cherry-8241bd6a82e`.
+
+### Summary:
+
+| # | Original Hash | Cherry-picked Hash | Subject | Status |
+|---|--------------|-------------------|---------|--------|
+| 1 | 8241bd6a82e | 0e26cd48dd0 | configs: mt8365: remove empty header file | ✅ OK |
+| 2 | 99416665f00 | c8c2989154b | fs: prevent integer overflow in fs.c do_mv | ✅ OK (auto-merged to fs/fs_legacy.c) |
+| 3 | c8f0294285f | 8ef630c38e4 | fs: prevent integer overflow in zfs_nvlist_lookup | ✅ OK |
+| 4 | 870aff99a27 | 67bd4b1e377 | fs: prevent integer overflow in sqfs_concat | ✅ OK (auto-merge) |
+| 5 | fc16c847a1c | fd052ee8b3c | fs: prevent integer overflow in ext4fs_get_bgdtable | ✅ OK (auto-merge) |
+| 6 | adccdb22ebd | 796d5d2a2ee | Merge patch series "fix integer overflows..." | ✅ OK (empty, as expected) |
+
+### Build Result: **OK** (no warnings/errors)
+
+### Fix-ups Made: **None**
+
+### Notes on Deltas:
+- Commit 99416665f00 was auto-merged: The original commit modified `fs/fs.c` but in ci/master this file was renamed to `fs/fs_legacy.c`. The actual code changes are identical.
+- The merge commit (adccdb22ebd) is empty in the cherry-picked branch because all the individual patches were already applied separately. This is expected behavior.
+
+The branch `cherry-8241bd6a82e` is ready for pushing.
+
+---
+
+### Review: 2026-04-21
+
+Branch: cherry-8241bd6a82e
+
+Comments addressed:
+
+
+### Conversation log
+Let me check if there are commits between the current branch base and ci/master that need to be rebased:
+
+Now I'll store the original commit hashes and their deltas before rebasing, so I can verify them after rebase:
+
+Good. I've captured the stats for all commits before rebase. Now let me perform the rebase:
+
+Rebase completed successfully. Now let me verify the rebased commits and compare their deltas:
+
+All deltas are identical before and after rebase:
+
+| # | Subject | Before | After | Match |
+|---|---------|--------|-------|-------|
+| 1 | configs: mt8365: remove empty header file | 2 files, 13 deletions | 2 files, 13 deletions | ✅ |
+| 2 | fs: prevent integer overflow in fs.c do_mv | 1 file, +13/-3 | 1 file, +13/-3 | ✅ |
+| 3 | fs: prevent integer overflow in zfs_nvlist_lookup | 1 file, +5/-1 | 1 file, +5/-1 | ✅ |
+| 4 | fs: prevent integer overflow in sqfs_concat | 1 file, +5/-1 | 1 file, +5/-1 | ✅ |
+| 5 | fs: prevent integer overflow in ext4fs_get_bgdtable | 1 file, +7/-1 | 1 file, +7/-1 | ✅ |
+| 6 | Merge patch series (empty) | empty | empty | ✅ |
+| 7 | pickman: Record cherry-pick | 1 file, 86 insertions | 1 file, 86 insertions | ✅ |
+
+Now let me run the build test:
+
+Build passed. Now let me create the local -v2 branch and then force push to the original remote branch:
+
+The rebase and push completed successfully. Let me provide a summary:
+
+## Rebase Summary for MR !925 (branch: cherry-8241bd6a82e)
+
+### Actions Completed:
+1. ✅ Checked out branch `cherry-8241bd6a82e`
+2. ✅ Rebased onto latest `ci/master` (0d0ee2ce7ae)
+3. ✅ All 7 commits rebased successfully with no conflicts
+4. ✅ Verified all commit deltas are identical before/after rebase
+5. ✅ Build test passed
+6. ✅ Created local branch `cherry-8241bd6a82e-v2`
+7. ✅ Force pushed to update MR
+
+### Commit Mapping (old → new):
+
+| Subject | Old Hash | New Hash |
+|---------|----------|----------|
+| configs: mt8365: remove empty header file | 0e26cd48dd0 | 6b263020feb |
+| fs: prevent integer overflow in fs.c do_mv | c8c2989154b | 3c482434e01 |
+| fs: prevent integer overflow in zfs_nvlist_lookup | 8ef630c38e4 | b5a5d80c5b7 |
+| fs: prevent integer overflow in sqfs_concat | 67bd4b1e377 | 059be1a0cf4 |
+| fs: prevent integer overflow in ext4fs_get_bgdtable | fd052ee8b3c | 2325521002a |
+| Merge patch series "fix integer overflows..." | 796d5d2a2ee | 18a95836016 |
+| pickman: Record cherry-pick of 6 commits | d902d45394c | ddbe4436e34 |
+
+### Build Result: **PASSED** ✅
+
+---
+
+### Suggested Reply for MR:
+
+> Rebased onto latest ci/master. All commits and their deltas are preserved. Build passes.
+
+---
+
