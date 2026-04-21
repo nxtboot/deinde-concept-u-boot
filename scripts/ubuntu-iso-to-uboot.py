@@ -76,7 +76,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
 from u_boot_pylib import command
 from u_boot_pylib import tout
 
-DEFAULT_CMDLINE = 'console=ttyS0,115200 console=tty0 --- quiet'
 REQUIRED_TOOLS = ('xorriso', 'mcopy', 'mmd', 'mkfs.vfat')
 MIB = 1024 * 1024
 
@@ -88,6 +87,33 @@ def check_tools() -> None:
             f'missing tools: {" ".join(missing)}\n'
             f'try: apt install xorriso mtools dosfstools'
         )
+
+
+def parse_grub_cmdline(iso: Path) -> str:
+    """Return the kernel cmdline from the ISO's default grub entry.
+
+    Parses the first `linux /casper/vmlinuz ...` line in /boot/grub/grub.cfg
+    and strips the kernel path, so the caller can pass the remaining tokens
+    to the kernel (e.g. '--- quiet splash' on Ubuntu 24.04.1).
+    """
+    with tempfile.TemporaryDirectory(prefix='iso2uboot.grub.') as td:
+        dst = Path(td) / 'grub.cfg'
+        command.run(
+            'xorriso', '-osirrox', 'on', '-indev', str(iso),
+            '-extract', '/boot/grub/grub.cfg', str(dst),
+        )
+        cfg = dst.read_text(errors='replace')
+
+    m = re.search(
+        r'^\s*linux\s+\S*casper/vmlinuz\S*\s*(.*)$',
+        cfg, re.MULTILINE,
+    )
+    if not m:
+        tout.fatal(
+            'could not find a casper linux entry in /boot/grub/grub.cfg'
+        )
+    # Collapse any run of whitespace to a single space
+    return ' '.join(m.group(1).split())
 
 
 def parse_boot_report(iso: Path) -> tuple[str, str]:
@@ -181,8 +207,9 @@ def main() -> None:
                    help='kernel path inside the input ISO')
     p.add_argument('-i', '--initrd', default='casper/initrd',
                    help='initrd path inside the input ISO')
-    p.add_argument('-a', '--cmdline', default=DEFAULT_CMDLINE,
-                   help='kernel command line written into loader/entry.conf')
+    p.add_argument('-a', '--cmdline', default=None,
+                   help='kernel command line written into loader/entry.conf '
+                        '(default: inherit from the ISO\'s grub.cfg)')
     p.add_argument('-t', '--title', default=None,
                    help='BLS entry title (default: derived from volume label)')
     p.add_argument('-s', '--esp-size', type=int, default=None,
@@ -199,8 +226,12 @@ def main() -> None:
     # Extract the volume label and ESP partition GUID from xorriso's report
     vol_id, esp_guid = parse_boot_report(args.iso)
     title = args.title or f'U-Boot BLS boot ({vol_id})'
+    cmdline = args.cmdline
+    if cmdline is None:
+        cmdline = parse_grub_cmdline(args.iso)
     print(f'   Volume label: {vol_id}')
     print(f'   ESP GUID:     {esp_guid}')
+    print(f'   Cmdline:      {cmdline}')
 
     with tempfile.TemporaryDirectory(prefix='iso2uboot.') as td:
         work = Path(td)
@@ -215,7 +246,7 @@ def main() -> None:
             f'title {title}\n'
             f'linux /{args.kernel}\n'
             f'initrd /{args.initrd}\n'
-            f'options {args.cmdline}\n'
+            f'options {cmdline}\n'
         )
 
         print(f'=> Repacking to {args.out}')
