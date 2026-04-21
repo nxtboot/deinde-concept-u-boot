@@ -8,17 +8,18 @@ the EFI system partition. Each entry names a kernel, initrd and command
 line; U-Boot's BOOTMETH_BLS scans the ESP and presents them in its boot
 menu, replacing the shim/grub chain that Ubuntu ships by default.
 
-The ISO's appended EFI System Partition is replaced with a fresh ESP
-containing:
+Two things change in the rewritten ISO:
 
-    /EFI/BOOT/BOOTX64.EFI   U-Boot EFI app (built with CONFIG_BOOTMETH_BLS=y)
-    /casper/vmlinuz         copied from the input ISO
-    /casper/initrd          copied from the input ISO
-    /loader/entry.conf      BLS Type #1 entry pointing at the above
+    EFI system partition  /EFI/BOOT/BOOTX64.EFI  replaced with the U-Boot
+                                                 EFI app
+    ISO 9660 tree         /loader/entry.conf     added, pointing at the
+                                                 existing /casper/vmlinuz
+                                                 and /casper/initrd
 
-The ISO9660 tree is preserved unchanged, so casper still finds its squashfs
-by disc label at runtime. All other boot records (BIOS El Torito, grub2 MBR,
-GPT layout) are preserved by xorriso's -boot_image any replay.
+The kernel and initrd stay where Ubuntu put them. U-Boot reads them off
+the ISO 9660 partition directly via its isofs driver. All other boot
+records (BIOS El Torito, grub2 MBR, GPT layout) are preserved by
+xorriso's -boot_image any replay.
 
 Quick start (run from the root of the U-Boot tree)::
 
@@ -75,9 +76,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
 from u_boot_pylib import command
 from u_boot_pylib import tout
 
-DEFAULT_CMDLINE = 'console=ttyS0,115200 console=tty0 --- quiet'
 REQUIRED_TOOLS = ('xorriso', 'mcopy', 'mmd', 'mkfs.vfat')
 MIB = 1024 * 1024
+
+
+def _quiet() -> bool:
+    """True when tout is set below INFO (no progress chatter requested)."""
+    return tout.verbose < tout.INFO
+
+
+def _run(*cmd) -> None:
+    """Run a command, capturing its output when tout is quiet.
+
+    On failure u_boot_pylib's CommandExc still carries the captured
+    output, so the user sees what went wrong.
+    """
+    quiet = _quiet()
+    command.run(*cmd, capture=quiet, capture_stderr=quiet)
 
 
 def check_tools() -> None:
@@ -89,15 +104,42 @@ def check_tools() -> None:
         )
 
 
+def parse_grub_cmdline(iso: Path) -> str:
+    """Return the kernel cmdline from the ISO's default grub entry.
+
+    Parses the first `linux /casper/vmlinuz ...` line in /boot/grub/grub.cfg
+    and strips the kernel path, so the caller can pass the remaining tokens
+    to the kernel (e.g. '--- quiet splash' on Ubuntu 24.04.1).
+    """
+    with tempfile.TemporaryDirectory(prefix='iso2uboot.grub.') as td:
+        dst = Path(td) / 'grub.cfg'
+        _run(
+            'xorriso', '-osirrox', 'on', '-indev', str(iso),
+            '-extract', '/boot/grub/grub.cfg', str(dst),
+        )
+        cfg = dst.read_text(errors='replace')
+
+    m = re.search(
+        r'^\s*linux\s+\S*casper/vmlinuz\S*\s*(.*)$',
+        cfg, re.MULTILINE,
+    )
+    if not m:
+        tout.fatal('could not find a casper linux entry in /boot/grub/grub.cfg')
+    # Collapse any run of whitespace to a single space
+    return ' '.join(m.group(1).split())
+
+
 def parse_boot_report(iso: Path) -> tuple[str, str]:
     """Return (volume_label, esp_partition_guid) from xorriso's mkisofs report.
 
     Raises SystemExit if the ISO does not have an appended EFI System
     Partition on slot 2
     """
-    # xorriso prints the report on stdout; stderr carries progress/status.
-    report = command.output(
+    # xorriso prints the report on stdout (which we need to parse) and
+    # progress/status on stderr (which we swallow unless -v was passed).
+    report = command.run(
         'xorriso', '-indev', str(iso), '-report_el_torito', 'as_mkisofs',
+        capture=True, capture_stderr=_quiet(),
     )
 
     m_vol = re.search(r"^-V '([^']*)'", report, re.MULTILINE)
@@ -114,72 +156,55 @@ def parse_boot_report(iso: Path) -> tuple[str, str]:
     return m_vol.group(1), m_esp.group(1)
 
 
-def extract_from_iso(iso: Path, src: str, dst: Path) -> None:
-    """Pull a single file out of the ISO9660 tree via xorriso -osirrox"""
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    command.run(
-        'xorriso', '-osirrox', 'on', '-indev', str(iso),
-        '-extract', f'/{src.lstrip("/")}', str(dst),
-    )
-
-
-def build_esp(
-    esp_path: Path,
-    size_mib: int,
-    uboot_efi: Path,
-    vmlinuz: Path,
-    initrd: Path,
-    entry_conf: str,
-) -> None:
-    """Create a fresh FAT32 ESP at esp_path populated with BLS + kernel.
+def build_esp(esp_path: Path, size_mib: int, uboot_efi: Path) -> None:
+    """Create a fresh FAT ESP containing only the U-Boot EFI application.
 
     Args:
         esp_path (Path): Output file to hold the new ESP image
         size_mib (int): Size of the ESP in mebibytes
         uboot_efi (Path): U-Boot EFI app to install as /EFI/BOOT/BOOTX64.EFI
-        vmlinuz (Path): Kernel image to install under /casper/vmlinuz
-        initrd (Path): Initrd image to install under /casper/initrd
-        entry_conf (str): Contents for /loader/entry.conf (BLS Type #1)
     """
     with esp_path.open('wb') as f:
         f.truncate(size_mib * MIB)
-    command.output('mkfs.vfat', '-F32', '-n', 'ESP', str(esp_path))
-    command.run('mmd', '-i', str(esp_path),
-                '::EFI', '::EFI/BOOT', '::loader', '::casper')
-
-    def put(src: Path, dst: str) -> None:
-        command.run('mcopy', '-i', str(esp_path), str(src), f'::{dst}')
-
-    put(uboot_efi, 'EFI/BOOT/BOOTX64.EFI')
-    put(vmlinuz, 'casper/vmlinuz')
-    put(initrd, 'casper/initrd')
-
-    entry = Path(esp_path.parent) / 'entry.conf'
-    entry.write_text(entry_conf)
-    put(entry, 'loader/entry.conf')
-
-
-def auto_esp_size(files: list[Path], headroom_mib: int = 16) -> int:
-    """Sum file sizes + headroom, round up to MiB, floor at 64 MiB (FAT32)"""
-    total = sum(f.stat().st_size for f in files) + headroom_mib * MIB
-    mib = (total + MIB - 1) // MIB
-    return max(mib, 64)
+    # FAT12 is enough for the small ESP we emit (just a U-Boot binary).
+    _run('mkfs.vfat', '-F12', '-n', 'ESP', str(esp_path))
+    _run('mmd', '-i', str(esp_path), '::EFI', '::EFI/BOOT')
+    _run('mcopy', '-i', str(esp_path), str(uboot_efi),
+         '::EFI/BOOT/BOOTX64.EFI')
 
 
 def repack_iso(
     in_iso: Path, out_iso: Path, esp_img: Path, esp_guid: str,
+    entry_conf: Path,
 ) -> None:
-    """Stream the input ISO to a new ISO, replacing partition 2's data.
+    """Stream the input ISO to a new ISO with the ESP and BLS entry replaced.
 
     -boot_image any replay preserves every other boot record (BIOS El Torito,
-    grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten
+    grub2 MBR, GPT layout); only the bytes behind partition 2 are rewritten,
+    plus /loader/entry.conf is added to the ISO 9660 tree, and the shim,
+    GRUB and MokManager copies under /EFI/boot/ are removed since U-Boot
+    supplies the UEFI boot path via the appended ESP. The BIOS El Torito
+    path still uses /boot/grub/ so legacy boot continues to work.
+
+    -find is tolerant of missing files: if a distribution does not ship
+    one of these binaries, the call is a no-op.
+
+    xorriso refuses to write to an existing non-empty file when -indev
+    and -outdev differ (it would treat the outdev as a session to
+    extend), so unlink any stale output first.
     """
-    command.run(
+    if out_iso.exists():
+        out_iso.unlink()
+    _run(
         'xorriso',
         '-indev', str(in_iso),
         '-outdev', str(out_iso),
         '-boot_image', 'any', 'replay',
         '-append_partition', '2', esp_guid, str(esp_img),
+        '-map', str(entry_conf), '/loader/entry.conf',
+        '-find', '/EFI/boot', '-name', 'bootx64.efi', '-exec', 'rm', '--',
+        '-find', '/EFI/boot', '-name', 'grubx64.efi', '-exec', 'rm', '--',
+        '-find', '/EFI/boot', '-name', 'mmx64.efi', '-exec', 'rm', '--',
         '-commit',
     )
 
@@ -197,13 +222,20 @@ def main() -> None:
                    help='kernel path inside the input ISO')
     p.add_argument('-i', '--initrd', default='casper/initrd',
                    help='initrd path inside the input ISO')
-    p.add_argument('-a', '--cmdline', default=DEFAULT_CMDLINE,
-                   help='kernel command line written into loader/entry.conf')
+    p.add_argument('-a', '--cmdline', default=None,
+                   help='kernel command line written into loader/entry.conf '
+                        '(default: inherit from the ISO\'s grub.cfg)')
     p.add_argument('-t', '--title', default=None,
                    help='BLS entry title (default: derived from volume label)')
     p.add_argument('-s', '--esp-size', type=int, default=None,
-                   help='ESP size in MiB (default: auto-size to fit)')
+                   help='ESP size in MiB (default: 4 MiB)')
+    p.add_argument('-v', '--verbose', action='store_true',
+                   help='show progress markers and subprocess output')
     args = p.parse_args()
+
+    # Default verbosity is WARNING (silent); -v raises to INFO so
+    # tout.notice()/tout.info() print and _run() stops capturing output.
+    tout.init(tout.INFO if args.verbose else tout.WARNING)
 
     if not args.iso.is_file():
         tout.fatal(f'ISO not found: {args.iso}')
@@ -211,39 +243,38 @@ def main() -> None:
         tout.fatal(f'EFI app not found: {args.uboot}')
     check_tools()
 
-    print(f'=> Reading boot config from {args.iso}')
+    tout.notice(f'=> Reading boot config from {args.iso}')
     # Extract the volume label and ESP partition GUID from xorriso's report
     vol_id, esp_guid = parse_boot_report(args.iso)
     title = args.title or f'U-Boot BLS boot ({vol_id})'
-    print(f'   Volume label: {vol_id}')
-    print(f'   ESP GUID:     {esp_guid}')
+    cmdline = args.cmdline
+    if cmdline is None:
+        cmdline = parse_grub_cmdline(args.iso)
+    tout.notice(f'   Volume label: {vol_id}')
+    tout.notice(f'   ESP GUID:     {esp_guid}')
+    tout.notice(f'   Cmdline:      {cmdline}')
 
     with tempfile.TemporaryDirectory(prefix='iso2uboot.') as td:
         work = Path(td)
-        vmlinuz = work / 'vmlinuz'
-        initrd = work / 'initrd'
 
-        print(f'=> Extracting /{args.kernel} and /{args.initrd}')
-        extract_from_iso(args.iso, args.kernel, vmlinuz)
-        extract_from_iso(args.iso, args.initrd, initrd)
-
-        esp_mib = args.esp_size or auto_esp_size([vmlinuz, initrd, args.uboot])
-        print(f'=> Building {esp_mib} MiB ESP')
-
-        entry_conf = f'''\
-title {title}
-linux /casper/vmlinuz
-initrd /casper/initrd
-options {args.cmdline}
-'''
+        esp_mib = args.esp_size or 4
+        tout.notice(f'=> Building {esp_mib} MiB ESP')
         esp = work / 'esp.img'
-        build_esp(esp, esp_mib, args.uboot, vmlinuz, initrd, entry_conf)
+        build_esp(esp, esp_mib, args.uboot)
 
-        print(f'=> Repacking to {args.out}')
-        repack_iso(args.iso, args.out, esp, esp_guid)
+        entry = work / 'entry.conf'
+        entry.write_text(
+            f'title {title}\n'
+            f'linux /{args.kernel}\n'
+            f'initrd /{args.initrd}\n'
+            f'options {cmdline}\n'
+        )
+
+        tout.notice(f'=> Repacking to {args.out}')
+        repack_iso(args.iso, args.out, esp, esp_guid, entry)
 
     size_mib = args.out.stat().st_size / MIB
-    print(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
+    tout.notice(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
 
 
 if __name__ == '__main__':

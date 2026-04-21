@@ -107,10 +107,17 @@ int isofs_probe(struct blk_desc *fs_dev_desc,
 		goto err_free_sb;
 	}
 
-	/* Initialise super_block fields */
+	/*
+	 * ISO 9660 images always start at absolute block 0 of the device,
+	 * even when accessed via a GPT partition whose start LBA is non-zero
+	 * (e.g. a hybrid ISO where partition 1 covers the ISO 9660 session
+	 * but begins at LBA 64 because of the protective MBR + GPT header).
+	 * Pin bd_part_start to 0 so callers that translate filesystem block
+	 * numbers through bd_part_start reach the real data.
+	 */
 	sb->s_bdev->bd_super = sb;
 	sb->s_bdev->bd_blk = fs_dev_desc->bdev;
-	sb->s_bdev->bd_part_start = fs_partition ? fs_partition->start : 0;
+	sb->s_bdev->bd_part_start = 0;
 	sb->s_blocksize = ISOFS_BLOCK_SIZE;
 	sb->s_blocksize_bits = ISOFS_BLOCK_BITS;
 	sb->s_flags = SB_RDONLY;  /* ISO 9660 is always read-only */
@@ -123,9 +130,8 @@ int isofs_probe(struct blk_desc *fs_dev_desc,
 		memset(&ifs.partition, '\0', sizeof(ifs.partition));
 	ifs.mounted = true;
 
-	/* Read first sector to verify it's an ISO filesystem */
-	part_offset = fs_partition ?
-		(loff_t)fs_partition->start * fs_dev_desc->blksz : 0;
+	/* Read the primary volume descriptor at absolute block 16 */
+	part_offset = 0;
 
 	buf = malloc(ISOFS_BLOCK_SIZE);
 	if (!buf) {
@@ -478,8 +484,13 @@ int isofs_read(const char *filename, void *buf, loff_t offset, loff_t len,
 		block = offset / blksize;
 		blk_off = offset % blksize;
 
-		/* Read the block using isofs_bread (handles block mapping) */
-		bh = isofs_bread(inode, block);
+		/*
+		 * Use the uncached read path: the buffer cache is shared
+		 * across the whole VFS layer, and populating it from a
+		 * streaming file read of an arbitrarily large file would
+		 * exhaust the malloc heap before the read completes.
+		 */
+		bh = isofs_bread_uncached(inode, block);
 		if (!bh)
 			return -EIO;
 

@@ -3,17 +3,16 @@
 Booting Ubuntu live ISOs via U-Boot
 ===================================
 
-U-Boot can replace GRUB as the bootloader on an Ubuntu live ISO. The
-stock ISO has an appended EFI system partition (ESP) containing shim,
-GRUB and their configuration. ``scripts/ubuntu-iso-to-uboot.py`` rewrites
-that ESP with a U-Boot EFI application, a :doc:`Boot Loader Specification
-Type #1 </usage/bls>` entry and the casper kernel and initrd, leaving the
-rest of the ISO untouched so casper still finds its squashfs by disc
-label at runtime.
+U-Boot can replace GRUB as the bootloader on an Ubuntu live ISO.
+``scripts/ubuntu-iso-to-uboot.py`` rewrites the ISO so the appended EFI
+system partition holds a U-Boot EFI application and the ISO 9660 tree
+carries a :doc:`Boot Loader Specification Type #1 </usage/bls>` entry
+pointing at the casper kernel and initrd that Ubuntu already places on
+the disc.
 
-The flow only touches the appended partition. BIOS El Torito, the
-grub2 MBR, the GPT layout and the ISO 9660 tree are preserved verbatim
-by xorriso's ``-boot_image any replay``
+All other boot records (BIOS El Torito, grub2 MBR, GPT layout) are
+preserved verbatim by xorriso's ``-boot_image any replay``, and casper
+still finds its squashfs by disc label at runtime.
 
 Host prerequisites
 ------------------
@@ -26,17 +25,17 @@ Building the U-Boot EFI application
 -----------------------------------
 
 The ``efi-x86_app64`` target enables ``CONFIG_BOOTMETH_BLS=y``,
-``CONFIG_FS_ISOFS=y`` and ``CONFIG_JOLIET=y`` by default, so no
-Kconfig tweaks are required. Build with::
+``CONFIG_FS_ISOFS=y`` and ``CONFIG_JOLIET=y`` by default, so no Kconfig
+tweaks are required. Build with::
 
     make O=/tmp/b/efi-x86_app64 efi-x86_app64_defconfig
     make O=/tmp/b/efi-x86_app64 -j$(nproc)
 
-The output is ``/tmp/b/efi-x86_app64/u-boot-app.efi``, a PE32+ x86_64 EFI
-application.
+The output is ``/tmp/b/efi-x86_app64/u-boot-app.efi``, a PE32+ x86_64
+EFI application.
 
 If ``rustc`` is not installed, also disable the rust example build
-before ``make``::
+before the main ``make``::
 
     scripts/config --file /tmp/b/efi-x86_app64/.config \\
         -d RUST_EXAMPLES -d EXAMPLES
@@ -58,13 +57,20 @@ The script:
 
 1. Reads the input ISO's boot record with ``xorriso -report_el_torito``
    to pick up the volume label and the EFI system partition GUID.
-2. Extracts ``/casper/vmlinuz`` and ``/casper/initrd`` via ``xorriso -osirrox``
-3. Builds a fresh FAT32 ESP (auto-sized to fit) containing
-   ``/EFI/BOOT/BOOTX64.EFI`` (the U-Boot app), ``/casper/vmlinuz``,
-   ``/casper/initrd`` and ``/loader/entry.conf``
-4. Writes a new ISO with ``xorriso -indev ... -outdev ... -boot_image
-   any replay -append_partition 2 ...``, replacing the original ESP
-   while preserving all other boot metadata.
+2. Builds a small FAT ESP (4 MiB by default) containing just
+   ``/EFI/BOOT/BOOTX64.EFI`` -- the U-Boot EFI application.
+3. Writes a new ISO with
+   ``xorriso -indev ... -outdev ... -boot_image any replay
+   -append_partition 2 ... -map entry.conf /loader/entry.conf``,
+   which replaces the original ESP and adds ``/loader/entry.conf`` to
+   the ISO 9660 tree. The kernel and initrd stay in ``/casper/`` on the
+   ISO 9660 tree; U-Boot reads them directly via its isofs driver.
+4. Strips the shim, GRUB and MOK manager binaries
+   (``/EFI/boot/{bootx64,grubx64,mmx64}.efi``) from the ISO 9660 tree.
+   The UEFI firmware loads ``BOOTX64.EFI`` from the appended ESP, so
+   the ISO 9660 copies are unused dead weight. The BIOS El Torito
+   image under ``/boot/grub/`` is left in place, so legacy-BIOS boot
+   still chains into GRUB as before.
 
 Relevant options:
 
@@ -72,14 +78,15 @@ Relevant options:
 * ``-o PATH`` -- the output ISO (required).
 * ``-a ARGS`` -- override the kernel command line written to
   ``loader/entry.conf``. The default is
-  ``console=ttyS0,115200 console=tty0 --- quiet``, which logs the kernel output
-  serial and video. Duplicate the ``console=`` arguments after ``---`` as well
-  if you want casper and the running system logged to serial too.
+  ``console=ttyS0,115200 console=tty0 --- quiet``, which logs the
+  kernel to serial and video. Duplicate the ``console=`` arguments
+  after ``---`` as well if you want casper and the running system
+  logged to serial too.
 * ``-k PATH`` / ``-i PATH`` -- override the kernel and initrd paths
   inside the ISO if a distribution uses something other than
   ``casper/vmlinuz`` and ``casper/initrd``.
-* ``-s MiB`` -- force an ESP size; the default auto-sizes to fit the
-  kernel, initrd and U-Boot app with 16 MiB of headroom.
+* ``-s MiB`` -- force an ESP size; the default is 4 MiB, enough for the
+  U-Boot binary.
 * ``-t TITLE`` -- override the BLS entry title.
 
 Testing under QEMU + OVMF
@@ -95,60 +102,23 @@ Testing under QEMU + OVMF
 
 The expected boot trace on the serial console is roughly::
 
-    BdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x3,0x0)
-    BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x3,0x0)
-    Laceboot EFI App (using allocated RAM address 6beef000) starting
-
-
     U-Boot Concept 2026.02
-
-    CPU: x86_64, vendor <invalid cpu vendor>, device 0h
-    Model: EFI x86 Application
-    DRAM:  256 MiB
-    Core:  22 devices, 13 uclasses, devicetree: separate
-    EFI:   disks 2, partitions 3
-    Loading Environment from FAT... Unable to use efi 0:0...
-    Video: 1280x800x32 @ 0
-    Hit any key to stop autoboot:  2
-    Hit any key to stop autoboot: 1
-    Hit any key to stop autoboot: 0
-    Scanning for bootflows in all bootdevs
-    Seq  Method       State   Uclass    Part  Ent  E  Name                      Filename
-    ---  -----------  ------  --------  ----  ---  -  ------------------------  ----------------
-    Hunting with: fs
+    ...
     Scanning bootdev 'efi_media_0.bootdev':
-      0  bls          ready   pci          2    0     efi_media_0.bootdev.part_ /loader/entry.conf
-    ** Booting bootflow 'efi_media_0.bootdev.part_2' with bls
+      0  bls    ready   pci  1  0  efi_media_0.bootdev.part_ /loader/entry.conf
+    ** Booting bootflow 'efi_media_0.bootdev.part_1' with bls
     Retrieving file: /casper/vmlinuz
     Retrieving file: /casper/initrd
-    Valid Boot Flag
-    Magic signature found
-    Linux kernel version 6.8.0-41-generic (buildd@lcy02-amd64-100) #41-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  2 20:41:06 UTC 2024
-    Building boot_params at 90000
-    Loading bzImage at address 100000 (14926336 bytes)
-    Initial RAM disk at linear address 8000000, size 47a003e (75104318 bytes)
-    Kernel command line: "console=ttyS0,115200 console=tty0 --- console=ttyS0,115200 quiet"
-
+    Linux kernel version 6.8.0-41-generic ... Ubuntu
     Starting kernel ...
 
-    ...
-
-
-Why the kernel and initrd live on the ESP
------------------------------------------
-
-BLS paths are resolved against the partition holding ``loader/entry.conf``
-
-OVMF only exposes the EFI system partition as an ``EFI_BLOCK_IO`` protocol
-handle on CD media, so U-Boot's ``efi_media`` bootdev cannot see the ISO 9660
-partition directly and would fail to resolve ``/casper/vmlinuz`` if the entry
-were placed there. Copying the kernel and initrd onto the ESP sidesteps this;
-the ISO 9660 side remains bootable in its own right, and casper finds its
-squashfs on the original media at runtime.
+The bootflow appears on ``part_1`` -- the ISO 9660 partition -- because
+``entry.conf`` lives in the ISO 9660 tree and U-Boot reads kernel and
+initrd from the same partition via isofs.
 
 See also
 --------
 
-* :doc:`/usage/bls` — the U-Boot Boot Loader Specification bootmeth.
+* :doc:`/usage/bls` -- the U-Boot Boot Loader Specification bootmeth.
 * `Boot Loader Specification
   <https://uapi-group.org/specifications/specs/boot_loader_specification/>`_.

@@ -882,3 +882,24 @@ int part_get_bootable(struct blk_desc *desc)
 
 	return 0;
 }
+
+bool part_is_bls_target(const struct disk_partition *info)
+{
+	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)) {
+		const char *guid = disk_partition_type_guid(info);
+
+		/* EFI System Partition */
+		if (!strcasecmp(guid, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"))
+			return true;
+		/* Extended Boot Loader Partition (XBOOTLDR) */
+		if (!strcasecmp(guid, "bc13c2ff-59e6-4262-a352-b275fd6f7172"))
+			return true;
+	}
+
+	/* MBR/DOS disks: BLS uses partition type 0xea */
+	if (IS_ENABLED(CONFIG_DOS_PARTITION) &&
+	    disk_partition_sys_ind(info) == 0xea)
+		return true;
+
+	return false;
+}

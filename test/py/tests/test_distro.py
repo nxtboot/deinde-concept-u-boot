@@ -99,6 +99,39 @@ def test_distro_arm_app_extlinux(ubman):
 
     ubman.restart_uboot()
 
+@pytest.mark.boardspec('efi-x86_app64')
+@pytest.mark.role('efi-x86_64-uboot-iso')
+@pytest.mark.restart
+def test_distro_ubuntu_iso_uboot(ubman):
+    """Boot a rewritten Ubuntu live ISO through U-Boot + BLS.
+
+    The 'efi-x86_64-uboot-iso' role's UBootWriterDriver uses the
+    'qemu-efi-iso' method, which runs scripts/ubuntu-iso-to-uboot.py
+    to rebuild the destination ISO (image slot 'ubuntu-uboot') from
+    the source (slot 'ubuntu') before QEMU boots. U-Boot's
+    BOOTMETH_BLS then picks up /loader/entry.conf and loads the
+    casper kernel/initrd straight off the ISO 9660 partition.
+    """
+    with ubman.log.section('boot'):
+        # The efi_media_0 phantom bootdev OVMF exposes makes bootflow
+        # scan iterate through many dead probes before reaching the
+        # ISO's real partition, so allow a generous timeout for the
+        # first BLS match.
+        with ubman.temporary_timeout(120 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with bls"])
+
+    # The ISO's cmdline carries 'quiet splash' so kernel-level info
+    # messages (including systemd-journald's kmsg output) are dropped;
+    # what does reach ttyS0 is systemd-pid1's own '[  OK  ]' status
+    # writer. gdm.service is the latest reliable "userspace fully up"
+    # marker before casper's snap-run race loop fills the console.
+    with ubman.log.section('Ubuntu'):
+        with ubman.temporary_timeout(120 * 1000):
+            ubman.expect([r'Started gdm\.service'])
+
+    ubman.restart_uboot()
+
 @pytest.mark.boardspec('efi-arm_app64')
 @pytest.mark.role('efi-aarch64')
 @pytest.mark.restart

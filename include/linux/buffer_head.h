@@ -178,6 +178,20 @@ static inline void put_bh(struct buffer_head *bh)
 void brelse(struct buffer_head *bh);
 void __brelse(struct buffer_head *bh);
 
+/**
+ * sb_bread_uncached() - Read a block without inserting it in the buffer cache
+ * @sb: Super block
+ * @block: Block number
+ *
+ * Same as sb_bread() but skips the buffer-head cache. Useful for streaming
+ * reads of large file contents where caching every block would exhaust the
+ * malloc heap before the read completes. Caller must release with brelse(),
+ * which frees the buffer immediately since it is not cached.
+ *
+ * Return: Buffer head with valid data, or NULL on error
+ */
+struct buffer_head *sb_bread_uncached(struct super_block *sb, sector_t block);
+
 /*
  * Buffer operation stubs - U-Boot is single-threaded
  */

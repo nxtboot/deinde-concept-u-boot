@@ -337,11 +337,7 @@ int inode_generic_drop(struct inode *inode)
 	return 0;
 }
 
-void *alloc_inode_sb(struct super_block *sb, struct kmem_cache *cache,
-		     gfp_t gfp)
-{
-	return kmem_cache_alloc(cache, gfp);
-}
+/* alloc_inode_sb() is now in fs/linux_fs.c */
 
 /* inode_set_iversion is now a macro in linux/iversion.h */
 
@@ -381,10 +377,7 @@ unsigned long get_zeroed_page(gfp_t gfp)
 	return (unsigned long)p;
 }
 
-void free_page(unsigned long addr)
-{
-	free((void *)addr);
-}
+/* free_page() is now in fs/linux_fs.c */
 
 /* Trace stubs */
 void trace_ext4_error(struct super_block *sb, const char *func, unsigned int line)
@@ -460,19 +453,7 @@ void fs_put_dax(void *dax, void *holder)
 {
 }
 
-/* Block size */
-int sb_set_blocksize(struct super_block *sb, int size)
-{
-	/* Validate block size */
-	if (size != 1024 && size != 2048 && size != 4096)
-		return 0;
-
-	/* Update superblock fields */
-	sb->s_blocksize = size;
-	sb->s_blocksize_bits = ffs(size) - 1;
-
-	return size;
-}
+/* sb_set_blocksize() is now in fs/linux_fs.c */
 
 /* strscpy_pad is now a macro in linux/string.h */
 /* kmemdup_nul is now in lib/string.c */
@@ -501,54 +482,7 @@ void generic_set_sb_d_ops(struct super_block *sb)
 {
 }
 
-/**
- * d_make_root() - Create a root dentry for an inode
- * @inode: Inode to create dentry for
- * Return: Allocated dentry or NULL on failure
- */
-struct dentry *d_make_root(struct inode *inode)
-{
-	struct dentry *de;
-
-	if (!inode)
-		return NULL;
-
-	de = kzalloc(sizeof(struct dentry), GFP_KERNEL);
-	if (!de) {
-		iput(inode);
-		return NULL;
-	}
-
-	de->d_inode = inode;
-	de->d_sb = inode->i_sb;
-	de->d_name.name = "/";
-	de->d_name.len = 1;
-
-	return de;
-}
-
-/**
- * iput() - Release a reference to an inode
- * @inode: Inode to release
- *
- * Decrements the inode reference count. When the reference count reaches
- * zero and the inode has no links, the inode is evicted (freed).
- */
-void iput(struct inode *inode)
-{
-	if (!inode)
-		return;
-
-	if (atomic_dec_and_test(&inode->i_count)) {
-		/* Last reference - check if inode should be evicted */
-		if (inode->i_nlink == 0 && inode->i_sb &&
-		    inode->i_sb->s_op && inode->i_sb->s_op->evict_inode) {
-			inode->i_sb->s_op->evict_inode(inode);
-			/* Sync dirty buffers after eviction */
-			bh_cache_sync();
-		}
-	}
-}
+/* d_make_root() and iput() are now in fs/linux_fs.c */
 
 /* percpu_init_rwsem is now in linux/percpu.h */
 

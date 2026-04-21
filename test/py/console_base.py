@@ -331,25 +331,38 @@ class ConsoleBase():
             if not self.lab_mode:
                 self._wait_for_banner(loop_num)
                 self.u_boot_version_string = self.after
+            # In lab mode the '{lab ready in <t>s: <banner>}' marker is
+            # the authoritative ready signal and must be consumed so
+            # the embedded banner does not trip the signon bad-pattern
+            # when the next command runs. Skip the plain '=>' prompt
+            # match in that case.
+            if self.lab_mode:
+                wait_patterns = [pattern_ready_prompt,
+                                 pattern_stop_autoboot_prompt]
+            else:
+                wait_patterns = [self.prompt_compiled, pattern_ready_prompt,
+                                 pattern_stop_autoboot_prompt]
+            ready_idx = wait_patterns.index(pattern_ready_prompt)
+            autoboot_idx = wait_patterns.index(pattern_stop_autoboot_prompt)
+            base = len(wait_patterns)
             while True:
-                m = self.expect([self.prompt_compiled, pattern_ready_prompt,
-                    pattern_stop_autoboot_prompt] + self.bad_patterns)
-                if m == 0:
+                m = self.expect(wait_patterns + self.bad_patterns)
+                if not self.lab_mode and m == 0:
                     self.log.info(f'Found ready prompt {m}')
                     break
-                if m == 1:
+                if m == ready_idx:
                     m = pattern_ready_prompt.search(self.after)
                     self.u_boot_version_string = m.group(2)
                     self.log.info('Lab: Board is ready')
                     self.timeout = self.get_default_timeout()
                     break
-                if m == 2:
+                if m == autoboot_idx:
                     self.log.info(f'Found autoboot prompt {m}')
                     self.p.send(' ')
                     continue
                 if not self.lab_mode:
                     raise BootFail('Missing prompt / ready message on console: ' +
-                                   self.bad_pattern_ids[m - 3])
+                                   self.bad_pattern_ids[m - base])
             self.log.info('U-Boot is ready')
 
         finally:

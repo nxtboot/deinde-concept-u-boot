@@ -756,6 +756,20 @@ int part_get_type_by_name(const char *name);
 int part_get_bootable(struct blk_desc *desc);
 
 /**
+ * part_is_bls_target() - Check whether a partition holds BLS boot entries
+ *
+ * The Boot Loader Specification defines two GPT partition types as homes
+ * for Type #1 entries (the ESP and the Extended Boot Loader Partition) and
+ * one MBR type ID (0xea). This helper returns true when @info names one of
+ * them, so the caller can scan the partition for loader/entries/<name>.conf
+ * (or loader/entry.conf) regardless of any 'bootable' flag.
+ *
+ * @info:	Partition information
+ * Return:	true if the partition is an ESP, XBOOTLDR or MBR-0xea partition
+ */
+bool part_is_bls_target(const struct disk_partition *info);
+
+/**
  * part_driver_lookup_type() - Look up the partition driver for a blk device
  *
  * If @desc->part_type is PART_TYPE_UNKNOWN, this checks each partition driver
@@ -781,6 +795,9 @@ static inline struct part_driver *part_driver_get_first(void)
 { return NULL; }
 
 static inline bool part_get_bootable(struct blk_desc *desc)
+{ return false; }
+
+static inline bool part_is_bls_target(const struct disk_partition *info)
 { return false; }
 
 static inline struct part_driver *part_driver_lookup_type(struct blk_desc *desc)

@@ -109,6 +109,48 @@ static int dm_test_part_bootable(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_part_bootable, UTF_SCAN_FDT);
 
+static int dm_test_part_is_bls_target(struct unit_test_state *uts)
+{
+	struct disk_partition info;
+
+	/* GPT: ESP type GUID */
+	memset(&info, '\0', sizeof(info));
+	disk_partition_set_type_guid(&info,
+				     "c12a7328-f81f-11d2-ba4b-00a0c93ec93b");
+	ut_asserteq(true, part_is_bls_target(&info));
+
+	/* GPT: XBOOTLDR type GUID */
+	memset(&info, '\0', sizeof(info));
+	disk_partition_set_type_guid(&info,
+				     "bc13c2ff-59e6-4262-a352-b275fd6f7172");
+	ut_asserteq(true, part_is_bls_target(&info));
+
+	/* GPT: GUID match must be case-insensitive */
+	memset(&info, '\0', sizeof(info));
+	disk_partition_set_type_guid(&info,
+				     "c12a7328-f81f-11d2-ba4b-00a0c93ec93b");
+	ut_asserteq(true, part_is_bls_target(&info));
+
+	/* GPT: a Linux filesystem partition is not a BLS target */
+	memset(&info, '\0', sizeof(info));
+	disk_partition_set_type_guid(&info,
+				     "0fc63daf-8483-4772-8e79-3d69d8477de4");
+	ut_asserteq(false, part_is_bls_target(&info));
+
+	/* MBR: BLS partition type 0xea */
+	memset(&info, '\0', sizeof(info));
+	info.sys_ind = 0xea;
+	ut_asserteq(true, part_is_bls_target(&info));
+
+	/* MBR: a Linux partition (0x83) is not a BLS target */
+	memset(&info, '\0', sizeof(info));
+	info.sys_ind = 0x83;
+	ut_asserteq(false, part_is_bls_target(&info));
+
+	return 0;
+}
+DM_TEST(dm_test_part_is_bls_target, 0);
+
 static int do_get_info_test(struct unit_test_state *uts,
 			    struct blk_desc *dev_desc, int part, int part_type,
 			    struct disk_partition const *reference)

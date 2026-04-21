@@ -22,6 +22,7 @@
 #include <linux/stat.h>
 #include <linux/fs.h>
 #include <linux/buffer_head.h>
+#include <linux/dcache.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/bio.h>
@@ -471,6 +472,32 @@ struct buffer_head *sb_bread(struct super_block *sb, sector_t block)
 	return bh;
 }
 
+struct buffer_head *sb_bread_uncached(struct super_block *sb, sector_t block)
+{
+	struct buffer_head *bh;
+	int ret;
+
+	if (!sb)
+		return NULL;
+
+	bh = alloc_buffer_head_with_data(sb->s_blocksize);
+	if (!bh)
+		return NULL;
+
+	bh->b_blocknr = block;
+	bh->b_bdev = sb->s_bdev;
+
+	ret = linux_fs_read_block(sb, block, sb->s_blocksize, bh->b_data);
+	if (ret) {
+		free_buffer_head(bh);
+		return NULL;
+	}
+
+	set_buffer_uptodate(bh);
+
+	return bh;
+}
+
 /**
  * bdev_getblk() - Get buffer via block_device
  * @bdev: Block device
@@ -657,3 +684,91 @@ const struct file_operations generic_ro_fops = {
 
 const struct inode_operations page_symlink_inode_operations = {
 };
+
+/**
+ * alloc_inode_sb() - Allocate an inode associated with a super block
+ * @sb: Super block the inode will belong to
+ * @cache: kmem_cache to allocate from
+ * @gfp: Allocation flags
+ * Return: Newly allocated inode, or NULL on failure
+ */
+void *alloc_inode_sb(struct super_block *sb, struct kmem_cache *cache,
+		     gfp_t gfp)
+{
+	return kmem_cache_alloc(cache, gfp);
+}
+
+/**
+ * free_page() - Free a single page previously obtained via get_zeroed_page()
+ * @addr: Address returned by get_zeroed_page()
+ */
+void free_page(unsigned long addr)
+{
+	free((void *)addr);
+}
+
+/**
+ * sb_set_blocksize() - Validate and record the block size on a super block
+ * @sb: Super block to update
+ * @size: Block size in bytes (must be 1024, 2048 or 4096)
+ * Return: @size on success, 0 on invalid block size
+ */
+int sb_set_blocksize(struct super_block *sb, int size)
+{
+	if (size != 1024 && size != 2048 && size != 4096)
+		return 0;
+
+	sb->s_blocksize = size;
+	sb->s_blocksize_bits = ffs(size) - 1;
+
+	return size;
+}
+
+/**
+ * d_make_root() - Create a root dentry for an inode
+ * @inode: Inode to create a dentry for
+ * Return: Allocated dentry, or NULL on failure (the inode is released on
+ *	failure via iput())
+ */
+struct dentry *d_make_root(struct inode *inode)
+{
+	struct dentry *de;
+
+	if (!inode)
+		return NULL;
+
+	de = kzalloc(sizeof(*de), GFP_KERNEL);
+	if (!de) {
+		iput(inode);
+		return NULL;
+	}
+
+	de->d_inode = inode;
+	de->d_sb = inode->i_sb;
+	de->d_name.name = "/";
+	de->d_name.len = 1;
+
+	return de;
+}
+
+/**
+ * iput() - Release a reference to an inode
+ * @inode: Inode to release
+ *
+ * Decrement the inode reference count. When the reference count reaches
+ * zero and the inode has no links, evict the inode via its super block
+ * operations and flush any dirty buffers.
+ */
+void iput(struct inode *inode)
+{
+	if (!inode)
+		return;
+
+	if (atomic_dec_and_test(&inode->i_count)) {
+		if (inode->i_nlink == 0 && inode->i_sb &&
+		    inode->i_sb->s_op && inode->i_sb->s_op->evict_inode) {
+			inode->i_sb->s_op->evict_inode(inode);
+			bh_cache_sync();
+		}
+	}
+}

@@ -1046,6 +1046,14 @@ qemu-x86_64:
     TEST_PY_TEST_SPEC: "and not sleep"
   <<: *sjg_lab_dfn
 
+# Boots a rewritten Ubuntu live ISO via U-Boot + BLS, exercising the
+# qemu-efi-iso labgrid writer and test_distro_ubuntu_iso_uboot.
+efi-x86_64-uboot-iso:
+  variables:
+    ROLE: efi-x86_64-uboot-iso
+    TEST_PY_TEST_SPEC: "and test_distro_ubuntu_iso_uboot"
+  <<: *sjg_lab_dfn
+
 # NVIDIA Jetson TK1
 tk1:
   variables:
