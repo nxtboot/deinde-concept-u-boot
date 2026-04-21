@@ -80,6 +80,21 @@ REQUIRED_TOOLS = ('xorriso', 'mcopy', 'mmd', 'mkfs.vfat')
 MIB = 1024 * 1024
 
 
+def _quiet() -> bool:
+    """True when tout is set below INFO (no progress chatter requested)."""
+    return tout.verbose < tout.INFO
+
+
+def _run(*cmd) -> None:
+    """Run a command, capturing its output when tout is quiet.
+
+    On failure u_boot_pylib's CommandExc still carries the captured
+    output, so the user sees what went wrong.
+    """
+    quiet = _quiet()
+    command.run(*cmd, capture=quiet, capture_stderr=quiet)
+
+
 def check_tools() -> None:
     missing = [t for t in REQUIRED_TOOLS if not shutil.which(t)]
     if missing:
@@ -98,7 +113,7 @@ def parse_grub_cmdline(iso: Path) -> str:
     """
     with tempfile.TemporaryDirectory(prefix='iso2uboot.grub.') as td:
         dst = Path(td) / 'grub.cfg'
-        command.run(
+        _run(
             'xorriso', '-osirrox', 'on', '-indev', str(iso),
             '-extract', '/boot/grub/grub.cfg', str(dst),
         )
@@ -109,9 +124,7 @@ def parse_grub_cmdline(iso: Path) -> str:
         cfg, re.MULTILINE,
     )
     if not m:
-        tout.fatal(
-            'could not find a casper linux entry in /boot/grub/grub.cfg'
-        )
+        tout.fatal('could not find a casper linux entry in /boot/grub/grub.cfg')
     # Collapse any run of whitespace to a single space
     return ' '.join(m.group(1).split())
 
@@ -122,9 +135,11 @@ def parse_boot_report(iso: Path) -> tuple[str, str]:
     Raises SystemExit if the ISO does not have an appended EFI System
     Partition on slot 2
     """
-    # xorriso prints the report on stdout; stderr carries progress/status.
-    report = command.output(
+    # xorriso prints the report on stdout (which we need to parse) and
+    # progress/status on stderr (which we swallow unless -v was passed).
+    report = command.run(
         'xorriso', '-indev', str(iso), '-report_el_torito', 'as_mkisofs',
+        capture=True, capture_stderr=_quiet(),
     )
 
     m_vol = re.search(r"^-V '([^']*)'", report, re.MULTILINE)
@@ -152,10 +167,10 @@ def build_esp(esp_path: Path, size_mib: int, uboot_efi: Path) -> None:
     with esp_path.open('wb') as f:
         f.truncate(size_mib * MIB)
     # FAT12 is enough for the small ESP we emit (just a U-Boot binary).
-    command.output('mkfs.vfat', '-F12', '-n', 'ESP', str(esp_path))
-    command.run('mmd', '-i', str(esp_path), '::EFI', '::EFI/BOOT')
-    command.run('mcopy', '-i', str(esp_path), str(uboot_efi),
-                '::EFI/BOOT/BOOTX64.EFI')
+    _run('mkfs.vfat', '-F12', '-n', 'ESP', str(esp_path))
+    _run('mmd', '-i', str(esp_path), '::EFI', '::EFI/BOOT')
+    _run('mcopy', '-i', str(esp_path), str(uboot_efi),
+         '::EFI/BOOT/BOOTX64.EFI')
 
 
 def repack_iso(
@@ -180,7 +195,7 @@ def repack_iso(
     """
     if out_iso.exists():
         out_iso.unlink()
-    command.run(
+    _run(
         'xorriso',
         '-indev', str(in_iso),
         '-outdev', str(out_iso),
@@ -214,7 +229,13 @@ def main() -> None:
                    help='BLS entry title (default: derived from volume label)')
     p.add_argument('-s', '--esp-size', type=int, default=None,
                    help='ESP size in MiB (default: 4 MiB)')
+    p.add_argument('-v', '--verbose', action='store_true',
+                   help='show progress markers and subprocess output')
     args = p.parse_args()
+
+    # Default verbosity is WARNING (silent); -v raises to INFO so
+    # tout.notice()/tout.info() print and _run() stops capturing output.
+    tout.init(tout.INFO if args.verbose else tout.WARNING)
 
     if not args.iso.is_file():
         tout.fatal(f'ISO not found: {args.iso}')
@@ -222,22 +243,22 @@ def main() -> None:
         tout.fatal(f'EFI app not found: {args.uboot}')
     check_tools()
 
-    print(f'=> Reading boot config from {args.iso}')
+    tout.notice(f'=> Reading boot config from {args.iso}')
     # Extract the volume label and ESP partition GUID from xorriso's report
     vol_id, esp_guid = parse_boot_report(args.iso)
     title = args.title or f'U-Boot BLS boot ({vol_id})'
     cmdline = args.cmdline
     if cmdline is None:
         cmdline = parse_grub_cmdline(args.iso)
-    print(f'   Volume label: {vol_id}')
-    print(f'   ESP GUID:     {esp_guid}')
-    print(f'   Cmdline:      {cmdline}')
+    tout.notice(f'   Volume label: {vol_id}')
+    tout.notice(f'   ESP GUID:     {esp_guid}')
+    tout.notice(f'   Cmdline:      {cmdline}')
 
     with tempfile.TemporaryDirectory(prefix='iso2uboot.') as td:
         work = Path(td)
 
         esp_mib = args.esp_size or 4
-        print(f'=> Building {esp_mib} MiB ESP')
+        tout.notice(f'=> Building {esp_mib} MiB ESP')
         esp = work / 'esp.img'
         build_esp(esp, esp_mib, args.uboot)
 
@@ -249,11 +270,11 @@ def main() -> None:
             f'options {cmdline}\n'
         )
 
-        print(f'=> Repacking to {args.out}')
+        tout.notice(f'=> Repacking to {args.out}')
         repack_iso(args.iso, args.out, esp, esp_guid, entry)
 
     size_mib = args.out.stat().st_size / MIB
-    print(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
+    tout.notice(f'=> Done: {args.out} ({size_mib:.1f} MiB)')
 
 
 if __name__ == '__main__':
