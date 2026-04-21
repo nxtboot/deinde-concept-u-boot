@@ -28489,20 +28489,16 @@ So if binman exits with non-zero, it would increment `failures`. Let me check if
 Actually wait, let me re-read the CI output. The error message shows:
 ```
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ```
 
 The test continues to dtoc! So the binman coverage test didn't raise an exception - it continued. This means the `allow_failures` mechanism worked and the function returned at line 110.
 
 But then why did the overall test fail? Looking further in the CI output:
 ```
-binman code coverage: ================= Running binman tests ========================
 ...
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ...
 100%
-fdt code coverage: ================ Running test_fdt tests =======================
 ...
 100%
 Tests FAILED
@@ -28536,7 +28532,6 @@ TOTAL                                                    6067     79    99%
 
 To get a report in 'htmlcov/index.html', type: python3-coverage html
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ```
 
 Hmm, I see "99%" printed, then the coverage report, then the error message. The fact that it continues to "dtoc code coverage" suggests the binman test didn't raise an exception.
@@ -28577,7 +28572,6 @@ Actually, I realize I need to look at this differently. The CI job says "Check m
 
 But looking at the CI output, I see:
 ```
-binman code coverage: ================= Running binman tests ========================
 ...
 Coverage error: 99%, but should be 100%
 dtoc code coverage: ...
@@ -28588,10 +28582,8 @@ This suggests the binman test completed (didn't raise exception) and continued t
 Wait, I think I might be misreading the output. Let me look at the actual test output format again. Looking at the log:
 
 ```
-binman code coverage: ================= Running binman tests ========================
 ```
 
-That `: ` after "binman code coverage" is from the `run_test` function's `echo -n "$1: "`. Then the tests run and output `================= Running binman tests ========================`.
 
 After all tests complete, we see:
 ```
@@ -28602,7 +28594,6 @@ Name                                                    Stmts   Miss  Cover
 ...
 To get a report in 'htmlcov/index.html', type: python3-coverage html
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ```
 
 The fact that we see "dtoc code coverage:" immediately after "Coverage error" means the binman test exited with 0 (success) and test/run continued to the next test.
@@ -28675,13 +28666,10 @@ hwids_to_dtsi: ...........
 Ran 11 tests in 0.001s
 
 OK
-binman code coverage: ================= Running binman tests ========================
 ...
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ...
 100%
-fdt code coverage: ================ Running test_fdt tests =======================
 ...
 100%
 Tests FAILED
@@ -28744,7 +28732,6 @@ Wait, but the CI ALSO failed. Let me re-look at the CI output...
 Actually, looking at the CI output again more carefully, I see something I missed. Looking at the log around the binman code coverage section:
 
 ```
-binman code coverage: ================= Running binman tests ========================
 ...
 Image 'file2' has missing bintools and is non-functional: openssl
 
@@ -28772,7 +28759,6 @@ But then why did "Tests FAILED" appear at the end?
 
 Let me look at the job log more carefully. Looking at the very end:
 ```
-fdt code coverage: ================ Running test_fdt tests =======================
 ----------------------------------------------------------------------
 Ran 54 tests in 0.325s
 
@@ -28857,7 +28843,6 @@ So looking at this flow, the test failed. But where?
 Wait, I just realized the crucial detail. Looking at the line after "Coverage error":
 ```
 Coverage error: 99%, but should be 100%
-dtoc code coverage: ================== Running dtoc tests =========================
 ```
 
 There's NO `ValueError: Test coverage failure` in between! This means the allow_failures mechanism worked and the function returned without raising an exception.
@@ -29004,7 +28989,6 @@ Since I only have the log tail, I can't see what failed earlier. But let me chec
 
 Actually, wait. Let me re-check the CI log output order. Looking at the job log:
 ```
-binman code coverage: ================= Running binman tests ========================
 ...
 OK
 
@@ -53492,9 +53476,7 @@ The conflict is near the end of the file. Let me see the conflicting section:
 I see the conflict. The HEAD (ci/master) contains a different MR's review log, and the incoming commit contains the original cherry-4d02b0343e3 history. I need to keep both - they're different MRs. Let me resolve this properly by keeping both sections:
 
 The conflict structure is:
-- Line 53091: `<<<<<<< HEAD` 
 - Lines 53092-53234: HEAD content (cherry-cde77583cf0 review log from ci/master)
-- Line 53235: `=======`
 - Lines 53236-53306: Theirs content (cherry-4d02b0343e3 original cherry-pick log)
 - Line 53307: `>>>>>>> 89eca6af46a`
 
@@ -53684,15 +53666,12 @@ The conflict is at the end of the file. Let me see the conflict area:
 I can see the conflict structure. The HEAD content (from ci/master) includes the cherry-20b822dd4f0 work, and the incoming commit has the cherry-4d02b0343e3 review log. I need to keep both sections. Let me resolve this:
 
 I can see the conflict:
-- Lines 53308: `<<<<<<< HEAD`
 - Lines 53309-53462: HEAD content (cherry-20b822dd4f0 cherry-pick log)
-- Line 53463: `=======`
 - Lines 53464-53574: Incoming content (cherry-4d02b0343e3 review log)
 - Line 53575: `>>>>>>> 3e4f673a5a7`
 
 I need to keep both sections. Let me resolve this by removing the conflict markers and keeping both sections:
 
-Good - the remaining `=======` lines are just in the history text, not actual conflict markers. Let me verify the resolution looks correct by checking the end of the file:
 
 The resolution looks correct. Now let me add the file and continue the rebase:
 
@@ -57328,12 +57307,9 @@ I can see the conflict - the file ends with `>>>>>>> 1ee474bed3c` which is a con
 
 Now I understand the conflict. HEAD contains entries for cherry-3c2a9475334 that were added on ci/master, and the incoming commit (1ee474bed3c) contains the entry for cherry-a264c0454b8. I need to keep both. Let me resolve this properly:
 
-So the conflict is from line 56672 (<<<<<<< HEAD) to line 56925 (>>>>>>> marker). I need to:
 1. Keep content from HEAD (lines 56673-56813, the cherry-3c2a9475334 entry)
-2. Keep content after ======= (lines 56815-56924, the cherry-a264c0454b8 entry)
 3. Remove the conflict markers
 
-Good - those are not conflict markers, they're just text content in the log file (e.g., `=========` from test output). The conflict is resolved. Let me add the file and continue:
 
 Rebase completed. Now let me verify the commits and check deltas:
 
@@ -60847,15 +60823,12 @@ The `.pickman-history` file contains log entries from various operations. Let me
 
 Let me check what the actual conflict markers look like at the end of the file:
 
-I can see the conflict. The file has both a `=======` divider and a `>>>>>>> 6a468cf7398` marker at the end. This is just a history file, so I should keep both sets of content. Let me resolve it by accepting both versions:
 
 I see the conflict markers. Let me resolve this by removing them and keeping both sections:
 
 There are still markers in the file, but those might be text within the conversation log (quoting conflict resolution steps). Let me check if any are actual conflict markers that need resolution:
 
-There's still a `<<<<<<< HEAD` marker. Let me look at that area:
 
-I see there's a full `<<<<<<< HEAD` section. Let me find and remove the full conflict region:
 
 Rebase completed successfully. Now let me verify the commits and check the deltas:
 
@@ -63125,6 +63098,105 @@ All 9 commits have been successfully cherry-picked from `us/next` branch to the 
 
 ### Branch Status
 The branch `cherry-60f5170c1fe` is ready for pushing with 9 commits ahead of `ci/master`.
+Branch: cherry-1cd0a441066
+
+Commits:
+- 1cd0a441066 boot: fix missing dependency for BOOTMETH_ANDROID
+- 6a92e982765 usb: ci_udc: Check ci_ep->desc before use
+- 8ea70d8132d usb: ci_udc: cosmetics: EP and requests debug info
+- 3f9765672ce dfu: Report error codes
+- 8fa0cf5f3d7 bootstd: android: Add missing free in android_read_bootflow
+- 6b0f079ba26 boot: android: import addBootConfigParameters() from AOSP
+- 8f6d4355705 boot: android: Add sandbox memory mapping support
+- 733f5a60198 boot: android: Add bootconfig support
+- 892409d4fc0 cmd: abootimg: Add 'get ramdisk' command
+- 0efe1d9502a test: abootimg: Add test for bootconfig handling
+- 1da640cc46a Merge tag 'u-boot-dfu-20260116' of https://source.denx.de/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+The repository state is clean enough (only untracked files). Let me create the new branch and start the cherry-pick process.
+
+Now let me start cherry-picking the commits one by one. First commit:
+
+Cherry-pick succeeded. Now let me check the delta and run the build:
+
+Delta looks identical (1 file, 1 insertion). Now let me run the build test:
+
+Build passes. Proceeding to commit 2:
+
+Delta matches. Build test:
+
+Commit 3:
+
+Delta matches. Build test:
+
+Commit 4:
+
+Delta matches. Build test:
+
+Commit 5:
+
+Delta matches. Build test:
+
+Commit 6:
+
+Delta matches. Build test:
+
+Build has a warning (unused function), but this is expected as the function will be used by later commits. This is not a failure, just a warning. Let me continue with commit 7:
+
+Delta matches. Build test:
+
+Same warning as before (expected - the function will be used in later commits). Continuing with commit 8:
+
+Delta matches. Build test:
+
+Build passes (no more warning). Commit 9:
+
+Delta matches. Build test:
+
+Commit 10:
+
+Delta matches. Build test:
+
+Now commit 11 - this is a merge commit (identified by "Merge" in the subject), so I need to use -m 1 --allow-empty:
+
+The merge commit results in an empty commit because all the changes were already cherry-picked individually. I need to commit it with --allow-empty to preserve the merge commit message:
+
+All 11 commits are cherry-picked. Now let me verify with git log:
+
+All 11 commits are present. Now let me run the final build test:
+
+## Final Status Report
+
+**Build Result:** ✅ OK - Build passes with no warnings or errors
+
+**Cherry-pick Summary:**
+All 11 commits were successfully cherry-picked from `us/next` to the new branch `cherry-1cd0a441066` based on `ci/master`:
+
+| # | Hash | Subject | Delta | Build |
+|---|------|---------|-------|-------|
+| 1 | 1cd0a441066 | boot: fix missing dependency for BOOTMETH_ANDROID | ✅ Match | ✅ OK |
+| 2 | 6a92e982765 | usb: ci_udc: Check ci_ep->desc before use | ✅ Match | ✅ OK |
+| 3 | 8ea70d8132d | usb: ci_udc: cosmetics: EP and requests debug info | ✅ Match | ✅ OK |
+| 4 | 3f9765672ce | dfu: Report error codes | ✅ Match | ✅ OK |
+| 5 | 8fa0cf5f3d7 | bootstd: android: Add missing free in android_read_bootflow | ✅ Match | ✅ OK |
+| 6 | 6b0f079ba26 | boot: android: import addBootConfigParameters() from AOSP | ✅ Match | ⚠️ Warning* |
+| 7 | 8f6d4355705 | boot: android: Add sandbox memory mapping support | ✅ Match | ⚠️ Warning* |
+| 8 | 733f5a60198 | boot: android: Add bootconfig support | ✅ Match | ✅ OK |
+| 9 | 892409d4fc0 | cmd: abootimg: Add 'get ramdisk' command | ✅ Match | ✅ OK |
+| 10 | 0efe1d9502a | test: abootimg: Add test for bootconfig handling | ✅ Match | ✅ OK |
+| 11 | 1da640cc46a | Merge tag 'u-boot-dfu-20260116'... | Empty (expected) | ✅ OK |
+
+\* Commits 6 & 7 had a temporary warning about `add_bootconfig_parameters` being defined but not used, which was resolved when commit 8 was applied.
+
+**Fix-ups Made:** None required
+
+**Concerning Deltas:** None - all commits matched their original deltas exactly
+
+**Branch Status:**
+- Branch `cherry-1cd0a441066` is now ready for pushing
+- 11 commits ahead of `ci/master`
+- The merge commit (commit 11) is empty as expected since all changes were already applied individually
 
 ---
 
