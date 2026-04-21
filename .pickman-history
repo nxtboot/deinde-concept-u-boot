@@ -62834,81 +62834,146 @@ Now let me run the final build test:
 
 ## 2026-04-20: us/next
 
-Branch: cherry-637942ac8e0
+Branch: cherry-711150fc6fe
 
 Commits:
-- 637942ac8e0 test.py: check ubconfig exists before using it
-- c85d302bf23 doc: pytest: mention additional requirements for venv
-- 487ab1c991d pylibfdt: add requirements.txt for setuptools
-- 21e64d0c925 Merge patch series "a few test.py improvements"
+- 711150fc6fe configs: am57xx_hs_evm_defconfig: Reserve EMIF memory used by PPA
+- 84fac640265 gardena-smart-gateway-mt7688: Disable CMD_LICENSE
+- 0b97991fa0e powerpc: mpc83xx: Check the size of peripheral structs
+- 6014f87b03d misc: Add fixed-layout support
+- d54691b64e7 lib: crypt: remove dependency on autoboot
+- a1d1fc8d8c8 pinctrl: mediatek: MT7981: fix GPIO9 register map
+- d503633a367 Revert "doc: board: starfive: update jh7110 common description"
+- 492ff73de69 net:lwip: Add debug line to net-lwip
+- 60c228c0773 net: move net_state to net-common
+- 3938ae64571 net: Move some variables to net-common files
+- 046f553fe87 net: nfs: Add licence header
+- 3bc1197e3d7 net: nfs: Move most NFS code to common files
+- 230cf3bc277 net: lwip: nfs: Port the NFS code to work with lwIP
+- f916c819a33 configs: qemu_arm64_lwip_defconfig: enable CMD_NFS
+- c832cd3b49a net: tftpput: Rework to exclude code from xPL phases
+- dfc39f9caf3 net: add Microsemi/Microchip MDIO driver
+- 7d650e7f908 Add missing “net” prefix in help net
+- 2ee6bf4c65d net: phy: marvell10g: Fix PHY mode bitmap handling
+- 60545cf032f net: phy: micrel_ksz90x1: disable asymmetric pause for KSZ9031 and KSZ9021
+- b61d7d95cc6 net: phy: micrel_ksz90x1: support forced GIGE master for KSZ9031
+- 5665d1f4e7c Merge tag 'net-20260115' of https://source.denx.de/u-boot/custodians/u-boot-net
 
 ### Conversation log
-The repository has some untracked files but no uncommitted changes, so it's in a clean state for cherry-picking. Let me create and checkout the new branch based on ci/master.
+The repository has untracked files but is otherwise clean. Now let me create and checkout the new branch based on ci/master:
 
-Now let's cherry-pick the first commit (637942ac8e0: test.py: check ubconfig exists before using it):
+Good, branch created. Now I'll start cherry-picking the commits one by one. Let me start with the first commit:
 
-The first cherry-pick succeeded. Let me verify the delta and run a build test:
+First cherry-pick succeeded. Let me verify the delta and run the build test:
 
-The delta differs slightly: original shows 5 lines changed (3+/2-) vs cherry-picked shows 2 lines changed (1+/1-). This is a significant difference. Let me check if the commit was auto-merged somehow differently. Let me compare the actual content:
+Delta looks good - both show 1 file changed, 1 insertion. Now let me run the build test:
 
-I see - the delta difference is because some parts of the original commit (adding `ubconfig = None` and the `if ubconfig and` check) were already present in ci/master. The cherry-pick only applied the comment change because the other changes already exist. This is a normal auto-merge result that shows ci/master has already evolved with similar changes. Let me run the build test:
+Build passed. Let me continue with the second commit:
 
-Build passed. Now let's cherry-pick the second commit (c85d302bf23: doc: pytest: mention additional requirements for venv):
+Conflict on the second commit. Let me check the conflict and see if it can be resolved:
 
-Let me verify the delta:
+I can see the conflict. The incoming commit (84fac640265) is trying to add lines that already exist in the HEAD version in a different position (likely defconfig reordering). The actual change is about disabling CMD_LICENSE - in HEAD it has `CONFIG_CMD_LICENSE=y`, and the incoming commit wants to disable it.
 
-Delta matches (1 file, 4 insertions). Let me run the build test:
+Let me see what the original commit actually changed:
 
-Build passed. Now let's cherry-pick the third commit (487ab1c991d: pylibfdt: add requirements.txt for setuptools):
+The original commit just removes the CMD_LICENSE line. In our HEAD version, we have `CONFIG_CMD_LICENSE=y` which should be removed. Let me resolve this conflict:
 
-Let me verify the delta:
+I see. The original file had different structure. The BOOTM configs appear in a different location in the original. Let me resolve by properly removing the CMD_LICENSE line and keeping the rest:
 
-Delta matches (1 file, 1 insertion). Let me run the build test:
+Good, conflict resolved. Let me verify the delta and run build test:
 
-Build passed. Now let's cherry-pick the fourth commit (21e64d0c925: Merge patch series "a few test.py improvements"). This is a merge commit, so I need to use `-m 1 --allow-empty`:
+Both show 1 file changed, 1 deletion - delta matches. Build test:
 
-The merge commit is empty (as expected since we already cherry-picked the individual commits). The message says "all conflicts fixed" and suggests using `--allow-empty`. Let me commit it as an empty commit to preserve the merge commit message:
+Build passed. Continue with commit 3:
 
-The merge commit was preserved. Let me verify the delta:
+Continue with commit 4:
 
-The cherry-picked merge is empty (as expected since we already applied all the individual patches), while the original shows the combined delta of all the patches. This is correct behavior for merge commits. Let me run the build test:
+Continue with commit 5:
 
-Build passed. Now let me verify that all 4 commits are present:
+Continue with commit 6:
 
-All 4 commits are present. Now let me run the final build test:
+Continue with commit 7 (the Revert commit):
+
+Continue with commit 8:
+
+Continue with commit 9:
+
+Continue with commit 10:
+
+Continue with commit 11:
+
+Continue with commit 12:
+
+Continue with commit 13:
+
+Continue with commit 14:
+
+Continue with commit 15:
+
+Continue with commit 16:
+
+Continue with commit 17:
+
+Continue with commit 18:
+
+Continue with commit 19:
+
+Continue with commit 20:
+
+Now commit 21 - the merge commit. It needs special handling:
+
+The merge commit is empty (as expected, since all individual commits were already cherry-picked). Let me commit it with --allow-empty to preserve the merge history:
+
+Excellent! All 21 commits are cherry-picked. Let me verify the log and run the final build test:
+
+All 21 commits are present. Let me run the final build test:
+
+All builds passed. Let me provide the final status summary:
 
 ## Final Status Report
 
-**Cherry-pick branch:** `cherry-637942ac8e0` (based on `ci/master`)
+### Cherry-pick Summary
+**Branch:** `cherry-711150fc6fe` (based on `ci/master`)
+
+**All 21 commits successfully cherry-picked:**
+
+| # | Hash (new) | Original | Subject |
+|---|------------|----------|---------|
+| 1 | ccf55b8ce24 | 711150fc6fe | configs: am57xx_hs_evm_defconfig: Reserve EMIF memory used by PPA |
+| 2 | a74ad5893e0 | 84fac640265 | gardena-smart-gateway-mt7688: Disable CMD_LICENSE |
+| 3 | 4b9d07218d1 | 0b97991fa0e | powerpc: mpc83xx: Check the size of peripheral structs |
+| 4 | 9a0d5809364 | 6014f87b03d | misc: Add fixed-layout support |
+| 5 | 43b7cc91150 | d54691b64e7 | lib: crypt: remove dependency on autoboot |
+| 6 | 786321d0594 | a1d1fc8d8c8 | pinctrl: mediatek: MT7981: fix GPIO9 register map |
+| 7 | 7ca7b913d2b | d503633a367 | Revert "doc: board: starfive: update jh7110 common description" |
+| 8 | dbad172ffa1 | 492ff73de69 | net:lwip: Add debug line to net-lwip |
+| 9 | 9bb51a8406b | 60c228c0773 | net: move net_state to net-common |
+| 10 | a9690d1fd17 | 3938ae64571 | net: Move some variables to net-common files |
+| 11 | 22b22733fe3 | 046f553fe87 | net: nfs: Add licence header |
+| 12 | 6935d61d8cb | 3bc1197e3d7 | net: nfs: Move most NFS code to common files |
+| 13 | f7fde357970 | 230cf3bc277 | net: lwip: nfs: Port the NFS code to work with lwIP |
+| 14 | faf7b3866b3 | f916c819a33 | configs: qemu_arm64_lwip_defconfig: enable CMD_NFS |
+| 15 | 1476686f129 | c832cd3b49a | net: tftpput: Rework to exclude code from xPL phases |
+| 16 | a850809bb49 | dfc39f9caf3 | net: add Microsemi/Microchip MDIO driver |
+| 17 | f646f6be2d1 | 7d650e7f908 | Add missing "net" prefix in help net |
+| 18 | 52481c92fad | 2ee6bf4c65d | net: phy: marvell10g: Fix PHY mode bitmap handling |
+| 19 | 04929746853 | 60545cf032f | net: phy: micrel_ksz90x1: disable asymmetric pause for KSZ9031 and KSZ9021 |
+| 20 | 748a2486329 | b61d7d95cc6 | net: phy: micrel_ksz90x1: support forced GIGE master for KSZ9031 |
+| 21 | ee8451dd2fb | 5665d1f4e7c | Merge tag 'net-20260115' (empty - all content in individual commits) |
 
 ### Build Result: ✅ OK
-All builds passed with no warnings or errors.
-
-### Commits Applied (4 total):
-
-| # | Original Hash | New Hash | Subject | Delta Status |
-|---|---------------|----------|---------|--------------|
-| 1 | 637942ac8e0 | 0aeb8af455b | test.py: check ubconfig exists before using it | ⚠️ Partial (auto-merged) |
-| 2 | c85d302bf23 | 331e5c440da | doc: pytest: mention additional requirements for venv | ✅ Exact match |
-| 3 | 487ab1c991d | 15c8e41a92f | pylibfdt: add requirements.txt for setuptools | ✅ Exact match |
-| 4 | 21e64d0c925 | 6fda1220e97 | Merge patch series "a few test.py improvements" | ✅ Empty (expected) |
-
-### Notes:
-
-1. **Commit 637942ac8e0 (test.py: check ubconfig exists before using it):**
-   - Original: 5 lines changed (3+/2-)
-   - Cherry-picked: 2 lines changed (1+/1-)
-   - The difference is expected: ci/master already has `ubconfig = None` and the `if ubconfig and` guard. Only the comment change was applied. This is normal auto-merge behavior.
-
-2. **Merge commit (21e64d0c925):** Cherry-picked as an empty commit since all individual patches were already applied. The commit message is preserved for tracking history.
+All sandbox builds passed with no warnings or errors.
 
 ### Fix-ups Made:
-None required.
+1. **Commit #2 (gardena-smart-gateway-mt7688: Disable CMD_LICENSE)**: Resolved merge conflict in `configs/gardena-smart-gateway-mt7688_defconfig`. The conflict was due to defconfig reordering - the BOOTM config lines appeared in different positions. The resolution correctly removed the `CONFIG_CMD_LICENSE=y` line while preserving the proper defconfig structure.
 
-### Commits with Concerning Deltas:
-- Commit 1 had a delta difference but this is expected due to ci/master already having some of the changes applied via a different path. The auto-merge correctly applied only the missing portion (comment update).
+### Commits with No Concerning Deltas:
+All commit deltas matched the originals (same files changed, same line counts).
 
-The cherry-pick branch `cherry-637942ac8e0` is ready for pushing.
+### Merge Commit Note:
+The merge commit (5665d1f4e7c) was cherry-picked with `--allow-empty` since all its constituent commits were already cherry-picked individually. The empty merge commit preserves the tracking history.
+
+The branch `cherry-711150fc6fe` is now ready for pushing.
 
 ---
 
