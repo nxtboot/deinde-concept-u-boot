@@ -64835,3 +64835,50 @@ Branch is ready for pushing. Not merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-04-22 (attempt 1)
+
+Branch: cherry-cfce859b16f
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- vbe (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now let me verify the build works for rk3399-generic-ddr3:
+
+Now continue the rebase:
+
+## Summary
+
+Fix complete on branch `cherry-cfce859b16f-fix1`.
+
+### Root cause
+Commit `a3394a9a657 fit: Rework SPL_LOAD_FIT_ADDRESS slightly` (cherry-picked from upstream `272b8784fa`) introduces `SPL_HAS_LOAD_FIT_ADDRESS`, which defaults to `y` for `ARCH_ROCKCHIP`, and removed the `default 0x0` fallback from `SPL_LOAD_FIT_ADDRESS`.
+
+The local CI-only defconfig `configs/rk3399-generic-ddr3_defconfig` sets `CONFIG_SPL_TEXT_BASE=0xff8c2000`, which does not match any of the remaining conditional defaults for `SPL_LOAD_FIT_ADDRESS` (0x08000000 / 0x60000000 / 0x00200000 / 0x00000000). Result: the hex symbol ends up empty, Kconfig loops prompting for a value, and the build aborts with `.config:499:warning: symbol value '' invalid for SPL_LOAD_FIT_ADDRESS`. Upstream did not see this because this defconfig only exists on the CI fork.
+
+### Job-by-job assessment
+- **build all 64bit ARM platforms (442075)** — real regression: `rk3399-generic-ddr3` (aarch64) fails to configure, tripping `buildman -PEWM aarch64`'s exit code.
+- **vbe (442071)** — same failure. The job builds just `rk3399-generic-ddr3` and hits the identical Kconfig error.
+- **opi_pc (442041)** — **infrastructure**, not code: `pexpect.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad`. The orangepi_pc board simply did not respond on the serial line. No code change made.
+
+### Fix
+Amended commit `2a2e591b87a fit: Rework SPL_LOAD_FIT_ADDRESS slightly` with a one-line addition to `configs/rk3399-generic-ddr3_defconfig`:
+
+```
++# CONFIG_SPL_HAS_LOAD_FIT_ADDRESS is not set
+```
+
+This preserves the prior behaviour (malloc-backed FIT load buffer via the weak `board_spl_fit_buffer_addr()` fallback) without reintroducing the deprecated `0x0` default. Defconfig was normalised with `make savedefconfig`. A `[pickman]` note explaining the fix was appended to the commit message.
+
+### Verification
+- `um build sandbox` — clean.
+- `buildman -PEWM rk3399` — 31/31 rk3399 boards built, **0 failures** (previously 1 failure).
+- `buildman -PEWM k3 am62 am64 am65 am68 am69 j7 j72` — 65/65 built, 0 failures.
+- `buildman -PEWM --boards imx8mm_evk,lx2160aqds_tfa,ls2088ardb_tfa,apple_m1,j721e_evm_a72` — 5/5 built, 0 failures.
+
+Branch `cherry-cfce859b16f-fix1` left at HEAD = `5e1ea6475f1`, not pushed.
+
+---
+
