@@ -64982,3 +64982,48 @@ The pickman review workflow surfaces the bot's own prior pipeline-fix comment as
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-6f3e63b4de8
+
+Comments addressed:
+
+
+### Conversation log
+Local branch is already on top of the fetched `ci/master` HEAD (merge-base = ci/master HEAD = 86e0c12d21f). Let me save the pre-rebase state and run the rebase command anyway to confirm it's a no-op.
+
+Rebase was a no-op — branch is already up to date with ci/master. HEAD unchanged (1d055d3d7e1), all 8 commits preserved. Now running buildman.
+
+Build passed. Now create -v2 local branch and force-push.
+
+Force push succeeded. The remote now points at `1d055d3d7e1` (our HEAD), previously at `30b3ab0d7e0`.
+
+## Rebase Complete — MR !937
+
+### Outcome
+
+The rebase was a **no-op** — the local branch `cherry-6f3e63b4de8` was already based on the tip of `ci/master` (merge-base = ci/master HEAD = `86e0c12d21f`). `git rebase --keep-empty ci/master` reported *"Current branch cherry-6f3e63b4de8 is up to date."*, HEAD stayed at `1d055d3d7e1`, and all 8 commits were preserved unchanged (6 cherry-picked + the pickman cherry-pick record + the pickman review-handling record).
+
+### Verification
+
+- **Pre-/post-rebase HEAD**: `1d055d3d7e1` (unchanged)
+- **Deltas per commit** (all match originals exactly):
+  - `7cd681c92a4` — Remove unused variable: `drivers/core/lists.c` (+2/-3)
+  - `02cccdd8fa3` — Replace found variable: `drivers/core/lists.c` (+2/-3)
+  - `6269aeedcc7` — Support multiple drivers with same compatibles: `drivers/core/lists.c` (+34/-33)
+  - `f7f3c262c46` — Indent continuation debug log: `drivers/core/lists.c` (+1/-1)
+  - `698daff55a3` — Add compatible multimatch test: `test.dts`/`core.c`/`test-driver.c` (+45)
+  - `4e9a83364d5` — Merge patch series (empty merge commit, preserved)
+  - `bf2e0884473` — pickman cherry-pick record (+43)
+  - `1d055d3d7e1` — pickman review-handling record (+57)
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:13` (OK)
+- **Local -v2 branch**: `cherry-6f3e63b4de8-v2` created at `1d055d3d7e1`
+- **Remote update**: force-pushed `cherry-6f3e63b4de8` on `ci`: `30b3ab0d7e0 → 1d055d3d7e1` (the previous remote tip had unrelated `cherry-ea4bab00531` review commits, now replaced with the correct tree)
+- **GitLab MR**: https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/937 — pipeline will auto-trigger on the new tip
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. The branch was already based on the current target tip (`86e0c12d21f`), so `git rebase --keep-empty ci/master` was a no-op — HEAD stayed at `1d055d3d7e1` and all 8 commits are preserved with identical deltas. Sandbox build passes (`buildman -L --board sandbox`). Force-pushed to refresh the MR pipeline; the previous remote tip (`30b3ab0d7e0`) contained stale/unrelated commits and has been replaced with the correct cherry-pick tree.
+
+---
+
