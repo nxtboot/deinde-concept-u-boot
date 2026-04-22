@@ -64482,3 +64482,53 @@ There is nothing in the comment that requests a change; it is a logged diagnosti
 
 ---
 
+### Pipeline fix: 2026-04-22 (attempt 2)
+
+Branch: cherry-a6f018b7b50
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+## Report
+
+**Failure type:** Infrastructure / lab hardware issue — **no code fix applied, no `cherry-a6f018b7b50-fix2` branch created**
+
+### Root cause
+The `opi_pc` job (stage `sjg-lab`) is a hardware-in-the-loop test on an actual Orange Pi PC (Allwinner H3, 32-bit sunxi). The log shows labgrid flashed the board successfully ("Writing U-Boot using method sunxi") and then timed out waiting for the U-Boot console:
+
+```
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The lab tooling itself explicitly classifies this as `Lab failure: Marking connection bad` — meaning the lab runner decided the board/serial connection was the fault, not the image.
+
+### Why this cannot be a code regression on this branch
+Branch `cherry-a6f018b7b50` contains exactly one content-bearing commit:
+
+- `215018bfe48` — `arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock description for Sparrow Hawk`
+  - Touches only `arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi` (18 insertions)
+  - Target: Renesas R-Car Gen4 Sparrow Hawk (arm64, r8a779g3)
+
+The other commits are:
+- `9c7c48bb08d` — empty merge commit (u-boot-sh custodian merge)
+- `1050cabdd5b`, `e8c63335aec`, `0f0d7558304` — pickman bookkeeping (only `.pickman-history`)
+
+No change on this branch is compiled into or included by the Orange Pi PC (Allwinner H3 sunxi) image, so none of them can cause an H3 board to fail to reach a console prompt within 15 s of reset. This is the same failure signature and same branch contents as pipeline-fix attempt 1, which reached the identical conclusion.
+
+### Action taken
+Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"):
+
+- No commit amended.
+- No fixup commit added.
+- No `cherry-a6f018b7b50-fix2` branch created.
+- Working tree left on `cherry-a6f018b7b50` unchanged.
+
+### Recommended action for caller
+Re-run the `opi_pc` job. If it fails again with the same `_await_prompt` timeout / `Marking connection bad`, the Orange Pi PC lab runner needs attention (serial cable, power, or SD-card reflash path) — this is not something a branch-level fix can resolve.
+
+---
+
