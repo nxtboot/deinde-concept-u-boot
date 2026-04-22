@@ -64566,3 +64566,52 @@ There is nothing in this comment that requests a change. It is a logged diagnost
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-d8ee42f1134
+
+Commits:
+- d8ee42f1134 sunxi: extend R528/T113-s3/D1(s) DRAM initialisation
+- c47b6367373 sunxi: dram: detect non-power-of-2 sized DRAM chips
+- eb7390797d2 sunxi: avoid double vendor prefix when CONFIG_OF_UPSTREAM is enabled
+- 71f07932756 power: regulator: add AXP318W support
+- 61c2f29bde1 power: regulator: enable AWP318W SPL support
+- 8805aa120ca board: sunxi: Add X96Q support
+- c08da5d03c2 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sunxi
+
+### Conversation log
+Stats match. Let me build-test and continue with the next commits.
+
+Now the last commit - the merge commit that may already be applied as 9374d653491. Let me check.
+
+The merge commit is different from 9374d653491. Let me cherry-pick it as a merge commit.
+
+All 7 commits are present. Let me run the final build test.
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-d8ee42f1134` (based on `ci/master`)
+
+**Build result:** OK - sandbox build passed cleanly after each cherry-pick and at the end.
+
+**Commits cherry-picked (in order):**
+1. `b71f5c2c867` - sunxi: extend R528/T113-s3/D1(s) DRAM initialisation (2 files, +21)
+2. `8b0ec671d22` - sunxi: dram: detect non-power-of-2 sized DRAM chips (3 files, +34/-1)
+3. `36e4d87fc28` - sunxi: avoid double vendor prefix when CONFIG_OF_UPSTREAM is enabled (1 file, +4/-1) — auto-merged `board/sunxi/board.c` cleanly
+4. `9c5fc5f11d7` - power: regulator: add AXP318W support (3 files, +52)
+5. `69869c98edc` - power: regulator: enable AWP318W SPL support (3 files, +31)
+6. `a5466658c7a` - board: sunxi: Add X96Q support (2 files, +32)
+7. `d252901a4e7` - Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sunxi (empty, preserved)
+
+**Already-applied check:** The merge commit `c08da5d03c2` was potentially already applied as `9374d653491`, but inspection showed they are different merges (different parents, different authors, different merge messages). The commit became empty when cherry-picked because the underlying patches were already applied via commits 1-6, so it was committed as an empty merge to preserve the history entry — per instructions.
+
+**Fix-ups:** None — all cherry-picks applied cleanly with no conflicts requiring resolution. Only automatic merge occurred in `board/sunxi/board.c` for commit 3, which git handled on its own.
+
+**Deltas:** All stat deltas between cherry-picked and original commits matched exactly (same files, same line counts).
+
+Branch is ready for pushing.
+
+---
+
