@@ -64368,3 +64368,37 @@ Successfully rebased MR !929 onto the latest ci/master.
 
 ---
 
+## 2026-04-21: us/next
+
+Branch: cherry-a6f018b7b50
+
+Commits:
+- a6f018b7b50 arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock description for Sparrow Hawk
+- 0ffca1dff1e Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+Delta is identical. Now build test.
+
+Build OK. Now the merge commit - it's already been verified to be different from 95eee01b8b0.
+
+Cherry-pick complete. Final status:
+
+**Branch:** `cherry-a6f018b7b50` (based on `ci/master`)
+
+**Commits cherry-picked (2/2):**
+1. `215018bfe48` — arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock description for Sparrow Hawk
+   - Delta identical to original (1 file changed, 18 insertions)
+2. `9c7c48bb08d` — Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+   - Empty merge commit preserved via `--allow-empty`
+   - Verified the candidate `95eee01b8b0` was a different merge (pickman merge, not the sh custodian merge), so cherry-pick proceeded
+
+**Build result:** OK (sandbox built successfully)
+
+**Fix-ups:** None required
+
+**Concerning deltas:** None
+
+The branch is ready for pushing.
+
+---
+
