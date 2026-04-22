@@ -29,7 +29,7 @@ default:
     - ${DEFAULT_TAG}
   # Grab our configured image.  The source for this is found
   # in the u-boot tree at tools/docker/Dockerfile
-  image: ${MIRROR_DOCKER}/sjg20/u-boot-gitlab-ci-runner:noble-20251001-17Apr2026
+  image: ${MIRROR_DOCKER}/sjg20/u-boot-gitlab-ci-runner:noble-20251001-21Apr2026
   services:
     - name: container-$(CI_JOB_ID)
       command: ["--rm"]
