@@ -65,6 +65,7 @@ import argparse
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -313,7 +314,26 @@ mksquashfs '{stage}' '{modified}' -noappend -comp xz -no-progress
     return modified
 
 
-def autoinstall_yaml() -> str:
+def hash_password(password: str) -> str:
+    """Return a SHA-512 crypt hash for @password via openssl passwd -6.
+
+    Subiquity's identity.password field wants a crypt(3) hash, not a plaintext
+    password. Shelling out to openssl keeps the script's dependency list
+    unchanged (Python's crypt module is gone in 3.13).
+    """
+    out = subprocess.run(
+        ['openssl', 'passwd', '-6', '-stdin'],
+        input=password, capture_output=True, text=True, check=True,
+    )
+    return out.stdout.strip()
+
+
+def autoinstall_yaml(
+    unattended: bool = False,
+    hostname: str = 'ubuntu-uboot',
+    username: str = 'ubuntu',
+    password_hash: str = '',
+) -> str:
     """Return an autoinstall snippet that seeds BLS entries on the
     installed ESP.
 
@@ -329,11 +349,33 @@ def autoinstall_yaml() -> str:
     The kernel-install path is bypassed because curtin's chroot has /boot/efi as
     a plain directory rather than the ESP mountpoint, so systemd-boot-efi's
     90-loaderentry.install plugin silently exits without writing entries.
+
+    When @unattended is True, also emit identity and storage sections so
+    subiquity can complete without user input - required for the
+    test_distro_ubuntu_iso_install CI path.
     """
-    return (
-        '#cloud-config\n'
-        'autoinstall:\n'
-        '  version: 1\n'
+    head = '''\
+#cloud-config
+autoinstall:
+  version: 1
+'''
+    unattended_block = ''
+    if unattended:
+        unattended_block = f'''\
+  interactive-sections: []
+  refresh-installer:
+    update: no
+  identity:
+    hostname: {hostname}
+    username: {username}
+    password: '{password_hash}'
+  storage:
+    layout:
+      name: direct
+  ssh:
+    install-server: true
+'''
+    body = (
         '  late-commands:\n'
         # Write BLS entries to the install target's ESP. The kernel
         # and initrd are copied alongside on the ESP so the entry can
@@ -371,6 +413,7 @@ options root=UUID=%s ro console=ttyS0,115200 console=tty0\\n"\
  fi'
 '''
     )
+    return head + unattended_block + body
 
 
 def main() -> None:
@@ -402,6 +445,20 @@ def main() -> None:
                    help='path inside the ISO of the install squashfs to '
                         'modify for interactive installs '
                         '(default: %(default)s; set to empty to skip)')
+    p.add_argument('-A', '--autoinstall', action='store_true',
+                   help='build for unattended autoinstall: append '
+                        '"autoinstall" to the BLS cmdline and ship a complete '
+                        'autoinstall.yaml so subiquity runs without user input')
+    p.add_argument('--hostname', default='ubuntu-uboot',
+                   help='hostname for the autoinstalled system '
+                        '(default: %(default)s)')
+    p.add_argument('--username', default='ubuntu',
+                   help='username created by autoinstall '
+                        '(default: %(default)s)')
+    p.add_argument('--password', default='ubuntu',
+                   help='plaintext password for the autoinstall user; '
+                        'hashed with `openssl passwd -6` before being '
+                        'written to autoinstall.yaml (default: %(default)s)')
     p.add_argument('-v', '--verbose', action='store_true',
                    help='show progress markers and subprocess output')
     args = p.parse_args()
@@ -414,7 +471,11 @@ def main() -> None:
         tout.fatal(f'ISO not found: {args.iso}')
     if not args.uboot.is_file():
         tout.fatal(f'EFI app not found: {args.uboot}')
+    if args.autoinstall and args.no_target_bls:
+        tout.fatal('--autoinstall requires target-BLS wiring; drop -N')
     check_tools()
+    if args.autoinstall and not shutil.which('openssl'):
+        tout.fatal('openssl is required when --autoinstall is set')
 
     tout.notice(f'=> Reading boot config from {args.iso}')
     # Extract the volume label and ESP partition GUID from xorriso's report
@@ -423,6 +484,19 @@ def main() -> None:
     cmdline = args.cmdline
     if cmdline is None:
         cmdline = parse_grub_cmdline(args.iso, args.kernel)
+    if args.autoinstall:
+        # Force subiquity onto the serial console so the CI harness can watch
+        # progress: drop the live-ISO 'quiet splash' (kernel would otherwise
+        # silently swallow the reboot line), pin the console to ttyS0, and ask
+        # systemd-journald to mirror its stream onto the console so subiquity's
+        # own events land on serial too.
+        tokens = [t for t in cmdline.split() if t not in ('quiet', 'splash')]
+        for extra in ('console=ttyS0,115200',
+                      'systemd.journald.forward_to_console=1',
+                      'autoinstall'):
+            if extra not in tokens:
+                tokens.append(extra)
+        cmdline = ' '.join(tokens)
     tout.notice(f'   Volume label: {vol_id}')
     tout.notice(f'   ESP GUID:     {esp_guid}')
     tout.notice(f'   Cmdline:      {cmdline}')
@@ -446,7 +520,15 @@ def main() -> None:
         file_maps = [(entry, '/loader/entry.conf')]
         if not args.no_target_bls:
             ai = work / 'autoinstall.yaml'
-            ai.write_text(autoinstall_yaml())
+            if args.autoinstall:
+                ai.write_text(autoinstall_yaml(
+                    unattended=True,
+                    hostname=args.hostname,
+                    username=args.username,
+                    password_hash=hash_password(args.password),
+                ))
+            else:
+                ai.write_text(autoinstall_yaml())
             file_maps.append((ai, '/autoinstall.yaml'))
             if args.install_squashfs:
                 modified_sqfs = inject_first_boot_unit(
