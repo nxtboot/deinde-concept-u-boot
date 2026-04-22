@@ -64402,3 +64402,49 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-21 (attempt 1)
+
+Branch: cherry-a6f018b7b50
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Based on my analysis, this is a hardware lab infrastructure issue, not a code issue.
+
+## Diagnosis Report
+
+**Failure type:** Infrastructure / lab hardware issue — **no code fix needed**
+
+### Root cause
+The `opi_pc` job (stage `sjg-lab`) is a hardware-in-the-loop test on an actual Orange Pi PC (Allwinner H3 / sunxi) board. The failure is:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+Labgrid flashed the board, reset it, and then timed out waiting for the U-Boot login prompt over serial. The error is classified by the lab tooling itself as `Lab failure: Marking connection bad` — meaning the lab runner decided this was a hardware/connection problem and skipped remaining tests.
+
+### Why this is not a code regression
+The branch `cherry-a6f018b7b50` contains only one content-bearing change:
+
+```
+ arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi | 18 ++++++++++++++
+```
+
+That file is a U-Boot DTS overlay for the **Renesas R-Car Gen4 Sparrow Hawk** (arm64, r8a779g3). It is in no way compiled into or included by the Orange Pi PC (Allwinner H3 / sunxi, 32-bit ARM) build. It cannot affect the opi_pc image.
+
+The branch's other commits are:
+- `9c7c48bb08d` — empty merge commit (u-boot-sh custodian merge, no code)
+- `1050cabdd5b` — `pickman: Record cherry-pick...` (only touches `.pickman-history`)
+
+None of these can change opi_pc behaviour.
+
+### Conclusion
+This is a transient lab/hardware problem: the Orange Pi PC didn't come up on the serial console within 15 s after flash/reset. Per the instructions, infrastructure/transient failures should be reported without making changes. No commits were amended, no fixup commit was added, and no `cherry-a6f018b7b50-fix1` branch was created.
+
+Recommended action for the caller: re-run the `opi_pc` job.
+
+---
+
