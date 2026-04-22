@@ -64663,6 +64663,57 @@ A `[pickman] Fix ...` note was appended to the commit message explaining that th
 
 - `um build sandbox` — silent success.
 - `buildman -o /tmp/pickman x96q orangepi_pc tanix_tx1 sandbox` (expanded to 15 boards incl. `x96q_pro_plus`, `orangepi_pc_plus`, `orangepi_pc2`, `sandbox*` variants): **15/15 built**, 0 errors. The only warnings are the standard "missing atf-bl31" / "missing scp" sunxi CI warnings already present on `tanix_tx1` and all other sunxi boards — the X96Q build now produces the same warning pattern as its neighbours.
+---
+
+## 2026-04-21: us/next
+
+Branch: cherry-280dbbbf6e4
+
+Commits:
+- 280dbbbf6e4 mach-sc5xx: Introduce Kconfig symbols for image addresses
+- ca8cceb12f1 mach-sc5xx: Rename SC_BOOT_MODE
+- e01743624ef mach-sc5xx: Kconfig: Make EZKIT and EZLITE carriers mutually exclusive
+- a6927e71756 mach-sc5xx: Add preliminary support for binman
+- b36007b0162 docker: add Analog Devices tools to docker image
+- 48a45b74aa5 board: adi: Add SOMCRR infrastructure
+- 34d41f8da61 board: adi: Add support for SC573-ezkit
+- e382cb2be4e board: adi: Add support for SC589 boards
+- e1d6232874f board: adi: Add support for SC584-ezkit
+- c9e893d6266 board: adi: Add support for SC598
+- be7937847b7 board: adi: Add support for SC594
+- b0df2df8d47 MAINTAINERS: Update ADI entries for new boards
+- 8de6e8f8a07 Merge patch series "sc5xx: Add complete board support for all ADI SC5xx boards"
+
+### Conversation log
+Build passes. Moving on to next commit.
+
+Good - the maintainer warnings are gone now. Now the merge commit.
+
+The conflicts are in CI config files (.azure-pipelines.yml and .gitlab-ci.yml) where ci/master uses its own custom CI runner image. We need to keep our (HEAD) side for those files.
+
+Now I need to amend to add the cherry-pick -x line and a note about the fix-up.
+
+Now verify the branch and run final build.
+
+All 13 commits are present (12 regular + 1 merge). Let me run the final build.
+
+## Summary
+
+All 13 commits cherry-picked successfully onto `cherry-280dbbbf6e4` (based on `ci/master`).
+
+**Branch**: `cherry-280dbbbf6e4` (ready to push; not merged to any other branch)
+
+**Build result**: OK - sandbox builds cleanly with no errors or warnings.
+
+**Commit deltas**: All 12 regular commits matched the originals exactly (identical file lists and line counts). The 13th (merge) commit became empty since its content was carried by the preceding 12 picks — this is expected for a patch-series merge commit.
+
+**Fix-ups made**:
+- **Merge commit `8de6e8f8a07`**: Cherry-pick produced conflicts in `.azure-pipelines.yml` and `.gitlab-ci.yml` (ci/master uses its own custom CI runner image `sjg20/u-boot-gitlab-ci-runner` vs upstream's `trini/u-boot-gitlab-ci-runner`). Resolved by keeping `--ours` (the ci/master CI configuration). The cherry-pick then became empty, so committed with `--allow-empty` to preserve merge history. A note was appended to the commit message: *"Kept ci/master CI runner configuration in .azure-pipelines.yml and .gitlab-ci.yml during merge resolution."*
+
+**Concerning deltas**: None.
+
+**Intermediate build warnings** (transient, cleared by commit 12):
+- "no maintainers for 'sc573-ezkit'", "'sc589-ezkit'", "'sc589-mini'", "'sc598-som-ezkit-spl'", "'sc598-som-ezlite-spl'" — these appeared between the board-add commits and the `MAINTAINERS` update commit, which is normal ordering. The final build has no warnings.
 
 ---
 
