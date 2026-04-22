@@ -21,6 +21,7 @@ variables:
   WORLD: "1"
   SAGE_LAB: ""
   SJG_LAB: ""
+  SJG_LAB_SLOW: ""
   PLATFORM: linux/amd64,linux/arm64
   GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_RUNNER_ID/$CI_CONCURRENT_ID/u-boot
 
@@ -40,6 +41,7 @@ stages:
   - test.py
   - sage-lab
   - sjg-lab
+  - sjg-lab-slow
   - world_build
   - version_bump
   - release
@@ -899,6 +901,29 @@ coreboot test.py:
       - "build/${ROLE}/multiplexed_log.css"
     expire_in: 1 week
 
+# Slow lab jobs (e.g. full distro installs). Same script/artifacts as
+# sjg_lab_dfn but in a later stage and gated on its own SJG_LAB_SLOW variable so
+# slow jobs can be opted into without pulling in the rest of the sjg-lab matrix.
+# Auto-runs on merge_request_event like sjg_lab_dfn; on other pipelines (push,
+# schedule) it appears as a manual-trigger button with allow_failure so it never
+# blocks a pipeline. Set [skip-sjg-slow] in the MR description to skip just the
+# slow jobs (independent of the sjg-lab [skip-sjg] hatch).
+.sjg_lab_slow_template: &sjg_lab_slow_dfn
+  <<: *sjg_lab_dfn
+  stage: sjg-lab-slow
+  rules:
+    - if: $CI_MERGE_REQUEST_DESCRIPTION =~ /\[skip-sjg-slow\]/
+      when: never
+    - if: $SJG_LAB_SLOW == $ROLE || $SJG_LAB_SLOW == "1"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $SJG_LAB_SLOW != "" && $SJG_LAB_SLOW != "1" && $SJG_LAB_SLOW != $ROLE
+      when: never
+    - if: $SJG_LAB_SLOW == ""
+      when: manual
+      allow_failure: true
+
 rpi3:
   variables:
     ROLE: rpi3
@@ -1061,6 +1086,18 @@ efi-x86_64-uboot-iso:
     ROLE: efi-x86_64-uboot-iso
     TEST_PY_TEST_SPEC: "and test_distro_ubuntu_iso_uboot"
   <<: *sjg_lab_dfn
+
+# Full unattended install of Ubuntu: the role's writer builds the ISO with
+# --autoinstall, subiquity installs onto a blank target disk, and BLS is
+# expected to pick up the kernel entries kernel-install creates on the installed
+# ESP. Slow (~30-45 min), so lives in sjg-lab-slow: manual-trigger only on
+# MRs; set SJG_LAB_SLOW to the role name (or '1') to force an automatic run.
+efi-x86_64-uboot-iso-install:
+  variables:
+    ROLE: efi-x86_64-uboot-iso-install
+    TEST_PY_TEST_SPEC: "and test_distro_ubuntu_iso_install"
+  timeout: 2h
+  <<: *sjg_lab_slow_dfn
 
 # NVIDIA Jetson TK1
 tk1:
