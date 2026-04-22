@@ -64717,3 +64717,62 @@ All 13 commits cherry-picked successfully onto `cherry-280dbbbf6e4` (based on `c
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-380ddb473c6
+
+Commits:
+- 380ddb473c6 arm: spl: Correct alignment of .rel.dyn section
+- f4dfa5d3c26 Revert "arm: spl: Correct alignment of .rel.dyn section"
+- dc2d8423b19 count rel_dyn
+- aa4f687977a Prepare v2026.04-rc1
+- 431f1ce46bb Revert a number of incorrect commits
+- 3ffda58597b scsi: ufs: renesas: Replace init data by init code
+- a7bec98ef80 scsi: ufs: renesas: Add register read to remove save/set/restore
+- 4e27f441844 scsi: ufs: renesas: Remove register control helper function
+- 8bf3dc99aff scsi: ufs: renesas: Refactor 0x10ad/0x10af PHY settings
+- bd07aa1aa6c scsi: ufs: renesas: Add reusable functions
+- 0fcd1548596 bootm: Remove BOOTM_NETBSD from defaults
+- 04854a24aca Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 12 commits are present. Let me run the final build.
+
+## Cherry-pick Summary
+
+All 12 commits successfully cherry-picked onto branch `cherry-380ddb473c6` (based on `ci/master`).
+
+### Build result
+**OK** — Final sandbox build passed.
+
+### Fix-ups made
+1. **`aa4f687977a` (Prepare v2026.04-rc1)** — Makefile conflict: current base had `PATCHLEVEL = 02`, resolved by setting `PATCHLEVEL = 04`. Amended commit message with note: `[sjg: Resolve conflict in Makefile PATCHLEVEL]`.
+
+2. **`0fcd1548596` (bootm: Remove BOOTM_NETBSD from defaults)** — `cmd/Kconfig` conflict: the `BOOTM_NETBSD` config block has moved from `cmd/Kconfig` to `boot/Kconfig` in this branch. Manually applied the same 3-line change (title update + removal of `default y` + help text update) to `boot/Kconfig`. Noted in commit message: `[sjg: Apply to boot/Kconfig instead of cmd/Kconfig (moved upstream)]`.
+
+### Deltas
+All cherry-picks match the original commits exactly in line counts and files. The BOOTM_NETBSD commit differs only in the file path (`boot/Kconfig` vs `cmd/Kconfig`), which is expected due to the upstream refactor.
+
+### Merge commit
+`04854a24aca` — empty merge cherry-picked with `-m 1 --allow-empty` + `git commit --allow-empty` to preserve the history marker.
+
+### Branch log
+```
+87313faea94 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+4c87062c574 bootm: Remove BOOTM_NETBSD from defaults
+c56e2754894 scsi: ufs: renesas: Add reusable functions
+3aef579757a scsi: ufs: renesas: Refactor 0x10ad/0x10af PHY settings
+f0dc9b2e40b scsi: ufs: renesas: Remove register control helper function
+6ffad5fa0c9 scsi: ufs: renesas: Add register read to remove save/set/restore
+594fc61cd2a scsi: ufs: renesas: Replace init data by init code
+df90a712662 Revert a number of incorrect commits
+e22cec59103 Prepare v2026.04-rc1
+2843258c4a8 count rel_dyn
+c242fc530ce Revert "arm: spl: Correct alignment of .rel.dyn section"
+40c4a631ffe arm: spl: Correct alignment of .rel.dyn section
+```
+
+Branch `cherry-380ddb473c6` ready for pushing.
+
+---
+
