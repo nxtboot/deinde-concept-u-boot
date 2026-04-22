@@ -100,6 +100,59 @@ def test_distro_arm_app_extlinux(ubman):
     ubman.restart_uboot()
 
 @pytest.mark.boardspec('efi-x86_app64')
+@pytest.mark.role('efi-x86_64-uboot-iso-install')
+@pytest.mark.restart
+def test_distro_ubuntu_iso_install(ubman):
+    """Run an unattended Ubuntu install through U-Boot + BLS.
+
+    Needs a role whose UBootWriterDriver passes --autoinstall to
+    scripts/ubuntu-iso-to-uboot.py and whose QEMU config attaches a blank virtio
+    disk as the install target. The rewritten ISO boots straight into subiquity
+    (autoinstall on the BLS cmdline), subiquity partitions the target disk and
+    installs Ubuntu, then kernel-install populates /boot/loader/entries/ on the
+    installed ESP. On reboot, OVMF hands control back to U-Boot (still living on
+    the ISO ESP), whose BOOTMETH_BLS picks up the new entries from the installed
+    disk and boots that system.
+    """
+    with ubman.log.section('boot-installer'):
+        with ubman.temporary_timeout(120 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with bls"])
+            ubman.expect(['Linux version'])
+
+    # Subiquity sends its reporting events through journald; with
+    # forward_to_console=1 on the cmdline they appear on ttyS0. Each event is
+    # logged as 'start: <path>: <description>' (or 'finish: ...'), so wait for
+    # the start of the curtin_install step, which follows partitioning and
+    # marks the point where curtin begins copying the system to disk.
+    with ubman.log.section('subiquity-install'):
+        with ubman.temporary_timeout(10 * 60 * 1000):
+            ubman.expect(
+                [r'start: +subiquity/Install/install/curtin_install:'])
+
+    # The clean end-of-install marker: subiquity finishes, systemd tears the
+    # session down and the kernel prints 'Restarting system' on the way out.
+    # 'quiet' has been stripped so this is visible.
+    with ubman.log.section('subiquity-reboot'):
+        with ubman.temporary_timeout(45 * 60 * 1000):
+            ubman.expect([r'reboot: Restarting system'])
+
+    # After reboot OVMF re-runs U-Boot from the ISO ESP. BLS now sees the
+    # installed disk's /loader/entries/ and should pick the newly written entry
+    # rather than the ISO's casper one.
+    with ubman.log.section('boot-installed'):
+        with ubman.temporary_timeout(300 * 1000):
+            ubman.expect([r"Booting bootflow '[^']+' with bls"])
+            ubman.expect(['Linux version'])
+
+    with ubman.log.section('installed-ubuntu'):
+        with ubman.temporary_timeout(300 * 1000):
+            ubman.expect([r' login: '])
+
+    ubman.restart_uboot()
+
+
+@pytest.mark.boardspec('efi-x86_app64')
 @pytest.mark.role('efi-x86_64-uboot-iso')
 @pytest.mark.restart
 def test_distro_ubuntu_iso_uboot(ubman):
