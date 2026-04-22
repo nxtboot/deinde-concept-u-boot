@@ -318,10 +318,18 @@ class ConsoleBase():
         self.timeout = TIMEOUT_PREPARE_MS
         self.lab_mode = True
 
-    def _wait_for_boot_prompt(self, loop_num=1):
+    def _wait_for_boot_prompt(self, loop_num=1, lab_marker_expected=True):
         """Wait for the boot up until command prompt.
 
         This is for internal use only.
+
+        Args:
+            loop_num (int): Number of banner occurrences to wait for.
+            lab_marker_expected (bool): In lab mode, True means the labgrid
+                reset wrapper emits the '{lab ready ...}' marker that must
+                be consumed. False means this is an in-test reboot (reset
+                command, EFI watchdog, ...) with no labgrid involvement,
+                so match the plain '=>' prompt instead.
         """
         try:
             self.log.info('Waiting for U-Boot to be ready')
@@ -331,23 +339,24 @@ class ConsoleBase():
             if not self.lab_mode:
                 self._wait_for_banner(loop_num)
                 self.u_boot_version_string = self.after
-            # In lab mode the '{lab ready in <t>s: <banner>}' marker is
-            # the authoritative ready signal and must be consumed so
-            # the embedded banner does not trip the signon bad-pattern
-            # when the next command runs. Skip the plain '=>' prompt
-            # match in that case.
-            if self.lab_mode:
-                wait_patterns = [pattern_ready_prompt,
+            # In lab mode the '{lab ready in <t>s: <banner>}' marker is the
+            # authoritative ready signal and must be consumed so the
+            # embedded banner does not trip the signon bad-pattern on the
+            # next command. For in-test reboots there is no labgrid
+            # involvement, so fall back to matching the plain '=>' prompt.
+            match_prompt = not self.lab_mode or not lab_marker_expected
+            if match_prompt:
+                wait_patterns = [self.prompt_compiled, pattern_ready_prompt,
                                  pattern_stop_autoboot_prompt]
             else:
-                wait_patterns = [self.prompt_compiled, pattern_ready_prompt,
+                wait_patterns = [pattern_ready_prompt,
                                  pattern_stop_autoboot_prompt]
             ready_idx = wait_patterns.index(pattern_ready_prompt)
             autoboot_idx = wait_patterns.index(pattern_stop_autoboot_prompt)
             base = len(wait_patterns)
             while True:
                 m = self.expect(wait_patterns + self.bad_patterns)
-                if not self.lab_mode and m == 0:
+                if match_prompt and m == 0:
                     self.log.info(f'Found ready prompt {m}')
                     break
                 if m == ready_idx:
@@ -473,7 +482,7 @@ class ConsoleBase():
             if not wait_for_prompt:
                 return ''
             if wait_for_reboot:
-                self._wait_for_boot_prompt()
+                self._wait_for_boot_prompt(lab_marker_expected=False)
             else:
                 m = self.expect([self.prompt_compiled] + self.bad_patterns)
                 if m != 0:
