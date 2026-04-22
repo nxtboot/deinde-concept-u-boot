@@ -50,11 +50,19 @@ async def run_agent_collect(prompt, options):
         tuple: (success, conversation_log) where success is bool and
             conversation_log is the agent's output text
     """
+    import os
+    debug = os.environ.get('PATMAN_DEBUG_AGENT')
     conversation_log = []
     try:
         async for message in query(prompt=prompt, options=options):
+            if debug:
+                tout.error(f'AGENT MSG: {type(message).__name__}: '
+                           f'{message!r}')
             if hasattr(message, 'content'):
                 for block in message.content:
+                    if debug:
+                        tout.error(f'  BLOCK: {type(block).__name__}: '
+                                   f'{block!r}')
                     if hasattr(block, 'text'):
                         print(block.text)
                         conversation_log.append(block.text)
