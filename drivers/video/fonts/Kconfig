@@ -71,6 +71,14 @@ config CONSOLE_TRUETYPE_UBUNTU_BOLD
 	  License: Ubuntu Font Licence version 1.0
 	  https://canonical.com/legal/font-licence
 
+config CONSOLE_TRUETYPE_DEJAVU
+	bool "DejaVu Sans Mono Regular"
+	depends on CONSOLE_TRUETYPE
+	help
+	  This mono spaced font contains all code page 437 characters.
+	  From https://sourceforge.net/projects/dejavu/
+	  License: DejaVu Font License
+
 endmenu
 
 endif  # CONSOLE_TRUETYPE

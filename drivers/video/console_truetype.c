@@ -740,6 +740,7 @@ FONT_DECL(rufscript010);
 FONT_DECL(cantoraone_regular);
 FONT_DECL(ubuntu_light);
 FONT_DECL(ubuntu_bold);
+FONT_DECL(dejavu_mono);
 
 static struct font_info font_table[] = {
 #ifdef CONFIG_CONSOLE_TRUETYPE_NIMBUS
@@ -759,6 +760,9 @@ static struct font_info font_table[] = {
 #endif
 #ifdef CONFIG_CONSOLE_TRUETYPE_UBUNTU_BOLD
 	TT_FONT_ENTRY(ubuntu_bold),
+#endif
+#ifdef CONFIG_CONSOLE_TRUETYPE_DEJAVU
+	TT_FONT_ENTRY(dejavu_mono),
 #endif
 	{} /* sentinel */
 };
