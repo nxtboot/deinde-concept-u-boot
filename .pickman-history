@@ -64882,3 +64882,46 @@ Branch `cherry-cfce859b16f-fix1` left at HEAD = `5e1ea6475f1`, not pushed.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-6f3e63b4de8
+
+Commits:
+- 6f3e63b4de8 dm: core: lists_bind_fdt: Remove unused variable
+- 41cf66011fc dm: core: lists_bind_fdt: Replace found variable
+- 6668b8e7cc6 dm: core: Support multiple drivers with same compatibles
+- 87d7d8190f5 dm: core: lists_bind_fdt: Indent continuation debug log message
+- c7e0e3fd33c test: dm: Add compatible multimatch test
+- e8ec8d980a3 Merge patch series "dm: core: Support same compatible in host/gadget musb drivers"
+
+### Conversation log
+Stats match exactly. Let me run the build test.
+
+Now the final (merge) commit:
+
+All 6 commits are present. Now run the final build:
+
+## Cherry-pick Complete
+
+All 6 commits were successfully cherry-picked from `us/next` onto a new branch `cherry-6f3e63b4de8` based on `ci/master`.
+
+### Final Status
+
+**Build result:** OK (sandbox build successful with no warnings/errors after every cherry-pick including final verification)
+
+**Commits applied (in order):**
+1. `7cd681c92a4` — dm: core: lists_bind_fdt: Remove unused variable (1 file, +2/-3)
+2. `02cccdd8fa3` — dm: core: lists_bind_fdt: Replace found variable (1 file, +2/-3)
+3. `6269aeedcc7` — dm: core: Support multiple drivers with same compatibles (1 file, +34/-33)
+4. `f7f3c262c46` — dm: core: lists_bind_fdt: Indent continuation debug log message (1 file, +1/-1)
+5. `698daff55a3` — test: dm: Add compatible multimatch test (3 files, +45) — auto-merged cleanly in `test.dts`, `core.c`, `test-driver.c`
+6. `4e9a83364d5` — Merge patch series ... (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups:** None required. The test commit auto-merged in 3 files but resulted in identical stats to the original — no manual intervention or commit message amendments needed.
+
+**Concerning deltas:** None. Every cherry-pick's `git show --stat` matched the original exactly.
+
+The branch `cherry-6f3e63b4de8` is ready for pushing.
+
+---
+
