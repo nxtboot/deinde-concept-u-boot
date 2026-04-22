@@ -64882,3 +64882,148 @@ Branch `cherry-cfce859b16f-fix1` left at HEAD = `5e1ea6475f1`, not pushed.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-6f3e63b4de8
+
+Commits:
+- 6f3e63b4de8 dm: core: lists_bind_fdt: Remove unused variable
+- 41cf66011fc dm: core: lists_bind_fdt: Replace found variable
+- 6668b8e7cc6 dm: core: Support multiple drivers with same compatibles
+- 87d7d8190f5 dm: core: lists_bind_fdt: Indent continuation debug log message
+- c7e0e3fd33c test: dm: Add compatible multimatch test
+- e8ec8d980a3 Merge patch series "dm: core: Support same compatible in host/gadget musb drivers"
+
+### Conversation log
+Stats match exactly. Let me run the build test.
+
+Now the final (merge) commit:
+
+All 6 commits are present. Now run the final build:
+
+## Cherry-pick Complete
+
+All 6 commits were successfully cherry-picked from `us/next` onto a new branch `cherry-6f3e63b4de8` based on `ci/master`.
+
+### Final Status
+
+**Build result:** OK (sandbox build successful with no warnings/errors after every cherry-pick including final verification)
+
+**Commits applied (in order):**
+1. `7cd681c92a4` — dm: core: lists_bind_fdt: Remove unused variable (1 file, +2/-3)
+2. `02cccdd8fa3` — dm: core: lists_bind_fdt: Replace found variable (1 file, +2/-3)
+3. `6269aeedcc7` — dm: core: Support multiple drivers with same compatibles (1 file, +34/-33)
+4. `f7f3c262c46` — dm: core: lists_bind_fdt: Indent continuation debug log message (1 file, +1/-1)
+5. `698daff55a3` — test: dm: Add compatible multimatch test (3 files, +45) — auto-merged cleanly in `test.dts`, `core.c`, `test-driver.c`
+6. `4e9a83364d5` — Merge patch series ... (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups:** None required. The test commit auto-merged in 3 files but resulted in identical stats to the original — no manual intervention or commit message amendments needed.
+
+**Concerning deltas:** None. Every cherry-pick's `git show --stat` matched the original exactly.
+
+The branch `cherry-6f3e63b4de8` is ready for pushing.
+
+---
+
+### Review: 2026-04-22
+
+Branch: cherry-6f3e63b4de8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+Let me examine the log more carefully and con...
+
+### Conversation log
+Look at /home/sglass/dev/u-boot/tools/pickman/agent.py and related files. I need to understand how the pickman review workflow handles the case where a "review comment" to address is actually the bot's own previous "Pipeline fix (attempt N)" comment that concluded "no code change made - lab infrastructure failure".
+
+Specifically:
+1. What does pickman expect the agent to do when the review comment IS the bot's own previous pipeline-fix analysis?
+2. Is there a way to report back "no action needed, previous analysis stands" without creating a new branch?
+3. What format should the reply post on the MR take?
+4. Does the tool require a -v2 branch to be pushed even if no code changes were made?
+
+Report under 300 words. Look for prompt templates, agent instructions, or handling of "Pipeline fix" comments.
+
+I've analyzed the situation carefully. Here's my report:
+
+## Analysis
+
+The "review comment" to address is actually **the bot's own previous `Pipeline fix (attempt 1)` report** — not a comment from a human reviewer. This is evident from:
+
+1. **Author**: `project_1_bot_2541d37e7146e9c25808a380e05ebef0` (the pickman bot itself)
+2. **Content**: Verbatim copy of the previous Claude session's analysis, which is also recorded in `.pickman-history` (commit `1f072c3307c` "pickman: Record pipeline fix for cherry-6f3e63b4de8")
+3. **Conclusion within the comment**: "No code change made. Per the instructions, I'm reporting this as an infrastructure / transient issue."
+
+## State verification
+
+- Branch `cherry-6f3e63b4de8` is currently checked out
+- Local HEAD is `bf2e0884473` — unchanged since the original cherry-pick
+- All 6 cherry-picked commits plus the `pickman: Record cherry-pick of 6 commits from us/next` tracking commit are present
+- No new review feedback from a human reviewer exists
+
+## Action taken
+
+**No code changes.** There is nothing actionable in the comment — it is a self-authored analysis of an `opi_pc` lab/infrastructure failure (labgrid 15-second timeout with no U-Boot banner, explicitly classified as "Lab failure:" by the harness). The previous analysis remains valid:
+
+- The DM-core binding commits on this branch are generic and would not cause a no-banner hang on a single sunxi board
+- The failure mode (pre-boot serial timeout, zero tests executed) is characteristic of lab flakiness, not a code regression
+- A U-Boot regression from these commits would affect multiple boards and typically produce partial serial output
+
+**No `-v2` branch pushed**, because there are no code changes to land. Force-pushing an unchanged tree would be noise.
+
+## Suggested MR reply
+
+> This review comment is the bot's own previous `Pipeline fix (attempt 1)` analysis being re-surfaced as an unresolved comment. The analysis concluded (correctly) that the `opi_pc` failure is a lab/infrastructure issue — labgrid timed out waiting for the login prompt on orangepi_pc with zero tests executed and no U-Boot output, and the harness itself classified it with the `"Lab failure:"` prefix. The DM-core binding commits on this branch are generic and would not produce a no-banner hang on one sunxi board in isolation. No code change is warranted; please retry the `opi_pc` job. If it reproduces across multiple runs while other sunxi boards pass, we can investigate further.
+
+## Gap noted
+
+The pickman review workflow surfaces the bot's own prior pipeline-fix comment as an unresolved comment to address (no filter by author in `build_review_prompt` per `tools/pickman/agent.py`). Consider filtering or auto-resolving `project_1_bot_*` comments that begin with `"Pipeline fix (attempt N):"` so they don't enter the review queue as actionable items.
+
+---
+
+### Review: 2026-04-22
+
+Branch: cherry-6f3e63b4de8
+
+Comments addressed:
+
+
+### Conversation log
+Local branch is already on top of the fetched `ci/master` HEAD (merge-base = ci/master HEAD = 86e0c12d21f). Let me save the pre-rebase state and run the rebase command anyway to confirm it's a no-op.
+
+Rebase was a no-op — branch is already up to date with ci/master. HEAD unchanged (1d055d3d7e1), all 8 commits preserved. Now running buildman.
+
+Build passed. Now create -v2 local branch and force-push.
+
+Force push succeeded. The remote now points at `1d055d3d7e1` (our HEAD), previously at `30b3ab0d7e0`.
+
+## Rebase Complete — MR !937
+
+### Outcome
+
+The rebase was a **no-op** — the local branch `cherry-6f3e63b4de8` was already based on the tip of `ci/master` (merge-base = ci/master HEAD = `86e0c12d21f`). `git rebase --keep-empty ci/master` reported *"Current branch cherry-6f3e63b4de8 is up to date."*, HEAD stayed at `1d055d3d7e1`, and all 8 commits were preserved unchanged (6 cherry-picked + the pickman cherry-pick record + the pickman review-handling record).
+
+### Verification
+
+- **Pre-/post-rebase HEAD**: `1d055d3d7e1` (unchanged)
+- **Deltas per commit** (all match originals exactly):
+  - `7cd681c92a4` — Remove unused variable: `drivers/core/lists.c` (+2/-3)
+  - `02cccdd8fa3` — Replace found variable: `drivers/core/lists.c` (+2/-3)
+  - `6269aeedcc7` — Support multiple drivers with same compatibles: `drivers/core/lists.c` (+34/-33)
+  - `f7f3c262c46` — Indent continuation debug log: `drivers/core/lists.c` (+1/-1)
+  - `698daff55a3` — Add compatible multimatch test: `test.dts`/`core.c`/`test-driver.c` (+45)
+  - `4e9a83364d5` — Merge patch series (empty merge commit, preserved)
+  - `bf2e0884473` — pickman cherry-pick record (+43)
+  - `1d055d3d7e1` — pickman review-handling record (+57)
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:13` (OK)
+- **Local -v2 branch**: `cherry-6f3e63b4de8-v2` created at `1d055d3d7e1`
+- **Remote update**: force-pushed `cherry-6f3e63b4de8` on `ci`: `30b3ab0d7e0 → 1d055d3d7e1` (the previous remote tip had unrelated `cherry-ea4bab00531` review commits, now replaced with the correct tree)
+- **GitLab MR**: https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/937 — pipeline will auto-trigger on the new tip
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. The branch was already based on the current target tip (`86e0c12d21f`), so `git rebase --keep-empty ci/master` was a no-op — HEAD stayed at `1d055d3d7e1` and all 8 commits are preserved with identical deltas. Sandbox build passes (`buildman -L --board sandbox`). Force-pushed to refresh the MR pipeline; the previous remote tip (`30b3ab0d7e0`) contained stale/unrelated commits and has been replaced with the correct cherry-pick tree.
+
+---
+
