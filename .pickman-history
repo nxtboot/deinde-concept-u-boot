@@ -64776,3 +64776,109 @@ Branch `cherry-380ddb473c6` ready for pushing.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-cfce859b16f
+
+Commits:
+- cfce859b16f Kconfig: select SPL_USE_TINY_PRINTF_POINTER_SUPPORT for K3
+- 272b8784faf fit: Rework SPL_LOAD_FIT_ADDRESS slightly
+- 09cc6788683 boot/fit: print name of config node not found
+- b0c6b5f4214 configs: apple: Enable SMBIOS / sysinfo
+- 4234f4d432b binman: Regenerate expired test certificate
+- 424b324165e armv7: Add CPLD support via IFC to the ls1021a-iot board.
+- add12cb688d board: nxp: Rename board directory from board/freescale to board/nxp
+- 8e918cbe7a1 firmware: scmi: sandbox: Use scmi_clk_state_in_v2
+- cd4f4f74213 Merge tag 'fsl-qoriq-for-2026.04-rc2' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+Build passed. Continuing with next cherry-pick.
+
+Same deltas. Continuing.
+
+The patch is applied. Now commit with the original message plus a fix-up note.
+
+Now the merge commit.
+
+All 9 commits present. Running final build.
+
+## Final Status
+
+**Branch:** `cherry-cfce859b16f` (based on `ci/master`) — all 9 commits present.
+
+**Build result:** OK — sandbox build passed after every cherry-pick and at the end.
+
+**Commit summary:**
+```
+b5101c26127 Merge tag 'fsl-qoriq-for-2026.04-rc2' ...
+d95529ec2a3 firmware: scmi: sandbox: Use scmi_clk_state_in_v2
+8c37a971949 board: nxp: Rename board directory from board/freescale to board/nxp
+1ade1cf4620 armv7: Add CPLD support via IFC to the ls1021a-iot board.
+9a81b9b2037 binman: Regenerate expired test certificate
+2427670933a configs: apple: Enable SMBIOS / sysinfo
+cc3f9c8a10a boot/fit: print name of config node not found
+a3394a9a657 fit: Rework SPL_LOAD_FIT_ADDRESS slightly
+812ff37da7d Kconfig: select SPL_USE_TINY_PRINTF_POINTER_SUPPORT for K3
+```
+
+**Fix-ups made (noted in commit messages):**
+
+1. **`boot/fit: print name of config node not found` (09cc6788683)** — Cherry-pick conflict due to upstream refactor that extracted `select_from_config()`. Applied the one-line change manually to `select_from_config()` in `boot/image-fit.c`. Result matches the original intent (single `puts` → `printf` with node name). Note added to commit message.
+
+2. **`board: nxp: Rename ...` (add12cb688d)** — Conflict in `arch/arm/Kconfig`: upstream had already moved `board/emulation/qemu-arm` and `board/emulation/qemu-sbsa` entries out of `arch/arm/Kconfig` into `board/`. Resolved by keeping only the freescale→nxp rename and dropping the emulation lines (they're present elsewhere in the tree). Note added.
+
+3. **`Merge tag 'fsl-qoriq-for-2026.04-rc2'` (cd4f4f74213)** — Same emulation/qemu conflict in `arch/arm/Kconfig`. Resolved by keeping HEAD. The merge ended up as an empty commit (as expected, since all children were already picked) — preserved via `--allow-empty` per instructions. Note added.
+
+**Concerning deltas:** None. Every non-conflicting cherry-pick showed identical file counts and line counts to the originals. The conflict resolutions for #2 and #3 were strictly narrower (skipped entries already handled elsewhere on master), not functionally different.
+
+Branch is ready for pushing. Not merged anywhere.
+
+---
+
+### Pipeline fix: 2026-04-22 (attempt 1)
+
+Branch: cherry-cfce859b16f
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- vbe (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now let me verify the build works for rk3399-generic-ddr3:
+
+Now continue the rebase:
+
+## Summary
+
+Fix complete on branch `cherry-cfce859b16f-fix1`.
+
+### Root cause
+Commit `a3394a9a657 fit: Rework SPL_LOAD_FIT_ADDRESS slightly` (cherry-picked from upstream `272b8784fa`) introduces `SPL_HAS_LOAD_FIT_ADDRESS`, which defaults to `y` for `ARCH_ROCKCHIP`, and removed the `default 0x0` fallback from `SPL_LOAD_FIT_ADDRESS`.
+
+The local CI-only defconfig `configs/rk3399-generic-ddr3_defconfig` sets `CONFIG_SPL_TEXT_BASE=0xff8c2000`, which does not match any of the remaining conditional defaults for `SPL_LOAD_FIT_ADDRESS` (0x08000000 / 0x60000000 / 0x00200000 / 0x00000000). Result: the hex symbol ends up empty, Kconfig loops prompting for a value, and the build aborts with `.config:499:warning: symbol value '' invalid for SPL_LOAD_FIT_ADDRESS`. Upstream did not see this because this defconfig only exists on the CI fork.
+
+### Job-by-job assessment
+- **build all 64bit ARM platforms (442075)** — real regression: `rk3399-generic-ddr3` (aarch64) fails to configure, tripping `buildman -PEWM aarch64`'s exit code.
+- **vbe (442071)** — same failure. The job builds just `rk3399-generic-ddr3` and hits the identical Kconfig error.
+- **opi_pc (442041)** — **infrastructure**, not code: `pexpect.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad`. The orangepi_pc board simply did not respond on the serial line. No code change made.
+
+### Fix
+Amended commit `2a2e591b87a fit: Rework SPL_LOAD_FIT_ADDRESS slightly` with a one-line addition to `configs/rk3399-generic-ddr3_defconfig`:
+
+```
++# CONFIG_SPL_HAS_LOAD_FIT_ADDRESS is not set
+```
+
+This preserves the prior behaviour (malloc-backed FIT load buffer via the weak `board_spl_fit_buffer_addr()` fallback) without reintroducing the deprecated `0x0` default. Defconfig was normalised with `make savedefconfig`. A `[pickman]` note explaining the fix was appended to the commit message.
+
+### Verification
+- `um build sandbox` — clean.
+- `buildman -PEWM rk3399` — 31/31 rk3399 boards built, **0 failures** (previously 1 failure).
+- `buildman -PEWM k3 am62 am64 am65 am68 am69 j7 j72` — 65/65 built, 0 failures.
+- `buildman -PEWM --boards imx8mm_evk,lx2160aqds_tfa,ls2088ardb_tfa,apple_m1,j721e_evm_a72` — 5/5 built, 0 failures.
+
+Branch `cherry-cfce859b16f-fix1` left at HEAD = `5e1ea6475f1`, not pushed.
+
+---
+

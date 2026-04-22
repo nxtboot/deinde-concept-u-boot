@@ -1678,7 +1678,8 @@ static int select_from_config(const void *fit, struct bootm_headers *images,
 	if (ret < 0 && ret != -EINVAL)
 		ret = fit_conf_get_node(fit, fit_uname_config);
 	if (ret < 0) {
-		puts("Could not find configuration node\n");
+		printf("Could not find configuration node '%s'\n",
+		       fit_uname_config ? fit_uname_config : "(null)");
 		bootstage_error(bootstage_id +
 				BOOTSTAGE_SUB_NO_UNIT_NAME);
 		return -ENOENT;
