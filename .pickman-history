@@ -64615,3 +64615,54 @@ Branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-22 (attempt 1)
+
+Branch: cherry-d8ee42f1134
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- efi-x86_64-uboot-iso (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now let me add the DTS file:
+
+Now let me build-test the X96Q first before amending:
+
+The DTB compiled successfully — the original build error is fixed. The remaining error about bl31.bin is just the usual missing-blob non-functional-binary issue seen on many sunxi boards in CI (the CI handles this with BINMAN_ALLOW_MISSING). Let me try buildman which understands this:
+
+Build succeeds — x96q and x96q_pro_plus both compile (remaining warnings are the expected missing-blob CI warnings, same as many other sunxi boards). Now let me amend the commit:
+
+Now let me run the required verification steps:
+
+All builds pass with only the expected missing-blob warnings (same as the CI). Let me finalize:
+
+## Report
+
+**Branch left on:** `cherry-d8ee42f1134-fix1`
+
+### Failure analysis
+
+| Job | Cause | Action |
+|---|---|---|
+| **build all 64bit ARM platforms** (#440877) | Build error: `make[3]: *** No rule to make target 'dts/upstream/src/arm64/allwinner/sun50i-h313-x96q.dtb'` | **Fixed** (see below) |
+| **efi-x86_64-uboot-iso** (#440871) | Runtime test failure — x86 Ubuntu ISO booted, kernel panicked with `Initramfs unpacking failed: invalid magic at start of compressed archive` then `VFS: Unable to mount root fs`. Build succeeded; the failure is in the lab ISO image. | **No code change** — infrastructure / test-asset issue, unrelated to the 7 sunxi cherry-picks |
+| **opi_pc** (#440843) | Lab-grid failure: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` on the Orange Pi PC hardware, followed by `Lab failure: Marking connection bad`. Build succeeded. | **No code change** — hardware/lab issue, unrelated |
+
+### Root cause of the build failure
+
+Commit **`a5466658c7a`** (`board: sunxi: Add X96Q support`, originally `8805aa120ca` upstream) added `configs/x96q_defconfig` with `CONFIG_DEFAULT_DEVICE_TREE="allwinner/sun50i-h313-x96q"`. The commit message says *"The devicetree is already in dts/upstream"*, but this is only true in the upstream sunxi tree because it picked up the `v6.18-dts` subtree merge (`29ab19c2bea`, adding `a0378f478d0 arm64: dts: allwinner: h313: Add Amediatech X96Q`). On `ci/master`, the `dts/upstream` subtree is only at `v6.17-dts` and therefore lacks `sun50i-h313-x96q.dts` — so the build rule for the `.dtb` had no source to compile from.
+
+### Fix applied
+
+Amended commit `a5466658c7a` → `18d342f2c23`, adding the missing DTS file at `dts/upstream/src/arm64/allwinner/sun50i-h313-x96q.dts` (230 lines, verbatim copy from upstream commit `07c7f4f4e950`, which is the Linux/DT commit that the v6.18-dts sync will eventually bring in). All referenced include files (`sun50i-h616.dtsi`, `sun50i-h616-cpu-opp.dtsi`) are already present in the dts/upstream subtree, so no further additions were needed.
+
+A `[pickman] Fix ...` note was appended to the commit message explaining that the DTS is added inline because the `v6.18-dts` subtree merge has not yet landed on this branch.
+
+### Verification
+
+- `um build sandbox` — silent success.
+- `buildman -o /tmp/pickman x96q orangepi_pc tanix_tx1 sandbox` (expanded to 15 boards incl. `x96q_pro_plus`, `orangepi_pc_plus`, `orangepi_pc2`, `sandbox*` variants): **15/15 built**, 0 errors. The only warnings are the standard "missing atf-bl31" / "missing scp" sunxi CI warnings already present on `tanix_tx1` and all other sunxi boards — the X96Q build now produces the same warning pattern as its neighbours.
+
+---
+
