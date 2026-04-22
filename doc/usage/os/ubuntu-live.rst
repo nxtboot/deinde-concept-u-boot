@@ -173,21 +173,41 @@ for the installer's kernel:
 
 2. **Interactive path.** The script unpacks the default install squashfs
    (``casper/minimal.squashfs``), drops in a ``oneshot`` systemd unit plus its
-   helper script, and repacks. On first boot of the installed system the unit
-   runs::
-
-       apt-get update
-       apt-get install -y systemd-boot-efi
-       mkdir -p /boot/loader/entries
-       for k in /usr/lib/modules/*; do
-           kernel-install add "$(basename "$k")" "$k/vmlinuz" || true
-       done
-       touch /var/lib/ubuntu-iso-to-uboot-bls-setup.done
+   helper script and a copy of ``u-boot.efi`` at ``/usr/lib/u-boot/u-boot.efi``,
+   and repacks. On first boot of the installed system the unit runs
+   ``apt install systemd-boot-efi``, back-fills ``/boot/loader/entries/`` via
+   ``kernel-install``, and installs ``u-boot.efi`` onto the target ESP (see
+   :ref:`target-uboot-install` below).
 
    The unit is gated on ``ConditionPathExists=!/cdrom`` so it stays dormant
    inside the live session, and the done-file stops it re-running on subsequent
    boots. It needs a network on first boot for the apt call; if that is not
    available it fails gracefully and retries on the next boot.
+
+.. _target-uboot-install:
+
+Installing U-Boot onto the target ESP
+-------------------------------------
+
+Subiquity writes shim and GRUB to the installed ESP and registers an ``ubuntu``
+NVRAM entry pointing at ``/EFI/ubuntu/shimx64.efi``. Without further action,
+firmware prefers that entry over the removable-media fallback, so control leaves
+U-Boot as soon as the install reboots.
+
+Both install paths therefore plant ``u-boot.efi`` on the target ESP at two
+locations:
+
+* ``/EFI/BOOT/BOOTX64.EFI`` -- the firmware fallback, picked up when no NVRAM
+  entry matches (for example after a CMOS reset).
+* ``/EFI/ubuntu/shimx64.efi`` -- the file the ``ubuntu`` NVRAM entry points at,
+  overwritten in place so the entry boots U-Boot rather than chaining through
+  shim into GRUB.
+
+The autoinstall path does the copy in its ``late-commands`` via
+``curtin in-target``; the interactive first-boot unit does it from the running
+installed system. Either way ``u-boot.efi`` travels through the install inside
+the modified squashfs at ``/usr/lib/u-boot/u-boot.efi``, so the installed disk
+boots U-Boot + BLS on its own once the live ISO has been ejected.
 
 For interactive installs, every subsequent ``apt install linux-image-*`` on the
 target updates ``/boot/loader/entries/`` automatically via the

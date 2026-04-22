@@ -90,7 +90,8 @@ MIB = 1024 * 1024
 # subsequent boot.
 FIRST_BOOT_SCRIPT = '''\
 #!/bin/sh
-# Set up BLS entries for future kernel updates
+# Set up BLS entries and install U-Boot on the target ESP so the
+# installed system boots via U-Boot + BLS without the live ISO
 set -e
 apt-get update
 apt-get install -y systemd-boot-efi
@@ -104,6 +105,15 @@ for k in /usr/lib/modules/*; do
 	v=$(basename "$k")
 	kernel-install add "$v" "/boot/vmlinuz-$v" || true
 done
+# Plant u-boot.efi on the installed ESP. BOOTX64.EFI is the firmware
+# fallback; shimx64.efi is what the 'ubuntu' NVRAM entry Subiquity
+# registers points at, so overwriting both means the disk boots
+# U-Boot whichever path the firmware takes.
+UBOOT=/usr/lib/u-boot/u-boot.efi
+install -D -m 644 "$UBOOT" /boot/efi/EFI/BOOT/BOOTX64.EFI
+if [ -f /boot/efi/EFI/ubuntu/shimx64.efi ]; then
+	install -m 644 "$UBOOT" /boot/efi/EFI/ubuntu/shimx64.efi
+fi
 touch /var/lib/ubuntu-iso-to-uboot-bls-setup.done
 '''
 
@@ -265,10 +275,15 @@ def repack_iso(
 
 
 def inject_first_boot_unit(
-    iso: Path, sqfs_in_iso: str, work: Path,
+    iso: Path, sqfs_in_iso: str, uboot_efi: Path, work: Path,
 ) -> Path:
     """Unpack the install squashfs, drop in a first-boot BLS-setup unit
-    plus its helper script, and repack.
+    plus its helper script and a copy of u-boot.efi, and repack.
+
+    u-boot.efi travels through the install at /usr/lib/u-boot/u-boot.efi
+    so the first-boot unit (and the autoinstall late-commands, which
+    also run in-target after the squashfs has been unpacked) can copy
+    it onto the installed ESP.
 
     The whole unpack/modify/repack cycle runs under one fakeroot
     invocation so ownership survives round-tripping through a regular
@@ -303,6 +318,8 @@ install -D -m 755 -o root -g root '{script_src}' \\
     '{stage}/usr/local/sbin/ubuntu-iso-to-uboot-bls-setup'
 install -D -m 644 -o root -g root '{unit_src}' \\
     '{stage}/etc/systemd/system/ubuntu-iso-to-uboot-bls-setup.service'
+install -D -m 644 -o root -g root '{uboot_efi}' \\
+    '{stage}/usr/lib/u-boot/u-boot.efi'
 mkdir -p '{stage}/etc/systemd/system/multi-user.target.wants'
 ln -sf ../ubuntu-iso-to-uboot-bls-setup.service \\
     '{stage}/etc/systemd/system/multi-user.target.wants/ubuntu-iso-to-uboot-bls-setup.service'
@@ -412,6 +429,19 @@ options root=UUID=%s ro console=ttyS0,115200 console=tty0\\n"\
  cp "$ESP/loader/entries/$last_v.conf" "$ESP/loader/entry.conf";\
  fi'
 '''
+        # Plant u-boot.efi on the installed ESP in-target, overwriting
+        # both the fallback BOOTX64.EFI and the shimx64.efi that the
+        # 'ubuntu' NVRAM entry points at, so the disk boots U-Boot
+        # whichever path firmware takes - no need to keep the ISO
+        # attached after the install reboot.
+        '''    - curtin in-target -- install -D -m 644\
+ /usr/lib/u-boot/u-boot.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+    - |
+      curtin in-target -- sh -c '[ -f\
+ /boot/efi/EFI/ubuntu/shimx64.efi ] && install -m 644\
+ /usr/lib/u-boot/u-boot.efi\
+ /boot/efi/EFI/ubuntu/shimx64.efi; true'
+'''
     )
     return head + unattended_block + body
 
@@ -473,6 +503,12 @@ def main() -> None:
         tout.fatal(f'EFI app not found: {args.uboot}')
     if args.autoinstall and args.no_target_bls:
         tout.fatal('--autoinstall requires target-BLS wiring; drop -N')
+    if args.autoinstall and not args.install_squashfs:
+        tout.fatal(
+            '--autoinstall needs --install-squashfs; the autoinstall '
+            "late-commands copy u-boot.efi from /usr/lib/u-boot/u-boot.efi, "
+            'which is only planted when the install squashfs is modified'
+        )
     check_tools()
     if args.autoinstall and not shutil.which('openssl'):
         tout.fatal('openssl is required when --autoinstall is set')
@@ -532,7 +568,7 @@ def main() -> None:
             file_maps.append((ai, '/autoinstall.yaml'))
             if args.install_squashfs:
                 modified_sqfs = inject_first_boot_unit(
-                    args.iso, args.install_squashfs, work,
+                    args.iso, args.install_squashfs, args.uboot, work,
                 )
                 file_maps.append(
                     (modified_sqfs, '/' + args.install_squashfs.lstrip('/')),
