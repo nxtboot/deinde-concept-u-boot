@@ -65268,3 +65268,61 @@ There are no code changes to make. Creating a `-v2` with identical content would
 
 ---
 
+### Pipeline fix: 2026-04-22 (attempt 2)
+
+Branch: cherry-b8a820ac98f
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures have been seen in attempt 1. Let me verify the current state of the branch and the analysis by checking out the branch and verifying the sandbox build still works.
+
+Let me run a sandbox build to verify the branch builds cleanly:
+
+Sandbox build passes cleanly (no output means success per the CLAUDE.md convention).
+
+Now let me verify the failure analysis by examining the key failure indicators:
+
+Analysis confirmed. Both failing boards are architecturally incompatible with the MR's changes:
+
+- **opi_pc**: Allwinner H3 (sun8i-h3), ARMv7 Cortex-A7 — cannot be affected by the `arch/arm/cpu/armv8/u-boot-spl.lds` change (that file is ARMv8-only; opi_pc uses `arch/arm/cpu/armv7/u-boot-spl.lds`).
+- **efi-aarch64**: uses `efi-arm_app64_defconfig` which has **no CONFIG_SPL** — it's a pure EFI application, SPL linker changes cannot affect it.
+- TI 32k crystal patches only touch `board/ti/{common,am62x,am62ax,am62px}/` — not relevant to either board.
+- `tools/image-host.c` is a host-only tool change.
+
+Confirming the failure signatures in the job logs:
+
+**opi_pc (job 443930)**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad - no other tests will run`. Fails during labgrid's `_await_prompt()` in `on_activate()` — before any test runs. U-Boot was successfully written via sunxi flash method, but the board didn't respond on serial. Classic lab hardware timeout (board power/connection flake).
+
+**efi-aarch64 (job 443962)**: `FAILED test/py/tests/test_distro.py::test_distro_arm_app_efi - console_base.Timeout` with `34 passed, 671 skipped, 3 deselected`. The test tries to boot Ubuntu 25.04 via EFI → expects `'Ubuntu 25.04 qarm ttyAMA0'` login prompt but times out. 34 other tests passed — transient distro-boot timing flake, not a code regression.
+
+Sandbox build on `cherry-b8a820ac98f` HEAD passes cleanly.
+
+## Report
+
+**No code fix made — both failures are lab/infrastructure issues unrelated to this MR's commits. This is the same diagnosis as attempt 1, re-confirmed against different job IDs (443930 and 443962 vs. attempt 1's 443690 and 443722), same symptoms.**
+
+### Branch left unchanged
+
+Per task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no `cherry-b8a820ac98f-fix2` branch was created — creating one with identical content or a no-op churn commit would not be appropriate.
+
+### Root-cause summary
+
+| Job | Failure | Root cause | Why not the MR |
+|---|---|---|---|
+| `opi_pc` (443930) | labgrid `pexpect.TIMEOUT` awaiting login prompt after successful sunxi flash | Board-side serial/power flake — no response on console | opi_pc is ARMv7 (sun8i-h3); MR's only SPL change is ARMv8-specific. AM62x and host-tool changes cannot affect it. |
+| `efi-aarch64` (443962) | `test_distro_arm_app_efi` timed out waiting for `Ubuntu 25.04 qarm ttyAMA0` login; 34 other tests passed | Transient QEMU/distro-boot timing flake | `efi-arm_app64_defconfig` has no `CONFIG_SPL` — ARMv8 SPL linker change does not apply. No MR commit touches EFI, distro, or QEMU boot code. |
+
+### Verification
+
+- `um build sandbox` on `cherry-b8a820ac98f` HEAD: passes cleanly.
+- File-touch audit: no overlap between MR commits and the failing test paths.
+
+### Suggested next step
+
+Retry both failed jobs. If they fail again with the same signatures, escalate to lab/runner ops — the opi_pc board or its serial link may need attention, and the efi-aarch64 distro test's 15-second Ubuntu-login timeout may need a tolerance bump.
+
+---
+
