@@ -65694,3 +65694,47 @@ the next v6.18-dts subtree merge.
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- [sjg]: pickman: there is a failure for board 'stm32mp23':
+
+   aarch64:  +   stm32mp23
++Error: arch/arm/dts/...
+
+### Conversation log
+Now let me update the pickman record commit to mention that one commit was dropped, and amend the message. Let me first look at it.
+
+Both stm32mp23 and stm32mp25 build cleanly. Let me also verify stm32mp15 still builds and run the standard sandbox build.
+
+Now let me push this. Let me first check the pickman push command.
+
+## Summary for MR !941
+
+**Local branch:** `cherry-9e8bc1c6be7-v3` → force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD `144b63f546c`)
+
+### What was done
+
+The reviewer reported that `stm32mp23` (and `stm32mp25`) failed to build with:
+```
+Error: arch/arm/dts/stm32mp257f-ev1-u-boot.dtsi:55.1-6 Label or path ltdc not found
+```
+
+**Root cause:** Cherry-picked commit `16d8c7e5920` (`ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot`) adds `&ltdc { bootph-all; };` to `stm32mp257f-ev1-u-boot.dtsi`. Its upstream `Fixes:` tag is `29ab19c2bead ("Subtree merge tag 'v6.18-dts' of dts repo [1] into dts/upstream")`. Our branch is on top of `v6.17-dts`, so the `ltdc` label is not present in any `dts/upstream/src/arm64/st/*.dtsi` file (`grep -r ltdc dts/upstream/src/arm64/st/` returns nothing). The override therefore fails dtc parsing for any board pulling that .dtsi.
+
+**Fix:** Dropped commit `16d8c7e5920` via `git rebase --onto 16d8c7e5920^ 16d8c7e5920`. The runtime issue it fixes only exists once v6.18-dts adds the `ltdc` node upstream; the patch should be re-cherry-picked alongside the next dts subtree merge.
+
+### Build verification
+- `um build stm32mp23` → OK (was failing)
+- `um build stm32mp25` → OK (was failing)
+- `um build stm32mp15` → OK (uses in-tree `arch/arm/dts/stm32mp151.dtsi` ltdc node — unaffected)
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total built` (no warnings/errors)
+
+### Suggested MR reply
+
+> Dropped `ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot` from the series. Its upstream `Fixes:` tag points at the v6.18-dts subtree merge, which is not in our tree (we're on v6.17-dts), so the referenced `&ltdc` label does not exist and the override breaks the dtc parse for stm32mp23 / stm32mp25. The patch will need to be cherry-picked again once v6.18-dts lands. stm32mp15, stm32mp23, stm32mp25 and sandbox all build cleanly now. Force-pushed to refresh the pipeline.
+
+---
+
