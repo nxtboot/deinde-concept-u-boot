@@ -66288,3 +66288,45 @@ Branch is ready for pushing at `cherry-a22a4fbe437`.
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-d9f1fcb3048
+
+Commits:
+- d9f1fcb3048 configs: sc598-ezkit: enable additional commands
+- fb4a6389314 arm: dts: sc598: add missing GPIO hogs for Rev D
+- 89a197e7e34 arm: dts: sc5xx: drop SPI flash from common dtsi
+- 9a49dcf6ab7 arm: dts: adi: rename GPIO expanders
+- d047a99d08d arm: dts: sc598: update EZLITE to latest revision
+- 28a1ac87b84 Merge patch series "arm: dts: sc5xx: device tree updates and fixes"
+
+### Conversation log
+Build passed. Continuing with next commit.
+
+All 6 commits are present. Running final build.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-d9f1fcb3048` (based on `ci/master`)
+
+**All 6 commits successfully cherry-picked:**
+
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| `dada89b76d6` | `d9f1fcb3048` | configs: sc598-ezkit: enable additional commands |
+| `6106dbf7896` | `fb4a6389314` | arm: dts: sc598: add missing GPIO hogs for Rev D |
+| `64d9b172ee1` | `89a197e7e34` | arm: dts: sc5xx: drop SPI flash from common dtsi |
+| `81c7ad46207` | `9a49dcf6ab7` | arm: dts: adi: rename GPIO expanders |
+| `7748781a758` | `d047a99d08d` | arm: dts: sc598: update EZLITE to latest revision |
+| `7cf929b3699` | `28a1ac87b84` | Merge patch series "arm: dts: sc5xx: device tree updates and fixes" |
+
+**Delta Analysis:** All non-merge commits matched the originals exactly (same files, same line counts). No concerning deltas.
+
+**Conflicts/Fix-ups:** None. All cherry-picks applied cleanly. The merge commit (28a1ac87b84) was committed empty (as expected, since all child commits were already cherry-picked individually) using `--allow-empty` to preserve the history tracking.
+
+**Build Result:** ok — sandbox builds successfully after final cherry-pick, no warnings or errors.
+
+The branch is ready for pushing.
+
+---
+
