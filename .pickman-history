@@ -65517,3 +65517,264 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-9e8bc1c6be7
+
+Commits:
+- 9e8bc1c6be7 spi: stm32-ospi: Increase read throughput in indirect mode
+- addebf9e818 spi: stm32-qspi: Increase read throughput in indirect mode
+- d67c721ec53 spi: stm32-qspi: Optimize FIFO accesses using u16 or u32
+- 2bafb6e61b1 clk: stm32mp13: Reorder include files
+- 7795c5ec6a6 ARM: dts: stm32: Add SCMI clocks in rcc node for stm32mp131.dtsi
+- 213f927a592 clk: stm32: Update clock management for STM32MP13/25
+- a6e550b57a1 ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot
+- 7f637df3dba video: stm32: ltdc: add .of_to_plat callback
+- 9fca4cc1d0b ARM: stm32: Use CONFIG_STM32MP15X to discern STM32MP15xx on DH STM32MP15xx DHSOM
+- a370c2b4063 ARM: stm32: Reinstate missing SPL configs for DH STM32MP15xx DHSOM
+- 07cd29b175d board: stm32mp2: read boot index from backup register
+- a8f12fa7af3 video: simple_panel: add support for "rocktech,rk043fn48h" display
+- 3f6b113291c misc: Keep FSL_IFC available on PowerPC as well
+- 66891ffb149 Merge tag 'u-boot-stm32-20260129' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+Now the merge commit:
+
+All 14 commits are present. Now final build:
+
+## Cherry-Pick Summary
+
+All 14 commits from `us/next` were successfully cherry-picked onto branch `cherry-9e8bc1c6be7` (based on `ci/master`).
+
+### Branch Log (HEAD → oldest cherry-pick)
+```
+80e1efd33cc Merge tag 'u-boot-stm32-20260129' of https://source.denx.de/u-boot/custodians/u-boot-stm
+c188d055432 misc: Keep FSL_IFC available on PowerPC as well
+515e80b6716 video: simple_panel: add support for "rocktech,rk043fn48h" display
+9026bf15a0f board: stm32mp2: read boot index from backup register
+7146b38ac0f ARM: stm32: Reinstate missing SPL configs for DH STM32MP15xx DHSOM
+1c8a8c37f06 ARM: stm32: Use CONFIG_STM32MP15X to discern STM32MP15xx on DH STM32MP15xx DHSOM
+276285fc893 video: stm32: ltdc: add .of_to_plat callback
+71549c46abc ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot
+1c5f2bffd2b clk: stm32: Update clock management for STM32MP13/25
+d78f5bc47a7 ARM: dts: stm32: Add SCMI clocks in rcc node for stm32mp131.dtsi
+a7a710bd13d clk: stm32mp13: Reorder include files
+0c5168e0405 spi: stm32-qspi: Optimize FIFO accesses using u16 or u32
+8384e4e8a51 spi: stm32-qspi: Increase read throughput in indirect mode
+c5acd59a970 spi: stm32-ospi: Increase read throughput in indirect mode
+```
+
+### Delta Check
+All 13 regular cherry-picks had **identical file/line stats** vs. their originals. No significant deltas.
+
+### Merge Commit
+- `66891ffb149` cherry-picked with `-m 1 --allow-empty`; resulted in an empty commit (expected — all changes had already been applied as the individual commits above). Committed with `--allow-empty` to preserve history.
+
+### Build Result
+- **OK**: `buildman -L --board sandbox -w -o /tmp/pickman` — `Completed: 1 total built` (no warnings/errors) both after cherry-picks and as final verification.
+
+### Fix-ups
+- One minor auto-merge in `drivers/misc/Kconfig` during `3f6b113291c` (git's automatic auto-merging, no manual intervention required). Content matches upstream exactly.
+
+The cherry-pick branch `cherry-9e8bc1c6be7` is ready for pushing.
+
+---
+
+### Review: 2026-04-22
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed successfully. Let me verify the results and check deltas.
+
+All 15 commits (including the merge commit and pickman record) have **identical stats** after the rebase. Now let me verify the build.
+
+Build passes. Now let me check the remote state and create the v2 branch.
+
+Push successful. Summary below.
+
+## Rebase Summary for MR !941
+
+**Branch:** `cherry-9e8bc1c6be7`
+**Target:** `ci/master`
+**Local v2 branch:** `cherry-9e8bc1c6be7-v2`
+
+### Rebase
+- `git rebase --keep-empty ci/master` — rebased cleanly with **no conflicts** across all 15 commits (14 cherry-picked + 1 pickman-history record).
+- The empty merge commit `Merge tag 'u-boot-stm32-20260129'` was preserved (empty delta before and after).
+
+### Delta Check
+All 15 commits retained **identical file/line stats** vs. their pre-rebase state:
+
+| Commit (old → new) | Subject | Stats |
+|---|---|---|
+| c5acd59a970 → 47e35b6f1ee | spi: stm32-ospi throughput | 1 file, 3+/1- |
+| 8384e4e8a51 → 88946a4c5bf | spi: stm32-qspi throughput | 1 file, 3+/1- |
+| 0c5168e0405 → ffee6597074 | spi: stm32-qspi FIFO u16/u32 | 1 file, 50+/9- |
+| a7a710bd13d → 7db2b4582b2 | clk: stm32mp13 reorder includes | 1 file, 11+/13- |
+| d78f5bc47a7 → 5e55f415923 | dts: SCMI clocks | 1 file, 27+ |
+| 1c5f2bffd2b → 0945f5da118 | clk: stm32 mgmt MP13/25 | 4 files, 671+/309- |
+| 71549c46abc → 16d8c7e5920 | dts: ltdc bootph-all | 1 file, 4+ |
+| 276285fc893 → 0335c27883e | ltdc .of_to_plat | 1 file, 108+/92- |
+| 1c8a8c37f06 → 57fe5768dc5 | CONFIG_STM32MP15X DHSOM | 1 file, 1+/1- |
+| 7146b38ac0f → 9780f12adf1 | SPL configs DHSOM | 1 file, 8+/2- |
+| 9026bf15a0f → 85c92eee15b | stm32mp2 boot index | 2 files, 25+ |
+| 515e80b6716 → 9896d9b2422 | simple_panel rocktech | 1 file, 1+ |
+| c188d055432 → 42f88668bc5 | FSL_IFC PowerPC | 1 file, 1+/1- |
+| 80e1efd33cc → ebb516e90d7 | Merge tag stm32-20260129 | empty (expected) |
+| 5d2c3842af8 → a85e90cd7b1 | pickman-history record | 1 file, 63+ |
+
+### Build
+- `buildman -L --board sandbox -w -o /tmp/pickman` → **Completed: 1 total built** (no warnings/errors).
+
+### Push
+- Force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD `a85e90cd7b1`), which triggers a fresh MR pipeline on GitLab.
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. No conflicts; all 15 commits retained identical diffstats. Sandbox build (`buildman --board sandbox`) passes cleanly. Force-pushed to refresh the pipeline.
+
+---
+
+### Review: 2026-04-22 (v3)
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- sjg: stm32mp23 (and stm32mp25) build failure — `arch/arm/dts/stm32mp257f-ev1-u-boot.dtsi:55.1-6 Label or path ltdc not found`.
+
+### Investigation
+
+The cherry-picked commit `16d8c7e5920` (`ARM: dts: stm32: Add bootph-all in
+ltdc node in stm32mp257f-ev1-u-boot`) adds a `&ltdc { bootph-all; };`
+override to `stm32mp257f-ev1-u-boot.dtsi`. Its upstream `Fixes:` tag points
+at commit `29ab19c2bead` (`Subtree merge tag 'v6.18-dts' of dts repo [1]
+into dts/upstream`), which is the merge that introduces the `ltdc` node into
+the stm32mp25 upstream device tree.
+
+Our branch sits on top of `v6.17-dts` — the `v6.18-dts` merge is not in
+our history, so the `ltdc` label simply does not exist in any
+`dts/upstream/src/arm64/st/*.dtsi` file. The override therefore fails dtc
+parsing for any board that pulls in `stm32mp257f-ev1-u-boot.dtsi`
+(stm32mp25, stm32mp23 in this report).
+
+### Fix
+
+Drop commit `16d8c7e5920` from the branch. The runtime issue it fixes
+(display-controller probe failure on stm32mp257f-ev1) only exists once
+v6.18-dts adds the `ltdc` node to the upstream stm32mp25 DT; until then the
+patch has no node to attach to. It should be re-cherry-picked together with
+the next v6.18-dts subtree merge.
+
+### Build verification
+
+- `um build stm32mp23` → OK (previously failed with the dtc error)
+- `um build stm32mp25` → OK (previously failed with the dtc error)
+- `um build stm32mp15` → OK (still uses the in-tree ltdc node from
+  `arch/arm/dts/stm32mp151.dtsi`)
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total
+  built` (no warnings/errors)
+
+### Push
+
+- Force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD updated; v3 branch
+  `cherry-9e8bc1c6be7-v3` locally).
+
+### Suggested MR reply
+> Dropped `ARM: dts: stm32: Add bootph-all in ltdc node in
+> stm32mp257f-ev1-u-boot` from the series. Its upstream `Fixes:` tag points
+> at the v6.18-dts subtree merge, which is not yet in our tree (we are on
+> v6.17-dts), so the referenced `&ltdc` label does not exist and the
+> override breaks the dtc parse for stm32mp23 / stm32mp25. Once v6.18-dts
+> lands the patch will need to be cherry-picked again. stm32mp15,
+> stm32mp23, stm32mp25 and sandbox now build cleanly. Force-pushed to
+> refresh the pipeline.
+
+---
+
+### Review: 2026-04-22
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- [sjg]: pickman: there is a failure for board 'stm32mp23':
+
+   aarch64:  +   stm32mp23
++Error: arch/arm/dts/...
+
+### Conversation log
+Now let me update the pickman record commit to mention that one commit was dropped, and amend the message. Let me first look at it.
+
+Both stm32mp23 and stm32mp25 build cleanly. Let me also verify stm32mp15 still builds and run the standard sandbox build.
+
+Now let me push this. Let me first check the pickman push command.
+
+## Summary for MR !941
+
+**Local branch:** `cherry-9e8bc1c6be7-v3` → force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD `144b63f546c`)
+
+### What was done
+
+The reviewer reported that `stm32mp23` (and `stm32mp25`) failed to build with:
+```
+Error: arch/arm/dts/stm32mp257f-ev1-u-boot.dtsi:55.1-6 Label or path ltdc not found
+```
+
+**Root cause:** Cherry-picked commit `16d8c7e5920` (`ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot`) adds `&ltdc { bootph-all; };` to `stm32mp257f-ev1-u-boot.dtsi`. Its upstream `Fixes:` tag is `29ab19c2bead ("Subtree merge tag 'v6.18-dts' of dts repo [1] into dts/upstream")`. Our branch is on top of `v6.17-dts`, so the `ltdc` label is not present in any `dts/upstream/src/arm64/st/*.dtsi` file (`grep -r ltdc dts/upstream/src/arm64/st/` returns nothing). The override therefore fails dtc parsing for any board pulling that .dtsi.
+
+**Fix:** Dropped commit `16d8c7e5920` via `git rebase --onto 16d8c7e5920^ 16d8c7e5920`. The runtime issue it fixes only exists once v6.18-dts adds the `ltdc` node upstream; the patch should be re-cherry-picked alongside the next dts subtree merge.
+
+### Build verification
+- `um build stm32mp23` → OK (was failing)
+- `um build stm32mp25` → OK (was failing)
+- `um build stm32mp15` → OK (uses in-tree `arch/arm/dts/stm32mp151.dtsi` ltdc node — unaffected)
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total built` (no warnings/errors)
+
+### Suggested MR reply
+
+> Dropped `ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot` from the series. Its upstream `Fixes:` tag points at the v6.18-dts subtree merge, which is not in our tree (we're on v6.17-dts), so the referenced `&ltdc` label does not exist and the override breaks the dtc parse for stm32mp23 / stm32mp25. The patch will need to be cherry-picked again once v6.18-dts lands. stm32mp15, stm32mp23, stm32mp25 and sandbox all build cleanly now. Force-pushed to refresh the pipeline.
+
+---
+
+
+### Review: 2026-04-22 (v4 rebase)
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- MR was behind the target branch (`ci/master`) and needed rebasing.
+
+### Conversation log
+Rebased `cherry-9e8bc1c6be7-v4` onto `ci/master` with `--keep-empty`.
+One conflict in `.pickman-history` caused by concurrent appends from
+`cherry-c287c6900aa` (now in `ci/master`) and this branch's initial
+cherry-pick record. Resolved by keeping both sections with a `---`
+separator between them. The resolved diff stat is unchanged (1 file,
+63 insertions) vs. the original `pickman: Record cherry-pick of 14
+commits from us/next` commit.
+
+### Delta check
+All 17 commits (including the 4 pickman-history records, the empty
+merge commit, and 12 regular patches) retained identical file/line
+stats vs. pre-rebase.
+
+### Build verification
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1
+  total built` (no warnings/errors)
+- `um build stm32mp15` → OK (silent)
+- `um build stm32mp23` → OK (silent)
+- `um build stm32mp25` → OK (silent)
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. One trivial `.pickman-history`
+> conflict (concurrent appends with the `cherry-c287c6900aa` series
+> now merged to master); resolved by keeping both entries. All 17
+> commits retained identical diffstats; sandbox, stm32mp15,
+> stm32mp23 and stm32mp25 all build cleanly. Force-pushed to
+> refresh the pipeline.
+
+---
+
