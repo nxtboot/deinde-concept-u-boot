@@ -66145,3 +66145,45 @@ under `config GENERATE_ACPI_TABLE`. This is unreachable from `orangepi_pc_defcon
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64.
+
+Now let me verify the build works locall...
+
+### Conversation log
+## Report
+
+**Nothing to push. The "review comment" is the bot's own attempt-3 diagnostic report, which concluded no code change was possible.**
+
+### What I found
+
+The review comment author `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is the same bot account that the `ci` remote uses to post status updates. The comment body is verbatim the attempt-3 diagnosis — `efi-aarch64` (job 446723) failed with `aarch64-linux-objdump: u-boot: file format not recognized` from `Makefile:2267`, a classic symptom of stale/cross-arch build artifacts in the persistent runner build directory (`/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64`).
+
+### Why no code change is appropriate
+
+The MR's sole code change is one line in `lib/Kconfig`:
+```
++       select ACPIGEN if !QFW_ACPI
+```
+under `config GENERATE_ACPI_TABLE`, gated by `depends on ACPI`.
+
+`efi-arm_app64_defconfig` (the config behind the `efi-aarch64` job) does **not** set `CONFIG_ACPI` — only `CONFIG_SUPPORT_ACPI=1` (a platform capability flag, not the ACPI gate). So `GENERATE_ACPI_TABLE` is unreachable from this config, and the new `select ACPIGEN if !QFW_ACPI` is never evaluated. Any code-level fix is impossible because the failure is in `objdump` reading a stale/wrong-arch `u-boot` binary — a runner-filesystem state problem, not a build-logic problem.
+
+### Branch state
+
+- Local `cherry-1c1bfb1cf34` = `f6e7ab64b76` (3 history-only pickman records, no code change)
+- Remote `ci/cherry-1c1bfb1cf34` = `f6e7ab64b76` (identical)
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is unchanged on both sides — one-line `lib/Kconfig` addition
+
+**No `-v2` branch was created** and **no push was performed.** The local branch already equals the remote; there is no code fix to apply; and pushing a history-only commit would re-trigger the same pipeline against the same runner without resolving its stale build directory.
+
+### Suggested reply to post on the MR
+
+> This review comment is attempt 3's own diagnosis — `efi-aarch64` (job 446723) failed with `aarch64-linux-objdump: u-boot: file format not recognized` at `Makefile:2267` (`u-boot.sym: u-boot FORCE → $(OBJDUMP) -t $< > $@`). That is a stale/cross-arch artifact left over in the persistent runner build directory `/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64` — not a code regression. The MR change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE`) which is unreachable from `efi-arm_app64_defconfig` (which does not set `CONFIG_ACPI`). A clean local `buildman efi-arm_app64 sandbox` produced a valid aarch64 ELF that `aarch64-linux-objdump` accepts. Please clean the CI runner's `build/efi-aarch64` directory (or re-run on a fresh workspace) and retry.
+
+---
+
