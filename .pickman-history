@@ -66187,3 +66187,59 @@ under `config GENERATE_ACPI_TABLE`, gated by `depends on ACPI`.
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Let me verify the build still passes locally as the task instructions specify:
+
+Build passes clean. Now let me analyze the situation and draft the report.
+
+## Report
+
+**No code fix applied. The review comment is the bot's hard-stop escalation after 3 consecutive infrastructure-only failures — "Manual intervention required" explicitly signals this is not an automated-fix situation.**
+
+### State verified
+
+- Local `cherry-1c1bfb1cf34` = `7b80ddf71d8` (1 history-only commit ahead of remote)
+- Remote `ci/cherry-1c1bfb1cf34` = `f6e7ab64b76`
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is identical on both sides — a **single 1-line addition** to `lib/Kconfig`:
+  ```
+  +       select ACPIGEN if !QFW_ACPI
+  ```
+  under `config GENERATE_ACPI_TABLE` (gated by `depends on ACPI`).
+- Local `buildman --board sandbox` completed cleanly in 14s (1/1 built, 0 warnings/errors).
+
+### Why no code change is possible
+
+All three prior pipeline attempts hit **different** infrastructure symptoms, none reachable from this MR's code change:
+
+| Attempt | Job | Root cause |
+|---|---|---|
+| 1 | `link` (446216) | `kea:34073` rfc2217 serial bridge refused TCP connection — before any U-Boot ran |
+| 1 | `opi_pc` (446214) | `pexpect.TIMEOUT waiting for login` — board never produced prompt after reset |
+| 2 | `opi_pc` (446452) | Same pexpect timeout — labgrid flagged `Lab failure: Marking connection bad` |
+| 3 | `efi-aarch64` (446723) | Persistent runner's `build/efi-aarch64/u-boot` was stale/wrong-arch; `aarch64-linux-objdump` rejected it with `file format not recognized` at Makefile:2267 |
+
+The code change is scoped to x86/QEMU ACPI table generation and is **unreachable** from `orangepi_pc_defconfig` (ARM sunxi, no `CONFIG_ACPI`) or `efi-arm_app64_defconfig` (no `CONFIG_ACPI`). It cannot influence a remote serial bridge daemon, a hung ARM board, or a stale binary in a persistent runner directory.
+
+### No push performed
+
+Pushing a history-only commit would simply re-trigger the same pipeline against the same lab/runner state without addressing any of the three root causes. No `-v2` branch was created.
+
+### Suggested reply to post on the MR
+
+> Retry limit reached confirms what attempts 1–3 already diagnosed: three independent infrastructure failures, none reachable from this MR's code. Manual steps needed to unblock:
+>
+> 1. **`kea:34073` rfc2217 serial bridge** — verify the daemon is running and accepting TCP (attempt 1 `link` got `[Errno 111] Connection refused`).
+> 2. **orangepi_pc lab board** — power-cycle or physically check the H3 board; attempts 1 and 2 both saw `pexpect.TIMEOUT waiting for login` with `Lab failure: Marking connection bad`, meaning the board was flashed successfully but never produced a U-Boot prompt after reset.
+> 3. **Persistent runner `build/efi-aarch64` dir** (`/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64`) — clean it; attempt 3 failed with `aarch64-linux-objdump: u-boot: file format not recognized` at Makefile:2267, which only happens when the existing `u-boot` artefact is not an aarch64 ELF. A clean local `buildman efi-arm_app64` produced a valid aarch64 ELF that `aarch64-linux-objdump` accepts.
+>
+> The MR change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE`, gated by `depends on ACPI`) which is unreachable from any of the three failing defconfigs. Once the three lab/runner issues above are addressed, please re-run the pipeline.
+
+---
+
