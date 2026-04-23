@@ -65580,3 +65580,61 @@ The cherry-pick branch `cherry-9e8bc1c6be7` is ready for pushing.
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed successfully. Let me verify the results and check deltas.
+
+All 15 commits (including the merge commit and pickman record) have **identical stats** after the rebase. Now let me verify the build.
+
+Build passes. Now let me check the remote state and create the v2 branch.
+
+Push successful. Summary below.
+
+## Rebase Summary for MR !941
+
+**Branch:** `cherry-9e8bc1c6be7`
+**Target:** `ci/master`
+**Local v2 branch:** `cherry-9e8bc1c6be7-v2`
+
+### Rebase
+- `git rebase --keep-empty ci/master` — rebased cleanly with **no conflicts** across all 15 commits (14 cherry-picked + 1 pickman-history record).
+- The empty merge commit `Merge tag 'u-boot-stm32-20260129'` was preserved (empty delta before and after).
+
+### Delta Check
+All 15 commits retained **identical file/line stats** vs. their pre-rebase state:
+
+| Commit (old → new) | Subject | Stats |
+|---|---|---|
+| c5acd59a970 → 47e35b6f1ee | spi: stm32-ospi throughput | 1 file, 3+/1- |
+| 8384e4e8a51 → 88946a4c5bf | spi: stm32-qspi throughput | 1 file, 3+/1- |
+| 0c5168e0405 → ffee6597074 | spi: stm32-qspi FIFO u16/u32 | 1 file, 50+/9- |
+| a7a710bd13d → 7db2b4582b2 | clk: stm32mp13 reorder includes | 1 file, 11+/13- |
+| d78f5bc47a7 → 5e55f415923 | dts: SCMI clocks | 1 file, 27+ |
+| 1c5f2bffd2b → 0945f5da118 | clk: stm32 mgmt MP13/25 | 4 files, 671+/309- |
+| 71549c46abc → 16d8c7e5920 | dts: ltdc bootph-all | 1 file, 4+ |
+| 276285fc893 → 0335c27883e | ltdc .of_to_plat | 1 file, 108+/92- |
+| 1c8a8c37f06 → 57fe5768dc5 | CONFIG_STM32MP15X DHSOM | 1 file, 1+/1- |
+| 7146b38ac0f → 9780f12adf1 | SPL configs DHSOM | 1 file, 8+/2- |
+| 9026bf15a0f → 85c92eee15b | stm32mp2 boot index | 2 files, 25+ |
+| 515e80b6716 → 9896d9b2422 | simple_panel rocktech | 1 file, 1+ |
+| c188d055432 → 42f88668bc5 | FSL_IFC PowerPC | 1 file, 1+/1- |
+| 80e1efd33cc → ebb516e90d7 | Merge tag stm32-20260129 | empty (expected) |
+| 5d2c3842af8 → a85e90cd7b1 | pickman-history record | 1 file, 63+ |
+
+### Build
+- `buildman -L --board sandbox -w -o /tmp/pickman` → **Completed: 1 total built** (no warnings/errors).
+
+### Push
+- Force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD `a85e90cd7b1`), which triggers a fresh MR pipeline on GitLab.
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. No conflicts; all 15 commits retained identical diffstats. Sandbox build (`buildman --board sandbox`) passes cleanly. Force-pushed to refresh the pipeline.
+
+---
+
