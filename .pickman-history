@@ -66290,41 +66290,68 @@ Branch is ready for pushing at `cherry-a22a4fbe437`.
 
 ## 2026-04-23: us/next
 
-Branch: cherry-d9f1fcb3048
+Branch: cherry-0eb8de350e9
 
 Commits:
-- d9f1fcb3048 configs: sc598-ezkit: enable additional commands
-- fb4a6389314 arm: dts: sc598: add missing GPIO hogs for Rev D
-- 89a197e7e34 arm: dts: sc5xx: drop SPI flash from common dtsi
-- 9a49dcf6ab7 arm: dts: adi: rename GPIO expanders
-- d047a99d08d arm: dts: sc598: update EZLITE to latest revision
-- 28a1ac87b84 Merge patch series "arm: dts: sc5xx: device tree updates and fixes"
+- 0eb8de350e9 mtd: rawnand: sunxi: cosmetic: remove needless comment
+- 79afb70a939 mtd: rawnand: sunxi_spl: fix pointer from integer without a cast
+- 322470fe733 mtd: rawnand: sunxi_spl: harmonize register defines with non spl file
+- 46d5ef0416a mtd: rawnand: sunxi_spl: cosmetic: use definitions from linux/mtd/rawnand.h
+- 8034c41d63c mtd: rawnand: sunxi: remove usage of struct sunxi_ccm_reg
+- dadf8a8decf mtd: rawnand: sunxi: merge register definitions for sunxi_nand{, _spl}.c
+- bd9944c74f6 mtd: rawnand: sunxi: add per SoC capabilities
+- 6124050e53d mtd: rawnand: sunxi: move ECC_ERR_CNT register offset in SoC caps
+- eb66861acc8 mtd: rawnand: sunxi: move USER_DATA register offset in SoC caps
+- 2e6852a8418 mtd: rawnand: sunxi: move ECC_PAT_FOUND register in SoC caps
+- f5178513a4c mtd: rawnand: sunxi: add has_ecc_block_512 capability
+- b4c005d6222 mtd: rawnand: sunxi: move NFC_ECC_MODE offset in SoC caps
+- 9edd503aada mtd: rawnand: sunxi: introduce reg_pat_id in sunxi_nfc_caps
+- 0b0f13d503e mtd: rawnand: sunxi_spl: add per SoC capabilities
+- d46bdfe0860 mtd: rawnand: sunxi: move NFC_RANDOM_EN register offset in SoC caps
+- 0a80eb81466 mtd: rawnand: sunxi: introduce reg_spare_area in sunxi_nfc_caps
+- 50b459973c3 mtd: rawnand: sunxi_spl: use NFC_ECC_ERR_MSK and NFC_ECC_PAT_FOUND
+- 442eb06c92e mtd: rawnand: sunxi_spl: increase max_oobsize for 2KiB pages
+- 01c5b0ec50b mtd: rawnand: sunxi_spl: use NFC_ECC_MODE and NFC_RANDOM_SEED macros
+- 25cbc335b47 sunxi: clock: H6: add NAND controller clock registers
+- 4a611a82e51 clk: sunxi: Add MBUS Master Clock Gating Register
+- f163da5e6d2 mtd: rawnand: sunxi: add support for H6/H616 nand controller
+- 7d1de980115 mtd: rawnand: sunxi_spl: add support for H6/H616 nand controller
+- e41e5ae4b5e mtd: rawnand: sunxi_spl: Fix cast to pointer from integer warnings
+- bd22b7e5d1b mtd: rawnand: sunxi: fix page size in control register
+- 800ebf7e94e tools: sunxi-spl-image-builder: support H6/H616 NAND boot
+- ede7198a370 board: mediatek: add MT8390 EVK board support
+- 3c72973b7a7 Merge branch 'u-boot-nand-03022026' of https://source.denx.de/u-boot/custodians/u-boot-nand-flash
 
 ### Conversation log
-Build passed. Continuing with next commit.
+Good, identical. Let me continue with the remaining commits. I'll do them one at a time and check deltas.
 
-All 6 commits are present. Running final build.
+Let me cherry-pick all the remaining commits one at a time, checking for issues as I go:
 
-## Cherry-pick Complete
+Now the merge commit:
 
-**Branch:** `cherry-d9f1fcb3048` (based on `ci/master`)
+All 28 commits are applied. Let me verify the log and run the final build:
 
-**All 6 commits successfully cherry-picked:**
+All 28 commits are present. Now let me run the final build to verify:
 
-| New Hash | Original | Subject |
-|----------|----------|---------|
-| `dada89b76d6` | `d9f1fcb3048` | configs: sc598-ezkit: enable additional commands |
-| `6106dbf7896` | `fb4a6389314` | arm: dts: sc598: add missing GPIO hogs for Rev D |
-| `64d9b172ee1` | `89a197e7e34` | arm: dts: sc5xx: drop SPI flash from common dtsi |
-| `81c7ad46207` | `9a49dcf6ab7` | arm: dts: adi: rename GPIO expanders |
-| `7748781a758` | `d047a99d08d` | arm: dts: sc598: update EZLITE to latest revision |
-| `7cf929b3699` | `28a1ac87b84` | Merge patch series "arm: dts: sc5xx: device tree updates and fixes" |
+Build completed successfully. Let me do a final sanity check by comparing the commit count:
 
-**Delta Analysis:** All non-merge commits matched the originals exactly (same files, same line counts). No concerning deltas.
+All 28 commits are present and the build passes.
 
-**Conflicts/Fix-ups:** None. All cherry-picks applied cleanly. The merge commit (28a1ac87b84) was committed empty (as expected, since all child commits were already cherry-picked individually) using `--allow-empty` to preserve the history tracking.
+## Final Status Report
 
-**Build Result:** ok — sandbox builds successfully after final cherry-pick, no warnings or errors.
+**Branch:** `cherry-0eb8de350e9` (based on `ci/master`)
+
+**Commits applied:** 28/28 successfully
+
+**Build result:** ✅ OK — sandbox build completed in 0:00:05, no errors or warnings reported by buildman.
+
+**Cherry-pick details:**
+- 27 regular commits cherry-picked cleanly with `-x`. A few had harmless auto-merging of `board/sunxi/board.c` and `scripts/Makefile.xpl` that git resolved automatically.
+- 1 merge commit (`3c72973b7a7`) preserved as an empty commit using `--allow-empty -m 1` per instructions — its message is retained for history tracking.
+
+**Fix-ups:** None required. No manual conflict resolution needed.
+
+**Concerning deltas:** None. All spot-checked line counts matched the originals exactly (e.g., first commit: 2 deletions matched; commit 2: 11+/1- matched; etc.).
 
 The branch is ready for pushing.
 
