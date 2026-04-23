@@ -65638,3 +65638,59 @@ All 15 commits retained **identical file/line stats** vs. their pre-rebase state
 
 ---
 
+### Review: 2026-04-22 (v3)
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- sjg: stm32mp23 (and stm32mp25) build failure — `arch/arm/dts/stm32mp257f-ev1-u-boot.dtsi:55.1-6 Label or path ltdc not found`.
+
+### Investigation
+
+The cherry-picked commit `16d8c7e5920` (`ARM: dts: stm32: Add bootph-all in
+ltdc node in stm32mp257f-ev1-u-boot`) adds a `&ltdc { bootph-all; };`
+override to `stm32mp257f-ev1-u-boot.dtsi`. Its upstream `Fixes:` tag points
+at commit `29ab19c2bead` (`Subtree merge tag 'v6.18-dts' of dts repo [1]
+into dts/upstream`), which is the merge that introduces the `ltdc` node into
+the stm32mp25 upstream device tree.
+
+Our branch sits on top of `v6.17-dts` — the `v6.18-dts` merge is not in
+our history, so the `ltdc` label simply does not exist in any
+`dts/upstream/src/arm64/st/*.dtsi` file. The override therefore fails dtc
+parsing for any board that pulls in `stm32mp257f-ev1-u-boot.dtsi`
+(stm32mp25, stm32mp23 in this report).
+
+### Fix
+
+Drop commit `16d8c7e5920` from the branch. The runtime issue it fixes
+(display-controller probe failure on stm32mp257f-ev1) only exists once
+v6.18-dts adds the `ltdc` node to the upstream stm32mp25 DT; until then the
+patch has no node to attach to. It should be re-cherry-picked together with
+the next v6.18-dts subtree merge.
+
+### Build verification
+
+- `um build stm32mp23` → OK (previously failed with the dtc error)
+- `um build stm32mp25` → OK (previously failed with the dtc error)
+- `um build stm32mp15` → OK (still uses the in-tree ltdc node from
+  `arch/arm/dts/stm32mp151.dtsi`)
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total
+  built` (no warnings/errors)
+
+### Push
+
+- Force-pushed to `ci/cherry-9e8bc1c6be7` (HEAD updated; v3 branch
+  `cherry-9e8bc1c6be7-v3` locally).
+
+### Suggested MR reply
+> Dropped `ARM: dts: stm32: Add bootph-all in ltdc node in
+> stm32mp257f-ev1-u-boot` from the series. Its upstream `Fixes:` tag points
+> at the v6.18-dts subtree merge, which is not yet in our tree (we are on
+> v6.17-dts), so the referenced `&ltdc` label does not exist and the
+> override breaks the dtc parse for stm32mp23 / stm32mp25. Once v6.18-dts
+> lands the patch will need to be cherry-picked again. stm32mp15,
+> stm32mp23, stm32mp25 and sandbox now build cleanly. Force-pushed to
+> refresh the pipeline.
+
+---
+
