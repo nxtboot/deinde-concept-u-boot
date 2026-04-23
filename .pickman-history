@@ -65159,3 +65159,62 @@ Branch `cherry-b8a820ac98f` is ready to push. Not merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-04-22 (attempt 1)
+
+Branch: cherry-b8a820ac98f
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me look at this more carefully. Both failures look potentially infrastructure-related. Let me verify by looking at the branch commits and considering whether the changes could affect these specific boards.
+
+Let me verify my analysis by checking what each commit actually touches and whether they could affect these specific board tests.
+
+Now I have a clear picture. Let me cross-check by doing a quick sandbox build sanity check on the branch.
+
+The sandbox build passes cleanly. I'll skip creating a fix branch since the failures are infrastructure issues — per the task instructions: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+## Report
+
+**No code fix needed — both failures are lab/infrastructure issues unrelated to the MR's changes.**
+
+### Branch contents (cherry-b8a820ac98f)
+
+| Commit | Files touched | Boards affected |
+|---|---|---|
+| `74aa3843e7b` armv8 SPL lds binman symbols | `arch/arm/cpu/armv8/u-boot-spl.lds` | ARMv8 SPL only |
+| `635c73044b1` tools strlist_add realloc | `tools/image-host.c` | host build tool only |
+| `7e5f503522a` … `434418083f6` TI 32k crystal | `board/ti/{common,am62x,am62ax,am62px}/...` | TI AM62x family only |
+
+### Why the failures are not caused by these commits
+
+**opi_pc (job 443690)** — Allwinner H3 (sun8i, ARMv7 Cortex-A7).
+```
+Bootstrapping U-Boot from .../build/opi_pc...
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+The failure happened in the labgrid `_await_prompt()` during the initial bootstrap, before any test ran. opi_pc is ARMv7 — the only code change that could conceivably affect a U-Boot binary (the armv8 SPL linker script) does not apply to it. The TI 32k crystal patches are board-specific to AM62x. Tools change is host-only. This is a lab connectivity / board-power-on timeout.
+
+**efi-aarch64 (job 443722)** — QEMU EFI app on aarch64.
+```
+test_distro_arm_app_extlinux ... +u-boot-test-reset efi-arm_app64 efi-aarch64
+os.read(self.fd, num_bytes).decode(...)
+OSError: [Errno 5] Input/output error
+1 failed, 34 passed, 671 skipped, 3 deselected
+```
+34 other tests passed; only one transient I/O error reading the spawned process's pty during a reset. EFI app builds don't use SPL, so the only ARMv8-touching commit (`u-boot-spl.lds`) is irrelevant. None of the other commits touch EFI, QEMU, distro boot, or extlinux paths. Classic flaky pty/serial glitch.
+
+### Verification
+
+- `um build sandbox` on `cherry-b8a820ac98f` HEAD: passes cleanly (no warnings/errors).
+- No source files referenced in the failure paths (`test/py/console_base.py`, `test/py/spawn.py`, labgrid internals, EFI/distro/extlinux code) were modified by the MR.
+
+### Outcome
+
+No `cherry-b8a820ac98f-fix1` branch created — there is nothing to fix in the source. Recommend retrying both jobs.
+
+---
+
