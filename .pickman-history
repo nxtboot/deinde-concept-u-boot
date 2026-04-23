@@ -65218,3 +65218,53 @@ No `cherry-b8a820ac98f-fix1` branch created — there is nothing to fix in the s
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-b8a820ac98f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc.
+
+Let me look at this more careful...
+
+### Conversation log
+Let me understand the situation. The "review comment" is the bot's own previous record from "Pipeline fix (attempt 1)" which concluded that the failures were infrastructure issues requiring no code change. Let me verify the current state and check if the build still passes.
+
+The build passes. Now let me re-verify the current pipeline status by checking the comment context. The "review comment" is the bot's own record from attempt 1, which determined the failures (efi-aarch64, opi_pc) were infrastructure issues requiring no code change. Let me double-check that conclusion is still valid.
+
+The analysis from attempt 1 still holds. Let me verify by examining what files the failing tests would touch versus what files this MR changes:
+
+**MR-touched files (not pickman tracking):**
+- `arch/arm/cpu/armv8/u-boot-spl.lds` — ARMv8 SPL only
+- `tools/image-host.c` — host build tool only
+- `board/ti/{am62x,am62ax,am62px,common}/*` — TI AM62x family only
+
+**Failing jobs:**
+- `opi_pc` — Allwinner H3 (sun8i, ARMv7 Cortex-A7) — none of the MR's files affect this board
+- `efi-aarch64` — QEMU EFI app on aarch64 — EFI app builds don't use SPL, and none of the other files touch EFI/distro/extlinux
+
+Both failures match infrastructure patterns (labgrid `pexpect.TIMEOUT` during bootstrap; transient `OSError: [Errno 5] Input/output error` on pty read after 34 tests passed).
+
+Since attempt 1 already concluded no code change is needed, and nothing has changed since then, I should not create a -v2 branch with no actual fix. Pushing identical content with churn commits is not appropriate. The correct action is to report this back to the MR.
+
+## Report
+
+**No code change made — the comment being addressed is the bot's own attempt-1 record, which already correctly determined the failures (`efi-aarch64`, `opi_pc`) are lab/infrastructure issues unrelated to this MR's commits. That conclusion is re-verified below.**
+
+### Re-verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` on `cherry-b8a820ac98f` HEAD: **passes cleanly** (1 board built, no warnings/errors, 12s).
+- File-touch audit confirms no overlap between MR commits and the failing test paths:
+  - `opi_pc` is ARMv7 (sun8i); MR's only ARMv8-specific change (`u-boot-spl.lds`) cannot affect it. TI 32k crystal patches are AM62x-only. Tools change is host-only.
+  - `efi-aarch64` is a QEMU EFI app build that does not use SPL; the lds change cannot affect it. None of the other commits touch EFI, QEMU, distro boot, or extlinux paths.
+
+### No -v2 branch created / no force-push
+
+There are no code changes to make. Creating a `-v2` with identical content would either be a no-op (same SHAs) or require a churn commit. Neither is appropriate — the previous analysis was correct and nothing has changed.
+
+### Suggested reply to the MR
+
+> Re-verified attempt-1 analysis: both failures are lab/infrastructure (`pexpect.TIMEOUT` during opi_pc bootstrap; transient `OSError: [Errno 5]` on efi-aarch64 pty after 34 other tests passed). MR-touched files (`arch/arm/cpu/armv8/u-boot-spl.lds`, `tools/image-host.c`, `board/ti/{am62x,am62ax,am62px,common}/*`) have no overlap with either failing board's code paths — opi_pc is ARMv7, and efi-aarch64 builds an EFI app that doesn't use SPL. Sandbox build still passes. Please retry the failed jobs.
+
+---
+
