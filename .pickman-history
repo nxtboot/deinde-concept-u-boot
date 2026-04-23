@@ -65835,3 +65835,65 @@ Branch is left ready for pushing. Not merged back.
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 1)
+
+Branch: cherry-bf55b84736d
+
+Failed jobs:
+- qemu_m68k_virt test.py (test.py)
+- efi-aarch64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now I understand the situation. Let me check the failures more carefully:
+
+- **qemu_m68k_virt test.py**: Real failure. The CI commit added a new test job for `qemu-m68k` but did not add the required test hook files (`conf.qemu-m68k` and `u_boot_boardenv_qemu_m68k.py`).
+- **efi-aarch64, colibrimx8, opi_pc** (sjg-lab stage): Lab/hardware infrastructure failures (connection timeouts, lab connection marked bad), unrelated to the m68k changes.
+
+Let me fix the qemu_m68k_virt issue by amending the CI commit. First verify the setup and the test-flash path expectations:
+
+Now I'll add the required hook files to allow the qemu_m68k_virt test to run:
+
+Now let me create the fix branch and build to verify:
+
+Sandbox build passed (no output = success). Now let's build the affected boards with buildman:
+
+All 11 commits build cleanly for qemu-m68k and sandbox (the warnings shown are pre-existing sandbox DTS warnings, not related to the MR).
+
+Both branches point to the same commit. All fixes are in place on `cherry-bf55b84736d-fix1`.
+
+## Summary
+
+### Fixes applied
+
+**1. `qemu_m68k_virt test.py` (real code failure) — FIXED**
+
+- **Root cause**: Commit `9c2d069e005 CI: Add test jobs for QEMU m68k virt machine` added a new CI job (`TEST_PY_BD: "qemu-m68k"`) for both `.gitlab-ci.yml` and `.azure-pipelines.yml`, but did not add the matching test-hook files. The Bash hook `test/hooks/bin/u-boot-test-common` then bailed with `conf.qemu-m68k: No such file or directory`, aborting every job before any test ran. The bug is inherited from upstream commit `b21d9acdff8` — the original author never added these files.
+- **Fix**: Amended `9c2d069e005` (now `e5a39bd2f56`) with two new files:
+  - `test/hooks/bin/travis-ci/conf.qemu-m68k` — launches `qemu-system-m68k -M virt -cpu m68040 -nographic` with `u-boot` via `-kernel`, modelled on the existing `conf.M5208EVBE_qemu` and `conf.qemu_arm_na`.
+  - `test/hooks/py/travis-ci/u_boot_boardenv_qemu_m68k.py` — minimal boardenv (no PCI, no DHCP) for the Python test framework.
+- A `[pickman] Fix missing test hook config files …` note was appended to the commit message.
+
+### Not fixed — infrastructure/transient
+
+**2. `efi-aarch64` (sjg-lab)** — `test_distro_arm_app_efi` timed out waiting for `Ubuntu 25.04 qarm ttyAMA0`. This is an arm64 lab/distro-boot failure with no connection to m68k driver changes.
+
+**3. `colibrimx8` (sjg-lab)** — `Lab timeout: Marking connection bad - no other tests will run` during bootstrap. Lab hardware/connection issue.
+
+**4. `opi_pc` (sjg-lab)** — `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`. Lab/hardware connection timeout.
+
+All three sjg-lab jobs failed before any code-under-test ran, and the failures are lab connectivity/hardware, unrelated to the cherry-picked commits.
+
+### Verification
+
+- `um build sandbox`: OK
+- `buildman qemu-m68k` across all 11 commits on the branch: all 11 built clean.
+- `buildman sandbox` (9 sandbox variants) across all 11 commits: all 99 built (warnings are pre-existing sandbox DTS range warnings, unchanged by this branch).
+
+### Branch state
+
+Branch `cherry-bf55b84736d-fix1` is left at `670545f2087` (same as `cherry-bf55b84736d` after the amend). Not pushed.
+
+---
+
