@@ -49,18 +49,17 @@ SECTIONS
 		__binman_sym_start = .;
 		KEEP(*(SORT(.binman_sym*)));
 		__binman_sym_end = .;
+		. = ALIGN(8);
 	} > .nor
 
-	. = ALIGN(4);
+	/*
+	 * These platforms enable CONFIG_POSITION_INDEPENDENT and so need
+	 * these names. The always however hold the same value.
+	 */
+	__rel_dyn_start = .;
+	__rel_dyn_end = .;
 
 	__image_copy_end = .;
-
-	.rel.dyn : {
-		__rel_dyn_start = .;
-		*(.rel*)
-		__rel_dyn_end = .;
-	} > .nor
-
 	_end = .;
 	_image_binary_end = .;
 

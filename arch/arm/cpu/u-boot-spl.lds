@@ -41,23 +41,22 @@ SECTIONS
 		__binman_sym_start = .;
 		KEEP(*(SORT(.binman_sym*)));
 		__binman_sym_end = .;
+		. = ALIGN(8);
 	}
 
-	. = ALIGN(4);
+	/*
+	 * Platforms which enable CONFIG_POSITION_INDEPENDENT (e.g. qemu_arm_spl)
+	 * reference these symbols from start.S. No xPL image contains rel.dyn
+	 * entries so the range is always empty.
+	 */
+	__rel_dyn_start = .;
+	__rel_dyn_end = .;
 
 	__image_copy_end = .;
-
-	.rel.dyn : {
-		__rel_dyn_start = .;
-		*(.rel*)
-		__rel_dyn_end = .;
-	}
-
-	. = ALIGN(8);
 	_image_binary_end = .;
 	_end = .;
 
-	.bss __rel_dyn_start (OVERLAY) : {
+	.bss : {
 		__bss_start = .;
 		*(.bss*)
 		 . = ALIGN(8);
