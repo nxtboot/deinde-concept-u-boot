@@ -65897,3 +65897,46 @@ Branch `cherry-bf55b84736d-fix1` is left at `670545f2087` (same as `cherry-bf55b
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-bf55b84736d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu_m68k_virt test.py, efi-aarch64, colibrimx8, opi_p...
+
+### Conversation log
+Good — the amended CI commit already contains both hook files and the pickman note. Now let me run the sandbox build.
+
+## Report
+
+### What the review comment actually was
+
+The "review comment" on MR !943 is the pickman bot's own **Pipeline fix (attempt 1)** report — a self-generated note recording that the pipeline failure (missing qemu-m68k test hooks) had been fixed. There was no human ask attached; it's a notification that a fix had already been applied to the tree.
+
+### Branch state going in
+
+- Local `cherry-bf55b84736d` tip: `5cc95058b60` (= `670545f2087` + one pickman-record commit recording the attempt-1 pipeline fix in `.pickman-history`)
+- Remote `ci/cherry-bf55b84736d` tip: `670545f2087`
+- The amended CI commit `e5a39bd2f56 CI: Add test jobs for QEMU m68k virt machine` already contained both new hook files:
+  - `test/hooks/bin/travis-ci/conf.qemu-m68k` (+27 lines)
+  - `test/hooks/py/travis-ci/u_boot_boardenv_qemu_m68k.py` (+2 lines)
+  - plus `[pickman] Fix missing test hook config files …` note appended to the message.
+
+No further code changes were required — attempt 1's fix was already in place. The only outstanding action was to ship the pickman-history record commit and re-trigger the pipeline.
+
+### Actions taken
+
+1. Checked out `cherry-bf55b84736d`.
+2. Verified the amended CI commit `e5a39bd2f56` already contains the two hook files and the `[pickman]` note.
+3. Ran `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built`, clean.
+4. Created local branch `cherry-bf55b84736d-v2` (at `5cc95058b60`, same tip as `cherry-bf55b84736d`).
+5. Force-pushed via `./tools/pickman/pickman push-branch cherry-bf55b84736d -r ci -f`:
+   - `670545f2087..5cc95058b60  HEAD -> cherry-bf55b84736d` — success.
+   - Remote now at `5cc95058b60`. GitLab will trigger a new MR pipeline.
+
+### Suggested MR reply
+
+> Pushed the pipeline-fix for the `qemu_m68k_virt test.py` job onto the MR branch. The CI commit `CI: Add test jobs for QEMU m68k virt machine` is amended to also add the two missing test-hook files (`test/hooks/bin/travis-ci/conf.qemu-m68k` and `test/hooks/py/travis-ci/u_boot_boardenv_qemu_m68k.py`), so the new job can find its QEMU launch configuration. A `[pickman]` note has been appended to the commit message. The other three failures (`efi-aarch64`, `colibrimx8`, `opi_pc` on sjg-lab) were lab/hardware connectivity timeouts and are not related to these cherry-picked commits. Sandbox build remains clean (`buildman` OK).
+
+---
+
