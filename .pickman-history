@@ -65517,3 +65517,66 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-9e8bc1c6be7
+
+Commits:
+- 9e8bc1c6be7 spi: stm32-ospi: Increase read throughput in indirect mode
+- addebf9e818 spi: stm32-qspi: Increase read throughput in indirect mode
+- d67c721ec53 spi: stm32-qspi: Optimize FIFO accesses using u16 or u32
+- 2bafb6e61b1 clk: stm32mp13: Reorder include files
+- 7795c5ec6a6 ARM: dts: stm32: Add SCMI clocks in rcc node for stm32mp131.dtsi
+- 213f927a592 clk: stm32: Update clock management for STM32MP13/25
+- a6e550b57a1 ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot
+- 7f637df3dba video: stm32: ltdc: add .of_to_plat callback
+- 9fca4cc1d0b ARM: stm32: Use CONFIG_STM32MP15X to discern STM32MP15xx on DH STM32MP15xx DHSOM
+- a370c2b4063 ARM: stm32: Reinstate missing SPL configs for DH STM32MP15xx DHSOM
+- 07cd29b175d board: stm32mp2: read boot index from backup register
+- a8f12fa7af3 video: simple_panel: add support for "rocktech,rk043fn48h" display
+- 3f6b113291c misc: Keep FSL_IFC available on PowerPC as well
+- 66891ffb149 Merge tag 'u-boot-stm32-20260129' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+Now the merge commit:
+
+All 14 commits are present. Now final build:
+
+## Cherry-Pick Summary
+
+All 14 commits from `us/next` were successfully cherry-picked onto branch `cherry-9e8bc1c6be7` (based on `ci/master`).
+
+### Branch Log (HEAD → oldest cherry-pick)
+```
+80e1efd33cc Merge tag 'u-boot-stm32-20260129' of https://source.denx.de/u-boot/custodians/u-boot-stm
+c188d055432 misc: Keep FSL_IFC available on PowerPC as well
+515e80b6716 video: simple_panel: add support for "rocktech,rk043fn48h" display
+9026bf15a0f board: stm32mp2: read boot index from backup register
+7146b38ac0f ARM: stm32: Reinstate missing SPL configs for DH STM32MP15xx DHSOM
+1c8a8c37f06 ARM: stm32: Use CONFIG_STM32MP15X to discern STM32MP15xx on DH STM32MP15xx DHSOM
+276285fc893 video: stm32: ltdc: add .of_to_plat callback
+71549c46abc ARM: dts: stm32: Add bootph-all in ltdc node in stm32mp257f-ev1-u-boot
+1c5f2bffd2b clk: stm32: Update clock management for STM32MP13/25
+d78f5bc47a7 ARM: dts: stm32: Add SCMI clocks in rcc node for stm32mp131.dtsi
+a7a710bd13d clk: stm32mp13: Reorder include files
+0c5168e0405 spi: stm32-qspi: Optimize FIFO accesses using u16 or u32
+8384e4e8a51 spi: stm32-qspi: Increase read throughput in indirect mode
+c5acd59a970 spi: stm32-ospi: Increase read throughput in indirect mode
+```
+
+### Delta Check
+All 13 regular cherry-picks had **identical file/line stats** vs. their originals. No significant deltas.
+
+### Merge Commit
+- `66891ffb149` cherry-picked with `-m 1 --allow-empty`; resulted in an empty commit (expected — all changes had already been applied as the individual commits above). Committed with `--allow-empty` to preserve history.
+
+### Build Result
+- **OK**: `buildman -L --board sandbox -w -o /tmp/pickman` — `Completed: 1 total built` (no warnings/errors) both after cherry-picks and as final verification.
+
+### Fix-ups
+- One minor auto-merge in `drivers/misc/Kconfig` during `3f6b113291c` (git's automatic auto-merging, no manual intervention required). Content matches upstream exactly.
+
+The cherry-pick branch `cherry-9e8bc1c6be7` is ready for pushing.
+
+---
+
