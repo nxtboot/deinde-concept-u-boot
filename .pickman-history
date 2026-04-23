@@ -65326,3 +65326,49 @@ Retry both failed jobs. If they fail again with the same signatures, escalate to
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-b8a820ac98f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Both failures have been seen in ...
+
+### Conversation log
+I've verified the current state of the branch. The situation is identical to attempt 2: the same two jobs (`efi-aarch64`, `opi_pc`) are failing for the same infrastructure reasons. The build passes cleanly, and there is nothing in the MR's commits that could affect either failing board.
+
+## Report
+
+**No code fix made — this is the third iteration of an identical infrastructure-failure pattern. Creating a `-v3` branch with no actual code change is not appropriate.**
+
+### Re-verification
+
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` on `cherry-b8a820ac98f` HEAD → **passes cleanly** (1 board, 12s, no warnings/errors).
+- **Branch state**: Only post-merge commits are pickman tracking entries; no source-tree changes since the merge of the patch series.
+- **File-touch audit** (unchanged since attempt 1): MR commits touch only `arch/arm/cpu/armv8/u-boot-spl.lds`, `tools/image-host.c`, and `board/ti/{common,am62x,am62ax,am62px}/*`.
+
+### Why neither failing job can be caused by this MR
+
+| Job | Board / config | Why MR commits cannot affect it |
+|---|---|---|
+| `opi_pc` | Allwinner H3 (sun8i-h3), **ARMv7** Cortex-A7 | Uses `arch/arm/cpu/armv7/u-boot-spl.lds`, not the ARMv8 file the MR modifies. AM62x patches are board-specific. Tools change is host-only. |
+| `efi-aarch64` | `efi-arm_app64_defconfig` — pure EFI app, **no `CONFIG_SPL`** | SPL linker change cannot apply. No MR commit touches EFI / QEMU / distro / extlinux paths. |
+
+Failure signatures (pexpect TIMEOUT during opi_pc bootstrap before any test runs; transient distro-boot timeout on efi-aarch64 with 34 other tests passing) are textbook lab/transient flakes.
+
+### Branch left unchanged — no force-push performed
+
+Per task instructions ("If a comment is unclear or cannot be addressed, note this in your report") and the previous attempts' conclusion: there is nothing actionable in the source tree. Pushing a no-op or churn-only `-v3` branch would burn another pipeline cycle to reach the same diagnosis.
+
+### Suggested reply to the MR
+
+> Re-confirmed for the third time: both `efi-aarch64` and `opi_pc` failures are lab/infrastructure issues unrelated to this MR.
+>
+> - `opi_pc` is **ARMv7** (sun8i-h3) — the only ARM-touching commit in this MR (`arch/arm/cpu/armv8/u-boot-spl.lds`) is ARMv8-only and cannot affect it. Failure signature is labgrid `pexpect.TIMEOUT` during initial bootstrap before any test runs.
+> - `efi-aarch64` builds an EFI app via `efi-arm_app64_defconfig` which has **no `CONFIG_SPL`** — the linker-script change cannot apply. 34 other tests pass; only the distro-boot/login wait times out.
+>
+> Sandbox build still passes cleanly on the unchanged branch. The MR is correct as-is. Recommend escalating to lab/runner ops if these jobs continue to fail with the same signatures — the opi_pc board's serial/power link may need attention, and the `efi-aarch64` distro-boot timeout may need a tolerance bump.
+
+---
+
