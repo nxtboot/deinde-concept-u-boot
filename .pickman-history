@@ -65369,6 +65369,97 @@ Per task instructions ("If a comment is unclear or cannot be addressed, note thi
 > - `efi-aarch64` builds an EFI app via `efi-arm_app64_defconfig` which has **no `CONFIG_SPL`** — the linker-script change cannot apply. 34 other tests pass; only the distro-boot/login wait times out.
 >
 > Sandbox build still passes cleanly on the unchanged branch. The MR is correct as-is. Recommend escalating to lab/runner ops if these jobs continue to fail with the same signatures — the opi_pc board's serial/power link may need attention, and the `efi-aarch64` distro-boot timeout may need a tolerance bump.
+---
+
+## 2026-04-22: us/next
+
+Branch: cherry-86455a8e4b1
+
+Commits:
+- 86455a8e4b1 doc: describe QEMU VGA emulation
+- 5f6776883c6 doc: develop: process: Move the existing block about patch application
+- 78e100db5b2 doc: develop: process: Rework the custodian feedback section
+- 7db33677c29 doc: develop: process: Explain when/how Custodians may edit patches
+- 8449e5c2342 doc: develop: process: Move Custodians section
+- 05609eebdbf doc: develop: process: Make "Work flow of a Custodian" a subsection
+- 385005732cf doc: develop: codingstyle: Update b4 external link
+- e41a8f3f35e doc: develop: sending_patches: Update link to patchwork
+- 302c054d64a doc: develop: process: Document using b4 and patchwork for custodians
+- 6a1bdb7e952 Merge tag 'doc-2026-04-rc2' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The first cherry-pick failed. Per instructions, let me check if these commits are already present in ci/master with different hashes.
+
+The commits aren't already applied. Let me examine the conflict.
+
+Now let me amend the commit to add a note about the fix-up.
+
+Now let me verify the delta and then continue.
+
+Delta matches. Now run the build.
+
+Build successful. Now cherry-pick the next commit.
+
+Let me check what's in our current HEAD for the b4 section.
+
+The b4 block exists in a different location in ci/master. I need to take HEAD (remove the duplicate) and apply the actual URL update to the existing b4 section further down.
+
+The diff looks clean - just the URL and anonymous reference update, as per the original commit intent.
+
+Need to add the fix-up note by amending.
+
+Now let me verify and continue.
+
+Same stat. Let me run the build and continue.
+
+Now let me also check what's in the process.rst and sending_patches.rst diffs (already staged).
+
+Good - those look clean. Now stage and continue.
+
+Same stat. Now build and proceed to the merge commit.
+
+Now cherry-pick the merge commit.
+
+For the merge commit, HEAD already contains all the changes. Take the HEAD version.
+
+All 10 commits present. Now run the final build.
+
+Build succeeds. Here's the final status report:
+
+## Cherry-pick Complete
+
+**Branch**: `cherry-86455a8e4b1` (10 commits on top of `ci/master`)
+
+**Build result**: OK (sandbox builds cleanly, no warnings/errors)
+
+### Commit list (all 10 present)
+```
+719ca156c51 Merge tag 'doc-2026-04-rc2' ... (empty merge commit)
+f28ac7aca10 doc: develop: process: Document using b4 and patchwork for custodians
+4fef70ccff3 doc: develop: sending_patches: Update link to patchwork
+1dcd9d0af6b doc: develop: codingstyle: Update b4 external link
+7c088f7a5a4 doc: develop: process: Make "Work flow of a Custodian" a subsection
+ae24268a230 doc: develop: process: Move Custodians section
+f835b0ad5c1 doc: develop: process: Explain when/how Custodians may edit patches
+6d350e4d2ad doc: develop: process: Rework the custodian feedback section
+d5ff5366e32 doc: develop: process: Move the existing block about patch application
+a9512a42ce8 doc: describe QEMU VGA emulation
+```
+
+### Fix-ups applied (commit messages amended with notes)
+
+1. **`a9512a42ce8` (describe QEMU VGA emulation)**: Conflict in `doc/board/emulation/index.rst` — both branches added new toctree entries adjacent to each other (`script` in HEAD, `video` in the cherry-pick). Resolved by keeping both.
+
+2. **`1dcd9d0af6b` (codingstyle: Update b4 external link)**: Conflict in `doc/develop/codingstyle.rst`. The b4 documentation block lives in a different location in `ci/master` (further down in the file, under clang-format section). The cherry-pick tried to insert a duplicate block near the top. Resolved by discarding the duplicate block and applying the actual URL change (`git.kernel.org/pub/scm/utils/b4/b4.git/` → `b4.docs.kernel.org/en/latest/`, `` `_ `` → `` `__ ``) to the existing b4 block in its actual location. Stat matches upstream (1 file, 1 insertion, 1 deletion).
+
+3. **`f28ac7aca10` (Document using b4 and patchwork for custodians)**: Same b4-location conflict in `doc/develop/codingstyle.rst`. Removed duplicate block attempt and placed the new `.. _b4_contrib:` label just before the existing b4 block in its actual location. Stat matches upstream (3 files, 33 insertions).
+
+4. **`719ca156c51` (merge commit)**: Conflicts in `doc/board/emulation/index.rst` and `doc/develop/codingstyle.rst` — all underlying content was already applied by the individual cherry-picks. Resolved by taking HEAD for both files and committing as empty merge with `--allow-empty` to preserve history.
+
+### Delta verification
+All non-merge cherry-picks show file/line counts matching the originals. No concerning deltas.
+
+The branch is ready for pushing. No merge was performed.
 
 ---
 

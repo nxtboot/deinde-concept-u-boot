@@ -11,6 +11,7 @@ Emulation
    common
    network
    script
+   video
    qemu-arm
    qemu-mips
    qemu-ppce500
