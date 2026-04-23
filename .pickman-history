@@ -65982,3 +65982,36 @@ Build succeeded. Final verification:
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 1)
+
+Branch: cherry-1c1bfb1cf34
+
+Failed jobs:
+- link (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures are clearly lab/infrastructure issues, not code-related. Reporting without making changes.
+
+## Diagnosis
+
+**The MR change:** A single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` under `config GENERATE_ACPI_TABLE` in `lib/Kconfig`). This change touches only x86/QEMU ACPI table generation dependencies — it has no possible impact on lab board connectivity or boot behavior.
+
+**Job: link (446216)** — Lab infrastructure failure
+- Error: `serial.serialutil.SerialException: Could not open serial port rfc2217://kea:34073?ign_set_control&timeout=3.0: ... [Errno 111] Connection refused`
+- The remote serial-port server on host `kea:34073` rejected the TCP connection. The test never even reached the point of writing or running the U-Boot binary — the failure occurred during labgrid's `on_activate()` of the serial driver, before any U-Boot code was loaded.
+
+**Job: opi_pc (446214)** — Lab infrastructure failure
+- Error: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- The orangepi_pc board did not produce a U-Boot prompt within 15 seconds after reset. This happens before any test logic runs and is the classic symptom of a lab board being powered off, hung, miswired, or with the prior image still booting.
+
+Both jobs printed `Lab failure: Marking connection bad - no other tests will run`, which is the lab harness's own signal that this is an infrastructure problem, not a code regression.
+
+## Conclusion
+
+**No fix branch created.** The failures are transient/infrastructure issues unrelated to the MR's one-line Kconfig change. The MR should be re-run when the `kea` serial server and the orangepi_pc lab board are healthy.
+
+Branch left untouched on `cherry-1c1bfb1cf34` at `8f3979201dc`.
+
+---
+
