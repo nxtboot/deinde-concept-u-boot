@@ -66062,3 +66062,44 @@ No `-v2` branch was created and no push was performed, because there is no code 
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 2)
+
+Branch: cherry-1c1bfb1cf34
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+**This is an infrastructure/transient lab failure, not a code regression. No fix is required.**
+
+### The MR change
+The entire MR is a single-line Kconfig addition in `lib/Kconfig` — `select ACPIGEN if !QFW_ACPI` under `config GENERATE_ACPI_TABLE`. This is scoped strictly to x86/QEMU ACPI table generation and cannot affect anything on an ARM Allwinner H3 board.
+
+### The failure on opi_pc (job 446452)
+The log shows:
+```
+Writing U-Boot using method sunxi
+...
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The orangepi_pc board was flashed successfully (the `u-boot-test-flash` step completed) but never produced a U-Boot prompt within 15 seconds after reset. Labgrid's own harness flagged this as `Lab failure: Marking connection bad — no other tests will run`, which is its signal for an infrastructure problem rather than a test regression.
+
+### Why this cannot be a code issue
+- The MR's only code change is `+select ACPIGEN if !QFW_ACPI` in `lib/Kconfig` under `GENERATE_ACPI_TABLE`. This symbol is not reachable from `orangepi_pc_defconfig` (ARM sunxi, no ACPI).
+- The test binary was built and flashed successfully; the failure is in the serial-console wait after reset, before any test logic ran.
+- This is the **same board with the same error pattern** as attempt 1 (job 446214: `pexpect.TIMEOUT waiting for login` on opi_pc). The `kea` remote-serial infrastructure has been flaky across both attempts for this MR.
+
+### Conclusion
+No code change is possible or appropriate. The orangepi_pc lab board is not reaching the login prompt after reset — it's hung, powered off, stuck in a prior boot, or has a serial-console issue. The MR should be re-run once the `ellesmere-lab` / orangepi_pc hardware is healthy.
+
+### Branch state
+No `cherry-1c1bfb1cf34-fix2` branch was created, because there is nothing to fix. `cherry-1c1bfb1cf34` remains at `989e2f9d863` (unchanged). Per the instructions: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+---
+
