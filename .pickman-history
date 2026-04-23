@@ -65738,3 +65738,43 @@ Error: arch/arm/dts/stm32mp257f-ev1-u-boot.dtsi:55.1-6 Label or path ltdc not fo
 
 ---
 
+
+### Review: 2026-04-22 (v4 rebase)
+
+Branch: cherry-9e8bc1c6be7
+
+Comments addressed:
+- MR was behind the target branch (`ci/master`) and needed rebasing.
+
+### Conversation log
+Rebased `cherry-9e8bc1c6be7-v4` onto `ci/master` with `--keep-empty`.
+One conflict in `.pickman-history` caused by concurrent appends from
+`cherry-c287c6900aa` (now in `ci/master`) and this branch's initial
+cherry-pick record. Resolved by keeping both sections with a `---`
+separator between them. The resolved diff stat is unchanged (1 file,
+63 insertions) vs. the original `pickman: Record cherry-pick of 14
+commits from us/next` commit.
+
+### Delta check
+All 17 commits (including the 4 pickman-history records, the empty
+merge commit, and 12 regular patches) retained identical file/line
+stats vs. pre-rebase.
+
+### Build verification
+- `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1
+  total built` (no warnings/errors)
+- `um build stm32mp15` → OK (silent)
+- `um build stm32mp23` → OK (silent)
+- `um build stm32mp25` → OK (silent)
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. One trivial `.pickman-history`
+> conflict (concurrent appends with the `cherry-c287c6900aa` series
+> now merged to master); resolved by keeping both entries. All 17
+> commits retained identical diffstats; sandbox, stm32mp15,
+> stm32mp23 and stm32mp25 all build cleanly. Force-pushed to
+> refresh the pipeline.
+
+---
+
