@@ -65940,3 +65940,306 @@ No further code changes were required — attempt 1's fix was already in place. 
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-1c1bfb1cf34
+
+Commits:
+- 1c1bfb1cf34 acpi: Correct dependencies for GENERATE_ACPI_TABLE
+
+### Conversation log
+The cherry-pick resulted in massive add/add conflicts across the whole tree. This suggests the commit might already be in ci/master. Let me check.
+
+The commit has no parent — it's a root commit. This is unusual. Let me check the current state and find the actual Kconfig change this commit is about.
+
+Found the properly-parented equivalent commit `b2eda1d2c01` with the actual small diff. Let me cherry-pick that with the original hash noted.
+
+Cherry-pick succeeded. Let me verify and update the commit message to reference the correct hash (the user asked for `1c1bfb1cf34`), and add a note about the source.
+
+Let me amend the commit to reference the original requested hash (`1c1bfb1cf34`) as the user asked, with a note about the source:
+
+Now compare the delta — expect 1 file, 1 insertion in lib/Kconfig. That matches the `b2eda1d2c01` equivalent. The requested `1c1bfb1cf34` can't be compared because it's a rootless commit. Let me run the build.
+
+Build succeeded. Final verification:
+
+## Final Status
+
+**Branch:** `cherry-1c1bfb1cf34` (based on `ci/master`) — ready for pushing.
+
+**Build result:** OK — `buildman --board sandbox` passed (22s, 1/1 built, 0 warnings/errors).
+
+**Commit applied:** `dbdc002d649` — `acpi: Correct dependencies for GENERATE_ACPI_TABLE`
+- Change: `lib/Kconfig`, +1 line (`select ACPIGEN if !QFW_ACPI` added to `config GENERATE_ACPI_TABLE`)
+
+**Fix-up / notable issue:**
+- The requested source commit `1c1bfb1cf34` is an **orphan root commit** (no parent) on `us/next`. Cherry-picking it directly produced massive add/add conflicts across the entire tree because there is no parent to compute a diff against.
+- I found the equivalent properly-parented commit `b2eda1d2c01c3cbc09414eb962208aafb837f35e` on `us/WIP/03Apr2026-next` with identical author, date, subject, message, and a clean 1-line diff matching the commit message's description.
+- Cherry-picked that equivalent commit cleanly, then amended the commit message to reference the originally-requested hash `1c1bfb1cf34` plus a note explaining the orphan-commit situation.
+
+**Delta check:** The applied diff is exactly the 1-line Kconfig addition described in the commit message. No delta concerns.
+
+**Conflicts:** `lib/Kconfig` auto-merged cleanly (3-way merge handled the nearby context difference between `select QFW if QEMU` in the source base and `select QFW if ARCH_QEMU_X86` in `ci/master`).
+
+---
+
+### Pipeline fix: 2026-04-23 (attempt 1)
+
+Branch: cherry-1c1bfb1cf34
+
+Failed jobs:
+- link (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures are clearly lab/infrastructure issues, not code-related. Reporting without making changes.
+
+## Diagnosis
+
+**The MR change:** A single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` under `config GENERATE_ACPI_TABLE` in `lib/Kconfig`). This change touches only x86/QEMU ACPI table generation dependencies — it has no possible impact on lab board connectivity or boot behavior.
+
+**Job: link (446216)** — Lab infrastructure failure
+- Error: `serial.serialutil.SerialException: Could not open serial port rfc2217://kea:34073?ign_set_control&timeout=3.0: ... [Errno 111] Connection refused`
+- The remote serial-port server on host `kea:34073` rejected the TCP connection. The test never even reached the point of writing or running the U-Boot binary — the failure occurred during labgrid's `on_activate()` of the serial driver, before any U-Boot code was loaded.
+
+**Job: opi_pc (446214)** — Lab infrastructure failure
+- Error: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`
+- The orangepi_pc board did not produce a U-Boot prompt within 15 seconds after reset. This happens before any test logic runs and is the classic symptom of a lab board being powered off, hung, miswired, or with the prior image still booting.
+
+Both jobs printed `Lab failure: Marking connection bad - no other tests will run`, which is the lab harness's own signal that this is an infrastructure problem, not a code regression.
+
+## Conclusion
+
+**No fix branch created.** The failures are transient/infrastructure issues unrelated to the MR's one-line Kconfig change. The MR should be re-run when the `kea` serial server and the orangepi_pc lab board are healthy.
+
+Branch left untouched on `cherry-1c1bfb1cf34` at `8f3979201dc`.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) link, opi_pc.
+
+Both failures are clearly lab/infrastru...
+
+### Conversation log
+Let me check the current pipeline status on the MR to understand if there are new failures to address:
+
+Let me look at the commit that was made after the pipeline fix attempt to understand the full context:
+
+## Analysis & Report
+
+**Nothing to push. The "review comment" is the bot's own attempt-1 status report, which concluded no code changes were warranted.**
+
+### What I found
+
+The review comment is authored by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — which `pickman check-gitlab` confirms is the same bot account that the `ci` remote uses to post status updates. The comment body is verbatim the attempt-1 diagnosis posted previously:
+
+- **link (446216):** `serial.SerialException: Could not open serial port rfc2217://kea:34073?... [Errno 111] Connection refused` — remote serial server refused the TCP connection before any U-Boot binary was loaded.
+- **opi_pc (446214):** `pexpect.TIMEOUT` waiting for login — orangepi_pc board never produced a prompt after reset.
+
+Both jobs explicitly printed `Lab failure: Marking connection bad - no other tests will run`.
+
+### Why no code change is appropriate
+
+The MR's sole change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE` in `lib/Kconfig`), confined to x86/QEMU ACPI table generation. It has zero reachable effect on:
+- A remote `rfc2217` serial bridge daemon on `kea:34073`
+- ARM orangepi_pc boot/login timing
+
+### Branch state
+
+- Local `cherry-1c1bfb1cf34` = `a64fca3e854` (adds only `.pickman-history` record — no code)
+- Remote `ci/cherry-1c1bfb1cf34` = `8f3979201dc`
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is identical on both sides
+
+No `-v2` branch was created and no push was performed, because there is no code fix to apply. Pushing a history-only commit would not address anything and would just re-trigger the same pipeline against the same lab.
+
+### Suggested reply to post on the MR
+
+> This review comment is attempt 1's own diagnosis — both failed jobs (`link`, `opi_pc`) were lab/infrastructure failures (serial bridge `kea:34073` refused TCP connection; orangepi_pc never reached login prompt), both explicitly reporting `Lab failure: Marking connection bad`. The MR change is a single-line Kconfig addition scoped to x86/QEMU ACPI and cannot affect those boards. No code change is possible or appropriate; please re-run the pipeline once the `kea` serial server and the orangepi_pc lab board are healthy.
+
+---
+
+### Pipeline fix: 2026-04-23 (attempt 2)
+
+Branch: cherry-1c1bfb1cf34
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+**This is an infrastructure/transient lab failure, not a code regression. No fix is required.**
+
+### The MR change
+The entire MR is a single-line Kconfig addition in `lib/Kconfig` — `select ACPIGEN if !QFW_ACPI` under `config GENERATE_ACPI_TABLE`. This is scoped strictly to x86/QEMU ACPI table generation and cannot affect anything on an ARM Allwinner H3 board.
+
+### The failure on opi_pc (job 446452)
+The log shows:
+```
+Writing U-Boot using method sunxi
+...
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The orangepi_pc board was flashed successfully (the `u-boot-test-flash` step completed) but never produced a U-Boot prompt within 15 seconds after reset. Labgrid's own harness flagged this as `Lab failure: Marking connection bad — no other tests will run`, which is its signal for an infrastructure problem rather than a test regression.
+
+### Why this cannot be a code issue
+- The MR's only code change is `+select ACPIGEN if !QFW_ACPI` in `lib/Kconfig` under `GENERATE_ACPI_TABLE`. This symbol is not reachable from `orangepi_pc_defconfig` (ARM sunxi, no ACPI).
+- The test binary was built and flashed successfully; the failure is in the serial-console wait after reset, before any test logic ran.
+- This is the **same board with the same error pattern** as attempt 1 (job 446214: `pexpect.TIMEOUT waiting for login` on opi_pc). The `kea` remote-serial infrastructure has been flaky across both attempts for this MR.
+
+### Conclusion
+No code change is possible or appropriate. The orangepi_pc lab board is not reaching the login prompt after reset — it's hung, powered off, stuck in a prior boot, or has a serial-console issue. The MR should be re-run once the `ellesmere-lab` / orangepi_pc hardware is healthy.
+
+### Branch state
+No `cherry-1c1bfb1cf34-fix2` branch was created, because there is nothing to fix. `cherry-1c1bfb1cf34` remains at `989e2f9d863` (unchanged). Per the instructions: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) opi_pc.
+
+## Diagnosis
+
+**This is an infrastructure/tra...
+
+### Conversation log
+## Analysis & Report
+
+**Nothing to push. The "review comment" is the bot's own attempt-2 status report, which concluded no code change was possible.**
+
+### What I found
+
+The review comment author `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is the same bot account that the `ci` remote uses to post status updates. The comment body is verbatim the attempt-2 diagnosis — it diagnoses `opi_pc` (job 446452) as a `pexpect.TIMEOUT waiting for login` lab failure, with labgrid itself reporting `Lab failure: Marking connection bad - no other tests will run`.
+
+### Why no code change is appropriate
+
+The MR's sole code change is a single-line Kconfig addition in `lib/Kconfig`:
+```
++select ACPIGEN if !QFW_ACPI
+```
+under `config GENERATE_ACPI_TABLE`. This is unreachable from `orangepi_pc_defconfig` (ARM Allwinner H3, no ACPI). The board was successfully flashed — the failure is in the serial-console wait after reset, before any U-Boot code ran. This is the same board with the same error pattern as attempt 1, confirming flaky lab hardware / `kea` remote-serial infrastructure.
+
+### Branch state
+
+- Local `cherry-1c1bfb1cf34` = `25ce199ce2d` (1 commit ahead of remote — just the attempt-2 `.pickman-history` record, no code)
+- Remote `ci/cherry-1c1bfb1cf34` = `989e2f9d863`
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is unchanged on both sides
+
+**No `-v2` branch was created** and **no push was performed**. There is no code fix to apply, and pushing a history-only commit would re-trigger the same lab failure without addressing its root cause (board not producing login prompt after reset).
+
+### Suggested reply to post on the MR
+
+> This review comment is attempt 2's own diagnosis — `opi_pc` (job 446452) failed with `pexpect.TIMEOUT waiting for login`, which labgrid itself flagged as `Lab failure: Marking connection bad`. The orangepi_pc board was flashed successfully but never produced a prompt after reset — classic infrastructure/hardware symptom. The MR change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE`) scoped to x86/QEMU ACPI generation, which is unreachable from `orangepi_pc_defconfig`. Same board, same error pattern as attempt 1. No code change is possible or appropriate; please re-run the pipeline once the orangepi_pc hardware is healthy.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64.
+
+Now let me verify the build works locall...
+
+### Conversation log
+## Report
+
+**Nothing to push. The "review comment" is the bot's own attempt-3 diagnostic report, which concluded no code change was possible.**
+
+### What I found
+
+The review comment author `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is the same bot account that the `ci` remote uses to post status updates. The comment body is verbatim the attempt-3 diagnosis — `efi-aarch64` (job 446723) failed with `aarch64-linux-objdump: u-boot: file format not recognized` from `Makefile:2267`, a classic symptom of stale/cross-arch build artifacts in the persistent runner build directory (`/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64`).
+
+### Why no code change is appropriate
+
+The MR's sole code change is one line in `lib/Kconfig`:
+```
++       select ACPIGEN if !QFW_ACPI
+```
+under `config GENERATE_ACPI_TABLE`, gated by `depends on ACPI`.
+
+`efi-arm_app64_defconfig` (the config behind the `efi-aarch64` job) does **not** set `CONFIG_ACPI` — only `CONFIG_SUPPORT_ACPI=1` (a platform capability flag, not the ACPI gate). So `GENERATE_ACPI_TABLE` is unreachable from this config, and the new `select ACPIGEN if !QFW_ACPI` is never evaluated. Any code-level fix is impossible because the failure is in `objdump` reading a stale/wrong-arch `u-boot` binary — a runner-filesystem state problem, not a build-logic problem.
+
+### Branch state
+
+- Local `cherry-1c1bfb1cf34` = `f6e7ab64b76` (3 history-only pickman records, no code change)
+- Remote `ci/cherry-1c1bfb1cf34` = `f6e7ab64b76` (identical)
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is unchanged on both sides — one-line `lib/Kconfig` addition
+
+**No `-v2` branch was created** and **no push was performed.** The local branch already equals the remote; there is no code fix to apply; and pushing a history-only commit would re-trigger the same pipeline against the same runner without resolving its stale build directory.
+
+### Suggested reply to post on the MR
+
+> This review comment is attempt 3's own diagnosis — `efi-aarch64` (job 446723) failed with `aarch64-linux-objdump: u-boot: file format not recognized` at `Makefile:2267` (`u-boot.sym: u-boot FORCE → $(OBJDUMP) -t $< > $@`). That is a stale/cross-arch artifact left over in the persistent runner build directory `/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64` — not a code regression. The MR change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE`) which is unreachable from `efi-arm_app64_defconfig` (which does not set `CONFIG_ACPI`). A clean local `buildman efi-arm_app64 sandbox` produced a valid aarch64 ELF that `aarch64-linux-objdump` accepts. Please clean the CI runner's `build/efi-aarch64` directory (or re-run on a fresh workspace) and retry.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Let me verify the build still passes locally as the task instructions specify:
+
+Build passes clean. Now let me analyze the situation and draft the report.
+
+## Report
+
+**No code fix applied. The review comment is the bot's hard-stop escalation after 3 consecutive infrastructure-only failures — "Manual intervention required" explicitly signals this is not an automated-fix situation.**
+
+### State verified
+
+- Local `cherry-1c1bfb1cf34` = `7b80ddf71d8` (1 history-only commit ahead of remote)
+- Remote `ci/cherry-1c1bfb1cf34` = `f6e7ab64b76`
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is identical on both sides — a **single 1-line addition** to `lib/Kconfig`:
+  ```
+  +       select ACPIGEN if !QFW_ACPI
+  ```
+  under `config GENERATE_ACPI_TABLE` (gated by `depends on ACPI`).
+- Local `buildman --board sandbox` completed cleanly in 14s (1/1 built, 0 warnings/errors).
+
+### Why no code change is possible
+
+All three prior pipeline attempts hit **different** infrastructure symptoms, none reachable from this MR's code change:
+
+| Attempt | Job | Root cause |
+|---|---|---|
+| 1 | `link` (446216) | `kea:34073` rfc2217 serial bridge refused TCP connection — before any U-Boot ran |
+| 1 | `opi_pc` (446214) | `pexpect.TIMEOUT waiting for login` — board never produced prompt after reset |
+| 2 | `opi_pc` (446452) | Same pexpect timeout — labgrid flagged `Lab failure: Marking connection bad` |
+| 3 | `efi-aarch64` (446723) | Persistent runner's `build/efi-aarch64/u-boot` was stale/wrong-arch; `aarch64-linux-objdump` rejected it with `file format not recognized` at Makefile:2267 |
+
+The code change is scoped to x86/QEMU ACPI table generation and is **unreachable** from `orangepi_pc_defconfig` (ARM sunxi, no `CONFIG_ACPI`) or `efi-arm_app64_defconfig` (no `CONFIG_ACPI`). It cannot influence a remote serial bridge daemon, a hung ARM board, or a stale binary in a persistent runner directory.
+
+### No push performed
+
+Pushing a history-only commit would simply re-trigger the same pipeline against the same lab/runner state without addressing any of the three root causes. No `-v2` branch was created.
+
+### Suggested reply to post on the MR
+
+> Retry limit reached confirms what attempts 1–3 already diagnosed: three independent infrastructure failures, none reachable from this MR's code. Manual steps needed to unblock:
+>
+> 1. **`kea:34073` rfc2217 serial bridge** — verify the daemon is running and accepting TCP (attempt 1 `link` got `[Errno 111] Connection refused`).
+> 2. **orangepi_pc lab board** — power-cycle or physically check the H3 board; attempts 1 and 2 both saw `pexpect.TIMEOUT waiting for login` with `Lab failure: Marking connection bad`, meaning the board was flashed successfully but never produced a U-Boot prompt after reset.
+> 3. **Persistent runner `build/efi-aarch64` dir** (`/home/sglass/dev/gitlab-runner/builds/8/2/u-boot/build/efi-aarch64`) — clean it; attempt 3 failed with `aarch64-linux-objdump: u-boot: file format not recognized` at Makefile:2267, which only happens when the existing `u-boot` artefact is not an aarch64 ELF. A clean local `buildman efi-arm_app64` produced a valid aarch64 ELF that `aarch64-linux-objdump` accepts.
+>
+> The MR change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE`, gated by `depends on ACPI`) which is unreachable from any of the three failing defconfigs. Once the three lab/runner issues above are addressed, please re-run the pipeline.
+
+---
+
