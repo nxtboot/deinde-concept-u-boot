@@ -65778,3 +65778,60 @@ stats vs. pre-rebase.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-bf55b84736d
+
+Commits:
+- bf55b84736d serial: Add Goldfish TTY driver
+- 909f717eaf2 timer: Add Goldfish timer driver
+- b41c54488f6 rtc: goldfish: Support platform data for non-DT probing
+- 0429298a1a7 sysreset: Add QEMU virtual system controller driver
+- c69b6aeaa35 m68k: Add support for M68040 CPU
+- 516afc8f762 board: Add QEMU m68k virt board support
+- b21d9acdff8 CI: Add test jobs for QEMU m68k virt machine
+- 838e3be9e1d MAINTAINERS: Update m68k entry
+- 1de103fc297 Merge patch series "m68k: Add support for QEMU virt machine"
+
+### Conversation log
+Perfect match. Now let me run the build test and proceed with the next cherry-pick.
+
+Stats match perfectly. Now let me build and continue.
+
+Now the final merge commit:
+
+All 9 commits are present. Now final build:
+
+All cherry-picks completed successfully. Final status:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-bf55b84736d` (based on `ci/master`)
+
+**All 9 commits present:**
+```
+f54a607cd00 Merge patch series "m68k: Add support for QEMU virt machine"
+37f3b4e9f42 MAINTAINERS: Update m68k entry
+9c2d069e005 CI: Add test jobs for QEMU m68k virt machine
+12ee69564ba board: Add QEMU m68k virt board support
+3a564ba0c10 m68k: Add support for M68040 CPU
+d657254b2ee sysreset: Add QEMU virtual system controller driver
+e1dd6b4ff77 rtc: goldfish: Support platform data for non-DT probing
+0ffdd14e55f timer: Add Goldfish timer driver
+73d2e2c98fa serial: Add Goldfish TTY driver
+```
+
+**Build result:** OK (sandbox build passed after every cherry-pick and at the end)
+
+**Fix-ups made:**
+1. **`m68k: Add support for M68040 CPU` (c69b6aeaa35)** — resolved two conflicts:
+   - `MAINTAINERS`: kept both the new `LUKS` block (from HEAD) and the new `M680X0 ARCHITECTURE` block (from cherry-pick)
+   - `arch/m68k/lib/Makefile`: preserved HEAD's `CONFIG_BOOT` gating for `bootm.o` while applying the cherry-pick's new `CONFIG_ARCH_COLDFIRE` gating for the other objects. Fix-up note appended to the commit message.
+2. **Merge commit `1de103fc297`** — conflicts in `MAINTAINERS` and `arch/m68k/lib/Makefile` because individual commits already applied the changes. Resolved by keeping our side (matching the already-applied state); became an empty commit, committed with `--allow-empty` to preserve merge history.
+
+**Deltas:** All per-commit `git show --stat` comparisons matched the originals exactly (same files, same line counts). No concerning deltas.
+
+Branch is left ready for pushing. Not merged back.
+
+---
+
