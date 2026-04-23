@@ -65463,3 +65463,57 @@ The branch is ready for pushing. No merge was performed.
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-c287c6900aa
+
+Commits:
+- c287c6900aa configs: mt8365_evk: enable mmc command
+- d8d9421c5cc mach-k3: am64x: add support for speed grades
+- 7c612df6a40 dts: add Exynos vendor support for OF_UPSTREAM_VENDOR
+- eed514b11d0 video: correct label for cyclic video_idle
+- 8bca63d2ed9 boot/fit: print error name in boot_get_fdt_fit()
+- 22129bf4733 mkimage: fit: align DTs in external data to 8 Bytes by default
+- 22d24ee4f6b arm: mach-k3: j721s2: Provide a way to obtain boot device for non SPLs
+- e9fa9a2fe32 board: phytec: Add PHYTEC phyCORE-AM68x/TDA4x SoM
+- 2a6935eee25 doc: board: phytec: Add phyCORE-AM68x/TDA4x
+- 4b287e0a3ae Merge patch series "arm: mach-k3: j721s2: Provide a way to obtain boot device for non SPLs"
+
+### Conversation log
+Now I need to rename `params` to `itl` in the new code added by this patch:
+
+Deltas match. Let me run the build test:
+
+All 10 commits present. Final build:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-c287c6900aa` (based on `ci/master`)
+
+**Final Build Result:** OK (sandbox builds successfully, no warnings/errors)
+
+**All 10 commits present:**
+```
+d214a0ca1c7 Merge patch series "arm: mach-k3: j721s2: ..."
+35ea963fc7a doc: board: phytec: Add phyCORE-AM68x/TDA4x
+f9ff10ec485 board: phytec: Add PHYTEC phyCORE-AM68x/TDA4x SoM
+69ef5aa78d3 arm: mach-k3: j721s2: Provide a way to obtain boot device for non SPLs
+21d6c681c05 mkimage: fit: align DTs in external data to 8 Bytes by default
+737adf3c0c9 boot/fit: print error name in boot_get_fdt_fit()
+27e867826d8 video: correct label for cyclic video_idle
+72ffa1e6d3d dts: add Exynos vendor support for OF_UPSTREAM_VENDOR
+04f635f122f mach-k3: am64x: add support for speed grades
+9d9695c433d configs: mt8365_evk: enable mmc command
+```
+
+**Fix-ups made:**
+- `22129bf4733` (mkimage: fit: align DTs...): Conflict in `tools/fit_image.c` because the base branch had renamed `params` → `itl` (and `struct image_tool_params *` → `struct imgtool *`). Resolved by dropping the removed line (moved into the loop) and renaming `params->bl_len` → `itl->bl_len` in the two new locations. Added `[sjg: Adapt to renamed struct (params -> itl)]` note to the commit message.
+
+**Concerning deltas:** None — all non-conflict cherry-picks match the originals exactly. The conflict-resolved `22129bf4733` also ended up with identical stat totals (2 files, +56/-22) to the original.
+
+**Merge commit:** `4b287e0a3ae` was empty after cherry-pick (all its content was already applied via the parent commits); it was preserved as an empty commit via `git commit --allow-empty`, keeping the original merge subject and body.
+
+Branch is ready for pushing.
+
+---
+
