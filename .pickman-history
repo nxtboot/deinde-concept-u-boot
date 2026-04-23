@@ -66357,3 +66357,133 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-d3697faeb54
+
+Commits:
+- d3697faeb54 drivers: phy: fix code documentation typo udevice_ops
+- f2566c3a71a MAINTAINERS: update my email address
+- 8df6b78746e net: lwip: tftp: Do not write past buffer end
+- 72d4e94b2ec net: lwip: dhcp: Do not write past end of buffer
+- d93b3a38d5f net: lwip: add TFTPSERVERIP Kconfig option
+- 35ee795d639 net: lwip: dns: Fix print of resolved IP address
+- f3b600efb33 net: lwip: nfs: Print device name based on current udevice
+- 3299bffc7c8 net: lwip: dns: Call env_set() from dns loop instead of found callback
+- 8d89b16ea4b net: lwip: Use ipaddr helpers
+- bd1f40a4028 net: lwip: dhcp: Save DHCP siaddr field to tftpserverip env var
+- 3349e3aa1b0 net: lwip: nfs: Prefer nfsserverip over serverip when set
+- f0a1eb8a3d1 net: phy: aquantia: add support for Marvell CUX3410 10Gb PHY
+- eb1562cc3e4 Merge tag 'net-20260204' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+Build passed. Now let's handle the second commit which may already be applied.
+
+The 629d7fdea73 commit is unrelated - it's a pickman history commit, not Jerome's MAINTAINERS email update. Let me check if the MAINTAINERS update is already in ci/master.
+
+These are different email updates (linaro.org→forissier.org vs forissier.org→arm.com). Let me load TodoWrite and track progress.
+
+Now let me handle the merge commit.
+
+All 13 commits are present. Let me run the final build test.
+
+## Final Status Report
+
+**Branch:** `cherry-d3697faeb54` (based on `ci/master`)
+
+**Build result:** ✅ OK (sandbox build passes)
+
+**All 13 commits cherry-picked successfully:**
+
+| # | Original Hash | New Hash | Subject | Status |
+|---|---------------|----------|---------|--------|
+| 1 | d3697faeb54 | ad7c46485b2 | drivers: phy: fix code documentation typo udevice_ops | ✅ Clean |
+| 2 | f2566c3a71a | 72670b0b17c | MAINTAINERS: update my email address | ✅ Clean (auto-merge) |
+| 3 | 8df6b78746e | ef98d37e9f2 | net: lwip: tftp: Do not write past buffer end | ✅ Clean |
+| 4 | 72d4e94b2ec | 16576d7d9e5 | net: lwip: dhcp: Do not write past end of buffer | ✅ Clean (auto-merge) |
+| 5 | d93b3a38d5f | f0daed4063d | net: lwip: add TFTPSERVERIP Kconfig option | ✅ Clean (auto-merge) |
+| 6 | 35ee795d639 | 01b311e0fd3 | net: lwip: dns: Fix print of resolved IP address | ✅ Clean |
+| 7 | f3b600efb33 | 96657aaf2bd | net: lwip: nfs: Print device name based on current udevice | ✅ Clean |
+| 8 | 3299bffc7c8 | 36f43538961 | net: lwip: dns: Call env_set() from dns loop | ✅ Clean |
+| 9 | 8d89b16ea4b | 9f2c495d791 | net: lwip: Use ipaddr helpers | ✅ Clean (auto-merge) |
+| 10 | bd1f40a4028 | bafb758047c | net: lwip: dhcp: Save DHCP siaddr field to tftpserverip | ✅ Clean |
+| 11 | 3349e3aa1b0 | d86e5c56f73 | net: lwip: nfs: Prefer nfsserverip over serverip | ✅ Clean |
+| 12 | f0a1eb8a3d1 | 9c948042b15 | net: phy: aquantia: Marvell CUX3410 10Gb PHY | ✅ Clean (auto-merge) |
+| 13 | eb1562cc3e4 | 37dde0b06e5 | Merge tag 'net-20260204' | ⚪ Empty merge commit (individual commits already applied) |
+
+**"Maybe already applied" verification:**
+- f2566c3a71a vs 629d7fdea73: **Different** — 629d7fdea73 is a pickman history commit, unrelated. An existing commit d8edea0b5ec in ci/master updates Jerome's email from linaro.org→forissier.org, but f2566c3a71a updates from forissier.org→arm.com, which is a separate subsequent update. Cherry-picked successfully.
+
+**Fix-ups made:** None — all commits applied cleanly, auto-merges only (no conflict markers).
+
+**Commits with concerning deltas:** None — all deltas match the originals exactly.
+
+**Notes:**
+- The merge commit (eb1562cc3e4) resulted in an empty commit because all individual changes had already been cherry-picked. Preserved with `--allow-empty` to maintain the merge commit message for history tracking.
+
+The branch `cherry-d3697faeb54` is ready for pushing with 13 commits ahead of `ci/master`.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-d3697faeb54
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rockpro64, rpi0, pine64, opi_pc.
+
+Let me examine the c...
+
+### Conversation log
+Let me verify the build passes and prepare the -v2 branch. Since this is attempt 2 of the same pipeline failure analysis, let me first check if this is a genuinely new pipeline failure or a re-run of the same one.
+
+Build passes. Now let me examine the comment more carefully - this appears to be a second iteration of the pipeline fix. The same boards (rockpro64, rpi0, pine64, opi_pc) that failed before were infrastructure issues. Let me check whether this might be a new failure by examining the comment context for any new information.
+
+Looking at the review comment carefully: this IS the attempt 1 analysis posted by the bot itself. The original pipeline failures (rockpro64, rpi0, pine64, opi_pc) were all diagnosed as lab/hardware infrastructure issues on the same runner `ellesmere-lab VKe9dm-Af`. The code on this branch only touches net/lwip/PHY drivers — none of which can affect the ARM SBC lab failures (USB hub offline, SD card I/O errors, boot timeouts).
+
+Let me create the -v2 branch and force-push to trigger a new pipeline run (the lab issues should now be resolved):
+
+The branch is already at the same commit as the remote, so there's nothing new to push. Since this is an infrastructure-only failure (no code changes warranted), I need to report back accordingly.
+
+## Report
+
+### Analysis of review comment
+
+The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` titled "Pipeline fix (attempt 1)" is a re-posting of the previous attempt-1 diagnostic analysis for failed jobs **rockpro64, rpi0, pine64, opi_pc**. All four were diagnosed in attempt 1 as lab/hardware infrastructure failures on the same runner (`ellesmere-lab VKe9dm-Af`):
+
+| Job | Root cause |
+|-----|-----------|
+| rpi0 | YKUSH USB power controller offline |
+| pine64 | SD card write I/O error during `dd` to `/dev/sdb` |
+| opi_pc | Board didn't boot after flash (pexpect timeout) |
+| rockpro64 | SPL MMC read failure, voltage select `-110` |
+
+The 13 commits on this branch touch only:
+- `drivers/phy/phy-uclass.c` — a comment typo
+- `MAINTAINERS` — email address
+- `net/lwip/*` — lwip TFTP/DHCP/DNS/NFS
+- `drivers/net/phy/aquantia*` — 10Gb PHY driver
+
+None of these can plausibly cause SPL MMC boot failures, YKUSH hub disconnection, host-side `dd` I/O errors, or boot timeouts on ARM SBCs whose tests don't touch lwip/aquantia.
+
+### Actions taken
+
+- Checked out `cherry-d3697faeb54`
+- Verified sandbox build still passes via `buildman -L --board sandbox -w -o /tmp/pickman` (1 total built, OK)
+- Created local branch `cherry-d3697faeb54-v2` pointing at the same HEAD (`454f316ab70`)
+- Attempted `./tools/pickman/pickman push-branch cherry-d3697faeb54 -r ci -f` — returned "Everything up-to-date" because there are no code changes to push (the remote already has `454f316ab70`)
+
+**No code changes made** — all four failing jobs are infrastructure issues confined to `ellesmere-lab`, unaffected by any code on this branch.
+
+### Suggested MR reply
+
+> **Pipeline fix attempt 2 — still no code change needed**
+>
+> The failures on rockpro64, rpi0, pine64, and opi_pc are the same lab-infrastructure failures diagnosed in attempt 1 (YKUSH hub offline on rpi0, SD-card write I/O errors on pine64, SPL MMC boot failure on rockpro64, pexpect boot timeout on opi_pc — all on the same `ellesmere-lab VKe9dm-Af` runner).
+>
+> The 13 commits on this branch only modify net/lwip, the aquantia PHY driver, a comment typo in `drivers/phy/phy-uclass.c`, and `MAINTAINERS`. None of those can affect SPL MMC boot, USB power hubs, host-side `dd`, or boards that don't exercise lwip/aquantia in their boot path. Sandbox build continues to pass.
+>
+> Please retry these four jobs after the lab operator confirms the YKUSH hub and the pine64/rockpro64 SD cards are healthy. No code push required — branch is unchanged at `454f316ab70`.
+
+---
+
