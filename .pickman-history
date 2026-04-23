@@ -66243,3 +66243,48 @@ Pushing a history-only commit would simply re-trigger the same pipeline against 
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-a22a4fbe437
+
+Commits:
+- a22a4fbe437 x86: Fix TCPA bloblist size
+- 00618f72126 mips: mtmips: do not select PINCONF Kconfig symbol for MT7620
+- 80a3572f9bc mips: mtmips: add CPU reset support for MT7628
+- 0cb8a88e7ab x86: boot: fix unreachable else branch in boot_prep_linux
+- a8d982e1f17 x86: cpu: Fix crash on FTRACE enabled builds
+- cdd51332cc8 arm: dts: k3-am69-aquila: Fix SPL USB DFU gadget failures
+- 81cd740838b board: toradex: aquila-am69: Remove ETH_1 MCU_CLKOUT0
+- 1b0ac17ccff Merge patch series "toradex: aquila-am69: fix SPL USB DFU, drop obsolete clock"
+
+### Conversation log
+The conflict is because the file being modified doesn't exist in ci/master (the aquila board support commit `3f0528882c0` is not in ci/master). Let me abort and try to apply just the original changes.
+
+All 8 commits present. Run final build test:
+
+## Cherry-pick Summary
+
+Branch `cherry-a22a4fbe437` created from `ci/master` with all 8 commits in order.
+
+**Build result:** OK (sandbox build passed after each cherry-pick and final build)
+
+**Successfully cherry-picked (5 commits, clean application):**
+- `273eddb6eff` - x86: Fix TCPA bloblist size (delta matched exactly)
+- `a98556d7555` - mips: mtmips: do not select PINCONF Kconfig symbol for MT7620 (delta matched exactly)
+- `df8dc246c75` - mips: mtmips: add CPU reset support for MT7628 (delta matched exactly)
+- `41c7637331a` - x86: boot: fix unreachable else branch in boot_prep_linux (auto-merged cleanly, delta matched exactly)
+- `176ff309ad4` - x86: cpu: Fix crash on FTRACE enabled builds (delta matched exactly)
+
+**Placeholder empty commits created (3 commits marked [FAILED]):**
+- `7edf2085db9` - arm: dts: k3-am69-aquila: Fix SPL USB DFU gadget failures **[FAILED]**
+- `ff452a58019` - board: toradex: aquila-am69: Remove ETH_1 MCU_CLKOUT0 **[FAILED]**
+- `ae05a52c5a3` - Merge patch series "toradex: aquila-am69: fix SPL USB DFU, drop obsolete clock" **[FAILED]**
+
+**Reason for failures:** The 3 toradex aquila-am69 patches depend on the prerequisite commit `3f0528882c0` ("board: toradex: add aquila am69 support") which is **not present** in `ci/master`. This means the files they touch (`arch/arm/dts/k3-am69-aquila-dev-u-boot.dtsi` and `board/toradex/aquila-am69/aquila-am69.c`) do not exist in this branch. Both `git cherry-pick` and `git apply --3way` reported the files are missing from the index. Empty placeholder commits were created to preserve the commit sequence.
+
+**No fix-ups needed** - the successful cherry-picks all applied with deltas exactly matching their originals.
+
+Branch is ready for pushing at `cherry-a22a4fbe437`.
+
+---
+
