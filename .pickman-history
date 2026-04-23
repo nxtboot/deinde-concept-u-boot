@@ -66015,3 +66015,50 @@ Branch left untouched on `cherry-1c1bfb1cf34` at `8f3979201dc`.
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-1c1bfb1cf34
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) link, opi_pc.
+
+Both failures are clearly lab/infrastru...
+
+### Conversation log
+Let me check the current pipeline status on the MR to understand if there are new failures to address:
+
+Let me look at the commit that was made after the pipeline fix attempt to understand the full context:
+
+## Analysis & Report
+
+**Nothing to push. The "review comment" is the bot's own attempt-1 status report, which concluded no code changes were warranted.**
+
+### What I found
+
+The review comment is authored by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — which `pickman check-gitlab` confirms is the same bot account that the `ci` remote uses to post status updates. The comment body is verbatim the attempt-1 diagnosis posted previously:
+
+- **link (446216):** `serial.SerialException: Could not open serial port rfc2217://kea:34073?... [Errno 111] Connection refused` — remote serial server refused the TCP connection before any U-Boot binary was loaded.
+- **opi_pc (446214):** `pexpect.TIMEOUT` waiting for login — orangepi_pc board never produced a prompt after reset.
+
+Both jobs explicitly printed `Lab failure: Marking connection bad - no other tests will run`.
+
+### Why no code change is appropriate
+
+The MR's sole change is a single-line Kconfig addition (`select ACPIGEN if !QFW_ACPI` on `GENERATE_ACPI_TABLE` in `lib/Kconfig`), confined to x86/QEMU ACPI table generation. It has zero reachable effect on:
+- A remote `rfc2217` serial bridge daemon on `kea:34073`
+- ARM orangepi_pc boot/login timing
+
+### Branch state
+
+- Local `cherry-1c1bfb1cf34` = `a64fca3e854` (adds only `.pickman-history` record — no code)
+- Remote `ci/cherry-1c1bfb1cf34` = `8f3979201dc`
+- MR code commit `dbdc002d649 acpi: Correct dependencies for GENERATE_ACPI_TABLE` is identical on both sides
+
+No `-v2` branch was created and no push was performed, because there is no code fix to apply. Pushing a history-only commit would not address anything and would just re-trigger the same pipeline against the same lab.
+
+### Suggested reply to post on the MR
+
+> This review comment is attempt 1's own diagnosis — both failed jobs (`link`, `opi_pc`) were lab/infrastructure failures (serial bridge `kea:34073` refused TCP connection; orangepi_pc never reached login prompt), both explicitly reporting `Lab failure: Marking connection bad`. The MR change is a single-line Kconfig addition scoped to x86/QEMU ACPI and cannot affect those boards. No code change is possible or appropriate; please re-run the pipeline once the `kea` serial server and the orangepi_pc lab board are healthy.
+
+---
+
