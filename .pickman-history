@@ -65940,3 +65940,45 @@ No further code changes were required — attempt 1's fix was already in place. 
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-1c1bfb1cf34
+
+Commits:
+- 1c1bfb1cf34 acpi: Correct dependencies for GENERATE_ACPI_TABLE
+
+### Conversation log
+The cherry-pick resulted in massive add/add conflicts across the whole tree. This suggests the commit might already be in ci/master. Let me check.
+
+The commit has no parent — it's a root commit. This is unusual. Let me check the current state and find the actual Kconfig change this commit is about.
+
+Found the properly-parented equivalent commit `b2eda1d2c01` with the actual small diff. Let me cherry-pick that with the original hash noted.
+
+Cherry-pick succeeded. Let me verify and update the commit message to reference the correct hash (the user asked for `1c1bfb1cf34`), and add a note about the source.
+
+Let me amend the commit to reference the original requested hash (`1c1bfb1cf34`) as the user asked, with a note about the source:
+
+Now compare the delta — expect 1 file, 1 insertion in lib/Kconfig. That matches the `b2eda1d2c01` equivalent. The requested `1c1bfb1cf34` can't be compared because it's a rootless commit. Let me run the build.
+
+Build succeeded. Final verification:
+
+## Final Status
+
+**Branch:** `cherry-1c1bfb1cf34` (based on `ci/master`) — ready for pushing.
+
+**Build result:** OK — `buildman --board sandbox` passed (22s, 1/1 built, 0 warnings/errors).
+
+**Commit applied:** `dbdc002d649` — `acpi: Correct dependencies for GENERATE_ACPI_TABLE`
+- Change: `lib/Kconfig`, +1 line (`select ACPIGEN if !QFW_ACPI` added to `config GENERATE_ACPI_TABLE`)
+
+**Fix-up / notable issue:**
+- The requested source commit `1c1bfb1cf34` is an **orphan root commit** (no parent) on `us/next`. Cherry-picking it directly produced massive add/add conflicts across the entire tree because there is no parent to compute a diff against.
+- I found the equivalent properly-parented commit `b2eda1d2c01c3cbc09414eb962208aafb837f35e` on `us/WIP/03Apr2026-next` with identical author, date, subject, message, and a clean 1-line diff matching the commit message's description.
+- Cherry-picked that equivalent commit cleanly, then amended the commit message to reference the originally-requested hash `1c1bfb1cf34` plus a note explaining the orphan-commit situation.
+
+**Delta check:** The applied diff is exactly the 1-line Kconfig addition described in the commit message. No delta concerns.
+
+**Conflicts:** `lib/Kconfig` auto-merged cleanly (3-way merge handled the nearby context difference between `select QFW if QEMU` in the source base and `select QFW if ARCH_QEMU_X86` in `ci/master`).
+
+---
+
