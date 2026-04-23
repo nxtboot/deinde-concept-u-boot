@@ -65061,3 +65061,51 @@ Branch is ready for pushing. Not merged into any other branch.
 
 ---
 
+### Review: 2026-04-22
+
+Branch: cherry-8e263e3a76e
+
+Comments addressed:
+
+
+### Conversation log
+## Rebase Complete — MR !938
+
+### Outcome
+
+Rebased branch `cherry-8e263e3a76e` onto fresh `ci/master` (`ab9b9f92b08`). The branch moved from its prior base (`df93eba9f46`) forward over ~4 intervening merges from ci/master.
+
+### Conflict resolved
+
+One conflict, in `.pickman-history` only (an append-only log file):
+- `HEAD` (new ci/master) had its own `## 2026-04-22: us/next` section for MR !937 (branch `cherry-6f3e63b4de8`)
+- Our commit added its own `## 2026-04-22: us/next` section for `cherry-8e263e3a76e`
+- Resolved by keeping both sections with a `---` separator between them (no information lost, no code impact).
+
+### Delta verification — all match originals exactly
+
+| Commit | Old → New | Files / Lines |
+|---|---|---|
+| `.b4-config` | `a4b65c50c8a` → `e53bbe7939b` | 1 file, +5 |
+| `arm: Remove rel.dyn` | `942375dedf1` → `15e6a4f008b` | 4 files, +12/-34 |
+| `pinctrl MT8188` | `ec800da8d48` → `82d93e34710` | 3 files, +1349 |
+| `pinmux_property_set` | `96d22126ef6` → `7a728dfae74` | 1 file, +12 |
+| `Merge patch series` | `03340619e64` → `c2d00ccfcd8` | empty (preserved) |
+| `pickman record` | `3599a0cdc57` → `a26e09dd198` | 1 file, +34 |
+
+### Build
+
+`buildman -L --board sandbox -w -o /tmp/pickman`: **1 total built, duration 0:00:11** — OK, no warnings/errors.
+
+### Branch state
+
+- Local `-v2` branch: `cherry-8e263e3a76e-v2` created at `a26e09dd198`
+- Remote `cherry-8e263e3a76e` on `ci`: force-pushed `03340619e64 → a26e09dd198`
+- GitLab will auto-trigger a pipeline on the new tip.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`ab9b9f92b08`). One trivial conflict in `.pickman-history` — both the new ci/master and this branch added their own dated sections for 2026-04-22; kept both. All 5 cherry-picked commits plus the pickman record commit have identical `git show --stat` deltas to the pre-rebase versions, the empty merge is preserved, and the sandbox build passes (`buildman -L --board sandbox`). Force-pushed; pipeline will retrigger.
+
+---
+
