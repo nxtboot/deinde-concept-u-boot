@@ -65109,3 +65109,53 @@ One conflict, in `.pickman-history` only (an append-only log file):
 
 ---
 
+## 2026-04-22: us/next
+
+Branch: cherry-b8a820ac98f
+
+Commits:
+- b8a820ac98f armv8: u-boot-spl.lds: Place binman symbols at end of binary
+- 3a53a03f501 tools: Handle realloc failure in strlist_add
+- c927eefd969 board: ti: common: Add function for initialization of 32k crystal
+- d7550d01050 board: ti: am62x: Enable 32k crystal on the board
+- b259574e471 board: ti: am62ax/am62dx: Enable 32k crystal on the board
+- de6b11e27b3 board: ti: am62px: Enable 32k crystal on the board
+- fcd28a598d8 Merge patch series "board: ti: Add 32k crystal initialization"
+
+### Conversation log
+All 7 commits are present. Now running the final build test.
+
+## Cherry-Pick Complete
+
+All 7 commits cherry-picked successfully onto branch `cherry-b8a820ac98f` from `ci/master`.
+
+### Build Result
+**OK** — sandbox build passes after each cherry-pick and for the final tree. No warnings/errors.
+
+### Final Log (`git log --oneline -n 9`)
+```
+7995cd45baa Merge patch series "board: ti: Add 32k crystal initialization"
+434418083f6 board: ti: am62px: Enable 32k crystal on the board
+9e05300c093 board: ti: am62ax/am62dx: Enable 32k crystal on the board
+bc4c7bd5803 board: ti: am62x: Enable 32k crystal on the board
+7e5f503522a board: ti: common: Add function for initialization of 32k crystal
+635c73044b1 tools: Handle realloc failure in strlist_add
+74aa3843e7b armv8: u-boot-spl.lds: Place binman symbols at end of binary
+ab9b9f92b08 Merge branch 'cherry-6f3e63b4de8' into 'master'  (pre-existing in ci/master)
+91d18160ca3 pickman: Record review handling for cherry-6f3e63b4de8  (pre-existing)
+```
+
+### Fix-Ups Applied
+1. **b8a820ac98f (`armv8: u-boot-spl.lds`)** — Content conflict in `arch/arm/cpu/armv8/u-boot-spl.lds`. The `__u_boot_list` block in ci/master no longer has the trailing `. = ALIGN(8);` that the upstream context expected. Resolved by inserting only the new `.binman_sym_table` block (the point of the patch); no ALIGN was restored. Commit message amended with: *"Resolve conflict due to missing trailing alignment in __u_boot_list block."* Delta: 9 insertions vs 8 originally (negligible).
+
+2. **b259574e471 (`am62ax/am62dx: Enable 32k crystal`)** — `board/ti/am62dx/evm.c` does not exist in ci/master (the "Add initial support for AM62D2-EVM" commit hasn't been applied yet). Resolved by `git rm`'ing the am62dx/evm.c hunk; am62ax changes applied cleanly. Commit amended with: *"Drop am62dx changes: board/ti/am62dx/ does not yet exist in this branch."* Delta: 9 insertions across 2 files (vs 16 across 3 originally — ~44% smaller, but the drop is deliberate and the content for the existing files is identical).
+
+3. **fcd28a598d8 (merge commit)** — Same `am62dx/evm.c` modify/delete conflict. Resolved by `git rm`, which made the merge empty after conflict resolution; committed with `--allow-empty` to preserve history. Git auto-appended a `# Conflicts:` note listing `board/ti/am62dx/evm.c`.
+
+### Concerning Deltas
+None. The am62dx drops in #2 and #3 are intentional and consistent — the target branch simply doesn't contain that board yet. All other cherry-picks matched the original stat exactly.
+
+Branch `cherry-b8a820ac98f` is ready to push. Not merged anywhere.
+
+---
+
