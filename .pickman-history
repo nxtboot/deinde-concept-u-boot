@@ -67236,3 +67236,44 @@ Neither failure correlates with any commit on this branch:
 
 ---
 
+### Review: 2026-04-24
+
+Branch: cherry-e202eca183b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc.
+
+Both failures look like infrastr...
+
+### Conversation log
+The sole "review comment" in this task is the pickman bot's own record of **Pipeline fix attempt 1**, which is already captured in commit `4dd0a3df878` (`.pickman-history`). That attempt completed its diagnosis and explicitly decided **no code changes** were warranted — the two failed jobs (`efi-aarch64`, `opi_pc`) are infrastructure/lab failures unrelated to the cherry-picked `memsize` command:
+
+- `opi_pc` — labgrid timed out waiting for the U-Boot prompt on the very first test (`test_000_version`); runner tagged it "Lab failure: Marking connection bad".
+- `efi-aarch64` — bare `OSError: [Errno 5] Input/output error` from `os.read()` on the spawn pty during `u-boot-test-reset`, after 34 tests had already passed. Classic transient pty/qemu flake.
+
+Neither failure can be caused by the MR's changes:
+- `CMD_MEMSIZE` is `default n` and `depends on CMD_MEMINFO`; not enabled by `opi_pc_defconfig` or any EFI aarch64 config.
+- Both failures are runtime lab/pty issues, not build failures. Build passed cleanly with buildman for sandbox.
+
+Since there is nothing to change in the code, I have **not** created a `-v2` branch and **not** pushed anything. Per the prior diagnosis and the rule "If the failure is an infrastructure or transient issue … report this without making changes", the correct action is to retry the failed jobs on GitLab.
+
+---
+
+**Suggested reply to post on the MR:**
+
+> The two failed jobs in attempt 1 are both infrastructure/lab issues, not code defects, and the diagnosis has already been recorded:
+>
+> - **`opi_pc`** (job 450814): labgrid timed out waiting for the U-Boot prompt on the very first test (`test_000_version`) and the runner itself tagged the run as `Lab failure: Marking connection bad`. A hardware/serial/power-lab flake.
+> - **`efi-aarch64`** (job 450846): `OSError: [Errno 5] Input/output error` from `os.read()` on the spawn pty during a `u-boot-test-reset`, after 34 tests had already passed. A transient pty/qemu-launcher flake, not a logic failure.
+>
+> The MR only adds the optional `CMD_MEMSIZE` command (`default n`, `depends on CMD_MEMINFO`) with its sandbox test and docs. It is not enabled by `opi_pc_defconfig` or any EFI aarch64 config, and neither failure is at build time. No code change can address either symptom.
+>
+> Please retry the two failed jobs. No `-v2` push is being made.
+
+**Summary of actions taken:**
+- Checked out `cherry-e202eca183b` and reviewed the history/commit `4dd0a3df878`.
+- Re-confirmed the prior diagnosis remains correct.
+- No files edited, no build re-run needed (no code changed), no branch created, no push performed.
+
+---
+
