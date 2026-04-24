@@ -67277,3 +67277,59 @@ Since there is nothing to change in the code, I have **not** created a `-v2` bra
 
 ---
 
+### Pipeline fix: 2026-04-24 (attempt 2)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures are clearly infrastructure/lab failures unrelated to the cherry-picked changes. Let me verify there's nothing else going on and confirm my diagnosis before reporting.
+
+## Diagnosis — No Code Changes Made
+
+Both failed jobs are infrastructure / lab failures unrelated to any change on this branch. No `cherry-e202eca183b-fix2` branch has been created.
+
+### MR scope (unchanged from attempt 1)
+
+The 4 cherry-picked commits only add:
+- `cmd/Kconfig` — new `CMD_MEMSIZE` option, `default n`, `depends on CMD_MEMINFO`
+- `cmd/meminfo.c`, `test/cmd/meminfo.c`, `doc/usage/cmd/memsize.rst`
+
+Verified `CMD_MEMSIZE` / `CMD_MEMINFO` are **not** set in `configs/orangepi_pc_defconfig`, and none of the EFI aarch64 configs enable them either. The new command cannot run in either failing job.
+
+### Job `opi_pc` (451055) — lab hardware failure
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+! _pytest.outcomes.Exit: Lab failure: Marking connection bad - no other tests will run !
+============================ 1 deselected in 33.02s ============================
+```
+
+The Python traceback shows labgrid's `ubootdriver._await_prompt()` timing out before the *first* test (`test_000_version`) can execute. The runner itself tags the run `Lab failure: Marking connection bad`. Pure serial/power/cable flake on the Orange Pi PC board.
+
+### Job `efi-aarch64` (451087) — transient pty I/O error
+
+```
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
++u-boot-test-reset efi-arm_app64 efi-aarch64
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 163.29s (0:02:43) ======
+```
+
+Bare `OSError: [Errno 5]` from `os.read()` on the console pty *during* a `u-boot-test-reset`, after 34 tests had already passed. The pty died; the test itself never ran. Classic transient QEMU/pty infrastructure flake at a reset boundary.
+
+### Conclusion
+
+- Neither failure is a build failure, and no commit on this branch touches any file exercised by either job.
+- Per the task rule *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"*, no code change was made, no fix commit added, and no `cherry-e202eca183b-fix2` branch was created.
+- **Recommended action:** retry both failed jobs.
+
+Current branch: `cherry-e202eca183b` (unchanged).
+
+---
+
