@@ -66604,3 +66604,447 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-1a79ea5b36e
+
+Commits:
+- 1a79ea5b36e net: fec_mxc: Add support for i.MX91
+- 79e1a5b69f4 imx8mm_evk: Drop DECLARE_GLOBAL_DATA_PTR
+- 4ea79496b01 imx8mp_evk: spl: Drop i2c_pad_info1
+- 649a52aeb92 imx8mp_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 652830fa0b3 imx8mp_evk: Cleanup headers
+- e590536a099 imx8mn_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 4559cd3ea42 imx8mn_evk: Cleanup headers
+- 8178c237374 imx8ulp_evk: Drop DECLARE_GLOBAL_DATA_PTR
+- ba69cabb645 imx8ulp_evk: Drop board_phy_config
+- 7e4e4ccc473 imx8ulp_evk: Cleanup headers
+- 3cde536025c imx8mq_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 1384a9ddebc imx93_frdm: Drop DECLARE_GLOBAL_DATA_PTR
+- 98d6f42fc59 imx93_frdm: Update IMX_BOOT_IMAGE_GUID
+- 944e5778274 board: ge: common: vpd: Fix read_i2c_vpd return value
+- 15cb4033c93 remoteproc: imx: Support ECC initialization
+- 3fa7b1055b8 remoteproc: imx: Add i.MX95 support
+- 7bb12b8dfe8 arm: dts: imx95: Add cm7 node
+- 36d93a7cd7c imx95_evk: Enable remoteproc for i.MX95 EVK
+- 620c1aaa2b5 nxp: imx95_evk: Drop init_uart_clk
+- 7412a1dbaf0 nxp: imx94_evk: Drop init_uart_clk
+- 650b381d27b toradex: smarc-imx95: Drop init_uart_clk
+- 57fce421a4f arm: dts: imx8mn-var-som: Move SOM-specific nodes to SOM u-boot.dtsi
+- 57d9399b466 arm: dts: imx8mn-var-som: add som-eeprom alias to SOM u-boot dtsi
+- 56246896a3e arm: dts: imx8mn-var-som-symphony: migrate to OF_UPSTREAM
+- ced337fccb8 board: imx8mn_var_som: let clock system enable UART clock
+- 40b8b343156 board: imx8mn-var-som: remove unneeded header files
+- 48133bcd168 board: imx8mn-var-som: compile SPL-only stuff only in SPL build
+- 470ea759aa6 mach-imx: ele_ahab: Mitigate imx93_qsb build error
+- 717cd8d54c8 Merge tag 'u-boot-imx-master-20260206' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+
+### Conversation log
+First commit matches. Let me continue with the rest, doing the build check at the end of all picks.
+
+Now let me verify the "maybe already applied" commit:
+
+The patches are very different (different paths, different changes). Let me cherry-pick 4559cd3ea42.
+
+The merge commit is now empty (since all the parents' content has been applied). Need to commit it as empty per instructions:
+
+Now let me verify all 29 commits are present and run the final build:
+
+All 29 commits are present. Updating todos and running the final build:
+
+Build succeeded with no warnings or errors.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-1a79ea5b36e` (based on `ci/master`)
+
+**Status:** All 29 commits successfully cherry-picked.
+
+**Build result:** OK — sandbox build completed in 5s with no warnings or errors.
+
+**Notes on individual commits:**
+- **`4559cd3ea42` (imx8mn_evk: Cleanup headers)** — was flagged as "maybe already applied as 7dba2e30098", but verification showed the patches are very different (the older one operated on `board/freescale/imx8mn_evk/` with different changes; the new one operates on `board/nxp/imx8mn_evk/`). Cherry-picked normally.
+- **`717cd8d54c8` (Merge commit)** — became empty since all parent content was already applied. Committed with `--allow-empty` to preserve the merge message in history, per instructions.
+- All other commits applied cleanly with auto-merge of overlapping configs/Makefile hunks; no manual conflict resolution required.
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None — all commits matched their originals in stat output.
+
+The branch is ready for pushing. No merge back was performed.
+
+---
+
+### Pipeline fix: 2026-04-23 (attempt 1)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+The failure is a lab/hardware test timeout on an OrangePi PC (sunxi/Allwinner board). Let me verify this is unrelated to the branch changes.
+
+## Analysis Result: Infrastructure/Transient Lab Failure — No Code Fix Needed
+
+### Root Cause
+
+The `opi_pc` job failure is a **hardware lab infrastructure timeout**, not a code issue. Key evidence from the job log:
+
+```
+Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The labgrid framework timed out after 15 seconds waiting for the OrangePi PC board to reach the U-Boot login prompt during `test_000_version` (the very first sanity test). When this happens, the runner declares a **"Lab failure"** and skips all remaining tests. The reported `1 deselected in 33.03s` with no tests actually executed confirms nothing in the test suite itself ran or failed.
+
+### Why This Is Not Caused by the Branch
+
+The OrangePi PC is a **sunxi/Allwinner H3** board. The 29 commits on `cherry-1a79ea5b36e` are exclusively:
+
+- NXP i.MX board work (imx8mm/mn/mp/mq, imx8ulp, imx93, imx94, imx95)
+- Toradex smarc-imx95
+- Variscite imx8mn_var_som
+- GE VPD reader fix
+- `fec_mxc` NXP ethernet driver (i.MX91 only)
+
+Verified with `git diff --name-only ci/master..HEAD` — **zero files** touched under `sunxi`, `allwinner`, `orangepi`, `opi`, `arch/arm/mach-sunxi`, or related paths. There is no plausible mechanism by which these NXP/i.MX patches could make a sunxi board fail to reach its prompt.
+
+### Conclusion
+
+This is a transient lab/hardware failure (board failed to boot within 15s — could be serial console hiccup, power sequencing, SD-card write flakiness, or lab-runner state). Per the task instructions:
+
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix1` branch created.** Recommend retrying the pipeline.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+The failure is a lab/hardware test timeout on...
+
+### Conversation log
+## Analysis: No Action Required
+
+The "review comment" surfaced for this turn is not a human review request — it is the **bot's own prior pipeline-fix status report** (from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`) being echoed back as a comment to address. The text of the comment is the verbatim conclusion of the previous fix attempt, which already determined:
+
+> **No code changes applied. No `cherry-1a79ea5b36e-fix1` branch created.** Recommend retrying the pipeline.
+
+### Verification
+
+I re-confirmed the prior analysis on the current branch state:
+
+- **Branch tip:** `eea984e0cec pickman: Record pipeline fix for cherry-1a79ea5b36e` (the marker commit from attempt 1)
+- **Commit count:** 31 (29 cherry-picks + 2 pickman tracking commits) — matches expectations
+- **File-scope check:** `git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3'` returns **zero matches**. None of the 29 NXP/i.MX patches touch any sunxi/Allwinner/OrangePi paths, so they cannot plausibly cause an OrangePi PC (sunxi H3) board to fail to reach its U-Boot login prompt within the 15s labgrid timeout.
+
+### Why nothing was pushed
+
+There is no actionable change requested:
+
+- The `opi_pc` failure was a **lab/hardware infrastructure timeout** (labgrid `pexpect.exceptions.TIMEOUT` waiting for login during `test_000_version`, before any actual test ran).
+- Per the task instructions for transient/infrastructure failures: *"report this without making changes."*
+- Creating a `-v2` branch and force-pushing with no code delta would be a no-op pipeline retrigger dressed up as a fix, which would muddy the history and misrepresent the situation.
+
+### What was done
+
+- Checked out `cherry-1a79ea5b36e`
+- Re-verified branch state and file scope
+- **No code changes**, **no new local branch**, **no push** to `ci`
+
+### Suggested MR reply
+
+> The flagged review comment is the bot's own previous attempt-1 status report. That analysis already concluded the `opi_pc` failure is a transient lab/hardware timeout (labgrid 15s `pexpect.exceptions.TIMEOUT` waiting for login on an OrangePi PC sunxi H3 board) unrelated to this branch — re-verified: `git diff --name-only ci/master..HEAD` touches zero sunxi/Allwinner/OrangePi paths; all 29 commits are NXP/i.MX work. No code change is warranted. Please retry the `opi_pc` job.
+
+---
+
+### Pipeline fix: 2026-04-23 (attempt 2)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures look like lab/hardware timeouts. Let me verify by checking out the branch and confirming the scope of changes.
+
+Both failures are lab/hardware infrastructure timeouts, not caused by the branch. Let me confirm my analysis and report.
+
+## Analysis: Infrastructure/Transient Lab Failures — No Code Fix Needed
+
+### Root cause
+
+Both failing jobs are **labgrid `pexpect.exceptions.TIMEOUT` waiting for the U-Boot login prompt** — hardware/lab infrastructure failures, not code failures. Both jobs ran on the same runner (`ellesmere-lab VKe9dm-Af`).
+
+**`rockpro64` (Rockchip RK3399)** — The board powered up and ran TPL/SPL, but SPL could not read the FIT from MMC:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+```
+That's an MMC/SD-card hardware read error (-EIO / -ETIMEDOUT on the card), retried twice and then labgrid gave up after 10 s waiting for a login prompt. Classic SD-card flakiness in the lab, not something any patch in this series could cause.
+
+**`opi_pc` (Allwinner H3 sunxi)** — No U-Boot console output at all; labgrid simply timed out after 15 s waiting for login during `test_000_version`. Same symptom as attempt 1.
+
+### Why this is not caused by the branch
+
+The 29 commits on `cherry-1a79ea5b36e` are **exclusively NXP i.MX work** (imx8mm/mn/mp/mq, imx8ulp, imx93, imx94, imx95, Toradex SMARC-iMX95, Variscite iMX8MN VAR-SOM, GE VPD, `fec_mxc` for i.MX91).
+
+Verification:
+```
+$ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|rockchip|rockpro|rk3399|rk33'
+NO MATCHES
+```
+Zero files touched under `sunxi`, `allwinner`, `orangepi`, `arch/arm/mach-sunxi`, `rockchip`, `rk3399`, or any other path that could affect these two boards. There is no plausible mechanism by which NXP/i.MX patches would cause a Rockchip SD-card read to fail or a sunxi board to miss its login prompt.
+
+### Conclusion
+
+Per the task instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+Both jobs hitting the **same runner** with hardware-level failures (one MMC read error, one total boot silence) on boards the branch never touches is textbook transient lab infrastructure failure.
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix2` branch created.** Recommend retrying both jobs.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rockpro64, opi_pc.
+
+Both failures look like lab/hardwa...
+
+### Conversation log
+## Analysis: No Action Required (Attempt 3)
+
+The review comment flagged for this turn is — for the third consecutive iteration — the bot's own prior pipeline-fix status report (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) being echoed back as a "comment to address." The text is the verbatim conclusion from attempt 2, which already determined no code fix is warranted.
+
+### Verification on the current branch
+
+- **Branch tip:** `07b5215f8f9 pickman: Record pipeline fix for cherry-1a79ea5b36e` (marker from attempt 2)
+- **Commit count:** 33 on top of `ci/master` (29 cherry-picks + 4 pickman tracking commits accumulated over the three review turns)
+- **File-scope check:**
+  ```
+  $ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|rockchip|rockpro|rk3399|rk33'
+  → NO MATCHES
+  ```
+  Zero files touched under any sunxi, Allwinner, OrangePi, Rockchip, RK3399, or related paths. The 29 cherry-picks are exclusively NXP/i.MX work.
+
+### Why nothing was changed or pushed
+
+The `opi_pc` and `rockpro64` failures were diagnosed in attempts 1 and 2 as lab infrastructure failures:
+
+- `opi_pc`: labgrid `pexpect.exceptions.TIMEOUT` after 15 s waiting for login during `test_000_version` — the board never produced console output.
+- `rockpro64`: SPL `mmc_load_image_raw_sector` read error (`Card did not respond to voltage select! : -110`) — an SD-card/MMC hardware-level I/O failure, followed by labgrid timeout.
+
+Both ran on the same runner (`ellesmere-lab VKe9dm-Af`) with hardware-level failures on boards the branch never touches. Per the task instructions: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+Creating a `-v3` branch and force-pushing with zero code delta would be a no-op pipeline retrigger masquerading as a fix, muddy the history, and misrepresent the situation. **No code changes, no new local branch, no push.**
+
+### Suggested MR reply
+
+> The flagged review comment is the bot's own attempt-2 status report. That analysis already concluded both failures (`opi_pc` sunxi H3 and `rockpro64` RK3399) are lab/hardware infrastructure failures on the same runner — an SD-card read error and a labgrid login timeout on boards this branch never touches. Re-verified on the current branch: `git diff --name-only ci/master..HEAD` returns zero matches for any sunxi/Allwinner/OrangePi/Rockchip/RK3399 paths. All 29 commits are NXP/i.MX work. No code change is warranted. Please retry the `opi_pc` and `rockpro64` jobs.
+
+---
+
+### Pipeline fix: 2026-04-23 (attempt 3)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- opi_pc (sjg-lab)
+- Check make qcheck (test.py)
+
+### Conversation log
+Now I have a real issue to fix. The `qcheck` job is failing due to binman coverage at 99% (needs 100%). Files with missing coverage:
+- `tools/binman/btool/cst.py`: 76% (4 missed)
+- `tools/binman/etype/nxp_imx8mcst.py`: 22% (69 missed)
+- `tools/binman/etype/nxp_imx8mimage.py`: 84% (6 missed)
+
+These appear related to NXP i.MX work on this branch. Let me investigate.
+
+Good. Now let me test whether this qcheck failure is pre-existing (exists on ci/master) or introduced by the branch.
+
+Let me check if qcheck fails the same way on the master branch (pre-existing vs. introduced):
+
+Let me run qcheck on ci/master to confirm whether this is a pre-existing failure or caused by the branch.
+
+The same coverage failure exists on `ci/master`: 99% with 79 missed lines. This is **pre-existing**, not introduced by the branch.
+
+Let me clean up the worktree and verify the scope of this branch's changes once more.
+
+## Analysis: Both Failures Are Unrelated to the Branch — No Code Fix Warranted
+
+### Root Cause
+
+**`opi_pc` (stage: sjg-lab)** — Lab/hardware infrastructure timeout, same symptom as attempts 1 and 2:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+The OrangePi PC (Allwinner H3 sunxi) board failed to produce its U-Boot console prompt within 15 s during `test_000_version` (the very first sanity test). `1 deselected in 32.94s` — no test body ran.
+
+**`Check make qcheck` (stage: test.py)** — binman code-coverage gate: 99% vs required 100%. The missing lines are entirely in three files:
+- `tools/binman/btool/cst.py` — 78% (4 lines missed, line 17/18 stmts differ by 1 between branch/master counts)
+- `tools/binman/etype/nxp_imx8mcst.py` — 22% (69 missed)
+- `tools/binman/etype/nxp_imx8mimage.py` — 84% (6 missed)
+
+### Why Neither Is Caused by This Branch
+
+**Branch scope check:**
+```
+$ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|binman|cst|imx8mcst|imx8mimage'
+→ NO MATCHES
+```
+Zero files changed under sunxi/Allwinner/OrangePi paths, and zero files changed under `tools/binman/` (including the three low-coverage files). All 29 cherry-picks are NXP/i.MX board and driver changes — no tooling changes.
+
+**qcheck is pre-existing:** I reproduced the coverage failure on a clean `ci/master` worktree. Exact same result:
+```
+TOTAL  6186  79  99%
+Coverage error: 99%, but should be 100%
+```
+With the same three files at 78% / 22% / 84%. The missing coverage is caused by a missing bintool in the CI environment (`openssl` / NXP `cst` tool — the log shows `Image 'file2' has missing bintools and is non-functional: openssl`). It is a **pre-existing environment/coverage-gate issue on master**, not something this series introduced. Fixing it would require adding tests or mocking in `tools/binman/` — out of scope for an NXP i.MX cherry-pick MR.
+
+**opi_pc is transient lab failure:** labgrid timed out waiting for the console prompt on a sunxi H3 board — identical symptom to attempts 1 and 2. The branch touches no sunxi code, so it cannot be the cause.
+
+### Conclusion
+
+Per the task instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes.
+
+- `opi_pc` → transient lab/hardware timeout.
+- `qcheck` → pre-existing coverage-gate failure on `ci/master` independent of this branch; requires tooling work (not cherry-pick scope).
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix3` branch created.** Recommend retrying `opi_pc`; escalate the `qcheck` coverage gate separately as it affects master.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) opi_pc, Check make qcheck.
+
+Now I have a real issue to...
+
+### Conversation log
+## Analysis: No Action Required (Attempt 4 — same comment re-echoed)
+
+The review comment flagged for this turn is — for the **fourth consecutive iteration** — the bot's own prior pipeline-fix status report (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) being echoed back as a "comment to address." The text is the verbatim conclusion from attempt 3, which already determined no code fix is warranted.
+
+### Verification on current branch
+
+- **Branch tip:** `c786d400a43 pickman: Record pipeline fix for cherry-1a79ea5b36e` (marker from attempt 3)
+- **Commit count:** 35 on top of `ci/master` (29 cherry-picks + 6 pickman tracking commits accumulated across attempts 1–3)
+- **File-scope check:**
+  ```
+  $ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|binman|cst|imx8mcst|imx8mimage'
+  → NO MATCHES
+  ```
+  Of the 38 files changed on this branch, **zero** are under sunxi/Allwinner/OrangePi paths and **zero** are under `tools/binman/` (including the three low-coverage files `tools/binman/btool/cst.py`, `tools/binman/etype/nxp_imx8mcst.py`, `tools/binman/etype/nxp_imx8mimage.py`). All 29 cherry-picks are NXP/i.MX board, DTS, config, and driver changes — no tooling changes.
+
+### Why nothing was changed or pushed
+
+The `opi_pc` and `Check make qcheck` failures were fully diagnosed in attempt 3:
+
+- **`opi_pc`** → labgrid `pexpect.exceptions.TIMEOUT` (15 s) waiting for login on an Allwinner H3 sunxi board. Transient lab/hardware failure; the branch touches no sunxi code.
+- **`Check make qcheck`** → binman coverage gate at 99% vs 100%. Reproduced on a clean `ci/master` worktree with identical output — the failure is **pre-existing on master**, caused by missing `openssl`/`cst` bintools in the CI environment, not by this branch. Fixing it would require tests/mocks in `tools/binman/`, which is out of scope for an NXP i.MX cherry-pick MR.
+
+Per the task instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes.
+
+Creating a `-v4` branch and force-pushing with zero code delta would be a no-op pipeline retrigger masquerading as a fix, muddy the history, and misrepresent the situation.
+
+### What was done this turn
+
+- Checked out `cherry-1a79ea5b36e` (per step 1)
+- Re-verified branch scope: 38 files, all NXP/i.MX; no sunxi, no binman
+- **No code changes, no new local branch (`-v4` not created), no force-push to `ci`**
+- Steps 4–6 deliberately skipped: no change to build, no branch to push
+
+### Suggested MR reply
+
+> The flagged review comment is the bot's own attempt-3 status report being echoed back (4th iteration of the same comment). That analysis already concluded:
+>
+> - `opi_pc` → transient lab/hardware timeout on an Allwinner H3 sunxi board (15 s labgrid login timeout before any test ran). This branch touches no sunxi code.
+> - `Check make qcheck` → **pre-existing** binman coverage-gate failure on `ci/master` (reproduced on a clean master worktree; 99% vs required 100%). The three low-coverage files — `tools/binman/btool/cst.py`, `tools/binman/etype/nxp_imx8mcst.py`, `tools/binman/etype/nxp_imx8mimage.py` — are **not touched by this branch** (verified: `git diff --name-only ci/master..HEAD` returns zero matches under `tools/binman/`). The root cause is missing `openssl`/`cst` bintools in the CI environment; fixing it is out of scope for an NXP i.MX cherry-pick MR and should be addressed separately on master.
+>
+> No code change is warranted. Please retry `opi_pc` and escalate the `qcheck` coverage gate as a separate master-level issue.
+
+---
+
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Analysis: Retry Limit Reached — Loop Terminating, No Further Action
+
+The review comment flagged for this turn is a **terminal status signal**, not an actionable review request:
+
+> **[project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required.**
+
+This is the pickman pipeline-fix system itself declaring that the automatic retry loop has exhausted its 3-attempt budget (attempts 1, 2, and 3 are all recorded in the MR history above) and is explicitly handing off to a human. It is **not** asking for another automated cherry-pick fix — it is asking the human operator to look at the MR.
+
+### Branch state verified
+
+- **Branch tip:** `a52729502ed pickman: Record review handling for cherry-1a79ea5b36e`
+- **Commits vs `ci/master`:** 36 (29 cherry-picks + 7 pickman tracking commits accumulated across the 3 fix attempts and 3 review-response turns)
+- **Content scope (29 cherry-picks):** exclusively NXP/i.MX work — no sunxi, no Allwinner, no OrangePi, no Rockchip, no `tools/binman/`
+
+### What the 3 prior attempts established (full trail is in the MR description above)
+
+| Attempt | Failing jobs | Verdict |
+|---|---|---|
+| 1 | `opi_pc` | Transient lab timeout on Allwinner H3 sunxi — branch touches no sunxi code |
+| 2 | `opi_pc`, `rockpro64` | Lab/hardware failures on sunxi H3 and Rockchip RK3399 (SD-card read error) — branch touches neither platform |
+| 3 | `opi_pc`, `Check make qcheck` | `opi_pc` transient again; `qcheck` is a **pre-existing** binman coverage-gate failure reproduced on a clean `ci/master` worktree, caused by missing CI bintools in files this branch does not touch |
+
+### Why I am not creating a `-v4` branch or force-pushing
+
+1. **The loop itself has declared it is terminating** — the "retry limit reached, manual intervention required" message is the system's stop signal. Treating it as "address this comment" and kicking another cycle would ignore the explicit terminal state and create an eighth pickman tracking commit for no reason.
+2. **Nothing actionable has been requested.** There is no code issue, no reviewer feedback, no failing job caused by this branch's changes. Each of the three prior failing jobs was either a transient lab/hardware event or a pre-existing master-level issue, as documented in attempts 1–3.
+3. **Force-pushing with zero code delta is not a fix** — it would be a disguised pipeline retrigger that further muddies history.
+
+### Suggested MR reply (for the human operator)
+
+> The pipeline-fix loop has hit its 3-attempt retry limit and requires manual intervention. Summary of what the automated attempts found:
+>
+> - **Attempt 1** — `opi_pc`: transient labgrid 15 s `pexpect.TIMEOUT` waiting for U-Boot login on an Allwinner H3 sunxi board, before any test ran. Branch touches no sunxi code.
+> - **Attempt 2** — `opi_pc` (same symptom) plus `rockpro64`: SPL `mmc_load_image_raw_sector` SD-card read error (`Card did not respond to voltage select! : -110`) on RK3399. Both jobs ran on the same lab runner. Branch touches neither sunxi nor Rockchip.
+> - **Attempt 3** — `opi_pc` (same) plus `Check make qcheck`: binman coverage gate at 99 % vs required 100 %. **Reproduced on clean `ci/master`** — it is pre-existing and unrelated to this MR. The three low-coverage files (`tools/binman/btool/cst.py`, `tools/binman/etype/nxp_imx8mcst.py`, `tools/binman/etype/nxp_imx8mimage.py`) are not modified by this branch.
+>
+> `git diff --name-only ci/master..HEAD` confirms the 29 cherry-picks touch zero files under `sunxi`, `allwinner`, `orangepi`, `rockchip`, `rk3399`, or `tools/binman/`.
+>
+> Recommended manual actions:
+> 1. Retry `opi_pc` (and `rockpro64` if it reappears) — transient lab failures.
+> 2. File a separate master-level issue for the binman coverage gate; add bintool mocks or exempt the NXP CST bintool path from the 100 % gate.
+>
+> No code change is warranted on this branch.
+
+### Actions taken this turn
+
+- Checked out `cherry-1a79ea5b36e` (step 1) ✓
+- Read and understood the terminal retry-limit message (step 2) ✓
+- **Steps 3–6 deliberately skipped**: no actionable comment, no code change, no `-v4` branch, no force-push. The loop's own stop signal must not be treated as a new fix request.
+
+**No further automated iterations should be scheduled.** Control is returned to the human operator as the retry-limit message instructs.
+
+---
+
