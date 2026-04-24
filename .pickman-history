@@ -67874,3 +67874,40 @@ Per the instructions ("If a comment is unclear or cannot be addressed, note this
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-589d0a687b0
+
+Commits:
+- 589d0a687b0 am335x: add support for loading u-boot from multiple offsets
+- a672456d4b2 doc: am335x: document use of CONFIG_SPL_AM33XX_MMCSD_MULTIPLE
+- 6f7fe31bf6d Merge patch series "am335x: failsafe bootloader update"
+
+### Conversation log
+Identical stats. Now let's run the build test.
+
+Build passes. Now cherry-pick the second commit.
+
+Identical. Build test:
+
+Now the merge commit:
+
+All 3 commits are present and the branch is ready.
+
+## Final Status
+
+**Build result:** OK (sandbox builds successfully on all 3 commits)
+
+**Cherry-picks completed:**
+1. `aa592df1443` - am335x: add support for loading u-boot from multiple offsets (2 files, 68 insertions — identical to original)
+2. `a8586ee6fde` - doc: am335x: document use of CONFIG_SPL_AM33XX_MMCSD_MULTIPLE (1 file, 80 insertions — identical to original)
+3. `2f37015ebae` - Merge patch series "am335x: failsafe bootloader update" (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups made:** None. The first two commits applied cleanly with stats matching the originals. The merge commit became empty (as expected since the merged content was already applied via the two preceding cherry-picks) and was preserved with `--allow-empty` to maintain history tracking.
+
+**Concerning deltas:** None.
+
+The branch `cherry-589d0a687b0` is ready for pushing.
+
+---
+
