@@ -67781,3 +67781,47 @@ This task appears to be a self-referential loop: the pickman workflow picked up 
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-b3087d21f02
+
+Commits:
+- b3087d21f02 env: Provide another work-around for unquoting fdtfile
+- 03d2d5fc003 board: sifive: unmatched: set fdtfile with unquoted variable.
+- cff4387c813 Merge patch series "env: Provide another work-around for unquoting fdtfile"
+
+### Conversation log
+Delta matches. Now let's run the build test.
+
+Build passes. Now cherry-pick the second commit.
+
+Delta matches. Build test:
+
+Build passes. Now cherry-pick the merge commit.
+
+All 3 commits are present. Cherry-pick complete.
+
+## Final Status Report
+
+**Branch:** `cherry-b3087d21f02` (based on `ci/master`)
+
+**Cherry-picked commits (in order):**
+1. `541d6136fff` - env: Provide another work-around for unquoting fdtfile (from `b3087d21f02`)
+2. `6b3f387c3ed` - board: sifive: unmatched: set fdtfile with unquoted variable. (from `03d2d5fc003`)
+3. `8c8f823d998` - Merge patch series "env: Provide another work-around for unquoting fdtfile" (from `cff4387c813`, empty as expected for merge commit)
+
+**Build result:** OK — sandbox build passed after each cherry-pick and at the end.
+
+**Deltas:**
+- Commit 1: identical to original (1 file, 1 insertion in Makefile)
+- Commit 2: identical to original (1 file, 1 insertion + 1 deletion in board/sifive/unmatched/unmatched.env)
+- Commit 3: empty merge commit (expected, since both child commits are already applied)
+
+**Fix-ups:** None required. The merge commit needed `--allow-empty` (auto-detected and committed empty as instructed).
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
