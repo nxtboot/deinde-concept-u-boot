@@ -66487,3 +66487,46 @@ None of these can plausibly cause SPL MMC boot failures, YKUSH hub disconnection
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-0ced9ef0736
+
+Commits:
+- 0ced9ef0736 disk: part: fix partition search boundaries
+- 6a1f8c89737 cmd: gpt: fix partition search boundaries
+- b06a1785b2b mtd: mtdpart: fix partitions searching
+- e7a21a985da Merge patch series "part: fix partition searching"
+
+### Conversation log
+Delta matches exactly. Let me run the build test.
+
+Build passed. Now cherry-pick the second commit.
+
+Matches exactly. Build test:
+
+All 4 commits are present. Now run the final build.
+
+## Final Status
+
+**Branch:** `cherry-0ced9ef0736` (based on `ci/master`)
+
+**Cherry-picks completed (4/4):**
+| Hash | Original | Subject |
+|------|----------|---------|
+| `4e6b08bd2ba` | `0ced9ef0736` | disk: part: fix partition search boundaries |
+| `e6d1c229aaa` | `6a1f8c89737` | cmd: gpt: fix partition search boundaries |
+| `60aaf570d7c` | `b06a1785b2b` | mtd: mtdpart: fix partitions searching |
+| `21f41e5f391` | `e7a21a985da` | Merge patch series "part: fix partition searching" (empty, preserved with --allow-empty) |
+
+**Build result:** ok — sandbox build passed cleanly after every cherry-pick (4 incremental + 1 final verification).
+
+**Deltas:** All three non-merge commits matched their originals exactly (same files, same line counts: 2+/2-, 2+/2-, 4+/3-).
+
+**Fix-ups:** None. The merge commit came through cleanly as an empty commit (as expected — all content from the series was already applied via the individual commits); committed with `git commit --allow-empty --no-edit` to preserve the merge message for history tracking, as required.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing. Not merged into any other branch.
+
+---
+
