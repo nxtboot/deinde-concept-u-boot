@@ -66859,3 +66859,75 @@ Creating a `-v3` branch and force-pushing with zero code delta would be a no-op 
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 3)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- opi_pc (sjg-lab)
+- Check make qcheck (test.py)
+
+### Conversation log
+Now I have a real issue to fix. The `qcheck` job is failing due to binman coverage at 99% (needs 100%). Files with missing coverage:
+- `tools/binman/btool/cst.py`: 76% (4 missed)
+- `tools/binman/etype/nxp_imx8mcst.py`: 22% (69 missed)
+- `tools/binman/etype/nxp_imx8mimage.py`: 84% (6 missed)
+
+These appear related to NXP i.MX work on this branch. Let me investigate.
+
+Good. Now let me test whether this qcheck failure is pre-existing (exists on ci/master) or introduced by the branch.
+
+Let me check if qcheck fails the same way on the master branch (pre-existing vs. introduced):
+
+Let me run qcheck on ci/master to confirm whether this is a pre-existing failure or caused by the branch.
+
+The same coverage failure exists on `ci/master`: 99% with 79 missed lines. This is **pre-existing**, not introduced by the branch.
+
+Let me clean up the worktree and verify the scope of this branch's changes once more.
+
+## Analysis: Both Failures Are Unrelated to the Branch — No Code Fix Warranted
+
+### Root Cause
+
+**`opi_pc` (stage: sjg-lab)** — Lab/hardware infrastructure timeout, same symptom as attempts 1 and 2:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+The OrangePi PC (Allwinner H3 sunxi) board failed to produce its U-Boot console prompt within 15 s during `test_000_version` (the very first sanity test). `1 deselected in 32.94s` — no test body ran.
+
+**`Check make qcheck` (stage: test.py)** — binman code-coverage gate: 99% vs required 100%. The missing lines are entirely in three files:
+- `tools/binman/btool/cst.py` — 78% (4 lines missed, line 17/18 stmts differ by 1 between branch/master counts)
+- `tools/binman/etype/nxp_imx8mcst.py` — 22% (69 missed)
+- `tools/binman/etype/nxp_imx8mimage.py` — 84% (6 missed)
+
+### Why Neither Is Caused by This Branch
+
+**Branch scope check:**
+```
+$ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|binman|cst|imx8mcst|imx8mimage'
+→ NO MATCHES
+```
+Zero files changed under sunxi/Allwinner/OrangePi paths, and zero files changed under `tools/binman/` (including the three low-coverage files). All 29 cherry-picks are NXP/i.MX board and driver changes — no tooling changes.
+
+**qcheck is pre-existing:** I reproduced the coverage failure on a clean `ci/master` worktree. Exact same result:
+```
+TOTAL  6186  79  99%
+Coverage error: 99%, but should be 100%
+```
+With the same three files at 78% / 22% / 84%. The missing coverage is caused by a missing bintool in the CI environment (`openssl` / NXP `cst` tool — the log shows `Image 'file2' has missing bintools and is non-functional: openssl`). It is a **pre-existing environment/coverage-gate issue on master**, not something this series introduced. Fixing it would require adding tests or mocking in `tools/binman/` — out of scope for an NXP i.MX cherry-pick MR.
+
+**opi_pc is transient lab failure:** labgrid timed out waiting for the console prompt on a sunxi H3 board — identical symptom to attempts 1 and 2. The branch touches no sunxi code, so it cannot be the cause.
+
+### Conclusion
+
+Per the task instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes.
+
+- `opi_pc` → transient lab/hardware timeout.
+- `qcheck` → pre-existing coverage-gate failure on `ci/master` independent of this branch; requires tooling work (not cherry-pick scope).
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix3` branch created.** Recommend retrying `opi_pc`; escalate the `qcheck` coverage gate separately as it affects master.
+
+---
+
