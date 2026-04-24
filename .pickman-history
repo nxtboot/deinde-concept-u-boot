@@ -67183,3 +67183,56 @@ The branch `cherry-e202eca183b` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-24 (attempt 1)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures look like infrastructure/lab issues. Let me verify by checking out the branch and confirming the changes are unrelated.
+
+The cherry-picked commits only touch `cmd/Kconfig`, `cmd/meminfo.c`, `test/cmd/meminfo.c`, and `doc/usage/cmd/memsize.rst`. Let me verify the failures are unrelated by looking more carefully.
+
+Both failures are clearly infrastructure / lab issues unrelated to the changes in the MR. I will not make any code changes.
+
+## Diagnosis
+
+**Branch under test:** `cherry-e202eca183b` (4 cherry-picked commits adding the `memsize` command)
+
+**Files touched by the MR:**
+- `cmd/Kconfig` — adds new `CMD_MEMSIZE` option (default off, depends on `CMD_MEMINFO`)
+- `cmd/meminfo.c` — adds the `memsize` command implementation
+- `test/cmd/meminfo.c` — sandbox unit test
+- `doc/usage/cmd/memsize.rst` — usage documentation
+
+These are entirely sandbox/build-time additions of an optional, default-off command. They cannot affect the runtime behaviour of the `opi_pc` board or the `efi-aarch64` test runner.
+
+### Job: `opi_pc` (job 450814)
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Labgrid timed out waiting for the U-Boot prompt during the very first test (`test_000_version`). The pytest run aborted with `_pytest.outcomes.Exit: Lab failure: Marking connection bad`. This is a classic hardware/serial-cable/power lab infrastructure failure — the lab runner explicitly tagged it as a "Lab failure".
+
+### Job: `efi-aarch64` (job 450846)
+```
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+FAILED test/py/tests/test_distro.py::test_distro_arm_app_efi
+```
+A bare `OSError: [Errno 5] Input/output error` came from `os.read()` on the spawn pty during a `u-boot-test-reset`. The console pty died mid-test. 34 tests passed and 671 skipped before this single transient failure on a reset boundary — symptomatic of a flaky PTY/qemu launcher, not a code defect.
+
+## Conclusion
+
+Neither failure correlates with any commit on this branch:
+- The `memsize` command is `default n`, gated by `depends on CMD_MEMINFO`, and not enabled by either `opi_pc_defconfig` or the EFI aarch64 configs.
+- Neither failure is at build time; both are runtime environment failures (lab serial timeout, pty I/O error).
+
+**Action: no code changes made; no `cherry-e202eca183b-fix1` branch created.** Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), these jobs should simply be retried.
+
+---
+
