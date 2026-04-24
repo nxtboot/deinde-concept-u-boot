@@ -66604,3 +66604,74 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-1a79ea5b36e
+
+Commits:
+- 1a79ea5b36e net: fec_mxc: Add support for i.MX91
+- 79e1a5b69f4 imx8mm_evk: Drop DECLARE_GLOBAL_DATA_PTR
+- 4ea79496b01 imx8mp_evk: spl: Drop i2c_pad_info1
+- 649a52aeb92 imx8mp_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 652830fa0b3 imx8mp_evk: Cleanup headers
+- e590536a099 imx8mn_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 4559cd3ea42 imx8mn_evk: Cleanup headers
+- 8178c237374 imx8ulp_evk: Drop DECLARE_GLOBAL_DATA_PTR
+- ba69cabb645 imx8ulp_evk: Drop board_phy_config
+- 7e4e4ccc473 imx8ulp_evk: Cleanup headers
+- 3cde536025c imx8mq_evk: spl: Drop DECLARE_GLOBAL_DATA_PTR
+- 1384a9ddebc imx93_frdm: Drop DECLARE_GLOBAL_DATA_PTR
+- 98d6f42fc59 imx93_frdm: Update IMX_BOOT_IMAGE_GUID
+- 944e5778274 board: ge: common: vpd: Fix read_i2c_vpd return value
+- 15cb4033c93 remoteproc: imx: Support ECC initialization
+- 3fa7b1055b8 remoteproc: imx: Add i.MX95 support
+- 7bb12b8dfe8 arm: dts: imx95: Add cm7 node
+- 36d93a7cd7c imx95_evk: Enable remoteproc for i.MX95 EVK
+- 620c1aaa2b5 nxp: imx95_evk: Drop init_uart_clk
+- 7412a1dbaf0 nxp: imx94_evk: Drop init_uart_clk
+- 650b381d27b toradex: smarc-imx95: Drop init_uart_clk
+- 57fce421a4f arm: dts: imx8mn-var-som: Move SOM-specific nodes to SOM u-boot.dtsi
+- 57d9399b466 arm: dts: imx8mn-var-som: add som-eeprom alias to SOM u-boot dtsi
+- 56246896a3e arm: dts: imx8mn-var-som-symphony: migrate to OF_UPSTREAM
+- ced337fccb8 board: imx8mn_var_som: let clock system enable UART clock
+- 40b8b343156 board: imx8mn-var-som: remove unneeded header files
+- 48133bcd168 board: imx8mn-var-som: compile SPL-only stuff only in SPL build
+- 470ea759aa6 mach-imx: ele_ahab: Mitigate imx93_qsb build error
+- 717cd8d54c8 Merge tag 'u-boot-imx-master-20260206' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+
+### Conversation log
+First commit matches. Let me continue with the rest, doing the build check at the end of all picks.
+
+Now let me verify the "maybe already applied" commit:
+
+The patches are very different (different paths, different changes). Let me cherry-pick 4559cd3ea42.
+
+The merge commit is now empty (since all the parents' content has been applied). Need to commit it as empty per instructions:
+
+Now let me verify all 29 commits are present and run the final build:
+
+All 29 commits are present. Updating todos and running the final build:
+
+Build succeeded with no warnings or errors.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-1a79ea5b36e` (based on `ci/master`)
+
+**Status:** All 29 commits successfully cherry-picked.
+
+**Build result:** OK — sandbox build completed in 5s with no warnings or errors.
+
+**Notes on individual commits:**
+- **`4559cd3ea42` (imx8mn_evk: Cleanup headers)** — was flagged as "maybe already applied as 7dba2e30098", but verification showed the patches are very different (the older one operated on `board/freescale/imx8mn_evk/` with different changes; the new one operates on `board/nxp/imx8mn_evk/`). Cherry-picked normally.
+- **`717cd8d54c8` (Merge commit)** — became empty since all parent content was already applied. Committed with `--allow-empty` to preserve the merge message in history, per instructions.
+- All other commits applied cleanly with auto-merge of overlapping configs/Makefile hunks; no manual conflict resolution required.
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None — all commits matched their originals in stat output.
+
+The branch is ready for pushing. No merge back was performed.
+
+---
+
