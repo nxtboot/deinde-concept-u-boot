@@ -67048,3 +67048,38 @@ This is the pickman pipeline-fix system itself declaring that the automatic retr
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-0cd81619bb2
+
+Commits:
+- 0cd81619bb2 arm: renesas: Enable wget command and TCP on all R-Car systems
+- 3243a73102c Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+First cherry-pick is clean. Now let's run the build test:
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-0cd81619bb2` (based on `ci/master`)
+
+**Commits applied (2 total):**
+1. `5919b72df4e` - arm: renesas: Enable wget command and TCP on all R-Car systems (from `0cd81619bb2`)
+   - 1 file changed, 3 insertions — identical to original
+2. `fa5750726e9` - Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh (from `3243a73102c`, empty merge commit)
+
+**Verification of "maybe already applied" commit:**
+- Compared `3243a73102c` vs `86e0c12d21f`: the pickman-generated merge `86e0c12d21f` includes unrelated content (12 other commits from us/next, 525-line UFS driver changes, etc.) and merges a different branch. Not the same commit — proceeded with cherry-pick as an empty commit to preserve history.
+
+**Build result:** ok (sandbox build passed)
+
+**Fix-ups:** None — no conflicts, no deltas of concern
+
+**Concerning deltas:** None — first commit applied identically (1 file, 3 insertions); second is an empty merge commit as expected
+
+The branch is ready for pushing.
+
+---
+
