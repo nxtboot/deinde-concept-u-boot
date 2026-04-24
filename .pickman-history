@@ -66675,3 +66675,49 @@ The branch is ready for pushing. No merge back was performed.
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 1)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+The failure is a lab/hardware test timeout on an OrangePi PC (sunxi/Allwinner board). Let me verify this is unrelated to the branch changes.
+
+## Analysis Result: Infrastructure/Transient Lab Failure — No Code Fix Needed
+
+### Root Cause
+
+The `opi_pc` job failure is a **hardware lab infrastructure timeout**, not a code issue. Key evidence from the job log:
+
+```
+Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The labgrid framework timed out after 15 seconds waiting for the OrangePi PC board to reach the U-Boot login prompt during `test_000_version` (the very first sanity test). When this happens, the runner declares a **"Lab failure"** and skips all remaining tests. The reported `1 deselected in 33.03s` with no tests actually executed confirms nothing in the test suite itself ran or failed.
+
+### Why This Is Not Caused by the Branch
+
+The OrangePi PC is a **sunxi/Allwinner H3** board. The 29 commits on `cherry-1a79ea5b36e` are exclusively:
+
+- NXP i.MX board work (imx8mm/mn/mp/mq, imx8ulp, imx93, imx94, imx95)
+- Toradex smarc-imx95
+- Variscite imx8mn_var_som
+- GE VPD reader fix
+- `fec_mxc` NXP ethernet driver (i.MX91 only)
+
+Verified with `git diff --name-only ci/master..HEAD` — **zero files** touched under `sunxi`, `allwinner`, `orangepi`, `opi`, `arch/arm/mach-sunxi`, or related paths. There is no plausible mechanism by which these NXP/i.MX patches could make a sunxi board fail to reach its prompt.
+
+### Conclusion
+
+This is a transient lab/hardware failure (board failed to boot within 15s — could be serial console hiccup, power sequencing, SD-card write flakiness, or lab-runner state). Per the task instructions:
+
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix1` branch created.** Recommend retrying the pipeline.
+
+---
+
