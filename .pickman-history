@@ -67630,3 +67630,64 @@ All 9 commits are present. Let me run the final build test:
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-86f90e2a5fb
+
+Commits:
+- 86f90e2a5fb net: Stop conflating return value with file size in net_loop()
+- a28db0f1ccd net: tftp: Fix TFTP Transfer Size data type
+- 337f50bad2a net: lwip: tftp: add support of tsize option to client
+- 68a8f0f1f34 net: lwip: wget: rework the '#' printing
+- 09245e094fe net: dwc_eth_qos: Use lower_32_bits() for tail pointers
+- 34c1ab534c6 net: dwc_eth_qos: Initialize the transmit tail pointer in eqos_start()
+- 8beb70f2309 net: dwc_eth_qos: Start DMA and MAC after tail pointers are initialized
+- 5fdc297b893 net: dwc_eth_qos: Define more of the unused MAC regs
+- 1db453a5fee net: airoha_eth: fix mdio binding to switch device
+- caa62920e32 net: airoha_eth: use proper switch node for en7523 case
+- 3aabc0dae03 net: mdio-mt7531-mmio: fix switch regs initialization
+- 0b46bdcf39d configs: an7581: add mii/mdio support
+- d8bb4a44a27 arm: dts: an7581: add mdio child node to switch node
+- d58e12688e1 configs: en7523: add mii/mdio support
+- b7984ef41a4 arm: dts: en7523: add mdio child node to switch node
+- e7b83e64d6b net: phy: mscc: allow RGMII with internal delay for the VSC8541
+- d395ea73dc2 Merge tag 'net-20260209' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+Let me resolve the conflicts. First, check other affected files:
+
+Stats match. Build test:
+
+All stats match. Now build test and merge commit:
+
+All 17 commits present. Final build test:
+
+## Final Status
+
+**Branch:** `cherry-86f90e2a5fb` (based on `ci/master`)
+
+**Result:** All 17 commits successfully cherry-picked.
+
+**Build result:** OK (sandbox build passes, no warnings or errors).
+
+**Fix-ups made:**
+
+1. **`86f90e2a5fb` — net: Stop conflating return value with file size in net_loop()**
+   - Conflict in `cmd/net.c`: `ci/master` had already refactored `netboot_common()` to call `netboot_run_()` wrapper (which returns 0/1) instead of `net_loop()` directly.
+   - Resolution: applied the intent of the commit by switching to `rcode = netboot_run_(...)` (naming the return value as rcode, not size), testing `if (rcode < 0)`, and then explicitly fetching `size = net_boot_file_size;` to preserve the downstream `if (size == 0)` check.
+   - A one-line Fix-up note was appended to the commit message describing the adaptation.
+
+2. **`d395ea73dc2` — Merge tag 'net-20260209' (merge commit)**
+   - Same conflict zone in `cmd/net.c` (the merge brings in the already-applied change from commit #1). Resolution: kept the already-applied HEAD version.
+   - After resolution the commit was empty; preserved via `git commit --allow-empty` as instructed, with original message plus cherry-pick reference.
+
+**Concerning deltas:** None significant.
+- Commit #1 stats: `cmd/net.c` changed 11/11 lines (vs 9/9 original) — within tolerance, caused by the wrapper adaptation.
+- All other commits have stats identical to the originals.
+
+**Untracked files** (unrelated, pre-existing): `arch/sandbox/dts/hwids.dtsi`, `test/fdt_overlay/hwids.dtsi`.
+
+The branch is ready for pushing.
+
+---
+
