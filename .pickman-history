@@ -67138,3 +67138,444 @@ Branch `cherry-24338c81ec2` is ready for pushing.
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-e202eca183b
+
+Commits:
+- e202eca183b cmd: mem: add command for getting ram size for use in scripts
+- 8acc8a65464 test: cmd: add test for memsize
+- b4842032d54 doc: cmd: add usage doc for memsize
+- b887a1c1a11 Merge patch series "Add command for getting ramsize in scripts"
+
+### Conversation log
+Deltas match. Let me build test.
+
+Build ok. Next commit:
+
+Matches. Build test:
+
+Now the merge commit:
+
+All 4 commits are present. Final build:
+
+## Cherry-pick Summary
+
+All 4 commits successfully cherry-picked onto branch `cherry-e202eca183b` from `ci/master`:
+
+| Original Hash | New Hash | Subject |
+|---|---|---|
+| e202eca183b | 79f6ec1e6ed | cmd: mem: add command for getting ram size for use in scripts |
+| 8acc8a65464 | 81976983c4b | test: cmd: add test for memsize |
+| b4842032d54 | 856c7e9ac72 | doc: cmd: add usage doc for memsize |
+| b887a1c1a11 | 0549b9e36ff | Merge patch series "Add command for getting ramsize in scripts" (empty) |
+
+### Build Result
+**OK** — `buildman -L --board sandbox` passed after every cherry-pick and on final verification. No warnings or errors.
+
+### Deltas
+All three non-merge commits match their originals exactly (same files, same line counts: +32, +21, +43). No concerning deltas.
+
+### Fix-ups
+- The merge commit `b887a1c1a11` became empty (as expected — its content was already included in the three predecessor commits). It was committed with `--allow-empty` to preserve history, and the commit message was amended to include the `(cherry picked from commit b887a1c1a1110582d178faad4397a0197938454e)` tag.
+
+The branch `cherry-e202eca183b` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-24 (attempt 1)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures look like infrastructure/lab issues. Let me verify by checking out the branch and confirming the changes are unrelated.
+
+The cherry-picked commits only touch `cmd/Kconfig`, `cmd/meminfo.c`, `test/cmd/meminfo.c`, and `doc/usage/cmd/memsize.rst`. Let me verify the failures are unrelated by looking more carefully.
+
+Both failures are clearly infrastructure / lab issues unrelated to the changes in the MR. I will not make any code changes.
+
+## Diagnosis
+
+**Branch under test:** `cherry-e202eca183b` (4 cherry-picked commits adding the `memsize` command)
+
+**Files touched by the MR:**
+- `cmd/Kconfig` — adds new `CMD_MEMSIZE` option (default off, depends on `CMD_MEMINFO`)
+- `cmd/meminfo.c` — adds the `memsize` command implementation
+- `test/cmd/meminfo.c` — sandbox unit test
+- `doc/usage/cmd/memsize.rst` — usage documentation
+
+These are entirely sandbox/build-time additions of an optional, default-off command. They cannot affect the runtime behaviour of the `opi_pc` board or the `efi-aarch64` test runner.
+
+### Job: `opi_pc` (job 450814)
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Labgrid timed out waiting for the U-Boot prompt during the very first test (`test_000_version`). The pytest run aborted with `_pytest.outcomes.Exit: Lab failure: Marking connection bad`. This is a classic hardware/serial-cable/power lab infrastructure failure — the lab runner explicitly tagged it as a "Lab failure".
+
+### Job: `efi-aarch64` (job 450846)
+```
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+FAILED test/py/tests/test_distro.py::test_distro_arm_app_efi
+```
+A bare `OSError: [Errno 5] Input/output error` came from `os.read()` on the spawn pty during a `u-boot-test-reset`. The console pty died mid-test. 34 tests passed and 671 skipped before this single transient failure on a reset boundary — symptomatic of a flaky PTY/qemu launcher, not a code defect.
+
+## Conclusion
+
+Neither failure correlates with any commit on this branch:
+- The `memsize` command is `default n`, gated by `depends on CMD_MEMINFO`, and not enabled by either `opi_pc_defconfig` or the EFI aarch64 configs.
+- Neither failure is at build time; both are runtime environment failures (lab serial timeout, pty I/O error).
+
+**Action: no code changes made; no `cherry-e202eca183b-fix1` branch created.** Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), these jobs should simply be retried.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-e202eca183b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, opi_pc.
+
+Both failures look like infrastr...
+
+### Conversation log
+The sole "review comment" in this task is the pickman bot's own record of **Pipeline fix attempt 1**, which is already captured in commit `4dd0a3df878` (`.pickman-history`). That attempt completed its diagnosis and explicitly decided **no code changes** were warranted — the two failed jobs (`efi-aarch64`, `opi_pc`) are infrastructure/lab failures unrelated to the cherry-picked `memsize` command:
+
+- `opi_pc` — labgrid timed out waiting for the U-Boot prompt on the very first test (`test_000_version`); runner tagged it "Lab failure: Marking connection bad".
+- `efi-aarch64` — bare `OSError: [Errno 5] Input/output error` from `os.read()` on the spawn pty during `u-boot-test-reset`, after 34 tests had already passed. Classic transient pty/qemu flake.
+
+Neither failure can be caused by the MR's changes:
+- `CMD_MEMSIZE` is `default n` and `depends on CMD_MEMINFO`; not enabled by `opi_pc_defconfig` or any EFI aarch64 config.
+- Both failures are runtime lab/pty issues, not build failures. Build passed cleanly with buildman for sandbox.
+
+Since there is nothing to change in the code, I have **not** created a `-v2` branch and **not** pushed anything. Per the prior diagnosis and the rule "If the failure is an infrastructure or transient issue … report this without making changes", the correct action is to retry the failed jobs on GitLab.
+
+---
+
+**Suggested reply to post on the MR:**
+
+> The two failed jobs in attempt 1 are both infrastructure/lab issues, not code defects, and the diagnosis has already been recorded:
+>
+> - **`opi_pc`** (job 450814): labgrid timed out waiting for the U-Boot prompt on the very first test (`test_000_version`) and the runner itself tagged the run as `Lab failure: Marking connection bad`. A hardware/serial/power-lab flake.
+> - **`efi-aarch64`** (job 450846): `OSError: [Errno 5] Input/output error` from `os.read()` on the spawn pty during a `u-boot-test-reset`, after 34 tests had already passed. A transient pty/qemu-launcher flake, not a logic failure.
+>
+> The MR only adds the optional `CMD_MEMSIZE` command (`default n`, `depends on CMD_MEMINFO`) with its sandbox test and docs. It is not enabled by `opi_pc_defconfig` or any EFI aarch64 config, and neither failure is at build time. No code change can address either symptom.
+>
+> Please retry the two failed jobs. No `-v2` push is being made.
+
+**Summary of actions taken:**
+- Checked out `cherry-e202eca183b` and reviewed the history/commit `4dd0a3df878`.
+- Re-confirmed the prior diagnosis remains correct.
+- No files edited, no build re-run needed (no code changed), no branch created, no push performed.
+
+---
+
+### Pipeline fix: 2026-04-24 (attempt 2)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures are clearly infrastructure/lab failures unrelated to the cherry-picked changes. Let me verify there's nothing else going on and confirm my diagnosis before reporting.
+
+## Diagnosis — No Code Changes Made
+
+Both failed jobs are infrastructure / lab failures unrelated to any change on this branch. No `cherry-e202eca183b-fix2` branch has been created.
+
+### MR scope (unchanged from attempt 1)
+
+The 4 cherry-picked commits only add:
+- `cmd/Kconfig` — new `CMD_MEMSIZE` option, `default n`, `depends on CMD_MEMINFO`
+- `cmd/meminfo.c`, `test/cmd/meminfo.c`, `doc/usage/cmd/memsize.rst`
+
+Verified `CMD_MEMSIZE` / `CMD_MEMINFO` are **not** set in `configs/orangepi_pc_defconfig`, and none of the EFI aarch64 configs enable them either. The new command cannot run in either failing job.
+
+### Job `opi_pc` (451055) — lab hardware failure
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+! _pytest.outcomes.Exit: Lab failure: Marking connection bad - no other tests will run !
+============================ 1 deselected in 33.02s ============================
+```
+
+The Python traceback shows labgrid's `ubootdriver._await_prompt()` timing out before the *first* test (`test_000_version`) can execute. The runner itself tags the run `Lab failure: Marking connection bad`. Pure serial/power/cable flake on the Orange Pi PC board.
+
+### Job `efi-aarch64` (451087) — transient pty I/O error
+
+```
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
++u-boot-test-reset efi-arm_app64 efi-aarch64
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 163.29s (0:02:43) ======
+```
+
+Bare `OSError: [Errno 5]` from `os.read()` on the console pty *during* a `u-boot-test-reset`, after 34 tests had already passed. The pty died; the test itself never ran. Classic transient QEMU/pty infrastructure flake at a reset boundary.
+
+### Conclusion
+
+- Neither failure is a build failure, and no commit on this branch touches any file exercised by either job.
+- Per the task rule *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"*, no code change was made, no fix commit added, and no `cherry-e202eca183b-fix2` branch was created.
+- **Recommended action:** retry both failed jobs.
+
+Current branch: `cherry-e202eca183b` (unchanged).
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-e202eca183b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Both failures are clearly infras...
+
+### Conversation log
+## Diagnosis — No Code Changes Made (attempt 3)
+
+This is the third time the pickman bot has flagged the same two jobs (`efi-aarch64`, `opi_pc`). Attempts 1 and 2 both correctly diagnosed them as infrastructure/lab failures unrelated to the MR, and nothing has changed that would alter that conclusion.
+
+### Re-verified facts
+
+- **MR scope:** only `cmd/Kconfig`, `cmd/meminfo.c`, `test/cmd/meminfo.c`, `doc/usage/cmd/memsize.rst`.
+- **The entire new code path in `cmd/meminfo.c` is wrapped in `#ifdef CONFIG_CMD_MEMSIZE`** — confirmed by re-reading the diff of `79f6ec1e6ed`. If `CMD_MEMSIZE` is not set, the binary is byte-identical to pre-MR.
+- `CMD_MEMSIZE` is `default n` and `depends on CMD_MEMINFO`.
+- `configs/orangepi_pc_defconfig` does **not** set `CMD_MEMSIZE` (or even `CMD_MEMINFO`).
+- `configs/efi-arm_app64_defconfig` sets `CONFIG_CMD_MEMINFO=y` but **not** `CONFIG_CMD_MEMSIZE=y`.
+
+Therefore the `memsize` command is not even compiled into either failing job's binary. It is impossible for this MR to affect them.
+
+### Failure classifications (unchanged from attempts 1 and 2)
+
+- **`opi_pc` (451055):** `pexpect.exceptions.TIMEOUT` before `test_000_version`, runner itself tagged it `Lab failure: Marking connection bad`. Hardware/serial/power flake.
+- **`efi-aarch64` (451087):** `OSError: [Errno 5] Input/output error` from `os.read()` on the console pty during `u-boot-test-reset`, after 34 tests had already passed. Transient pty/QEMU launcher flake at a reset boundary.
+
+### Actions taken
+
+- Checked out `cherry-e202eca183b`.
+- Re-read the MR diff and confirmed the `#ifdef CONFIG_CMD_MEMSIZE` gating.
+- Verified defconfigs for both failing jobs do not enable `CMD_MEMSIZE`.
+- **No files edited. No build re-run (no code change to build). No `-v3` branch created. No push performed.**
+
+Per the task rule — *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"* — the correct action is to retry the two failed jobs on GitLab.
+
+---
+
+### Suggested reply to post on the MR
+
+> This is the third time these same two jobs have been flagged; the previous two diagnoses still apply verbatim and no code change is warranted:
+>
+> - **`opi_pc` (451055)** — labgrid timed out waiting for the prompt before `test_000_version` could run, and the runner itself tagged the run `Lab failure: Marking connection bad`. Hardware/serial/power lab flake.
+> - **`efi-aarch64` (451087)** — bare `OSError: [Errno 5] Input/output error` from `os.read()` on the spawn pty during `u-boot-test-reset`, after 34 tests had already passed. Transient pty/QEMU-launcher flake at a reset boundary.
+>
+> The MR only adds the optional `CMD_MEMSIZE` command. The entire new code path in `cmd/meminfo.c` is wrapped in `#ifdef CONFIG_CMD_MEMSIZE`, and that option is `default n`, depends on `CMD_MEMINFO`, and is not enabled by either `orangepi_pc_defconfig` (which doesn't even enable `CMD_MEMINFO`) or `efi-arm_app64_defconfig`. The binaries for both failing jobs are therefore byte-identical to pre-MR in the affected code.
+>
+> Please retry the two failed jobs. No `-v3` push is being made.
+
+---
+
+### Pipeline fix: 2026-04-24 (attempt 3)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+The failures are the same infrastructure/lab issues flagged in the previous two attempts. Let me verify my diagnosis against the actual code on this branch.
+
+## Diagnosis — No Code Changes Made (attempt 3)
+
+This is the third time the pickman bot has flagged these same two jobs (`efi-aarch64`, `opi_pc`). Attempts 1 and 2 correctly classified them as infrastructure/lab flakes, and the attempt-3 logs confirm the same pattern. No code change is warranted.
+
+### Branch scope (verified, unchanged)
+
+The only functional commits on this branch are the three memsize commits (`79f6ec1e6ed`, `81976983c4b`, `856c7e9ac72`) plus the merge commit. Verified on disk:
+
+- `cmd/meminfo.c` lines 103–130: **all new code is gated by `#ifdef CONFIG_CMD_MEMSIZE`**.
+- `configs/orangepi_pc_defconfig`: **no match** for `CMD_MEMSIZE` or `CMD_MEMINFO` — the command isn't even compiled into the opi_pc binary.
+- `configs/efi-arm_app64_defconfig`: enables `CMD_MEMINFO=y` but **not** `CMD_MEMSIZE` — the new code path is `#ifdef`'d out.
+
+For both failing boards the binary is byte-identical to pre-MR in the touched areas.
+
+### Job `opi_pc` (451296) — lab hardware failure
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+! _pytest.outcomes.Exit: Lab failure: Marking connection bad - no other tests will run !
+============================ 1 deselected in 40.37s ============================
+```
+
+Labgrid's `ubootdriver._await_prompt()` timed out before `test_000_version` could start. The runner itself tagged the run `Lab failure: Marking connection bad`. Pure serial/power/cable lab flake on the Orange Pi PC board — same signature as attempts 1 and 2.
+
+### Job `efi-aarch64` (451328) — transient distro-boot timeout
+
+```
+test/py/tests/test_distro.py:150: in test_distro_arm_app_efi
+    ubman.expect(['Ubuntu 25.04 qarm ttyAMA0'])
+test/py/console_base.py:842: in expect
+    raise Timeout()
+E   console_base.Timeout
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 340.32s (0:05:40) ======
+```
+
+34 tests passed and 671 skipped before a single distro test timed out waiting for the Ubuntu 25.04 kernel console banner. This is a QEMU/distro boot-speed flake — the test boots a full Ubuntu image and waits for the kernel to come up on `ttyAMA0`. Not a logic failure; no U-Boot code path on the branch is exercised by this wait.
+
+### Actions taken
+
+- `git checkout cherry-e202eca183b` (confirmed branch unchanged from previous attempts).
+- Re-verified `#ifdef CONFIG_CMD_MEMSIZE` gating in `cmd/meminfo.c` (lines 103–130).
+- Re-verified the two failing jobs' defconfigs do not enable `CMD_MEMSIZE`.
+- **No files edited. No build run (no code change to build). No `cherry-e202eca183b-fix3` branch created. No push performed.**
+
+Per the task rule — *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"* — the correct action is to retry the two failed jobs on GitLab.
+
+### Summary
+
+- **Responsible commit:** none — failures are infrastructure/lab, not code.
+- **Root cause:** (1) labgrid timeout awaiting serial prompt on Orange Pi PC hardware; (2) console timeout awaiting Ubuntu kernel banner in QEMU distro test.
+- **Change made:** none.
+- **Branch created:** none — per the no-changes rule, `cherry-e202eca183b-fix3` was not created.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-e202eca183b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, opi_pc.
+
+The failures are the same infras...
+
+### Conversation log
+## Diagnosis — No Code Changes Made (attempt 4)
+
+This is the **fourth consecutive time** the pickman bot has flagged the same two jobs (`efi-aarch64`, `opi_pc`). Attempts 1, 2, and 3 all correctly diagnosed them as infrastructure/lab flakes unrelated to this MR, and the review comment being addressed here is itself just a record of attempt 3's no-change conclusion — the bot is looping.
+
+### Verification performed on `cherry-e202eca183b`
+
+- Branch is unchanged since attempt 3; HEAD is `e660204d54c` (pickman history record).
+- `cmd/meminfo.c`: the new code block is **`#ifdef CONFIG_CMD_MEMSIZE` … `#endif`** at lines 103–130 (confirmed twice — for the helper and for the command registration).
+- `configs/orangepi_pc_defconfig`: **no** `CMD_MEMSIZE` or `CMD_MEMINFO` — memsize is not compiled into the opi_pc binary at all.
+- `configs/efi-arm_app64_defconfig`: `CONFIG_CMD_MEMINFO=y` but **no** `CONFIG_CMD_MEMSIZE=y` — the new code path is preprocessed out.
+
+Conclusion (same as the previous three attempts): the binaries for both failing boards are byte-identical to pre-MR in the touched code, so **no change on this branch can possibly affect those jobs**.
+
+### Failure classifications (carried over — same root causes as prior attempts)
+
+- **`opi_pc`:** `pexpect.exceptions.TIMEOUT` before `test_000_version`; runner itself tagged `Lab failure: Marking connection bad`. Hardware/serial/power lab flake on Orange Pi PC.
+- **`efi-aarch64`:** transient console timeout / `OSError: [Errno 5] Input/output error` on the spawn pty during/after `u-boot-test-reset`, after 34 tests had already passed. QEMU/pty launcher flake at a reset boundary.
+
+### Actions taken
+
+- `git checkout cherry-e202eca183b` — ✅
+- Re-read `cmd/meminfo.c` and confirmed `#ifdef CONFIG_CMD_MEMSIZE` gating — ✅
+- Re-checked both failing jobs' defconfigs — ✅
+- **No files edited.**
+- **No build run** (no code change to build).
+- **No `cherry-e202eca183b-v2` branch created.**
+- **No push performed.**
+
+Per the task rule — *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"* — the correct action is to retry the two failed jobs on GitLab.
+
+---
+
+### Suggested reply to post on the MR
+
+> This is the **fourth** time these same two jobs have been flagged. Attempts 1, 2, and 3 all reached the same conclusion and nothing has changed on the branch or in the failure signatures since.
+>
+> - **`opi_pc`** — labgrid timed out waiting for the prompt before `test_000_version` could run; the runner itself tagged the run `Lab failure: Marking connection bad`. Hardware/serial/power lab flake.
+> - **`efi-aarch64`** — transient pty / console failure (`OSError: [Errno 5]` / console timeout) at a `u-boot-test-reset` boundary, after 34 tests had already passed. QEMU/pty launcher flake, not a logic failure.
+>
+> The MR only adds the optional `CMD_MEMSIZE` command. Its entire implementation in `cmd/meminfo.c` is wrapped in `#ifdef CONFIG_CMD_MEMSIZE`, and that option is `default n`, depends on `CMD_MEMINFO`, and is not enabled by either `orangepi_pc_defconfig` (which doesn't even enable `CMD_MEMINFO`) or `efi-arm_app64_defconfig`. The binaries for both failing jobs are therefore byte-identical to pre-MR.
+>
+> No code change is warranted. No `-v2` push is being made. Please retry the two failed jobs, or mark them as flaky in CI.
+
+### Summary
+
+- **Responsible commit:** none — failures are infrastructure/lab, not code.
+- **Change made:** none.
+- **Branch created:** none (no `cherry-e202eca183b-v2`).
+- **Push performed:** none.
+- **Recommended action:** retry both failed jobs; consider marking the repeatedly-flaky `opi_pc` and `efi-aarch64` QEMU distro boot as known-flaky in CI so this loop can terminate.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-e202eca183b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Diagnosis — No Code Changes Made (attempt 4, retry-limit reached)
+
+The review comment from pickman is itself a terminal notice: **"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."** The bot is no longer retrying automatically and is escalating to a human. This is not a new code-review request — there is no actionable code comment to address. Attempts 1, 2, and 3 all correctly classified the two flagged jobs as infrastructure/lab flakes, and nothing on the branch has changed since.
+
+### Re-verification performed
+
+- `git checkout cherry-e202eca183b` — branch HEAD is `7919d70ca4b` (pickman history record); the 4 memsize commits are intact.
+- `cmd/meminfo.c`: new code remains wrapped in `#ifdef CONFIG_CMD_MEMSIZE`.
+- `configs/orangepi_pc_defconfig`: grep for `CMD_MEMSIZE|CMD_MEMINFO` → **no matches**. Neither option is enabled; the command isn't even compiled.
+- `configs/efi-arm_app64_defconfig`: `CONFIG_CMD_MEMINFO=y` and `CONFIG_CMD_MEMINFO_MAP=y` are set, but **`CONFIG_CMD_MEMSIZE` is not**. The new code path is preprocessed out.
+
+The binaries for both failing boards are therefore byte-identical to pre-MR in the touched code. It is physically impossible for this MR to affect either job.
+
+### Failure classifications (unchanged across all four attempts)
+
+- **`opi_pc`** — labgrid `pexpect.exceptions.TIMEOUT` awaiting the prompt before `test_000_version` could start; runner itself tagged the run `Lab failure: Marking connection bad`. Orange Pi PC hardware/serial/power lab flake.
+- **`efi-aarch64`** — transient pty failure (`OSError: [Errno 5] Input/output error` / console timeout) at a `u-boot-test-reset` boundary, after 34 tests had already passed. QEMU/pty launcher flake.
+
+### Actions taken
+
+- Checked out `cherry-e202eca183b`.
+- Re-verified the `#ifdef CONFIG_CMD_MEMSIZE` gating and the two failing jobs' defconfigs.
+- **No files edited.**
+- **No build run** — there is no code change to build.
+- **No `cherry-e202eca183b-v2` branch created.**
+- **No push performed.**
+
+Per the task rule — *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"* — no action is taken on this branch. The "manual intervention required" message should be addressed by a human maintainer in one of two ways, neither of which is a code change on this branch:
+
+1. Retry the two failed jobs on GitLab one more time, or
+2. Mark `opi_pc` and the `efi-aarch64` distro test as known-flaky in CI so this loop terminates.
+
+---
+
+### Suggested reply to post on the MR
+
+> pickman has reached its 3-attempt retry limit and escalated to manual intervention. The underlying diagnosis has been identical across all four attempts and nothing on the branch has changed:
+>
+> - **`opi_pc`** — labgrid timed out awaiting the prompt before `test_000_version` could start; the runner itself tagged the run `Lab failure: Marking connection bad`. Orange Pi PC hardware/serial/power lab flake.
+> - **`efi-aarch64`** — transient pty / console failure at a `u-boot-test-reset` boundary, after 34 tests had already passed. QEMU/pty launcher flake, not a logic failure.
+>
+> The MR only adds the optional `CMD_MEMSIZE` command. Its implementation in `cmd/meminfo.c` is entirely wrapped in `#ifdef CONFIG_CMD_MEMSIZE`, and that option is `default n` and depends on `CMD_MEMINFO`. `orangepi_pc_defconfig` enables neither (the command isn't even compiled). `efi-arm_app64_defconfig` enables `CMD_MEMINFO` but not `CMD_MEMSIZE`, so the new code path is preprocessed out. The binaries for both failing boards are byte-identical to pre-MR in the touched areas.
+>
+> No code change is warranted and no `-v2` push is being made. Requesting that a maintainer either retry the two failed jobs one more time or mark `opi_pc` and the `efi-aarch64` distro test as known-flaky in CI so this retry loop can terminate.
+
+### Summary
+
+- **Responsible commit:** none — failures are infrastructure/lab, not code.
+- **Change made:** none.
+- **Branch created:** none (no `cherry-e202eca183b-v2`).
+- **Push performed:** none.
+- **Recommended next step:** human maintainer retry, or flag the two jobs as known-flaky in CI.
+
+---
+
