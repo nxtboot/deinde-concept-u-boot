@@ -67386,3 +67386,70 @@ Per the task rule — *"If the failure is an infrastructure or transient issue (
 
 ---
 
+### Pipeline fix: 2026-04-24 (attempt 3)
+
+Branch: cherry-e202eca183b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+The failures are the same infrastructure/lab issues flagged in the previous two attempts. Let me verify my diagnosis against the actual code on this branch.
+
+## Diagnosis — No Code Changes Made (attempt 3)
+
+This is the third time the pickman bot has flagged these same two jobs (`efi-aarch64`, `opi_pc`). Attempts 1 and 2 correctly classified them as infrastructure/lab flakes, and the attempt-3 logs confirm the same pattern. No code change is warranted.
+
+### Branch scope (verified, unchanged)
+
+The only functional commits on this branch are the three memsize commits (`79f6ec1e6ed`, `81976983c4b`, `856c7e9ac72`) plus the merge commit. Verified on disk:
+
+- `cmd/meminfo.c` lines 103–130: **all new code is gated by `#ifdef CONFIG_CMD_MEMSIZE`**.
+- `configs/orangepi_pc_defconfig`: **no match** for `CMD_MEMSIZE` or `CMD_MEMINFO` — the command isn't even compiled into the opi_pc binary.
+- `configs/efi-arm_app64_defconfig`: enables `CMD_MEMINFO=y` but **not** `CMD_MEMSIZE` — the new code path is `#ifdef`'d out.
+
+For both failing boards the binary is byte-identical to pre-MR in the touched areas.
+
+### Job `opi_pc` (451296) — lab hardware failure
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+! _pytest.outcomes.Exit: Lab failure: Marking connection bad - no other tests will run !
+============================ 1 deselected in 40.37s ============================
+```
+
+Labgrid's `ubootdriver._await_prompt()` timed out before `test_000_version` could start. The runner itself tagged the run `Lab failure: Marking connection bad`. Pure serial/power/cable lab flake on the Orange Pi PC board — same signature as attempts 1 and 2.
+
+### Job `efi-aarch64` (451328) — transient distro-boot timeout
+
+```
+test/py/tests/test_distro.py:150: in test_distro_arm_app_efi
+    ubman.expect(['Ubuntu 25.04 qarm ttyAMA0'])
+test/py/console_base.py:842: in expect
+    raise Timeout()
+E   console_base.Timeout
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 340.32s (0:05:40) ======
+```
+
+34 tests passed and 671 skipped before a single distro test timed out waiting for the Ubuntu 25.04 kernel console banner. This is a QEMU/distro boot-speed flake — the test boots a full Ubuntu image and waits for the kernel to come up on `ttyAMA0`. Not a logic failure; no U-Boot code path on the branch is exercised by this wait.
+
+### Actions taken
+
+- `git checkout cherry-e202eca183b` (confirmed branch unchanged from previous attempts).
+- Re-verified `#ifdef CONFIG_CMD_MEMSIZE` gating in `cmd/meminfo.c` (lines 103–130).
+- Re-verified the two failing jobs' defconfigs do not enable `CMD_MEMSIZE`.
+- **No files edited. No build run (no code change to build). No `cherry-e202eca183b-fix3` branch created. No push performed.**
+
+Per the task rule — *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"* — the correct action is to retry the two failed jobs on GitLab.
+
+### Summary
+
+- **Responsible commit:** none — failures are infrastructure/lab, not code.
+- **Root cause:** (1) labgrid timeout awaiting serial prompt on Orange Pi PC hardware; (2) console timeout awaiting Ubuntu kernel banner in QEMU distro test.
+- **Change made:** none.
+- **Branch created:** none — per the no-changes rule, `cherry-e202eca183b-fix3` was not created.
+
+---
+
