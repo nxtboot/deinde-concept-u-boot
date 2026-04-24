@@ -67630,3 +67630,154 @@ All 9 commits are present. Let me run the final build test:
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-86f90e2a5fb
+
+Commits:
+- 86f90e2a5fb net: Stop conflating return value with file size in net_loop()
+- a28db0f1ccd net: tftp: Fix TFTP Transfer Size data type
+- 337f50bad2a net: lwip: tftp: add support of tsize option to client
+- 68a8f0f1f34 net: lwip: wget: rework the '#' printing
+- 09245e094fe net: dwc_eth_qos: Use lower_32_bits() for tail pointers
+- 34c1ab534c6 net: dwc_eth_qos: Initialize the transmit tail pointer in eqos_start()
+- 8beb70f2309 net: dwc_eth_qos: Start DMA and MAC after tail pointers are initialized
+- 5fdc297b893 net: dwc_eth_qos: Define more of the unused MAC regs
+- 1db453a5fee net: airoha_eth: fix mdio binding to switch device
+- caa62920e32 net: airoha_eth: use proper switch node for en7523 case
+- 3aabc0dae03 net: mdio-mt7531-mmio: fix switch regs initialization
+- 0b46bdcf39d configs: an7581: add mii/mdio support
+- d8bb4a44a27 arm: dts: an7581: add mdio child node to switch node
+- d58e12688e1 configs: en7523: add mii/mdio support
+- b7984ef41a4 arm: dts: en7523: add mdio child node to switch node
+- e7b83e64d6b net: phy: mscc: allow RGMII with internal delay for the VSC8541
+- d395ea73dc2 Merge tag 'net-20260209' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+Let me resolve the conflicts. First, check other affected files:
+
+Stats match. Build test:
+
+All stats match. Now build test and merge commit:
+
+All 17 commits present. Final build test:
+
+## Final Status
+
+**Branch:** `cherry-86f90e2a5fb` (based on `ci/master`)
+
+**Result:** All 17 commits successfully cherry-picked.
+
+**Build result:** OK (sandbox build passes, no warnings or errors).
+
+**Fix-ups made:**
+
+1. **`86f90e2a5fb` — net: Stop conflating return value with file size in net_loop()**
+   - Conflict in `cmd/net.c`: `ci/master` had already refactored `netboot_common()` to call `netboot_run_()` wrapper (which returns 0/1) instead of `net_loop()` directly.
+   - Resolution: applied the intent of the commit by switching to `rcode = netboot_run_(...)` (naming the return value as rcode, not size), testing `if (rcode < 0)`, and then explicitly fetching `size = net_boot_file_size;` to preserve the downstream `if (size == 0)` check.
+   - A one-line Fix-up note was appended to the commit message describing the adaptation.
+
+2. **`d395ea73dc2` — Merge tag 'net-20260209' (merge commit)**
+   - Same conflict zone in `cmd/net.c` (the merge brings in the already-applied change from commit #1). Resolution: kept the already-applied HEAD version.
+   - After resolution the commit was empty; preserved via `git commit --allow-empty` as instructed, with original message plus cherry-pick reference.
+
+**Concerning deltas:** None significant.
+- Commit #1 stats: `cmd/net.c` changed 11/11 lines (vs 9/9 original) — within tolerance, caused by the wrapper adaptation.
+- All other commits have stats identical to the originals.
+
+**Untracked files** (unrelated, pre-existing): `arch/sandbox/dts/hwids.dtsi`, `test/fdt_overlay/hwids.dtsi`.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-24 (attempt 1)
+
+Branch: cherry-86f90e2a5fb
+
+Failed jobs:
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures have the same signature: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`, followed by `Lab failure: Marking connection bad - no other tests will run`. Let me verify this is indeed infrastructure-only and not related to the MR's changes.
+
+## Report: Infrastructure failure — no code changes required
+
+### Diagnosis
+
+Both failing jobs share the identical failure signature:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The timeout happens in `labgrid/driver/ubootdriver.py::_await_prompt` immediately after flashing — **before any test runs, and before U-Boot networking code is even reached**. Labgrid explicitly classifies this as a lab failure (`Lab failure: Marking connection bad`), i.e. the target did not produce its U-Boot prompt on the serial console within 15 seconds of the flash/reset.
+
+### Why this is not caused by the MR
+
+The MR touches only networking code:
+- `net/tftp.c`, `net/lwip/tftp.c`, `net/lwip/wget.c`, `net/net.c`, `cmd/net.c`
+- `drivers/net/dwc_eth_qos.*`, `drivers/net/airoha_eth.c`, `drivers/net/mdio-mt7531-mmio.c`, `drivers/net/phy/mscc.c`
+- `configs/an7581_evb_defconfig`, `configs/en7523_evb_defconfig` and their `-u-boot.dtsi` overlays
+
+Neither `chromebook_jerry` (RK3288) nor `orangepi_pc` (Allwinner H3) uses any of the affected drivers, config symbols, or DT overlays — confirmed by grepping their defconfigs for `DWC_ETH_QOS`, `airoha_eth`, `mt7531`, `en7523`, `an7581`, `VSC8541`, `NET_LWIP`, `TFTP` (zero matches).
+
+Additionally, the failures occur at serial-prompt-wait time, long before any network stack activity, so TFTP/lwip refactors cannot be implicated.
+
+Both jobs ran on the same runner (`ellesmere-lab`) and both failed the same way, which is consistent with a transient lab-side issue (serial/USB hub/power/em100 flasher, etc.).
+
+### Action taken
+
+None. No fix branch was created because there is no code defect to fix. Per the instructions ("If the failure is an infrastructure or transient issue... report this without making changes"), leaving the branch untouched. A retry of the jobs is the appropriate response.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-86f90e2a5fb
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) jerry, opi_pc.
+
+Both failures have the same signature:...
+
+### Conversation log
+Let me look at this situation carefully. The review comment is the previous pipeline fix attempt 1 report, which concluded the failures were infrastructure-only with no code changes needed.
+
+I need to analyze this situation carefully. The "review comment" being requested to address is actually the bot's own report from **attempt 1**, which concluded that the pipeline failures (`jerry`, `opi_pc`) were **infrastructure-only** failures (`pexpect.exceptions.TIMEOUT`... `Lab failure: Marking connection bad`) that occurred **before** any U-Boot networking code was executed.
+
+Let me verify nothing has changed that would alter that diagnosis:
+
+The MR's commits only touch networking-related code (as confirmed by the commit list), none of which affects `chromebook_jerry` (RK3288) or `orangepi_pc` (Allwinner H3). The attempt 1 diagnosis was correct and complete — the failures happen at serial-prompt-wait before any networking code runs.
+
+Since the "review comment" is literally the bot's own attempt 1 report (which concluded no code changes are needed), and nothing has changed about the code or the diagnosis, there is nothing actionable to address in code.
+
+## Report
+
+### What was done
+**Nothing.** No code changes were made, no new local branch was created, no push was performed.
+
+### Why
+The review comment being flagged (`[project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1)...`) is the **bot's own report from attempt 1**, which diagnosed the `jerry`/`opi_pc` failures as infrastructure-only (`pexpect.exceptions.TIMEOUT` during `_await_prompt`, labgrid-classified as `Lab failure: Marking connection bad`) and explicitly stated no code changes were required.
+
+Re-verifying the diagnosis against the current tree:
+- The 17 MR commits touch only `net/*`, `drivers/net/*`, `cmd/net.c`, and the `an7581_evb`/`en7523_evb` configs + DT overlays.
+- Neither `chromebook_jerry` (RK3288) nor `orangepi_pc` (Allwinner H3) uses any of these drivers/configs.
+- The failure timing (serial-prompt-wait, before U-Boot networking is exercised) makes a code-level causation impossible.
+
+The diagnosis from attempt 1 remains correct. Pushing a no-op `-v2` branch would just re-run the pipeline against unchanged code — if the lab-side issue has cleared, retrying the two failed jobs in the existing pipeline would accomplish the same thing without a force push.
+
+### Suggested reply to post to the MR
+
+> Attempt 2: No code changes made.
+>
+> The flagged comment is the attempt-1 diagnosis itself, which concluded the `jerry`/`opi_pc` failures were infrastructure-only (`Lab failure: Marking connection bad` during `_await_prompt`, before any U-Boot networking runs). That diagnosis stands: the MR's 17 commits touch only `net/*`, `drivers/net/{dwc_eth_qos,airoha_eth,mdio-mt7531-mmio,phy/mscc}`, `cmd/net.c`, and the `an7581_evb`/`en7523_evb` configs & DT overlays — none of which are used by RK3288 (`jerry`) or Allwinner H3 (`opi_pc`). A code-level fix is not possible because there is no code-level defect. The appropriate remedy is a lab-side retry of the two jobs.
+
+### Unclear/non-actionable note
+This task appears to be a self-referential loop: the pickman workflow picked up the bot's own attempt-1 report as a "review comment to address." If attempts are expected to converge on "no action needed" in cases like this, the workflow may need a short-circuit for bot-authored comments whose own content says "no action taken." Flagging for the user's awareness — not making any code change in response.
+
+---
+
