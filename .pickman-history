@@ -66532,44 +66532,75 @@ The branch is ready for pushing. Not merged into any other branch.
 
 ## 2026-04-23: us/next
 
-Branch: cherry-fbde868ba4a
+Branch: cherry-b5213bbfdcb
 
 Commits:
-- fbde868ba4a pci: skip unnecessary PCIe scanning
-- d7817a20c9e phy: ti: j721e-wiz: Enable reference clock output in cmn_refclk_<p/m>
-- 88e3fcef7ff phy: cadence-torrent: Add support to drive refclk out
-- 3d07fe1390b pci: pcie_cdns_ti: Add support to provide refclk to PCIe connector
-- 795b1fd2dff pci: pcie_cdns_ti: Add PCIe support for J722S SoC
-- 0cf1b43dbbb configs: j722s_evm_a53_defconfig: enable PCIe
-- 5f0b0ad7224 Merge patch series "arm: k3: j722s: add PCIe support"
+- b5213bbfdcb video: menu "TrueType Fonts" depends on TrueType enabled
+- beec6834544 efi_loader: fix use after free in efi_exit() with tcg2
+- 32b835ccf3d efi_loader: Improve EFI variable load message
+- e94d0bd8276 efi_loader: fix efi_debug_image_info_normal allocation
+- 4a7f6e5bc1c doc: Remove pip from requirements.txt
+- 4c289099b35 doc: develop/process: Clarify name usage in the Signed-off-by line
+- 36e321b487a efi_net: add missing EFI_CALL in efi_net
+- 3382d75f7a6 arch: arm: dts: k3: refactor common nodes to k3-*-r5.dtsi
+- 2e6b5185bd5 configs: microchip_mpfs_generic: fix boot failure
+- 02ffe4a0c9d gunzip: Fix len parameter in function signature
+- f2c704c0e8a cmd: unzip: Use map_sysmem() with buffers in the gzwrite command
+- 3a76ba66ecb cmd: zip: Use map_sysmem() with buffers in the zip command
+- 109e378e9ba cmd: zip: Add missing unmap_sysmem() for buffers in the unzip command
+- a54d613baf7 CI: Update to using grub-2.14 for our tests
+- e5e75ea8c7b Merge tag 'efi-2026-04-rc2' of https://source.denx.de/u-boot/custodians/u-boot-efi
 
 ### Conversation log
-Build passes. Continue with next commit.
+First cherry-pick failed. Let me check if these commits are already applied to ci/master before aborting.
+
+The commits aren't already applied. Let me restart the cherry-pick and resolve conflicts.
+
+I need permission to edit files. Let me wait for permission or try a different approach.
+
+Conflict resolved. Let me continue the cherry-pick.
+
+Build passes. Moving on to next commit.
 
 Now the merge commit:
 
-All 7 commits are present. Now run final build.
+All 15 commits present. Run final build test:
 
-All 7 commits cherry-picked successfully. Final status:
+## Cherry-pick Summary
 
-**Build result:** OK (sandbox build passes)
+**Branch:** `cherry-b5213bbfdcb` (based on `ci/master`)
 
-**Cherry-picked commits (in order):**
-1. `505d24fec39` - pci: skip unnecessary PCIe scanning
-2. `4ae9646ae41` - phy: ti: j721e-wiz: Enable reference clock output in cmn_refclk_<p/m>
-3. `a72a37e1e67` - phy: cadence-torrent: Add support to drive refclk out
-4. `7918be80d0a` - pci: pcie_cdns_ti: Add support to provide refclk to PCIe connector
-5. `c76fb17e384` - pci: pcie_cdns_ti: Add PCIe support for J722S SoC
-6. `dd67c0a3ccb` - configs: j722s_evm_a53_defconfig: enable PCIe
-7. `5ceee07ffa9` - Merge patch series "arm: k3: j722s: add PCIe support"
+**Build result:** OK - sandbox builds cleanly.
 
-**Fix-ups made:**
-- Commit #6 (`dd67c0a3ccb`): Conflict in `configs/j722s_evm_a53_defconfig` — `CONFIG_SPL_MAX_SIZE=0x58000` already existed in ci/master at the same location where `CONFIG_PCI=y` was being added. Resolved by keeping both lines (SPL_MAX_SIZE first, then CONFIG_PCI). Noted in amended commit message.
-- Commit #7 (`5ceee07ffa9`): Merge commit — same defconfig conflict was re-encountered during the merge. Resolution left the file identical to the previous commit, so the merge became empty. Committed with `--allow-empty` to preserve the merge history. Noted in amended commit message.
+**All 15 commits successfully cherry-picked:**
 
-**Concerning deltas:** None. All non-merge commits show identical file stats to their originals.
+```
+1597886845a Merge tag 'efi-2026-04-rc2' (empty merge, preserved)
+f78e5c72c67 CI: Update to using grub-2.14 for our tests
+ac14816c446 cmd: zip: Add missing unmap_sysmem()
+1567664e2dc cmd: zip: Use map_sysmem() in zip
+c6292607000 cmd: unzip: Use map_sysmem() in gzwrite
+1644822e187 gunzip: Fix len parameter
+ee26a8b954d configs: microchip_mpfs_generic: fix boot failure
+1b0c404037e arch: arm: dts: k3: refactor common nodes
+767de9a185f efi_net: add missing EFI_CALL
+d8bf796975b doc: develop/process: Clarify name usage
+92cfa006581 doc: Remove pip from requirements.txt
+45527abcb51 efi_loader: fix efi_debug_image_info_normal
+ced71aca823 efi_loader: Improve EFI variable load message
+d861701f3ab efi_loader: fix use after free in efi_exit() with tcg2
+a1cc16b0ef0 video: menu "TrueType Fonts" depends on TrueType enabled
+```
 
-The branch `cherry-fbde868ba4a` is ready for pushing.
+**Fix-ups required:**
+
+1. **b5213bbfdcb** (`video: menu "TrueType Fonts"...`): Conflict in `drivers/video/Kconfig` because ci/master has additional local TrueType configs (CONSOLE_TRUETYPE_GLYPH_BUF, CONSOLE_TRUETYPE_SCRATCH, CONSOLE_TRUETYPE_SCRATCH_SIZE, VIDEO_GLYPH_STATS). Resolved by placing the new `source "drivers/video/fonts/Kconfig"` and `endif` after these local configs, and dropped the now-redundant `depends on CONSOLE_TRUETYPE` from them (and from CONSOLE_TRUETYPE_DEJAVU in fonts/Kconfig) for consistency with the original commit's intent. Note appended to commit message.
+
+2. **3382d75f7a6** (`arch: arm: dts: k3: refactor...`): Modify/delete conflict on `arch/arm/dts/k3-am62d2-r5-evm.dts` (file doesn't exist in ci/master since `Add initial support for AM62D2-EVM` was never merged). Removed the modifications to that file and the new `k3-am62d2-r5.dtsi` since nothing references it. Stats: 25 files / 692 insertions / 1231 deletions vs original 27 files / 768 insertions / 1302 deletions (~7-10% diff, within tolerance). Note appended to commit message.
+
+**Concerning deltas:** None — all other commits matched the original stats exactly.
+
+The branch is ready for pushing.
 
 ---
 
