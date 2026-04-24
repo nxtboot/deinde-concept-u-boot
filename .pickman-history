@@ -67138,3 +67138,48 @@ Branch `cherry-24338c81ec2` is ready for pushing.
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-e202eca183b
+
+Commits:
+- e202eca183b cmd: mem: add command for getting ram size for use in scripts
+- 8acc8a65464 test: cmd: add test for memsize
+- b4842032d54 doc: cmd: add usage doc for memsize
+- b887a1c1a11 Merge patch series "Add command for getting ramsize in scripts"
+
+### Conversation log
+Deltas match. Let me build test.
+
+Build ok. Next commit:
+
+Matches. Build test:
+
+Now the merge commit:
+
+All 4 commits are present. Final build:
+
+## Cherry-pick Summary
+
+All 4 commits successfully cherry-picked onto branch `cherry-e202eca183b` from `ci/master`:
+
+| Original Hash | New Hash | Subject |
+|---|---|---|
+| e202eca183b | 79f6ec1e6ed | cmd: mem: add command for getting ram size for use in scripts |
+| 8acc8a65464 | 81976983c4b | test: cmd: add test for memsize |
+| b4842032d54 | 856c7e9ac72 | doc: cmd: add usage doc for memsize |
+| b887a1c1a11 | 0549b9e36ff | Merge patch series "Add command for getting ramsize in scripts" (empty) |
+
+### Build Result
+**OK** — `buildman -L --board sandbox` passed after every cherry-pick and on final verification. No warnings or errors.
+
+### Deltas
+All three non-merge commits match their originals exactly (same files, same line counts: +32, +21, +43). No concerning deltas.
+
+### Fix-ups
+- The merge commit `b887a1c1a11` became empty (as expected — its content was already included in the three predecessor commits). It was committed with `--allow-empty` to preserve history, and the commit message was amended to include the `(cherry picked from commit b887a1c1a1110582d178faad4397a0197938454e)` tag.
+
+The branch `cherry-e202eca183b` is ready for pushing.
+
+---
+
