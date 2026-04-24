@@ -66765,3 +66765,55 @@ There is no actionable change requested:
 
 ---
 
+### Pipeline fix: 2026-04-23 (attempt 2)
+
+Branch: cherry-1a79ea5b36e
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures look like lab/hardware timeouts. Let me verify by checking out the branch and confirming the scope of changes.
+
+Both failures are lab/hardware infrastructure timeouts, not caused by the branch. Let me confirm my analysis and report.
+
+## Analysis: Infrastructure/Transient Lab Failures — No Code Fix Needed
+
+### Root cause
+
+Both failing jobs are **labgrid `pexpect.exceptions.TIMEOUT` waiting for the U-Boot login prompt** — hardware/lab infrastructure failures, not code failures. Both jobs ran on the same runner (`ellesmere-lab VKe9dm-Af`).
+
+**`rockpro64` (Rockchip RK3399)** — The board powered up and ran TPL/SPL, but SPL could not read the FIT from MMC:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+```
+That's an MMC/SD-card hardware read error (-EIO / -ETIMEDOUT on the card), retried twice and then labgrid gave up after 10 s waiting for a login prompt. Classic SD-card flakiness in the lab, not something any patch in this series could cause.
+
+**`opi_pc` (Allwinner H3 sunxi)** — No U-Boot console output at all; labgrid simply timed out after 15 s waiting for login during `test_000_version`. Same symptom as attempt 1.
+
+### Why this is not caused by the branch
+
+The 29 commits on `cherry-1a79ea5b36e` are **exclusively NXP i.MX work** (imx8mm/mn/mp/mq, imx8ulp, imx93, imx94, imx95, Toradex SMARC-iMX95, Variscite iMX8MN VAR-SOM, GE VPD, `fec_mxc` for i.MX91).
+
+Verification:
+```
+$ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|rockchip|rockpro|rk3399|rk33'
+NO MATCHES
+```
+Zero files touched under `sunxi`, `allwinner`, `orangepi`, `arch/arm/mach-sunxi`, `rockchip`, `rk3399`, or any other path that could affect these two boards. There is no plausible mechanism by which NXP/i.MX patches would cause a Rockchip SD-card read to fail or a sunxi board to miss its login prompt.
+
+### Conclusion
+
+Per the task instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+Both jobs hitting the **same runner** with hardware-level failures (one MMC read error, one total boot silence) on boards the branch never touches is textbook transient lab infrastructure failure.
+
+**No code changes applied. No `cherry-1a79ea5b36e-fix2` branch created.** Recommend retrying both jobs.
+
+---
+
