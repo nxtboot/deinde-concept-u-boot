@@ -67083,3 +67083,58 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-24338c81ec2
+
+Commits:
+- 24338c81ec2 arm: dts: k3-binman: Use configs for ATF/OPTEE addresses
+- 27f105fbbda arm: dts: k3-am625-binman: Configure firewall for ATF/OPTEE
+- 0cee13fe86b arm: dts: k3-am625-phycore-binman: Configure firewall for ATF/OPTEE
+- 13c54cf588d arm: dts: k3-am625-verdin-binman: Configure Firewall for ATF/OPTEE
+- eaaec18f7a1 arm: dts: k3-am62p-binman: Configure firewall for ATF/OPTEE
+- 0c3a6f748c9 arm: dts: k3-am62p5-verdin-binman: Configure firewall for ATF/OPTEE
+- cb238a6b66a arm: dts: k3-am62a-binman: Configure firewall for ATF/OPTEE
+- 3c6c2f3f5c2 arm: dts: k3-am62a-phycore-binman: Configure firewall for ATF/OPTEE
+- 31d5d1b378b arm: dts: k3-am64x-binman: Configure firewall for ATF/OPTEE
+- 64daef1ada4 arm: dts: k3-am642-phycore-binman: Configure firewall for ATF/OPTEE
+- 2ffab9da914 Merge patch series "Firewall ATF and OP-TEE memory regions in Sitara"
+
+### Conversation log
+All 11 commits are present. Now final build test.
+
+## Final Status Report
+
+**All 11 commits successfully cherry-picked** onto branch `cherry-24338c81ec2` (based on `ci/master`).
+
+### Build Result
+**OK** — sandbox build passed with no warnings/errors at every step (11 intermediate builds + final build).
+
+### Commits Applied (in order)
+```
+db601255315 arm: dts: k3-binman: Use configs for ATF/OPTEE addresses
+ee6164fb552 arm: dts: k3-am625-binman: Configure firewall for ATF/OPTEE
+853309bcf9b arm: dts: k3-am625-phycore-binman: Configure firewall for ATF/OPTEE
+b65bfd1a1a4 arm: dts: k3-am625-verdin-binman: Configure Firewall for ATF/OPTEE
+ce7adedb70f arm: dts: k3-am62p-binman: Configure firewall for ATF/OPTEE
+6dff3660aa6 arm: dts: k3-am62p5-verdin-binman: Configure firewall for ATF/OPTEE
+3f2d7c4ed85 arm: dts: k3-am62a-binman: Configure firewall for ATF/OPTEE
+2d663fe2e01 arm: dts: k3-am62a-phycore-binman: Configure firewall for ATF/OPTEE
+077c14044ff arm: dts: k3-am64x-binman: Configure firewall for ATF/OPTEE
+0cf42213fee arm: dts: k3-am642-phycore-binman: Configure firewall for ATF/OPTEE
+9351349a4e2 Merge patch series "Firewall ATF and OP-TEE memory regions in Sitara"
+```
+
+### Fix-ups
+None required. All 10 regular commits applied with identical file/line stats to the originals. Several had `Auto-merging` notes from cherry-pick's merge logic (k3-am625-sk-binman.dtsi, k3-am625-phycore-som-binman.dtsi, etc.) but no conflicts arose.
+
+### Concerning Deltas
+None. Every cherry-picked commit matched the original in both files changed and line counts (0% deviation).
+
+### Merge Commit
+The merge commit `2ffab9da914` became empty after cherry-pick (parent `0cf42213fee` contained all the content already). As instructed, committed with `--allow-empty` to preserve the merge history record.
+
+Branch `cherry-24338c81ec2` is ready for pushing.
+
+---
+
