@@ -67579,3 +67579,54 @@ Per the task rule — *"If the failure is an infrastructure or transient issue (
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-1bc75c26524
+
+Commits:
+- 1bc75c26524 arm: at91: move atmel_serial.h to include/dm/platform_data
+- 757a7cbb3e3 dm: platform_data: atmel_serial: fix build warning on 64-bit platforms
+- a155dbc9f2b serial: atmel-usart: include arch specific headers only for AT91
+- 52be03bdf71 serial: atmel-usart: add support for skiping debug UART init
+- 1690228bac4 mtd: nand: raw: atmel: Access device ofnode through functions
+- c9d1fe757df MAINTAINERS: Add entry for SMBIOS
+- da6d5a93dda arm: mach-k3: r5: j721e: clk-data: manually set the main_pll3 frequency
+- c7fbe028ee5 arm: dts: k3-am62d-evm-binman: Fix device tree reference
+- 42b3ee7fa52 Merge tag 'u-boot-at91-2026.04-a' of https://source.denx.de/u-boot/custodians/u-boot-at91
+
+### Conversation log
+Stats match. Let me now run the build test and continue with the next commits.
+
+The file doesn't exist in ci/master - the commit depends on 14dfa6b8618 ("Add initial support for AM62D2-EVM") which isn't in ci/master. Let me abort and create an empty commit.
+
+Now let me cherry-pick the final merge commit:
+
+Now let's verify all 9 commits are present and run the final build test:
+
+All 9 commits are present. Let me run the final build test:
+
+## Final Status Report
+
+**Build Result:** OK - sandbox builds successfully after all cherry-picks
+
+**Commits on branch `cherry-1bc75c26524`:**
+1. `2810766b362` - arm: at91: move atmel_serial.h to include/dm/platform_data ✓
+2. `5f901005ad5` - dm: platform_data: atmel_serial: fix build warning on 64-bit platforms ✓
+3. `45a525943d4` - serial: atmel-usart: include arch specific headers only for AT91 ✓
+4. `84a044bae6a` - serial: atmel-usart: add support for skiping debug UART init ✓
+5. `0b978cbb292` - mtd: nand: raw: atmel: Access device ofnode through functions ✓
+6. `e703a446b5a` - MAINTAINERS: Add entry for SMBIOS ✓
+7. `57f45a934bf` - arm: mach-k3: r5: j721e: clk-data: manually set the main_pll3 frequency ✓
+8. `df00b2569d7` - arm: dts: k3-am62d-evm-binman: Fix device tree reference **[FAILED - empty commit]**
+9. `d8fd513f5e8` - Merge tag 'u-boot-at91-2026.04-a' (empty merge commit)
+
+**Fix-ups:**
+- Commit 8 (`c7fbe028ee5`): The target file `arch/arm/dts/k3-am62d-evm-binman.dtsi` does not exist in ci/master because the prerequisite commit `14dfa6b8618` ("Add initial support for AM62D2-EVM") is not present. Created an empty `[FAILED]` commit to preserve the sequence.
+- Commit 9 (merge): Cherry-pick produced an empty result (all content already applied). Created an empty commit with the merge tag message and `(cherry picked from commit ...)` reference preserved.
+
+**Concerning Deltas:** None - all stats matched the originals for successful cherry-picks.
+
+**All other cherry-picks** (commits 1-7) applied cleanly with identical file/line stats matching their originals. Branch is ready for pushing.
+
+---
+
