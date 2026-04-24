@@ -67691,3 +67691,47 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-24 (attempt 1)
+
+Branch: cherry-86f90e2a5fb
+
+Failed jobs:
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both failures have the same signature: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`, followed by `Lab failure: Marking connection bad - no other tests will run`. Let me verify this is indeed infrastructure-only and not related to the MR's changes.
+
+## Report: Infrastructure failure — no code changes required
+
+### Diagnosis
+
+Both failing jobs share the identical failure signature:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The timeout happens in `labgrid/driver/ubootdriver.py::_await_prompt` immediately after flashing — **before any test runs, and before U-Boot networking code is even reached**. Labgrid explicitly classifies this as a lab failure (`Lab failure: Marking connection bad`), i.e. the target did not produce its U-Boot prompt on the serial console within 15 seconds of the flash/reset.
+
+### Why this is not caused by the MR
+
+The MR touches only networking code:
+- `net/tftp.c`, `net/lwip/tftp.c`, `net/lwip/wget.c`, `net/net.c`, `cmd/net.c`
+- `drivers/net/dwc_eth_qos.*`, `drivers/net/airoha_eth.c`, `drivers/net/mdio-mt7531-mmio.c`, `drivers/net/phy/mscc.c`
+- `configs/an7581_evb_defconfig`, `configs/en7523_evb_defconfig` and their `-u-boot.dtsi` overlays
+
+Neither `chromebook_jerry` (RK3288) nor `orangepi_pc` (Allwinner H3) uses any of the affected drivers, config symbols, or DT overlays — confirmed by grepping their defconfigs for `DWC_ETH_QOS`, `airoha_eth`, `mt7531`, `en7523`, `an7581`, `VSC8541`, `NET_LWIP`, `TFTP` (zero matches).
+
+Additionally, the failures occur at serial-prompt-wait time, long before any network stack activity, so TFTP/lwip refactors cannot be implicated.
+
+Both jobs ran on the same runner (`ellesmere-lab`) and both failed the same way, which is consistent with a transient lab-side issue (serial/USB hub/power/em100 flasher, etc.).
+
+### Action taken
+
+None. No fix branch was created because there is no code defect to fix. Per the instructions ("If the failure is an infrastructure or transient issue... report this without making changes"), leaving the branch untouched. A retry of the jobs is the appropriate response.
+
+---
+
