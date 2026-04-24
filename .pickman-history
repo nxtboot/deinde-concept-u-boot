@@ -66986,3 +66986,65 @@ Creating a `-v4` branch and force-pushing with zero code delta would be a no-op 
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Analysis: Retry Limit Reached — Loop Terminating, No Further Action
+
+The review comment flagged for this turn is a **terminal status signal**, not an actionable review request:
+
+> **[project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required.**
+
+This is the pickman pipeline-fix system itself declaring that the automatic retry loop has exhausted its 3-attempt budget (attempts 1, 2, and 3 are all recorded in the MR history above) and is explicitly handing off to a human. It is **not** asking for another automated cherry-pick fix — it is asking the human operator to look at the MR.
+
+### Branch state verified
+
+- **Branch tip:** `a52729502ed pickman: Record review handling for cherry-1a79ea5b36e`
+- **Commits vs `ci/master`:** 36 (29 cherry-picks + 7 pickman tracking commits accumulated across the 3 fix attempts and 3 review-response turns)
+- **Content scope (29 cherry-picks):** exclusively NXP/i.MX work — no sunxi, no Allwinner, no OrangePi, no Rockchip, no `tools/binman/`
+
+### What the 3 prior attempts established (full trail is in the MR description above)
+
+| Attempt | Failing jobs | Verdict |
+|---|---|---|
+| 1 | `opi_pc` | Transient lab timeout on Allwinner H3 sunxi — branch touches no sunxi code |
+| 2 | `opi_pc`, `rockpro64` | Lab/hardware failures on sunxi H3 and Rockchip RK3399 (SD-card read error) — branch touches neither platform |
+| 3 | `opi_pc`, `Check make qcheck` | `opi_pc` transient again; `qcheck` is a **pre-existing** binman coverage-gate failure reproduced on a clean `ci/master` worktree, caused by missing CI bintools in files this branch does not touch |
+
+### Why I am not creating a `-v4` branch or force-pushing
+
+1. **The loop itself has declared it is terminating** — the "retry limit reached, manual intervention required" message is the system's stop signal. Treating it as "address this comment" and kicking another cycle would ignore the explicit terminal state and create an eighth pickman tracking commit for no reason.
+2. **Nothing actionable has been requested.** There is no code issue, no reviewer feedback, no failing job caused by this branch's changes. Each of the three prior failing jobs was either a transient lab/hardware event or a pre-existing master-level issue, as documented in attempts 1–3.
+3. **Force-pushing with zero code delta is not a fix** — it would be a disguised pipeline retrigger that further muddies history.
+
+### Suggested MR reply (for the human operator)
+
+> The pipeline-fix loop has hit its 3-attempt retry limit and requires manual intervention. Summary of what the automated attempts found:
+>
+> - **Attempt 1** — `opi_pc`: transient labgrid 15 s `pexpect.TIMEOUT` waiting for U-Boot login on an Allwinner H3 sunxi board, before any test ran. Branch touches no sunxi code.
+> - **Attempt 2** — `opi_pc` (same symptom) plus `rockpro64`: SPL `mmc_load_image_raw_sector` SD-card read error (`Card did not respond to voltage select! : -110`) on RK3399. Both jobs ran on the same lab runner. Branch touches neither sunxi nor Rockchip.
+> - **Attempt 3** — `opi_pc` (same) plus `Check make qcheck`: binman coverage gate at 99 % vs required 100 %. **Reproduced on clean `ci/master`** — it is pre-existing and unrelated to this MR. The three low-coverage files (`tools/binman/btool/cst.py`, `tools/binman/etype/nxp_imx8mcst.py`, `tools/binman/etype/nxp_imx8mimage.py`) are not modified by this branch.
+>
+> `git diff --name-only ci/master..HEAD` confirms the 29 cherry-picks touch zero files under `sunxi`, `allwinner`, `orangepi`, `rockchip`, `rk3399`, or `tools/binman/`.
+>
+> Recommended manual actions:
+> 1. Retry `opi_pc` (and `rockpro64` if it reappears) — transient lab failures.
+> 2. File a separate master-level issue for the binman coverage gate; add bintool mocks or exempt the NXP CST bintool path from the 100 % gate.
+>
+> No code change is warranted on this branch.
+
+### Actions taken this turn
+
+- Checked out `cherry-1a79ea5b36e` (step 1) ✓
+- Read and understood the terminal retry-limit message (step 2) ✓
+- **Steps 3–6 deliberately skipped**: no actionable comment, no code change, no `-v4` branch, no force-push. The loop's own stop signal must not be treated as a new fix request.
+
+**No further automated iterations should be scheduled.** Control is returned to the human operator as the retry-limit message instructs.
+
+---
+
