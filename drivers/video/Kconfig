@@ -219,9 +219,10 @@ config CONSOLE_TRUETYPE
 	  With this option you can adjust the text size and use a variety of
 	  fonts. Note that this is noticeably slower than with normal console.
 
+if CONSOLE_TRUETYPE
+
 config CONSOLE_TRUETYPE_SIZE
 	int "TrueType font size"
-	depends on CONSOLE_TRUETYPE
 	default 18
 	help
 	  This sets the font size for the console. The size is measured in
@@ -234,7 +235,6 @@ config CONSOLE_TRUETYPE_SIZE
 
 config CONSOLE_TRUETYPE_MAX_METRICS
 	int "TrueType maximum number of font / size combinations"
-	depends on CONSOLE_TRUETYPE
 	default 10 if EXPO
 	default 1
 	help
@@ -249,7 +249,6 @@ config CONSOLE_TRUETYPE_MAX_METRICS
 
 config CONSOLE_TRUETYPE_GLYPH_BUF
 	bool "TrueType glyph buffer to reduce malloc traffic"
-	depends on CONSOLE_TRUETYPE
 	default y
 	help
 	  Enable a pre-allocated buffer for rendering glyph bitmaps. This
@@ -261,7 +260,6 @@ config CONSOLE_TRUETYPE_GLYPH_BUF
 
 config CONSOLE_TRUETYPE_SCRATCH
 	bool "TrueType scratch buffer to reduce malloc traffic"
-	depends on CONSOLE_TRUETYPE
 	default y
 	help
 	  Enable a pre-allocated scratch buffer for internal TrueType
@@ -284,13 +282,16 @@ config CONSOLE_TRUETYPE_SCRATCH_SIZE
 
 config VIDEO_GLYPH_STATS
 	bool "Track glyph rendering statistics"
-	depends on CONSOLE_TRUETYPE
 	default y if SANDBOX
 	help
 	  Track cumulative glyph rendering statistics in global_data, so they
 	  persist across video device rebinds. This allows seeing the total
 	  count of glyphs rendered using the pre-allocated buffer vs. malloc
 	  fallback. Use 'font info' to view the statistics.
+
+source "drivers/video/fonts/Kconfig"
+
+endif
 
 config SYS_WHITE_ON_BLACK
 	bool "Display console as white on a black background"
@@ -361,8 +362,6 @@ config PANEL_HX8238D
 	  integrates the power circuit.
 	  It can drive a maximum 960x240 dot graphics on a-TFT panel
 	  displays in 16M colors with dithering.
-
-source "drivers/video/fonts/Kconfig"
 
 config VIDEO_BOCHS
 	bool "Enable Bochs video emulation for QEMU"
