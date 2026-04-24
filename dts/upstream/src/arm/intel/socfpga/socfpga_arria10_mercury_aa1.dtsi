@@ -147,7 +147,6 @@
 &qspi {
 	status = "okay";
 	flash0: flash@0 {
-		u-boot,dm-pre-reloc;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
