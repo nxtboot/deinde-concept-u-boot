@@ -66817,3 +66817,45 @@ Both jobs hitting the **same runner** with hardware-level failures (one MMC read
 
 ---
 
+### Review: 2026-04-23
+
+Branch: cherry-1a79ea5b36e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rockpro64, opi_pc.
+
+Both failures look like lab/hardwa...
+
+### Conversation log
+## Analysis: No Action Required (Attempt 3)
+
+The review comment flagged for this turn is — for the third consecutive iteration — the bot's own prior pipeline-fix status report (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) being echoed back as a "comment to address." The text is the verbatim conclusion from attempt 2, which already determined no code fix is warranted.
+
+### Verification on the current branch
+
+- **Branch tip:** `07b5215f8f9 pickman: Record pipeline fix for cherry-1a79ea5b36e` (marker from attempt 2)
+- **Commit count:** 33 on top of `ci/master` (29 cherry-picks + 4 pickman tracking commits accumulated over the three review turns)
+- **File-scope check:**
+  ```
+  $ git diff --name-only ci/master..HEAD | grep -iE 'sunxi|allwinner|orangepi|opi|h3|rockchip|rockpro|rk3399|rk33'
+  → NO MATCHES
+  ```
+  Zero files touched under any sunxi, Allwinner, OrangePi, Rockchip, RK3399, or related paths. The 29 cherry-picks are exclusively NXP/i.MX work.
+
+### Why nothing was changed or pushed
+
+The `opi_pc` and `rockpro64` failures were diagnosed in attempts 1 and 2 as lab infrastructure failures:
+
+- `opi_pc`: labgrid `pexpect.exceptions.TIMEOUT` after 15 s waiting for login during `test_000_version` — the board never produced console output.
+- `rockpro64`: SPL `mmc_load_image_raw_sector` read error (`Card did not respond to voltage select! : -110`) — an SD-card/MMC hardware-level I/O failure, followed by labgrid timeout.
+
+Both ran on the same runner (`ellesmere-lab VKe9dm-Af`) with hardware-level failures on boards the branch never touches. Per the task instructions: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+Creating a `-v3` branch and force-pushing with zero code delta would be a no-op pipeline retrigger masquerading as a fix, muddy the history, and misrepresent the situation. **No code changes, no new local branch, no push.**
+
+### Suggested MR reply
+
+> The flagged review comment is the bot's own attempt-2 status report. That analysis already concluded both failures (`opi_pc` sunxi H3 and `rockpro64` RK3399) are lab/hardware infrastructure failures on the same runner — an SD-card read error and a labgrid login timeout on boards this branch never touches. Re-verified on the current branch: `git diff --name-only ci/master..HEAD` returns zero matches for any sunxi/Allwinner/OrangePi/Rockchip/RK3399 paths. All 29 commits are NXP/i.MX work. No code change is warranted. Please retry the `opi_pc` and `rockpro64` jobs.
+
+---
+
