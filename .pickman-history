@@ -66530,3 +66530,46 @@ The branch is ready for pushing. Not merged into any other branch.
 
 ---
 
+## 2026-04-23: us/next
+
+Branch: cherry-fbde868ba4a
+
+Commits:
+- fbde868ba4a pci: skip unnecessary PCIe scanning
+- d7817a20c9e phy: ti: j721e-wiz: Enable reference clock output in cmn_refclk_<p/m>
+- 88e3fcef7ff phy: cadence-torrent: Add support to drive refclk out
+- 3d07fe1390b pci: pcie_cdns_ti: Add support to provide refclk to PCIe connector
+- 795b1fd2dff pci: pcie_cdns_ti: Add PCIe support for J722S SoC
+- 0cf1b43dbbb configs: j722s_evm_a53_defconfig: enable PCIe
+- 5f0b0ad7224 Merge patch series "arm: k3: j722s: add PCIe support"
+
+### Conversation log
+Build passes. Continue with next commit.
+
+Now the merge commit:
+
+All 7 commits are present. Now run final build.
+
+All 7 commits cherry-picked successfully. Final status:
+
+**Build result:** OK (sandbox build passes)
+
+**Cherry-picked commits (in order):**
+1. `505d24fec39` - pci: skip unnecessary PCIe scanning
+2. `4ae9646ae41` - phy: ti: j721e-wiz: Enable reference clock output in cmn_refclk_<p/m>
+3. `a72a37e1e67` - phy: cadence-torrent: Add support to drive refclk out
+4. `7918be80d0a` - pci: pcie_cdns_ti: Add support to provide refclk to PCIe connector
+5. `c76fb17e384` - pci: pcie_cdns_ti: Add PCIe support for J722S SoC
+6. `dd67c0a3ccb` - configs: j722s_evm_a53_defconfig: enable PCIe
+7. `5ceee07ffa9` - Merge patch series "arm: k3: j722s: add PCIe support"
+
+**Fix-ups made:**
+- Commit #6 (`dd67c0a3ccb`): Conflict in `configs/j722s_evm_a53_defconfig` — `CONFIG_SPL_MAX_SIZE=0x58000` already existed in ci/master at the same location where `CONFIG_PCI=y` was being added. Resolved by keeping both lines (SPL_MAX_SIZE first, then CONFIG_PCI). Noted in amended commit message.
+- Commit #7 (`5ceee07ffa9`): Merge commit — same defconfig conflict was re-encountered during the merge. Resolution left the file identical to the previous commit, so the merge became empty. Committed with `--allow-empty` to preserve the merge history. Noted in amended commit message.
+
+**Concerning deltas:** None. All non-merge commits show identical file stats to their originals.
+
+The branch `cherry-fbde868ba4a` is ready for pushing.
+
+---
+
