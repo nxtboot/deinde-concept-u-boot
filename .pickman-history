@@ -68198,3 +68198,59 @@ All 11 commits cherry-picked successfully onto branch `cherry-63d52576e7b`. Bran
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-63d52576e7b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rockpro64, opi_pc.
+
+Both failures show "Lab failure: M...
+
+### Conversation log
+The "review comment" to address is actually the previous bot's own report explaining that the rockpro64 and opi_pc failures were infrastructure issues (lab hardware faults, not code regressions). Since no code changes are needed (the diagnosis was correct — the cherry-picks only touch disk parsing and EFI loader files, none of which affect TPL/SPL or early boot on the failing boards), the task is to verify the build still passes and push a fresh branch to retrigger the pipeline.
+
+Let me verify the build first:
+
+Build is clean. Now create the -v2 branch and push:
+
+The remote already has the same commits — the push was a no-op. Since this is a "review handling" task (not a code-change task), let me check if pickman has a way to record this and trigger CI:
+
+The work is essentially complete. The "review comment" is actually the bot's own previous diagnosis report from the pipeline fix attempt, which correctly identified the rockpro64 and opi_pc failures as lab infrastructure issues (not code regressions). No code changes are needed.
+
+Summary of what I did:
+
+1. **Checked out `cherry-63d52576e7b`** — already in expected state with all 11 cherry-picks plus the `pickman: Record cherry-pick` commit at HEAD `a3b0a0b3eb3`.
+
+2. **Reviewed the comment** — the comment is the prior bot's own "Pipeline fix (attempt 1)" report. Its diagnosis still holds:
+   - Both failures showed labgrid's `Lab failure: Marking connection bad` marker (hardware-fault signal).
+   - rockpro64 failed in Rockchip TPL/SPL reading the SD card — long before any cherry-picked file is even linked.
+   - opi_pc produced no console output at all — pure connectivity/power fault.
+   - The 11 cherry-picks only touch `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, `lib/efi_selftest/*`. None of these are compiled into TPL/SPL on those boards.
+
+3. **No code changes made** — there is nothing actionable in the comment to fix.
+
+4. **Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean, no warnings.
+
+5. **Created local branch `cherry-63d52576e7b-v2`** as an exact copy of `cherry-63d52576e7b` (HEAD `a3b0a0b3eb3`).
+
+6. **Pushed to remote:** `./tools/pickman/pickman push-branch cherry-63d52576e7b -r ci -f` → `Everything up-to-date` (remote already at `a3b0a0b3eb3`; force-push is a no-op because no code changed).
+
+### Suggested reply to the MR
+
+> Reviewed the previous pipeline-fix report. The diagnosis stands — the `rockpro64` and `opi_pc` failures both ended with labgrid's `Lab failure: Marking connection bad - no other tests will run` marker, which is the lab's hardware-fault signal:
+>
+> - **rockpro64** failed in the Rockchip TPL/SPL stage with `Card did not respond to voltage select! : -110` / `mmc_load_image_raw_sector: mmc block read error`. That's well before any of the cherry-picked code is even linked into a binary.
+> - **opi_pc** produced no console output at all (15s timeout waiting for login). No U-Boot stage ever ran.
+>
+> The 11 cherry-picked commits only touch `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, and `lib/efi_selftest/*`. None of those compile into the early Rockchip boot chain or affect sunxi's pre-console path, so they cannot have caused either failure.
+>
+> No code changes made; sandbox build remains clean. Recommend re-running the pipeline. If the same two boards fail again with the same `Lab failure` marker and no commit-relevant output, the fixtures need physical attention (SD card on rockpro64, power/serial on opi_pc).
+
+### Notes / caveats
+
+- Because the diagnosis is "no code change needed," the force-push reported `Everything up-to-date`. The MR branch on the remote is unchanged, and **GitLab will not auto-trigger a new pipeline**. To re-run CI for this MR, the pipeline must be retriggered manually (e.g. via the GitLab UI's "Retry" / "New pipeline" button on the MR), or a trivial push (e.g. an empty commit) would be required — I did not add an empty/no-op commit because the task instructions only authorize code changes for actionable comments.
+- The previously created `cherry-63d52576e7b-fix1` branch from attempt 1 still exists locally as an exact copy as well.
+
+---
+
