@@ -68145,3 +68145,56 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-63d52576e7b
+
+Commits:
+- 63d52576e7b disk: part_dos: Move header to the main include directory
+- 1450a4555d0 disk: part_dos: Align dos_partition_t with struct partition
+- aee9b7d0e0b disk: part_efi: Remove redundant struct partition definition
+- d25c5d657ec disk: part_dos: Document part_get_info_extended() helper function
+- 5e802558886 disk: part_dos: Refactor to allow retrieving raw MBR partition data
+- 16b8554cd4f efi_loader: disk: Extend EFI_PARTITION_INFO_PROTOCOL to support MBR
+- fd2d9868761 efi_selftest: Enhance MBR test for PARTITION_INFO_PROTOCOL
+- 38ea3bfc650 efi_var_file: refactor to move buffer functions
+- 4fcc248c943 efi_var: Unify read/write access helper function
+- e54fbb2f901 efi_loader: Setup default location for UEFI Variables storing
+- ed6e970569b Merge tag 'efi-next-2026-02-15' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
+
+### Conversation log
+Now let me verify the delta and run the build test.
+
+Deltas match. Now let me run the build test.
+
+Good, deltas match. Continue.
+
+All 11 commits present. Now run final build test.
+
+## Cherry-pick Summary
+
+All 11 commits cherry-picked successfully onto branch `cherry-63d52576e7b`. Branch left ready for pushing.
+
+**Final commits on branch (newest first):**
+- `c7ba007e228` Merge tag 'efi-next-2026-02-15' (empty merge)
+- `4deeb61409c` efi_loader: Setup default location for UEFI Variables storing
+- `acb26024dc9` efi_var: Unify read/write access helper function
+- `45a046c36e1` efi_var_file: refactor to move buffer functions
+- `fc881b16f5e` efi_selftest: Enhance MBR test for PARTITION_INFO_PROTOCOL
+- `72e7d9b85b1` efi_loader: disk: Extend EFI_PARTITION_INFO_PROTOCOL to support MBR
+- `14f360a34ba` disk: part_dos: Refactor to allow retrieving raw MBR partition data
+- `24336881323` disk: part_dos: Document part_get_info_extended() helper function
+- `7922b39d8b5` disk: part_efi: Remove redundant struct partition definition
+- `2c45ec13b72` disk: part_dos: Align dos_partition_t with struct partition
+- `e4eb3825f61` disk: part_dos: Move header to the main include directory
+
+**Build result:** OK — final `buildman -L --board sandbox` completed cleanly (1/1 built, no warnings or errors).
+
+**Fix-ups applied:**
+1. **`63d52576e7b` (Move header):** Conflict in `disk/part_dos.c` — the include change had to be merged with an existing local `#include <linux/err.h>` line. Both kept; the converted `<part_dos.h>` form retained. Note added to commit message.
+2. **`ed6e970569b` (Merge tag):** Same conflict reappeared in the merge cherry-pick. Resolved to keep current tree state. Resulted in empty commit (expected — all changes already applied via individual picks). Committed with `--allow-empty`; note added to commit message.
+
+**Concerning deltas:** None. All non-merge commits had file lists and line counts identical to their originals.
+
+---
+
