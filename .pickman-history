@@ -68667,3 +68667,46 @@ None. Per the "infrastructure or transient issue" instruction, no commit was ame
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-090536b8e6f
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly. Let me verify the result and compare deltas.
+
+Delta is identical (299 files, 150/+845). Now build verification.
+
+Build OK (`done=0`, no `err` file). Now create v3 branch and push.
+
+## Report — MR !967 rebased onto latest `ci/master`
+
+### What was done
+
+1. **Fetched** `ci/master` (now at `39445e759be`, 4 commits ahead of the previous merge base `4d83e91e5af`).
+2. **Rebased** `cherry-090536b8e6f` onto `ci/master` with `git rebase --keep-empty ci/master` — **zero conflicts**, all 17 commits replayed cleanly (15 cherry-picks + 2 pickman history records, including the empty merge commit `c9ed691eb7c`).
+3. **Verified delta is identical**:
+   - Pre-rebase  vs base: `299 files changed, 150 insertions(+), 845 deletions(-)`
+   - Post-rebase vs `ci/master`: `299 files changed, 150 insertions(+), 845 deletions(-)`
+4. **Built sandbox locally**: `buildman -L --board sandbox -w -o /tmp/pickman` → `done=0`, no `err` file. Pass.
+5. **Created local branch** `cherry-090536b8e6f-v3` at the rebased HEAD (`d476d2ee9bc`). (`-v2` was already used by the previous attempt.)
+6. **Force-pushed** to remote `ci/cherry-090536b8e6f`: `0b1688a4e6f → d476d2ee9bc`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Branches / commits
+
+- Local: `cherry-090536b8e6f` and `cherry-090536b8e6f-v3` both at `d476d2ee9bc`
+- Remote: `ci/cherry-090536b8e6f` updated to `d476d2ee9bc`
+- New base: `ci/master` at `39445e759be`
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`39445e759be`).
+>
+> All 17 commits (15 cherry-picks + 2 pickman history records, including the empty merge commit) replayed cleanly with **zero conflicts**. The cumulative delta vs the new base is byte-for-byte identical to the pre-rebase delta: `299 files changed, 150 insertions(+), 845 deletions(-)`. Local sandbox build passes (`buildman -L --board sandbox` → `done=0`, no `err`).
+>
+> Force-pushed `cherry-090536b8e6f` (`0b1688a4e6f..d476d2ee9bc`); a new pipeline will follow.
+
+---
+
