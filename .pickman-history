@@ -68254,3 +68254,67 @@ Summary of what I did:
 
 ---
 
+### Pipeline fix: 2026-04-25 (attempt 2)
+
+Branch: cherry-63d52576e7b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me verify the build is clean and check more details on the failures:
+
+Build was silent (success). Let me verify the current state and check if the efi-aarch64 test_distro_arm_app_extlinux failure could possibly be related to the cherry-picks:
+
+Let me do a final analysis of both failures to confirm they're infrastructure issues:
+
+Both failures are infrastructure issues. Let me create the branch:
+
+## Report: Infrastructure failures — no code changes made
+
+**Diagnosis: both failures are transient lab/infrastructure faults, not code regressions.**
+
+### Evidence
+
+**opi_pc** (job 454564) — recurring lab failure, identical pattern to attempt 1:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+============================ 1 deselected in 56.30s ============================
+```
+The opi_pc board produced no console output at all. labgrid's `Lab failure: Marking connection bad` is the lab's hardware-fault marker. No U-Boot stage ever emitted a byte — power/serial connectivity issue on the fixture.
+
+**efi-aarch64** (job 454596) — serial-pty I/O error after a successful test body:
+```
+test/py/tests/test_distro.py:100: in test_distro_arm_app_extlinux
+    ubman.restart_uboot()
+...
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 160.92s ======
+```
+The test body itself completed — it had already passed all `expect()` calls including `Welcome to Ubuntu 25.04!` (test_distro.py lines 91–98). The failure was at line 100, the very last statement: `ubman.restart_uboot()`. That issues `u-boot-test-reset` and then re-reads the serial fd; the read returned `EIO` because the serial pty was closed underneath pexpect (QEMU process tear-down race or USB-serial blip on the host). 34 other tests passed in the same job.
+
+### Why this can't be the cherry-picks' fault
+
+The 11 cherry-picked commits only touch:
+- `disk/part_dos.c`, `disk/part_efi.c`
+- `include/part*.h`, `include/efi_variable.h`
+- `lib/efi_loader/efi_disk.c`, `lib/efi_loader/efi_var_*.c`
+- `lib/efi_selftest/efi_selftest_block_device.c`
+
+For **opi_pc** (sunxi orangepi_pc): none of these compile into the early sunxi boot path — and there was no console output at all, so no U-Boot code (cherry-picked or otherwise) ran.
+
+For **efi-aarch64**: the test ran the full extlinux→Linux→Ubuntu 25.04 boot to completion successfully. The failure was on serial-fd read after `u-boot-test-reset` was issued — a host-side OS I/O error, not a U-Boot bug. If the cherry-picked `EFI_PARTITION_INFO_PROTOCOL`/MBR or extlinux code were broken, the boot itself would have failed before line 91, not on the post-test reset at line 100. And 34 other tests in the same job passed.
+
+### Action
+
+- No code changes made.
+- Sandbox build verified clean: `um build sandbox` produced no output (success).
+- Branch `cherry-63d52576e7b-fix2` created as an exact copy of `cherry-63d52576e7b` (HEAD `acdd1b4014e`) so the caller's automation has the expected handle.
+- Recommend re-running the pipeline. If `opi_pc` fails again with the same `Lab failure: Marking connection bad` and no console output, the fixture needs physical attention (power/serial). If `efi-aarch64` fails again with `OSError: [Errno 5]` only on `restart_uboot()` after successful boot, the QEMU/host-side reset path or runner is the issue, not U-Boot.
+
+---
+
