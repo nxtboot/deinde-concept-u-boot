@@ -67781,3 +67781,96 @@ This task appears to be a self-referential loop: the pickman workflow picked up 
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-b3087d21f02
+
+Commits:
+- b3087d21f02 env: Provide another work-around for unquoting fdtfile
+- 03d2d5fc003 board: sifive: unmatched: set fdtfile with unquoted variable.
+- cff4387c813 Merge patch series "env: Provide another work-around for unquoting fdtfile"
+
+### Conversation log
+Delta matches. Now let's run the build test.
+
+Build passes. Now cherry-pick the second commit.
+
+Delta matches. Build test:
+
+Build passes. Now cherry-pick the merge commit.
+
+All 3 commits are present. Cherry-pick complete.
+
+## Final Status Report
+
+**Branch:** `cherry-b3087d21f02` (based on `ci/master`)
+
+**Cherry-picked commits (in order):**
+1. `541d6136fff` - env: Provide another work-around for unquoting fdtfile (from `b3087d21f02`)
+2. `6b3f387c3ed` - board: sifive: unmatched: set fdtfile with unquoted variable. (from `03d2d5fc003`)
+3. `8c8f823d998` - Merge patch series "env: Provide another work-around for unquoting fdtfile" (from `cff4387c813`, empty as expected for merge commit)
+
+**Build result:** OK — sandbox build passed after each cherry-pick and at the end.
+
+**Deltas:**
+- Commit 1: identical to original (1 file, 1 insertion in Makefile)
+- Commit 2: identical to original (1 file, 1 insertion + 1 deletion in board/sifive/unmatched/unmatched.env)
+- Commit 3: empty merge commit (expected, since both child commits are already applied)
+
+**Fix-ups:** None required. The merge commit needed `--allow-empty` (auto-detected and committed empty as instructed).
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-b3087d21f02
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rockpro64, opi_pc.
+
+Let me check the branch and the ac...
+
+### Conversation log
+The review comment is a record of pipeline fix attempt 1, where I previously diagnosed the failures as infrastructure/lab issues. Let me verify nothing has changed and the branch is still sound, then determine if any action is needed.
+
+Let me check the actual MR status to see what the latest pipeline looks like before deciding if there's anything actionable.
+
+I've reviewed the situation. The review comment is a record of pipeline fix attempt 1, which previously diagnosed the failures (rockpro64, opi_pc) as infrastructure/lab issues. Re-checking the situation:
+
+**Cherry-picked commit scope (unchanged from attempt 1):**
+- `541d6136fff` — Adds `-DDEFAULT_FDT_FILE=...` only to the `quiet_cmd_gen_envp` rule in the top-level `Makefile`. This affects **only** boards with `.env` files that reference `DEFAULT_FDT_FILE`.
+- `6b3f387c3ed` — Touches only `board/sifive/unmatched/unmatched.env` (SiFive Unmatched).
+- `8c8f823d998` — Empty merge commit.
+
+**Verification that the failing boards are unaffected:**
+- `rockpro64` — has no `.env` file at all (`board/pine64/rockpro64_rk3399/` contains only `MAINTAINERS` and `Kconfig`).
+- `opi_pc` — uses `board/sunxi/sunxi.env`, which contains no reference to `DEFAULT_FDT_FILE` or `CONFIG_DEFAULT_FDT_FILE` (grep confirms no match).
+
+The cherry-picked changes therefore cannot affect either failing board's binaries or runtime behaviour.
+
+**Failure signatures (from attempt 1 analysis):**
+- rockpro64 (job 452884): MMC controller errors → "Lab failure: Marking connection bad"
+- opi_pc (job 452861): zero serial output → "pexpect TIMEOUT" → "Lab failure: Marking connection bad"
+
+Both bear the canonical labgrid infrastructure-failure markers on boards completely untouched by this MR.
+
+## Decision: No Code Fix — No Push
+
+Per the instructions ("If a comment is unclear or cannot be addressed, note this in your report"), and since the failures are lab/infrastructure issues with no code change available to fix them, I am **not** creating `cherry-b3087d21f02-v2` and **not** force-pushing. There is nothing actionable in the source tree to change.
+
+## Suggested MR Reply
+
+> Pipeline fix (attempt 2): re-confirming attempt 1 — no code fix required.
+>
+> The cherry-picked changes affect only (a) the env preprocessor invocation in the top-level `Makefile` (only impacts boards whose `.env` references `DEFAULT_FDT_FILE`) and (b) `board/sifive/unmatched/unmatched.env`. Neither rockpro64 (RK3399, no `.env` file) nor opi_pc (sunxi, `.env` does not reference `DEFAULT_FDT_FILE`) can be impacted by these commits.
+>
+> Both failing jobs show the canonical "Lab failure: Marking connection bad" signature: rockpro64 fails MMC card-presence/voltage-select on the physical lab board after TPL/SPL DDR init succeeds; opi_pc produces zero serial output before a 15s `pexpect` timeout. These are lab/infrastructure faults, not regressions.
+>
+> Recommendation: retry the failing jobs once the lab boards recover. Branch `cherry-b3087d21f02` is unchanged.
+
+---
+
