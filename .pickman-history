@@ -68145,3 +68145,241 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-63d52576e7b
+
+Commits:
+- 63d52576e7b disk: part_dos: Move header to the main include directory
+- 1450a4555d0 disk: part_dos: Align dos_partition_t with struct partition
+- aee9b7d0e0b disk: part_efi: Remove redundant struct partition definition
+- d25c5d657ec disk: part_dos: Document part_get_info_extended() helper function
+- 5e802558886 disk: part_dos: Refactor to allow retrieving raw MBR partition data
+- 16b8554cd4f efi_loader: disk: Extend EFI_PARTITION_INFO_PROTOCOL to support MBR
+- fd2d9868761 efi_selftest: Enhance MBR test for PARTITION_INFO_PROTOCOL
+- 38ea3bfc650 efi_var_file: refactor to move buffer functions
+- 4fcc248c943 efi_var: Unify read/write access helper function
+- e54fbb2f901 efi_loader: Setup default location for UEFI Variables storing
+- ed6e970569b Merge tag 'efi-next-2026-02-15' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
+
+### Conversation log
+Now let me verify the delta and run the build test.
+
+Deltas match. Now let me run the build test.
+
+Good, deltas match. Continue.
+
+All 11 commits present. Now run final build test.
+
+## Cherry-pick Summary
+
+All 11 commits cherry-picked successfully onto branch `cherry-63d52576e7b`. Branch left ready for pushing.
+
+**Final commits on branch (newest first):**
+- `c7ba007e228` Merge tag 'efi-next-2026-02-15' (empty merge)
+- `4deeb61409c` efi_loader: Setup default location for UEFI Variables storing
+- `acb26024dc9` efi_var: Unify read/write access helper function
+- `45a046c36e1` efi_var_file: refactor to move buffer functions
+- `fc881b16f5e` efi_selftest: Enhance MBR test for PARTITION_INFO_PROTOCOL
+- `72e7d9b85b1` efi_loader: disk: Extend EFI_PARTITION_INFO_PROTOCOL to support MBR
+- `14f360a34ba` disk: part_dos: Refactor to allow retrieving raw MBR partition data
+- `24336881323` disk: part_dos: Document part_get_info_extended() helper function
+- `7922b39d8b5` disk: part_efi: Remove redundant struct partition definition
+- `2c45ec13b72` disk: part_dos: Align dos_partition_t with struct partition
+- `e4eb3825f61` disk: part_dos: Move header to the main include directory
+
+**Build result:** OK — final `buildman -L --board sandbox` completed cleanly (1/1 built, no warnings or errors).
+
+**Fix-ups applied:**
+1. **`63d52576e7b` (Move header):** Conflict in `disk/part_dos.c` — the include change had to be merged with an existing local `#include <linux/err.h>` line. Both kept; the converted `<part_dos.h>` form retained. Note added to commit message.
+2. **`ed6e970569b` (Merge tag):** Same conflict reappeared in the merge cherry-pick. Resolved to keep current tree state. Resulted in empty commit (expected — all changes already applied via individual picks). Committed with `--allow-empty`; note added to commit message.
+
+**Concerning deltas:** None. All non-merge commits had file lists and line counts identical to their originals.
+
+---
+
+### Review: 2026-04-25
+
+Branch: cherry-63d52576e7b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rockpro64, opi_pc.
+
+Both failures show "Lab failure: M...
+
+### Conversation log
+The "review comment" to address is actually the previous bot's own report explaining that the rockpro64 and opi_pc failures were infrastructure issues (lab hardware faults, not code regressions). Since no code changes are needed (the diagnosis was correct — the cherry-picks only touch disk parsing and EFI loader files, none of which affect TPL/SPL or early boot on the failing boards), the task is to verify the build still passes and push a fresh branch to retrigger the pipeline.
+
+Let me verify the build first:
+
+Build is clean. Now create the -v2 branch and push:
+
+The remote already has the same commits — the push was a no-op. Since this is a "review handling" task (not a code-change task), let me check if pickman has a way to record this and trigger CI:
+
+The work is essentially complete. The "review comment" is actually the bot's own previous diagnosis report from the pipeline fix attempt, which correctly identified the rockpro64 and opi_pc failures as lab infrastructure issues (not code regressions). No code changes are needed.
+
+Summary of what I did:
+
+1. **Checked out `cherry-63d52576e7b`** — already in expected state with all 11 cherry-picks plus the `pickman: Record cherry-pick` commit at HEAD `a3b0a0b3eb3`.
+
+2. **Reviewed the comment** — the comment is the prior bot's own "Pipeline fix (attempt 1)" report. Its diagnosis still holds:
+   - Both failures showed labgrid's `Lab failure: Marking connection bad` marker (hardware-fault signal).
+   - rockpro64 failed in Rockchip TPL/SPL reading the SD card — long before any cherry-picked file is even linked.
+   - opi_pc produced no console output at all — pure connectivity/power fault.
+   - The 11 cherry-picks only touch `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, `lib/efi_selftest/*`. None of these are compiled into TPL/SPL on those boards.
+
+3. **No code changes made** — there is nothing actionable in the comment to fix.
+
+4. **Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean, no warnings.
+
+5. **Created local branch `cherry-63d52576e7b-v2`** as an exact copy of `cherry-63d52576e7b` (HEAD `a3b0a0b3eb3`).
+
+6. **Pushed to remote:** `./tools/pickman/pickman push-branch cherry-63d52576e7b -r ci -f` → `Everything up-to-date` (remote already at `a3b0a0b3eb3`; force-push is a no-op because no code changed).
+
+### Suggested reply to the MR
+
+> Reviewed the previous pipeline-fix report. The diagnosis stands — the `rockpro64` and `opi_pc` failures both ended with labgrid's `Lab failure: Marking connection bad - no other tests will run` marker, which is the lab's hardware-fault signal:
+>
+> - **rockpro64** failed in the Rockchip TPL/SPL stage with `Card did not respond to voltage select! : -110` / `mmc_load_image_raw_sector: mmc block read error`. That's well before any of the cherry-picked code is even linked into a binary.
+> - **opi_pc** produced no console output at all (15s timeout waiting for login). No U-Boot stage ever ran.
+>
+> The 11 cherry-picked commits only touch `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, and `lib/efi_selftest/*`. None of those compile into the early Rockchip boot chain or affect sunxi's pre-console path, so they cannot have caused either failure.
+>
+> No code changes made; sandbox build remains clean. Recommend re-running the pipeline. If the same two boards fail again with the same `Lab failure` marker and no commit-relevant output, the fixtures need physical attention (SD card on rockpro64, power/serial on opi_pc).
+
+### Notes / caveats
+
+- Because the diagnosis is "no code change needed," the force-push reported `Everything up-to-date`. The MR branch on the remote is unchanged, and **GitLab will not auto-trigger a new pipeline**. To re-run CI for this MR, the pipeline must be retriggered manually (e.g. via the GitLab UI's "Retry" / "New pipeline" button on the MR), or a trivial push (e.g. an empty commit) would be required — I did not add an empty/no-op commit because the task instructions only authorize code changes for actionable comments.
+- The previously created `cherry-63d52576e7b-fix1` branch from attempt 1 still exists locally as an exact copy as well.
+
+---
+
+### Pipeline fix: 2026-04-25 (attempt 2)
+
+Branch: cherry-63d52576e7b
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me verify the build is clean and check more details on the failures:
+
+Build was silent (success). Let me verify the current state and check if the efi-aarch64 test_distro_arm_app_extlinux failure could possibly be related to the cherry-picks:
+
+Let me do a final analysis of both failures to confirm they're infrastructure issues:
+
+Both failures are infrastructure issues. Let me create the branch:
+
+## Report: Infrastructure failures — no code changes made
+
+**Diagnosis: both failures are transient lab/infrastructure faults, not code regressions.**
+
+### Evidence
+
+**opi_pc** (job 454564) — recurring lab failure, identical pattern to attempt 1:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+============================ 1 deselected in 56.30s ============================
+```
+The opi_pc board produced no console output at all. labgrid's `Lab failure: Marking connection bad` is the lab's hardware-fault marker. No U-Boot stage ever emitted a byte — power/serial connectivity issue on the fixture.
+
+**efi-aarch64** (job 454596) — serial-pty I/O error after a successful test body:
+```
+test/py/tests/test_distro.py:100: in test_distro_arm_app_extlinux
+    ubman.restart_uboot()
+...
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+===== 1 failed, 34 passed, 671 skipped, 3 deselected in 160.92s ======
+```
+The test body itself completed — it had already passed all `expect()` calls including `Welcome to Ubuntu 25.04!` (test_distro.py lines 91–98). The failure was at line 100, the very last statement: `ubman.restart_uboot()`. That issues `u-boot-test-reset` and then re-reads the serial fd; the read returned `EIO` because the serial pty was closed underneath pexpect (QEMU process tear-down race or USB-serial blip on the host). 34 other tests passed in the same job.
+
+### Why this can't be the cherry-picks' fault
+
+The 11 cherry-picked commits only touch:
+- `disk/part_dos.c`, `disk/part_efi.c`
+- `include/part*.h`, `include/efi_variable.h`
+- `lib/efi_loader/efi_disk.c`, `lib/efi_loader/efi_var_*.c`
+- `lib/efi_selftest/efi_selftest_block_device.c`
+
+For **opi_pc** (sunxi orangepi_pc): none of these compile into the early sunxi boot path — and there was no console output at all, so no U-Boot code (cherry-picked or otherwise) ran.
+
+For **efi-aarch64**: the test ran the full extlinux→Linux→Ubuntu 25.04 boot to completion successfully. The failure was on serial-fd read after `u-boot-test-reset` was issued — a host-side OS I/O error, not a U-Boot bug. If the cherry-picked `EFI_PARTITION_INFO_PROTOCOL`/MBR or extlinux code were broken, the boot itself would have failed before line 91, not on the post-test reset at line 100. And 34 other tests in the same job passed.
+
+### Action
+
+- No code changes made.
+- Sandbox build verified clean: `um build sandbox` produced no output (success).
+- Branch `cherry-63d52576e7b-fix2` created as an exact copy of `cherry-63d52576e7b` (HEAD `acdd1b4014e`) so the caller's automation has the expected handle.
+- Recommend re-running the pipeline. If `opi_pc` fails again with the same `Lab failure: Marking connection bad` and no console output, the fixture needs physical attention (power/serial). If `efi-aarch64` fails again with `OSError: [Errno 5]` only on `restart_uboot()` after successful boot, the QEMU/host-side reset path or runner is the issue, not U-Boot.
+
+---
+
+### Review: 2026-04-25
+
+Branch: cherry-63d52576e7b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Let me verify the build is clean...
+
+### Conversation log
+The current HEAD is `9b60ceb82bc` (pickman record for the previous pipeline fix attempt). Let me verify the build and look at the actual content of the comment to confirm there's nothing actionable.
+
+Build is clean (1/1 built, no warnings). The new `9b60ceb82bc` commit only touches `.pickman-history` — pure metadata, not source code. The "comment" to address is again the previous bot's pipeline-fix report, this time diagnosing efi-aarch64 + opi_pc failures as infrastructure issues.
+
+Let me verify the diagnosis still applies by examining what files the cherry-picks actually touch versus where the failures occurred.
+
+Confirmed: cherry-picks only touch disk-partition and EFI-loader files. No changes needed to address the comment (which is itself a previous infrastructure-failure diagnosis).
+
+Remote updated `acdd1b4014e..9b60ceb82bc` (the attempt-2 pipeline-fix record commit). Since this is a real ref update, GitLab will auto-trigger a new pipeline.
+
+## Report
+
+### What was done
+
+1. **Checked out `cherry-63d52576e7b`** — HEAD `9b60ceb82bc` (`pickman: Record pipeline fix for cherry-63d52576e7b`). The only delta vs. attempt 2 is one `.pickman-history` metadata commit; no source files changed.
+2. **Reviewed the comment** — it is the previous bot's own "Pipeline fix (attempt 2)" report, which diagnosed `efi-aarch64` and `opi_pc` failures as infrastructure issues. The diagnosis still holds.
+3. **No code changes made** — there is nothing actionable in the comment to fix.
+4. **Build verified:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean.
+5. **Local branch `cherry-63d52576e7b-v3`** created from HEAD `9b60ceb82bc`.
+6. **Force-pushed:** `acdd1b4014e..9b60ceb82bc → cherry-63d52576e7b` on remote `ci` — GitLab should auto-trigger a new pipeline.
+
+### Diagnosis (re-confirmed)
+
+The 11 cherry-picks touch exactly these files:
+```
+disk/part_dos.c, disk/part_efi.c
+include/{part.h, part_dos.h, part_efi.h, efi_variable.h}
+lib/efi_loader/{Kconfig, Makefile, efi_disk.c, efi_var_common.c,
+                efi_var_file.c, efi_variable.c}
+lib/efi_selftest/efi_selftest_block_device.c
+```
+
+Neither failure could plausibly be caused by these:
+
+- **opi_pc** (sunxi orangepi_pc): produced no console output at all (15s timeout, `Lab failure: Marking connection bad`). Hardware/connectivity fault — no U-Boot stage ran.
+- **efi-aarch64**: the test body completed successfully (boot reached `Welcome to Ubuntu 25.04!`); 34 other tests passed in the same job. Failure was `OSError: [Errno 5]` on the serial fd during the post-test `ubman.restart_uboot()` — a host-side pty teardown race, not a U-Boot defect.
+
+### Suggested MR reply
+
+> The previous "Pipeline fix (attempt 2)" diagnosis still applies — both failures were infrastructure faults, not code regressions:
+>
+> - **opi_pc** produced no console output at all (15s timeout, labgrid `Lab failure: Marking connection bad`). The fixture appears to have a recurring power/serial issue (same symptom in attempt 1).
+> - **efi-aarch64** booted successfully through extlinux to Ubuntu 25.04 and passed 34 other tests in the same job; the only failure was `OSError: [Errno 5]` on the serial fd during the post-test `restart_uboot()` — a host-side pty I/O race, not U-Boot.
+>
+> The 11 cherry-picked commits touch only `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, and `lib/efi_selftest/efi_selftest_block_device.c`. None compile into the sunxi pre-console boot path (where `opi_pc` failed) and none affect the post-test reset path (where `efi-aarch64` failed after a successful boot).
+>
+> No code changes; sandbox build remains clean. Branch force-pushed to retrigger CI. If the same boards fail again with identical infrastructure markers, the fixtures need physical attention rather than code changes.
+
+### Notes / caveats
+
+- The push was a real ref update (`acdd1b4014e..9b60ceb82bc`), not a no-op, so GitLab will auto-trigger a new pipeline this time (unlike attempt 2 where the remote was already at HEAD).
+- This is now the third consecutive infrastructure-failure attempt for this MR. If the next pipeline reports yet another non-code failure on these boards, escalating to a human maintainer to look at the lab fixtures is probably warranted rather than continuing automated retries.
+
+---
+
