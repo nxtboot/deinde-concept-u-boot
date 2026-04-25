@@ -68383,3 +68383,42 @@ Neither failure could plausibly be caused by these:
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-7080475bb7c
+
+Commits:
+- 7080475bb7c fwu-mdata: Allow multiple metadata storage drivers to be enabled
+- b3be5b4c265 Merge tag 'ab-next-13022026' of https://source.denx.de/u-boot/custodians/u-boot-tpm into next
+
+### Conversation log
+Stats match exactly. Now let's run the build test:
+
+Build passed. Now the merge commit:
+
+The merge commit cherry-pick is empty since the underlying changes were already applied via the first cherry-pick. This is expected behavior for a merge commit.
+
+All cherry-picks are done. Final summary:
+
+## Cherry-pick Results
+
+**Branch:** `cherry-7080475bb7c` (based on `ci/master`)
+
+**Commits cherry-picked:**
+1. `9d1f767152d` — fwu-mdata: Allow multiple metadata storage drivers to be enabled
+   - Original: `7080475bb7c`
+   - Stats match exactly: 1 file changed, 5 insertions(+), 7 deletions(-)
+2. `b900bbcdc6f` — Merge tag 'ab-next-13022026' (empty merge commit, preserved with `--allow-empty`)
+   - Original: `b3be5b4c265`
+   - Empty as expected — the underlying change was already applied via the first cherry-pick
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups:** None required
+
+**Concerning deltas:** None — the regular commit's stats match the original exactly; the merge commit was empty as expected since merging the upstream-only branch tip results in no new content beyond what cherry-pick #1 already applied.
+
+The branch is ready for pushing.
+
+---
+
