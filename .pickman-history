@@ -68053,3 +68053,45 @@ The push succeeded — remote updated from `b4553a3d2c6` to `431703e0943`, which
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-e8d9ad18f06
+
+Commits:
+- e8d9ad18f06 fwu: Pass bank state enum to fwu_state_machine_updates()
+- 9367b8d9339 fwu: Mark failed bank as invalid during rollback
+- 9e6b66409a3 Merge tag 'ab-next-11022026' of https://source.denx.de/u-boot/custodians/u-boot-tpm into next
+
+### Conversation log
+Stats match exactly. Now let me run the build test.
+
+Build passed. Now cherry-pick the second commit.
+
+Stats match exactly. Let me build and continue with the merge commit.
+
+The merge commit is empty as expected since both fwu commits were already cherry-picked. Now let me verify the log and run the final build.
+
+All cherry-picks completed successfully. 
+
+## Final Status Report
+
+**Branch:** `cherry-e8d9ad18f06` (based on `ci/master`)
+
+**Build result:** OK (sandbox build passes cleanly with no warnings or errors)
+
+**Commits cherry-picked (in order):**
+1. `b5caa424a8e` — fwu: Pass bank state enum to fwu_state_machine_updates()
+   - Stats match original exactly: 4 files, +44/-49 lines
+2. `ea2b4842c4c` — fwu: Mark failed bank as invalid during rollback
+   - Stats match original exactly: 1 file, +6 lines
+3. `839f9aecdff` — Merge tag 'ab-next-11022026' (empty merge commit, preserved with `--allow-empty`)
+   - Empty as expected since both content commits were already applied above
+
+**Fix-ups:** None needed. The first two cherry-picks applied cleanly with auto-merge on `lib/efi_loader/efi_capsule.c`. The merge commit was empty (expected behaviour — its content is the sum of the two prior cherry-picks) and was committed with `--allow-empty` to preserve history.
+
+**Concerning deltas:** None. Stats match original commits exactly.
+
+The branch is ready for pushing.
+
+---
+
