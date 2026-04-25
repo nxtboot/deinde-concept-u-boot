@@ -68615,3 +68615,55 @@ The branch is left ready for pushing; no merge back was performed.
 
 ---
 
+### Pipeline fix: 2026-04-25 (attempt 1)
+
+Branch: cherry-090536b8e6f
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me verify by running the full local build to confirm both failures are infrastructure-related:
+
+Both builds (`efi-arm_app64`, `orangepi_pc`, sandbox) succeed locally on this branch. Let me verify the failure pattern once more and clean up the conclusion.
+
+## Report: Both failures are infrastructure/transient — no code changes made
+
+### Diagnosis
+
+**Job `opi_pc` (455533) — lab failure (transient hardware):**
+The job got past pytest collection and entered the lab-mode reset/bootstrap step ("Bootstrapping U-Boot from dirs … Writing U-Boot using method sunxi"), then died with:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+This is the labgrid `ubootdriver._await_prompt` 15-second timeout — the OrangePi PC board did not produce a login prompt within the window. No build error, no test assertion. Classic flaky-hardware / lab connection issue.
+
+**Job `efi-aarch64` (455565) — corrupted artifact in CI build dir:**
+The job ran `scripts/build-efi -a arm -n --build-dir /home/sglass/dev/gitlab-runner/builds/8/5/u-boot/build/efi-aarch64` (a re-build inside the test step) and failed with:
+
+```
+readelf: Error: Reading 1344 bytes extends past end of file for section headers
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+```
+
+That is the `checkarmreloc` rule running `readelf -r -W u-boot` on the linked binary; the error means the section-header table sits past the file end, i.e. the `u-boot` ELF in the runner's incremental build dir was truncated (link step interrupted, disk full, or another process clobbered it). Because buildman's incremental dependency tracking sees `u-boot` as up-to-date, every subsequent test re-uses the corrupted file — which is exactly what we see (the same error appears on both reset attempts in the log). The fix is for the runner to clean its build dir; not a code issue.
+
+### Local verification on `cherry-090536b8e6f`
+
+- `um build sandbox` → OK
+- `buildman -o /tmp/pickman_efi --board efi-arm_app64 -I` → OK (`done` = 0, empty log)
+- `buildman -o /tmp/pickman --board orangepi_pc -I` → OK (`done` = 0)
+- `scripts/build-efi -a arm -n --build-dir /tmp/pickman_efi_aarch64` → OK ("Packaging efi-arm_app64", produced a clean ELF)
+
+The exact buildman invocation that failed in CI builds cleanly here against the same commits. The failure is not reproducible from the source.
+
+### Action taken
+
+None. Per the "infrastructure or transient issue" instruction, no commit was amended and no fixup was added. **Branch `cherry-090536b8e6f-fix1` was not created** because there is no fix to carry. The branch should be retried on the runner after the runner's `build/efi-aarch64/` directory is cleaned, and the lab connection for `opi_pc` is reset.
+
+---
+
