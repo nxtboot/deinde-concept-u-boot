@@ -67954,3 +67954,59 @@ The review handling was completed by the pickman review tool. Here's the summary
 
 ---
 
+### Pipeline fix: 2026-04-24 (attempt 2)
+
+Branch: cherry-589d0a687b0
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rock5b (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me checkout the correct branch and analyze the changes.
+
+The branch only modifies am335x-specific files. None of the failed jobs (efi-aarch64, rock5b, opi_pc) execute am335x code paths. Let me verify with local builds.
+
+Sandbox builds clean. Now let me build the affected boards via buildman.
+
+All three boards build clean. The rock5b warnings are environmental (missing local atf-bl31/rockchip-tpl blobs — same as master). Let me create the required fix branch.
+
+## Report: Pipeline failures are infrastructure/lab issues, not code defects
+
+**Action taken:** None. No commit changes are warranted. Created local branch `cherry-589d0a687b0-fix2` at the same HEAD as `cherry-589d0a687b0` (`b4553a3d2c6`).
+
+### Branch contents (only am335x-specific changes)
+```
+.pickman-history                  | 80 +++ (metadata only)
+arch/arm/mach-omap2/Kconfig       | 37 +++
+arch/arm/mach-omap2/boot-common.c | 31 +++
+doc/board/ti/am335x_evm.rst       | 80 +++
+```
+
+Commits:
+- `aa592df1443` — am335x: add SPL multi-offset loading
+- `a8586ee6fde` — doc: am335x: document `CONFIG_SPL_AM33XX_MMCSD_MULTIPLE`
+- `2f37015ebae` — Merge (empty)
+- `05e9df47aab`, `b4553a3d2c6` — pickman bookkeeping
+
+**None of the failed boards are am335x.** efi-aarch64 is generic ARM EFI, rock5b is rk3588, opi_pc is sunxi/Allwinner H3. The cherry-picks cannot affect their build or runtime behaviour.
+
+### Per-job diagnosis
+
+1. **efi-aarch64 (job 453139)** — Transient build glitch. `readelf: Error: u-boot: Failed to read file's magic number` at `Makefile:2642 (checkarmreloc)`, meaning the linker output was missing/empty when readelf ran on it. Buildman exited with 100. Identical symptom to attempt 1's failure on the same job — runner I/O race / partial filesystem state, not a code defect. Local `buildman --board efi-arm_app64` against this branch builds cleanly.
+
+2. **rock5b (job 453132)** — Lab/login timeout. SPL boots fine (`U-Boot Concept SPL 2026.02-g05e9df47aab5`), TF-A BL31 boots, U-Boot proper boots and prints `Model: Radxa ROCK 5B`, then DDR re-init lines appear and `pexpect.exceptions.TIMEOUT: Timeout of 10 seconds exceeded during waiting for login`. The board reaches U-Boot but the test harness gave up before reaching a usable Linux login prompt — typical lab/serial/timing flake on a board the cherry-picks cannot touch (rk3588, not am335x).
+
+3. **opi_pc (job 453107)** — Lab failure. No SPL output at all on the console; `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`. The board never came up — power/serial/lab problem. Identical symptom to attempt 1.
+
+### Verification
+- `um build sandbox` — clean (silent)
+- `buildman --board orangepi_pc,rock5b-rk3588,efi-arm_app64 -o /tmp/pickman` — `3 total built, 0 errors`. orangepi_pc and efi-arm_app64 are warning-free; rock5b only emits the pre-existing "missing external blob: rockchip-tpl, atf-bl31" warnings that depend on local ATF/TPL availability and are unaffected by this branch.
+
+**Recommendation:** Retry the failing jobs. They will pass once the lab/runner state recovers. No code changes should be made on this branch.
+
+Branch `cherry-589d0a687b0-fix2` left at HEAD `b4553a3d2c6` for the caller to push.
+
+---
+
