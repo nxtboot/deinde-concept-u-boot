@@ -68318,3 +68318,68 @@ For **efi-aarch64**: the test ran the full extlinux→Linux→Ubuntu 25.04 boot 
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-63d52576e7b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Let me verify the build is clean...
+
+### Conversation log
+The current HEAD is `9b60ceb82bc` (pickman record for the previous pipeline fix attempt). Let me verify the build and look at the actual content of the comment to confirm there's nothing actionable.
+
+Build is clean (1/1 built, no warnings). The new `9b60ceb82bc` commit only touches `.pickman-history` — pure metadata, not source code. The "comment" to address is again the previous bot's pipeline-fix report, this time diagnosing efi-aarch64 + opi_pc failures as infrastructure issues.
+
+Let me verify the diagnosis still applies by examining what files the cherry-picks actually touch versus where the failures occurred.
+
+Confirmed: cherry-picks only touch disk-partition and EFI-loader files. No changes needed to address the comment (which is itself a previous infrastructure-failure diagnosis).
+
+Remote updated `acdd1b4014e..9b60ceb82bc` (the attempt-2 pipeline-fix record commit). Since this is a real ref update, GitLab will auto-trigger a new pipeline.
+
+## Report
+
+### What was done
+
+1. **Checked out `cherry-63d52576e7b`** — HEAD `9b60ceb82bc` (`pickman: Record pipeline fix for cherry-63d52576e7b`). The only delta vs. attempt 2 is one `.pickman-history` metadata commit; no source files changed.
+2. **Reviewed the comment** — it is the previous bot's own "Pipeline fix (attempt 2)" report, which diagnosed `efi-aarch64` and `opi_pc` failures as infrastructure issues. The diagnosis still holds.
+3. **No code changes made** — there is nothing actionable in the comment to fix.
+4. **Build verified:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean.
+5. **Local branch `cherry-63d52576e7b-v3`** created from HEAD `9b60ceb82bc`.
+6. **Force-pushed:** `acdd1b4014e..9b60ceb82bc → cherry-63d52576e7b` on remote `ci` — GitLab should auto-trigger a new pipeline.
+
+### Diagnosis (re-confirmed)
+
+The 11 cherry-picks touch exactly these files:
+```
+disk/part_dos.c, disk/part_efi.c
+include/{part.h, part_dos.h, part_efi.h, efi_variable.h}
+lib/efi_loader/{Kconfig, Makefile, efi_disk.c, efi_var_common.c,
+                efi_var_file.c, efi_variable.c}
+lib/efi_selftest/efi_selftest_block_device.c
+```
+
+Neither failure could plausibly be caused by these:
+
+- **opi_pc** (sunxi orangepi_pc): produced no console output at all (15s timeout, `Lab failure: Marking connection bad`). Hardware/connectivity fault — no U-Boot stage ran.
+- **efi-aarch64**: the test body completed successfully (boot reached `Welcome to Ubuntu 25.04!`); 34 other tests passed in the same job. Failure was `OSError: [Errno 5]` on the serial fd during the post-test `ubman.restart_uboot()` — a host-side pty teardown race, not a U-Boot defect.
+
+### Suggested MR reply
+
+> The previous "Pipeline fix (attempt 2)" diagnosis still applies — both failures were infrastructure faults, not code regressions:
+>
+> - **opi_pc** produced no console output at all (15s timeout, labgrid `Lab failure: Marking connection bad`). The fixture appears to have a recurring power/serial issue (same symptom in attempt 1).
+> - **efi-aarch64** booted successfully through extlinux to Ubuntu 25.04 and passed 34 other tests in the same job; the only failure was `OSError: [Errno 5]` on the serial fd during the post-test `restart_uboot()` — a host-side pty I/O race, not U-Boot.
+>
+> The 11 cherry-picked commits touch only `disk/part_*.c`, `include/part*.h`, `include/efi_variable.h`, `lib/efi_loader/*`, and `lib/efi_selftest/efi_selftest_block_device.c`. None compile into the sunxi pre-console boot path (where `opi_pc` failed) and none affect the post-test reset path (where `efi-aarch64` failed after a successful boot).
+>
+> No code changes; sandbox build remains clean. Branch force-pushed to retrigger CI. If the same boards fail again with identical infrastructure markers, the fixtures need physical attention rather than code changes.
+
+### Notes / caveats
+
+- The push was a real ref update (`acdd1b4014e..9b60ceb82bc`), not a no-op, so GitLab will auto-trigger a new pipeline this time (unlike attempt 2 where the remote was already at HEAD).
+- This is now the third consecutive infrastructure-failure attempt for this MR. If the next pipeline reports yet another non-code failure on these boards, escalating to a human maintainer to look at the lab fixtures is probably warranted rather than continuing automated retries.
+
+---
+
