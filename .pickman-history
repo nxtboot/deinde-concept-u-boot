@@ -68071,7 +68071,7 @@ Stats match exactly. Let me build and continue with the merge commit.
 
 The merge commit is empty as expected since both fwu commits were already cherry-picked. Now let me verify the log and run the final build.
 
-All cherry-picks completed successfully. 
+All cherry-picks completed successfully.
 
 ## Final Status Report
 
@@ -68090,6 +68090,56 @@ All cherry-picks completed successfully.
 **Fix-ups:** None needed. The first two cherry-picks applied cleanly with auto-merge on `lib/efi_loader/efi_capsule.c`. The merge commit was empty (expected behaviour — its content is the sum of the two prior cherry-picks) and was committed with `--allow-empty` to preserve history.
 
 **Concerning deltas:** None. Stats match original commits exactly.
+
+---
+
+## 2026-04-25: us/next
+
+Branch: cherry-df5dd0bff44
+
+Commits:
+- df5dd0bff44 mtd: spi-nor-ids: remove duplicate IDs for w25q32 and w25q512 series
+- 59fa20f7297 spi: Squash spi_slave_of_to_plat() into spi_child_post_bind()
+- 10e84cc16a1 spi: Clean up more of the stacked parallel ifdeffery
+- 4f76c90bad3 mtd: spi-nor: winbond: Make sure w25q{01, 02}jv behave correctly
+- eae0ca21259 mtd: spi-nor-tiny: fix 4-Byte address instructions for Cypress and ISSI
+- 4696a38befb board: toradex: Make A53 get RAM size from DT in K3 boards
+- 044d6a800ed arm: socfpga: agilex: restore Multi-DTB support for NAND boot
+- fee6009aabd socfpga: Remove incorrect CONFIG_SPL_LDSCRIPT settings
+- 83f2843f20f socfpga: agilex: fix NAND clock handling
+- 847e67582b1 ddr: altera: arria10: Add DRAM size checking
+- ad642af8093 arch: arm: socfpga: Assign unit address to memory node
+- 22aac1c5b46 clk: altera: agilex: Exclude AGILEX_L4_SYS_FREE_CLK from enable/disable operations
+- cb23bbf4d74 drivers: ddr: altera: iossm_mailbox: widen MEM_TOTAL_CAPACITY mask
+- 8f41874f463 fix socfpga GEN5 handoff script path
+- 3a20a8591d8 arm: dts: agilex5: Fix DT property naming convention
+- d60ff5ab9ec arm: agilex5: Enable SD card UHS mode support
+- 4f116c82632 arm: agilex5: Enable eMMC HS200 and HS400 mode support
+- 97b17ecae81 Add CoreCourse socfpga Board - AC501
+- 3d1dc5b79fe Add CoreCourse socfpga Board - AC550
+- 62f7a946020 Replace TARGET namespace and cleanup properly
+- 6caff66ce46 soft_spi performance enhancement
+- 136faf7b0cc Merge tag 'u-boot-socfpga-next-20260213' of https://source.denx.de/u-boot/custodians/u-boot-socfpga into next
+
+### Conversation log
+Build passes. Continuing with the next cherry-picks.
+
+All 22 commits applied. Now run the final build.
+
+## Final Status
+
+**Branch**: `cherry-df5dd0bff44` (based on `ci/master`)
+
+**Build result**: OK — sandbox builds cleanly with no warnings or errors.
+
+**All 22 commits cherry-picked successfully:**
+- 21 regular commits applied cleanly with matching deltas (file lists and line counts identical to originals)
+- 1 merge commit (`136faf7b0cc`) applied with `-m 1 --allow-empty`
+
+**Fix-up made:**
+- The merge commit `136faf7b0cc` had a conflict in `arch/arm/mach-socfpga/Kconfig` for the AC501/AC550 board entries. Our HEAD had `select TARGET_SOCFPGA_CYCLONE5` (from the AC501/AC550 commits), while the upstream merge expected `select ARCH_SOCFPGA_CYCLONE5` (post-rename). Resolved by accepting the renamed version (`ARCH_SOCFPGA_CYCLONE5`), which is consistent with the rest of the file after the `Replace TARGET namespace` commit. Added a one-line note to the commit message documenting this fix-up.
+
+**Concerning deltas**: None. All cherry-picks produced file lists and line counts identical to the originals.
 
 The branch is ready for pushing.
 
