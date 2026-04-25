@@ -68831,3 +68831,41 @@ The "review comment" being referenced is the bot's **own prior status report** f
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-87f8a143da5
+
+Comments addressed:
+
+
+### Conversation log
+The rebase task is complete. Here's the report:
+
+## Report — MR !968 (`cherry-87f8a143da5`) rebase
+
+### Status: ✅ No rebase needed; branch was already current
+
+**Findings:**
+
+1. **Branch was already based on current `ci/master` HEAD.** The merge-base of `cherry-87f8a143da5` and `ci/master` is `e8ce2a61637`, which is the HEAD of `ci/master`. Running `git rebase --keep-empty ci/master` reported `Current branch cherry-87f8a143da5 is up to date.` — there were no commits to replay.
+
+2. **Build verified.** `buildman -L --board sandbox -w -o /tmp/pickman` completed cleanly: `Completed: 1 total built` with no warnings or errors.
+
+3. **All 9 expected commits intact** on the branch:
+   - 7 SMBIOS cherry-picks (`f2c5e677745` … `ef23e2fefaa`)
+   - 2 pickman metadata commits (`85cb9de4348` cherry-pick record, `b3fb06edca0` review-handling record)
+
+4. **Note about the remote:** The remote `ci/cherry-87f8a143da5` had been repointed to an unrelated set of commits (`5f6db7919a2 …`, with pickman records for other cherries like `b3087d21f02` / `86f90e2a5fb`). The force-push corrected this.
+
+**Actions taken:**
+
+- `git rebase --keep-empty ci/master` — no-op, branch already up to date.
+- Created local branch `cherry-87f8a143da5-v2` for record.
+- Force-pushed to `ci/cherry-87f8a143da5`: `+ 5f6db7919a2...b3fb06edca0 HEAD -> cherry-87f8a143da5 (forced update)`. GitLab will auto-trigger an MR pipeline.
+
+### Suggested reply to post on the MR
+
+> Rebase: branch was already based directly on current `ci/master` HEAD (`e8ce2a61637`), so `git rebase --keep-empty ci/master` was a no-op. The remote branch had been repointed to unrelated commits, so I force-pushed the correct local branch (`b3fb06edca0`) back to `cherry-87f8a143da5` to restore the MR contents. All 7 SMBIOS commits + 2 pickman metadata commits are present, and `buildman --board sandbox` builds cleanly. A fresh MR pipeline should now run.
+
+---
+
