@@ -67874,3 +67874,182 @@ Per the instructions ("If a comment is unclear or cannot be addressed, note this
 
 ---
 
+## 2026-04-24: us/next
+
+Branch: cherry-589d0a687b0
+
+Commits:
+- 589d0a687b0 am335x: add support for loading u-boot from multiple offsets
+- a672456d4b2 doc: am335x: document use of CONFIG_SPL_AM33XX_MMCSD_MULTIPLE
+- 6f7fe31bf6d Merge patch series "am335x: failsafe bootloader update"
+
+### Conversation log
+Identical stats. Now let's run the build test.
+
+Build passes. Now cherry-pick the second commit.
+
+Identical. Build test:
+
+Now the merge commit:
+
+All 3 commits are present and the branch is ready.
+
+## Final Status
+
+**Build result:** OK (sandbox builds successfully on all 3 commits)
+
+**Cherry-picks completed:**
+1. `aa592df1443` - am335x: add support for loading u-boot from multiple offsets (2 files, 68 insertions — identical to original)
+2. `a8586ee6fde` - doc: am335x: document use of CONFIG_SPL_AM33XX_MMCSD_MULTIPLE (1 file, 80 insertions — identical to original)
+3. `2f37015ebae` - Merge patch series "am335x: failsafe bootloader update" (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups made:** None. The first two commits applied cleanly with stats matching the originals. The merge commit became empty (as expected since the merged content was already applied via the two preceding cherry-picks) and was preserved with `--allow-empty` to maintain history tracking.
+
+**Concerning deltas:** None.
+
+The branch `cherry-589d0a687b0` is ready for pushing.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-589d0a687b0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, rockpro64, opi_pc.
+
+The branch only modif...
+
+### Conversation log
+The review handling was completed by the pickman review tool. Here's the summary:
+
+## Report
+
+**Action taken:** No code changes — the review comment was the bot's own previous "Pipeline fix (attempt 1)" report, which already concluded the failing jobs (efi-aarch64, rockpro64, opi_pc) were infrastructure/lab issues, not code defects.
+
+**Branch state:**
+- `cherry-589d0a687b0` HEAD: `05e9df47aab` (unchanged)
+- `cherry-589d0a687b0-v2` created at `9c42d453399` (adds a pickman review-handling record commit on top)
+- `ci/cherry-589d0a687b0` already at `05e9df47aab` — `push-branch` reported `Everything up-to-date`, so no force-push was needed
+
+**Verification:**
+- `buildman -L --board sandbox -w -o /tmp/pickman` → passes (1 built, 0 errors, 0 warnings)
+- Branch only modifies am335x-specific files (`arch/arm/mach-omap2/Kconfig`, `arch/arm/mach-omap2/boot-common.c`, `doc/board/ti/am335x_evm.rst`); none of the failed jobs execute am335x code paths.
+
+**Per-job recap (unchanged from attempt 1):**
+1. **efi-aarch64** — transient `readelf: Failed to read file's magic number` at `checkarmreloc`; runner I/O race. Local `buildman --board efi-arm_app64` is clean.
+2. **rockpro64** — SPL boots correctly, then MMC1 fails with `mmc block read error -38` / `Card did not respond to voltage select : -110`. Lab SD/MMC hardware issue.
+3. **opi_pc** — no SPL output at all; pexpect timed out at 15 s. Board never came up (power/serial).
+
+**Suggested MR reply:**
+
+> Reviewed the previous pipeline-fix analysis. No code changes are warranted — the branch only modifies am335x-specific files (`arch/arm/mach-omap2/Kconfig`, `arch/arm/mach-omap2/boot-common.c`, `doc/board/ti/am335x_evm.rst`) and none of the failing jobs (efi-aarch64, rockpro64, opi_pc) execute am335x code paths.
+>
+> The three failures are clearly infrastructure/lab issues:
+> - **efi-aarch64**: transient `readelf: Failed to read file's magic number` at the `checkarmreloc` step — a runner I/O race; local `buildman --board efi-arm_app64` is clean.
+> - **rockpro64**: SPL boots fine, then MMC1 fails with `mmc block read error -38` and `Card did not respond to voltage select : -110` — bad SD/MMC in the lab.
+> - **opi_pc**: no SPL output at all; pexpect timed out — board never came up (power/serial).
+>
+> Local sandbox build still passes. Branch HEAD is unchanged at `05e9df47aab`; remote already up to date. Please retry the failing jobs.
+
+---
+
+### Pipeline fix: 2026-04-24 (attempt 2)
+
+Branch: cherry-589d0a687b0
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rock5b (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me checkout the correct branch and analyze the changes.
+
+The branch only modifies am335x-specific files. None of the failed jobs (efi-aarch64, rock5b, opi_pc) execute am335x code paths. Let me verify with local builds.
+
+Sandbox builds clean. Now let me build the affected boards via buildman.
+
+All three boards build clean. The rock5b warnings are environmental (missing local atf-bl31/rockchip-tpl blobs — same as master). Let me create the required fix branch.
+
+## Report: Pipeline failures are infrastructure/lab issues, not code defects
+
+**Action taken:** None. No commit changes are warranted. Created local branch `cherry-589d0a687b0-fix2` at the same HEAD as `cherry-589d0a687b0` (`b4553a3d2c6`).
+
+### Branch contents (only am335x-specific changes)
+```
+.pickman-history                  | 80 +++ (metadata only)
+arch/arm/mach-omap2/Kconfig       | 37 +++
+arch/arm/mach-omap2/boot-common.c | 31 +++
+doc/board/ti/am335x_evm.rst       | 80 +++
+```
+
+Commits:
+- `aa592df1443` — am335x: add SPL multi-offset loading
+- `a8586ee6fde` — doc: am335x: document `CONFIG_SPL_AM33XX_MMCSD_MULTIPLE`
+- `2f37015ebae` — Merge (empty)
+- `05e9df47aab`, `b4553a3d2c6` — pickman bookkeeping
+
+**None of the failed boards are am335x.** efi-aarch64 is generic ARM EFI, rock5b is rk3588, opi_pc is sunxi/Allwinner H3. The cherry-picks cannot affect their build or runtime behaviour.
+
+### Per-job diagnosis
+
+1. **efi-aarch64 (job 453139)** — Transient build glitch. `readelf: Error: u-boot: Failed to read file's magic number` at `Makefile:2642 (checkarmreloc)`, meaning the linker output was missing/empty when readelf ran on it. Buildman exited with 100. Identical symptom to attempt 1's failure on the same job — runner I/O race / partial filesystem state, not a code defect. Local `buildman --board efi-arm_app64` against this branch builds cleanly.
+
+2. **rock5b (job 453132)** — Lab/login timeout. SPL boots fine (`U-Boot Concept SPL 2026.02-g05e9df47aab5`), TF-A BL31 boots, U-Boot proper boots and prints `Model: Radxa ROCK 5B`, then DDR re-init lines appear and `pexpect.exceptions.TIMEOUT: Timeout of 10 seconds exceeded during waiting for login`. The board reaches U-Boot but the test harness gave up before reaching a usable Linux login prompt — typical lab/serial/timing flake on a board the cherry-picks cannot touch (rk3588, not am335x).
+
+3. **opi_pc (job 453107)** — Lab failure. No SPL output at all on the console; `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`. The board never came up — power/serial/lab problem. Identical symptom to attempt 1.
+
+### Verification
+- `um build sandbox` — clean (silent)
+- `buildman --board orangepi_pc,rock5b-rk3588,efi-arm_app64 -o /tmp/pickman` — `3 total built, 0 errors`. orangepi_pc and efi-arm_app64 are warning-free; rock5b only emits the pre-existing "missing external blob: rockchip-tpl, atf-bl31" warnings that depend on local ATF/TPL availability and are unaffected by this branch.
+
+**Recommendation:** Retry the failing jobs. They will pass once the lab/runner state recovers. No code changes should be made on this branch.
+
+Branch `cherry-589d0a687b0-fix2` left at HEAD `b4553a3d2c6` for the caller to push.
+
+---
+
+### Review: 2026-04-24
+
+Branch: cherry-589d0a687b0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, rock5b, opi_pc.
+
+Let me checkout the corr...
+
+### Conversation log
+The push succeeded — remote updated from `b4553a3d2c6` to `431703e0943`, which will retrigger the MR pipeline.
+
+## Report
+
+**Action taken:** No code changes. The review comment is the bot's own previous "Pipeline fix (attempt 2)" report, which already concluded the failures (efi-aarch64, rock5b, opi_pc) are infrastructure/lab issues, not code defects. The HEAD already contains a `pickman: Record pipeline fix` bookkeeping commit (`431703e0943`) reflecting that prior attempt.
+
+**Branch state:**
+- `cherry-589d0a687b0` HEAD: `431703e0943` (unchanged from last fix attempt)
+- `cherry-589d0a687b0-v3` created at `431703e0943`
+- Remote `ci/cherry-589d0a687b0` force-pushed from `b4553a3d2c6` → `431703e0943` to retrigger the pipeline
+
+**Verification:**
+- `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings (clean)
+- Branch only modifies am335x-specific files: `arch/arm/mach-omap2/Kconfig`, `arch/arm/mach-omap2/boot-common.c`, `doc/board/ti/am335x_evm.rst` (148 insertions). None of the failed jobs (efi-aarch64=generic ARM EFI, rock5b=rk3588, opi_pc=sunxi/H3) execute am335x code.
+
+**Per-job recap (unchanged from attempt 2 analysis):**
+1. **efi-aarch64** — `readelf: Failed to read file's magic number` at `checkarmreloc`; runner I/O race. Local buildman is clean.
+2. **rock5b** — SPL/TF-A/U-Boot proper all boot fine; pexpect timed out at 10 s waiting for Linux login. Lab/serial flake on rk3588.
+3. **opi_pc** — no SPL output at all; pexpect timed out at 15 s. Board never came up (power/serial).
+
+**Suggested MR reply:**
+
+> Re-reviewed the previous pipeline-fix analysis. No code changes are warranted — the branch only modifies am335x-specific files (`arch/arm/mach-omap2/Kconfig`, `arch/arm/mach-omap2/boot-common.c`, `doc/board/ti/am335x_evm.rst`) and none of the failing jobs (efi-aarch64, rock5b, opi_pc) execute am335x code paths.
+>
+> The three failures are infrastructure/lab issues:
+> - **efi-aarch64**: transient `readelf: Failed to read file's magic number` at `checkarmreloc` — runner I/O race; local `buildman --board efi-arm_app64` is clean.
+> - **rock5b**: SPL, TF-A BL31, and U-Boot proper all boot correctly; pexpect timed out at 10 s waiting for the Linux login prompt — lab/serial flake.
+> - **opi_pc**: no SPL output at all; pexpect timed out at 15 s — board never came up (power/serial).
+>
+> Local sandbox build still passes. Branch HEAD unchanged at `431703e0943`; remote refreshed to retrigger CI. Please retry the failing jobs.
+
+---
+
