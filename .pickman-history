@@ -68539,3 +68539,79 @@ None required. The rebase completed cleanly without any conflicts.
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-090536b8e6f
+
+Commits:
+- 090536b8e6f beacon: imx8mm/n: Drop useless files
+- 87b9ccf6e42 mediatek: mt7622: Drop useless board files
+- befa5440b9d common: cli_hush: Include vsprintf.h
+- ecbbea0d165 cmd: mem: Include vsprintf.h
+- 68ab09e3a29 test: log_filter: Include vsprintf.h
+- afbeb3a0922 xtensa: relocate: Add missing headers
+- 49f60d60f70 toradex: common: Add missing headers
+- f025f9de602 tegra: pmc: Cleanup headers
+- 90d7b4c8a5b rockchip: evk_rk3308: Cleanup headers
+- b2db865c4e5 nxp: emc2305: Cleanup headers
+- d3b0b3c1184 pci: layerspace: Add missing header files
+- 15398169c42 renesas: common: Include asm-generic/u-boot.h
+- 406982f091c socfpga: clock_manager_s10: Add missing header files
+- 0f90b1e715f treewide: Clean up DECLARE_GLOBAL_DATA_PTR usage
+- 9ddccb51443 Merge patch series "treewide: Clean up usage of DECLARE_GLOBAL_DATA_PTR"
+
+### Conversation log
+Identical. Now let me run buildman to verify and proceed with the next commits.
+
+Build OK. Continuing with subsequent cherry-picks.
+
+Now let me check the qcom smem conflict:
+
+Now the k230/dram.c modify/delete conflict:
+
+All conflicts resolved. Let me continue the cherry-pick with a fix-up note in the commit message:
+
+Add fix-up note about the conflict resolution:
+
+Build OK. Now the merge commit:
+
+All 15 commits present. Now run the final build:
+
+## Final Status
+
+**Branch:** `cherry-090536b8e6f` (based on `ci/master`)
+
+**Build result:** OK — sandbox builds cleanly after each cherry-pick and the final state.
+
+**All 15 commits applied** (in order, as shown by `git log --oneline -n 17`):
+1. `ac3af838228` beacon: imx8mm/n: Drop useless files — clean
+2. `7466076136d` mediatek: mt7622: Drop useless board files — clean
+3. `2692d6f9f1c` common: cli_hush: Include vsprintf.h — clean
+4. `993f8cbf0be` cmd: mem: Include vsprintf.h — clean
+5. `2bcec3e85c1` test: log_filter: Include vsprintf.h — clean (auto-merge)
+6. `e9b7f430136` xtensa: relocate: Add missing headers — clean
+7. `8f3970b1fea` toradex: common: Add missing headers — clean
+8. `7f976ec4cc8` tegra: pmc: Cleanup headers — clean
+9. `516308a9843` rockchip: evk_rk3308: Cleanup headers — clean
+10. `3ab4640bb89` nxp: emc2305: Cleanup headers — clean
+11. `5ba8b13cf9a` pci: layerspace: Add missing header files — clean
+12. `e79dbb624b6` renesas: common: Include asm-generic/u-boot.h — clean (auto-merge)
+13. `dfbbc5be8c6` socfpga: clock_manager_s10: Add missing header files — clean
+14. `c6f0c22cf1e` treewide: Clean up DECLARE_GLOBAL_DATA_PTR usage — **fix-up**
+15. `994a43be58c` Merge patch series — **empty merge** (changes already applied)
+
+**Fix-ups applied (noted in commit messages):**
+
+- **Commit 14 (treewide cleanup)** — Three conflicts resolved:
+  - `arch/arm/mach-socfpga/system_manager_soc64.c`: kept `CONFIG_ARCH_SOCFPGA_AGILEX5` (HEAD's renamed config) while still removing `DECLARE_GLOBAL_DATA_PTR` and `<asm/global_data.h>`.
+  - `arch/riscv/cpu/k230/dram.c`: file is deleted in `ci/master` upstream — left removed.
+  - `drivers/soc/qcom/smem.c`: the upstream `drivers/smem/msm_smem.c` was renamed/rewritten — kept the HEAD version (no DECLARE_GLOBAL_DATA_PTR present).
+
+  Delta: 285 files / 804 deletions vs upstream 287 / 810. Difference of ~0.7%, well within tolerance.
+
+- **Commit 15 (merge)** — All conflicts resolved by keeping HEAD state, since the individual cleanup commits already applied the changes. Resulted in an empty merge commit (preserved with `--allow-empty`) to retain history.
+
+The branch is left ready for pushing; no merge back was performed.
+
+---
+
