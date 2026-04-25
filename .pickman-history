@@ -68793,3 +68793,41 @@ The cherry-pick branch is left ready for pushing.
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-87f8a143da5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+This is an infrastructure/lab failure, not a ...
+
+### Conversation log
+Looking at this carefully, the "review comment" I'm being asked to address is actually the bot's **own previous status report** from a prior pipeline-fix attempt. That report concluded the `opi_pc` job failure was an infrastructure/lab issue (15s timeout waiting for login prompt after successful flash, classified by labgrid as "Lab failure: Marking connection bad") and explicitly stated **no code changes were warranted**.
+
+Let me verify the current branch state matches the previous report and the SMBIOS series is intact.
+
+The branch state confirms the previous analysis: all changes are confined to SMBIOS files (`cmd/smbios.c`, `lib/smbios.c`, `include/smbios*.h`, `drivers/sysinfo/smbios.c`, `include/sysinfo.h`, `arch/arm/dts/smbios_generic.dtsi`). None of these touch sunxi/orangepi-PC boot paths, serial console, or labgrid prompt detection.
+
+## Report
+
+**No code changes were made and no v2 branch was pushed.**
+
+The "review comment" being referenced is the bot's **own prior status report** from Pipeline fix attempt 1, which already concluded the `opi_pc` failure was infrastructure-related (not a code defect) and explicitly stated that no code change was warranted (`Action taken: None`). Re-reading the comment does not surface any new actionable request — it is a record of a non-action, not a request for one.
+
+**Why no action is appropriate:**
+
+1. **Failure mode is non-code:** The `opi_pc` job failed with `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login`, which labgrid itself classified as `Lab failure: Marking connection bad`. Zero tests ran (`1 deselected in 33.92s`), so there is no test assertion or boot output pointing to a regression.
+2. **Series cannot plausibly cause it:** The 7 cherry-picked commits are entirely SMBIOS work. SMBIOS tables are constructed late in U-Boot (post-relocation, on demand), and the `orangepi_pc` 32-bit sunxi target failed *before reaching the U-Boot login prompt over serial after a successful flash* — well upstream of any SMBIOS code path.
+3. **Branch is unchanged and correct:** `git log ci/master..HEAD` shows all 7 cherry-picks plus the `pickman` metadata commit, exactly as left after the original cherry-pick run. The build for sandbox passes.
+
+**Suggested reply to post on the MR:**
+
+> Acknowledged — this comment is the prior fix-attempt's own status report concluding that the `opi_pc` failure was a lab/infrastructure issue (`Lab failure: Marking connection bad` after a 15s login-prompt timeout, with 0 tests run). No code changes are warranted and none have been made.
+>
+> The cherry-picked series is entirely SMBIOS work (`cmd/smbios.c`, `lib/smbios.c`, `include/smbios*.h`, `drivers/sysinfo/smbios.c`) and cannot plausibly affect early sunxi boot or labgrid serial-prompt detection on `orangepi_pc`. Recommend retrying the `opi_pc` job; if it fails identically on retry, the orangepi_pc lab device (serial/power/flashing) should be investigated rather than this MR.
+
+**No push performed** — there is nothing to update on the remote `cherry-87f8a143da5` branch since no code changes were made.
+
+---
+
