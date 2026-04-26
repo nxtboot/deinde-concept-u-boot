@@ -68917,3 +68917,35 @@ The branch `cherry-1af249f511a` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-25 (attempt 1)
+
+Branch: cherry-1af249f511a
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+The failure is purely a lab/infrastructure timeout — `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` followed by `Lab failure: Marking connection bad - no other tests will run`. Let me confirm the branch's commits don't touch any sunxi/Allwinner/orangepi_pc code paths.
+
+## Report: Infrastructure / Transient Failure — No Code Changes Made
+
+**Root cause:** Lab/hardware infrastructure failure, not a code defect.
+
+**Evidence from job 457565 (opi_pc):**
+- The build of `orangepi_pc` succeeded (bootstrapping completed, image written via the `sunxi` flash method).
+- During `_await_prompt()`, labgrid's `ubootdriver` raised:
+  ```
+  pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+  ```
+- Followed by: `Lab failure: Marking connection bad - no other tests will run`
+- All 708 collected tests were then deselected (`1 deselected in 40.01s`) — the test session aborted before any U-Boot test code actually ran.
+
+**Why this is not the MR's fault:**
+- The MR's 8 commits are entirely confined to `arch/arm/mach-mediatek/`, `board/mediatek/`, and `configs/mt8390_evk_defconfig`.
+- `git diff --name-only ci/master..HEAD | grep -iE "sunxi|allwinner|orange|opi_pc"` returned no matches — nothing in this branch touches sunxi, Allwinner SoCs, or the orangepi_pc board.
+- The failure mode (serial console never reaching the login prompt within 15 s on a hardware lab board) is a classic lab/runner symptom (cabling, power relay, serial console, or sd-card reflash hiccup), not a U-Boot regression — and certainly not one that a MediaTek-only patch series could plausibly cause on a sunxi target.
+
+**Action taken:** None required. As instructed, I did not modify any code. Branch `cherry-1af249f511a-fix1` was created pointing at the same commit as `cherry-1af249f511a` (HEAD `c45e3ae4c22`) so the caller's workflow has the expected branch. Recommendation: re-run the `opi_pc` job.
+
+---
+
