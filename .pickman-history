@@ -68869,3 +68869,51 @@ The rebase task is complete. Here's the report:
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-1af249f511a
+
+Commits:
+- 1af249f511a arm: mediatek: use default weak mtk_soc_early_init()
+- d8c550fb7a3 board: mediatek: mt8390_evk: remove empty board_init()
+- 35d5cd54153 arm: mediatek: mt8183: remove unused function
+- 9260339c0ed arm: mediatek: make mtk_pll_early_init() static
+- 8b621407386 board/mediatek: move EVK MAINTAINERS to common file
+- 24ffbb2aa17 arm: mediatek: consolidate ARMv8 memory maps
+- f1c0e637cd6 arm: mediatek: add CONFIG_MTK_MEM_MAP_DDR_BASE_PHY
+- 339a55865a0 Merge patch series "arm: mediatek: clean up some redundant board init"
+
+### Conversation log
+Build passed. Continuing with next cherry-pick.
+
+All 8 commits are present. Now let me run the final build:
+
+## Cherry-pick Summary
+
+All 8 commits were successfully cherry-picked from `us/next` onto a new branch `cherry-1af249f511a` based on `ci/master`.
+
+### Final Branch State
+```
+25623e35004 Merge patch series "arm: mediatek: clean up some redundant board init"
+92da2dc5ff7 arm: mediatek: add CONFIG_MTK_MEM_MAP_DDR_BASE_PHY
+36c6807d8ec arm: mediatek: consolidate ARMv8 memory maps
+446a809917a board/mediatek: move EVK MAINTAINERS to common file
+f85fa5d1fbd arm: mediatek: make mtk_pll_early_init() static
+b8469a7f22c arm: mediatek: mt8183: remove unused function
+50f8af803b8 board: mediatek: mt8390_evk: remove empty board_init()
+7942fa75c35 arm: mediatek: use default weak mtk_soc_early_init()
+```
+
+### Build Result
+**OK** — Final sandbox build passed with no warnings or errors. Builds also passed cleanly after each individual cherry-pick.
+
+### Deltas
+All 7 regular cherry-picks had **identical file/line stats** to their originals — no concerning deltas.
+
+### Fix-ups
+- The merge commit `339a55865a0` cherry-picked as empty (which is expected since all child commits were already applied). It was committed with `--allow-empty` using `-C` to preserve the original message, then amended to add the `(cherry picked from commit ...)` reference for tracking.
+
+The branch `cherry-1af249f511a` is ready for pushing.
+
+---
+
