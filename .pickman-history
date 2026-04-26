@@ -69137,3 +69137,73 @@ The original analysis is correct: the cherry-picks cannot influence boot of an R
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 3)
+
+Branch: cherry-06cfded6edf
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+I can see this is the third attempt at the same branch. The log analysis suggests these are again infrastructure issues (lab connection timeout for opi_pc, build environment issue for efi-aarch64). Let me checkout the branch and verify carefully.
+
+Branch is identical to previous attempts - all 5 cherry-pick commits + 3 pickman tracking commits. Files touched are exclusively MediaTek-specific. Let me now analyze the failures carefully.
+
+**efi-aarch64**: The job runs `scripts/build-efi -a arm -n --build-dir ...` which attempts to rebuild U-Boot as an EFI app. It fails with:
+```
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+```
+
+This is `checkarmreloc` failing because readelf cannot read the u-boot ELF file. Let me look more carefully at what could trigger this.
+
+Let me verify the sandbox build and confirm the failures are unrelated to the MediaTek-only changes.
+
+Let me build the actual U-Boot boards corresponding to those failing roles to confirm they still build correctly:
+
+All boards build successfully (13 built, 0 errors) — including `efi-arm_app64` and `orangepi_pc` (the actual U-Boot boards corresponding to the failing CI roles). Warnings are pre-existing (missing external blobs, sandbox dt warnings) and unrelated to the cherry-picks.
+
+Both failures are clearly infrastructure issues:
+- **opi_pc**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → board never reached U-Boot prompt; same recurring lab issue.
+- **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` during `checkarmreloc` → readelf cannot read the u-boot ELF (file empty/missing). This is a runner build-environment race, not a source-code issue. The aarch64 EFI app build now works correctly locally.
+
+Per the task instructions, when failures are infrastructure/transient, report this without making changes. Let me create the fix3 branch:
+
+Branch `cherry-06cfded6edf-fix3` created.
+
+## Report
+
+### Root cause: Both failures are infrastructure/transient — not caused by any commit on this branch
+
+**Branch contents** (`cherry-06cfded6edf`): Unchanged from previous attempts — 5 cherry-picked commits, exclusively MediaTek-related:
+- `10f1e255f49` pinctrl: mediatek: add pinctrl driver for MT8195
+- `1fd57c59fc3` pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1
+- `8ada7914f8c` arm: dts: mt7622: Fix SPI bus bridge warning
+- `f5ffd5ccfa1` arm: dts: mt7622: Use generic node names
+- `a0ab3b37b91` Merge patch series
+
+**Files touched**: only `arch/arm/dts/mt7622.dtsi`, `drivers/pinctrl/mediatek/Kconfig`, `Makefile`, `pinctrl-mt798[1,6,7,8].c`, and the new `pinctrl-mt8195.c`.
+
+### Failure analysis
+
+| Job | Board | Failure signature | Verdict |
+|---|---|---|---|
+| `efi-aarch64` | `efi-arm_app64` (generic ARM64 EFI) | `readelf: Error: u-boot: Failed to read file's magic number` → `make[1]: *** [Makefile:2643: checkarmreloc] Error 1` | Build-env race on runner — readelf ran against an empty/missing u-boot ELF. Not source-code-related. |
+| `opi_pc` | `orangepi_pc` (Allwinner H3) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad - no other tests will run` | Recurring lab connection timeout — board never reached U-Boot prompt. |
+
+Neither board uses a MediaTek SoC, so MediaTek pinctrl/DTS changes cannot influence them. `opi_pc` has now failed in attempts 1, 2, and 3 with the identical "Marking connection bad" signature — the lab/board needs attention.
+
+### Local verification
+
+- `um build sandbox` → silent (OK)
+- `buildman -o /tmp/pickman efi-arm_app64 orangepi_pc sandbox` → **13 built, 0 errors** (all warnings pre-existing: orangepi_pc2 missing external ATF blobs; sandbox reserved-memory ranges warnings)
+
+### Action taken
+
+- **Responsible commit:** None — failures are not caused by any commit on this branch.
+- **Change made:** None. Created local branch `cherry-06cfded6edf-fix3` identical to `cherry-06cfded6edf` (no code changes).
+- **Recommendation:** Retry the two failed jobs. Per project guideline "*If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes*", no fix is warranted.
+
+---
+
