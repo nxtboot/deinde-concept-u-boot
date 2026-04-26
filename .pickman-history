@@ -69559,3 +69559,51 @@ Push was successful. Final status:
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Now let me start the rebase onto ci/master:
+
+Now let me verify the deltas of each commit haven't changed:
+
+All deltas match exactly. Now run the build:
+
+Build succeeded. Now create the v2 branch and push:
+
+Push succeeded. Final summary:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`61ce55a492b`) and force-pushed to update MR !970 (`459d71501f3 → e79d05daaed`).
+
+**Conflict resolved:**
+- `.pickman-history`: Same flavour of trivial conflict as the previous rebase. The new ci/master had picked up another "2026-04-25: us/next" entry (for `cherry-2517e2b524e` from MR pipeline), and our branch's pickman record sat in the same spot. Resolved by keeping both sections in chronological order, separated by the standard `---` divider, with our entry retaining its "(continued)" label.
+
+**Delta verification:** All nine commits (7 content + 2 pickman) replayed with byte-identical stats to their pre-rebase counterparts:
+- `52297603a15` board mt8370_evk: 2 files, 32+
+- `4e8f1da87db` topckgen-cg: 76+/101−
+- `59c71fabd63` circular dep: 7+/7−
+- `515956d1e73` fixed clock: 196+/195−
+- `55965d81825` clock parents: 15+/19−
+- `aab0649ec2c` refactor: 217+/230−
+- `b7edbf1a1a3` merge commit (empty, preserved)
+- `e21f0a43f30` pickman cherry-pick record: 60+
+- `e79d05daaed` pickman review record: 39+
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 errors, 0 warnings.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `e79d05daaed`) and backup `cherry-b5db4f322a0-v3` (the `-v2` slot was taken by the earlier rebase)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`61ce55a492b`). Only conflict was a trivial one in `.pickman-history` again — another parallel MR (`cherry-2517e2b524e`) had landed an entry under the same `2026-04-25: us/next` heading. Resolved by keeping both sections in order. All nine commits replayed with byte-identical stats, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
