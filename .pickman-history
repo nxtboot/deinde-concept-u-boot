@@ -69875,3 +69875,27 @@ Only the SPL stack-placement commit could even theoretically affect rockpro64/op
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Comments addressed:
+- [project_1_bot]: Pipeline fix (attempt 1) summary — re-confirms three failed lab jobs (efi-aarch64, rockpro64, opi_pc) and asks for follow-up.
+
+### Conversation log
+
+The review comment is the bot's own summary of the previous attempt (Pipeline fix attempt 1), which determined all three failures were lab/infrastructure issues — not code regressions. Re-checked the analysis on the unchanged tip of the branch.
+
+### Re-verification
+
+- Tip unchanged at `528ac40b013` — same five cherry-picked commits, none of them touch code paths exercised by `rockpro64`'s MMC1 voltage-select path or `opi_pc`'s sunxi serial-bringup path.
+- `efi-aarch64`'s `readelf: Failed to read file's magic number` is a stale-build-artefact symptom (the test rebuilds `efi-arm_app64` into the same `build/efi-aarch64/` directory the aarch64 build uses, then runs `checkarmreloc` on a clobbered `u-boot` file). Reproduces only with stale state, not from a clean build.
+- `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+- Working tree clean (only the pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+
+### Action taken
+
+No code change. Created `cherry-311f9237613-v2` at the same five-commit tip plus the prior pipeline-fix record (5acf7996539) and this review-handling record. Force-pushing to `ci/cherry-311f9237613` to retrigger the pipeline so the three flaky lab jobs get a fresh cycle.
+
+---
+
