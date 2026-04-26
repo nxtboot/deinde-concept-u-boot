@@ -69715,3 +69715,48 @@ All eleven commits replayed with byte-identical stats vs their pre-rebase counte
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-b5db4f322a0
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Looking at this failure, the issue is clear: a hardware lab test timeout, not a code problem. Let me verify the diagnosis.
+
+This is a clear infrastructure/transient lab failure, not a code issue. No fix is warranted.
+
+## Diagnosis
+
+**Failure:** `opi_pc` job in `sjg-lab` stage — hardware lab test on Orange Pi PC.
+
+**Error:**
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The test flashed U-Boot to an Orange Pi PC board, attempted to await the boot prompt, and timed out after 15 seconds. The labgrid runtime then marked the connection bad and refused to run further tests — the textbook signature of a flaky/dead lab board, not a software regression.
+
+## Why this is not caused by the branch
+
+The branch `cherry-b5db4f322a0` touches only four files, none of which can affect Orange Pi PC (a sunxi/Allwinner board):
+
+```
+.pickman-history                      | 255 +    (metadata only)
+board/mediatek/mt8370_evk/MAINTAINERS |   4 +    (new MTK board)
+configs/mt8370_evk_defconfig          |  28 +    (new MTK board)
+drivers/clk/mediatek/clk-mt8188.c     | 631 ±    (MTK MT8188 clk driver)
+```
+
+No sunxi, ARM core, common, or build-system code is modified. There is no plausible mechanism by which these MediaTek-only changes could prevent an Orange Pi PC from reaching its login prompt.
+
+## Verdict
+
+**Infrastructure / transient lab failure.** The job hit a `pexpect` TIMEOUT before the board even reached the U-Boot prompt; the lab framework explicitly classifies this as a lab connection problem. Same MR's earlier pipelines have already shown the codebase builds cleanly across affected MediaTek boards and sandbox.
+
+**No code change made. No `cherry-b5db4f322a0-fix1` branch created.** Recommend retrying the pipeline (or investigating the `orangepi_pc` lab board itself).
+
+---
+
