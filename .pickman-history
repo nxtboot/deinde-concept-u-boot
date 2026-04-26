@@ -69899,3 +69899,43 @@ No code change. Created `cherry-311f9237613-v2` at the same five-commit tip plus
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, rockpro64, opi_pc.
+
+Let me look at the ot...
+
+### Conversation log
+## Report — MR !974, review handling round (v2)
+
+### What the comment was
+
+The "review comment" was the bot's own summary of **Pipeline fix attempt 1**, which had concluded that the three failing jobs (`efi-aarch64`, `rockpro64`, `opi_pc`) were lab/infrastructure flakes and recommended re-running the pipeline. No new actionable feedback — the bot was effectively asking what to do next.
+
+### What I did
+
+- **No code change** — analysis from attempt 1 still holds:
+  - `opi_pc`: 15-second login timeout with no SPL/TPL output → labgrid flagged it as a lab failure.
+  - `efi-aarch64`: `readelf: Failed to read file's magic number` → stale build artefact in `build/efi-aarch64/`.
+  - `rockpro64`: MMC1 `Card did not respond to voltage select! : -110` → hardware-level CMD8 timeout, runs before any code from this branch.
+  - None of the five cherry-picked commits touch code paths exercised by these failure modes.
+- **Re-verified** sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+- **Created `cherry-311f9237613-v2`** at `42c5ad5e5c4`, stacking the prior pipeline-fix record (`5acf7996539`) plus a new `pickman: Record review handling for cherry-311f9237613` commit on top of the unchanged five-commit tip (`528ac40b013`).
+- **Force-pushed** to `ci/cherry-311f9237613` (`528ac40b013..42c5ad5e5c4`). The push triggers a fresh MR pipeline so the three flaky lab jobs get a clean cycle.
+
+### Suggested reply for the MR
+
+> Re-checked the analysis from pipeline fix attempt 1: all three failures (`efi-aarch64`, `rockpro64`, `opi_pc`) are lab/infrastructure issues, not code regressions. None of the five cherry-picked commits touch code paths exercised by those failures: `opi_pc` timed out before any SPL/TPL output, `efi-aarch64`'s `readelf` magic-number error is a stale-artefact symptom from `build/efi-aarch64/` being reused for the `efi-arm_app64` rebuild, and `rockpro64`'s `Card did not respond to voltage select! : -110` on MMC1 is a hardware-level CMD8 timeout that runs before any of our changed code.
+>
+> Local re-verification: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings. Tip unchanged. Force-pushed `cherry-311f9237613` (`528ac40b013..42c5ad5e5c4`, only adds the pipeline-fix and review-handling history records) to retrigger the pipeline so the lab jobs get a fresh cycle.
+
+### Branches
+
+- Local: `cherry-311f9237613` and `cherry-311f9237613-v2` both at `42c5ad5e5c4`. Prior `cherry-311f9237613-fix1` retained at `5acf7996539`.
+- Remote: `ci/cherry-311f9237613` updated to `42c5ad5e5c4`.
+
+---
+
