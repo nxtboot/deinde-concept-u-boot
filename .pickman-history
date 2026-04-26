@@ -68980,3 +68980,42 @@ The branch `cherry-2517e2b524e` is ready for pushing.
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-06cfded6edf
+
+Commits:
+- 06cfded6edf pinctrl: mediatek: add pinctrl driver for MT8195
+- b681f2be8cc pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1
+- a1edc0b7d64 arm: dts: mt7622: Fix SPI bus bridge warning
+- 08b379f9cfd arm: dts: mt7622: Use generic node names
+- 68e542d4f59 Merge patch series "arm: dts: mt7622: use generic node names"
+
+### Conversation log
+All 5 commits are present. Now run the final build:
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-06cfded6edf` (based on `ci/master`)
+
+**Cherry-pick results:**
+| Original Hash | New Hash | Subject | Delta |
+|---|---|---|---|
+| 06cfded6edf | 10f1e255f49 | pinctrl: mediatek: add pinctrl driver for MT8195 | Identical (3 files, +1084) |
+| b681f2be8cc | 1fd57c59fc3 | pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1 | Identical (4 files, +4) |
+| a1edc0b7d64 | 8ada7914f8c | arm: dts: mt7622: Fix SPI bus bridge warning | Identical (1 file, +1/-1) |
+| 08b379f9cfd | f5ffd5ccfa1 | arm: dts: mt7622: Use generic node names | Identical (1 file, +11/-11) |
+| 68e542d4f59 | a0ab3b37b91 | Merge patch series "arm: dts: mt7622: use generic node names" | Empty merge (preserved with --allow-empty) |
+
+**Build result:** ✅ OK — sandbox built successfully after each cherry-pick and after the final commit (no warnings/errors)
+
+**Fix-ups:** None required. All cherry-picks applied cleanly (with auto-merging on Kconfig and pinctrl-mt798x.c files for the first two commits).
+
+**Concerning deltas:** None. All non-merge commits have identical file/line stats vs. their originals. The merge commit was empty as expected (its content is captured by the preceding 2 dts commits) and was preserved with `--allow-empty`.
+
+The branch is ready for pushing.
+
+---
+
