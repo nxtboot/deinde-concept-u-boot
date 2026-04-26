@@ -69019,3 +69019,62 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-06cfded6edf
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me look at the actual code changes in these commits to verify they don't affect the failing boards.
+
+Based on my analysis, all three failures are clearly infrastructure/lab issues unrelated to the cherry-picked code changes. Let me confirm by examining what files the commits touch vs. the failing boards.
+
+**Analysis of failures:**
+
+The branch `cherry-06cfded6edf` contains 5 commits, all MediaTek-specific:
+- `10f1e255f49` pinctrl: mediatek: add pinctrl driver for **MT8195**
+- `1fd57c59fc3` pinctrl: mediatek: set **MT798x** rev as MTK_PINCTRL_V1
+- `8ada7914f8c` arm: dts: **mt7622**: Fix SPI bus bridge warning
+- `f5ffd5ccfa1` arm: dts: **mt7622**: Use generic node names
+- `a0ab3b37b91` (merge commit)
+
+**Files touched:** only `drivers/pinctrl/mediatek/*` and `arch/arm/dts/mt7622.dtsi`.
+
+**The three failing boards have nothing to do with MediaTek SoCs:**
+- `jerry` = Rockchip RK3288 (Chromebook)
+- `opi_pc` = Allwinner H3 (OrangePi PC)
+- `efi-x86_64-uboot-iso` = x86_64 EFI
+
+**Failure signatures:**
+
+1. **jerry** & **opi_pc** — Identical lab connection failures:
+   ```
+   pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+   Lab failure: Marking connection bad - no other tests will run
+   ```
+   The bootstrap could not even reach a U-Boot prompt within 15 s — typical lab/runner infrastructure issue (board not powering on, cable, em100/sunxi flash wedged, etc.). U-Boot itself was never tested.
+
+2. **efi-x86_64-uboot-iso** — Test ran, U-Boot booted fine, BLS bootflow was found on `efi_media_1.bootdev`, kernel started, then:
+   ```
+   [    4.842990] Initramfs unpacking failed: invalid magic at start of compressed archive
+   ```
+   followed by timeout waiting for `Started gdm.service`. The kernel/initrd download itself succeeded; the failure is in the Ubuntu casper initrd (unrelated to U-Boot, let alone to MediaTek pinctrl).
+
+Since the cherry-picks touch only MediaTek pinctrl drivers and the mt7622 DTS, they cannot influence boot of an RK3288, an Allwinner H3, or an x86_64 EFI ISO test. The instructions state: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+**Conclusion: All three failures are infrastructure/transient — no code fix needed.**
+
+- **Responsible commit:** None — failures are not caused by any commit on this branch.
+- **Root cause:**
+  - `jerry`, `opi_pc`: Lab connection timeouts (boards never reached U-Boot prompt; "Marking connection bad").
+  - `efi-x86_64-uboot-iso`: Ubuntu live-ISO initramfs corruption / kernel-side decompression failure during distro boot test — not affected by MediaTek pinctrl/DTS changes.
+- **Change made:** None. No `cherry-06cfded6edf-fix1` branch created since there is nothing to fix; left on `cherry-06cfded6edf` unchanged.
+
+Recommend simply retrying the three failed jobs.
+
+---
+
