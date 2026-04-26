@@ -69760,3 +69760,43 @@ No sunxi, ARM core, common, or build-system code is modified. There is no plausi
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-311f9237613
+
+Commits:
+- 311f9237613 mtd: spi-nor-ids: Add Fujitsu MB85RS256TY FRAM
+- c5d82cab772 spi: add support for ISSI IS25WP02GG flash
+- 587b1a56752 board: ti: am62ax: tifs-rm-cfg.yaml: Add C7x resource allocation entries
+- 2a86d872ecd defconfigs: Remove default COFNIG_SPL_LDSCRIPT value
+- ef65b15383c spl: fix stack placement in spl_relocate_stack_gd()
+
+### Conversation log
+Delta matches. Now build test.
+
+Build passes. Cherry-pick next commit.
+
+All 5 commits present. Now run final build.
+
+## Summary
+
+All 5 commits successfully cherry-picked onto branch `cherry-311f9237613` (based on `ci/master`):
+
+| New Hash | Original Hash | Subject |
+|---|---|---|
+| 222bc8c92a3 | 311f9237613 | mtd: spi-nor-ids: Add Fujitsu MB85RS256TY FRAM |
+| 7879c4ec58f | c5d82cab772 | spi: add support for ISSI IS25WP02GG flash |
+| be57b8ad1de | 587b1a56752 | board: ti: am62ax: tifs-rm-cfg.yaml: Add C7x resource allocation entries |
+| ed4c4e942a6 | 2a86d872ecd | defconfigs: Remove default COFNIG_SPL_LDSCRIPT value |
+| bda44bde1a7 | ef65b15383c | spl: fix stack placement in spl_relocate_stack_gd() |
+
+**Build result:** OK — all builds passed (1 board built, no warnings/errors).
+
+**Fix-ups:** None required. Two commits had auto-merges (the SPL_LDSCRIPT defconfig commit auto-merged `axm_defconfig` and `taurus_defconfig`; the SPL stack placement commit auto-merged `common/spl/spl.c`), but no manual conflict resolution was needed.
+
+**Concerning deltas:** None. Every cherry-pick stat matches the original exactly (same files, identical line counts).
+
+The branch is left ready for pushing.
+
+---
+
