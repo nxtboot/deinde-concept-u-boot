@@ -69207,3 +69207,256 @@ Neither board uses a MediaTek SoC, so MediaTek pinctrl/DTS changes cannot influe
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-27e1924ffaa
+
+Commits:
+- 27e1924ffaa bootcount: Use predefined count/magic bit masks
+- 05b56599b5b bootcount: Fix potential clobbering issue
+- f97642853cd bootcount: dm_i2c: Support also single word mode
+- cf6aa7cf731 Merge patch series "bootcount: Small clean-up and fix, and dm_i2c single-word support"
+
+### Conversation log
+Stats match exactly. Now build test:
+
+Now the merge commit:
+
+All 4 commits present. Final build:
+
+## Final Status
+
+**Branch:** `cherry-27e1924ffaa` (based on `ci/master`)
+
+**Cherry-picks completed successfully:**
+1. `752728ae06d` ← `27e1924ffaa` - bootcount: Use predefined count/magic bit masks (4 files, 18+/12-)
+2. `0a6b74942ee` ← `05b56599b5b` - bootcount: Fix potential clobbering issue (1 file, 4+/2-)
+3. `60235516ec7` ← `f97642853cd` - bootcount: dm_i2c: Support also single word mode (1 file, 54+/20-)
+4. `58155597d3f` ← `cf6aa7cf731` - Merge patch series (empty merge, preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox build passed after each cherry-pick and on the final combined state. No warnings or errors.
+
+**Deltas:** All three regular commits matched the originals exactly (same files, same line counts).
+
+**Fix-ups:** None required. No conflicts encountered. The merge commit was empty (as expected — the three patches were already cherry-picked), so it was committed with `--allow-empty` to preserve the merge subject in history.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-27e1924ffaa
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+This is a lab/hardware failure. Let me verify by checking out the branch and inspecting the commits.
+
+## Report: Infrastructure/Transient Failure — No Code Fix Required
+
+**Failure type:** Lab/hardware timeout, not a code regression.
+
+**Root cause from log:**
+```
+Bootstrapping U-Boot from dirs .../build/opi_pc and .../build/opi_pc_extra
+Writing U-Boot using method sunxi
+...
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The orangepi_pc board was flashed via the sunxi method, then labgrid waited 15 seconds for a U-Boot login prompt that never appeared. The framework itself flagged this as `Lab failure: Marking connection bad` — meaning labgrid identified it as an infrastructure/connectivity issue, not a test assertion failure. Tests didn't even start running; the very first reset/boot before `test_000_version.py` failed.
+
+**Why this can't be caused by the branch:**
+
+The branch `cherry-27e1924ffaa` only modifies:
+- `drivers/bootcount/bootcount.c`
+- `drivers/bootcount/bootcount_at91.c` (AT91 only)
+- `drivers/bootcount/bootcount_davinci.c` (DaVinci only)
+- `drivers/bootcount/bootcount_dm_i2c.c` (DM I2C bootcount only)
+- `include/bootcount.h`
+- `.pickman-history`
+
+`configs/orangepi_pc_defconfig` contains no `CONFIG_BOOTCOUNT*` entries — orangepi_pc doesn't compile or use any of the modified files. Even if every line of the bootcount changes were broken, they could not affect orangepi_pc's ability to print a login prompt over the serial console.
+
+**Most likely real causes:** flaky serial cable/relay, slow SD-card flash, or the board not coming back up cleanly after a previous job's reset — typical for the sjg-lab stage.
+
+**Action taken:** None. No `cherry-27e1924ffaa-fix1` branch was created because there is nothing to fix in the code. Recommend simply re-running the `opi_pc` job.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-27e1924ffaa
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+This is a lab/hardware failure. Let me verify...
+
+### Conversation log
+Looking at this task carefully, I need to flag a problem with what's being requested.
+
+The "review comment" being asked to address (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is **the bot's own previous pipeline-fix report from attempt 1**. It is not a human reviewer's feedback — it's the automated status report that this MR already received, where the bot itself concluded:
+
+> **Action taken:** None. No `cherry-27e1924ffaa-fix1` branch was created because there is nothing to fix in the code. Recommend simply re-running the `opi_pc` job.
+
+The comment is already self-resolved. Let me verify no actual code change is warranted by checking the branch state and the fact that no new failures or new review comments exist.
+
+## Report
+
+**No action taken.** The single "review comment" passed in for this MR is **the bot's own previous Pipeline-fix-attempt-1 report**, not human reviewer feedback. The comment ID `project_1_bot_…` confirms its origin, and the body of the comment itself already concludes:
+
+> **Action taken:** None. … Recommend simply re-running the `opi_pc` job.
+
+So the comment is asking for nothing actionable — it's a self-resolved infrastructure-failure analysis that was already posted to the MR.
+
+### Why I did not create a -v2 branch or push
+
+- The branch only touches `drivers/bootcount/*` and `include/bootcount.h` (verified: `git diff ci/master…cherry-27e1924ffaa --stat` shows 5 bootcount files, nothing else).
+- `configs/orangepi_pc_defconfig` does not enable any `CONFIG_BOOTCOUNT*`, so orangepi_pc cannot link against any of the modified code. The previous analysis is correct.
+- There is no code change that could plausibly address a serial-console-login-prompt timeout on a board that doesn't compile any of the patched files.
+- Forcing a -v2 with no real change (or with a no-op pickman-history bump) would just re-trigger the same lab and waste CI cycles, while pretending to "address" feedback that explicitly said no fix was required.
+
+### What was done
+
+Nothing to the code. Branch left at `935cba16aeb` (current tip of `cherry-27e1924ffaa`). Working tree clean (the two untracked `hwids.dtsi` files were already untracked before checkout and are unrelated to this MR).
+
+### Suggested reply to post on the MR
+
+> The flagged "review comment" is the bot's own prior pipeline-fix report, which already concluded the `opi_pc` failure was a labgrid serial-login timeout (`Lab failure: Marking connection bad`) — i.e. infrastructure, not code. The branch only modifies `drivers/bootcount/*` and `include/bootcount.h`, and `orangepi_pc_defconfig` enables no `CONFIG_BOOTCOUNT*`, so these patches cannot be involved in an orangepi_pc boot failure. No code change is warranted; please simply re-run the `opi_pc` job.
+
+If the intent was actually to address something other than this self-report (e.g. a new human review comment that wasn't included in the prompt), please re-run the task with the actual comment text and I'll handle it.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 2)
+
+Branch: cherry-27e1924ffaa
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- vf2 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+All three failures look like infrastructure/lab issues. Let me verify the branch state and confirm.
+
+Let me verify the modified bootcount code builds cleanly to be thorough.
+
+Sandbox build passes (silent = OK). Now let me create the local fix branch as required by the protocol — even though no fix was applied, the caller expects the branch:
+
+## Report: Infrastructure/Transient Failures — No Code Fix Required
+
+**Failure type:** All three failures are lab/hardware/infrastructure issues, not code regressions.
+
+### Per-job analysis
+
+**1. `opi_pc`** (orangepi_pc, sunxi):
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Same failure mode as attempt 1. Labgrid flagged this itself as a lab failure. No tests ran.
+
+**2. `vf2`** (starfive_visionfive2, RISC-V):
+```
+Writing U-Boot using method riscv
+dwmci_s: Response Timeout.
+dwmci_s: Response Timeout.
+BOOT fail,Error is 0xffffffff
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+The DesignWare MMC controller (`dwmci_s`) timed out talking to the SD card during the BootROM stage — this is before any U-Boot code runs. Pure SD card / flash hardware fault. Labgrid again flagged it as a lab failure.
+
+**3. `efi-aarch64`** (qemu_arm64 EFI):
+```
+test/py/tests/test_distro.py:150: in test_distro_arm_app_efi
+    ubman.expect(['Ubuntu 25.04 qarm ttyAMA0'])
+E   console_base.Timeout
+===== 1 failed, 34 passed, 671 skipped, 3 deselected =====
+```
+A single distro-boot test (downloads/boots an Ubuntu cloud image inside QEMU+EFI) timed out waiting for the distro's login banner. The 34 U-Boot self-tests in the same job all passed — the failure is in the distro boot, not U-Boot. Likely a flaky distro download / slow QEMU run / network hiccup.
+
+### Why none of these can be caused by this branch
+
+The branch (vs `ci/master`) only modifies bootcount files:
+- `drivers/bootcount/bootcount.c`
+- `drivers/bootcount/bootcount_at91.c` (AT91 only)
+- `drivers/bootcount/bootcount_davinci.c` (DaVinci only)
+- `drivers/bootcount/bootcount_dm_i2c.c` (DM I2C bootcount only)
+- `include/bootcount.h`
+- `.pickman-history`
+
+I verified none of `qemu_arm64_defconfig`, `orangepi_pc_defconfig`, or `starfive_visionfive2_defconfig` enable any `CONFIG_BOOTCOUNT*` — so none of them compile or link any of the modified files. There is no code path on these boards that touches the changed code.
+
+Furthermore, the `vf2` and `opi_pc` failures occur **before** U-Boot is even loaded (BootROM/SD-flash timeout, serial-login timeout during bootstrap), which the branch's user-space–level bootcount changes could not influence even theoretically.
+
+### Verification
+
+- `um build sandbox` → silent (success).
+- `git status` → working tree clean (only the same pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+- Branch tip unchanged: `726e56b8ddc`.
+
+### Action taken
+
+No code change. Created local branch `cherry-27e1924ffaa-fix2` pointing at the unchanged tip of `cherry-27e1924ffaa` (commit `726e56b8ddc`), as the caller's protocol expects the branch to exist. Did **not** push.
+
+**Recommendation:** Re-run the three lab jobs (`opi_pc`, `vf2`, `efi-aarch64`); they should pass on a healthy lab cycle.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-27e1924ffaa
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, vf2, opi_pc.
+
+All three failures look lik...
+
+### Conversation log
+I have enough information. This is the same pattern as the previous task in the conversation log: the "review comment" being passed in is the bot's own previous Pipeline-fix-attempt-2 report — and the body of that report itself concludes "No code change required" and recommends re-running the lab jobs.
+
+Let me confirm the build is still clean and then report.
+
+## Report
+
+**No code change made. No -v2 branch created. No push performed.**
+
+The single "review comment" passed in for this task (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is **the bot's own Pipeline-fix-attempt-2 report** — not human reviewer feedback. The comment ID confirms its bot origin (`project_1_bot_…`), and the body of the comment itself already concluded:
+
+> **Action taken:** No code change. … **Recommendation:** Re-run the three lab jobs (`opi_pc`, `vf2`, `efi-aarch64`); they should pass on a healthy lab cycle.
+
+The comment is self-resolved. There is nothing actionable in it.
+
+### Why no -v2 was created or pushed
+
+- **Diff vs `ci/master`** (`git diff ci/master..HEAD --stat`): 6 files — `.pickman-history`, `drivers/bootcount/bootcount.c`, `drivers/bootcount/bootcount_at91.c`, `drivers/bootcount/bootcount_davinci.c`, `drivers/bootcount/bootcount_dm_i2c.c`, `include/bootcount.h`. Nothing else.
+- **Failing boards don't compile any of the changed code**: `grep -l BOOTCOUNT configs/qemu_arm64_defconfig configs/orangepi_pc_defconfig configs/starfive_visionfive2_defconfig` → no matches. None of the three failing jobs (`efi-aarch64`, `vf2`, `opi_pc`) link any of the modified files.
+- **The failures are pre-U-Boot or post-U-Boot**:
+  - `vf2`: BootROM `dwmci_s: Response Timeout` (before U-Boot loads).
+  - `opi_pc`: Labgrid `Marking connection bad` after a 15 s serial-login timeout (no tests ran).
+  - `efi-aarch64`: A single Ubuntu cloud-image distro-boot test timed out; the 34 U-Boot self-tests in the same job all passed.
+- **Sandbox build still passes** silently (`um build sandbox`).
+- Forcing a `-v2` with no change (or with a no-op pickman-history bump) would waste CI on three flaky lab jobs while pretending to "address" feedback that explicitly said no fix was required.
+
+### State
+
+- Branch tip unchanged: `81bf622f132` on `cherry-27e1924ffaa`.
+- Working tree clean (the two untracked `hwids.dtsi` files are pre-existing and unrelated).
+
+### Suggested reply to post on the MR
+
+> The flagged "review comment" is the bot's own prior pipeline-fix-attempt-2 report, which itself concluded the three failures (`opi_pc`, `vf2`, `efi-aarch64`) are infrastructure issues — labgrid serial-login timeout on opi_pc, BootROM `dwmci_s` SD-card timeout on vf2, and a single Ubuntu cloud-image distro-boot timeout on efi-aarch64 (all 34 U-Boot self-tests in that same job passed). The branch only modifies `drivers/bootcount/*` and `include/bootcount.h`, and none of `qemu_arm64_defconfig`, `orangepi_pc_defconfig`, or `starfive_visionfive2_defconfig` enable any `CONFIG_BOOTCOUNT*` — so these patches cannot be involved. No code change is warranted; please re-run the three lab jobs.
+
+If a real human review comment was intended and got lost, please re-run with the actual comment text.
+
+---
+
