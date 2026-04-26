@@ -68980,3 +68980,230 @@ The branch `cherry-2517e2b524e` is ready for pushing.
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-06cfded6edf
+
+Commits:
+- 06cfded6edf pinctrl: mediatek: add pinctrl driver for MT8195
+- b681f2be8cc pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1
+- a1edc0b7d64 arm: dts: mt7622: Fix SPI bus bridge warning
+- 08b379f9cfd arm: dts: mt7622: Use generic node names
+- 68e542d4f59 Merge patch series "arm: dts: mt7622: use generic node names"
+
+### Conversation log
+All 5 commits are present. Now run the final build:
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-06cfded6edf` (based on `ci/master`)
+
+**Cherry-pick results:**
+| Original Hash | New Hash | Subject | Delta |
+|---|---|---|---|
+| 06cfded6edf | 10f1e255f49 | pinctrl: mediatek: add pinctrl driver for MT8195 | Identical (3 files, +1084) |
+| b681f2be8cc | 1fd57c59fc3 | pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1 | Identical (4 files, +4) |
+| a1edc0b7d64 | 8ada7914f8c | arm: dts: mt7622: Fix SPI bus bridge warning | Identical (1 file, +1/-1) |
+| 08b379f9cfd | f5ffd5ccfa1 | arm: dts: mt7622: Use generic node names | Identical (1 file, +11/-11) |
+| 68e542d4f59 | a0ab3b37b91 | Merge patch series "arm: dts: mt7622: use generic node names" | Empty merge (preserved with --allow-empty) |
+
+**Build result:** ✅ OK — sandbox built successfully after each cherry-pick and after the final commit (no warnings/errors)
+
+**Fix-ups:** None required. All cherry-picks applied cleanly (with auto-merging on Kconfig and pinctrl-mt798x.c files for the first two commits).
+
+**Concerning deltas:** None. All non-merge commits have identical file/line stats vs. their originals. The merge commit was empty as expected (its content is captured by the preceding 2 dts commits) and was preserved with `--allow-empty`.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-06cfded6edf
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me look at the actual code changes in these commits to verify they don't affect the failing boards.
+
+Based on my analysis, all three failures are clearly infrastructure/lab issues unrelated to the cherry-picked code changes. Let me confirm by examining what files the commits touch vs. the failing boards.
+
+**Analysis of failures:**
+
+The branch `cherry-06cfded6edf` contains 5 commits, all MediaTek-specific:
+- `10f1e255f49` pinctrl: mediatek: add pinctrl driver for **MT8195**
+- `1fd57c59fc3` pinctrl: mediatek: set **MT798x** rev as MTK_PINCTRL_V1
+- `8ada7914f8c` arm: dts: **mt7622**: Fix SPI bus bridge warning
+- `f5ffd5ccfa1` arm: dts: **mt7622**: Use generic node names
+- `a0ab3b37b91` (merge commit)
+
+**Files touched:** only `drivers/pinctrl/mediatek/*` and `arch/arm/dts/mt7622.dtsi`.
+
+**The three failing boards have nothing to do with MediaTek SoCs:**
+- `jerry` = Rockchip RK3288 (Chromebook)
+- `opi_pc` = Allwinner H3 (OrangePi PC)
+- `efi-x86_64-uboot-iso` = x86_64 EFI
+
+**Failure signatures:**
+
+1. **jerry** & **opi_pc** — Identical lab connection failures:
+   ```
+   pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+   Lab failure: Marking connection bad - no other tests will run
+   ```
+   The bootstrap could not even reach a U-Boot prompt within 15 s — typical lab/runner infrastructure issue (board not powering on, cable, em100/sunxi flash wedged, etc.). U-Boot itself was never tested.
+
+2. **efi-x86_64-uboot-iso** — Test ran, U-Boot booted fine, BLS bootflow was found on `efi_media_1.bootdev`, kernel started, then:
+   ```
+   [    4.842990] Initramfs unpacking failed: invalid magic at start of compressed archive
+   ```
+   followed by timeout waiting for `Started gdm.service`. The kernel/initrd download itself succeeded; the failure is in the Ubuntu casper initrd (unrelated to U-Boot, let alone to MediaTek pinctrl).
+
+Since the cherry-picks touch only MediaTek pinctrl drivers and the mt7622 DTS, they cannot influence boot of an RK3288, an Allwinner H3, or an x86_64 EFI ISO test. The instructions state: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+**Conclusion: All three failures are infrastructure/transient — no code fix needed.**
+
+- **Responsible commit:** None — failures are not caused by any commit on this branch.
+- **Root cause:**
+  - `jerry`, `opi_pc`: Lab connection timeouts (boards never reached U-Boot prompt; "Marking connection bad").
+  - `efi-x86_64-uboot-iso`: Ubuntu live-ISO initramfs corruption / kernel-side decompression failure during distro boot test — not affected by MediaTek pinctrl/DTS changes.
+- **Change made:** None. No `cherry-06cfded6edf-fix1` branch created since there is nothing to fix; left on `cherry-06cfded6edf` unchanged.
+
+Recommend simply retrying the three failed jobs.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-06cfded6edf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso, jerry, opi_pc.
+
+Let me look at t...
+
+### Conversation log
+Looking at the review comment, it's actually the previous bot's own pipeline fix attempt #1 report — the analysis concluded the failures (jerry, opi_pc, efi-x86_64-uboot-iso) were infrastructure issues unrelated to the MediaTek-only cherry-picks, recommending a retry. There's no actionable code change requested. Let me verify the analysis still holds and confirm the build works.
+
+Confirmed: changes are 100% MediaTek-specific. Let me verify the sandbox build still works.
+
+Build passes. Now let me check the pickman tool for how to handle this case.
+
+## Report
+
+### Analysis
+
+The "review comment" being addressed is actually the **previous bot's own pipeline fix attempt #1 report** (from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`). That report's analysis was already complete and correct — it concluded all three failures were infrastructure issues unrelated to the cherry-picked changes, with no code fix required.
+
+### Re-verification
+
+I re-verified the situation:
+
+**Branch contents (cherry-06cfded6edf):** 5 commits, exclusively MediaTek-related:
+- `10f1e255f49` pinctrl: mediatek: add pinctrl driver for **MT8195**
+- `1fd57c59fc3` pinctrl: mediatek: set **MT798x** rev as MTK_PINCTRL_V1
+- `8ada7914f8c` arm: dts: **mt7622**: Fix SPI bus bridge warning
+- `f5ffd5ccfa1` arm: dts: **mt7622**: Use generic node names
+- `a0ab3b37b91` (merge commit)
+
+**Files touched (confirmed via `git diff --stat`):**
+- `arch/arm/dts/mt7622.dtsi` (24 lines)
+- `drivers/pinctrl/mediatek/Kconfig` (4 lines)
+- `drivers/pinctrl/mediatek/Makefile` (1 line)
+- `drivers/pinctrl/mediatek/pinctrl-mt{7981,7986,7987,7988}.c` (1 line each)
+- `drivers/pinctrl/mediatek/pinctrl-mt8195.c` (1079 lines, new file)
+
+**Failing boards have no MediaTek SoC:**
+- `jerry` = Rockchip RK3288 (Chromebook)
+- `opi_pc` = Allwinner H3 (OrangePi PC)
+- `efi-x86_64-uboot-iso` = x86_64 EFI
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+
+### Action Taken
+
+**No code change made.** No `-v2` branch created. No push performed.
+
+The original analysis is correct: the cherry-picks cannot influence boot of an RK3288, an Allwinner H3, or an x86_64 EFI ISO test. Per the project guideline ("If the failure is an infrastructure or transient issue ... report this without making changes"), there is nothing to fix.
+
+### Suggested reply to post on the MR
+
+> Re-verified pipeline-fix attempt #1: confirmed correct. The branch only modifies `arch/arm/dts/mt7622.dtsi` and `drivers/pinctrl/mediatek/*` (MT8195/MT798x), so it cannot affect the failing boards (jerry = RK3288, opi_pc = Allwinner H3, efi-x86_64-uboot-iso = x86_64 EFI). Sandbox build remains clean (`buildman -L --board sandbox`: 1 built, 0 errors/warnings). All three failures are infrastructure/transient: jerry & opi_pc are lab connection timeouts ("Marking connection bad — no other tests will run"), and efi-x86_64-uboot-iso is a kernel-side initramfs decompression failure inside the Ubuntu casper image after U-Boot already handed off successfully. No code change required — please retry the failed jobs.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 3)
+
+Branch: cherry-06cfded6edf
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+I can see this is the third attempt at the same branch. The log analysis suggests these are again infrastructure issues (lab connection timeout for opi_pc, build environment issue for efi-aarch64). Let me checkout the branch and verify carefully.
+
+Branch is identical to previous attempts - all 5 cherry-pick commits + 3 pickman tracking commits. Files touched are exclusively MediaTek-specific. Let me now analyze the failures carefully.
+
+**efi-aarch64**: The job runs `scripts/build-efi -a arm -n --build-dir ...` which attempts to rebuild U-Boot as an EFI app. It fails with:
+```
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+```
+
+This is `checkarmreloc` failing because readelf cannot read the u-boot ELF file. Let me look more carefully at what could trigger this.
+
+Let me verify the sandbox build and confirm the failures are unrelated to the MediaTek-only changes.
+
+Let me build the actual U-Boot boards corresponding to those failing roles to confirm they still build correctly:
+
+All boards build successfully (13 built, 0 errors) — including `efi-arm_app64` and `orangepi_pc` (the actual U-Boot boards corresponding to the failing CI roles). Warnings are pre-existing (missing external blobs, sandbox dt warnings) and unrelated to the cherry-picks.
+
+Both failures are clearly infrastructure issues:
+- **opi_pc**: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → board never reached U-Boot prompt; same recurring lab issue.
+- **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` during `checkarmreloc` → readelf cannot read the u-boot ELF (file empty/missing). This is a runner build-environment race, not a source-code issue. The aarch64 EFI app build now works correctly locally.
+
+Per the task instructions, when failures are infrastructure/transient, report this without making changes. Let me create the fix3 branch:
+
+Branch `cherry-06cfded6edf-fix3` created.
+
+## Report
+
+### Root cause: Both failures are infrastructure/transient — not caused by any commit on this branch
+
+**Branch contents** (`cherry-06cfded6edf`): Unchanged from previous attempts — 5 cherry-picked commits, exclusively MediaTek-related:
+- `10f1e255f49` pinctrl: mediatek: add pinctrl driver for MT8195
+- `1fd57c59fc3` pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1
+- `8ada7914f8c` arm: dts: mt7622: Fix SPI bus bridge warning
+- `f5ffd5ccfa1` arm: dts: mt7622: Use generic node names
+- `a0ab3b37b91` Merge patch series
+
+**Files touched**: only `arch/arm/dts/mt7622.dtsi`, `drivers/pinctrl/mediatek/Kconfig`, `Makefile`, `pinctrl-mt798[1,6,7,8].c`, and the new `pinctrl-mt8195.c`.
+
+### Failure analysis
+
+| Job | Board | Failure signature | Verdict |
+|---|---|---|---|
+| `efi-aarch64` | `efi-arm_app64` (generic ARM64 EFI) | `readelf: Error: u-boot: Failed to read file's magic number` → `make[1]: *** [Makefile:2643: checkarmreloc] Error 1` | Build-env race on runner — readelf ran against an empty/missing u-boot ELF. Not source-code-related. |
+| `opi_pc` | `orangepi_pc` (Allwinner H3) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad - no other tests will run` | Recurring lab connection timeout — board never reached U-Boot prompt. |
+
+Neither board uses a MediaTek SoC, so MediaTek pinctrl/DTS changes cannot influence them. `opi_pc` has now failed in attempts 1, 2, and 3 with the identical "Marking connection bad" signature — the lab/board needs attention.
+
+### Local verification
+
+- `um build sandbox` → silent (OK)
+- `buildman -o /tmp/pickman efi-arm_app64 orangepi_pc sandbox` → **13 built, 0 errors** (all warnings pre-existing: orangepi_pc2 missing external ATF blobs; sandbox reserved-memory ranges warnings)
+
+### Action taken
+
+- **Responsible commit:** None — failures are not caused by any commit on this branch.
+- **Change made:** None. Created local branch `cherry-06cfded6edf-fix3` identical to `cherry-06cfded6edf` (no code changes).
+- **Recommendation:** Retry the two failed jobs. Per project guideline "*If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes*", no fix is warranted.
+
+---
+
