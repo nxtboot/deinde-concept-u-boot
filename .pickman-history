@@ -69607,3 +69607,50 @@ Push succeeded. Final summary:
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Now let me verify deltas of each commit match the pre-rebase versions.
+
+All deltas are identical to the pre-rebase versions. Now let me run the build verification.
+
+Build passed cleanly. Now let me create the v4 backup branch and force-push.
+
+Push successful. Final summary:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`fc686e475d9`) and force-pushed to update MR !970 (`e79d05daaed → 3428e212670`).
+
+**Conflict resolved:**
+- `.pickman-history`: Same trivial flavour as before — `ci/master` had picked up new entries for `cherry-06cfded6edf` (the 2026-04-26 us/next pick plus three pipeline-fix attempts and a review entry) right where our `cherry-b5db4f322a0` "(continued)" record sits. Resolved by keeping both sections, adding a `---` divider, and preserving our entry's "(continued)" label.
+
+**Delta verification:** All ten commits replayed with byte-identical stats vs their pre-rebase counterparts:
+- `1741af18712` board mt8370_evk: 2 files, 32+
+- `dd1491899f7` topckgen-cg: 76+/101−
+- `a065848eba3` circular dep: 7+/7−
+- `8fde10720f3` fixed clock: 196+/195−
+- `8476da9e76a` clock parents: 15+/19−
+- `58c106618c7` refactor: 217+/230−
+- `9963d54e70d` merge commit (empty, preserved)
+- `54f7c5e7ac0` pickman cherry-pick record: 60+
+- `6dd89f7b605` pickman review record 1: 39+
+- `3428e212670` pickman review record 2: 48+
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 errors, 0 warnings.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `3428e212670`) and backup `cherry-b5db4f322a0-v4` (the `-v2`, `-v3` slots were taken by earlier rebases)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`fc686e475d9`). Only conflict was the now-familiar one in `.pickman-history` — the new ci/master picked up entries for the parallel `cherry-06cfded6edf` MR (cherry-pick + three pipeline-fix attempts + review) right where our "(continued)" record sits. Resolved by keeping both sections in chronological order. All ten commits replayed with byte-identical stats, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
