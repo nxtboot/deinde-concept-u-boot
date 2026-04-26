@@ -68949,3 +68949,34 @@ The failure is purely a lab/infrastructure timeout — `pexpect.exceptions.TIMEO
 
 ---
 
+## 2026-04-25: us/next
+
+Branch: cherry-2517e2b524e
+
+Commits:
+- 2517e2b524e arm: mediatek: add support for MediaTek MT8195 SoC
+- 5f2111e9ff7 clk: mediatek: implement GATE_FLAGS macro
+- a0c5403283f clk: mediatek: add MT8195 clock driver
+- fa3f16e450a Merge patch series "Add MT8195 support"
+
+### Conversation log
+Deltas match exactly. Now build test:
+
+All cherry-picks succeeded. Final status:
+
+**Build result:** OK (sandbox builds cleanly with no warnings/errors)
+
+**Commits cherry-picked (in order):**
+1. `93e0f995cff` — arm: mediatek: add support for MediaTek MT8195 SoC (5 files, 106+/-1, identical to original)
+2. `6d2f95188cc` — clk: mediatek: implement GATE_FLAGS macro (1 file, 8+, identical to original)
+3. `830c36085d3` — clk: mediatek: add MT8195 clock driver (2 files, 1663+, identical to original)
+4. `c8158bd038e` — Merge patch series "Add MT8195 support" (empty merge commit, preserved with `--allow-empty` and `(cherry picked from ...)` trailer manually added)
+
+**Fix-ups:** The merge commit needed a manual amend to add the `(cherry picked from commit fa3f16e450a5cb6001f538e05c62bd38fb3cdebc)` trailer, since `git commit --allow-empty` after the empty cherry-pick doesn't add it automatically. No code changes were made.
+
+**Concerning deltas:** None — file lists and line counts match the originals exactly for all three non-merge commits.
+
+The branch `cherry-2517e2b524e` is ready for pushing.
+
+---
+
