@@ -69207,3 +69207,42 @@ Neither board uses a MediaTek SoC, so MediaTek pinctrl/DTS changes cannot influe
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-27e1924ffaa
+
+Commits:
+- 27e1924ffaa bootcount: Use predefined count/magic bit masks
+- 05b56599b5b bootcount: Fix potential clobbering issue
+- f97642853cd bootcount: dm_i2c: Support also single word mode
+- cf6aa7cf731 Merge patch series "bootcount: Small clean-up and fix, and dm_i2c single-word support"
+
+### Conversation log
+Stats match exactly. Now build test:
+
+Now the merge commit:
+
+All 4 commits present. Final build:
+
+## Final Status
+
+**Branch:** `cherry-27e1924ffaa` (based on `ci/master`)
+
+**Cherry-picks completed successfully:**
+1. `752728ae06d` ← `27e1924ffaa` - bootcount: Use predefined count/magic bit masks (4 files, 18+/12-)
+2. `0a6b74942ee` ← `05b56599b5b` - bootcount: Fix potential clobbering issue (1 file, 4+/2-)
+3. `60235516ec7` ← `f97642853cd` - bootcount: dm_i2c: Support also single word mode (1 file, 54+/20-)
+4. `58155597d3f` ← `cf6aa7cf731` - Merge patch series (empty merge, preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox build passed after each cherry-pick and on the final combined state. No warnings or errors.
+
+**Deltas:** All three regular commits matched the originals exactly (same files, same line counts).
+
+**Fix-ups:** None required. No conflicts encountered. The merge commit was empty (as expected — the three patches were already cherry-picked), so it was committed with `--allow-empty` to preserve the merge subject in history.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
