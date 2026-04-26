@@ -69460,3 +69460,63 @@ If a real human review comment was intended and got lost, please re-run with the
 
 ---
 
+## 2026-04-25: us/next (continued)
+
+Branch: cherry-b5db4f322a0
+
+Commits:
+- b5db4f322a0 board: mediatek: add MT8370 EVK board support
+- a04835c0e92 clk: mediatek: mt8188: remove separate topckgen-cg driver
+- 6354f83f43f clk: mediatek: mt8188: fix circular clock dependency
+- 5e9bbbdab00 clk: mediatek: mt8188: add missing fixed clock
+- 2797fa3efd8 clk: mediatek: mt8188: fix some clock parents
+- 0cdd01dbde2 clk: mediatek: mt8188: refactor driver to improve readability
+- 03637bda63a Merge patch series "clk: mediatek: mt8188: fix clocks"
+
+### Conversation log
+First cherry-pick failed with conflicts. Per instructions, I need to check if commits are already present in ci/master with different hashes before aborting.
+
+The conflict arose because in ci/master the consolidated `board/mediatek/MAINTAINERS` was split into per-board MAINTAINERS files. I need to restore mt8390_evk/MAINTAINERS to its original state and create a new mt8370_evk/MAINTAINERS file.
+
+Build passed. Now cherry-pick the next commit.
+
+Identical delta. Continue with build test and next picks.
+
+Now the merge commit:
+
+All 7 commits are present. Let me run the final build test.
+
+All cherry-picks complete. Final report:
+
+## Final Status
+
+**Build result:** OK — sandbox builds cleanly after every commit and at the end of the series.
+
+**Commits applied (7/7):**
+1. `b3499708c3d` board: mediatek: add MT8370 EVK board support
+2. `3d19740330e` clk: mediatek: mt8188: remove separate topckgen-cg driver
+3. `166699e3d0f` clk: mediatek: mt8188: fix circular clock dependency
+4. `cd0ab01f7d8` clk: mediatek: mt8188: add missing fixed clock
+5. `3342d65a169` clk: mediatek: mt8188: fix some clock parents
+6. `96bcd27f166` clk: mediatek: mt8188: refactor driver to improve readability
+7. `097488e0fe2` Merge patch series "clk: mediatek: mt8188: fix clocks" (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups made:**
+- **Commit 1 (MT8370 EVK board):** The original commit added an MT8370 EVK entry to the consolidated `board/mediatek/MAINTAINERS`, but in `ci/master` that file has been split into per-board MAINTAINERS files. Resolved by:
+  - Restoring `board/mediatek/mt8390_evk/MAINTAINERS` to its existing per-board content (git's rename-detection had merged the consolidated file into it).
+  - Creating new `board/mediatek/mt8370_evk/MAINTAINERS` with the MT8370 EVK entry to match the per-board layout.
+  - Added a one-line note at the end of the commit message describing this fix-up.
+  - Delta: 32 lines added vs 33 in the original (1-line reduction is the missing blank-line separator between MAINTAINERS sections that existed in the consolidated file).
+
+**Concerning deltas:** None. All other commits applied cleanly with identical or near-identical line counts and file sets.
+
+The `cherry-b5db4f322a0` branch is left checked out and ready for pushing. (The two untracked files in `arch/sandbox/dts/` and `test/fdt_overlay/` were present before I started and remain untracked.)
+
+---
+
+### Rebase: 2026-04-25
+
+Rebased cherry-b5db4f322a0 onto latest ci/master (f2a813872d9). Conflict in .pickman-history resolved by keeping both sections. All commits replayed; sandbox build verified.
+
+---
+
