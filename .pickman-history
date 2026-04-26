@@ -69654,3 +69654,64 @@ Push successful. Final summary:
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+- [sjg]: Pickman: please check this build failure
+
+https://concept.u-boot.org/u-boot/u-boot/-/commit/097488e0...
+
+### Conversation log
+## Rebase + Build-Failure Investigation Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`b79c72b9bf6`) and force-pushed to update MR !970 (`3428e212670 → 084b06a8834`).
+
+### Build failure investigation
+
+The reviewer pointed to pipeline 6922 (commit `097488e0fe2`), where `mt8370_evk` failed with `undefined reference to mem_map` in `arch/arm/cpu/armv8/cache_v8.c`. **Root cause: stale CI base, not a real bug.**
+
+That pipeline ran on top of master at `2d3f5d992c0`, which **did not yet contain** the consolidate commit `9c0aa61886` (`arm: mediatek: consolidate ARMv8 memory maps`). Without that commit, `arch/arm/mach-mediatek/armv8-mem-map.c` (the file that defines `mem_map` for all MTK ARMv8 platforms including the new MT8188-based MT8370 EVK) didn't exist, so the new `mt8370_evk` board had nowhere to source `mem_map` from. Existing boards like `mt8390_evk` had per-board `.c` files that defined it; the new MT8370 EVK relied on the consolidated definition.
+
+The consolidate commit landed in master via `f2a813872d9` (`cherry-1af249f511a`) and is in every ci/master we've rebased onto since the first rebase. **No code change is warranted.** Local verification on the rebased branch:
+
+```
+buildman -PEWM -L --board mt8370_evk,mt8390_evk,mt8365_evk,mt8183_pumpkin,mt8512_bm1_emmc
+→ 5 built, 0 errors, 0 warnings
+buildman -L --board sandbox -w -o /tmp/pickman
+→ 1 built, 0 errors, 0 warnings
+```
+
+### Conflict resolved
+
+- `.pickman-history`: same flavour as the prior four rebases — `ci/master` picked up entries for `cherry-27e1924ffaa` (the new "2026-04-26: us/next" section) right where our `cherry-b5db4f322a0` "(continued)" record sits. Resolved by keeping both sections in chronological order with the standard `---` divider.
+
+### Delta verification
+
+All eleven commits replayed with byte-identical stats vs their pre-rebase counterparts:
+- `3e8e30f21c2` board mt8370_evk: 2 files, 32+
+- `bac9398bffa` topckgen-cg: 76+/101−
+- `570816b09f2` circular dep: 7+/7−
+- `dbcae417323` fixed clock: 196+/195−
+- `5cd00a76f5e` clock parents: 15+/19−
+- `d276cf53804` refactor: 217+/230−
+- `5ea0538cb57` merge commit (empty, preserved)
+- `5d3224247a9` pickman cherry-pick record: 60+
+- `0ada5206db4` pickman review record 1: 39+
+- `b858914f7e6` pickman review record 2: 48+
+- `084b06a8834` pickman review record 3 (this rebase): 47+
+
+### Branches
+
+- Local: `cherry-b5db4f322a0` (HEAD `084b06a8834`) and backup `cherry-b5db4f322a0-v5` (the `-v2`, `-v3`, `-v4` slots are taken by earlier rebases)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+### Reply to post on MR !970
+
+> Investigated the `mt8370_evk` build failure flagged at `097488e0fe2` (pipeline 6922). It's a stale-base artefact, not a real bug: that pipeline ran on top of `2d3f5d992c0`, which predates the consolidate commit `9c0aa61886` (`arm: mediatek: consolidate ARMv8 memory maps`). Without that commit `arch/arm/mach-mediatek/armv8-mem-map.c` doesn't exist, so the new MT8370 EVK (which relies on the consolidated `mem_map` rather than a per-board `.c` file like `mt8390_evk` had) failed to link `cache_v8.o`. The consolidate commit landed in master via `f2a813872d9` (`cherry-1af249f511a`) and has been in every ci/master base since the first rebase. No code change is warranted.
+>
+> Now also rebased onto latest `ci/master` (`b79c72b9bf6`). Only conflict was the now-familiar one in `.pickman-history` — `cherry-27e1924ffaa` had landed an entry under the same date heading. Resolved by keeping both sections. All eleven commits replayed with byte-identical stats. Local verification: `buildman -PEWM -L --board mt8370_evk,mt8390_evk,mt8365_evk,mt8183_pumpkin,mt8512_bm1_emmc` → 5 built, 0 errors, 0 warnings; `buildman --board sandbox` is also clean. Force-pushed to refresh the pipeline.
+
+---
+
