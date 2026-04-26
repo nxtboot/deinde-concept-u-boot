@@ -69520,3 +69520,42 @@ Rebased cherry-b5db4f322a0 onto latest ci/master (f2a813872d9). Conflict in .pic
 
 ---
 
+### Review: 2026-04-25
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Good, no real conflict markers remain (the matches are in test output sections).
+
+Now let me verify deltas vs original commits and check the build.
+
+Deltas look good. Now let me run the build.
+
+Build passes. Now let me create the v2 branch and push.
+
+Push was successful. Final status:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`f2a813872d9`) and force-pushed to update MR !970.
+
+**Conflicts resolved:**
+- `.pickman-history`: Trivial conflict where the previous MR for `cherry-1af249f511a` had also added a "2026-04-25: us/next" section. Resolved by keeping both sections, with the prior one preceding this MR's notes (now labelled "continued").
+
+**Build verification:** OK — `buildman -L --board sandbox` completed cleanly (1 board built, 0 errors, 0 warnings).
+
+**Delta verification:** All seven content commits show identical or near-identical line counts to their originals; the merge commit replayed empty as expected. The board commit retains the prior fix-up note about the per-board MAINTAINERS layout.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `459d71501f3`) and backup `cherry-b5db4f322a0-v2`
+- Remote: force-pushed to `ci/cherry-b5db4f322a0` (`097488e0fe2 → 459d71501f3`)
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`f2a813872d9`). Only conflict was a trivial one in `.pickman-history` (a parallel MR added an entry under the same date heading) — resolved by keeping both entries. All seven content commits replayed with matching deltas, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
