@@ -69334,3 +69334,81 @@ If the intent was actually to address something other than this self-report (e.g
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 2)
+
+Branch: cherry-27e1924ffaa
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- vf2 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+All three failures look like infrastructure/lab issues. Let me verify the branch state and confirm.
+
+Let me verify the modified bootcount code builds cleanly to be thorough.
+
+Sandbox build passes (silent = OK). Now let me create the local fix branch as required by the protocol — even though no fix was applied, the caller expects the branch:
+
+## Report: Infrastructure/Transient Failures — No Code Fix Required
+
+**Failure type:** All three failures are lab/hardware/infrastructure issues, not code regressions.
+
+### Per-job analysis
+
+**1. `opi_pc`** (orangepi_pc, sunxi):
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Same failure mode as attempt 1. Labgrid flagged this itself as a lab failure. No tests ran.
+
+**2. `vf2`** (starfive_visionfive2, RISC-V):
+```
+Writing U-Boot using method riscv
+dwmci_s: Response Timeout.
+dwmci_s: Response Timeout.
+BOOT fail,Error is 0xffffffff
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+The DesignWare MMC controller (`dwmci_s`) timed out talking to the SD card during the BootROM stage — this is before any U-Boot code runs. Pure SD card / flash hardware fault. Labgrid again flagged it as a lab failure.
+
+**3. `efi-aarch64`** (qemu_arm64 EFI):
+```
+test/py/tests/test_distro.py:150: in test_distro_arm_app_efi
+    ubman.expect(['Ubuntu 25.04 qarm ttyAMA0'])
+E   console_base.Timeout
+===== 1 failed, 34 passed, 671 skipped, 3 deselected =====
+```
+A single distro-boot test (downloads/boots an Ubuntu cloud image inside QEMU+EFI) timed out waiting for the distro's login banner. The 34 U-Boot self-tests in the same job all passed — the failure is in the distro boot, not U-Boot. Likely a flaky distro download / slow QEMU run / network hiccup.
+
+### Why none of these can be caused by this branch
+
+The branch (vs `ci/master`) only modifies bootcount files:
+- `drivers/bootcount/bootcount.c`
+- `drivers/bootcount/bootcount_at91.c` (AT91 only)
+- `drivers/bootcount/bootcount_davinci.c` (DaVinci only)
+- `drivers/bootcount/bootcount_dm_i2c.c` (DM I2C bootcount only)
+- `include/bootcount.h`
+- `.pickman-history`
+
+I verified none of `qemu_arm64_defconfig`, `orangepi_pc_defconfig`, or `starfive_visionfive2_defconfig` enable any `CONFIG_BOOTCOUNT*` — so none of them compile or link any of the modified files. There is no code path on these boards that touches the changed code.
+
+Furthermore, the `vf2` and `opi_pc` failures occur **before** U-Boot is even loaded (BootROM/SD-flash timeout, serial-login timeout during bootstrap), which the branch's user-space–level bootcount changes could not influence even theoretically.
+
+### Verification
+
+- `um build sandbox` → silent (success).
+- `git status` → working tree clean (only the same pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+- Branch tip unchanged: `726e56b8ddc`.
+
+### Action taken
+
+No code change. Created local branch `cherry-27e1924ffaa-fix2` pointing at the unchanged tip of `cherry-27e1924ffaa` (commit `726e56b8ddc`), as the caller's protocol expects the branch to exist. Did **not** push.
+
+**Recommendation:** Re-run the three lab jobs (`opi_pc`, `vf2`, `efi-aarch64`); they should pass on a healthy lab cycle.
+
+---
+
