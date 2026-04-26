@@ -69246,3 +69246,46 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-27e1924ffaa
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+This is a lab/hardware failure. Let me verify by checking out the branch and inspecting the commits.
+
+## Report: Infrastructure/Transient Failure — No Code Fix Required
+
+**Failure type:** Lab/hardware timeout, not a code regression.
+
+**Root cause from log:**
+```
+Bootstrapping U-Boot from dirs .../build/opi_pc and .../build/opi_pc_extra
+Writing U-Boot using method sunxi
+...
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The orangepi_pc board was flashed via the sunxi method, then labgrid waited 15 seconds for a U-Boot login prompt that never appeared. The framework itself flagged this as `Lab failure: Marking connection bad` — meaning labgrid identified it as an infrastructure/connectivity issue, not a test assertion failure. Tests didn't even start running; the very first reset/boot before `test_000_version.py` failed.
+
+**Why this can't be caused by the branch:**
+
+The branch `cherry-27e1924ffaa` only modifies:
+- `drivers/bootcount/bootcount.c`
+- `drivers/bootcount/bootcount_at91.c` (AT91 only)
+- `drivers/bootcount/bootcount_davinci.c` (DaVinci only)
+- `drivers/bootcount/bootcount_dm_i2c.c` (DM I2C bootcount only)
+- `include/bootcount.h`
+- `.pickman-history`
+
+`configs/orangepi_pc_defconfig` contains no `CONFIG_BOOTCOUNT*` entries — orangepi_pc doesn't compile or use any of the modified files. Even if every line of the bootcount changes were broken, they could not affect orangepi_pc's ability to print a login prompt over the serial console.
+
+**Most likely real causes:** flaky serial cable/relay, slow SD-card flash, or the board not coming back up cleanly after a previous job's reset — typical for the sjg-lab stage.
+
+**Action taken:** None. No `cherry-27e1924ffaa-fix1` branch was created because there is nothing to fix in the code. Recommend simply re-running the `opi_pc` job.
+
+---
+
