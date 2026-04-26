@@ -69800,3 +69800,78 @@ The branch is left ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-311f9237613
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me look at the other commits to identify the cause:
+
+All three failures look infrastructural. Let me confirm the build state and check if rockpro64 SPL works upstream:
+
+## Report: Infrastructure/Transient Failures — No Code Fix Required
+
+**Failure type:** All three failures are lab/hardware/infrastructure issues, not code regressions.
+
+### Per-job analysis
+
+**1. `opi_pc`** (orangepi_pc, sunxi):
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Bare 15-second login timeout with **no SPL/TPL output at all** before timeout. Labgrid itself flagged this as a lab failure. Identical pattern to prior attempted runs of this lab role. Classic lab/serial-port flake.
+
+**2. `efi-aarch64`** (qemu_arm64 EFI):
+```
+scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+```
+The test rebuilds for `efi-arm_app64` *into the same `build/efi-aarch64/` directory* used for the aarch64 build, then `checkarmreloc` runs `readelf -r u-boot` and gets a magic-number error (file empty/non-ELF). I built `efi-arm_app64` and `efi-aarch64` locally on this branch — both build cleanly; readelf reads the resulting `u-boot` file fine. The failure is a stale/clobbered build artifact in the lab build directory.
+
+**3. `rockpro64`** (rockpro64-rk3399):
+```
+U-Boot Concept SPL ... Trying to boot from MMC2
+## Checking hash(es) for config config-1 ... OK
+## Checking hash(es) for Image atf-1 ... sha256+ OK
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Trying to boot from MMC1
+Card did not respond to voltage select! : -110
+```
+SPL gets through TPL+DDR init, reads and verifies the FIT header & atf-1 image hashes (so the underlying MMC reads *do* work), then fails the next loadable read on **both MMC2 and MMC1**. MMC1 reports `Card did not respond to voltage select! : -110` — a hardware-level CMD8/voltage-select timeout that occurs before any of our changed code runs on that controller. Two different MMC controllers misbehaving on the same boot is consistent with a flaky SD card / lab cabling, not a code regression.
+
+### Why none of these can plausibly be caused by this branch
+
+The branch (vs `ci/master`) contains only these 5 commits:
+| Commit | Effect on failing boards |
+|---|---|
+| `222bc8c92a3` mtd: spi-nor-ids: Fujitsu MB85RS256TY | adds 1 SPI-NOR ID entry; no code paths touched on these boards |
+| `7879c4ec58f` spi: ISSI IS25WP02GG | adds 1 SPI-NOR ID entry; same |
+| `be57b8ad1de` am62ax tifs-rm-cfg.yaml | TI AM62Ax only |
+| `ed4c4e942a6` defconfigs: drop COFNIG_SPL_LDSCRIPT | only `axm_defconfig`, `brppt2_defconfig`, `taurus_defconfig` |
+| `bda44bde1a7` spl: fix stack placement | upstream-merged fix; same diff as upstream `ef65b15383c` |
+
+Only the SPL stack-placement commit could even theoretically affect rockpro64/opi_pc, but (a) it's the unchanged upstream fix already in master elsewhere; (b) opi_pc never produced any SPL output to corrupt; (c) rockpro64's failure is a hardware-level CMD8 voltage-select timeout on MMC1 that runs before any relocated stack/heap is even touched on that controller.
+
+### Verification
+
+- `um build sandbox` → silent (success).
+- `buildman -o /tmp/pickman efi-aarch64 efi-arm_app64 opi_pc rockpro64 sandbox` → all 11 sub-targets built, 0 errors. The only diagnostics are pre-existing missing-blob warnings (atf-bl31, tee-os) for boards we have no blobs for locally — these are not introduced by this branch.
+- Working tree clean (only pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+
+### Action taken
+
+**No code change.** Created local branch `cherry-311f9237613-fix1` at `528ac40b013` (unchanged tip of `cherry-311f9237613`). Not pushed.
+
+**Recommendation:** Re-run the three sjg-lab jobs (`opi_pc`, `efi-aarch64`, `rockpro64`); they should pass on a healthy lab cycle. If `rockpro64` continues to fail with MMC voltage-select timeouts, the SD card / cabling on that lab device likely needs attention — but that is independent of this MR.
+
+---
+
