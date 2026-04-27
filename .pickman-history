@@ -70418,3 +70418,61 @@ All deltas match the originals.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-b45bdb822c2
+
+Commits:
+- b45bdb822c2 arm: dts: k3-am62d2-r5: Add DMA and OSPI configuration
+- 75acda482ce configs: am62dx_evm: Enable SPI flash support
+- d5feb16f01b Merge patch series "am62dxx-evm: Add SPI flash support"
+
+### Conversation log
+The first cherry-pick conflicted. Let me check if the commits are already applied to ci/master before aborting.
+
+The commits are not in ci/master. The conflict is because `arch/arm/dts/k3-am62d2-r5.dtsi` doesn't exist in ci/master. Let me investigate further.
+
+Neither commit's target files exist in ci/master because the prerequisite commits (`3382d75f7a6` creating the dtsi, and `14dfa6b8618` creating the defconfigs) aren't in ci/master. Let me try `git apply --3way` for each, and fall back to empty commits as the task instructs.
+
+The git apply also failed because the base file doesn't exist. Per task instructions, I'll create an empty placeholder commit.
+
+Now the merge commit:
+
+All 3 commits are present (as empty placeholders). Now let me run the build test.
+
+Build passes. Let me confirm the final state.
+
+## Final Status
+
+**Build result:** OK (sandbox build completed successfully in 6 seconds)
+
+**Branch:** `cherry-b45bdb822c2` (3 commits ahead of `ci/master`)
+
+**Cherry-pick results — all 3 commits FAILED to apply, empty placeholders created:**
+
+All three commits failed to cherry-pick because their prerequisite commits are not present in `ci/master`:
+
+1. **`b45bdb822c2` — arm: dts: k3-am62d2-r5: Add DMA and OSPI configuration** → FAILED
+   - Conflict: `arch/arm/dts/k3-am62d2-r5.dtsi` doesn't exist in ci/master
+   - Prerequisite missing: `3382d75f7a6` ("arch: arm: dts: k3: refactor common nodes to k3-*-r5.dtsi")
+   - `git apply --3way` also failed: file does not exist in index
+   - Empty placeholder created: `87e4884f82b`
+
+2. **`75acda482ce` — configs: am62dx_evm: Enable SPI flash support** → FAILED
+   - Conflict: `configs/am62dx_evm_a53_defconfig` and `configs/am62dx_evm_r5_defconfig` don't exist in ci/master
+   - Prerequisite missing: `14dfa6b8618` ("Add initial support for AM62D2-EVM")
+   - `git apply --3way` also failed: files do not exist in index
+   - Empty placeholder created: `4e07afcbeb6`
+
+3. **`d5feb16f01b` — Merge patch series "am62dxx-evm: Add SPI flash support"** → FAILED
+   - Same conflicts (modifies all three files above)
+   - Empty placeholder created: `369b14e6974`
+
+**Fix-ups:** None applied to working code; placeholder commits document the failure reasons.
+
+**Concerning deltas:** N/A — none of the commits could be applied, so all 3 are empty `[FAILED]` placeholders preserving the commit sequence per the task instructions. The AM62D2-EVM platform itself is not in ci/master, which is the root cause.
+
+The branch is left ready for pushing.
+
+---
+
