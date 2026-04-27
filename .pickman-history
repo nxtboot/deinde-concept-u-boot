@@ -70326,3 +70326,95 @@ Branch is ready for pushing. Not merged to any other branch.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-ebe62142fc6
+
+Commits:
+- ebe62142fc6 arm: mach-k3: j722s: Update SoC data to add wake-up I2C device
+- 30b8c03d8c8 board: ti: am64,j721*: use correct fdt if eeprom detection fails
+- e365a269df5 fs/squashfs: fix heap buffer overflow in sqfs_frag_lookup()
+- 4f70106beaf Prepare v2026.04-rc3
+
+### Conversation log
+Deltas match perfectly. Now let me run the build test.
+
+Deltas match perfectly.
+
+Deltas match.
+
+The conflict is in Makefile only (release_cycle.rst auto-merged). The branch is on v2026.02 while the original commit was on v2026.04. Since changing the PATCHLEVEL would be incorrect for this branch, I'll keep HEAD's version and note this in the commit.
+
+Now let me amend the commit to add a note about the fix-up:
+
+Delta is smaller because the Makefile change was intentionally dropped (documented in commit message). Now let's run the final build:
+
+All 4 commits successfully cherry-picked. Final report:
+
+## Cherry-pick Report
+
+**Branch:** `cherry-ebe62142fc6` (based on `ci/master`)
+
+**Build result:** OK — all builds passed cleanly (no warnings/errors)
+
+**Commits applied (in order):**
+1. `5ba1cb092b7` — arm: mach-k3: j722s: Update SoC data to add wake-up I2C device — clean apply, delta matches original
+2. `f8073eb17ac` — board: ti: am64,j721*: use correct fdt if eeprom detection fails — auto-merged cleanly, delta matches original
+3. `3f7cf8de071` — fs/squashfs: fix heap buffer overflow in sqfs_frag_lookup() — auto-merged cleanly, delta matches original
+4. `6de730a0726` — Prepare v2026.04-rc3 — **fix-up applied**
+
+**Fix-ups:**
+- For commit 4 ("Prepare v2026.04-rc3"): Conflict in `Makefile` because the branch is on v2026.02 (not v2026.04). Dropped the `EXTRAVERSION = -rc3` change to avoid an inconsistent "v2026.02-rc3" version. Kept the `release_cycle.rst` doc change. Added one-line note `[sjg: drop Makefile EXTRAVERSION change as branch is on v2026.02]` to the commit message.
+
+**Concerning deltas:**
+- Commit 4 has a smaller delta than the original (1 file/1 line vs 2 files/2 lines) — this is intentional and documented in the commit message.
+
+Branch is ready for pushing.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-ebe62142fc6
+
+Comments addressed:
+
+
+### Conversation log
+Now let me check the deltas before and after rebase:
+
+All deltas match. Now let me run the build verification:
+
+Build passed. Now create the v2 branch and push:
+
+Push succeeded. Here is the report:
+
+## Rebase Report
+
+**Branch:** `cherry-ebe62142fc6` rebased onto `ci/master` (`0c9eb441a72`)
+**Local backup branch:** `cherry-ebe62142fc6-v2`
+**Force-pushed:** `+ 6de730a0726...944e45ebe30 HEAD -> cherry-ebe62142fc6`
+**MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/982
+
+### Conflict resolution
+- **`.pickman-history`** (in commit `9cba9e13c4b — pickman: Record cherry-pick of 4 commits from us/next`): conflicted with the new pickman-history entry that landed on `ci/master` for the previous MR (`cherry-6f96026b1e3`). Resolved by keeping both entries — the `cherry-6f96026b1e3` entry from `ci/master` followed by a separator and the new `cherry-ebe62142fc6` entry. The four code-changing commits (k3 j722s, am64/j721 fdt, squashfs, v2026.04-rc3) all rebased without conflicts.
+
+### Delta verification (before → after rebase)
+| Commit | Stat |
+|---|---|
+| arm: mach-k3: j722s | 2 files, 11+/2− → 2 files, 11+/2− ✓ |
+| board: ti: am64,j721* | 3 files, 3+/3− → 3 files, 3+/3− ✓ |
+| fs/squashfs | 1 file, 5+ → 1 file, 5+ ✓ |
+| Prepare v2026.04-rc3 | 1 file, 1+/1− → 1 file, 1+/1− ✓ |
+| pickman: Record cherry-pick | 1 file, 47+ → 1 file, 47+ ✓ |
+
+All deltas match the originals.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings/errors.
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. The only conflict was in `.pickman-history` (history-log file), where the entry for the previously-merged `cherry-6f96026b1e3` MR also landed on master at the same date heading; resolved by keeping both entries as separate sections. All four code-changing commits applied cleanly with identical deltas, and the sandbox build passes.
+
+---
+
