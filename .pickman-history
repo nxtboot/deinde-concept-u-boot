@@ -70043,3 +70043,45 @@ The branch `cherry-546687c8dc2` is left ready for pushing.
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-00ea1fc21a9
+
+Commits:
+- 00ea1fc21a9 drivers/clk/Kconfig: fix "related" typo in help text
+- 6d865c1ee61 drivers/clk/clk_zynqmp.c: get rid of compiler warning for !CONFIG_CMD_CLK builds
+- 85bbd16750e arm64: versal2: fix GICD/GICR base addresses for Versal Gen 2
+- ce6fc049b70 net: phy: mscc: Enable RMII clock output for VSC8541 PHY
+- f71ae395290 Merge tag 'xilinx-for-v2026.04-rc3' of https://source.denx.de/u-boot/custodians/u-boot-microblaze
+
+### Conversation log
+Cherry-pick 1 looks identical. Let me run the build test.
+
+Now the merge commit:
+
+All 5 commits are present. Let me run the final build test:
+
+## Final Status
+
+All 5 commits successfully cherry-picked onto branch `cherry-00ea1fc21a9` (based on `ci/master`):
+
+| # | Hash (new) | Subject |
+|---|---|---|
+| 1 | ca05208727b | drivers/clk/Kconfig: fix "related" typo in help text |
+| 2 | a1ebdc765a2 | drivers/clk/clk_zynqmp.c: get rid of compiler warning for !CONFIG_CMD_CLK builds |
+| 3 | be486562c1f | arm64: versal2: fix GICD/GICR base addresses for Versal Gen 2 |
+| 4 | ea1f76457c3 | net: phy: mscc: Enable RMII clock output for VSC8541 PHY |
+| 5 | 7cfc78c3c9f | Merge tag 'xilinx-for-v2026.04-rc3' (empty merge, preserved) |
+
+**Build result:** OK — sandbox builds cleanly after each cherry-pick and at the end (no warnings/errors).
+
+**Deltas:** All four regular commits matched their originals exactly (same files, same line counts).
+
+**Fix-ups:** None needed. The merge commit was empty after cherry-pick (all changes were already brought in by the four preceding commits) and was preserved with `git commit --allow-empty` per instructions.
+
+**Concerning deltas:** None.
+
+Branch is left ready for pushing; not merged anywhere.
+
+---
+
