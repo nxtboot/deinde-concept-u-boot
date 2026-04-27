@@ -70260,3 +70260,69 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-6f96026b1e3
+
+Commits:
+- 6f96026b1e3 test/py: Fix spelling of source_dir in docstring
+- a79edd52a80 MAINTAINERS: Remove a few inactive people
+- 5ebf0c55a23 image: fit: Apply overlays using aligned writable FDT copies
+- 2ac30d21e45 cmd: pxe_utils: fix syntax error in comments
+- c3538f788db bootstd: rauc: Fix null pointer access while checking root part
+- e7ef80f6707 board: ti: j721e,j7200: fix do_main_cpsw0_qsgmii_phyinit
+- 8666b16015d x86/coreboot: Exclude memory regions starting above 4GB
+- 73823d1c581 arm: dts: k3-am64-phycore-som-ddr4: Update DDR timings
+- 8a056a10585 configs: sandbox: Enable zip command
+- 6be3db6c1ab test: cmd: Add test for zip/unzip/gzwrite commands
+- 7dca54ef4c4 Merge patch series "test: cmd: Add test for zip/unzip/gzwrite commands"
+
+### Conversation log
+Match. Now let's run the build test.
+
+Now let's resolve the Kconfig conflict.
+
+Let me amend the commit message to add a fix-up note.
+
+All 11 commits are present. Let me verify the build output more thoroughly and report the final status.
+
+Build completed successfully. Here's the final report:
+
+## Cherry-Pick Summary
+
+**Branch**: `cherry-6f96026b1e3` (based on `ci/master`)
+
+**Build Result**: ✓ OK — sandbox build completed successfully (1 board built, no warnings/errors).
+
+**All 11 commits present in order**:
+```
+acfc94960eb Merge patch series "test: cmd: Add test for zip/unzip/gzwrite commands"
+b8d02e7a1e7 test: cmd: Add test for zip/unzip/gzwrite commands
+694824f18fc configs: sandbox: Enable zip command
+018add01c7e arm: dts: k3-am64-phycore-som-ddr4: Update DDR timings
+19143c04fc6 x86/coreboot: Exclude memory regions starting above 4GB
+58e7cbb5644 board: ti: j721e,j7200: fix do_main_cpsw0_qsgmii_phyinit
+29a6ffd10b4 bootstd: rauc: Fix null pointer access while checking root part
+1aa9469bf88 cmd: pxe_utils: fix syntax error in comments
+bfbf8413351 image: fit: Apply overlays using aligned writable FDT copies
+b6f6a5018e3 MAINTAINERS: Remove a few inactive people
+4b4b8b385e9 test/py: Fix spelling of source_dir in docstring
+```
+
+**Fix-ups required**:
+
+1. **`cmd: pxe_utils: fix syntax error in comments` (2ac30d21e45)** — Original cherry-pick failed with massive conflict because pxe_utils.c had been heavily refactored on this branch, with the parser code moved to `boot/pxe_parse.c`. Aborted the cherry-pick and applied the trivial one-word "to" fix manually to `boot/pxe_parse.c`. Note appended to commit message.
+
+2. **`test: cmd: Add test for zip/unzip/gzwrite commands` (6be3db6c1ab)** — Conflicts in two files:
+   - `arch/sandbox/dts/test.dts`: `mmc9` was already added on this branch for "extlinux localboot" with mmc10–mmc15 also present. Resolved by sharing the existing `mmc9` device (same config) and updating its comment to reflect both purposes.
+   - `common/Kconfig`: `CONSOLE_RECORD_OUT_SIZE` had been refactored into UNIT_TEST conditional defaults of `0x6000`. Applied the bump to `0x20000` to both UNIT_TEST default lines so the test has the required buffer space.
+   - Note appended to commit message.
+
+3. **`Merge patch series "test: cmd: Add test for zip/unzip/gzwrite commands"` (7dca54ef4c4)** — Merge commit conflicted because the merged content was already applied. Took HEAD versions and committed empty (with `--allow-empty`) as instructed, preserving the merge commit message and adding the cherry-pick reference.
+
+**Concerning deltas**: None — the test commit's stat shows 5 fewer insertions (136 vs 141) due to not duplicating the existing `mmc9` node, which is expected.
+
+Branch is ready for pushing. Not merged to any other branch.
+
+---
+
