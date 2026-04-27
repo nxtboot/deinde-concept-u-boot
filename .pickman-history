@@ -70174,3 +70174,52 @@ One conflict in `.pickman-history`: ci/master added a record for `cherry-546687c
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-f9ffeec4bdc
+
+Commits:
+- f9ffeec4bdc board: toradex: Make A53 get RAM size from DT in K3 boards
+- 05b13c05896 efi_loader: add missing EFI_CALL around tcg2 read_blocks calls
+- ca4eda24c64 efi_loader: fix ecpt size computation
+- 6274e400fca Merge tag 'efi-2026-04-rc3' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The first commit is already applied as 4696a38befb (only hash differs). Now let me check the remaining commits:
+
+First commit is already applied. The other commits are NOT in ci/master. Let me cherry-pick them:
+
+Delta matches perfectly. Now build test:
+
+Now the merge commit:
+
+All cherry-picks complete. Final status report:
+
+## Cherry-Pick Summary
+
+**Branch:** `cherry-f9ffeec4bdc` (based on `ci/master`)
+
+**Final log:**
+```
+5b1e601d1be Merge tag 'efi-2026-04-rc3' of https://source.denx.de/u-boot/custodians/u-boot-efi
+ff2dc8282d6 efi_loader: fix ecpt size computation
+7ca0d812dda efi_loader: add missing EFI_CALL around tcg2 read_blocks calls
+a05ed74a64e Merge branch 'cherry-00ea1fc21a9' into 'master'  (ci/master HEAD)
+```
+
+**Commit Status:**
+1. **f9ffeec4bdc** (toradex K3 RAM size) — **SKIPPED**, already applied as `4696a38befb` in ci/master (recorded by pickman commit `a79cdc72e2a`). Patches verified identical via `diff /tmp/orig.patch /tmp/found2.patch` (only commit hash differed).
+2. **05b13c05896** (efi_loader EFI_CALL tcg2) — Cherry-picked cleanly as `7ca0d812dda`. Delta matches (1 file, 8+/5−).
+3. **ca4eda24c64** (efi_loader ecpt size) — Cherry-picked cleanly as `ff2dc8282d6`. Delta matches (1 file, 9+/9−).
+4. **6274e400fca** (Merge tag efi-2026-04-rc3) — Cherry-picked as empty merge `5b1e601d1be` (children already present, expected for merge commit).
+
+**Build result:** OK — `buildman --board sandbox` completed successfully after each cherry-pick and at the final state. No warnings or errors.
+
+**Fix-ups:** None. No conflicts requiring manual resolution.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
