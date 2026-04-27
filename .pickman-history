@@ -70840,3 +70840,46 @@ Branch `cherry-6830f1ec971` is left ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 1)
+
+Branch: cherry-6830f1ec971
+
+Failed jobs:
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me check the branch and verify that the failures are truly infrastructure-related rather than caused by the commits.
+
+The diff confirms my hypothesis. Let me also confirm by looking at the failure message pattern more carefully — note that both boards print `Lab failure: Marking connection bad`, which is the lab harness's signal for an infrastructure issue, not a U-Boot fault.
+
+## Diagnosis: Infrastructure / lab failure — no code change needed
+
+**Failing jobs:** `jerry` (chromebook_jerry, Rockchip RK3288) and `opi_pc` (orangepi_pc, Allwinner H3/sunxi), both in the `sjg-lab` stage.
+
+**Failure pattern (identical for both):**
+```
+Bootstrapping U-Boot from dirs ...
+Writing U-Boot using method rockchip-em100   (or "sunxi" for opi_pc)
+...
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The boards never come up to a U-Boot prompt within 15 seconds of being flashed. The lab harness explicitly classifies this as `Lab failure: Marking connection bad` — its label for hardware/connection issues — and the test session is aborted before any U-Boot test even runs (`1 deselected`).
+
+**Why this isn't caused by the MR:**
+The MR `cherry-6830f1ec971` cherry-picks 37 commits that exclusively touch:
+- `arch/arm/mach-imx/`, `arch/arm/dts/imx*`
+- `board/nxp/imx*`, `board/siemens/capricorn/`, `board/phytec/phycore_imx93/`
+- `drivers/clk/imx/`, `drivers/mmc/fsl_esdhc_imx.c`, `drivers/pinctrl/nxp/`, `drivers/video/imx/`, `drivers/pwm/pwm-imx.c`
+- `configs/imx8mp_evk_defconfig`, `configs/toradex-smarc-imx95_defconfig`
+
+`git diff --stat 11c96b06aec..HEAD` shows zero changes to Rockchip (`arch/arm/mach-rockchip/`, RK3288 dts/configs) or Allwinner sunxi (`arch/arm/mach-sunxi/`, H3 dts/configs) files. There is no plausible path by which any of these commits could affect chromebook_jerry or orangepi_pc boot behaviour.
+
+**Conclusion:** Both failures are transient lab/hardware issues (the boards failed to wake/boot and present a serial prompt within the 15 s window). Per task instructions, infrastructure/transient failures should be reported without code changes.
+
+**No commits were modified, no fix was applied, no `cherry-6830f1ec971-fix1` branch was created.** The branch `cherry-6830f1ec971` is unchanged and is a re-run candidate.
+
+---
+
