@@ -70526,3 +70526,46 @@ The branch is ready for pushing.
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+The failure is a "Lab failure" - the orangepi...
+
+### Conversation log
+The build passes. Looking at this task: the "review comment" is the bot's own previous diagnosis that the opi_pc failure was an infrastructure issue (serial timeout on Allwinner H3 hardware unrelated to the MediaTek MT7531 driver changes in this MR). The previous recommendation was to retry the job, since no code change was warranted.
+
+For this fix attempt (v2), the appropriate action is to re-trigger the pipeline by force-pushing — since GitLab auto-triggers a new pipeline on push, this effectively retries the previously-failing opi_pc job. Let me create the v2 branch and push.
+
+The push reports "Everything up-to-date" because the branch SHA is unchanged (no code changes). A pipeline retry through force-push isn't possible without altering the commit; this needs to be retried manually in the GitLab CI UI. Let me verify the remote state:
+
+The remote already has commit `41388dc3831` — same as our local branch. No update needed.
+
+## Report
+
+**Task:** Address review comment on MR !984 (branch `cherry-145487611f6`) — the comment was the bot's own previous Pipeline fix (attempt 1) report diagnosing the opi_pc job failure as a lab/infrastructure issue.
+
+**Diagnosis (re-confirmed):**
+- The original opi_pc failure was a **serial console timeout** during pexpect login wait — classified by the test framework itself as `Lab failure: Marking connection bad`.
+- The branch only modifies `drivers/net/mdio-mt7531-mmio.c` (MediaTek MT7531 Ethernet switch MDIO driver). The opi_pc target is an **Allwinner H3 (sunxi)** SoC — entirely unrelated.
+- Sandbox `buildman -L --board sandbox -w -o /tmp/pickman` passes cleanly (1 built, no warnings/errors).
+
+**Action taken:**
+- Checked out `cherry-145487611f6` at `41388dc3831e4b129380ed9b0e880fcb1d963672`.
+- Ran sandbox build via `buildman` — passes.
+- Created local branch `cherry-145487611f6-v2` at the same SHA (no code changes).
+- Attempted `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — reported `Everything up-to-date` (remote already at `41388dc3831`).
+
+**Why no force push happened:** Without code changes, the SHA is unchanged, so the push is a no-op and GitLab won't trigger a new pipeline.
+
+**Suggested MR reply:**
+
+> Pipeline fix (attempt 2): the opi_pc failure remains an infrastructure-level lab failure (serial console pexpect timeout), unrelated to this MR's MediaTek MT7531 MDIO driver changes. The orangepi_pc target is Allwinner H3 (sunxi) — no overlap with `drivers/net/mdio-mt7531-mmio.c`. Sandbox build still passes cleanly.
+>
+> Since no code change is warranted, force-pushing produces no SHA change and won't auto-retrigger the pipeline. **Please retry the `opi_pc` job manually from the GitLab CI UI**, or have the lab admins investigate if the failure recurs.
+
+---
+
