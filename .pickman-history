@@ -70569,3 +70569,42 @@ The remote already has commit `41388dc3831` — same as our local branch. No upd
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) colibrimx8, opi_pc.
+
+## Report: Infrastructure failure...
+
+### Conversation log
+## Report: Pipeline fix (attempt 3) — Infrastructure failures, no code change
+
+**Diagnosis (re-confirmed for the third time):** The review comment to address is the bot's own attempt-2 report, which already diagnosed both failures (`opi_pc`, `colibrimx8`) as **lab/infrastructure failures** — serial console pexpect timeouts, explicitly classified by the test framework as `Lab failure` / `Lab timeout: Marking connection bad`.
+
+### Why this MR is unrelated to those failures
+- `git diff ci/master..HEAD --stat` confirms the branch only modifies:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping only)
+- **opi_pc** = Allwinner H3 (sunxi) — does not compile MT7531
+- **colibrimx8** = NXP i.MX8X — does not compile MT7531
+- Sandbox build (`buildman -L --board sandbox -w -o /tmp/pickman`) passes: `1 total built, duration 0:00:06`
+
+### Action taken
+- Checked out `cherry-145487611f6` at `9ea6b1431d8`.
+- Ran `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, no warnings/errors).
+- Created local branch `cherry-145487611f6-v3` at the same SHA `9ea6b1431d8` (no code change — there is nothing to fix).
+- Ran `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — reports `Everything up-to-date` (remote already at this SHA, no SHA change since attempt 2).
+
+### Why no force push happened
+Without a code change, the SHA is unchanged, so `push -f` is a no-op and GitLab won't auto-trigger a new pipeline. There is nothing to fix in this MR's code — the failing jobs test boards that don't even include the changed driver.
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 3): both `opi_pc` and `colibrimx8` failures remain pure lab/infrastructure issues — serial-console pexpect timeouts on Allwinner H3 (sunxi) and NXP i.MX8X boards respectively, both classified by the test framework itself as `Lab failure` / `Lab timeout: Marking connection bad`. Neither board compiles `drivers/net/mdio-mt7531-mmio.c` (the only source file this MR touches), and sandbox build still passes cleanly.
+>
+> No code change is warranted, so a force-push produces no SHA change and won't auto-retrigger the pipeline. **Please retry the `opi_pc` and `colibrimx8` jobs manually from the GitLab CI UI.** If they recur (especially on the same `ellesmere-lab` runner), this needs lab-side investigation rather than further attempts on this MR.
+
+---
+
