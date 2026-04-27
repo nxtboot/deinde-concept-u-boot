@@ -70085,3 +70085,42 @@ Branch is left ready for pushing; not merged anywhere.
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-add7152eb07
+
+Commits:
+- add7152eb07 usb: dwc3: core: Add ip and version_type support from Linux
+- 7590f29e2cd usb: dwc3: Increase DWC3 controller halt timeout
+- de69f14a099 usb: dwc3: gadget: Don't send unintended link state change
+- aef270254f0 usb: dwc3: core: improve reset sequence
+- e69841fa71d usb: gadget: dwc2: Move dr_mode check from of_to_plat() to bind()
+- dffccda75cc Merge tag 'u-boot-dfu-20260211' of https://source.denx.de/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+Identical. Now build test.
+
+All 6 commits cherry-picked successfully on branch `cherry-add7152eb07`.
+
+## Final Status
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and at the end.
+
+**Commits applied (top → bottom):**
+```
+a8966475c12 Merge tag 'u-boot-dfu-20260211' of https://source.denx.de/u-boot/custodians/u-boot-dfu
+297c5328181 usb: gadget: dwc2: Move dr_mode check from of_to_plat() to bind()
+a85d3baa41e usb: dwc3: core: improve reset sequence
+c8293b1306c usb: dwc3: gadget: Don't send unintended link state change
+b43b04b68e1 usb: dwc3: Increase DWC3 controller halt timeout
+82affe95113 usb: dwc3: core: Add ip and version_type support from Linux
+```
+
+**Deltas:** All 5 non-merge cherry-picks have identical file/line stats to their originals (no concerning deltas). The merge commit `dffccda75cc` cherry-picked as an empty commit (expected — its diff is the union of the 5 already-applied commits) and was committed with `--allow-empty` to preserve history.
+
+**Fix-ups:** None required. No conflicts encountered.
+
+Branch `cherry-add7152eb07` is ready for pushing.
+
+---
+
