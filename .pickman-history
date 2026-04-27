@@ -69939,3 +69939,32 @@ The "review comment" was the bot's own summary of **Pipeline fix attempt 1**, wh
 
 ---
 
+### Rebase: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Rebased onto latest `ci/master` (`0b66ce164ef`). Only conflict was the
+familiar one in `.pickman-history` — the new `ci/master` had picked up
+the merged `cherry-b5db4f322a0` entries that landed under the same
+`2026-04-25: us/next` heading where our branch's record sits. Resolved
+by keeping both sections in chronological order with the standard `---`
+divider.
+
+All five content commits replayed with byte-identical stats:
+- `22998d3fee3` Fujitsu MB85RS256TY FRAM: 2 files, 19+
+- `717d0e9b67a` ISSI IS25WP02GG: 1 file, 2+
+- `2b17b8261da` am62ax tifs-rm-cfg.yaml: 1 file, 26+/20−
+- `0d338b06d9d` defconfigs SPL_LDSCRIPT: 3 files, 3−
+- `c0c7bffd2fc` spl stack placement: 1 file, 1+/1−
+
+Build verification: `buildman -L --board sandbox -w -o /tmp/pickman` →
+1 board built, 0 errors, 0 warnings.
+
+Branches:
+- Local: `cherry-311f9237613` (HEAD updated post-rebase) and backup
+  `cherry-311f9237613-v3` (the `-v2` slot is taken by the earlier
+  review-handling round)
+- Remote: force-push to `ci/cherry-311f9237613`
+
+---
+
