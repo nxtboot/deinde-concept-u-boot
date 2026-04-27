@@ -70373,3 +70373,48 @@ Branch is ready for pushing.
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-ebe62142fc6
+
+Comments addressed:
+
+
+### Conversation log
+Now let me check the deltas before and after rebase:
+
+All deltas match. Now let me run the build verification:
+
+Build passed. Now create the v2 branch and push:
+
+Push succeeded. Here is the report:
+
+## Rebase Report
+
+**Branch:** `cherry-ebe62142fc6` rebased onto `ci/master` (`0c9eb441a72`)
+**Local backup branch:** `cherry-ebe62142fc6-v2`
+**Force-pushed:** `+ 6de730a0726...944e45ebe30 HEAD -> cherry-ebe62142fc6`
+**MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/982
+
+### Conflict resolution
+- **`.pickman-history`** (in commit `9cba9e13c4b — pickman: Record cherry-pick of 4 commits from us/next`): conflicted with the new pickman-history entry that landed on `ci/master` for the previous MR (`cherry-6f96026b1e3`). Resolved by keeping both entries — the `cherry-6f96026b1e3` entry from `ci/master` followed by a separator and the new `cherry-ebe62142fc6` entry. The four code-changing commits (k3 j722s, am64/j721 fdt, squashfs, v2026.04-rc3) all rebased without conflicts.
+
+### Delta verification (before → after rebase)
+| Commit | Stat |
+|---|---|
+| arm: mach-k3: j722s | 2 files, 11+/2− → 2 files, 11+/2− ✓ |
+| board: ti: am64,j721* | 3 files, 3+/3− → 3 files, 3+/3− ✓ |
+| fs/squashfs | 1 file, 5+ → 1 file, 5+ ✓ |
+| Prepare v2026.04-rc3 | 1 file, 1+/1− → 1 file, 1+/1− ✓ |
+| pickman: Record cherry-pick | 1 file, 47+ → 1 file, 47+ ✓ |
+
+All deltas match the originals.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings/errors.
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. The only conflict was in `.pickman-history` (history-log file), where the entry for the previously-merged `cherry-6f96026b1e3` MR also landed on master at the same date heading; resolved by keeping both entries as separate sections. All four code-changing commits applied cleanly with identical deltas, and the sandbox build passes.
+
+---
+
