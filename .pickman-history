@@ -70658,3 +70658,44 @@ Retry the `vf2`, `bpi`, and `opi_pc` jobs manually from the GitLab CI UI. The cl
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) vf2, bpi, opi_pc.
+
+All three failures are lab/infrastr...
+
+### Conversation log
+The push actually succeeded this time — the remote advanced from `3220d7da1a7` to `14823478c17` (a pickman-history record commit that hadn't been pushed before). This SHA change will auto-trigger a new pipeline, effectively retrying the failed jobs.
+
+## Report: Pipeline fix (attempt 4) — Infrastructure failures, no code change required
+
+**Diagnosis:** The review comment to address is the bot's own attempt-3 report, which already diagnosed all three failures (`vf2`, `bpi`, `opi_pc`) as **lab/infrastructure failures**. All three ran on the same runner (`ellesmere-lab VKe9dm-Af`) within ~5 minutes, and all were explicitly classified by the test framework as `Lab failure: Marking connection bad`. None of the failing boards compiles the only driver this MR touches.
+
+### Why this MR is unrelated to the failures
+- `git diff ci/master..HEAD --stat` confirms only:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping)
+- `mt7531` = MediaTek Ethernet switch MDIO driver. Failing boards:
+  - **vf2** = StarFive RISC-V (JH7110) — does not compile MT7531
+  - **bpi** = Allwinner A20 (sunxi) — does not compile MT7531
+  - **opi_pc** = Allwinner H3 (sunxi) — does not compile MT7531
+- Sandbox build (`buildman -L --board sandbox -w -o /tmp/pickman`) passes: `1 total built, duration 0:00:06`.
+
+### Action taken
+- Checked out `cherry-145487611f6` at HEAD `14823478c17`.
+- Verified `git diff ci/master..HEAD --stat` (only MT7531 driver + pickman-history).
+- Ran `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, no warnings/errors).
+- Created local branch `cherry-145487611f6-v4` at SHA `14823478c17` (no code change — there is nothing in the source to fix).
+- Ran `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — **push went through** (`3220d7da1a7..14823478c17`) because a previously-recorded pickman-history commit had not yet been pushed to the remote. GitLab will auto-trigger a new MR pipeline on this SHA change, which effectively retries the failed jobs.
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 4): all three previously-failing jobs (`vf2`, `bpi`, `opi_pc`) were lab/infrastructure failures on a single runner (`ellesmere-lab VKe9dm-Af`) — pexpect timeouts at the login prompt, classified by the test framework itself as `Lab failure: Marking connection bad`. None of the failing boards (StarFive RISC-V, Allwinner A20, Allwinner H3) compiles the MediaTek MT7531 MDIO driver this MR modifies, and sandbox build still passes cleanly.
+>
+> Pushing the unpushed pickman-history record advanced the remote SHA (`3220d7da1a7` → `14823478c17`), which auto-triggers a fresh pipeline and effectively retries the failed jobs. If the same boards fail again on the same runner, this is a lab-side issue (likely PSU/USB-hub/serial-console glitch on `ellesmere-lab`) and needs lab admin investigation rather than further attempts on this MR.
+
+---
+
