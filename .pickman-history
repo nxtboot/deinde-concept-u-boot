@@ -70883,3 +70883,47 @@ The MR `cherry-6830f1ec971` cherry-picks 37 commits that exclusively touch:
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-6830f1ec971
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) jerry, opi_pc.
+
+Let me check the branch and verify tha...
+
+### Conversation log
+The review comment is actually the bot's own report from a previous pipeline-fix attempt that concluded the failures were transient infrastructure/lab issues. Let me verify the branch state and confirm the diagnosis still holds.
+
+Confirmed: zero changes to Rockchip or sunxi files. The previous diagnosis (transient lab failures for `jerry` and `opi_pc`) is still valid. Let me run the verification build and then re-push to retrigger the pipeline.
+
+Build OK. Now create the v2 branch and force-push to retrigger the pipeline (since the previous failures were transient lab issues with no code changes needed).
+
+Push succeeded. The MR pipeline will be retriggered automatically.
+
+## Summary
+
+**Action taken:** Re-verified the previous diagnosis and re-pushed the branch to retrigger the pipeline. No code changes were made.
+
+### Findings
+1. **Build verification:** `buildman --board sandbox` passed cleanly.
+2. **Diff verification:** `git diff --stat ci/master..HEAD` against `arch/arm/mach-rockchip/`, `arch/arm/mach-sunxi/`, `arch/arm/dts/rk*`, `arch/arm/dts/sun*`, `configs/chromebook_jerry*`, and `configs/orangepi_pc*` produced **zero output** — the 37 cherry-picked commits do not touch any Rockchip RK3288 or Allwinner H3 files.
+3. **Failure pattern in attempt 1:** Both `jerry` and `opi_pc` failed with `pexpect.exceptions.TIMEOUT: ... waiting for login` followed by `Lab failure: Marking connection bad` — the lab harness's explicit signal for hardware/serial-connection issues, not a U-Boot fault. The boards never reached a prompt before any test executed.
+
+### Conclusion
+The previous diagnosis remains valid: the `jerry` and `opi_pc` failures are transient lab/infrastructure issues unrelated to this MR's content (which is exclusively NXP i.MX, Siemens capricorn, and Phytec phycore-imx93). The branch was force-pushed to `cherry-6830f1ec971` to retrigger the pipeline, which is the correct response to a transient lab failure.
+
+### Local branches
+- `cherry-6830f1ec971` — unchanged (still `186e532329e`)
+- `cherry-6830f1ec971-v2` — created as a marker at the same SHA
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 2): retriggered after transient lab failures**
+>
+> No code changes. Attempt 1 already established that the `jerry` (chromebook_jerry, RK3288) and `opi_pc` (orangepi_pc, sunxi H3) failures were lab/infrastructure issues — both timed out waiting for a login prompt and the harness logged `Lab failure: Marking connection bad`, its explicit signal for a hardware/serial issue. Re-verified `git diff --stat ci/master..HEAD` against `arch/arm/mach-rockchip/`, `arch/arm/mach-sunxi/`, `arch/arm/dts/rk*`, `arch/arm/dts/sun*`, and the relevant `configs/*` — zero hits. The 37 cherry-picks touch only i.MX / capricorn / phycore-imx93 paths; there is no plausible mechanism by which they could affect either board.
+>
+> Sandbox build still passes (`buildman --board sandbox`). Force-pushed the unchanged branch to retrigger the pipeline so the affected boards get a fresh attempt.
+
+---
+
