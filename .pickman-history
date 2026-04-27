@@ -70223,3 +70223,40 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-bfb530e06ca
+
+Commits:
+- bfb530e06ca usb: cdns3: use VBUS Valid to determine role for dr_mode OTG
+- fec27316cf7 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The `17f3a9fefc3` merge in ci/master is a completely different merge (different parents, brings in xhci/dtc/font commits, not the cdns3 change). Need to proceed with normal cherry-pick.
+
+Delta matches exactly. Now run build test:
+
+Build passed. Now cherry-pick the merge commit:
+
+All cherry-picks complete. Final status:
+
+**Branch:** `cherry-bfb530e06ca` (based on `ci/master`)
+
+**Cherry-picked commits (2):**
+1. `67f417248a3` — usb: cdns3: use VBUS Valid to determine role for dr_mode OTG (from `bfb530e06ca`)
+   - Delta: matches original exactly (2 files, +64 lines)
+2. `da3ce5b185e` — Merge branch 'master' of git://source.denx.de/u-boot-usb (from `fec27316cf7`)
+   - Empty commit preserved with `--allow-empty` per instructions
+
+**Verification of "maybe already applied" hint:** The hinted commit `17f3a9fefc3` is in `ci/master` but is a completely different merge (parents `85224bd30ef..c0cb7d87950` brought in xhci/dtc/font commits, not the cdns3 VBUS change). The actual content of `bfb530e06ca` was not in `ci/master`, so the cherry-pick proceeded normally.
+
+**Build result:** OK — sandbox built successfully both after the first cherry-pick and after the merge commit.
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
+
+---
+
