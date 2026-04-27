@@ -71161,3 +71161,47 @@ The single review comment is the bot re-posting attempt-2's report verbatim. The
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-1197954d589
+
+Commits:
+- 1197954d589 fw_env: use "erasesize" variable in writing loop
+- d80d88cb87d fw_env: allocate buffer of proper size in flash_write_buf()
+- 2f28f4116a1 fw_env: add ROUND_UP() helper
+- 1d175b2108d fw_env: unify calculation of "blockstart" in flash_write_buf()
+- ffd8024efcb fw_env: move "erasesize" calculation up in a code
+- 667fa1a1cd5 fw_env: drop unneeded variables from flash_write_buf()
+- 14335ada2fb Merge patch series "fw_env: cleanup flash_write_buf()"
+
+### Conversation log
+## Cherry-pick Complete
+
+All 7 commits successfully cherry-picked from `us/next` to branch `cherry-1197954d589` (based on `ci/master`).
+
+### Final Status
+
+**Build result:** OK — `buildman` for sandbox passes cleanly with no warnings or errors.
+
+**Commits applied (in order):**
+| New Hash | Original Hash | Subject |
+|---|---|---|
+| 7dca87d0797 | 1197954d589 | fw_env: use "erasesize" variable in writing loop |
+| 59ec67ee6a9 | d80d88cb87d | fw_env: allocate buffer of proper size in flash_write_buf() |
+| 08aae1e8736 | 2f28f4116a1 | fw_env: add ROUND_UP() helper |
+| 9ee7c39400c | 1d175b2108d | fw_env: unify calculation of "blockstart" in flash_write_buf() |
+| d39fa53ed45 | ffd8024efcb | fw_env: move "erasesize" calculation up in a code |
+| 561658dd5f2 | 667fa1a1cd5 | fw_env: drop unneeded variables from flash_write_buf() |
+| 3545eb8230b | 14335ada2fb | Merge patch series "fw_env: cleanup flash_write_buf()" |
+
+**Commit deltas:** All 6 regular commits applied cleanly with identical file/line counts to the originals (no concerning deltas).
+
+**Fix-ups:**
+- The merge commit (14335ada2fb) cherry-picked as empty (which is expected since all 6 underlying commits were already cherry-picked individually). Used `git commit --allow-empty -C 14335ada2fb` followed by `--amend` to add the `(cherry picked from commit 14335ada2fb1a1871ad01fd61bce355e9f2fad14)` trailer that `-x` would have added.
+
+**Concerning deltas:** None.
+
+The branch is left checked out and ready for pushing.
+
+---
+
