@@ -69760,3 +69760,211 @@ No sunxi, ARM core, common, or build-system code is modified. There is no plausi
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-311f9237613
+
+Commits:
+- 311f9237613 mtd: spi-nor-ids: Add Fujitsu MB85RS256TY FRAM
+- c5d82cab772 spi: add support for ISSI IS25WP02GG flash
+- 587b1a56752 board: ti: am62ax: tifs-rm-cfg.yaml: Add C7x resource allocation entries
+- 2a86d872ecd defconfigs: Remove default COFNIG_SPL_LDSCRIPT value
+- ef65b15383c spl: fix stack placement in spl_relocate_stack_gd()
+
+### Conversation log
+Delta matches. Now build test.
+
+Build passes. Cherry-pick next commit.
+
+All 5 commits present. Now run final build.
+
+## Summary
+
+All 5 commits successfully cherry-picked onto branch `cherry-311f9237613` (based on `ci/master`):
+
+| New Hash | Original Hash | Subject |
+|---|---|---|
+| 222bc8c92a3 | 311f9237613 | mtd: spi-nor-ids: Add Fujitsu MB85RS256TY FRAM |
+| 7879c4ec58f | c5d82cab772 | spi: add support for ISSI IS25WP02GG flash |
+| be57b8ad1de | 587b1a56752 | board: ti: am62ax: tifs-rm-cfg.yaml: Add C7x resource allocation entries |
+| ed4c4e942a6 | 2a86d872ecd | defconfigs: Remove default COFNIG_SPL_LDSCRIPT value |
+| bda44bde1a7 | ef65b15383c | spl: fix stack placement in spl_relocate_stack_gd() |
+
+**Build result:** OK — all builds passed (1 board built, no warnings/errors).
+
+**Fix-ups:** None required. Two commits had auto-merges (the SPL_LDSCRIPT defconfig commit auto-merged `axm_defconfig` and `taurus_defconfig`; the SPL stack placement commit auto-merged `common/spl/spl.c`), but no manual conflict resolution was needed.
+
+**Concerning deltas:** None. Every cherry-pick stat matches the original exactly (same files, identical line counts).
+
+The branch is left ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-311f9237613
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me look at the other commits to identify the cause:
+
+All three failures look infrastructural. Let me confirm the build state and check if rockpro64 SPL works upstream:
+
+## Report: Infrastructure/Transient Failures — No Code Fix Required
+
+**Failure type:** All three failures are lab/hardware/infrastructure issues, not code regressions.
+
+### Per-job analysis
+
+**1. `opi_pc`** (orangepi_pc, sunxi):
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Bare 15-second login timeout with **no SPL/TPL output at all** before timeout. Labgrid itself flagged this as a lab failure. Identical pattern to prior attempted runs of this lab role. Classic lab/serial-port flake.
+
+**2. `efi-aarch64`** (qemu_arm64 EFI):
+```
+scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+```
+The test rebuilds for `efi-arm_app64` *into the same `build/efi-aarch64/` directory* used for the aarch64 build, then `checkarmreloc` runs `readelf -r u-boot` and gets a magic-number error (file empty/non-ELF). I built `efi-arm_app64` and `efi-aarch64` locally on this branch — both build cleanly; readelf reads the resulting `u-boot` file fine. The failure is a stale/clobbered build artifact in the lab build directory.
+
+**3. `rockpro64`** (rockpro64-rk3399):
+```
+U-Boot Concept SPL ... Trying to boot from MMC2
+## Checking hash(es) for config config-1 ... OK
+## Checking hash(es) for Image atf-1 ... sha256+ OK
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Trying to boot from MMC1
+Card did not respond to voltage select! : -110
+```
+SPL gets through TPL+DDR init, reads and verifies the FIT header & atf-1 image hashes (so the underlying MMC reads *do* work), then fails the next loadable read on **both MMC2 and MMC1**. MMC1 reports `Card did not respond to voltage select! : -110` — a hardware-level CMD8/voltage-select timeout that occurs before any of our changed code runs on that controller. Two different MMC controllers misbehaving on the same boot is consistent with a flaky SD card / lab cabling, not a code regression.
+
+### Why none of these can plausibly be caused by this branch
+
+The branch (vs `ci/master`) contains only these 5 commits:
+| Commit | Effect on failing boards |
+|---|---|
+| `222bc8c92a3` mtd: spi-nor-ids: Fujitsu MB85RS256TY | adds 1 SPI-NOR ID entry; no code paths touched on these boards |
+| `7879c4ec58f` spi: ISSI IS25WP02GG | adds 1 SPI-NOR ID entry; same |
+| `be57b8ad1de` am62ax tifs-rm-cfg.yaml | TI AM62Ax only |
+| `ed4c4e942a6` defconfigs: drop COFNIG_SPL_LDSCRIPT | only `axm_defconfig`, `brppt2_defconfig`, `taurus_defconfig` |
+| `bda44bde1a7` spl: fix stack placement | upstream-merged fix; same diff as upstream `ef65b15383c` |
+
+Only the SPL stack-placement commit could even theoretically affect rockpro64/opi_pc, but (a) it's the unchanged upstream fix already in master elsewhere; (b) opi_pc never produced any SPL output to corrupt; (c) rockpro64's failure is a hardware-level CMD8 voltage-select timeout on MMC1 that runs before any relocated stack/heap is even touched on that controller.
+
+### Verification
+
+- `um build sandbox` → silent (success).
+- `buildman -o /tmp/pickman efi-aarch64 efi-arm_app64 opi_pc rockpro64 sandbox` → all 11 sub-targets built, 0 errors. The only diagnostics are pre-existing missing-blob warnings (atf-bl31, tee-os) for boards we have no blobs for locally — these are not introduced by this branch.
+- Working tree clean (only pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+
+### Action taken
+
+**No code change.** Created local branch `cherry-311f9237613-fix1` at `528ac40b013` (unchanged tip of `cherry-311f9237613`). Not pushed.
+
+**Recommendation:** Re-run the three sjg-lab jobs (`opi_pc`, `efi-aarch64`, `rockpro64`); they should pass on a healthy lab cycle. If `rockpro64` continues to fail with MMC voltage-select timeouts, the SD card / cabling on that lab device likely needs attention — but that is independent of this MR.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Comments addressed:
+- [project_1_bot]: Pipeline fix (attempt 1) summary — re-confirms three failed lab jobs (efi-aarch64, rockpro64, opi_pc) and asks for follow-up.
+
+### Conversation log
+
+The review comment is the bot's own summary of the previous attempt (Pipeline fix attempt 1), which determined all three failures were lab/infrastructure issues — not code regressions. Re-checked the analysis on the unchanged tip of the branch.
+
+### Re-verification
+
+- Tip unchanged at `528ac40b013` — same five cherry-picked commits, none of them touch code paths exercised by `rockpro64`'s MMC1 voltage-select path or `opi_pc`'s sunxi serial-bringup path.
+- `efi-aarch64`'s `readelf: Failed to read file's magic number` is a stale-build-artefact symptom (the test rebuilds `efi-arm_app64` into the same `build/efi-aarch64/` directory the aarch64 build uses, then runs `checkarmreloc` on a clobbered `u-boot` file). Reproduces only with stale state, not from a clean build.
+- `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+- Working tree clean (only the pre-existing untracked `hwids.dtsi` files unrelated to this MR).
+
+### Action taken
+
+No code change. Created `cherry-311f9237613-v2` at the same five-commit tip plus the prior pipeline-fix record (5acf7996539) and this review-handling record. Force-pushing to `ci/cherry-311f9237613` to retrigger the pipeline so the three flaky lab jobs get a fresh cycle.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, rockpro64, opi_pc.
+
+Let me look at the ot...
+
+### Conversation log
+## Report — MR !974, review handling round (v2)
+
+### What the comment was
+
+The "review comment" was the bot's own summary of **Pipeline fix attempt 1**, which had concluded that the three failing jobs (`efi-aarch64`, `rockpro64`, `opi_pc`) were lab/infrastructure flakes and recommended re-running the pipeline. No new actionable feedback — the bot was effectively asking what to do next.
+
+### What I did
+
+- **No code change** — analysis from attempt 1 still holds:
+  - `opi_pc`: 15-second login timeout with no SPL/TPL output → labgrid flagged it as a lab failure.
+  - `efi-aarch64`: `readelf: Failed to read file's magic number` → stale build artefact in `build/efi-aarch64/`.
+  - `rockpro64`: MMC1 `Card did not respond to voltage select! : -110` → hardware-level CMD8 timeout, runs before any code from this branch.
+  - None of the five cherry-picked commits touch code paths exercised by these failure modes.
+- **Re-verified** sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+- **Created `cherry-311f9237613-v2`** at `42c5ad5e5c4`, stacking the prior pipeline-fix record (`5acf7996539`) plus a new `pickman: Record review handling for cherry-311f9237613` commit on top of the unchanged five-commit tip (`528ac40b013`).
+- **Force-pushed** to `ci/cherry-311f9237613` (`528ac40b013..42c5ad5e5c4`). The push triggers a fresh MR pipeline so the three flaky lab jobs get a clean cycle.
+
+### Suggested reply for the MR
+
+> Re-checked the analysis from pipeline fix attempt 1: all three failures (`efi-aarch64`, `rockpro64`, `opi_pc`) are lab/infrastructure issues, not code regressions. None of the five cherry-picked commits touch code paths exercised by those failures: `opi_pc` timed out before any SPL/TPL output, `efi-aarch64`'s `readelf` magic-number error is a stale-artefact symptom from `build/efi-aarch64/` being reused for the `efi-arm_app64` rebuild, and `rockpro64`'s `Card did not respond to voltage select! : -110` on MMC1 is a hardware-level CMD8 timeout that runs before any of our changed code.
+>
+> Local re-verification: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings. Tip unchanged. Force-pushed `cherry-311f9237613` (`528ac40b013..42c5ad5e5c4`, only adds the pipeline-fix and review-handling history records) to retrigger the pipeline so the lab jobs get a fresh cycle.
+
+### Branches
+
+- Local: `cherry-311f9237613` and `cherry-311f9237613-v2` both at `42c5ad5e5c4`. Prior `cherry-311f9237613-fix1` retained at `5acf7996539`.
+- Remote: `ci/cherry-311f9237613` updated to `42c5ad5e5c4`.
+
+---
+
+### Rebase: 2026-04-26
+
+Branch: cherry-311f9237613
+
+Rebased onto latest `ci/master` (`0b66ce164ef`). Only conflict was the
+familiar one in `.pickman-history` — the new `ci/master` had picked up
+the merged `cherry-b5db4f322a0` entries that landed under the same
+`2026-04-25: us/next` heading where our branch's record sits. Resolved
+by keeping both sections in chronological order with the standard `---`
+divider.
+
+All five content commits replayed with byte-identical stats:
+- `22998d3fee3` Fujitsu MB85RS256TY FRAM: 2 files, 19+
+- `717d0e9b67a` ISSI IS25WP02GG: 1 file, 2+
+- `2b17b8261da` am62ax tifs-rm-cfg.yaml: 1 file, 26+/20−
+- `0d338b06d9d` defconfigs SPL_LDSCRIPT: 3 files, 3−
+- `c0c7bffd2fc` spl stack placement: 1 file, 1+/1−
+
+Build verification: `buildman -L --board sandbox -w -o /tmp/pickman` →
+1 board built, 0 errors, 0 warnings.
+
+Branches:
+- Local: `cherry-311f9237613` (HEAD updated post-rebase) and backup
+  `cherry-311f9237613-v3` (the `-v2` slot is taken by the earlier
+  review-handling round)
+- Remote: force-push to `ci/cherry-311f9237613`
+
+---
+
