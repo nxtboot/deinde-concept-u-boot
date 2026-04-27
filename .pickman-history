@@ -70124,3 +70124,53 @@ Branch `cherry-add7152eb07` is ready for pushing.
 
 ---
 
+### Review: 2026-04-26
+
+Branch: cherry-add7152eb07
+
+Comments addressed:
+
+
+### Conversation log
+Now let me capture the pre-rebase stat info for verification:
+
+Now let's start the rebase:
+
+Good — only `=====` lines that are not conflict markers (they're test output decorations). Continue the rebase:
+
+Now let's compare deltas. Map: old→new commits.
+
+All deltas match exactly. Now run the build:
+
+Build passes. Now create the v2 branch and push:
+
+Now restore the stashed untracked files for cleanliness:
+
+## Rebase Complete
+
+**Branch:** `cherry-add7152eb07` rebased onto `ci/master` (`3b09e08c909`)
+**Local v2 branch:** `cherry-add7152eb07-v2` created
+**Remote push:** force-pushed to `ci/cherry-add7152eb07` → MR !977 will trigger a new pipeline
+
+### Conflict resolved
+One conflict in `.pickman-history`: ci/master added a record for `cherry-546687c8dc2`, our branch added a record for `cherry-add7152eb07`. Resolved by keeping both records (ci/master's first, ours second), each as a separate `## 2026-04-26: us/next` block separated by `---`.
+
+### Delta verification (all match exactly)
+| Old (pre-rebase) | New (post-rebase) | Stat |
+|---|---|---|
+| 82affe95113 | 950dbe4fe55 | 2 files, 81+ 5- |
+| b43b04b68e1 | 7cf0eaee529 | 1 file, 2+ 2- |
+| c8293b1306c | 185c45f3f8f | 2 files, 21+ 9- |
+| a85d3baa41e | 69ade3fb55c | 1 file, 39+ 27- |
+| 297c5328181 | 2a0d49fc2c3 | 1 file, 13+ 6- |
+| a8966475c12 | e52bb0c8c61 | empty merge (preserved) |
+| 8c33e63fe7a | 1b1664cd93c | 1 file, 39+ (pickman record) |
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` — passed (1/1, 0 errors, 0 warnings).
+
+### Suggested MR reply
+> Rebased onto latest ci/master. One conflict in `.pickman-history` (concurrent record entries) — resolved by keeping both records as separate sections. All non-merge commit deltas are byte-identical to their originals; merge commit remains empty (preserved with `--keep-empty`). Sandbox build passes. New HEAD: `1b1664cd93c`.
+
+---
+
