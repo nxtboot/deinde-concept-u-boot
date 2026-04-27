@@ -71056,3 +71056,56 @@ The single review comment is the bot re-posting the verbatim text of "Pipeline f
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 2)
+
+Branch: cherry-9bf19639a76
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both builds completed successfully (efi-arm_app64 and orangepi_pc). Let me check the config implications and create the branch.
+
+Confirmed: neither board enables `CONFIG_USB_MUSB_TI` or references MUSB. The cherry-picked patches cannot affect them. Both failures are infrastructure issues.
+
+## Report — No code change required (infrastructure failures, attempt 2)
+
+**Verdict:** Both failed jobs are infrastructure/transient failures, not regressions caused by the cherry-picked commits. No code change made. Local branch `cherry-9bf19639a76-fix2` created at the same tip (`aecfc206d69`).
+
+### Root cause analysis
+
+| Job | Failure | Type |
+|---|---|---|
+| `opi_pc` (sjg-lab) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` in `labgrid/strategy/ubootstrategy.py:transition()` after `u-boot-test-flash` | Lab strategy timeout — board never reached U-Boot prompt |
+| `efi-aarch64` (sjg-lab) | `readelf: Error: u-boot: Failed to read file's magic number` then `Unable to read in 1344 bytes of section headers` during `make checkarmreloc` | Build-time readelf race: u-boot ELF read while still being written by parallel make. Note the second retry's different errors confirm a non-deterministic race rather than a deterministic bug |
+
+### Why the cherry-picks cannot be the cause
+
+The branch contains 3 functional commits, all touching only `drivers/usb/musb-new/ti-musb.c` (TI AM33xx-specific MUSB wrapper):
+
+| Commit | Files |
+|---|---|
+| `1a2902c09e7` usb: musb-new: Relative ctrl_mod address parsing | `drivers/usb/musb-new/ti-musb.c` (5+/5−) |
+| `6171e0fd0d1` usb: musb-new: Add compatibles for ti,musb-am33xx | `drivers/usb/musb-new/ti-musb.c` (29+) |
+| `176a93e8e7a` Merge branch 'master' … usb into next | empty |
+
+Failing boards:
+- `efi-arm_app64` (efi-aarch64 job): U-Boot built as a 32-bit ARM EFI app — config does not enable `CONFIG_USB_MUSB_TI` and does not reference MUSB at all (`grep MUSB configs/efi-arm_app64_defconfig` → no match).
+- `orangepi_pc` (opi_pc job): Allwinner H3 sunxi board — also does not enable `CONFIG_USB_MUSB_TI`.
+
+`grep -l CONFIG_USB_MUSB_TI configs/efi-arm_app64_defconfig configs/orangepi_pc_defconfig configs/orangepi_pc2_defconfig` returned no matches. The modified driver is not compiled into either failing build.
+
+### Build verification
+
+- `um build sandbox` → clean (no output)
+- `buildman -o /tmp/pickman --board efi-arm_app64,orangepi_pc` → **2 / 2 built clean**, no warnings, ~4 s
+
+The `efi-arm_app64` build that triggered the readelf race in CI builds cleanly here, confirming the failure is a parallel-build race condition on the lab runner, not a code defect.
+
+### Branch state
+
+- Local: `cherry-9bf19639a76` and `cherry-9bf19639a76-fix2` both at `aecfc206d69`. No commits added or amended. Caller can re-trigger the lab CI on this branch.
+
+---
+
