@@ -70608,3 +70608,53 @@ Without a code change, the SHA is unchanged, so `push -f` is a no-op and GitLab 
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 3)
+
+Branch: cherry-145487611f6
+
+Failed jobs:
+- vf2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+All three failures are lab/infrastructure failures on the same runner (`ellesmere-lab VKe9dm-Af`). Let me verify the branch state and check the diff to confirm the MR is unrelated.
+
+All three failures are confirmed lab/infrastructure failures, unrelated to this MR. Let me create the requested local branch.
+
+## Report: Pipeline fix (attempt 3) — Infrastructure failures, no code change required
+
+**Diagnosis:** All three failed jobs (`vf2`, `bpi`, `opi_pc`) are **lab/infrastructure failures**, not code problems. All ran on the same runner (`ellesmere-lab VKe9dm-Af`) within ~5 minutes of each other (15:54–15:59 UTC), and all were explicitly classified by the test framework itself as `Lab failure: Marking connection bad`.
+
+### Root cause per job
+
+| Job | Board | SoC | Symptom |
+|-----|-------|-----|---------|
+| 464821 vf2 | StarFive VisionFive 2 | RISC-V (JH7110) | `dwmci_s: Response Timeout` / `BOOT fail,Error is 0xffffffff` then `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` |
+| 464806 bpi | Bananapi | Allwinner A20 (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 45 seconds exceeded during waiting for login` |
+| 464800 opi_pc | orangepi_pc | Allwinner H3 (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` |
+
+The `vf2` failure additionally shows a SD card controller (DesignWare MMC) timeout during flashing — also a hardware/lab issue. All three end with the framework-specific `Lab failure: Marking connection bad - no other tests will run` exit, which is the test harness's own infrastructure-failure classification.
+
+### Why this MR is unrelated
+- `git diff ci/master..HEAD --stat` shows the branch modifies only:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping)
+- `mt7531` is a MediaTek Ethernet switch MDIO driver. None of the failing boards compile it:
+  - `vf2` = StarFive RISC-V
+  - `bpi` = Allwinner A20
+  - `opi_pc` = Allwinner H3
+- `grep MT7531 configs/` returns no matches at all — the driver isn't enabled in any defconfig.
+- Sandbox build (`um build sandbox`) passes silently with no output.
+
+### Action taken
+- Checked out `cherry-145487611f6` at `3220d7da1a7`.
+- Verified `git diff ci/master..HEAD --stat` (only the MT7531 driver + pickman history).
+- Ran `um build sandbox` — passes silently.
+- Created local branch `cherry-145487611f6-fix3` at the same SHA `3220d7da1a7` (no code change — there is nothing in the code to fix).
+
+### Recommendation
+Retry the `vf2`, `bpi`, and `opi_pc` jobs manually from the GitLab CI UI. The cluster of three failures on one runner within five minutes strongly suggests a transient lab issue on `ellesmere-lab VKe9dm-Af` (possibly a PSU/USB-hub/serial-console glitch affecting multiple boards on that host). If the failures recur on the same runner, the lab itself needs investigation, not this MR.
+
+---
+
