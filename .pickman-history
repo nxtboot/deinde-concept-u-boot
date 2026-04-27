@@ -70699,3 +70699,60 @@ The push actually succeeded this time — the remote advanced from `3220d7da1a7`
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-8fd76675efb
+
+Commits:
+- 8fd76675efb board: Correct usage of fdtfile=CONFIG_DEFAULT_FDT_FILE
+- 6f7d976317c cmd: mmc: Drop trailing space in Name: before newline
+- 4267b414dca power: regulator: add MediaTek MT6357 driver
+- 5419cf43cf0 power: regulator: mt6359: add driver for MT6359P
+- 219c05f3f68 power: pmic: mtk-pwrap: add MediaTek PMIC Wrapper driver
+- 93016370cf4 configs: mt8365_evk_defconfig: enable PMIC and regulators
+- adc49c29a9e power: regulator: Kconfig: add SPL_DM_REGULATOR_FAN53555
+- b3d16267b50 mmc: mtk-sd: add mediatek,mt8189-mmc compatible
+- f6963fc2326 Merge tag 'mmc-next-2026-02-26' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+Delta matches exactly. Let me run buildman.
+
+Build passed. Continuing with next commit.
+
+Now the merge commit:
+
+All 9 commits are present. Final build:
+
+## Final Status Report
+
+**All 9 commits successfully cherry-picked onto branch `cherry-8fd76675efb` (based on `ci/master`).**
+
+### Final commit log (top of branch):
+```
+740ee23ba19 Merge tag 'mmc-next-2026-02-26' (empty merge, preserved with --allow-empty)
+95ba2f30813 mmc: mtk-sd: add mediatek,mt8189-mmc compatible
+de37a65e1f5 power: regulator: Kconfig: add SPL_DM_REGULATOR_FAN53555
+86ae6b833b7 configs: mt8365_evk_defconfig: enable PMIC and regulators
+5f9bae08d1d power: pmic: mtk-pwrap: add MediaTek PMIC Wrapper driver
+4162de12825 power: regulator: mt6359: add driver for MT6359P
+a9f140c6075 power: regulator: add MediaTek MT6357 driver
+4090ecaff19 cmd: mmc: Drop trailing space in Name: before newline
+972816aba48 board: Correct usage of fdtfile=CONFIG_DEFAULT_FDT_FILE
+```
+
+### Build result:
+**OK** — `buildman --board sandbox` passed cleanly after every cherry-pick and on the final state.
+
+### Fix-ups: 
+None. All non-merge cherry-picks applied with auto-merging only (MAINTAINERS, imx8mp/imx93 .env files), and the deltas matched the originals exactly (file lists and line counts identical).
+
+### Concerning deltas: 
+None. Every cherry-pick produced the same `--stat` output as its original.
+
+### Merge commit:
+The merge `f6963fc2326` resolved to empty (all the underlying mmc-next changes were already brought in by the preceding cherry-picks). It was preserved with `git commit --allow-empty` to keep the history marker intact, as instructed.
+
+The branch `cherry-8fd76675efb` is ready for pushing. No merge back to any other branch performed.
+
+---
+
