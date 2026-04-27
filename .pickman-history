@@ -69968,3 +69968,42 @@ Branches:
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-f5ef79fe651
+
+Commits:
+- f5ef79fe651 arm: dts: k3-am64: Update DDR Configurations
+- 9ce3b50b8d5 arm: dts: k3-am62x: Update DDR Configurations
+- 92f1f586c2a arm: dts: k3-am62-lp: Update DDR Configurations
+- 4f5fcfcea7e arm: dts: k3-am62a: Update DDR Configurations
+- 3391e5ff15e arm: dts: k3-am62p: Update DDR Configurations
+- 712765339a5 Merge patch series "Update DDR Configurations"
+
+### Conversation log
+The patches differ significantly - the original is for DDR tool v0.10.32 (Jan 2026), the found one is v0.10.02 (Feb 2025). These are different commits despite same subject. I'll proceed with the cherry-pick.
+
+All 6 commits successfully cherry-picked onto branch `cherry-f5ef79fe651`.
+
+## Final Status
+
+**Build result:** OK (sandbox build passed cleanly after each cherry-pick and at the end)
+
+**Commits applied (in order):**
+1. `5583f693748` arm: dts: k3-am64: Update DDR Configurations
+2. `e46ce789ed1` arm: dts: k3-am62x: Update DDR Configurations
+3. `33cdc38e142` arm: dts: k3-am62-lp: Update DDR Configurations
+4. `fe90d83423f` arm: dts: k3-am62a: Update DDR Configurations
+5. `c38a7dc9f2e` arm: dts: k3-am62p: Update DDR Configurations
+6. `1d7c483f4cc` Merge patch series "Update DDR Configurations" (empty, preserved with --allow-empty)
+
+**Pre-flight verification:** The "maybe already applied as 702025856df" hint pointed to a `pickman: Record cherry-pick of 841 commits` meta-commit, not a real DDR commit. Searching ci/master found earlier DDR commits with matching subjects (e.g., `3b8196c985d`), but patch comparison showed they update DDR tool v0.10.02 (Feb 2025), while the requested commits update to DDR tool v0.10.32 (Jan 2026) — genuinely different upgrades. Proceeded with cherry-picks.
+
+**Fix-ups:** None. All 5 non-merge cherry-picks applied cleanly with identical file/line stats to the originals. The merge commit was empty (as expected — the file changes were already applied by the 5 preceding cherry-picks) and was preserved via `git commit --allow-empty` to keep the history marker.
+
+**Concerning deltas:** None.
+
+Branch `cherry-f5ef79fe651` is ready for pushing.
+
+---
+
