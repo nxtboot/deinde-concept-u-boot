@@ -70007,3 +70007,39 @@ Branch `cherry-f5ef79fe651` is ready for pushing.
 
 ---
 
+## 2026-04-26: us/next
+
+Branch: cherry-546687c8dc2
+
+Commits:
+- 546687c8dc2 lib: sm3: fix coverity error
+- 1e79d9c763c doc: cmd: add documentation for sm3sum
+- 0e4baa32914 Merge tag 'tpm-master-11022026' of https://source.denx.de/u-boot/custodians/u-boot-tpm
+
+### Conversation log
+Stats match perfectly. Now let me run the build test.
+
+Build OK. Now let's cherry-pick the second commit.
+
+Build OK. Now the merge commit.
+
+All 3 commits cherry-picked successfully.
+
+## Final Status
+
+**Build result:** OK (sandbox build completed successfully after each cherry-pick and final verification)
+
+**Commits cherry-picked (in order):**
+1. `6f85bd4b9d5` - `lib: sm3: fix coverity error` (from `546687c8dc2`) — Stats matched exactly (1 file, 1 insertion, 1 deletion)
+2. `d7305008e91` - `doc: cmd: add documentation for sm3sum` (from `1e79d9c763c`) — Stats matched exactly (1 file, 112 insertions)
+3. `cb3b947ae03` - `Merge tag 'tpm-master-11022026' ...` (from `0e4baa32914`) — Empty merge commit (preserved with `--allow-empty`)
+
+**Fix-ups made:**
+- The merge commit cherry-pick was empty (as expected — no conflicts to resolve since the underlying commits were already cherry-picked individually). I committed with `--allow-empty` to preserve the merge commit history. The `-x` cherry-pick annotation was added by amending the commit message to include `(cherry picked from commit 0e4baa329143a77b51a6fb9b11abe436f6b81e7a)`.
+
+**Concerning deltas:** None — all stats matched the originals exactly.
+
+The branch `cherry-546687c8dc2` is left ready for pushing.
+
+---
+
