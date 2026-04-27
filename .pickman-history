@@ -70743,16 +70743,187 @@ a9f140c6075 power: regulator: add MediaTek MT6357 driver
 ### Build result:
 **OK** — `buildman --board sandbox` passed cleanly after every cherry-pick and on the final state.
 
-### Fix-ups: 
+### Fix-ups:
 None. All non-merge cherry-picks applied with auto-merging only (MAINTAINERS, imx8mp/imx93 .env files), and the deltas matched the originals exactly (file lists and line counts identical).
 
-### Concerning deltas: 
+### Concerning deltas:
 None. Every cherry-pick produced the same `--stat` output as its original.
 
 ### Merge commit:
 The merge `f6963fc2326` resolved to empty (all the underlying mmc-next changes were already brought in by the preceding cherry-picks). It was preserved with `git commit --allow-empty` to keep the history marker intact, as instructed.
 
 The branch `cherry-8fd76675efb` is ready for pushing. No merge back to any other branch performed.
+
+---
+
+## 2026-04-27: us/next
+
+Branch: cherry-6830f1ec971
+
+Commits:
+- 6830f1ec971 nxp: imx8mp_evk: Enable SPL_CLK_IMX8MP
+- c6c1b7a5445 nxp: imx8m[m,p]_evk: Drop init_uart_clk
+- 7936aec48b1 nxp: imx8mp_evk: Add board_mmc_get_env_dev
+- 3b1da4cce6d board: phytec: phycore-imx93: Enter fastboot on USB boot by default
+- 49aa5b83622 imx: scu_api: implement sc_misc_get_boot_type
+- b93ef61ce4d imx8qx: misc: add command for getting boottype
+- 670a20de08d arch: imx: fix incorrect shutdown call for inactive video devices
+- 3632346f4bc clk: imx6q: apply clang-format
+- b0cc723f46a clk: imx6q: add ipu and ldb clocks and dependencies
+- 07632c97a4c pwm: pwm-imx: enable ipg or per clks only if CONFIG_CLK enabled
+- a2d79d461e8 video: imx: ipuv3: move clock code to legacy
+- 10e0560ea8b video: imx: ipuv3: use clock framework
+- fd30e492cc3 mmc: fsl_esdhc_imx: Skip voltage switching for fixed 1.8V regulator
+- 177c2ce8b24 arm: dts: capricorn: pinctrl_usdhc1 cleanup
+- 77260b8cee4 siemens: capricorn: set max-frequency for usdhc1
+- 76b53f7e841 arm: dts: capricorn: remove pinctrl_usdhc2
+- d03cb570ccd arm: dts: capricorn: move fec2 config
+- bb5a4607a3a imx8qxp_capricorn config: add wget command
+- 4f8749394d4 capricorn: config: add bootcounter command
+- 4e67785e6df siemens: capricorn: add logic to U-Boot to avoid zig-zag boot
+- c019f813149 siemens: capricorn: always detect emmc device
+- 2b19fea315c siemens: capricorn: fix fallback bootm call for fitImage
+- bf3c641e975 siemens: capricorn: rework bootcmd environment variables
+- cc832b67645 siemens: capricorn: protect environment
+- 029892c5b8c configs: toradex-smarc-imx95: Enable remoteproc
+- 7771b254597 pinctrl: nxp: Kconfig: Typo fix
+- cf516f200d1 pinctrl: nxp: imx8mp: Support print pin muxing
+- b994cf0acff pinctrl: nxp: imx8mn: Support print pin muxing
+- 18a62c12e17 pinctrl: nxp: imx8mm: Support print pin muxing
+- 5a06dd29248 pinctrl: nxp: imx8mq: Support print pin muxing
+- d7a7653dfcb pinctrl: nxp: imx8m: Guard pinctrl match table with CONFIG_IMX8M[X]
+- 9c74ce7846a pinctrl: nxp: imx93: Rename to imx9
+- 87cf5b3c89c pinctrl: nxp: imx93: Support print pin muxing
+- ce4f470eb41 pinctrl: nxp: imx91: Support print pin muxing
+- 85d55a610ea pinctrl: nxp: imx9: Guard pinctrl match table with CONFIG_IMX9[X]
+- 56e5f5290f2 arm: imx: imx95: Use arch override for env_get_location()
+- c0ca147ac62 Merge tag 'u-boot-imx-next-20260228' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+Let me run an intermediate build to verify all is working so far, then continue with the capricorn series.
+
+Now run an intermediate build to ensure things still work:
+
+All look good. Let me continue:
+
+All deltas match. Now the merge commit:
+
+All 37 commits are present (lines 1-37). Now let me run the final build test:
+
+## Final Status Report
+
+All 37 cherry-picks completed on branch `cherry-6830f1ec971` (based on `ci/master`). Final sandbox build passed cleanly.
+
+### Build result
+**OK** — `buildman --board sandbox` completed with no warnings or errors.
+
+### Fix-ups (5 commits)
+Five commits required intervention because two source files do not exist in `ci/master` (the `configs/imx8qxp_capricorn.config` fragment and `board/siemens/capricorn/capricorn_default.env`); these were never introduced into this branch).
+
+**Empty `[FAILED]` commits preserving sequence:**
+- `4115acc13d5` — `imx8qxp_capricorn config: add wget command [FAILED]` (file absent)
+- `fea4a7ebdcc` — `capricorn: config: add bootcounter command [FAILED]` (file absent)
+- `6f6f6540f2a` — `siemens: capricorn: fix fallback bootm call for fitImage [FAILED]` (file absent)
+- `7728f57bf7b` — `siemens: capricorn: rework bootcmd environment variables [FAILED]` (file absent)
+
+**Partial cherry-picks (one hunk dropped):**
+- `fea1b217ab0` — `siemens: capricorn: always detect emmc device` — only the `board.c` hunk applied; `capricorn_default.env` change dropped. Note added to message.
+- `413ab1f451c` — `siemens: capricorn: protect environment` — only the `capricorn-common.h` hunk applied; `configs/imx8qxp_capricorn.config` change dropped. Note added to message.
+
+**Merge commit:**
+- `dc44bbd50ad` — `Merge tag 'u-boot-imx-next-20260228'` — preserved with `--allow-empty`. The two missing files were `git rm`ed; the `capricorn-common.h` hunk that was already added by the cc832b67645 partial pickup was reset to avoid duplication.
+
+### Concerning deltas
+None. All non-FAILED, non-partial cherry-picks matched their originals exactly in files and line counts.
+
+Branch `cherry-6830f1ec971` is left ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 1)
+
+Branch: cherry-6830f1ec971
+
+Failed jobs:
+- jerry (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me check the branch and verify that the failures are truly infrastructure-related rather than caused by the commits.
+
+The diff confirms my hypothesis. Let me also confirm by looking at the failure message pattern more carefully — note that both boards print `Lab failure: Marking connection bad`, which is the lab harness's signal for an infrastructure issue, not a U-Boot fault.
+
+## Diagnosis: Infrastructure / lab failure — no code change needed
+
+**Failing jobs:** `jerry` (chromebook_jerry, Rockchip RK3288) and `opi_pc` (orangepi_pc, Allwinner H3/sunxi), both in the `sjg-lab` stage.
+
+**Failure pattern (identical for both):**
+```
+Bootstrapping U-Boot from dirs ...
+Writing U-Boot using method rockchip-em100   (or "sunxi" for opi_pc)
+...
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The boards never come up to a U-Boot prompt within 15 seconds of being flashed. The lab harness explicitly classifies this as `Lab failure: Marking connection bad` — its label for hardware/connection issues — and the test session is aborted before any U-Boot test even runs (`1 deselected`).
+
+**Why this isn't caused by the MR:**
+The MR `cherry-6830f1ec971` cherry-picks 37 commits that exclusively touch:
+- `arch/arm/mach-imx/`, `arch/arm/dts/imx*`
+- `board/nxp/imx*`, `board/siemens/capricorn/`, `board/phytec/phycore_imx93/`
+- `drivers/clk/imx/`, `drivers/mmc/fsl_esdhc_imx.c`, `drivers/pinctrl/nxp/`, `drivers/video/imx/`, `drivers/pwm/pwm-imx.c`
+- `configs/imx8mp_evk_defconfig`, `configs/toradex-smarc-imx95_defconfig`
+
+`git diff --stat 11c96b06aec..HEAD` shows zero changes to Rockchip (`arch/arm/mach-rockchip/`, RK3288 dts/configs) or Allwinner sunxi (`arch/arm/mach-sunxi/`, H3 dts/configs) files. There is no plausible path by which any of these commits could affect chromebook_jerry or orangepi_pc boot behaviour.
+
+**Conclusion:** Both failures are transient lab/hardware issues (the boards failed to wake/boot and present a serial prompt within the 15 s window). Per task instructions, infrastructure/transient failures should be reported without code changes.
+
+**No commits were modified, no fix was applied, no `cherry-6830f1ec971-fix1` branch was created.** The branch `cherry-6830f1ec971` is unchanged and is a re-run candidate.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-6830f1ec971
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) jerry, opi_pc.
+
+Let me check the branch and verify tha...
+
+### Conversation log
+The review comment is actually the bot's own report from a previous pipeline-fix attempt that concluded the failures were transient infrastructure/lab issues. Let me verify the branch state and confirm the diagnosis still holds.
+
+Confirmed: zero changes to Rockchip or sunxi files. The previous diagnosis (transient lab failures for `jerry` and `opi_pc`) is still valid. Let me run the verification build and then re-push to retrigger the pipeline.
+
+Build OK. Now create the v2 branch and force-push to retrigger the pipeline (since the previous failures were transient lab issues with no code changes needed).
+
+Push succeeded. The MR pipeline will be retriggered automatically.
+
+## Summary
+
+**Action taken:** Re-verified the previous diagnosis and re-pushed the branch to retrigger the pipeline. No code changes were made.
+
+### Findings
+1. **Build verification:** `buildman --board sandbox` passed cleanly.
+2. **Diff verification:** `git diff --stat ci/master..HEAD` against `arch/arm/mach-rockchip/`, `arch/arm/mach-sunxi/`, `arch/arm/dts/rk*`, `arch/arm/dts/sun*`, `configs/chromebook_jerry*`, and `configs/orangepi_pc*` produced **zero output** — the 37 cherry-picked commits do not touch any Rockchip RK3288 or Allwinner H3 files.
+3. **Failure pattern in attempt 1:** Both `jerry` and `opi_pc` failed with `pexpect.exceptions.TIMEOUT: ... waiting for login` followed by `Lab failure: Marking connection bad` — the lab harness's explicit signal for hardware/serial-connection issues, not a U-Boot fault. The boards never reached a prompt before any test executed.
+
+### Conclusion
+The previous diagnosis remains valid: the `jerry` and `opi_pc` failures are transient lab/infrastructure issues unrelated to this MR's content (which is exclusively NXP i.MX, Siemens capricorn, and Phytec phycore-imx93). The branch was force-pushed to `cherry-6830f1ec971` to retrigger the pipeline, which is the correct response to a transient lab failure.
+
+### Local branches
+- `cherry-6830f1ec971` — unchanged (still `186e532329e`)
+- `cherry-6830f1ec971-v2` — created as a marker at the same SHA
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 2): retriggered after transient lab failures**
+>
+> No code changes. Attempt 1 already established that the `jerry` (chromebook_jerry, RK3288) and `opi_pc` (orangepi_pc, sunxi H3) failures were lab/infrastructure issues — both timed out waiting for a login prompt and the harness logged `Lab failure: Marking connection bad`, its explicit signal for a hardware/serial issue. Re-verified `git diff --stat ci/master..HEAD` against `arch/arm/mach-rockchip/`, `arch/arm/mach-sunxi/`, `arch/arm/dts/rk*`, `arch/arm/dts/sun*`, and the relevant `configs/*` — zero hits. The 37 cherry-picks touch only i.MX / capricorn / phycore-imx93 paths; there is no plausible mechanism by which they could affect either board.
+>
+> Sandbox build still passes (`buildman --board sandbox`). Force-pushed the unchanged branch to retrigger the pipeline so the affected boards get a fresh attempt.
 
 ---
 
