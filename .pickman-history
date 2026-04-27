@@ -70476,3 +70476,53 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-145487611f6
+
+Commits:
+- 145487611f6 net: mdio-mt7531-mmio: use common header priv struct
+- 358f97fcca9 net: mdio-mt7531-mmio: improve parsing of switch register on probe
+- a226944635e Merge patch series "net: mdio-mt7531-mmio: consolidate and improve probe"
+
+### Conversation log
+I can see the situation. The first commit fails because ci/master already has commit `9818aa93006` which is essentially the same as the second cherry-pick target (`358f97fcca9`). Only the first cherry-pick (`145487611f6` - renaming the struct) is genuinely new. Let me resolve the conflict manually.
+
+Now let me amend the commit message to note the fix-up:
+
+Now check delta and run build test:
+
+Stats match perfectly. Now run the build test:
+
+Build succeeded. Now cherry-pick the second commit:
+
+The second cherry-pick is empty because ci/master already has equivalent change via `9818aa93006`. Commit as empty to preserve the sequence:
+
+Now cherry-pick the third (merge) commit:
+
+All three commits are present. Now run the final build:
+
+All cherry-picks complete. Final status:
+
+## Summary
+
+**Branch:** `cherry-145487611f6` (based on `ci/master`)
+
+**Build result:** OK (sandbox builds cleanly with no warnings/errors)
+
+**Commits on the branch:**
+1. `ded8c9fa4ce` — net: mdio-mt7531-mmio: use common header priv struct *(from `145487611f6`)*
+2. `e5b80824854` — net: mdio-mt7531-mmio: improve parsing of switch register on probe *(from `358f97fcca9`, empty commit — content already in ci/master)*
+3. `b9b17b32d99` — Merge patch series "net: mdio-mt7531-mmio: consolidate and improve probe" *(from `a226944635e`, empty as expected for merge)*
+
+**Fix-ups made:**
+- **Commit 1 (`145487611f6`)**: Resolved a conflict where ci/master already had `9818aa930063` ("net: mdio-mt7531-mmio: fix switch regs initialization") which used the new `ofnode_get_parent`/`ofnode_get_addr` style probe. Kept the ci/master probe body and applied only the struct rename. Stat delta is identical to original (1 file, +11/−13). Note appended to commit message.
+- **Commit 2 (`358f97fcca9`)**: Resulted in an empty cherry-pick because `9818aa930063` in ci/master is functionally equivalent (same parent ofnode lookup approach). Committed with `--allow-empty` to preserve sequence; note appended to commit message.
+- **Commit 3 (`a226944635e`)**: Empty merge commit, expected. Committed with `--allow-empty`.
+
+**Concerning deltas:** None — commit 1 stats match the original exactly. Commits 2 and 3 are intentionally empty (already-applied content / merge commit, both expected).
+
+The branch is ready for pushing.
+
+---
+
