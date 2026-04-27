@@ -70959,3 +70959,41 @@ Branch is ready for pushing. Not merged into any other branch.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-9bf19639a76
+
+Commits:
+- 9bf19639a76 usb: musb-new: Relative ctrl_mod address parsing
+- 4cf2275ee74 usb: musb-new: Add compatibles for ti,musb-am33xx
+- 47dabe3b96e Merge branch 'master' of git://source.denx.de/u-boot-usb into next
+
+### Conversation log
+Delta matches exactly. Now build test.
+
+Delta matches exactly. Now build test.
+
+The merge commit is empty as expected (the changes were already cherry-picked in the prior commits). Now run the final build.
+
+All three commits are now present in the cherry-pick branch. Final status:
+
+## Cherry-pick Status: SUCCESS
+
+**Branch:** `cherry-9bf19639a76` (based on `ci/master`)
+
+**Commits cherry-picked:**
+1. `1a2902c09e7` - usb: musb-new: Relative ctrl_mod address parsing — clean cherry-pick, identical delta (1 file, 5+/5-)
+2. `6171e0fd0d1` - usb: musb-new: Add compatibles for ti,musb-am33xx — clean cherry-pick, identical delta (1 file, 29+)
+3. `176a93e8e7a` - Merge branch 'master' of git://source.denx.de/u-boot-usb into next — empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK (sandbox builds cleanly after each cherry-pick and after the final commit, no warnings/errors)
+
+**Fix-ups made:**
+- The merge commit reported as empty during cherry-pick (because its contents were already applied in the prior two cherry-picks). Used `git commit --allow-empty` and amended the message to include the standard `(cherry picked from commit 47dabe3b96ea8f79edf574a0e141a156b227455c)` annotation that `-x` would normally add.
+
+**Concerning deltas:** None. Both content commits matched their originals exactly. The merge commit is intentionally empty (its diff was already represented in the two preceding commits).
+
+The branch is ready for pushing.
+
+---
+
