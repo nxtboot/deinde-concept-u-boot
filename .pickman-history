@@ -70476,3 +70476,226 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-145487611f6
+
+Commits:
+- 145487611f6 net: mdio-mt7531-mmio: use common header priv struct
+- 358f97fcca9 net: mdio-mt7531-mmio: improve parsing of switch register on probe
+- a226944635e Merge patch series "net: mdio-mt7531-mmio: consolidate and improve probe"
+
+### Conversation log
+I can see the situation. The first commit fails because ci/master already has commit `9818aa93006` which is essentially the same as the second cherry-pick target (`358f97fcca9`). Only the first cherry-pick (`145487611f6` - renaming the struct) is genuinely new. Let me resolve the conflict manually.
+
+Now let me amend the commit message to note the fix-up:
+
+Now check delta and run build test:
+
+Stats match perfectly. Now run the build test:
+
+Build succeeded. Now cherry-pick the second commit:
+
+The second cherry-pick is empty because ci/master already has equivalent change via `9818aa93006`. Commit as empty to preserve the sequence:
+
+Now cherry-pick the third (merge) commit:
+
+All three commits are present. Now run the final build:
+
+All cherry-picks complete. Final status:
+
+## Summary
+
+**Branch:** `cherry-145487611f6` (based on `ci/master`)
+
+**Build result:** OK (sandbox builds cleanly with no warnings/errors)
+
+**Commits on the branch:**
+1. `ded8c9fa4ce` — net: mdio-mt7531-mmio: use common header priv struct *(from `145487611f6`)*
+2. `e5b80824854` — net: mdio-mt7531-mmio: improve parsing of switch register on probe *(from `358f97fcca9`, empty commit — content already in ci/master)*
+3. `b9b17b32d99` — Merge patch series "net: mdio-mt7531-mmio: consolidate and improve probe" *(from `a226944635e`, empty as expected for merge)*
+
+**Fix-ups made:**
+- **Commit 1 (`145487611f6`)**: Resolved a conflict where ci/master already had `9818aa930063` ("net: mdio-mt7531-mmio: fix switch regs initialization") which used the new `ofnode_get_parent`/`ofnode_get_addr` style probe. Kept the ci/master probe body and applied only the struct rename. Stat delta is identical to original (1 file, +11/−13). Note appended to commit message.
+- **Commit 2 (`358f97fcca9`)**: Resulted in an empty cherry-pick because `9818aa930063` in ci/master is functionally equivalent (same parent ofnode lookup approach). Committed with `--allow-empty` to preserve sequence; note appended to commit message.
+- **Commit 3 (`a226944635e`)**: Empty merge commit, expected. Committed with `--allow-empty`.
+
+**Concerning deltas:** None — commit 1 stats match the original exactly. Commits 2 and 3 are intentionally empty (already-applied content / merge commit, both expected).
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) opi_pc.
+
+The failure is a "Lab failure" - the orangepi...
+
+### Conversation log
+The build passes. Looking at this task: the "review comment" is the bot's own previous diagnosis that the opi_pc failure was an infrastructure issue (serial timeout on Allwinner H3 hardware unrelated to the MediaTek MT7531 driver changes in this MR). The previous recommendation was to retry the job, since no code change was warranted.
+
+For this fix attempt (v2), the appropriate action is to re-trigger the pipeline by force-pushing — since GitLab auto-triggers a new pipeline on push, this effectively retries the previously-failing opi_pc job. Let me create the v2 branch and push.
+
+The push reports "Everything up-to-date" because the branch SHA is unchanged (no code changes). A pipeline retry through force-push isn't possible without altering the commit; this needs to be retried manually in the GitLab CI UI. Let me verify the remote state:
+
+The remote already has commit `41388dc3831` — same as our local branch. No update needed.
+
+## Report
+
+**Task:** Address review comment on MR !984 (branch `cherry-145487611f6`) — the comment was the bot's own previous Pipeline fix (attempt 1) report diagnosing the opi_pc job failure as a lab/infrastructure issue.
+
+**Diagnosis (re-confirmed):**
+- The original opi_pc failure was a **serial console timeout** during pexpect login wait — classified by the test framework itself as `Lab failure: Marking connection bad`.
+- The branch only modifies `drivers/net/mdio-mt7531-mmio.c` (MediaTek MT7531 Ethernet switch MDIO driver). The opi_pc target is an **Allwinner H3 (sunxi)** SoC — entirely unrelated.
+- Sandbox `buildman -L --board sandbox -w -o /tmp/pickman` passes cleanly (1 built, no warnings/errors).
+
+**Action taken:**
+- Checked out `cherry-145487611f6` at `41388dc3831e4b129380ed9b0e880fcb1d963672`.
+- Ran sandbox build via `buildman` — passes.
+- Created local branch `cherry-145487611f6-v2` at the same SHA (no code changes).
+- Attempted `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — reported `Everything up-to-date` (remote already at `41388dc3831`).
+
+**Why no force push happened:** Without code changes, the SHA is unchanged, so the push is a no-op and GitLab won't trigger a new pipeline.
+
+**Suggested MR reply:**
+
+> Pipeline fix (attempt 2): the opi_pc failure remains an infrastructure-level lab failure (serial console pexpect timeout), unrelated to this MR's MediaTek MT7531 MDIO driver changes. The orangepi_pc target is Allwinner H3 (sunxi) — no overlap with `drivers/net/mdio-mt7531-mmio.c`. Sandbox build still passes cleanly.
+>
+> Since no code change is warranted, force-pushing produces no SHA change and won't auto-retrigger the pipeline. **Please retry the `opi_pc` job manually from the GitLab CI UI**, or have the lab admins investigate if the failure recurs.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) colibrimx8, opi_pc.
+
+## Report: Infrastructure failure...
+
+### Conversation log
+## Report: Pipeline fix (attempt 3) — Infrastructure failures, no code change
+
+**Diagnosis (re-confirmed for the third time):** The review comment to address is the bot's own attempt-2 report, which already diagnosed both failures (`opi_pc`, `colibrimx8`) as **lab/infrastructure failures** — serial console pexpect timeouts, explicitly classified by the test framework as `Lab failure` / `Lab timeout: Marking connection bad`.
+
+### Why this MR is unrelated to those failures
+- `git diff ci/master..HEAD --stat` confirms the branch only modifies:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping only)
+- **opi_pc** = Allwinner H3 (sunxi) — does not compile MT7531
+- **colibrimx8** = NXP i.MX8X — does not compile MT7531
+- Sandbox build (`buildman -L --board sandbox -w -o /tmp/pickman`) passes: `1 total built, duration 0:00:06`
+
+### Action taken
+- Checked out `cherry-145487611f6` at `9ea6b1431d8`.
+- Ran `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, no warnings/errors).
+- Created local branch `cherry-145487611f6-v3` at the same SHA `9ea6b1431d8` (no code change — there is nothing to fix).
+- Ran `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — reports `Everything up-to-date` (remote already at this SHA, no SHA change since attempt 2).
+
+### Why no force push happened
+Without a code change, the SHA is unchanged, so `push -f` is a no-op and GitLab won't auto-trigger a new pipeline. There is nothing to fix in this MR's code — the failing jobs test boards that don't even include the changed driver.
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 3): both `opi_pc` and `colibrimx8` failures remain pure lab/infrastructure issues — serial-console pexpect timeouts on Allwinner H3 (sunxi) and NXP i.MX8X boards respectively, both classified by the test framework itself as `Lab failure` / `Lab timeout: Marking connection bad`. Neither board compiles `drivers/net/mdio-mt7531-mmio.c` (the only source file this MR touches), and sandbox build still passes cleanly.
+>
+> No code change is warranted, so a force-push produces no SHA change and won't auto-retrigger the pipeline. **Please retry the `opi_pc` and `colibrimx8` jobs manually from the GitLab CI UI.** If they recur (especially on the same `ellesmere-lab` runner), this needs lab-side investigation rather than further attempts on this MR.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 3)
+
+Branch: cherry-145487611f6
+
+Failed jobs:
+- vf2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+All three failures are lab/infrastructure failures on the same runner (`ellesmere-lab VKe9dm-Af`). Let me verify the branch state and check the diff to confirm the MR is unrelated.
+
+All three failures are confirmed lab/infrastructure failures, unrelated to this MR. Let me create the requested local branch.
+
+## Report: Pipeline fix (attempt 3) — Infrastructure failures, no code change required
+
+**Diagnosis:** All three failed jobs (`vf2`, `bpi`, `opi_pc`) are **lab/infrastructure failures**, not code problems. All ran on the same runner (`ellesmere-lab VKe9dm-Af`) within ~5 minutes of each other (15:54–15:59 UTC), and all were explicitly classified by the test framework itself as `Lab failure: Marking connection bad`.
+
+### Root cause per job
+
+| Job | Board | SoC | Symptom |
+|-----|-------|-----|---------|
+| 464821 vf2 | StarFive VisionFive 2 | RISC-V (JH7110) | `dwmci_s: Response Timeout` / `BOOT fail,Error is 0xffffffff` then `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` |
+| 464806 bpi | Bananapi | Allwinner A20 (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 45 seconds exceeded during waiting for login` |
+| 464800 opi_pc | orangepi_pc | Allwinner H3 (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` |
+
+The `vf2` failure additionally shows a SD card controller (DesignWare MMC) timeout during flashing — also a hardware/lab issue. All three end with the framework-specific `Lab failure: Marking connection bad - no other tests will run` exit, which is the test harness's own infrastructure-failure classification.
+
+### Why this MR is unrelated
+- `git diff ci/master..HEAD --stat` shows the branch modifies only:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping)
+- `mt7531` is a MediaTek Ethernet switch MDIO driver. None of the failing boards compile it:
+  - `vf2` = StarFive RISC-V
+  - `bpi` = Allwinner A20
+  - `opi_pc` = Allwinner H3
+- `grep MT7531 configs/` returns no matches at all — the driver isn't enabled in any defconfig.
+- Sandbox build (`um build sandbox`) passes silently with no output.
+
+### Action taken
+- Checked out `cherry-145487611f6` at `3220d7da1a7`.
+- Verified `git diff ci/master..HEAD --stat` (only the MT7531 driver + pickman history).
+- Ran `um build sandbox` — passes silently.
+- Created local branch `cherry-145487611f6-fix3` at the same SHA `3220d7da1a7` (no code change — there is nothing in the code to fix).
+
+### Recommendation
+Retry the `vf2`, `bpi`, and `opi_pc` jobs manually from the GitLab CI UI. The cluster of three failures on one runner within five minutes strongly suggests a transient lab issue on `ellesmere-lab VKe9dm-Af` (possibly a PSU/USB-hub/serial-console glitch affecting multiple boards on that host). If the failures recur on the same runner, the lab itself needs investigation, not this MR.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-145487611f6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) vf2, bpi, opi_pc.
+
+All three failures are lab/infrastr...
+
+### Conversation log
+The push actually succeeded this time — the remote advanced from `3220d7da1a7` to `14823478c17` (a pickman-history record commit that hadn't been pushed before). This SHA change will auto-trigger a new pipeline, effectively retrying the failed jobs.
+
+## Report: Pipeline fix (attempt 4) — Infrastructure failures, no code change required
+
+**Diagnosis:** The review comment to address is the bot's own attempt-3 report, which already diagnosed all three failures (`vf2`, `bpi`, `opi_pc`) as **lab/infrastructure failures**. All three ran on the same runner (`ellesmere-lab VKe9dm-Af`) within ~5 minutes, and all were explicitly classified by the test framework as `Lab failure: Marking connection bad`. None of the failing boards compiles the only driver this MR touches.
+
+### Why this MR is unrelated to the failures
+- `git diff ci/master..HEAD --stat` confirms only:
+  - `drivers/net/mdio-mt7531-mmio.c` (+11/−13)
+  - `.pickman-history` (record-keeping)
+- `mt7531` = MediaTek Ethernet switch MDIO driver. Failing boards:
+  - **vf2** = StarFive RISC-V (JH7110) — does not compile MT7531
+  - **bpi** = Allwinner A20 (sunxi) — does not compile MT7531
+  - **opi_pc** = Allwinner H3 (sunxi) — does not compile MT7531
+- Sandbox build (`buildman -L --board sandbox -w -o /tmp/pickman`) passes: `1 total built, duration 0:00:06`.
+
+### Action taken
+- Checked out `cherry-145487611f6` at HEAD `14823478c17`.
+- Verified `git diff ci/master..HEAD --stat` (only MT7531 driver + pickman-history).
+- Ran `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, no warnings/errors).
+- Created local branch `cherry-145487611f6-v4` at SHA `14823478c17` (no code change — there is nothing in the source to fix).
+- Ran `./tools/pickman/pickman push-branch cherry-145487611f6 -r ci -f` — **push went through** (`3220d7da1a7..14823478c17`) because a previously-recorded pickman-history commit had not yet been pushed to the remote. GitLab will auto-trigger a new MR pipeline on this SHA change, which effectively retries the failed jobs.
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 4): all three previously-failing jobs (`vf2`, `bpi`, `opi_pc`) were lab/infrastructure failures on a single runner (`ellesmere-lab VKe9dm-Af`) — pexpect timeouts at the login prompt, classified by the test framework itself as `Lab failure: Marking connection bad`. None of the failing boards (StarFive RISC-V, Allwinner A20, Allwinner H3) compiles the MediaTek MT7531 MDIO driver this MR modifies, and sandbox build still passes cleanly.
+>
+> Pushing the unpushed pickman-history record advanced the remote SHA (`3220d7da1a7` → `14823478c17`), which auto-triggers a fresh pipeline and effectively retries the failed jobs. If the same boards fail again on the same runner, this is a lab-side issue (likely PSU/USB-hub/serial-console glitch on `ellesmere-lab`) and needs lab admin investigation rather than further attempts on this MR.
+
+---
+
