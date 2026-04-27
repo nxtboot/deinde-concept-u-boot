@@ -70927,3 +70927,35 @@ The previous diagnosis remains valid: the `jerry` and `opi_pc` failures are tran
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-24526162338
+
+Commits:
+- 24526162338 fastboot: mmc: make boot partition offset configurable
+- 94b7c3b2622 arch: imx8qxp: Override weak fb_mmc_get_boot_offset function
+- b1f56667065 Merge tag 'u-boot-dfu-next-20260303' of https://source.denx.de/u-boot/custodians/u-boot-dfu into next
+
+### Conversation log
+All 3 commits cherry-picked successfully on branch `cherry-24526162338`.
+
+**Final status:**
+
+- **Build result:** OK (sandbox build completed successfully after each step and at the end)
+- **Fix-ups:** None — no conflicts, no manual resolution needed
+- **Concerning deltas:** None
+  - `e9f3323e490` (fastboot mmc): identical stats to `24526162338` (1 file, +11/-4)
+  - `7428985e239` (imx8qxp override): identical stats to `94b7c3b2622` (1 file, +21)
+  - `c76d2516ee8` (merge): empty commit (expected — its content came in via the two preceding cherry-picks); preserved with `--allow-empty` to maintain history
+
+**Final log:**
+```
+c76d2516ee8 Merge tag 'u-boot-dfu-next-20260303' ... into next
+7428985e239 arch: imx8qxp: Override weak fb_mmc_get_boot_offset function
+e9f3323e490 fastboot: mmc: make boot partition offset configurable
+```
+
+Branch is ready for pushing. Not merged into any other branch.
+
+---
+
