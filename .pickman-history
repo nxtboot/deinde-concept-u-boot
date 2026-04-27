@@ -70743,16 +70743,100 @@ a9f140c6075 power: regulator: add MediaTek MT6357 driver
 ### Build result:
 **OK** — `buildman --board sandbox` passed cleanly after every cherry-pick and on the final state.
 
-### Fix-ups: 
+### Fix-ups:
 None. All non-merge cherry-picks applied with auto-merging only (MAINTAINERS, imx8mp/imx93 .env files), and the deltas matched the originals exactly (file lists and line counts identical).
 
-### Concerning deltas: 
+### Concerning deltas:
 None. Every cherry-pick produced the same `--stat` output as its original.
 
 ### Merge commit:
 The merge `f6963fc2326` resolved to empty (all the underlying mmc-next changes were already brought in by the preceding cherry-picks). It was preserved with `git commit --allow-empty` to keep the history marker intact, as instructed.
 
 The branch `cherry-8fd76675efb` is ready for pushing. No merge back to any other branch performed.
+
+---
+
+## 2026-04-27: us/next
+
+Branch: cherry-6830f1ec971
+
+Commits:
+- 6830f1ec971 nxp: imx8mp_evk: Enable SPL_CLK_IMX8MP
+- c6c1b7a5445 nxp: imx8m[m,p]_evk: Drop init_uart_clk
+- 7936aec48b1 nxp: imx8mp_evk: Add board_mmc_get_env_dev
+- 3b1da4cce6d board: phytec: phycore-imx93: Enter fastboot on USB boot by default
+- 49aa5b83622 imx: scu_api: implement sc_misc_get_boot_type
+- b93ef61ce4d imx8qx: misc: add command for getting boottype
+- 670a20de08d arch: imx: fix incorrect shutdown call for inactive video devices
+- 3632346f4bc clk: imx6q: apply clang-format
+- b0cc723f46a clk: imx6q: add ipu and ldb clocks and dependencies
+- 07632c97a4c pwm: pwm-imx: enable ipg or per clks only if CONFIG_CLK enabled
+- a2d79d461e8 video: imx: ipuv3: move clock code to legacy
+- 10e0560ea8b video: imx: ipuv3: use clock framework
+- fd30e492cc3 mmc: fsl_esdhc_imx: Skip voltage switching for fixed 1.8V regulator
+- 177c2ce8b24 arm: dts: capricorn: pinctrl_usdhc1 cleanup
+- 77260b8cee4 siemens: capricorn: set max-frequency for usdhc1
+- 76b53f7e841 arm: dts: capricorn: remove pinctrl_usdhc2
+- d03cb570ccd arm: dts: capricorn: move fec2 config
+- bb5a4607a3a imx8qxp_capricorn config: add wget command
+- 4f8749394d4 capricorn: config: add bootcounter command
+- 4e67785e6df siemens: capricorn: add logic to U-Boot to avoid zig-zag boot
+- c019f813149 siemens: capricorn: always detect emmc device
+- 2b19fea315c siemens: capricorn: fix fallback bootm call for fitImage
+- bf3c641e975 siemens: capricorn: rework bootcmd environment variables
+- cc832b67645 siemens: capricorn: protect environment
+- 029892c5b8c configs: toradex-smarc-imx95: Enable remoteproc
+- 7771b254597 pinctrl: nxp: Kconfig: Typo fix
+- cf516f200d1 pinctrl: nxp: imx8mp: Support print pin muxing
+- b994cf0acff pinctrl: nxp: imx8mn: Support print pin muxing
+- 18a62c12e17 pinctrl: nxp: imx8mm: Support print pin muxing
+- 5a06dd29248 pinctrl: nxp: imx8mq: Support print pin muxing
+- d7a7653dfcb pinctrl: nxp: imx8m: Guard pinctrl match table with CONFIG_IMX8M[X]
+- 9c74ce7846a pinctrl: nxp: imx93: Rename to imx9
+- 87cf5b3c89c pinctrl: nxp: imx93: Support print pin muxing
+- ce4f470eb41 pinctrl: nxp: imx91: Support print pin muxing
+- 85d55a610ea pinctrl: nxp: imx9: Guard pinctrl match table with CONFIG_IMX9[X]
+- 56e5f5290f2 arm: imx: imx95: Use arch override for env_get_location()
+- c0ca147ac62 Merge tag 'u-boot-imx-next-20260228' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+Let me run an intermediate build to verify all is working so far, then continue with the capricorn series.
+
+Now run an intermediate build to ensure things still work:
+
+All look good. Let me continue:
+
+All deltas match. Now the merge commit:
+
+All 37 commits are present (lines 1-37). Now let me run the final build test:
+
+## Final Status Report
+
+All 37 cherry-picks completed on branch `cherry-6830f1ec971` (based on `ci/master`). Final sandbox build passed cleanly.
+
+### Build result
+**OK** — `buildman --board sandbox` completed with no warnings or errors.
+
+### Fix-ups (5 commits)
+Five commits required intervention because two source files do not exist in `ci/master` (the `configs/imx8qxp_capricorn.config` fragment and `board/siemens/capricorn/capricorn_default.env`); these were never introduced into this branch).
+
+**Empty `[FAILED]` commits preserving sequence:**
+- `4115acc13d5` — `imx8qxp_capricorn config: add wget command [FAILED]` (file absent)
+- `fea4a7ebdcc` — `capricorn: config: add bootcounter command [FAILED]` (file absent)
+- `6f6f6540f2a` — `siemens: capricorn: fix fallback bootm call for fitImage [FAILED]` (file absent)
+- `7728f57bf7b` — `siemens: capricorn: rework bootcmd environment variables [FAILED]` (file absent)
+
+**Partial cherry-picks (one hunk dropped):**
+- `fea1b217ab0` — `siemens: capricorn: always detect emmc device` — only the `board.c` hunk applied; `capricorn_default.env` change dropped. Note added to message.
+- `413ab1f451c` — `siemens: capricorn: protect environment` — only the `capricorn-common.h` hunk applied; `configs/imx8qxp_capricorn.config` change dropped. Note added to message.
+
+**Merge commit:**
+- `dc44bbd50ad` — `Merge tag 'u-boot-imx-next-20260228'` — preserved with `--allow-empty`. The two missing files were `git rm`ed; the `capricorn-common.h` hunk that was already added by the cc832b67645 partial pickup was reset to avoid duplication.
+
+### Concerning deltas
+None. All non-FAILED, non-partial cherry-picks matched their originals exactly in files and line counts.
+
+Branch `cherry-6830f1ec971` is left ready for pushing.
 
 ---
 
