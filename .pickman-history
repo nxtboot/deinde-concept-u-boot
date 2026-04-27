@@ -69460,3 +69460,303 @@ If a real human review comment was intended and got lost, please re-run with the
 
 ---
 
+## 2026-04-25: us/next (continued)
+
+Branch: cherry-b5db4f322a0
+
+Commits:
+- b5db4f322a0 board: mediatek: add MT8370 EVK board support
+- a04835c0e92 clk: mediatek: mt8188: remove separate topckgen-cg driver
+- 6354f83f43f clk: mediatek: mt8188: fix circular clock dependency
+- 5e9bbbdab00 clk: mediatek: mt8188: add missing fixed clock
+- 2797fa3efd8 clk: mediatek: mt8188: fix some clock parents
+- 0cdd01dbde2 clk: mediatek: mt8188: refactor driver to improve readability
+- 03637bda63a Merge patch series "clk: mediatek: mt8188: fix clocks"
+
+### Conversation log
+First cherry-pick failed with conflicts. Per instructions, I need to check if commits are already present in ci/master with different hashes before aborting.
+
+The conflict arose because in ci/master the consolidated `board/mediatek/MAINTAINERS` was split into per-board MAINTAINERS files. I need to restore mt8390_evk/MAINTAINERS to its original state and create a new mt8370_evk/MAINTAINERS file.
+
+Build passed. Now cherry-pick the next commit.
+
+Identical delta. Continue with build test and next picks.
+
+Now the merge commit:
+
+All 7 commits are present. Let me run the final build test.
+
+All cherry-picks complete. Final report:
+
+## Final Status
+
+**Build result:** OK — sandbox builds cleanly after every commit and at the end of the series.
+
+**Commits applied (7/7):**
+1. `b3499708c3d` board: mediatek: add MT8370 EVK board support
+2. `3d19740330e` clk: mediatek: mt8188: remove separate topckgen-cg driver
+3. `166699e3d0f` clk: mediatek: mt8188: fix circular clock dependency
+4. `cd0ab01f7d8` clk: mediatek: mt8188: add missing fixed clock
+5. `3342d65a169` clk: mediatek: mt8188: fix some clock parents
+6. `96bcd27f166` clk: mediatek: mt8188: refactor driver to improve readability
+7. `097488e0fe2` Merge patch series "clk: mediatek: mt8188: fix clocks" (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups made:**
+- **Commit 1 (MT8370 EVK board):** The original commit added an MT8370 EVK entry to the consolidated `board/mediatek/MAINTAINERS`, but in `ci/master` that file has been split into per-board MAINTAINERS files. Resolved by:
+  - Restoring `board/mediatek/mt8390_evk/MAINTAINERS` to its existing per-board content (git's rename-detection had merged the consolidated file into it).
+  - Creating new `board/mediatek/mt8370_evk/MAINTAINERS` with the MT8370 EVK entry to match the per-board layout.
+  - Added a one-line note at the end of the commit message describing this fix-up.
+  - Delta: 32 lines added vs 33 in the original (1-line reduction is the missing blank-line separator between MAINTAINERS sections that existed in the consolidated file).
+
+**Concerning deltas:** None. All other commits applied cleanly with identical or near-identical line counts and file sets.
+
+The `cherry-b5db4f322a0` branch is left checked out and ready for pushing. (The two untracked files in `arch/sandbox/dts/` and `test/fdt_overlay/` were present before I started and remain untracked.)
+
+---
+
+### Rebase: 2026-04-25
+
+Rebased cherry-b5db4f322a0 onto latest ci/master (f2a813872d9). Conflict in .pickman-history resolved by keeping both sections. All commits replayed; sandbox build verified.
+
+---
+
+### Review: 2026-04-25
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Good, no real conflict markers remain (the matches are in test output sections).
+
+Now let me verify deltas vs original commits and check the build.
+
+Deltas look good. Now let me run the build.
+
+Build passes. Now let me create the v2 branch and push.
+
+Push was successful. Final status:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`f2a813872d9`) and force-pushed to update MR !970.
+
+**Conflicts resolved:**
+- `.pickman-history`: Trivial conflict where the previous MR for `cherry-1af249f511a` had also added a "2026-04-25: us/next" section. Resolved by keeping both sections, with the prior one preceding this MR's notes (now labelled "continued").
+
+**Build verification:** OK — `buildman -L --board sandbox` completed cleanly (1 board built, 0 errors, 0 warnings).
+
+**Delta verification:** All seven content commits show identical or near-identical line counts to their originals; the merge commit replayed empty as expected. The board commit retains the prior fix-up note about the per-board MAINTAINERS layout.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `459d71501f3`) and backup `cherry-b5db4f322a0-v2`
+- Remote: force-pushed to `ci/cherry-b5db4f322a0` (`097488e0fe2 → 459d71501f3`)
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`f2a813872d9`). Only conflict was a trivial one in `.pickman-history` (a parallel MR added an entry under the same date heading) — resolved by keeping both entries. All seven content commits replayed with matching deltas, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Now let me start the rebase onto ci/master:
+
+Now let me verify the deltas of each commit haven't changed:
+
+All deltas match exactly. Now run the build:
+
+Build succeeded. Now create the v2 branch and push:
+
+Push succeeded. Final summary:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`61ce55a492b`) and force-pushed to update MR !970 (`459d71501f3 → e79d05daaed`).
+
+**Conflict resolved:**
+- `.pickman-history`: Same flavour of trivial conflict as the previous rebase. The new ci/master had picked up another "2026-04-25: us/next" entry (for `cherry-2517e2b524e` from MR pipeline), and our branch's pickman record sat in the same spot. Resolved by keeping both sections in chronological order, separated by the standard `---` divider, with our entry retaining its "(continued)" label.
+
+**Delta verification:** All nine commits (7 content + 2 pickman) replayed with byte-identical stats to their pre-rebase counterparts:
+- `52297603a15` board mt8370_evk: 2 files, 32+
+- `4e8f1da87db` topckgen-cg: 76+/101−
+- `59c71fabd63` circular dep: 7+/7−
+- `515956d1e73` fixed clock: 196+/195−
+- `55965d81825` clock parents: 15+/19−
+- `aab0649ec2c` refactor: 217+/230−
+- `b7edbf1a1a3` merge commit (empty, preserved)
+- `e21f0a43f30` pickman cherry-pick record: 60+
+- `e79d05daaed` pickman review record: 39+
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 errors, 0 warnings.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `e79d05daaed`) and backup `cherry-b5db4f322a0-v3` (the `-v2` slot was taken by the earlier rebase)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`61ce55a492b`). Only conflict was a trivial one in `.pickman-history` again — another parallel MR (`cherry-2517e2b524e`) had landed an entry under the same `2026-04-25: us/next` heading. Resolved by keeping both sections in order. All nine commits replayed with byte-identical stats, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+
+
+### Conversation log
+Now let me verify deltas of each commit match the pre-rebase versions.
+
+All deltas are identical to the pre-rebase versions. Now let me run the build verification.
+
+Build passed cleanly. Now let me create the v4 backup branch and force-push.
+
+Push successful. Final summary:
+
+## Rebase Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`fc686e475d9`) and force-pushed to update MR !970 (`e79d05daaed → 3428e212670`).
+
+**Conflict resolved:**
+- `.pickman-history`: Same trivial flavour as before — `ci/master` had picked up new entries for `cherry-06cfded6edf` (the 2026-04-26 us/next pick plus three pipeline-fix attempts and a review entry) right where our `cherry-b5db4f322a0` "(continued)" record sits. Resolved by keeping both sections, adding a `---` divider, and preserving our entry's "(continued)" label.
+
+**Delta verification:** All ten commits replayed with byte-identical stats vs their pre-rebase counterparts:
+- `1741af18712` board mt8370_evk: 2 files, 32+
+- `dd1491899f7` topckgen-cg: 76+/101−
+- `a065848eba3` circular dep: 7+/7−
+- `8fde10720f3` fixed clock: 196+/195−
+- `8476da9e76a` clock parents: 15+/19−
+- `58c106618c7` refactor: 217+/230−
+- `9963d54e70d` merge commit (empty, preserved)
+- `54f7c5e7ac0` pickman cherry-pick record: 60+
+- `6dd89f7b605` pickman review record 1: 39+
+- `3428e212670` pickman review record 2: 48+
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 errors, 0 warnings.
+
+**Branches:**
+- Local: `cherry-b5db4f322a0` (HEAD `3428e212670`) and backup `cherry-b5db4f322a0-v4` (the `-v2`, `-v3` slots were taken by earlier rebases)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+**Reply to post on MR !970:**
+
+> Rebased onto latest `ci/master` (`fc686e475d9`). Only conflict was the now-familiar one in `.pickman-history` — the new ci/master picked up entries for the parallel `cherry-06cfded6edf` MR (cherry-pick + three pipeline-fix attempts + review) right where our "(continued)" record sits. Resolved by keeping both sections in chronological order. All ten commits replayed with byte-identical stats, the empty merge commit was preserved, and `buildman --board sandbox` is clean. Force-pushed to refresh the pipeline.
+
+---
+
+### Review: 2026-04-26
+
+Branch: cherry-b5db4f322a0
+
+Comments addressed:
+- [sjg]: Pickman: please check this build failure
+
+https://concept.u-boot.org/u-boot/u-boot/-/commit/097488e0...
+
+### Conversation log
+## Rebase + Build-Failure Investigation Summary
+
+**Result:** Successfully rebased `cherry-b5db4f322a0` onto latest `ci/master` (`b79c72b9bf6`) and force-pushed to update MR !970 (`3428e212670 → 084b06a8834`).
+
+### Build failure investigation
+
+The reviewer pointed to pipeline 6922 (commit `097488e0fe2`), where `mt8370_evk` failed with `undefined reference to mem_map` in `arch/arm/cpu/armv8/cache_v8.c`. **Root cause: stale CI base, not a real bug.**
+
+That pipeline ran on top of master at `2d3f5d992c0`, which **did not yet contain** the consolidate commit `9c0aa61886` (`arm: mediatek: consolidate ARMv8 memory maps`). Without that commit, `arch/arm/mach-mediatek/armv8-mem-map.c` (the file that defines `mem_map` for all MTK ARMv8 platforms including the new MT8188-based MT8370 EVK) didn't exist, so the new `mt8370_evk` board had nowhere to source `mem_map` from. Existing boards like `mt8390_evk` had per-board `.c` files that defined it; the new MT8370 EVK relied on the consolidated definition.
+
+The consolidate commit landed in master via `f2a813872d9` (`cherry-1af249f511a`) and is in every ci/master we've rebased onto since the first rebase. **No code change is warranted.** Local verification on the rebased branch:
+
+```
+buildman -PEWM -L --board mt8370_evk,mt8390_evk,mt8365_evk,mt8183_pumpkin,mt8512_bm1_emmc
+→ 5 built, 0 errors, 0 warnings
+buildman -L --board sandbox -w -o /tmp/pickman
+→ 1 built, 0 errors, 0 warnings
+```
+
+### Conflict resolved
+
+- `.pickman-history`: same flavour as the prior four rebases — `ci/master` picked up entries for `cherry-27e1924ffaa` (the new "2026-04-26: us/next" section) right where our `cherry-b5db4f322a0` "(continued)" record sits. Resolved by keeping both sections in chronological order with the standard `---` divider.
+
+### Delta verification
+
+All eleven commits replayed with byte-identical stats vs their pre-rebase counterparts:
+- `3e8e30f21c2` board mt8370_evk: 2 files, 32+
+- `bac9398bffa` topckgen-cg: 76+/101−
+- `570816b09f2` circular dep: 7+/7−
+- `dbcae417323` fixed clock: 196+/195−
+- `5cd00a76f5e` clock parents: 15+/19−
+- `d276cf53804` refactor: 217+/230−
+- `5ea0538cb57` merge commit (empty, preserved)
+- `5d3224247a9` pickman cherry-pick record: 60+
+- `0ada5206db4` pickman review record 1: 39+
+- `b858914f7e6` pickman review record 2: 48+
+- `084b06a8834` pickman review record 3 (this rebase): 47+
+
+### Branches
+
+- Local: `cherry-b5db4f322a0` (HEAD `084b06a8834`) and backup `cherry-b5db4f322a0-v5` (the `-v2`, `-v3`, `-v4` slots are taken by earlier rebases)
+- Remote: force-pushed to `ci/cherry-b5db4f322a0`
+
+### Reply to post on MR !970
+
+> Investigated the `mt8370_evk` build failure flagged at `097488e0fe2` (pipeline 6922). It's a stale-base artefact, not a real bug: that pipeline ran on top of `2d3f5d992c0`, which predates the consolidate commit `9c0aa61886` (`arm: mediatek: consolidate ARMv8 memory maps`). Without that commit `arch/arm/mach-mediatek/armv8-mem-map.c` doesn't exist, so the new MT8370 EVK (which relies on the consolidated `mem_map` rather than a per-board `.c` file like `mt8390_evk` had) failed to link `cache_v8.o`. The consolidate commit landed in master via `f2a813872d9` (`cherry-1af249f511a`) and has been in every ci/master base since the first rebase. No code change is warranted.
+>
+> Now also rebased onto latest `ci/master` (`b79c72b9bf6`). Only conflict was the now-familiar one in `.pickman-history` — `cherry-27e1924ffaa` had landed an entry under the same date heading. Resolved by keeping both sections. All eleven commits replayed with byte-identical stats. Local verification: `buildman -PEWM -L --board mt8370_evk,mt8390_evk,mt8365_evk,mt8183_pumpkin,mt8512_bm1_emmc` → 5 built, 0 errors, 0 warnings; `buildman --board sandbox` is also clean. Force-pushed to refresh the pipeline.
+
+---
+
+### Pipeline fix: 2026-04-26 (attempt 1)
+
+Branch: cherry-b5db4f322a0
+
+Failed jobs:
+- opi_pc (sjg-lab)
+
+### Conversation log
+Looking at this failure, the issue is clear: a hardware lab test timeout, not a code problem. Let me verify the diagnosis.
+
+This is a clear infrastructure/transient lab failure, not a code issue. No fix is warranted.
+
+## Diagnosis
+
+**Failure:** `opi_pc` job in `sjg-lab` stage — hardware lab test on Orange Pi PC.
+
+**Error:**
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The test flashed U-Boot to an Orange Pi PC board, attempted to await the boot prompt, and timed out after 15 seconds. The labgrid runtime then marked the connection bad and refused to run further tests — the textbook signature of a flaky/dead lab board, not a software regression.
+
+## Why this is not caused by the branch
+
+The branch `cherry-b5db4f322a0` touches only four files, none of which can affect Orange Pi PC (a sunxi/Allwinner board):
+
+```
+.pickman-history                      | 255 +    (metadata only)
+board/mediatek/mt8370_evk/MAINTAINERS |   4 +    (new MTK board)
+configs/mt8370_evk_defconfig          |  28 +    (new MTK board)
+drivers/clk/mediatek/clk-mt8188.c     | 631 ±    (MTK MT8188 clk driver)
+```
+
+No sunxi, ARM core, common, or build-system code is modified. There is no plausible mechanism by which these MediaTek-only changes could prevent an Orange Pi PC from reaching its login prompt.
+
+## Verdict
+
+**Infrastructure / transient lab failure.** The job hit a `pexpect` TIMEOUT before the board even reached the U-Boot prompt; the lab framework explicitly classifies this as a lab connection problem. Same MR's earlier pipelines have already shown the codebase builds cleanly across affected MediaTek boards and sandbox.
+
+**No code change made. No `cherry-b5db4f322a0-fix1` branch created.** Recommend retrying the pipeline (or investigating the `orangepi_pc` lab board itself).
+
+---
+
