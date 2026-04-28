@@ -72226,3 +72226,40 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-28 (attempt 1)
+
+Branch: cherry-437ea9f8be5
+
+Failed jobs:
+- qemu-x86_64 (sjg-lab)
+- jerry (sjg-lab)
+
+### Conversation log
+The qemu-x86_64 failure was already pre-emptively fixed in the local branch — commit `f1df543110e` is now an empty cherry-pick with a `[pickman]` note explaining why the change was reverted (the branch lacks the upstream regularization commit `c7f360f20d84` that the change depended on). Let me verify the build works correctly.
+
+Good, sandbox builds cleanly. Now build the affected boards in one go:
+
+Now I'll create the fix1 branch pointing to the current branch tip (which has the fix already applied via the empty cherry-pick commit `f1df543110e`):
+
+The fix is in place on `cherry-437ea9f8be5-fix1` (at `cecc2cde685`). Both boards build cleanly.
+
+## Report
+
+### qemu-x86_64 failure (job 469828)
+**Responsible commit:** `f1df543110e` ("Gitlab: Fix TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab" — cherry-pick of upstream `437ea9f8be5`)
+
+**Root cause:** The upstream commit removed the leading `and ` from `TEST_PY_TEST_SPEC: "and not sleep"` for qemu-x86_64, but that change depended on upstream commit `c7f360f20d84` ("Gitlab: Rework sjg-lab calling test.py to be closer to test.py stage"), which regularizes the `-k` expression at line 888. This branch lacks `c7f360f20d84`, so line 888 still uses `-k "not bootstd ${TEST_PY_TEST_SPEC}"`. With the new value the substituted expression becomes `not bootstd not sleep` — invalid pytest syntax (`expected end of input; got not`).
+
+**Fix applied:** Commit `f1df543110e` is now an empty cherry-pick — the diff was reverted while keeping the commit message plus a `[pickman]` annotation explaining why. The file again has `TEST_PY_TEST_SPEC: "and not sleep"` for qemu-x86_64, which substitutes correctly to `not bootstd and not sleep`. (This had already been done in the local branch at the time the task was launched; no further change was needed beyond verification.)
+
+### jerry failure (job 469804)
+**Root cause:** Infrastructure / lab failure — `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` followed by `Lab failure: Marking connection bad - no other tests will run`. The chromebook_jerry board did not respond on the labgrid serial console; this is a transient hardware/lab connectivity problem, not a code defect. **No code change made.**
+
+### Verification
+- `um build sandbox`: success
+- `buildman -o /tmp/pickman chromebook_jerry qemu-x86_64 sandbox`: 12 boards built, 0 errors. Only pre-existing dtc warnings on sandbox64/sandbox64_lwip (unrelated `ranges_format` warnings in `arch/sandbox/dts/sandbox.dtsi`).
+
+Branch `cherry-437ea9f8be5-fix1` created at `cecc2cde685`, ready for the caller to push.
+
+---
+
