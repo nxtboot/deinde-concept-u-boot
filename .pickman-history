@@ -72390,3 +72390,71 @@ Both review comments (from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`) are
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+The qemu-x86_64 failure was alrea...
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Now I understand the failures:
+
+1...
+
+### Conversation log
+Now I understand the state. Let me verify the build and check the running pipeline.
+
+Build is clean. The remote already has the fix (`cecc2cde685`) and pipeline `7126` is currently **running** on it. Both review comments are bot self-reports about the previous pipeline-fix attempt — they request no code changes. Force-pushing now would cancel the running pipeline.
+
+Following the prior pattern (see commit `c7156e72107` for the analogous cherry-3ee1408eeb7 case), I'll mark the comments as processed in the DB and append a record entry, but will NOT create a v2 / push.
+
+Now amend (replace) the existing pickman-history record commit `1f3a6190926` with a "review handling" entry, since both events happened back-to-back today on the same branch.
+
+Now amend the existing record commit to include this review-handling entry (also include the `.pickman.db` updates).
+
+Now create the v2 branch label (kept locally for traceability, even though we are not pushing it).
+
+Done. Here is what I did and the reply to post on MR !994:
+
+## Summary of work
+
+**Both review comments are bot self-reports** about the prior "Pipeline fix attempt 1" run (comments `43195` and `43198` from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`). They contain no new code-change request — the fix they describe is already on the remote and a pipeline is currently running on it.
+
+### Repo / MR state right now
+
+| Where | SHA | Notes |
+|-------|-----|-------|
+| Local `cherry-437ea9f8be5` (current) | `06ab112c554` | New "Record review handling" commit on top |
+| Local `cherry-437ea9f8be5-v3` | `06ab112c554` | New label for this run (v2 was already used by attempt 1) |
+| Local `cherry-437ea9f8be5-v2` | `1f3a6190926` | Pre-existing |
+| Local `cherry-437ea9f8be5-fix1` | `cecc2cde685` | Matches remote tip |
+| Remote `ci/cherry-437ea9f8be5` | `cecc2cde685` | Pipeline-fix commit from attempt 1 |
+| MR !994 head_pipeline | **7126 — running** | On `cecc2cde685` |
+
+### What I did this session
+
+1. Confirmed the branch already has the attempt-1 fix applied (commit `f1df543110e` is an empty cherry-pick with a `[pickman]` note explaining the revert).
+2. Verified `cherry-437ea9f8be5-fix1` matches `ci/cherry-437ea9f8be5`.
+3. Re-ran `buildman -L --board sandbox -w -o /tmp/pickman` → **clean** (1 board built, 0 errors).
+4. Confirmed pipeline `7126` is still **running** on `cecc2cde685`.
+5. Marked comments `43195` and `43198` as processed in `.pickman.db` so the framework no longer treats them as unhandled.
+6. Created `cherry-437ea9f8be5-v3` and committed `pickman: Record review handling for cherry-437ea9f8be5` (`.pickman-history` only).
+
+### Why I did NOT push
+
+- The remote already has the pipeline-fix commit (`cecc2cde685`).
+- Pipeline `7126` is **currently running** on that commit; force-pushing now would cancel it.
+- The only local-only diff vs remote is `.pickman-history` (and the new record commit on top of `1f3a6190926`); there are zero source-level differences.
+- The two "review comments" are the bot's status reports on attempt 1; there is no new code change requested or required.
+
+This matches the precedent set on MR !993 / `cherry-3ee1408eeb7` (commit `c7156e72107`).
+
+### Suggested MR reply
+
+> Acknowledged. No additional code change is required: pipeline 7126 is still running on `cecc2cde685` (the attempt-1 fix). The `qemu-x86_64` failure was a pre-emptively-fixed cherry-pick conflict — commit `f1df543110e` is now an empty cherry-pick because this branch lacks upstream `c7f360f20d84`, which the original change depended on. The `jerry` failure was a labgrid serial-console timeout / lab flake unrelated to any code change on this branch. Sandbox build remains clean. Awaiting pipeline 7126.
+
+---
+
