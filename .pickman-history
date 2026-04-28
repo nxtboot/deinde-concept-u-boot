@@ -72458,3 +72458,69 @@ This matches the precedent set on MR !993 / `cherry-3ee1408eeb7` (commit `c7156e
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+
+
+### Conversation log
+I need to resolve two conflicts in `.pickman-history`. Both sides should be kept since they describe different branches/work.
+
+Now I'll resolve the conflict by keeping both sides. The HEAD side describes cherry-3ee1408eeb7 (now in master) and the incoming side describes cherry-437ea9f8be5 (this branch's cherry-pick).
+
+Now resolve the second conflict block:
+
+No more raw conflict markers. The remaining matches are inside text descriptions. Now stage and continue:
+
+Rebase completed successfully. Now let me verify state and run the build:
+
+Rebase succeeded. Now compare deltas before/after for each commit:
+
+All deltas are identical to the pre-rebase versions. Now run the build:
+
+Build clean (1 built, 0 errors). Now create the v4 branch (v2 and v3 already exist):
+
+Push succeeded. Let me also restore the working state from before:
+
+## Report
+
+### Rebase Summary
+
+**Branch:** `cherry-437ea9f8be5` rebased from `b960d921853` onto `ci/master` tip `187fdfda8fa`.
+
+**New commits brought in via rebase:** 6 commits from upstream (the cherry-3ee1408eeb7 merge plus the 3 dt-validate commits and 1 unrelated merge that landed on master after this branch was first created).
+
+**Pre-rebase tip:** `ebabc400a5a`
+**Post-rebase tip:** `7f67ceffa71`
+
+### Conflicts
+
+One conflict in `.pickman-history` (a log/diary file). The HEAD side described the cherry-3ee1408eeb7 work which is now on master (already recorded in the history file via the master merge), and the incoming side described this branch's own cherry-pick of 437ea9f8be5. **Resolution:** dropped the duplicate HEAD entries (already in master's history file via earlier records) and kept only the cherry-437ea9f8be5 entries, since they belong to this branch's record. Net change: `1 file changed, 23 insertions(+), 85 deletions(-)`.
+
+### Delta Verification
+
+All 4 non-merge cherry-pick commits remain byte-identical to their pre-rebase versions:
+- `d90ac68d5bd` (Gitlab fix) — empty cherry-pick with `[pickman]` revert note (preserved)
+- `8139b8e6e40` (efi_loader) — `1 file, +6/-2`
+- `25582d77a15` (efi_selftest test) — `1 file, +7`
+- `091398734c7` (efi_selftest spelling) — `1 file, +4/-4`
+- `bda2e921894` (Merge efi-2026-04-rc4) — empty merge (preserved with `--keep-empty`)
+
+The 4 trailing pickman-history record commits also rebased cleanly.
+
+### Build
+
+`buildman -L --board sandbox -w -o /tmp/pickman` — **clean** (1 built, 0 errors, 0 warnings).
+
+### Push
+
+Force-pushed to `ci/cherry-437ea9f8be5`: `1f3a6190926..7f67ceffa71` (forced update). Local label `cherry-437ea9f8be5-v4` created at `7f67ceffa71` (v2 and v3 were already taken by prior runs).
+
+### Suggested MR Reply
+
+> Rebased onto current `ci/master` (`187fdfda8fa`) and force-pushed. The only conflict was in `.pickman-history` (log file), where HEAD's cherry-3ee1408eeb7 records already exist in master's copy, so I kept only this branch's own cherry-437ea9f8be5 entries to avoid duplication. All 5 cherry-picked commits are byte-identical to their pre-rebase versions; the empty Gitlab/qemu-x86_64 fix and empty `efi-2026-04-rc4` merge commits were preserved via `--keep-empty`. Sandbox build clean.
+
+---
+
