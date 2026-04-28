@@ -72181,3 +72181,54 @@ The remaining job failures in the original pipeline (efi-aarch64 lab failure and
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-3ee1408eeb7
+
+Commits:
+- 3ee1408eeb7 firmware: scmi: Validate device tree node before setup channel
+- 6ee82240de6 power: domain: Validate device tree node in dev_power_domain_ctrl
+- efc9be77d85 iommu: Validate device tree node in dev_iommu_enable
+- e2dfabcab02 Merge tag 'fsl-qoriq-next-2026-02-25' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+Identical. Now let me build and continue.
+
+I notice the branch name changed somehow. Let me check the state more carefully.
+
+The branch was unexpectedly switched between operations. Let me investigate and recover.
+
+I need to revert my erroneous commit on cherry-1ad13306649, switch to the correct branch, and avoid the issue (likely buildman switching branches).
+
+Now let me cherry-pick the second commit on the correct branch:
+
+Identical. Now cherry-pick the third commit (skipping build for now to avoid the branch switching issue):
+
+Identical. Now cherry-pick the merge commit:
+
+All 4 commits are in place. Now run the final build:
+
+The build passed and the branch is intact. Here is the final status:
+
+## Final Status
+
+**Branch:** `cherry-3ee1408eeb7` (4 commits ahead of `ci/master`)
+
+**Build result:** OK — sandbox built cleanly, no warnings or errors.
+
+**Commits cherry-picked (all in order):**
+1. `82a52daa8ff` — firmware: scmi: Validate device tree node before setup channel (2 files, +3/-2)
+2. `6a03337e0f8` — power: domain: Validate device tree node in dev_power_domain_ctrl (1 file, +3)
+3. `9048f0f6b8a` — iommu: Validate device tree node in dev_iommu_enable (1 file, +3)
+4. `9e10c463ea7` — Merge tag 'fsl-qoriq-next-2026-02-25' (empty, preserved with --allow-empty as instructed)
+
+**Delta verification:** All three regular commits are byte-identical to their originals (same files, same line counts). The merge commit is empty (its content was already integrated by the prior three cherry-picks), as expected.
+
+**Fix-ups:** None to the cherry-picked commits themselves.
+
+**Workflow note:** During the operation, the worktree's checked-out branch was switched away from `cherry-3ee1408eeb7` to a different pre-existing branch (`cherry-1ad13306649`) at some point after the first per-commit `buildman` invocation, which caused the second cherry-pick to land on the wrong branch. I detected this, reset the unrelated `cherry-1ad13306649` branch back to its prior tip (`8364181a895`), switched back to `cherry-3ee1408eeb7`, and re-applied the second cherry-pick correctly. To avoid recurrence I deferred the per-commit builds and ran a single final `buildman` after all four picks were on the right branch — that final build passed and the branch is on `cherry-3ee1408eeb7` as expected. No history was force-pushed or otherwise rewritten on any branch other than the local recovery just described.
+
+The branch is ready for pushing.
+
+---
+
