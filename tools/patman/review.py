@@ -228,8 +228,8 @@ async def apply_series(pwork, link, branch_name, upstream_branch,
     # Build the prompt and run the agent
     prompt = _build_apply_prompt(mbox_path, branch_name, upstream_branch)
     options = ClaudeAgentOptions(
-        allowed_tools=['Bash', 'Read', 'Grep'], cwd=repo_path,
-        max_buffer_size=claude_mod.MAX_BUFFER_SIZE)
+        allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
+        cwd=repo_path, max_buffer_size=claude_mod.MAX_BUFFER_SIZE)
 
     tout.notice(f'Applying series to branch {branch_name}...')
     success, _ = await claude_mod.run_agent_collect(prompt, options)
