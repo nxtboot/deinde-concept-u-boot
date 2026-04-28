@@ -71852,3 +71852,104 @@ Re-verified the two cherry-picked commits achieve the same intent on the new cod
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+
+
+### Conversation log
+Let me try cherry-picking the original commits to verify the conflict state hasn't changed:
+
+Let me examine the current state of the conflicting files to determine if a manual resolution is now feasible:
+
+Let me try to resolve the conflict manually since the intent of the original fix is clear:
+
+Looking at this carefully, the conflict can be resolved by translating the original commit's intent to the new code structure: 
+- `addr` → `bmi->kern_comp_addr` (new buffer address)
+- `req_size` → `bmi->kern_comp_size` (allocation size)
+- The original's `os.load = (ulong)addr;` (which was buggy and the commit fixed) maps to HEAD's `os.load = load;` (also a no-op) — needs the proper update
+
+Let me resolve it:
+
+Now resolve the second conflict block:
+
+The diagnostics are LSP false positives (clang doesn't have U-Boot's include paths). Let me verify the resolution looks right:
+
+Let me build to verify the first commit's resolution:
+
+First commit built cleanly. Now let me try the second commit:
+
+Now let me look at the test_ut.py conflict:
+
+Now let me create the new RAUC image module following the new framework pattern:
+
+Now resolve the test_ut.py conflicts:
+
+Now resolve the second conflict in test_ut.py:
+
+Now let me verify the build with both commits applied:
+
+Build passes. Let me verify the deltas before/after rebase:
+
+Let me also run a quick functional test for bootflow_rauc test setup:
+
+The test fails only because mmc16.img doesn't exist (which would be created by setup_rauc_image during test.py run). This is the correct behaviour. Let me also verify the existing tests haven't been broken:
+
+The pre-existing `bootflow_efi` also fails for the same image-setup reason — both behave consistently. Now let me look at the diff of what we have:
+
+## Report: MR !990 Rebased Successfully
+
+### Summary
+Successfully rebased branch `cherry-fe6484b4027` onto latest `ci/master` and resolved both previously-blocked conflicts. Branch pushed to remote `ci/cherry-fe6484b4027` to update the MR.
+
+### What Was Done
+Both commits were re-applied with manual conflict resolution that preserves the original commits' intent translated to the refactored code structure:
+
+#### Commit 1: `662265ebf8d` "bootm: fix booting kernel_noload image" (orig `fe6484b4027`)
+**boot/bootm.c** — translated original 2-line surgical fix to current `bmi`/`resolve_os_comp_buf()`-based code:
+- Marked `os` as `const` (matches original intent)
+- Replaced HEAD's buggy lines `os.load = load;` (no-op) and `images->ep = load;` (uses pre-allocation address) with proper updates from `bmi->kern_comp_addr`:
+  ```c
+  load = bmi->kern_comp_addr;
+  images->os.load = bmi->kern_comp_addr;
+  images->ep = bmi->kern_comp_addr;
+  debug("Allocated %lx bytes at %lx for kernel (size %lx) decompression\n",
+        bmi->kern_comp_size, load, image_len);
+  ```
+- This preserves the original commit's purpose: ensure the noload buffer address actually propagates to the kernel structure and entry point
+
+#### Commit 2: `dc97142e409` "test: boot: Add test for bootmeth_rauc" (orig `36add050eea`)
+- **test.dts**: renumbered RAUC slot to `mmc16` (mmc10 now used by VBE ABrec, mmc11–14 by bootctl/LUKS, mmc15 by BLS); added `mmc16` alias and node
+- **test/boot/bootflow.c**: updated test references from `mmc10` → `mmc16`
+- **test/py/tests/test_ut.py**: ported from inline `setup_rauc_image(ubman)` helper to the new module-based API; added `from img.rauc import setup_rauc_image` and call with `(u_boot_config, u_boot_log)`
+- **test/py/img/rauc.py** (new): ported the original inline helper using `run_and_log_no_ubman()` and `fs_helper.mk_fs()` per the new framework pattern (matches `bls.py`, `efi.py`)
+- **configs/sandbox_defconfig**: applied cleanly (BOOTMETH_RAUC enable)
+
+### Verification
+- ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passes
+- ✅ No conflict markers remain
+- ✅ Both commits compile cleanly
+- ✅ `bootflow_rauc` C unit test compiles and registers; only fails at runtime when `mmc16.img` is missing (expected — the Python `setup_rauc_image` helper creates it during full `test.py` run; the pre-existing `bootflow_efi` test fails the same way for the same reason)
+
+### Push Result
+```
+2b4e7598f77..dc97142e409  HEAD -> cherry-fe6484b4027
+```
+GitLab MR pipeline should be triggered automatically.
+
+### Suggested MR Reply
+> Rebased on latest `ci/master` and resolved both conflicts.
+>
+> 1. **`fe6484b4027` (bootm fix)**: `bootm_load_os()` was refactored to use `bmi`/`resolve_os_comp_buf()`, so the original 2-line fix doesn't translate verbatim. Preserved the intent: marked `os` const and replaced HEAD's `os.load = load;` (no-op) and `images->ep = load;` (uses pre-allocation address) with proper updates from `bmi->kern_comp_addr` — so the noload buffer now correctly propagates to `images->os.load` and `images->ep`. Added the original commit's debug message using `bmi->kern_comp_size`.
+> 2. **`36add050eea` (RAUC test)**: `mmc10` is now used by VBE ABrec tests (commit `290632dab3c`), so renumbered the RAUC slot to `mmc16`. The Python test framework was refactored from `(ubman)` to `(u_boot_config, u_boot_log)` with helpers moved to `test/py/img/*.py`, so ported the inline `setup_rauc_image()` to a new `test/py/img/rauc.py` module following the same pattern as `bls.py`/`efi.py`/`cedit.py`.
+>
+> Sandbox build passes. Note that the rebase changes are non-trivial because of the upstream refactors; please review carefully.
+
+The background test command completed (it was the `um test bootflow_rauc` invocation that produced no output earlier — we already got direct test results from running `/tmp/b/sandbox/u-boot` manually, confirming the test compiles and registers correctly).
+
+The rebase work is complete and pushed. No further action needed on my end — the MR has been updated and the GitLab pipeline should now run against the resolved commits.
+
+---
+
