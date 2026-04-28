@@ -72863,3 +72863,41 @@ Result is on local branch **`cherry-080b4f09955-fix1`** (HEAD `93a95ce185e`).
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-080b4f09955
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso, Check make check.
+
+Now I have a ...
+
+### Conversation log
+## Report
+
+### Comment addressed
+The single review comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is the bot's own status note from the prior pipeline-fix attempt, reporting that it had fixed `Check make check` (real bug) and skipped `efi-x86_64-uboot-iso` (transient lab flake).
+
+### Action taken
+The fix from attempt 1 was already amended into commit `f6c2221f37a` (Revert "kbuild: unexport sub_make_done…") on `cherry-080b4f09955`, restoring `check` to the per-target `MAKECMDGOALS` filter:
+
+```make
+ifneq ($(filter tests check pcheck qcheck tcheck,$(MAKECMDGOALS)),)
+export sub_make_done := 0
+endif
+```
+
+Verification:
+- `grep` confirmed the fix is present in the working tree's `Makefile`.
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean (1/1 built).
+- The MR API shows pipeline `7145` is currently running on the fixed SHA `93a95ce185e`.
+
+### Branch / push
+- Local branch: `cherry-080b4f09955-v2` (created; identical to remote plus an additional `pickman: Record pipeline fix` metadata commit added to `.pickman-history`).
+- Force-pushed `cherry-080b4f09955` → `ci/cherry-080b4f09955`: `93a95ce185e..3956352d1c6` (this triggers a fresh MR pipeline run on top of the in-flight #7145).
+
+### Suggested MR reply
+> Re-pushed `cherry-080b4f09955` (now `3956352d1c6`). The Makefile fix from attempt 1 (restoring `check` in the `MAKECMDGOALS` filter that resets `sub_make_done`) is in place on commit `f6c2221f37a`; the new push only adds a pickman metadata commit to `.pickman-history`. Sandbox builds clean locally. A new MR pipeline will run on the updated head — `efi-x86_64-uboot-iso` was a transient initramfs/kernel-side issue unrelated to this MR and should pass on retry.
+
+---
+
