@@ -72232,3 +72232,59 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-28 (attempt 2)
+
+Branch: cherry-3ee1408eeb7
+
+Failed jobs (pipeline 7118):
+- efi-aarch64 (sjg-lab) — `OSError: [Errno 5] Input/output error` in
+  `test_distro_arm_app_efi` during `restart_uboot()` (serial-port I/O
+  error from the lab harness, not a code failure)
+- qemu-x86_64 (sjg-lab) — `Lab failure: Timeout executing 'setenv
+  efi_selftest watchdog reboot'` after a `cyclic_run() cyclic
+  function video_idle took too long: 16908us vs 5000us max` warning
+  (lab/timing flake during EFI selftest)
+
+### Root cause
+
+Both failures are lab/runner infrastructure flakes:
+
+1. **efi-aarch64**: serial-port I/O error during U-Boot reset (Errno 5
+   is `EIO`). The harness lost the connection mid-test. Not
+   reproducible from code.
+
+2. **qemu-x86_64**: timeout while issuing `setenv efi_selftest
+   watchdog reboot`, preceded by a `video_idle` cyclic over-run
+   warning. This is a known timing-related lab flake.
+
+Neither failure is on a code path touched by this MR. The four
+cherry-picks add `dev_has_ofnode()` validation in:
+- `drivers/firmware/scmi/mailbox_agent.c`
+- `drivers/firmware/scmi/optee_agent.c`
+- `drivers/iommu/iommu-uclass.c`
+- `drivers/power/domain/power-domain-uclass.c`
+
+None of these files are exercised by EFI distro boot on aarch64 or by
+the EFI selftest / `video_idle` path on qemu-x86_64.
+
+### Fix applied
+
+None — there is no code defect to fix. Re-pushing the same branch
+(with `--run-ci`) to retrigger the pipeline so the flaky lab jobs run
+again.
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean, no
+  warnings or errors
+- Branch tip unchanged: `43fdf520e97`
+
+### Note on attempt 1
+
+Attempt 1 was reported as failed with an Anthropic API 500 error
+("Internal server error"). No code or branch changes were made on
+that attempt — it never reached the analysis phase. Attempt 2 (this
+one) reaches the same branch state and pushes to retrigger CI.
+
+---
+
