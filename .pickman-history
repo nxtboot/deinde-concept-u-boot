@@ -71293,3 +71293,74 @@ Re-run jobs `rockpro64` and `opi_pc` once the sjg-lab MMC card / serial connecti
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 2)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now let me check out the branch and review the commits.
+
+Let me verify the changes only touch the userspace tool and check the build:
+
+The sandbox build succeeded. Now let me look at whether the efi-aarch64 failure could possibly have any connection to our changes:
+
+I have all the information needed. Let me confirm the branch state and report.
+
+## Report: Infrastructure Failures (No Code Fix Needed)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — no `-fix2` branch created)
+
+### What the series actually changes
+
+The 6 functional commits + merge on this branch touch **exactly one file**: `tools/env/fw_env.c` (47 ± lines), the Linux userspace `fw_env` tool. Verified with:
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history'
+ tools/env/fw_env.c | 47 +++++++++++++++++++--------------
+```
+This file is **not linked into SPL, U-Boot proper, or any board image**. It cannot affect SPL boot, MMC initialisation, U-Boot ELF generation, ARM relocation, EFI builds, or login prompts. Local `um build sandbox` passes cleanly.
+
+### Diagnosis of each failed job (all stage `sjg-lab`)
+
+**Job 467245 — rockpro64** — Hardware/MMC lab failure:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  Error: -38
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+... pexpect.TIMEOUT: ... waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+`-110` (ETIMEDOUT) on the MMC card and `-38` block-read error are board/SD-card issues. fw_env.c plays no role in SPL.
+
+**Job 467222 — opi_pc** — Serial/lab connectivity failure:
+```
+Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No board output captured at all. No code path from these commits is exercised before login.
+
+**Job 467254 — efi-aarch64** — Transient build infrastructure failure inside the lab job:
+```
+Building U-Boot in pytest-source dir for efi-arm_app64
+Command failure: scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+```
+`checkarmreloc` runs `readelf -r -W u-boot`. "Failed to read file's magic number" means the `u-boot` ELF was missing/empty/truncated when `readelf` opened it (parallel-make race or filesystem hiccup on the lab runner; note the "Waiting for unfinished jobs"). The fw_env userspace tool is not linked into `u-boot` and cannot affect ELF generation or ARM relocation.
+
+### Action taken
+
+**None.** Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no code change is appropriate and **no `cherry-1197954d589-fix2` branch was created**. Manufacturing a no-op v2 would just reburn lab time on the same flaky runs.
+
+### Recommendation
+
+Re-run all three jobs once the sjg-lab MMC card / serial console / runner I/O are healthy.
+
+---
+
