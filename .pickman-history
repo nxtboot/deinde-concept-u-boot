@@ -70959,3 +70959,205 @@ Branch is ready for pushing. Not merged into any other branch.
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-9bf19639a76
+
+Commits:
+- 9bf19639a76 usb: musb-new: Relative ctrl_mod address parsing
+- 4cf2275ee74 usb: musb-new: Add compatibles for ti,musb-am33xx
+- 47dabe3b96e Merge branch 'master' of git://source.denx.de/u-boot-usb into next
+
+### Conversation log
+Delta matches exactly. Now build test.
+
+Delta matches exactly. Now build test.
+
+The merge commit is empty as expected (the changes were already cherry-picked in the prior commits). Now run the final build.
+
+All three commits are now present in the cherry-pick branch. Final status:
+
+## Cherry-pick Status: SUCCESS
+
+**Branch:** `cherry-9bf19639a76` (based on `ci/master`)
+
+**Commits cherry-picked:**
+1. `1a2902c09e7` - usb: musb-new: Relative ctrl_mod address parsing — clean cherry-pick, identical delta (1 file, 5+/5-)
+2. `6171e0fd0d1` - usb: musb-new: Add compatibles for ti,musb-am33xx — clean cherry-pick, identical delta (1 file, 29+)
+3. `176a93e8e7a` - Merge branch 'master' of git://source.denx.de/u-boot-usb into next — empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK (sandbox builds cleanly after each cherry-pick and after the final commit, no warnings/errors)
+
+**Fix-ups made:**
+- The merge commit reported as empty during cherry-pick (because its contents were already applied in the prior two cherry-picks). Used `git commit --allow-empty` and amended the message to include the standard `(cherry picked from commit 47dabe3b96ea8f79edf574a0e141a156b227455c)` annotation that `-x` would normally add.
+
+**Concerning deltas:** None. Both content commits matched their originals exactly. The merge commit is intentionally empty (its diff was already represented in the two preceding commits).
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-9bf19639a76
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) bpi, opi_pc.
+
+The cherry-picked commits only touch `dr...
+
+### Conversation log
+The review comment is the bot re-posting the previous "Pipeline fix (attempt 1)" report. The original conclusion was that the failures (`bpi`, `opi_pc` — both sunxi/Allwinner) are infrastructure-only timeouts and cannot be caused by these patches (which only touch TI AM33xx `ti-musb.c`).
+
+Let me verify the build still passes, then create the -v2 branch and re-push to re-trigger CI.
+
+Build passes. The previous attempt used `-fix1`, but the task specifies `-v2` naming. Creating `cherry-9bf19639a76-v2`:
+
+The branch tip is identical to what's already on the remote, so git reports "Everything up-to-date". To actually re-trigger a CI pipeline, the branch needs a new tip. Let me check pickman's options:
+
+The remote already has this exact commit hash (`3ac7412c354`) — no new tip exists to push. Since the previous attempt's verdict (no code change required, infrastructure-only failure) still holds, and the patches still only touch TI AM33xx code that cannot affect the failing sunxi boards, there is nothing to update.
+
+The `-fix1` branch had an additional `pickman: Record pipeline fix` tracking commit on top. Let me see if pickman has a record-review-handling command:
+
+## Report
+
+### Task understanding
+
+The single review comment is the bot re-posting the verbatim text of "Pipeline fix (attempt 1)" — the same analysis I delivered previously concluding no code change is needed because the `bpi`/`opi_pc` failures are sunxi/Allwinner lab-strategy timeouts and the patches only touch TI AM33xx code (`drivers/usb/musb-new/ti-musb.c`).
+
+### What I did
+
+1. **Checked out** `cherry-9bf19639a76` — three cherry-picked commits intact (`1a2902c09e7`, `6171e0fd0d1`, `176a93e8e7a`).
+2. **Re-confirmed** the patches' file scope is unchanged (only `drivers/usb/musb-new/ti-musb.c`) — physically cannot affect sunxi boards.
+3. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean in 6 s, no warnings.
+4. **Created** local branch `cherry-9bf19639a76-v2` at the same tip (`3ac7412c354`) per the task's naming requirement.
+5. **Attempted force-push** to `ci/cherry-9bf19639a76` (with and without `--run-ci`) → both report `Everything up-to-date` because the remote tip already equals `3ac7412c354` and there are no new commits to send.
+
+### Why no code change
+
+| Aspect | Evidence |
+|---|---|
+| Patches only modify | `drivers/usb/musb-new/ti-musb.c` (TI AM33xx wrapper) |
+| Failing boards | `bpi` (Bananapi, Allwinner A20), `opi_pc` (orangepi_pc, Allwinner H3) |
+| Driver in failing builds? | No — `CONFIG_USB_MUSB_TI` is not selected on any sunxi board |
+| Failure mode | `pexpect.exceptions.TIMEOUT` during `ubootstrategy.transition()` → board never reached prompt; lab-side, not code-side |
+| Sandbox build | Clean |
+
+### Branch state
+
+- Local: `cherry-9bf19639a76` and `cherry-9bf19639a76-v2` both at `3ac7412c354`.
+- Remote `ci/cherry-9bf19639a76`: already at `3ac7412c354`. Nothing to push.
+
+### Suggested MR reply
+
+> The comment restates the previous attempt's analysis. The verdict is unchanged: the failing jobs (`bpi`, `opi_pc`) are sunxi/Allwinner boards whose builds do not include the modified driver (`drivers/usb/musb-new/ti-musb.c` is TI AM33xx only and gated on `CONFIG_USB_MUSB_TI`). Both failures are `pexpect.TIMEOUT` from labgrid's strategy transition — lab-side timeouts, not code regressions.
+>
+> Sandbox rebuild is clean. The branch tip is unchanged at `3ac7412c354`; please re-trigger the lab pipeline manually (or wait for the flaky boards to recover). No code change is appropriate here.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 2)
+
+Branch: cherry-9bf19639a76
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Both builds completed successfully (efi-arm_app64 and orangepi_pc). Let me check the config implications and create the branch.
+
+Confirmed: neither board enables `CONFIG_USB_MUSB_TI` or references MUSB. The cherry-picked patches cannot affect them. Both failures are infrastructure issues.
+
+## Report — No code change required (infrastructure failures, attempt 2)
+
+**Verdict:** Both failed jobs are infrastructure/transient failures, not regressions caused by the cherry-picked commits. No code change made. Local branch `cherry-9bf19639a76-fix2` created at the same tip (`aecfc206d69`).
+
+### Root cause analysis
+
+| Job | Failure | Type |
+|---|---|---|
+| `opi_pc` (sjg-lab) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` in `labgrid/strategy/ubootstrategy.py:transition()` after `u-boot-test-flash` | Lab strategy timeout — board never reached U-Boot prompt |
+| `efi-aarch64` (sjg-lab) | `readelf: Error: u-boot: Failed to read file's magic number` then `Unable to read in 1344 bytes of section headers` during `make checkarmreloc` | Build-time readelf race: u-boot ELF read while still being written by parallel make. Note the second retry's different errors confirm a non-deterministic race rather than a deterministic bug |
+
+### Why the cherry-picks cannot be the cause
+
+The branch contains 3 functional commits, all touching only `drivers/usb/musb-new/ti-musb.c` (TI AM33xx-specific MUSB wrapper):
+
+| Commit | Files |
+|---|---|
+| `1a2902c09e7` usb: musb-new: Relative ctrl_mod address parsing | `drivers/usb/musb-new/ti-musb.c` (5+/5−) |
+| `6171e0fd0d1` usb: musb-new: Add compatibles for ti,musb-am33xx | `drivers/usb/musb-new/ti-musb.c` (29+) |
+| `176a93e8e7a` Merge branch 'master' … usb into next | empty |
+
+Failing boards:
+- `efi-arm_app64` (efi-aarch64 job): U-Boot built as a 32-bit ARM EFI app — config does not enable `CONFIG_USB_MUSB_TI` and does not reference MUSB at all (`grep MUSB configs/efi-arm_app64_defconfig` → no match).
+- `orangepi_pc` (opi_pc job): Allwinner H3 sunxi board — also does not enable `CONFIG_USB_MUSB_TI`.
+
+`grep -l CONFIG_USB_MUSB_TI configs/efi-arm_app64_defconfig configs/orangepi_pc_defconfig configs/orangepi_pc2_defconfig` returned no matches. The modified driver is not compiled into either failing build.
+
+### Build verification
+
+- `um build sandbox` → clean (no output)
+- `buildman -o /tmp/pickman --board efi-arm_app64,orangepi_pc` → **2 / 2 built clean**, no warnings, ~4 s
+
+The `efi-arm_app64` build that triggered the readelf race in CI builds cleanly here, confirming the failure is a parallel-build race condition on the lab runner, not a code defect.
+
+### Branch state
+
+- Local: `cherry-9bf19639a76` and `cherry-9bf19639a76-fix2` both at `aecfc206d69`. No commits added or amended. Caller can re-trigger the lab CI on this branch.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-9bf19639a76
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, opi_pc.
+
+Both builds completed successful...
+
+### Conversation log
+The branch state is clear. The previous attempts (-fix1, -fix2, -v2) all reached the same verdict: failures are infrastructure/transient, the patches only touch TI AM33xx code (`drivers/usb/musb-new/ti-musb.c`), and cannot affect the failing sunxi/EFI boards. The current review comment is the bot re-posting attempt-2's report. Let me run the build verification and create a fresh `-v3` branch to re-trigger CI.
+
+Build passes (1/1, no warnings, 6s). Now create the `-v3` branch and push.
+
+The push succeeded — remote advanced from `aecfc206d69` to `41a80d5e9a3`, which will re-trigger the MR pipeline.
+
+## Report
+
+### Task understanding
+
+The single review comment is the bot re-posting attempt-2's report verbatim. The verdict is unchanged: failing jobs (`efi-aarch64`, `opi_pc`) are infrastructure/transient failures. The cherry-picked commits only modify `drivers/usb/musb-new/ti-musb.c` (TI AM33xx specific) and physically cannot affect the failing boards.
+
+### What I did
+
+1. **Checked out** `cherry-9bf19639a76` — three cherry-picked commits intact (`1a2902c09e7`, `6171e0fd0d1`, `176a93e8e7a`); local tip at `41a80d5e9a3` (includes pickman tracking commits from prior attempts).
+2. **Re-confirmed file scope** — only `drivers/usb/musb-new/ti-musb.c` modified (5+/5− and 29+).
+3. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built clean in 6 s, no warnings.
+4. **Created** local branch `cherry-9bf19639a76-v3` at `41a80d5e9a3` per the task's `-v3` naming requirement (since `-v2`, `-fix1`, `-fix2` already exist locally).
+5. **Force-pushed** to `ci/cherry-9bf19639a76`: `aecfc206d69..41a80d5e9a3` — remote tip advanced, so the MR pipeline will re-trigger automatically.
+
+### Why no code change is appropriate
+
+| Aspect | Evidence |
+|---|---|
+| Patches modify | `drivers/usb/musb-new/ti-musb.c` only (TI AM33xx wrapper) |
+| Failing boards | `efi-arm_app64` (32-bit ARM EFI app), `orangepi_pc` (Allwinner H3) |
+| Driver in failing builds? | No — neither defconfig selects `CONFIG_USB_MUSB_TI` nor references MUSB |
+| Failure mode | `pexpect.TIMEOUT` (lab-strategy transition) and `readelf` race (parallel-build read of partially-written ELF) — both lab-side, both non-deterministic |
+| Local build of failing targets | All clean (verified previously) |
+| Sandbox build | Clean |
+
+### Suggested MR reply
+
+> The comment again restates the previous attempt's analysis. Verdict is unchanged: `efi-aarch64` and `opi_pc` are sunxi/EFI-ARM boards whose builds do not include the modified driver. `drivers/usb/musb-new/ti-musb.c` is TI AM33xx only and gated on `CONFIG_USB_MUSB_TI` — neither defconfig enables it.
+>
+> - `opi_pc`: `pexpect.TIMEOUT` from labgrid's `ubootstrategy.transition()` after flash — board didn't reach the U-Boot prompt within the 15 s window. Lab-side.
+> - `efi-aarch64`: `readelf: Failed to read file's magic number` during `make checkarmreloc` — parallel-build race reading the ELF while it's still being written; the second retry's different errors confirm non-determinism.
+>
+> Sandbox rebuild and target rebuilds are clean. Branch tip pushed at `41a80d5e9a3` to re-trigger the lab pipeline. No code change is appropriate here.
+
+---
+
