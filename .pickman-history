@@ -72901,3 +72901,42 @@ Verification:
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-080b4f09955
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso, Check make check.
+
+Let me check ...
+
+### Conversation log
+The push succeeded. The remote `ci/cherry-080b4f09955` is now at `8bf2ec08f9f`, which will trigger a new MR pipeline.
+
+## Report
+
+### Comment addressed
+The single review comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is the bot's own status note from the prior pipeline-fix attempt. It reported that:
+- `Check make check` — real bug, fixed by amending the revert commit
+- `efi-x86_64-uboot-iso` — transient initramfs/kernel-side flake, unrelated to this MR
+
+### Verification
+- The Makefile fix from attempt 1 is in place at line 2908 of `Makefile`:
+  ```make
+  ifneq ($(filter tests check pcheck qcheck tcheck,$(MAKECMDGOALS)),)
+  export sub_make_done := 0
+  endif
+  ```
+  (`check` correctly restored in the filter list on commit `f6c2221f37a`.)
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean (1/1 built in 0:00:05).
+
+### Branches and push
+- Local branches present: `cherry-080b4f09955` (HEAD `8bf2ec08f9f`), `cherry-080b4f09955-fix1`, `cherry-080b4f09955-v2` (matches old remote `3956352d1c6`), and newly created `cherry-080b4f09955-v3` (matches the new push).
+- Force-pushed `cherry-080b4f09955` → `ci/cherry-080b4f09955`: `3956352d1c6..8bf2ec08f9f`. The push only adds the `pickman: Record review handling for cherry-080b4f09955` metadata commit (touches only `.pickman-history`); no source-code changes since the prior push.
+- A fresh MR pipeline will run on the updated head.
+
+### Suggested MR reply
+> Re-pushed `cherry-080b4f09955` (now `8bf2ec08f9f`). The Makefile fix from attempt 1 (restoring `check` in the `MAKECMDGOALS` filter that resets `sub_make_done`) remains in place on commit `f6c2221f37a` — this push only adds a pickman metadata commit to `.pickman-history`. Sandbox builds clean locally. A fresh MR pipeline will run on the updated head; `efi-x86_64-uboot-iso` was a transient initramfs/kernel-side issue unrelated to this MR and should pass on retry.
+
+---
+
