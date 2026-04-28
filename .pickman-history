@@ -71609,3 +71609,73 @@ The conflict was purely in `.pickman-history` because both this branch and the r
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-7accb716c10
+
+Commits:
+- 7accb716c10 gpio: stm32-gpio: prevent the use of the secure protected pins
+- 04dcaadd439 pinctrl: pinctrl_stm32: prevent the use of the secure protected pins
+- 71433d27716 stm32mp: stm32prog: Remove fsbl_nor_detected from stm32prog_data struct
+- 5d5195073ca stm32mp: fix array bounds checks
+- d5cedabe8b5 stm32mp2: Update size of DDR entry in MMU table
+- 32912d0908b board: st: common: Add support of stm32mp21xx-dk board
+- 6a6f2eb3e6a board: st: common: add uclass_get_device_by_driver()'s return value check
+- afa8f076db3 arm: armv8: Flush TLB before enabling MMU
+- 26048cdb4ce arm: mach-k3: common: Clamp RAM end address to board-usable region in spl_enable_cache()
+- 0b2939464fe boot: fit: validate FDT/DTO payload before fdt_open_into()
+- a44b36a044f clk: stm32mp21: Add clock driver support
+- 56356278331 reset: stm32mp21: add stm32mp21 reset driver
+- 0ec3b313109 stm32mp: syscon: Add STM32MP21 support
+- 42fa38b925b stm32mp: cmd_stm32key: add support of STM32MP21x
+- d557099fb0f ARM: stm32mp: Add STM32MP21 support
+- ec3fc57da45 ARM: dts: stm32: Add stm32mp215f-dk-u-boot
+- 5af044da9bf ARM: dts: stm32: Add bootph-all in stm32mp215f-dk-u-boot.dtsi
+- 4aac418854a stm32mp2: Migrate duplicated code into stm32mp2x.c
+- ab965d31a26 stm32mp2: Add check on syscon_get_first_range() return value
+- ac7f28523cd stm32mp1: Add check on syscon_get_first_range() return value
+- dcb304943e2 stm32mp: cmd_stm32key: add support of STM32MP21x SoC
+- cbd3977207f stm32mp: cmd_stm32key: add support of OTP key format 2
+- d8a0db45367 stm32mp: cmd_stm32key: add support of remoteproc firmware encryption key
+- c258621b5ef stm32mp: cmd_stm32key: add support of remoteproc firmware public key
+- bd6fd26f150 stm32mp: cmd_stm32key: add support of ADAC public key hash
+- 20727a083f4 configs: stm32mp25: Enable CMD_STM32KEY
+- 5f92eef2f99 ARM: stm32mp: Do not acquire RIFSC semaphore if CID filtering is disabled
+- 9d3a9080c9f ARM: stm32mp: Fix CID and semaphore check
+- c61d6f67f46 ARM: stm32mp: Check secure state first
+- 78ea226ddb2 Merge tag 'u-boot-stm32-20260224' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+Delta is identical. Let me proceed with the remaining commits, doing delta checks after each.
+
+Now the merge commit:
+
+All 30 commits are present. Now run final build:
+
+Build succeeded. Let me update the todo list:
+
+## Final Status Report
+
+**Branch**: `cherry-7accb716c10` (based on `ci/master`)
+
+**Build result**: ✅ OK — sandbox build completed successfully (1 board built, no errors/warnings)
+
+**Cherry-picks**: All 30 commits successfully applied
+- 29 regular commits cherry-picked cleanly (some had auto-merge for trivially-overlapping context, no conflicts requiring manual resolution)
+- 1 merge commit (78ea226ddb2) cherry-picked with `-m 1 --allow-empty`; resulted in an empty commit (as expected, since all underlying child commits were already cherry-picked individually) — preserved for history
+
+**Delta verification**: Every cherry-picked commit matches the original commit byte-for-byte in terms of files changed and line counts. No commits had concerning deltas (>20% change).
+
+**Fix-ups**: None required — all cherry-picks applied without manual intervention.
+
+**Concerning deltas**: None.
+
+**Commits at HEAD** (top to bottom):
+- 843b411b216 Merge tag 'u-boot-stm32-20260224' (empty preservation commit)
+- 51847f5fdf9 → a39ffbaa04c (29 stm32-related commits)
+- d131d1929be (top of ci/master)
+
+The branch is ready for pushing. No merge or further changes performed.
+
+---
+
