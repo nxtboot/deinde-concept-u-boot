@@ -71512,3 +71512,54 @@ Manufacturing a no-op `-fix3` push would re-burn lab time on the same flaky runn
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, rock5b, rockpro64, opi_pc.
+
+The situation...
+
+### Conversation log
+## Report: Pipeline fix attempt 4 — No Code Fix Possible (4th iteration of same infrastructure-failure loop)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — **no `-v4` branch created, no push**)
+
+### Re-verification on the current branch
+
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history' ':(exclude)pickman'
+ tools/env/fw_env.c | 47 ++++++++++++++++++-----------------------------
+ 1 file changed, 18 insertions(+), 29 deletions(-)
+```
+
+All 6 functional commits + merge touch a single file: `tools/env/fw_env.c`, the Linux userspace `fw_env` tool. **It is not compiled into SPL, U-Boot proper, or any board image.** Local `um build sandbox` passes cleanly with no warnings (silent = success).
+
+### What the "review comment" actually is
+
+The single comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is **the pickman bot's own auto-generated record of attempt 3's report**, which itself was a record of attempt 2's report, which was a record of attempt 1's report. The pickman/MR loop is converting each "no fix needed" report into a new "review comment to address", spawning the next iteration. We are now at attempt 4 of identical content.
+
+The actual underlying CI failures (rockpro64 SPL/MMC voltage-select `-110`; opi_pc 15-second login timeout with no captured output; rock5b 3-minute rockchip-flashing timeout; efi-aarch64 `readelf` parallel-make race in `checkarmreloc`) are all on the same `ellesmere-lab` runner (`VKe9dm-Af`) and are unambiguous lab/runner issues.
+
+### Why no `-v4` branch / no force-push
+
+I am explicitly **deviating from the standard "create -v2/-v3/-v4 and push" workflow** because:
+
+1. There is **no actionable reviewer feedback** — only the bot's own loop record.
+2. There is **no source-level change** that could fix an SD card not answering voltage select, a serial console with zero output, a USB-flashing handshake to a Rockchip bootrom, or a `readelf` link race — none of which involves the userspace `fw_env` tool.
+3. A no-op `-v4` push would re-burn lab time on the same `ellesmere-lab` runner and add a misleading "attempt 4 fixed it" record while changing nothing.
+4. This loop will continue as `attempt 5, 6, 7…` indefinitely until a human breaks it.
+
+### Recommended action (human intervention required)
+
+1. **Inspect / repair the `ellesmere-lab` runner** (rockpro64 SD card, opi_pc serial, rock5b USB flashing, general I/O). Re-run the four jobs once healthy.
+2. **Manually resolve the bot review thread on MR !989**, or reconfigure pickman so it does not convert "no fix needed" diagnoses into new actionable review comments. Without this, the loop cannot terminate.
+3. Optional: address the `checkarmreloc` parallel-make race (pre-existing in U-Boot, unrelated to this series) in a separate patch.
+
+### Suggested reply to post on the MR
+
+> This is the 4th iteration of the same loop. The series only modifies `tools/env/fw_env.c` (Linux userspace tool — not in any board image, cannot affect SPL/MMC/EFI/login). All four failing jobs are on the same `ellesmere-lab` runner with classic lab symptoms (MMC voltage-select `-110`, 15s login timeout with no output, 3-minute rockchip-flash timeout, `readelf` parallel-make race). No `-v4` is appropriate — please re-run the jobs once the lab is healthy and resolve this bot thread manually so the cycle terminates.
+
+---
+
