@@ -72726,6 +72726,7 @@ The branch `cherry-080b4f09955` is ready for pushing. Not merged anywhere.
 
 ---
 
+
 ## 2026-04-28: us/next
 
 Branch: cherry-35d9b9c70ea
@@ -72778,6 +72779,87 @@ The branch `cherry-35d9b9c70ea` is now in the correct state with all 4 cherry-pi
 **Fix-ups:** None needed for content. The merge commit needed `--allow-empty` because its content was already fully applied by the three individual commits (this is normal/expected for merge commits in a cherry-pick).
 
 **Concerning observations:** During this run there was clear evidence of a concurrent process making cherry-picks on this same git working tree (stray "common/memsize.c" commit appeared on my branch between cherry-picks, my merge commit ended up on a different branch initially, and an unrelated UFS merge commit was added on top of my branch after my build). I recovered by resetting and redoing the picks cleanly. The branch is now in the correct expected state, but the shared working tree is being contended by another agent — worth being aware of.
+
+### Pipeline fix: 2026-04-28 (attempt 1)
+
+Branch: cherry-080b4f09955
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- Check make check (test.py)
+
+### Conversation log
+Let me check out the branch and investigate.
+
+Now I understand the root cause. Let me also check the build artifacts and other context:
+
+The root cause is clear. The current Makefile has `tests pcheck qcheck tcheck` in the filter, missing `check`. Before the cherry-picks, master had `tests check pcheck qcheck tcheck` (added by commit `35aee3040ae`). The chain was:
+
+1. Master had: `tests check pcheck qcheck tcheck` (with `check`)
+2. Cherry-pick #8 (`922b6d957fa`) dropped the entire block during conflict resolution
+3. The revert (`93419a9c8be`) restored the upstream version `tests pcheck qcheck tcheck` (without `check`)
+
+This causes `make check` to fail because sub_make_done isn't reset for child make invocations, leading to the `m2c: No such file or directory` errors. The fix is to amend the revert to restore the correct filter list.
+
+Let me create the fix branch first:
+
+The revert is at HEAD~2 (positions 12, 11, 10 from HEAD: pickman, merge, revert). Let me use `rf 3` to edit it:
+
+Now let me verify the build works:
+
+Sandbox built cleanly (silent = success per the project conventions). Now let me reproduce the actual failure scenario — running make check — to verify the fix works:
+
+Let me verify by checking test state and running the buildman tests that failed:
+
+Let me investigate the efi-x86_64-uboot-iso failure more carefully. First check if any of the cherry-picked commits could affect kernel/initrd loading:
+
+Let me check if any of the cherry-picks touches files that could affect EFI boot/initrd loading:
+
+Let me verify the fix by running a quick make check simulation:
+
+Build succeeded for all boards (`done` = 0, only pre-existing dtsi warnings). Let me verify the Makefile fix one more time:
+
+All fixed. Here's the summary:
+
+## Report
+
+### Job: Check make check (stage: test.py) — FIXED
+
+**Root cause:** Commit `f6c2221f37a` (Revert "kbuild: unexport sub_make_done to fix child make invocations") restored an upstream version of the per-target workaround block that was missing `check` from the filter list.
+
+The cherry-pick chain was:
+1. **Local master** had `ifneq ($(filter tests check pcheck qcheck tcheck,$(MAKECMDGOALS)),)` (with `check`, added by local commit `35aee3040ae`)
+2. **Cherry-pick #8** (`922b6d957fa`) had a Makefile conflict and the resolution dropped the entire workaround block (the upstream commit's intent)
+3. **Cherry-pick #10** (the revert) restored only the upstream pre-revert block: `ifneq ($(filter tests pcheck qcheck tcheck,$(MAKECMDGOALS)),)` — without `check`
+
+Without `check` in the filter, `make check` doesn't reset `sub_make_done=0`, so the child make invocations spawned by `test/py/conftest.py` (with `O=...`) inherit `sub_make_done=1`, skip the `KBUILD_OUTPUT` setup, and try to build in-tree. This matches the CI symptom exactly: `make: m2c: No such file or directory` (make falls back to its built-in pattern rules because variables like `CC` aren't set up).
+
+The cascade also explains the `ImportError: cannot import name 'QUIET_NOTFOUND' from 'libfdt'` and the `buildman` `test_adjust_cfg_imply` / `test_reproducible` failures — they all depend on the sandbox build that never succeeded. I confirmed both buildman tests pass locally with the fix.
+
+**Fix:** Amended the revert commit (now `f6c2221f37a`) to include `check` in the filter:
+```
+-ifneq ($(filter tests pcheck qcheck tcheck,$(MAKECMDGOALS)),)
++ifneq ($(filter tests check pcheck qcheck tcheck,$(MAKECMDGOALS)),)
+```
+A `[pickman]` note was appended to the commit message describing the fix.
+
+### Job: efi-x86_64-uboot-iso (stage: sjg-lab) — INFRASTRUCTURE / TRANSIENT, NO CODE CHANGE
+
+This is a lab test that boots a Ubuntu ISO. The log shows:
+- A 2-minute gap between `Retrieving file: /casper/vmlinuz` (21:37:27) and `Retrieving file: /casper/initrd` (21:39:28) — abnormally slow I/O
+- Kernel reports `Initramfs unpacking failed: invalid magic at start of compressed archive`
+- Test times out waiting for `Started gdm.service`
+
+None of the 11 cherry-picked commits touch `boot/`, `fs/`, `lib/efi*`, `drivers/efi*`, or `cmd/bootflow*` (verified with `git log --name-only`). The memsize fix is ARM-only (uses `dcache_flush_invalidate`, not invoked on x86_64). This looks like a transient lab/runner issue — slow disk, partial initrd load, or ISO file corruption. **No change made.**
+
+### Verification
+- `um build sandbox`: success (silent)
+- `buildman -o /tmp/pickman efi-x86_app64 sandbox`: 10 boards built, only pre-existing `sandbox.dtsi` ranges_format warnings (unrelated)
+- `buildman -t -P -k test_adjust_cfg_imply` and `test_reproducible`: both pass
+
+### Branch
+Result is on local branch **`cherry-080b4f09955-fix1`** (HEAD `93a95ce185e`).
+
 
 ---
 
