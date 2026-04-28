@@ -72337,3 +72337,56 @@ informational, not requests, and contain no new feedback to address.
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+The qemu-x86_64 failure was alrea...
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Now I understand the failures:
+
+1...
+
+### Conversation log
+Let me look at the actual review comments more carefully. The two comments are both bot-generated pipeline fix reports - they describe what was already done, not requests for changes.
+
+Let me verify the current state of the qemu-x86_64 config in the YAML file:
+
+The fix is correctly in place:
+- Line 1052: `TEST_PY_TEST_SPEC: "and not sleep"` (leading `and` restored)
+- Line 888: `-k "not bootstd ${TEST_PY_TEST_SPEC}"` → substitutes to valid `not bootstd and not sleep`
+
+Both review comments are bot-generated informational reports about the same pipeline fix that has already been applied. There are no actionable code changes requested. Let me verify the build still passes:
+
+Build passes. Now let me create the v2 branch and push to update the MR:
+
+Force push succeeded. Pipeline is triggered automatically.
+
+## Report
+
+### Status: No code changes required
+
+Both review comments (from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`) are duplicate bot-generated informational reports describing the previous pipeline-fix attempt — not actionable review requests. The fix they describe was already applied to this branch:
+
+**qemu-x86_64 fix** (in commit `f1df543110e`): The cherry-pick of upstream `437ea9f8be5` was made into an effective no-op. The original change removed the leading `and ` from `TEST_PY_TEST_SPEC: "and not sleep"`, but that depended on the not-yet-cherry-picked upstream `c7f360f20d84` (which removes the corresponding `and` from the `-k` expression at line 888). The current branch state is correct:
+- Line 1052: `TEST_PY_TEST_SPEC: "and not sleep"` ✓
+- Line 888: `-k "not bootstd ${TEST_PY_TEST_SPEC}"` → substitutes to valid `not bootstd and not sleep` ✓
+- A `[pickman]` annotation is appended to the commit message explaining the revert.
+
+**jerry**: Lab/infrastructure timeout (`pexpect TIMEOUT`), not a code defect — no action.
+
+### Actions taken
+1. Verified branch state on `cherry-437ea9f8be5` already contains the fix (no further edits needed)
+2. `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no errors
+3. Created local branch `cherry-437ea9f8be5-v2` at the current tip (`1f3a6190926`)
+4. Force-pushed to remote `cherry-437ea9f8be5` via `pickman push-branch ... -r ci -f` → pipeline retrigger started
+
+### Suggested MR reply
+> Both comments are the same automated pipeline-fix report. The qemu-x86_64 fix (reverting the cherry-picked diff in `f1df543110e` so this branch keeps the leading `and ` in `TEST_PY_TEST_SPEC` for the sjg-lab `qemu-x86_64` job) is already in place — line 888's `-k "not bootstd ${TEST_PY_TEST_SPEC}"` requires it because the branch lacks upstream `c7f360f20d84` ("Gitlab: Rework sjg-lab calling test.py …"). The jerry failure was a transient lab/serial-console timeout (no code issue). Sandbox build verified; force-pushed to retrigger the pipeline.
+
+---
+
