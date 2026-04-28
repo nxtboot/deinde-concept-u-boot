@@ -72263,3 +72263,77 @@ Branch `cherry-437ea9f8be5-fix1` created at `cecc2cde685`, ready for the caller 
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0] (id 43195, 43198):
+  Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Both review comments are bot self-reports describing the work that the
+prior "Pipeline fix attempt 1" run already performed. They are
+informational, not requests, and contain no new feedback to address.
+
+## Report
+
+### Repo / MR state
+
+| Where | SHA | Notes |
+|-------|-----|-------|
+| Local `cherry-437ea9f8be5` (this branch, before record commit) | `1f3a6190926` | Has prior `pickman: Record pipeline fix` commit on top of fix |
+| Local `cherry-437ea9f8be5-fix1` | `cecc2cde685` | Matches remote tip |
+| Remote `ci/cherry-437ea9f8be5` | `cecc2cde685` | Pipeline-fix commit from attempt 1, force-pushed earlier |
+| MR !994 head_pipeline | **7126 — running** | On `cecc2cde685` |
+
+### What attempt 1 (prior session) had already established
+
+- `qemu-x86_64` (job 469828): cherry-pick `f1df543110e` ("Gitlab: Fix
+  TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab") replaced
+  `TEST_PY_TEST_SPEC: "and not sleep"` with `"not sleep"`. The upstream
+  change relies on companion commit `c7f360f20d84` ("Gitlab: Rework
+  sjg-lab calling test.py …") which is **not** on this branch — without
+  it, `-k "not bootstd ${TEST_PY_TEST_SPEC}"` substitutes to invalid
+  pytest expression `not bootstd not sleep`. Fixed by reverting the
+  diff in `f1df543110e` so it becomes an empty cherry-pick, with a
+  `[pickman]` annotation explaining why.
+- `jerry` (job 469804): infrastructure/lab flake —
+  `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during
+  waiting for login` followed by `Lab failure: Marking connection bad`.
+  No code defect. No change made.
+
+### What I did this session
+
+1. Confirmed the working tree is on `cherry-437ea9f8be5` (1f3a6190926)
+   with no source changes pending; only two unrelated untracked DT
+   files (`arch/sandbox/dts/hwids.dtsi`, `test/fdt_overlay/hwids.dtsi`).
+2. Verified `cherry-437ea9f8be5-fix1` matches `ci/cherry-437ea9f8be5`
+   at `cecc2cde685`.
+3. Re-ran `buildman -L --board sandbox -w -o /tmp/pickman` → **clean**
+   (`Completed: 1 total built, duration 0:00:10`).
+4. Confirmed pipeline 7126 is still **running** on `cecc2cde685`.
+5. Recorded comments 43195 and 43198 as processed in `.pickman.db` so
+   the framework no longer treats them as unhandled.
+
+### Why I did NOT create a v2 or push
+
+- The remote already has the pipeline-fix commit (`cecc2cde685`).
+- Pipeline 7126 is **currently running** on that commit; force-pushing
+  a new history would cancel it.
+- The two "review comments" are the bot's status reports on attempt 1;
+  there is no new code change requested or required.
+- Sandbox build is clean and the cherry-picks are unchanged.
+
+### Suggested MR reply
+
+> Acknowledged. No additional code change is required: pipeline 7126
+> is still running on `cecc2cde685` (the attempt-1 fix). The
+> `qemu-x86_64` failure was a pre-emptively-fixed cherry-pick conflict
+> (commit `f1df543110e` is now an empty cherry-pick because this
+> branch lacks upstream `c7f360f20d84`); the `jerry` failure was a
+> labgrid serial-console timeout / lab flake unrelated to any code
+> change on this branch. Sandbox build remains clean. Awaiting
+> pipeline 7126.
+
+---
+
