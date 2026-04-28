@@ -1007,13 +1007,37 @@ async def _review_single_patch(ctx, cmt, seq, all_commits):
     return format_review_email(ctx, greeting, verdict, comments, commit_msg)
 
 
+def parse_patch_selection(spec):
+    """Parse a patch selection string into a set of patch numbers
+
+    Supports comma-separated numbers and ranges, e.g. '1,3,5' or '2-7'
+    or '1,3-5,8'.
+
+    Args:
+        spec (str or None): Selection string, or None for all patches
+
+    Returns:
+        set of int or None: Selected patch numbers, or None for all
+    """
+    if not spec:
+        return None
+    result = set()
+    for part in spec.split(','):
+        if '-' in part:
+            start, end = part.split('-', 1)
+            result.update(range(int(start), int(end) + 1))
+        else:
+            result.add(int(part))
+    return result
+
+
 async def review_patches(ctx):
     """Run AI review on each patch in the applied branch
 
     Args:
         ctx (ReviewContext): Review context (uses branch_name,
             upstream_branch, patch_count, cover_content,
-            previous_reviews, repo_path, etc.)
+            previous_reviews, repo_path, patch_selection, etc.)
 
     Returns:
         dict: Map of patch index (1-based) to review body
@@ -1034,14 +1058,29 @@ async def review_patches(ctx):
 
     review_bodies = {}
 
-    if ctx.cover_content and ctx.patch_count > 1:
+    patch_sel = getattr(ctx, 'patch_selection', None)
+
+    if ctx.cover_content and ctx.patch_count > 1 and not patch_sel:
         body = await _review_cover_letter(ctx, all_commits)
         if body:
             review_bodies[0] = body
+    # Check which patches already have stored reviews
+    existing_reviews = set()
+    if hasattr(ctx, 'svid') and ctx.svid:
+        for rev in ctx.cser.db.review_get_for_version(ctx.svid):
+            existing_reviews.add(rev.seq)
 
     reviewer_tag = ctx.reviewer_tag
     for i, cmt in enumerate(series.commits):
         seq = i + 1
+
+        if patch_sel and seq not in patch_sel:
+            continue
+
+        if seq in existing_reviews:
+            tout.notice(f'Skipping patch {seq}/{len(commits)}'
+                        ' (already in database)')
+            continue
 
         if (reviewer_tag in cmt.rtags.get('Reviewed-by', set()) or
                 reviewer_tag in cmt.rtags.get('Tested-by', set())):
@@ -1083,6 +1122,88 @@ def apply_series_sync(pwork, link, branch_name, upstream_branch, repo_path):
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(apply_series(
         pwork, link, branch_name, upstream_branch, repo_path))
+
+
+def search_patch(pwork, title):
+    """Search patchwork for a patch by title and return its series and index
+
+    Queries the patchwork patches API by title, picks the most recent
+    match, then looks up its series.
+
+    Args:
+        pwork (Patchwork): Configured patchwork instance
+        title (str): Patch title text to search for
+
+    Returns:
+        tuple: (series_link, patch_seq)
+
+    Raises:
+        ValueError: if no matching patch is found
+    """
+    from urllib.parse import quote_plus
+
+    async def _query():
+        query = quote_plus(title, safe=':')
+        subpath = (f'patches/?project={pwork.proj_id}&q={query}'
+                   '&order=-date&per_page=20')
+        async with aiohttp.ClientSession() as client:
+            return await pwork._request(client, subpath)
+
+    loop = asyncio.get_event_loop()
+    results = loop.run_until_complete(_query())
+
+    if not results:
+        raise ValueError(f"No patch found matching '{title}'")
+
+    if len(results) > 1:
+        tout.notice(f"Found {len(results)} matching patches:")
+        for i, p in enumerate(results[:10]):
+            tout.notice(f"  {i + 1}. [{p['id']}] {p['name']}")
+
+    best = results[0]
+    patch_id = best['id']
+    tout.notice(f"Using: [{patch_id}] {best['name']}")
+    return lookup_patch_series(pwork, patch_id)
+
+
+def lookup_patch_series(pwork, patch_id):
+    """Look up a patch on patchwork and return its series link and position
+
+    Args:
+        pwork (Patchwork): Configured patchwork instance
+        patch_id (int): Patchwork patch ID
+
+    Returns:
+        tuple: (series_link, patch_seq) where series_link is the series
+            ID as a string and patch_seq is the 1-based position
+
+    Raises:
+        ValueError: if the patch or its series cannot be found
+    """
+    async def _query():
+        async with aiohttp.ClientSession() as client:
+            return await pwork.get_patch(client, patch_id)
+
+    loop = asyncio.get_event_loop()
+    data = loop.run_until_complete(_query())
+
+    series_list = data.get('series', [])
+    if not series_list:
+        raise ValueError(f'Patch {patch_id} has no associated series')
+
+    series_link = str(series_list[0]['id'])
+    patch_name = data.get('name', '')
+    tout.notice(f"Patch {patch_id}: '{patch_name}'")
+    tout.notice(f"Series: {series_list[0].get('name', '')} "
+                f"(link {series_link})")
+
+    # Fetch the series to find the patch position
+    series_data = _fetch_series(pwork, series_link)[0]
+    patches = series_data.get('patches', [])
+    for i, patch in enumerate(patches):
+        if patch.get('id') == patch_id:
+            return series_link, i + 1
+    return series_link, 1
 
 
 def search_series(pwork, title):
@@ -1746,6 +1867,16 @@ def _find_or_register(ctx, args, clean_name, link):
         tout.notice('Resuming incomplete review')
         return series_id, svid
 
+    # When reviewing specific patches, allow adding to existing reviews
+    patch_sel = parse_patch_selection(args.patches)
+    if patch_sel:
+        reviewed_seqs = {r.seq for r in reviews}
+        new_seqs = patch_sel - reviewed_seqs
+        if new_seqs:
+            tout.notice(f'Adding review for patch(es) '
+                        f'{", ".join(str(s) for s in sorted(new_seqs))}')
+            return series_id, svid
+
     if not args.force:
         _, db_name, db_version, _ = existing
         tout.notice(f"Already reviewed: '{db_name}' v{db_version}")
@@ -1778,12 +1909,21 @@ def do_review(args, pwork, cser):
     if args.sync:
         return _do_sync(args, cser)
 
-    if not args.pw_link and not args.title:
-        raise ValueError("Please provide -l <link> or -t <title> "
-            "to identify the series")
+    has_patch = getattr(args, 'patch', None)
+    has_patch_title = getattr(args, 'patch_title', None)
+    if not args.pw_link and not args.title and not has_patch and \
+            not has_patch_title:
+        raise ValueError("Please provide -s <series>, -S <title>, "
+            "-p <patch-id> or -P <patch-title>")
 
     link = args.pw_link
-    if not link:
+    if not link and has_patch:
+        link, patch_seq = lookup_patch_series(pwork, args.patch)
+        args.patches = str(patch_seq)
+    elif not link and has_patch_title:
+        link, patch_seq = search_patch(pwork, args.patch_title)
+        args.patches = str(patch_seq)
+    elif not link:
         link = search_series(pwork, args.title)
 
     series_data, clean_name, version, patch_count = \
@@ -1820,11 +1960,12 @@ def do_review(args, pwork, cser):
             tout.notice('Apply-only mode; skipping review')
             return 0
 
+        ctx.patch_selection = parse_patch_selection(args.patches)
         ctx.reviewer_name, ctx.reviewer_email = _parse_reviewer(args)
-        ctx.signoff = getattr(args, 'signoff', '') or None
+        ctx.signoff = args.signoff or None
         if ctx.signoff:
             ctx.signoff = ctx.signoff.replace('\\n', '\n')
-        ctx.spelling = getattr(args, 'spelling', 'British')
+        ctx.spelling = args.spelling
         ctx.comments_path = _write_comments_file(series_data, pwork)
 
         _run_and_store_reviews(ctx, args)

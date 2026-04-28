@@ -553,6 +553,18 @@ def add_review_subparser(subparsers):
         '-S', '--series-title', type=str, dest='title',
         help='Search for a series by cover-letter title')
     review.add_argument(
+        '-p', '--patch', type=int,
+        help='Patchwork patch ID (finds the series and reviews just '
+        'that patch)')
+    review.add_argument(
+        '-P', '--patch-title', type=str,
+        help='Search for a patch by title (finds its series and reviews '
+        'just that patch)')
+    review.add_argument(
+        '-i', '--index', type=str, dest='patches',
+        help='Review only specific patches by index (e.g. 3 or 1,3,5 '
+        'or 2-7)')
+    review.add_argument(
         '-n', '--dry-run', action='store_true', dest='dry_run',
         default=False,
         help='Show what would be done without creating drafts')

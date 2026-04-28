@@ -1258,6 +1258,19 @@ Or search by cover-letter title::
     patman review -S 'boot/bootm: Disable interrupts' -U us \
         --reviewer 'Your Name <your@email>'
 
+To review a single patch by its Patchwork patch ID (the series is
+found automatically)::
+
+    patman review -p 2219748
+
+Or search for a patch by title::
+
+    patman review -P 'Add SPL support for Qualcomm'
+
+To review only specific patches by index within the series::
+
+    patman review -s 497923 -i 1,3,5
+
 To create Gmail drafts threaded under the original emails::
 
     patman review -s 497923 -U us \
