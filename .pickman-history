@@ -71416,3 +71416,99 @@ The pickman/MR loop is in a feedback cycle where each "no-fix-needed" report bec
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 3)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rock5b (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+The situation is identical to attempts 1 and 2: the same series only touches `tools/env/fw_env.c`. Let me verify the build still passes and look at the failures one more time to confirm this is the same infrastructure-failure loop.
+
+Sandbox build passes (silent = success per project conventions). The diagnosis is identical to attempts 1 and 2. The series touches only `tools/env/fw_env.c` — a Linux userspace tool that is not linked into any board image and cannot affect SPL boot, MMC, EFI/ARM relocation, or login prompts.
+
+Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), I am not making code changes and not creating a `cherry-1197954d589-fix3` branch — manufacturing a no-op fix-branch would just re-burn lab time on the same flaky runners and falsely suggest a fix was made.
+
+## Report: Pipeline fix attempt 3 — No Code Fix Possible (Infrastructure Failures)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — **no `-fix3` branch created, no push**)
+
+### What this series actually changes
+
+Verified on the current branch:
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history' ':(exclude)pickman'
+ tools/env/fw_env.c | 47 ++++++++++++++++++-----------------------------
+ 1 file changed, 18 insertions(+), 29 deletions(-)
+```
+
+All 6 functional commits + merge touch a single file: `tools/env/fw_env.c`, the Linux userspace `fw_env` tool. **It is not compiled into SPL, U-Boot proper, or any board image.** It cannot affect SPL boot, MMC initialisation, U-Boot ELF generation, ARM relocation, EFI builds, or login prompts. Local `um build sandbox` passes cleanly with no warnings.
+
+### Diagnosis of each failed job (all stage `sjg-lab`, all on the same runner `ellesmere-lab`)
+
+**Job 467485 — rockpro64** — Hardware/MMC failure, identical to attempts 1 & 2:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  Error: -38
+Card did not respond to voltage select! : -110   ← MMC card hardware/timeout
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+... pexpect.TIMEOUT: Timeout of 10 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+`-110` = ETIMEDOUT on the SD card; `-38` = block-read error. fw_env.c plays no role in SPL or MMC.
+
+**Job 467462 — opi_pc** — Serial/lab connectivity failure, identical to attempts 1 & 2:
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+[no board output captured at all]
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No code path from these commits is exercised before login.
+
+**Job 467487 — rock5b (NEW this attempt)** — Lab/flashing timeout:
+```
+Building U-Boot in pytest-source dir for rock5b-rk3588
+Bootstrapping U-Boot ... Writing U-Boot using method rockchip
+[3 minutes silence]
+Lab timeout: Marking connection bad - no other tests will run
+```
+Hung during the rockchip flashing step (which is a userspace tool talking USB to the board's bootrom). No board output, no boot attempt; the runner couldn't talk to the rock5b. Pure lab issue.
+
+**Job 467494 — efi-aarch64** — Same parallel-make race in `checkarmreloc` as attempt 2, repeated twice:
+```
+Building U-Boot in pytest-source dir for efi-arm_app64
+readelf: Error: u-boot: Failed to read file's magic number   ← attempt 1
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+... [retry] ...
+readelf: Error: Unable to read in 72 bytes of symbols        ← attempt 2 (different error, both readelf)
+```
+This is an existing parallel-make race in U-Boot's `checkarmreloc` target — `readelf` opens the `u-boot` ELF before final linking is complete. The "Waiting for unfinished jobs" line is the smoking gun. The fw_env userspace tool is not part of `u-boot` ELF and cannot influence this race. The race is sometimes triggered by I/O contention on the runner.
+
+All four failures originate on the same `ellesmere-lab` runner (`VKe9dm-Af`), which strongly suggests the runner / its attached lab hardware is currently unhealthy.
+
+### Why no `-fix3` branch / no push
+
+This is the **third iteration of the same pickman feedback loop**: each "no fix needed" report becomes the next "review comment to address", which spawns another "fix attempt" run. There is no source-level change that could fix:
+
+- An SD-card not answering voltage select (`-110`)
+- A serial console with zero captured output before the 15-second login timeout
+- A USB-flashing handshake to a Rockchip bootrom that times out after 3 minutes
+- A `readelf` race-with-link in `checkarmreloc` that a userspace tool cannot influence
+
+Manufacturing a no-op `-fix3` push would re-burn lab time on the same flaky runner and add a misleading "attempt 3 fixed it" record. The branch is left in the same state as before.
+
+### Recommended next step (human action required to break the loop)
+
+1. **Inspect the `ellesmere-lab` runner** (`VKe9dm-Af`) — its rockpro64 SD card, opi_pc serial console, rock5b USB flashing path, and general I/O health. Re-run jobs 467485, 467462, 467487, 467494 once the lab is healthy.
+2. **Manually resolve the bot review thread** on MR !989, or instruct pickman not to convert "no fix needed" reports into new actionable comments — otherwise this loop will continue indefinitely (attempt 4, 5, ...).
+3. Optional: address the long-standing `checkarmreloc` parallel-make race in a separate, unrelated patch (it is not caused by this series and not appropriate to mix in here).
+
+---
+
