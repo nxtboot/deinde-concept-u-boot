@@ -72029,3 +72029,40 @@ The branch `cherry-1ad13306649` is ready for pushing.
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+
+
+### Conversation log
+## Report: MR !990 Rebased Successfully
+
+### Status
+- **Rebase**: ✅ Succeeded onto latest `ci/master` (`373b1d488c0`)
+- **Build**: ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passed (1 board built, no errors/warnings)
+- **Push**: ✅ Force-pushed to `ci/cherry-fe6484b4027` (`f0719dd117b...c49c81b7f86`)
+- **Local backup**: `cherry-fe6484b4027-v6`
+
+### What Was Done
+1. Fetched latest `ci/master` (advanced from `d131d1929be` to `373b1d488c0`, +33 commits including the recently merged `cherry-7accb716c10` series with stm32 work)
+2. Ran `git rebase --keep-empty ci/master` on `cherry-fe6484b4027`
+3. Resolved one conflict — purely in `.pickman-history`:
+   - Both branches had appended new entries: HEAD had the `cherry-7accb716c10` history block (now part of `ci/master`), the incoming pickman record commit had the `cherry-fe6484b4027` review block
+   - Resolved by keeping both, separated with the standard `---` history-block delimiter
+4. Verified per-commit deltas are byte-identical to the originals:
+   - `bootm: fix booting kernel_noload image` → `boot/bootm.c | 9 ++++++---` (matches)
+   - `test: boot: Add test for bootmeth_rauc` → 5 files, 133 insertions (matches)
+5. Built sandbox cleanly, created v6 backup, force-pushed
+
+### New commit hashes
+- `d98f778b7af` — bootm: fix booting kernel_noload image
+- `7777f3330ff` — test: boot: Add test for bootmeth_rauc
+
+### Suggested MR Reply
+
+> Rebased onto latest `ci/master` (`373b1d488c0`, which now includes the `cherry-7accb716c10` stm32 series). Only conflict was in `.pickman-history` — both branches had appended a new history block; resolved by keeping both. Per-commit deltas are byte-identical to the pre-rebase versions (`boot/bootm.c | 9 ++++++---` and the 5-file/133-insertion RAUC test). Sandbox build passes. Force-pushed `f0719dd117b...c49c81b7f86` to retrigger the pipeline.
+
+---
+
