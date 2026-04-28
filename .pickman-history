@@ -71953,3 +71953,79 @@ The rebase work is complete and pushed. No further action needed on my end — t
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-1ad13306649
+
+Commits:
+- 1ad13306649 ARM: dts: add dtsi for exynos7870-a2corelte (Samsung Galaxy A2 Core)
+- 5689cc9c6fb ARM: dts: add dtsi for exynos7870-j6lte (Samsung Galaxy J6)
+- 3f2ab427c13 ARM: dts: add dtsi for exynos7870-on7xelte (Samsung Galaxy J7 Prime)
+- de6b405e615 video: exynos: node variable should not be unsigned
+- 548e9a254c7 video: nexell: unsigned parameter cannot be negative
+- 3b9f3620b8a board: samsung: exynos-mobile: simplify parsing RAM banks from device tree
+- 23ad0660c11 board: samsung: exynos-mobile: resolve env vars without board_info data
+- 6220037e7c1 board: samsung: exynos-mobile: disable MULTI_DTB_FIT support
+- e215c1a558f board: samsung: exynos-mobile: enable OF_BOARD support
+- 743b91bab77 configs: exynos-mobile: remove DEFAULT_DEVICE_TREE and add OF_UPSTREAM_BUILD_VENDOR
+- ac93c4534fa doc: board: samsung: exynos-mobile: add DEVICE_TREE make flag in build
+- be1b1cd641f doc: board: samsung: exynos-mobile: use u-boot-nodtb.bin for packaging process
+- 579349593a8 ARM: dts: exynos7870-a2corelte: add properties to make S-BOOT happy
+- cc77806b5d3 ARM: dts: exynos7870-j6lte: add properties to make S-BOOT happy
+- d73efc6841c ARM: dts: exynos7870-on7xelte: add properties to make S-BOOT happy
+- 11198fa3473 doc: board: samsung: exynos-mobile: remove requirement of stub device tree
+- ae1e081f83f phy: samsung: add enum for variants based on SoCs
+- e4001865ff3 phy: samsung: add support for exynos7870 USB PHY
+- db0fe21bd38 board: samsung: exynos-mobile: use blkmap for booting from userdata subpartitions
+- 0e61fc5364d board: samsung: exynos-mobile: add EFI capsule update support
+- 336dd39b956 configs: exynos-mobile: add DEFAULT_DEVICE_TREE option
+- 7995bf8dea2 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-samsung
+
+### Conversation log
+Good, identical. Let me proceed with the rest. I'll cherry-pick the remaining commits.
+
+Identical deltas. Let me amend the commit message to add a fix-up note about the conflict resolution.
+
+Now I'm back on cherry-1ad13306649. Let me amend the last commit to add the fix-up note. First, verify HEAD is correct:
+
+Good, I'm now on cherry-1ad13306649 at 06ff379fba7. Let me amend the message with the fix-up note:
+
+Good - the amend worked correctly this time, on cherry-1ad13306649. Continue with the next cherry-picks:
+
+Good - we stayed on cherry-1ad13306649 this time. Now amend with the fix-up note:
+
+Identical deltas. Continue with remaining cherry-picks:
+
+Now check the merge commit. The user noted it might already be applied as 61a9395e60b:
+
+All 22 commits present. Now run the build test:
+
+Build succeeded. Let me verify the final state:
+
+All 22 commits cherry-picked successfully on cherry-1ad13306649.
+
+## Summary
+
+**Branch:** `cherry-1ad13306649` (based on `ci/master`)
+
+**Build result:** OK — sandbox build completes cleanly (`Completed: 1 total built, duration 0:00:06`).
+
+**All 22 commits applied:**
+- 18 regular commits cherry-picked cleanly with `-x`.
+- 1 merge commit (`7995bf8dea2`) preserved as empty commit (its contents are the individual commits we already cherry-picked).
+
+**Fix-ups (conflict resolutions):**
+1. `dee119c76df` (was `6220037e7c1`) — `board: samsung: exynos-mobile: disable MULTI_DTB_FIT support`. The upstream patch context expected a `#define lmb_alloc(size, addr)` wrapper macro that is not present in our local `exynos-mobile.c` (we use the direct `lmb_alloc()` API from `include/lmb.h`). Resolved by dropping the `struct exynos_board_info` definition (the actual intent of the patch) without introducing the unused macro. Delta is identical to original (2 files, 156 deletions). Note appended to commit message.
+
+2. `2b71d6513c5` (was `0e61fc5364d`) — `board: samsung: exynos-mobile: add EFI capsule update support`. Same `#define lmb_alloc` context issue. Resolved by adding `efi_fw_image[]` and `efi_capsule_update_info` (the patch intent) without the unused macro. Delta is identical to original (2 files, 30 insertions). Note appended to commit message.
+
+3. `e480a8b54b4` (was `7995bf8dea2`) — Merge commit. Conflict caused by the `#define lmb_alloc` divergence. Aborted and recorded as an empty commit since all child commits were already individually cherry-picked. Note appended to commit message.
+
+**Other observations:**
+- All commit deltas (file counts and line counts) match the originals exactly — no concerning deltas.
+- During the cherry-pick, `git cherry-pick --continue` and `git cherry-pick --abort` unexpectedly switched HEAD to a different local branch (`cherry-fe6484b4027`) twice. I returned to `cherry-1ad13306649` each time and verified state. One side-effect: the first `git commit --amend` accidentally landed on `cherry-fe6484b4027` (commit `735c05df83a`) instead of the intended branch — that branch's previous tip (`52c4095a9a2`) is preserved in the reflog (`cherry-fe6484b4027@{1}`) but I did not reset it because of the "do not modify history" rule. The user may want to manually reset `cherry-fe6484b4027` to `52c4095a9a2` to undo my accidental amend on that branch.
+
+The branch `cherry-1ad13306649` is ready for pushing.
+
+---
+
