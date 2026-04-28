@@ -72183,108 +72183,344 @@ The remaining job failures in the original pipeline (efi-aarch64 lab failure and
 
 ## 2026-04-28: us/next
 
-Branch: cherry-3ee1408eeb7
+Branch: cherry-437ea9f8be5
 
 Commits:
-- 3ee1408eeb7 firmware: scmi: Validate device tree node before setup channel
-- 6ee82240de6 power: domain: Validate device tree node in dev_power_domain_ctrl
-- efc9be77d85 iommu: Validate device tree node in dev_iommu_enable
-- e2dfabcab02 Merge tag 'fsl-qoriq-next-2026-02-25' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+- 437ea9f8be5 Gitlab: Fix TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab
+- 3768968b1ea efi_loader: fix specific LoadImage() return code
+- 02b74a78635 efi_selftest: test specific LoadImage() case
+- 89f6b9020db efi_selftest: cosmetic: fix spelling in comments
+- e6e7b2427a7 Merge tag 'efi-2026-04-rc4' of https://source.denx.de/u-boot/custodians/u-boot-efi
 
 ### Conversation log
-Identical. Now let me build and continue.
+Good, identical changes. Let me run the build test.
 
-I notice the branch name changed somehow. Let me check the state more carefully.
+Now the merge commit:
 
-The branch was unexpectedly switched between operations. Let me investigate and recover.
+The merge commit is empty since all the changes were already cherry-picked. Let me commit it as empty:
 
-I need to revert my erroneous commit on cherry-1ad13306649, switch to the correct branch, and avoid the issue (likely buildman switching branches).
+All 5 commits are present. Let me run the final build:
 
-Now let me cherry-pick the second commit on the correct branch:
+All cherry-picks complete and build verified.
 
-Identical. Now cherry-pick the third commit (skipping build for now to avoid the branch switching issue):
+## Final Status Report
 
-Identical. Now cherry-pick the merge commit:
+**Branch:** `cherry-437ea9f8be5` (based on `ci/master`)
 
-All 4 commits are in place. Now run the final build:
+**Cherry-picked commits (in order):**
+1. `8442927ddd9` - Gitlab: Fix TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab (1 file, +1/-1)
+2. `fe8e3ec69cc` - efi_loader: fix specific LoadImage() return code (1 file, +6/-2)
+3. `2f05a9a69bc` - efi_selftest: test specific LoadImage() case (1 file, +7)
+4. `d59fade7317` - efi_selftest: cosmetic: fix spelling in comments (1 file, +4/-4)
+5. `767452549c2` - Merge tag 'efi-2026-04-rc4' (empty merge — all changes already applied via earlier picks)
 
-The build passed and the branch is intact. Here is the final status:
+**Build result:** OK — sandbox build completed successfully after each cherry-pick and at the end.
 
-## Final Status
+**Deltas:** All non-merge cherry-picks have identical file/line counts to their originals. No concerning deltas.
 
-**Branch:** `cherry-3ee1408eeb7` (4 commits ahead of `ci/master`)
+**Fix-ups:** None required — only one minor auto-merge in `.gitlab-ci.yml` and `lib/efi_loader/efi_boottime.c` (clean cherry-picks). The merge commit was committed with `--allow-empty` as required since its content was already applied through the individual cherry-picks.
 
-**Build result:** OK — sandbox built cleanly, no warnings or errors.
-
-**Commits cherry-picked (all in order):**
-1. `82a52daa8ff` — firmware: scmi: Validate device tree node before setup channel (2 files, +3/-2)
-2. `6a03337e0f8` — power: domain: Validate device tree node in dev_power_domain_ctrl (1 file, +3)
-3. `9048f0f6b8a` — iommu: Validate device tree node in dev_iommu_enable (1 file, +3)
-4. `9e10c463ea7` — Merge tag 'fsl-qoriq-next-2026-02-25' (empty, preserved with --allow-empty as instructed)
-
-**Delta verification:** All three regular commits are byte-identical to their originals (same files, same line counts). The merge commit is empty (its content was already integrated by the prior three cherry-picks), as expected.
-
-**Fix-ups:** None to the cherry-picked commits themselves.
-
-**Workflow note:** During the operation, the worktree's checked-out branch was switched away from `cherry-3ee1408eeb7` to a different pre-existing branch (`cherry-1ad13306649`) at some point after the first per-commit `buildman` invocation, which caused the second cherry-pick to land on the wrong branch. I detected this, reset the unrelated `cherry-1ad13306649` branch back to its prior tip (`8364181a895`), switched back to `cherry-3ee1408eeb7`, and re-applied the second cherry-pick correctly. To avoid recurrence I deferred the per-commit builds and ran a single final `buildman` after all four picks were on the right branch — that final build passed and the branch is on `cherry-3ee1408eeb7` as expected. No history was force-pushed or otherwise rewritten on any branch other than the local recovery just described.
+**Conflicts:** None — all cherry-picks applied cleanly.
 
 The branch is ready for pushing.
 
 ---
 
-### Pipeline fix: 2026-04-28 (attempt 2)
+### Pipeline fix: 2026-04-28 (attempt 1)
 
-Branch: cherry-3ee1408eeb7
+Branch: cherry-437ea9f8be5
 
-Failed jobs (pipeline 7118):
-- efi-aarch64 (sjg-lab) — `OSError: [Errno 5] Input/output error` in
-  `test_distro_arm_app_efi` during `restart_uboot()` (serial-port I/O
-  error from the lab harness, not a code failure)
-- qemu-x86_64 (sjg-lab) — `Lab failure: Timeout executing 'setenv
-  efi_selftest watchdog reboot'` after a `cyclic_run() cyclic
-  function video_idle took too long: 16908us vs 5000us max` warning
-  (lab/timing flake during EFI selftest)
+Failed jobs:
+- qemu-x86_64 (sjg-lab)
+- jerry (sjg-lab)
 
-### Root cause
+### Conversation log
+The qemu-x86_64 failure was already pre-emptively fixed in the local branch — commit `f1df543110e` is now an empty cherry-pick with a `[pickman]` note explaining why the change was reverted (the branch lacks the upstream regularization commit `c7f360f20d84` that the change depended on). Let me verify the build works correctly.
 
-Both failures are lab/runner infrastructure flakes:
+Good, sandbox builds cleanly. Now build the affected boards in one go:
 
-1. **efi-aarch64**: serial-port I/O error during U-Boot reset (Errno 5
-   is `EIO`). The harness lost the connection mid-test. Not
-   reproducible from code.
+Now I'll create the fix1 branch pointing to the current branch tip (which has the fix already applied via the empty cherry-pick commit `f1df543110e`):
 
-2. **qemu-x86_64**: timeout while issuing `setenv efi_selftest
-   watchdog reboot`, preceded by a `video_idle` cyclic over-run
-   warning. This is a known timing-related lab flake.
+The fix is in place on `cherry-437ea9f8be5-fix1` (at `cecc2cde685`). Both boards build cleanly.
 
-Neither failure is on a code path touched by this MR. The four
-cherry-picks add `dev_has_ofnode()` validation in:
-- `drivers/firmware/scmi/mailbox_agent.c`
-- `drivers/firmware/scmi/optee_agent.c`
-- `drivers/iommu/iommu-uclass.c`
-- `drivers/power/domain/power-domain-uclass.c`
+## Report
 
-None of these files are exercised by EFI distro boot on aarch64 or by
-the EFI selftest / `video_idle` path on qemu-x86_64.
+### qemu-x86_64 failure (job 469828)
+**Responsible commit:** `f1df543110e` ("Gitlab: Fix TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab" — cherry-pick of upstream `437ea9f8be5`)
 
-### Fix applied
+**Root cause:** The upstream commit removed the leading `and ` from `TEST_PY_TEST_SPEC: "and not sleep"` for qemu-x86_64, but that change depended on upstream commit `c7f360f20d84` ("Gitlab: Rework sjg-lab calling test.py to be closer to test.py stage"), which regularizes the `-k` expression at line 888. This branch lacks `c7f360f20d84`, so line 888 still uses `-k "not bootstd ${TEST_PY_TEST_SPEC}"`. With the new value the substituted expression becomes `not bootstd not sleep` — invalid pytest syntax (`expected end of input; got not`).
 
-None — there is no code defect to fix. Re-pushing the same branch
-(with `--run-ci`) to retrigger the pipeline so the flaky lab jobs run
-again.
+**Fix applied:** Commit `f1df543110e` is now an empty cherry-pick — the diff was reverted while keeping the commit message plus a `[pickman]` annotation explaining why. The file again has `TEST_PY_TEST_SPEC: "and not sleep"` for qemu-x86_64, which substitutes correctly to `not bootstd and not sleep`. (This had already been done in the local branch at the time the task was launched; no further change was needed beyond verification.)
+
+### jerry failure (job 469804)
+**Root cause:** Infrastructure / lab failure — `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` followed by `Lab failure: Marking connection bad - no other tests will run`. The chromebook_jerry board did not respond on the labgrid serial console; this is a transient hardware/lab connectivity problem, not a code defect. **No code change made.**
 
 ### Verification
+- `um build sandbox`: success
+- `buildman -o /tmp/pickman chromebook_jerry qemu-x86_64 sandbox`: 12 boards built, 0 errors. Only pre-existing dtc warnings on sandbox64/sandbox64_lwip (unrelated `ranges_format` warnings in `arch/sandbox/dts/sandbox.dtsi`).
 
-- `buildman -L --board sandbox -w -o /tmp/pickman` — clean, no
-  warnings or errors
-- Branch tip unchanged: `43fdf520e97`
+Branch `cherry-437ea9f8be5-fix1` created at `cecc2cde685`, ready for the caller to push.
 
-### Note on attempt 1
+---
 
-Attempt 1 was reported as failed with an Anthropic API 500 error
-("Internal server error"). No code or branch changes were made on
-that attempt — it never reached the analysis phase. Attempt 2 (this
-one) reaches the same branch state and pushes to retrigger CI.
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0] (id 43195, 43198):
+  Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Both review comments are bot self-reports describing the work that the
+prior "Pipeline fix attempt 1" run already performed. They are
+informational, not requests, and contain no new feedback to address.
+
+## Report
+
+### Repo / MR state
+
+| Where | SHA | Notes |
+|-------|-----|-------|
+| Local `cherry-437ea9f8be5` (this branch, before record commit) | `1f3a6190926` | Has prior `pickman: Record pipeline fix` commit on top of fix |
+| Local `cherry-437ea9f8be5-fix1` | `cecc2cde685` | Matches remote tip |
+| Remote `ci/cherry-437ea9f8be5` | `cecc2cde685` | Pipeline-fix commit from attempt 1, force-pushed earlier |
+| MR !994 head_pipeline | **7126 — running** | On `cecc2cde685` |
+
+### What attempt 1 (prior session) had already established
+
+- `qemu-x86_64` (job 469828): cherry-pick `f1df543110e` ("Gitlab: Fix
+  TEST_PY_TEST_SPEC for qemu-x86_64 in sjg-lab") replaced
+  `TEST_PY_TEST_SPEC: "and not sleep"` with `"not sleep"`. The upstream
+  change relies on companion commit `c7f360f20d84` ("Gitlab: Rework
+  sjg-lab calling test.py …") which is **not** on this branch — without
+  it, `-k "not bootstd ${TEST_PY_TEST_SPEC}"` substitutes to invalid
+  pytest expression `not bootstd not sleep`. Fixed by reverting the
+  diff in `f1df543110e` so it becomes an empty cherry-pick, with a
+  `[pickman]` annotation explaining why.
+- `jerry` (job 469804): infrastructure/lab flake —
+  `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during
+  waiting for login` followed by `Lab failure: Marking connection bad`.
+  No code defect. No change made.
+
+### What I did this session
+
+1. Confirmed the working tree is on `cherry-437ea9f8be5` (1f3a6190926)
+   with no source changes pending; only two unrelated untracked DT
+   files (`arch/sandbox/dts/hwids.dtsi`, `test/fdt_overlay/hwids.dtsi`).
+2. Verified `cherry-437ea9f8be5-fix1` matches `ci/cherry-437ea9f8be5`
+   at `cecc2cde685`.
+3. Re-ran `buildman -L --board sandbox -w -o /tmp/pickman` → **clean**
+   (`Completed: 1 total built, duration 0:00:10`).
+4. Confirmed pipeline 7126 is still **running** on `cecc2cde685`.
+5. Recorded comments 43195 and 43198 as processed in `.pickman.db` so
+   the framework no longer treats them as unhandled.
+
+### Why I did NOT create a v2 or push
+
+- The remote already has the pipeline-fix commit (`cecc2cde685`).
+- Pipeline 7126 is **currently running** on that commit; force-pushing
+  a new history would cancel it.
+- The two "review comments" are the bot's status reports on attempt 1;
+  there is no new code change requested or required.
+- Sandbox build is clean and the cherry-picks are unchanged.
+
+### Suggested MR reply
+
+> Acknowledged. No additional code change is required: pipeline 7126
+> is still running on `cecc2cde685` (the attempt-1 fix). The
+> `qemu-x86_64` failure was a pre-emptively-fixed cherry-pick conflict
+> (commit `f1df543110e` is now an empty cherry-pick because this
+> branch lacks upstream `c7f360f20d84`); the `jerry` failure was a
+> labgrid serial-console timeout / lab flake unrelated to any code
+> change on this branch. Sandbox build remains clean. Awaiting
+> pipeline 7126.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+The qemu-x86_64 failure was alrea...
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Now I understand the failures:
+
+1...
+
+### Conversation log
+Let me look at the actual review comments more carefully. The two comments are both bot-generated pipeline fix reports - they describe what was already done, not requests for changes.
+
+Let me verify the current state of the qemu-x86_64 config in the YAML file:
+
+The fix is correctly in place:
+- Line 1052: `TEST_PY_TEST_SPEC: "and not sleep"` (leading `and` restored)
+- Line 888: `-k "not bootstd ${TEST_PY_TEST_SPEC}"` → substitutes to valid `not bootstd and not sleep`
+
+Both review comments are bot-generated informational reports about the same pipeline fix that has already been applied. There are no actionable code changes requested. Let me verify the build still passes:
+
+Build passes. Now let me create the v2 branch and push to update the MR:
+
+Force push succeeded. Pipeline is triggered automatically.
+
+## Report
+
+### Status: No code changes required
+
+Both review comments (from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`) are duplicate bot-generated informational reports describing the previous pipeline-fix attempt — not actionable review requests. The fix they describe was already applied to this branch:
+
+**qemu-x86_64 fix** (in commit `f1df543110e`): The cherry-pick of upstream `437ea9f8be5` was made into an effective no-op. The original change removed the leading `and ` from `TEST_PY_TEST_SPEC: "and not sleep"`, but that depended on the not-yet-cherry-picked upstream `c7f360f20d84` (which removes the corresponding `and` from the `-k` expression at line 888). The current branch state is correct:
+- Line 1052: `TEST_PY_TEST_SPEC: "and not sleep"` ✓
+- Line 888: `-k "not bootstd ${TEST_PY_TEST_SPEC}"` → substitutes to valid `not bootstd and not sleep` ✓
+- A `[pickman]` annotation is appended to the commit message explaining the revert.
+
+**jerry**: Lab/infrastructure timeout (`pexpect TIMEOUT`), not a code defect — no action.
+
+### Actions taken
+1. Verified branch state on `cherry-437ea9f8be5` already contains the fix (no further edits needed)
+2. `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no errors
+3. Created local branch `cherry-437ea9f8be5-v2` at the current tip (`1f3a6190926`)
+4. Force-pushed to remote `cherry-437ea9f8be5` via `pickman push-branch ... -r ci -f` → pipeline retrigger started
+
+### Suggested MR reply
+> Both comments are the same automated pipeline-fix report. The qemu-x86_64 fix (reverting the cherry-picked diff in `f1df543110e` so this branch keeps the leading `and ` in `TEST_PY_TEST_SPEC` for the sjg-lab `qemu-x86_64` job) is already in place — line 888's `-k "not bootstd ${TEST_PY_TEST_SPEC}"` requires it because the branch lacks upstream `c7f360f20d84` ("Gitlab: Rework sjg-lab calling test.py …"). The jerry failure was a transient lab/serial-console timeout (no code issue). Sandbox build verified; force-pushed to retrigger the pipeline.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+The qemu-x86_64 failure was alrea...
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) qemu-x86_64, jerry.
+
+Now I understand the failures:
+
+1...
+
+### Conversation log
+Now I understand the state. Let me verify the build and check the running pipeline.
+
+Build is clean. The remote already has the fix (`cecc2cde685`) and pipeline `7126` is currently **running** on it. Both review comments are bot self-reports about the previous pipeline-fix attempt — they request no code changes. Force-pushing now would cancel the running pipeline.
+
+Following the prior pattern (see commit `c7156e72107` for the analogous cherry-3ee1408eeb7 case), I'll mark the comments as processed in the DB and append a record entry, but will NOT create a v2 / push.
+
+Now amend (replace) the existing pickman-history record commit `1f3a6190926` with a "review handling" entry, since both events happened back-to-back today on the same branch.
+
+Now amend the existing record commit to include this review-handling entry (also include the `.pickman.db` updates).
+
+Now create the v2 branch label (kept locally for traceability, even though we are not pushing it).
+
+Done. Here is what I did and the reply to post on MR !994:
+
+## Summary of work
+
+**Both review comments are bot self-reports** about the prior "Pipeline fix attempt 1" run (comments `43195` and `43198` from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`). They contain no new code-change request — the fix they describe is already on the remote and a pipeline is currently running on it.
+
+### Repo / MR state right now
+
+| Where | SHA | Notes |
+|-------|-----|-------|
+| Local `cherry-437ea9f8be5` (current) | `06ab112c554` | New "Record review handling" commit on top |
+| Local `cherry-437ea9f8be5-v3` | `06ab112c554` | New label for this run (v2 was already used by attempt 1) |
+| Local `cherry-437ea9f8be5-v2` | `1f3a6190926` | Pre-existing |
+| Local `cherry-437ea9f8be5-fix1` | `cecc2cde685` | Matches remote tip |
+| Remote `ci/cherry-437ea9f8be5` | `cecc2cde685` | Pipeline-fix commit from attempt 1 |
+| MR !994 head_pipeline | **7126 — running** | On `cecc2cde685` |
+
+### What I did this session
+
+1. Confirmed the branch already has the attempt-1 fix applied (commit `f1df543110e` is an empty cherry-pick with a `[pickman]` note explaining the revert).
+2. Verified `cherry-437ea9f8be5-fix1` matches `ci/cherry-437ea9f8be5`.
+3. Re-ran `buildman -L --board sandbox -w -o /tmp/pickman` → **clean** (1 board built, 0 errors).
+4. Confirmed pipeline `7126` is still **running** on `cecc2cde685`.
+5. Marked comments `43195` and `43198` as processed in `.pickman.db` so the framework no longer treats them as unhandled.
+6. Created `cherry-437ea9f8be5-v3` and committed `pickman: Record review handling for cherry-437ea9f8be5` (`.pickman-history` only).
+
+### Why I did NOT push
+
+- The remote already has the pipeline-fix commit (`cecc2cde685`).
+- Pipeline `7126` is **currently running** on that commit; force-pushing now would cancel it.
+- The only local-only diff vs remote is `.pickman-history` (and the new record commit on top of `1f3a6190926`); there are zero source-level differences.
+- The two "review comments" are the bot's status reports on attempt 1; there is no new code change requested or required.
+
+This matches the precedent set on MR !993 / `cherry-3ee1408eeb7` (commit `c7156e72107`).
+
+### Suggested MR reply
+
+> Acknowledged. No additional code change is required: pipeline 7126 is still running on `cecc2cde685` (the attempt-1 fix). The `qemu-x86_64` failure was a pre-emptively-fixed cherry-pick conflict — commit `f1df543110e` is now an empty cherry-pick because this branch lacks upstream `c7f360f20d84`, which the original change depended on. The `jerry` failure was a labgrid serial-console timeout / lab flake unrelated to any code change on this branch. Sandbox build remains clean. Awaiting pipeline 7126.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-437ea9f8be5
+
+Comments addressed:
+
+
+### Conversation log
+I need to resolve two conflicts in `.pickman-history`. Both sides should be kept since they describe different branches/work.
+
+Now I'll resolve the conflict by keeping both sides. The HEAD side describes cherry-3ee1408eeb7 (now in master) and the incoming side describes cherry-437ea9f8be5 (this branch's cherry-pick).
+
+Now resolve the second conflict block:
+
+No more raw conflict markers. The remaining matches are inside text descriptions. Now stage and continue:
+
+Rebase completed successfully. Now let me verify state and run the build:
+
+Rebase succeeded. Now compare deltas before/after for each commit:
+
+All deltas are identical to the pre-rebase versions. Now run the build:
+
+Build clean (1 built, 0 errors). Now create the v4 branch (v2 and v3 already exist):
+
+Push succeeded. Let me also restore the working state from before:
+
+## Report
+
+### Rebase Summary
+
+**Branch:** `cherry-437ea9f8be5` rebased from `b960d921853` onto `ci/master` tip `187fdfda8fa`.
+
+**New commits brought in via rebase:** 6 commits from upstream (the cherry-3ee1408eeb7 merge plus the 3 dt-validate commits and 1 unrelated merge that landed on master after this branch was first created).
+
+**Pre-rebase tip:** `ebabc400a5a`
+**Post-rebase tip:** `7f67ceffa71`
+
+### Conflicts
+
+One conflict in `.pickman-history` (a log/diary file). The HEAD side described the cherry-3ee1408eeb7 work which is now on master (already recorded in the history file via the master merge), and the incoming side described this branch's own cherry-pick of 437ea9f8be5. **Resolution:** dropped the duplicate HEAD entries (already in master's history file via earlier records) and kept only the cherry-437ea9f8be5 entries, since they belong to this branch's record. Net change: `1 file changed, 23 insertions(+), 85 deletions(-)`.
+
+### Delta Verification
+
+All 4 non-merge cherry-pick commits remain byte-identical to their pre-rebase versions:
+- `d90ac68d5bd` (Gitlab fix) — empty cherry-pick with `[pickman]` revert note (preserved)
+- `8139b8e6e40` (efi_loader) — `1 file, +6/-2`
+- `25582d77a15` (efi_selftest test) — `1 file, +7`
+- `091398734c7` (efi_selftest spelling) — `1 file, +4/-4`
+- `bda2e921894` (Merge efi-2026-04-rc4) — empty merge (preserved with `--keep-empty`)
+
+The 4 trailing pickman-history record commits also rebased cleanly.
+
+### Build
+
+`buildman -L --board sandbox -w -o /tmp/pickman` — **clean** (1 built, 0 errors, 0 warnings).
+
+### Push
+
+Force-pushed to `ci/cherry-437ea9f8be5`: `1f3a6190926..7f67ceffa71` (forced update). Local label `cherry-437ea9f8be5-v4` created at `7f67ceffa71` (v2 and v3 were already taken by prior runs).
+
+### Suggested MR Reply
+
+> Rebased onto current `ci/master` (`187fdfda8fa`) and force-pushed. The only conflict was in `.pickman-history` (log file), where HEAD's cherry-3ee1408eeb7 records already exist in master's copy, so I kept only this branch's own cherry-437ea9f8be5 entries to avoid duplication. All 5 cherry-picked commits are byte-identical to their pre-rebase versions; the empty Gitlab/qemu-x86_64 fix and empty `efi-2026-04-rc4` merge commits were preserved via `--keep-empty`. Sandbox build clean.
 
 ---
 
