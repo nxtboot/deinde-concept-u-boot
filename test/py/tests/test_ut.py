@@ -30,6 +30,7 @@ from img.android import setup_android_image
 from img.efi import setup_efi_image
 from img.cedit import setup_cedit_file
 from img.localboot import setup_localboot_image
+from img.rauc import setup_rauc_image
 
 
 @pytest.mark.buildconfigspec('ut_dm')
@@ -93,6 +94,7 @@ def test_ut_dm_init_bootstd(u_boot_config, u_boot_log):
     setup_cros_image(u_boot_config, u_boot_log)
     setup_android_image(u_boot_config, u_boot_log)
     setup_efi_image(u_boot_config)
+    setup_rauc_image(u_boot_config, u_boot_log)
     setup_ubuntu_image(u_boot_config, u_boot_log, 3, 'flash', '25.04')
     setup_localboot_image(u_boot_config, u_boot_log)
     setup_vbe_image(u_boot_config, u_boot_log)

@@ -761,7 +761,7 @@ static bool booti_is_supported(struct image_info *os)
 static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 {
 	struct bootm_headers *images = bmi->images;
-	struct image_info os = images->os;
+	const struct image_info os = images->os;
 	ulong load = os.load;
 	ulong load_end;
 	ulong blob_start = os.start;
@@ -789,8 +789,11 @@ static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 		if (ret)
 			return log_msg_ret("fbo", ret);
 
-		os.load = load;
-		images->ep = load;
+		load = bmi->kern_comp_addr;
+		images->os.load = bmi->kern_comp_addr;
+		images->ep = bmi->kern_comp_addr;
+		debug("Allocated %lx bytes at %lx for kernel (size %lx) decompression\n",
+		      bmi->kern_comp_size, load, image_len);
 	}
 	log_debug("load_os load %lx image_start %lx image_len %lx\n", load,
 		  image_start, image_len);

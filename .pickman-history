@@ -71739,3 +71739,445 @@ Branch `cherry-7accb716c10-fix1` created at the same SHA as `cherry-7accb716c10`
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+
+
+### Conversation log
+The branch actually has the 2 commits applied on top of an older ci/master (`2b4e7598f77`). Let me check what changed in `boot/bootm.c` and `arch/sandbox/dts/test.dts` between then and now.
+
+None of the conflict-prone files were changed between merge base and current ci/master. The rebase should be clean. Let me proceed.
+
+Rebase succeeded. Let me verify the deltas are unchanged.
+
+Both commits have identical deltas. Now let me run the build verification.
+
+Build passed. Now let me create the v2 branch and push.
+
+Push succeeded. Let me verify the final state.
+
+## Report
+
+### Status: ✅ Rebase succeeded and pushed
+
+The previous reports in the MR description were incorrect — the branch `cherry-fe6484b4027` actually had both cherry-picked commits applied successfully on top of an older `ci/master` snapshot (`2b4e7598f77`). The "rebase" task was therefore straightforward: reapply those two commits on top of the latest `ci/master` (`d131d1929be`).
+
+### What was done
+
+1. **Investigated state**: Local branch had both commits (`662265ebf8d`, `dc97142e409`) on top of merge-base `2b4e7598f77`. Current `ci/master` is at `d131d1929be`.
+2. **Verified no conflict-prone changes**: `git log 2b4e7598f77..ci/master -- boot/bootm.c arch/sandbox/dts/test.dts test/py/tests/test_ut.py test/boot/bootflow.c` returned empty — none of the previously-feared conflict files changed in the intermediate range. The intermediate commits are all pickman records and unrelated `fw_env` cleanups.
+3. **Rebased**: `git rebase --keep-empty ci/master` succeeded with no conflicts.
+4. **Verified deltas unchanged**: `git show --stat` for each commit before/after rebase produced identical output.
+5. **Built**: `buildman -L --board sandbox -w -o /tmp/pickman` passed (1 total built, duration 0:00:06).
+6. **Created local backup branch**: `cherry-fe6484b4027-v3` (v2 already existed).
+7. **Force-pushed**: `./tools/pickman/pickman push-branch cherry-fe6484b4027 -r ci -f` updated remote (`dc97142e409...6ec6fb6cc2d`).
+
+### New commit hashes
+- `32fb042f64e` — bootm: fix booting kernel_noload image
+- `6ec6fb6cc2d` — test: boot: Add test for bootmeth_rauc
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (now at `d131d1929be`). The previous "rebase aborted" reports in this thread were based on an inaccurate snapshot — the branch actually had both commits applied on top of `2b4e7598f77`, and none of the files touched by these patches (`boot/bootm.c`, `arch/sandbox/dts/test.dts`, `test/py/tests/test_ut.py`, `test/boot/bootflow.c`) were modified in the intermediate range, so the rebase applied cleanly with no conflicts. Per-commit deltas are byte-identical to the pre-rebase versions. Sandbox build passes.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+- [sjg]: pickman: Can you try re-applying the commits one by one, rewriting as necessary, so the same intent ...
+
+### Conversation log
+Both commits have already been adapted/rewritten to achieve the same intent on the new code:
+
+**Commit `32fb042f64e` (bootm fix):**
+- Original intent: mark `os` as `const`, ensure `images->os.load` is set
+- Adapted: keeps `const`, sets `images->os.load = bmi->kern_comp_addr` (using new bmi-based API), also fixes `images->ep` and local `load`, adds debug message
+
+**Commit `6ec6fb6cc2d` (RAUC test):**
+- Original used `mmc10`; adapted to `mmc16` (mmc10-15 now used by other tests)
+- Moved `setup_rauc_image()` from inline in `test_ut.py` to `test/py/img/rauc.py` to match new helper layout
+- Updated to use new `(config, log)` API instead of old `(ubman)`
+
+The test fails because the `bootflow list` output format added new columns ("Ent" and "E") since the test was originally written. The expected line needs adjusting to match the new column alignment. Let me fix it.
+
+Test passes. Now let me run the build verification one more time and run a broader test set.
+
+## Report: Re-applied commits with rewriting, fixed test, pushed
+
+### Status: Pushed successfully to MR !990
+
+### What was done
+
+Re-verified the two cherry-picked commits achieve the same intent on the new code, and fixed a remaining test failure that was hidden by the fact the original test format was stale.
+
+**Commit `32fb042f64e` — bootm: fix booting kernel_noload image** (already adapted, no change needed)
+- Original intent: mark `os` as `const`; ensure `images->os.load` (not just local `os.load`) is updated after `lmb_alloc_mem()`
+- Adapted to new `bmi`/`resolve_os_comp_buf()` API: `const struct image_info os`; `load = bmi->kern_comp_addr; images->os.load = bmi->kern_comp_addr; images->ep = bmi->kern_comp_addr;` plus debug message — same intent, just with the new variable names
+
+**Commit `6cbd853e81d` — test: boot: Add test for bootmeth_rauc** (rewrote and amended)
+- Already adapted to use `mmc16` (mmc10–15 now occupied by VBE/bootctl/LUKS/BLS) and the new `(u_boot_config, u_boot_log)` test framework API with `setup_rauc_image()` moved to `test/py/img/rauc.py` (matching the new helper layout)
+- **New fix in this iteration**: the expected `bootflow list` output line in `test/boot/bootflow.c` was missing whitespace for the new `Ent` and `E` columns added by upstream since the test was authored. Updated to match the format used by sibling `android` tests:
+
+```c
+-	ut_assert_nextlinen("  0  rauc         ready   mmc          0  mmc16.bootdev.whole      ");
++	ut_assert_nextlinen("  0  rauc         ready   mmc          0          mmc16.bootdev.whole       ");
+```
+
+### Verification
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — ✅ passes
+- **Test**: `ut bootstd bootflow_rauc` — ✅ Tests run: 2, 0 failures (after generating `mmc16.img` via `test_ut_dm_init_bootstd`)
+
+### Push
+- Local backup: `cherry-fe6484b4027-v4`
+- Force-pushed `cherry-fe6484b4027` → remote `ci`: `6ec6fb6cc2d...85f7a2b1f54`
+
+### New commit hashes
+- `32fb042f64e` — bootm: fix booting kernel_noload image (unchanged)
+- `6cbd853e81d` — test: boot: Add test for bootmeth_rauc (amended to fix expected output format)
+
+### Suggested MR reply
+
+> Re-applied both commits with rewriting where necessary to preserve intent on the refactored code:
+>
+> 1. **`32fb042f64e` (bootm fix)** — original surgical 2-line fix (`const struct image_info os`; set `images->os.load`) doesn't translate directly because `bootm_load_os()` now uses `bmi`/`resolve_os_comp_buf()`. Same intent achieved by keeping `const` on `os`, then setting `load`, `images->os.load`, and `images->ep` to `bmi->kern_comp_addr` after the noload allocation, plus the original debug() print.
+> 2. **`6cbd853e81d` (RAUC test)** — moved `setup_rauc_image()` from `test_ut.py` into `test/py/img/rauc.py` (matching the post-refactor layout for image helpers) and ported it from `(ubman)` to `(config, log)`. Renumbered to `mmc16` since mmc10–15 are now used by VBE ABrec / bootctl / LUKS / BLS tests. Also updated the `bootflow list` expected line to account for the new `Ent`/`E` columns — sandbox `bootflow_rauc` test now passes (2 runs, 0 failures).
+>
+> Sandbox build passes.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+
+
+### Conversation log
+Let me try cherry-picking the original commits to verify the conflict state hasn't changed:
+
+Let me examine the current state of the conflicting files to determine if a manual resolution is now feasible:
+
+Let me try to resolve the conflict manually since the intent of the original fix is clear:
+
+Looking at this carefully, the conflict can be resolved by translating the original commit's intent to the new code structure: 
+- `addr` → `bmi->kern_comp_addr` (new buffer address)
+- `req_size` → `bmi->kern_comp_size` (allocation size)
+- The original's `os.load = (ulong)addr;` (which was buggy and the commit fixed) maps to HEAD's `os.load = load;` (also a no-op) — needs the proper update
+
+Let me resolve it:
+
+Now resolve the second conflict block:
+
+The diagnostics are LSP false positives (clang doesn't have U-Boot's include paths). Let me verify the resolution looks right:
+
+Let me build to verify the first commit's resolution:
+
+First commit built cleanly. Now let me try the second commit:
+
+Now let me look at the test_ut.py conflict:
+
+Now let me create the new RAUC image module following the new framework pattern:
+
+Now resolve the test_ut.py conflicts:
+
+Now resolve the second conflict in test_ut.py:
+
+Now let me verify the build with both commits applied:
+
+Build passes. Let me verify the deltas before/after rebase:
+
+Let me also run a quick functional test for bootflow_rauc test setup:
+
+The test fails only because mmc16.img doesn't exist (which would be created by setup_rauc_image during test.py run). This is the correct behaviour. Let me also verify the existing tests haven't been broken:
+
+The pre-existing `bootflow_efi` also fails for the same image-setup reason — both behave consistently. Now let me look at the diff of what we have:
+
+## Report: MR !990 Rebased Successfully
+
+### Summary
+Successfully rebased branch `cherry-fe6484b4027` onto latest `ci/master` and resolved both previously-blocked conflicts. Branch pushed to remote `ci/cherry-fe6484b4027` to update the MR.
+
+### What Was Done
+Both commits were re-applied with manual conflict resolution that preserves the original commits' intent translated to the refactored code structure:
+
+#### Commit 1: `662265ebf8d` "bootm: fix booting kernel_noload image" (orig `fe6484b4027`)
+**boot/bootm.c** — translated original 2-line surgical fix to current `bmi`/`resolve_os_comp_buf()`-based code:
+- Marked `os` as `const` (matches original intent)
+- Replaced HEAD's buggy lines `os.load = load;` (no-op) and `images->ep = load;` (uses pre-allocation address) with proper updates from `bmi->kern_comp_addr`:
+  ```c
+  load = bmi->kern_comp_addr;
+  images->os.load = bmi->kern_comp_addr;
+  images->ep = bmi->kern_comp_addr;
+  debug("Allocated %lx bytes at %lx for kernel (size %lx) decompression\n",
+        bmi->kern_comp_size, load, image_len);
+  ```
+- This preserves the original commit's purpose: ensure the noload buffer address actually propagates to the kernel structure and entry point
+
+#### Commit 2: `dc97142e409` "test: boot: Add test for bootmeth_rauc" (orig `36add050eea`)
+- **test.dts**: renumbered RAUC slot to `mmc16` (mmc10 now used by VBE ABrec, mmc11–14 by bootctl/LUKS, mmc15 by BLS); added `mmc16` alias and node
+- **test/boot/bootflow.c**: updated test references from `mmc10` → `mmc16`
+- **test/py/tests/test_ut.py**: ported from inline `setup_rauc_image(ubman)` helper to the new module-based API; added `from img.rauc import setup_rauc_image` and call with `(u_boot_config, u_boot_log)`
+- **test/py/img/rauc.py** (new): ported the original inline helper using `run_and_log_no_ubman()` and `fs_helper.mk_fs()` per the new framework pattern (matches `bls.py`, `efi.py`)
+- **configs/sandbox_defconfig**: applied cleanly (BOOTMETH_RAUC enable)
+
+### Verification
+- ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passes
+- ✅ No conflict markers remain
+- ✅ Both commits compile cleanly
+- ✅ `bootflow_rauc` C unit test compiles and registers; only fails at runtime when `mmc16.img` is missing (expected — the Python `setup_rauc_image` helper creates it during full `test.py` run; the pre-existing `bootflow_efi` test fails the same way for the same reason)
+
+### Push Result
+```
+2b4e7598f77..dc97142e409  HEAD -> cherry-fe6484b4027
+```
+GitLab MR pipeline should be triggered automatically.
+
+### Suggested MR Reply
+> Rebased on latest `ci/master` and resolved both conflicts.
+>
+> 1. **`fe6484b4027` (bootm fix)**: `bootm_load_os()` was refactored to use `bmi`/`resolve_os_comp_buf()`, so the original 2-line fix doesn't translate verbatim. Preserved the intent: marked `os` const and replaced HEAD's `os.load = load;` (no-op) and `images->ep = load;` (uses pre-allocation address) with proper updates from `bmi->kern_comp_addr` — so the noload buffer now correctly propagates to `images->os.load` and `images->ep`. Added the original commit's debug message using `bmi->kern_comp_size`.
+> 2. **`36add050eea` (RAUC test)**: `mmc10` is now used by VBE ABrec tests (commit `290632dab3c`), so renumbered the RAUC slot to `mmc16`. The Python test framework was refactored from `(ubman)` to `(u_boot_config, u_boot_log)` with helpers moved to `test/py/img/*.py`, so ported the inline `setup_rauc_image()` to a new `test/py/img/rauc.py` module following the same pattern as `bls.py`/`efi.py`/`cedit.py`.
+>
+> Sandbox build passes. Note that the rebase changes are non-trivial because of the upstream refactors; please review carefully.
+
+The background test command completed (it was the `um test bootflow_rauc` invocation that produced no output earlier — we already got direct test results from running `/tmp/b/sandbox/u-boot` manually, confirming the test compiles and registers correctly).
+
+The rebase work is complete and pushed. No further action needed on my end — the MR has been updated and the GitLab pipeline should now run against the resolved commits.
+
+---
+
+## 2026-04-28: us/next
+
+Branch: cherry-1ad13306649
+
+Commits:
+- 1ad13306649 ARM: dts: add dtsi for exynos7870-a2corelte (Samsung Galaxy A2 Core)
+- 5689cc9c6fb ARM: dts: add dtsi for exynos7870-j6lte (Samsung Galaxy J6)
+- 3f2ab427c13 ARM: dts: add dtsi for exynos7870-on7xelte (Samsung Galaxy J7 Prime)
+- de6b405e615 video: exynos: node variable should not be unsigned
+- 548e9a254c7 video: nexell: unsigned parameter cannot be negative
+- 3b9f3620b8a board: samsung: exynos-mobile: simplify parsing RAM banks from device tree
+- 23ad0660c11 board: samsung: exynos-mobile: resolve env vars without board_info data
+- 6220037e7c1 board: samsung: exynos-mobile: disable MULTI_DTB_FIT support
+- e215c1a558f board: samsung: exynos-mobile: enable OF_BOARD support
+- 743b91bab77 configs: exynos-mobile: remove DEFAULT_DEVICE_TREE and add OF_UPSTREAM_BUILD_VENDOR
+- ac93c4534fa doc: board: samsung: exynos-mobile: add DEVICE_TREE make flag in build
+- be1b1cd641f doc: board: samsung: exynos-mobile: use u-boot-nodtb.bin for packaging process
+- 579349593a8 ARM: dts: exynos7870-a2corelte: add properties to make S-BOOT happy
+- cc77806b5d3 ARM: dts: exynos7870-j6lte: add properties to make S-BOOT happy
+- d73efc6841c ARM: dts: exynos7870-on7xelte: add properties to make S-BOOT happy
+- 11198fa3473 doc: board: samsung: exynos-mobile: remove requirement of stub device tree
+- ae1e081f83f phy: samsung: add enum for variants based on SoCs
+- e4001865ff3 phy: samsung: add support for exynos7870 USB PHY
+- db0fe21bd38 board: samsung: exynos-mobile: use blkmap for booting from userdata subpartitions
+- 0e61fc5364d board: samsung: exynos-mobile: add EFI capsule update support
+- 336dd39b956 configs: exynos-mobile: add DEFAULT_DEVICE_TREE option
+- 7995bf8dea2 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-samsung
+
+### Conversation log
+Good, identical. Let me proceed with the rest. I'll cherry-pick the remaining commits.
+
+Identical deltas. Let me amend the commit message to add a fix-up note about the conflict resolution.
+
+Now I'm back on cherry-1ad13306649. Let me amend the last commit to add the fix-up note. First, verify HEAD is correct:
+
+Good, I'm now on cherry-1ad13306649 at 06ff379fba7. Let me amend the message with the fix-up note:
+
+Good - the amend worked correctly this time, on cherry-1ad13306649. Continue with the next cherry-picks:
+
+Good - we stayed on cherry-1ad13306649 this time. Now amend with the fix-up note:
+
+Identical deltas. Continue with remaining cherry-picks:
+
+Now check the merge commit. The user noted it might already be applied as 61a9395e60b:
+
+All 22 commits present. Now run the build test:
+
+Build succeeded. Let me verify the final state:
+
+All 22 commits cherry-picked successfully on cherry-1ad13306649.
+
+## Summary
+
+**Branch:** `cherry-1ad13306649` (based on `ci/master`)
+
+**Build result:** OK — sandbox build completes cleanly (`Completed: 1 total built, duration 0:00:06`).
+
+**All 22 commits applied:**
+- 18 regular commits cherry-picked cleanly with `-x`.
+- 1 merge commit (`7995bf8dea2`) preserved as empty commit (its contents are the individual commits we already cherry-picked).
+
+**Fix-ups (conflict resolutions):**
+1. `dee119c76df` (was `6220037e7c1`) — `board: samsung: exynos-mobile: disable MULTI_DTB_FIT support`. The upstream patch context expected a `#define lmb_alloc(size, addr)` wrapper macro that is not present in our local `exynos-mobile.c` (we use the direct `lmb_alloc()` API from `include/lmb.h`). Resolved by dropping the `struct exynos_board_info` definition (the actual intent of the patch) without introducing the unused macro. Delta is identical to original (2 files, 156 deletions). Note appended to commit message.
+
+2. `2b71d6513c5` (was `0e61fc5364d`) — `board: samsung: exynos-mobile: add EFI capsule update support`. Same `#define lmb_alloc` context issue. Resolved by adding `efi_fw_image[]` and `efi_capsule_update_info` (the patch intent) without the unused macro. Delta is identical to original (2 files, 30 insertions). Note appended to commit message.
+
+3. `e480a8b54b4` (was `7995bf8dea2`) — Merge commit. Conflict caused by the `#define lmb_alloc` divergence. Aborted and recorded as an empty commit since all child commits were already individually cherry-picked. Note appended to commit message.
+
+**Other observations:**
+- All commit deltas (file counts and line counts) match the originals exactly — no concerning deltas.
+- During the cherry-pick, `git cherry-pick --continue` and `git cherry-pick --abort` unexpectedly switched HEAD to a different local branch (`cherry-fe6484b4027`) twice. I returned to `cherry-1ad13306649` each time and verified state. One side-effect: the first `git commit --amend` accidentally landed on `cherry-fe6484b4027` (commit `735c05df83a`) instead of the intended branch — that branch's previous tip (`52c4095a9a2`) is preserved in the reflog (`cherry-fe6484b4027@{1}`) but I did not reset it because of the "do not modify history" rule. The user may want to manually reset `cherry-fe6484b4027` to `52c4095a9a2` to undo my accidental amend on that branch.
+
+The branch `cherry-1ad13306649` is ready for pushing.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+
+
+### Conversation log
+## Report: MR !990 Rebased Successfully
+
+### Status
+- **Rebase**: ✅ Succeeded onto latest `ci/master` (`373b1d488c0`)
+- **Build**: ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passed (1 board built, no errors/warnings)
+- **Push**: ✅ Force-pushed to `ci/cherry-fe6484b4027` (`f0719dd117b...c49c81b7f86`)
+- **Local backup**: `cherry-fe6484b4027-v6`
+
+### What Was Done
+1. Fetched latest `ci/master` (advanced from `d131d1929be` to `373b1d488c0`, +33 commits including the recently merged `cherry-7accb716c10` series with stm32 work)
+2. Ran `git rebase --keep-empty ci/master` on `cherry-fe6484b4027`
+3. Resolved one conflict — purely in `.pickman-history`:
+   - Both branches had appended new entries: HEAD had the `cherry-7accb716c10` history block (now part of `ci/master`), the incoming pickman record commit had the `cherry-fe6484b4027` review block
+   - Resolved by keeping both, separated with the standard `---` history-block delimiter
+4. Verified per-commit deltas are byte-identical to the originals:
+   - `bootm: fix booting kernel_noload image` → `boot/bootm.c | 9 ++++++---` (matches)
+   - `test: boot: Add test for bootmeth_rauc` → 5 files, 133 insertions (matches)
+5. Built sandbox cleanly, created v6 backup, force-pushed
+
+### New commit hashes
+- `d98f778b7af` — bootm: fix booting kernel_noload image
+- `7777f3330ff` — test: boot: Add test for bootmeth_rauc
+
+### Suggested MR Reply
+
+> Rebased onto latest `ci/master` (`373b1d488c0`, which now includes the `cherry-7accb716c10` stm32 series). Only conflict was in `.pickman-history` — both branches had appended a new history block; resolved by keeping both. Per-commit deltas are byte-identical to the pre-rebase versions (`boot/bootm.c | 9 ++++++---` and the 5-file/133-insertion RAUC test). Sandbox build passes. Force-pushed `f0719dd117b...c49c81b7f86` to retrigger the pipeline.
+
+---
+
+### Pipeline fix: 2026-04-28 (attempt 1)
+
+Branch: cherry-fe6484b4027
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- sandbox64 with clang test.py (test.py)
+- sandbox64_lwip test.py (test.py)
+- sandbox64 test.py (test.py)
+- sandbox_flattree test.py (test.py)
+- efi-aarch64 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+Let me look at the test code for both `bootflow_cmd_bls` and the new RAUC test/setup, since the BLS SIGSEGV happens consistently across all sandbox variants:
+
+The local branch already has the fix in commit `f41e9bab0f3` (mmc15 alias added to test.dts). Let me verify the build for all required boards and confirm the fix works.
+
+Let me verify the mmc15 alias is actually the fix by temporarily removing it and confirming the SIGSEGV reproduces:
+
+Confirmed: removing the mmc15 alias reproduces the SIGSEGV. Now restore it:
+
+The local branch `cherry-fe6484b4027-fix1` is set up correctly with the fix applied to the responsible commit. Build and tests pass.
+
+## Report
+
+**Branch state:** `cherry-fe6484b4027-fix1` is set at `97966dd2868` (= `cherry-fe6484b4027`), with the fix amended into the RAUC commit `f41e9bab0f3`.
+
+### Root cause
+
+The pipeline failures fell into three groups:
+
+1. **`bootflow_cmd_bls` SIGSEGV** (sandbox, sandbox64, sandbox64_lwip, sandbox_flattree, sandbox+clang, sandbox64+clang — all 6 sandbox test.py jobs): caused by the second commit, **`f41e9bab0f3` "test: boot: Add test for bootmeth_rauc"**. That commit added an `mmc16 = "/mmc16";` entry to the `aliases` block of `arch/sandbox/dts/test.dts`. With `mmc16` aliased but `mmc15` *not* aliased, the seq-number assignment for the `mmc15` device gets perturbed when `bootflow_cmd_bls` dynamically binds it — the device ends up with a non-15 sequence number and the test crashes inside `bootflow scan`. (Reproduced and verified locally: deleting the `mmc15` alias produces the SIGSEGV; restoring it makes the test pass.)
+
+2. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` followed by `Lab failure: Marking connection bad — no other tests will run`. Lab/runner infrastructure failure, not caused by the MR.
+
+3. **make check / make qcheck**: `Coverage error: 99%, but should be 100%` — the missed coverage is in `tools/binman/btool/cst.py`, `etype/nxp_imx8mcst.py`, `etype/nxp_imx8mimage.py`, all NXP imx8m-specific files introduced by an unrelated upstream binman series (`88420ed1a9e binman: cst: Build from source` etc., already in `ci/master`). Pre-existing CI issue unrelated to this MR.
+
+### Fix applied
+
+Amended into commit `f41e9bab0f3` (the responsible commit). One added line in `arch/sandbox/dts/test.dts`:
+
+```diff
+ 		mmc14 = "/mmc14";
++		mmc15 = "/mmc15";
+ 		mmc16 = "/mmc16";
+```
+
+Pickman note appended to the commit message:
+> [pickman] Add mmc15 alias to test.dts so the BLS test can find the mmc15 device by label after mmc16 was added (without it mmc15 was assigned a non-15 sequence number, causing bootflow_cmd_bls to crash)
+
+### Verification
+
+- ✅ `um build sandbox` — clean
+- ✅ `buildman -o /tmp/pickman sandbox sandbox64 sandbox64_lwip sandbox_flattree` — 9 boards built, no errors
+- ✅ `um test bootflow_cmd_bls` — passes
+- ✅ `um py -B sandbox bootflow_cmd_bls` — passes
+- ✅ `um py -B sandbox bootflow_rauc` — passes
+- ✅ `um py -B sandbox ut_bootstd_bootflow` — 32/32 pass
+- ✅ Reproduced the SIGSEGV by removing the alias, then verified it goes away when restored
+
+Note: the efi-aarch64 lab failure and the binman 99% coverage issue are unrelated to this MR and are not addressed by this fix.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) sandbox test.py, sandbox with clang test.py, sandbox64...
+
+### Conversation log
+The fix is already in place on the local `cherry-fe6484b4027` branch. The mmc15 alias is in `arch/sandbox/dts/test.dts` and is part of the RAUC test commit `f41e9bab0f3`. Let me verify the build passes and then create the v2 branch and push.
+
+Build passes. Now let me check what existing -vN branches are around to determine the next number:
+
+Successfully pushed. Let me verify the remote state:
+
+## Report: MR !990 Pipeline Fix Pushed
+
+### Status
+- **Local branch `cherry-fe6484b4027`**: at `0854d07a794` (includes the pipeline fix)
+- **Remote `ci/cherry-fe6484b4027`**: updated to `0854d07a794` (pushed `97966dd2868..0854d07a794`)
+- **Build**: ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passes
+- **Backup branch**: `cherry-fe6484b4027-v7` created
+
+### What Was Done
+The fix was already applied locally to commit `f41e9bab0f3` "test: boot: Add test for bootmeth_rauc" from the previous attempt. Verified the fix is in place, ran the sandbox build to confirm it still passes, created v7 backup, and force-pushed to update the MR pipeline.
+
+### The Fix (one line in `arch/sandbox/dts/test.dts`)
+```diff
+ 		mmc14 = "/mmc14";
++		mmc15 = "/mmc15";
+ 		mmc16 = "/mmc16";
+```
+
+With a pickman note appended to the commit message:
+> [pickman] Add mmc15 alias to test.dts so the BLS test can find the mmc15 device by label after mmc16 was added (without it mmc15 was assigned a non-15 sequence number, causing bootflow_cmd_bls to crash)
+
+### Root Cause Recap
+The 6 sandbox `test.py` SIGSEGV failures (`bootflow_cmd_bls`) were caused by adding the `mmc16` alias without `mmc15` — sequence-number assignment for the dynamically-bound `mmc15` device got perturbed, causing it to land on a non-15 sequence number and crash inside `bootflow scan`. Reproduced locally by removing the alias and verified the fix by restoring it.
+
+The remaining job failures in the original pipeline (efi-aarch64 lab failure and binman 99% coverage in NXP imx8m modules) are pre-existing CI infrastructure issues unrelated to this MR.
+
+### Suggested MR Reply
+
+> Pushed pipeline fix `97966dd2868..0854d07a794`. Root cause of the 6 sandbox `test.py` `bootflow_cmd_bls` SIGSEGVs: the RAUC test commit added an `mmc16` alias to `arch/sandbox/dts/test.dts` without an `mmc15` alias. That perturbed the seq-number assignment for the dynamically-bound `mmc15` device — it ended up with a non-15 sequence number, causing the BLS test to crash inside `bootflow scan`. Reproduced locally by removing the alias; restoring it fixes the test. Amended the missing `mmc15 = "/mmc15";` alias into the RAUC commit. Sandbox build passes; `bootflow_cmd_bls`, `bootflow_rauc`, and the full `ut_bootstd_bootflow` suite (32/32) all pass locally.
+>
+> The other CI failures (efi-aarch64 lab `readelf` failure, binman 99% coverage in NXP imx8m-specific modules) are pre-existing CI infrastructure issues unrelated to this MR.
+
+---
+
