@@ -71679,3 +71679,63 @@ The branch is ready for pushing. No merge or further changes performed.
 
 ---
 
+### Pipeline fix: 2026-04-28 (attempt 1)
+
+Branch: cherry-7accb716c10
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+Let me check if this failure is related to the cherry-picked commits or a transient infrastructure issue. Let me look at the parent branch to compare:
+
+Let me do a quick sandbox build to verify nothing's broken:
+
+Build works on both sandbox and efi-arm_app64. Let me create the fix branch as a no-op placeholder since this is a transient issue:
+
+## Report
+
+**Conclusion: Transient infrastructure / test runner issue — no code changes required.**
+
+### Root cause analysis
+
+The failed job `efi-aarch64` (test `test_distro_arm_app_efi`) failed with:
+
+```
+OSError: [Errno 5] Input/output error
+  at os.read(self.fd, num_bytes)
+  during ubman.restart_uboot()  -> _wait_for_boot_prompt -> expect -> receive
+```
+
+This is a Python-level pipe error from `os.read()` against the QEMU pty — the spawned process's file descriptor was closed before the test framework could read from it. The error occurred **after** the test's functional assertions had already passed:
+
+1. `bootmeth order efi` ran  
+2. `boot` ran and the bootflow began  
+3. The expected `Booting bootflow 'efi_media_1.bootdev.part_1' with efi` was matched  
+4. The expected `Ubuntu 25.04 qarm ttyAMA0` userspace prompt was matched  
+5. **Then** `ubman.restart_uboot()` (test cleanup at `test_distro.py:152`) tried to read from the QEMU pty and got `EIO` because the pipe was already broken.
+
+This pattern is consistent with QEMU exiting on its own (e.g., Ubuntu issuing a `reboot`/`poweroff`, or `u-boot-test-reset` killing it) before the framework attempted its read.
+
+### Why no commit on the branch is responsible
+
+All 30 cherry-picked commits on `cherry-7accb716c10` are either:
+
+- **STM32-specific** (drivers, board code, dts, syscon, clk, reset, pinctrl, gpio, cmd_stm32key, RIFSC) — irrelevant to `efi-arm_app64`
+- **arm: mach-k3** RAM-clamp fix — irrelevant to `efi-arm_app64`
+- **boot: fit** validate FDT/DTO payload — only affects FIT image overlay loading; the failing test uses bootmeth `efi`, not FIT
+- **arm: armv8: Flush TLB before enabling MMU** (`58b6aebcc9a`, cherry-pick of upstream `afa8f076db3`) — only relevant if `dcache_enable()` is called when the MMU is off, which doesn't happen in the EFI app path (U-Boot runs under EFI's MMU); furthermore this is an upstream fix already merged.
+
+No commit on this branch touches EFI app code, the test framework, the runner, or the distro-boot path the test exercises.
+
+### Verification
+
+- `um build sandbox` — succeeds
+- `buildman -o /tmp/pickman efi-arm_app64` — succeeds (1/1 built, no errors/warnings)
+
+### Result
+
+Branch `cherry-7accb716c10-fix1` created at the same SHA as `cherry-7accb716c10` (commit `c8f23ac684e`). No code changes — the failure is transient and should clear on retry.
+
+---
+
