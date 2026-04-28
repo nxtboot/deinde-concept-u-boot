@@ -72066,3 +72066,70 @@ Comments addressed:
 
 ---
 
+### Pipeline fix: 2026-04-28 (attempt 1)
+
+Branch: cherry-fe6484b4027
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- sandbox64 with clang test.py (test.py)
+- sandbox64_lwip test.py (test.py)
+- sandbox64 test.py (test.py)
+- sandbox_flattree test.py (test.py)
+- efi-aarch64 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+Let me look at the test code for both `bootflow_cmd_bls` and the new RAUC test/setup, since the BLS SIGSEGV happens consistently across all sandbox variants:
+
+The local branch already has the fix in commit `f41e9bab0f3` (mmc15 alias added to test.dts). Let me verify the build for all required boards and confirm the fix works.
+
+Let me verify the mmc15 alias is actually the fix by temporarily removing it and confirming the SIGSEGV reproduces:
+
+Confirmed: removing the mmc15 alias reproduces the SIGSEGV. Now restore it:
+
+The local branch `cherry-fe6484b4027-fix1` is set up correctly with the fix applied to the responsible commit. Build and tests pass.
+
+## Report
+
+**Branch state:** `cherry-fe6484b4027-fix1` is set at `97966dd2868` (= `cherry-fe6484b4027`), with the fix amended into the RAUC commit `f41e9bab0f3`.
+
+### Root cause
+
+The pipeline failures fell into three groups:
+
+1. **`bootflow_cmd_bls` SIGSEGV** (sandbox, sandbox64, sandbox64_lwip, sandbox_flattree, sandbox+clang, sandbox64+clang — all 6 sandbox test.py jobs): caused by the second commit, **`f41e9bab0f3` "test: boot: Add test for bootmeth_rauc"**. That commit added an `mmc16 = "/mmc16";` entry to the `aliases` block of `arch/sandbox/dts/test.dts`. With `mmc16` aliased but `mmc15` *not* aliased, the seq-number assignment for the `mmc15` device gets perturbed when `bootflow_cmd_bls` dynamically binds it — the device ends up with a non-15 sequence number and the test crashes inside `bootflow scan`. (Reproduced and verified locally: deleting the `mmc15` alias produces the SIGSEGV; restoring it makes the test pass.)
+
+2. **efi-aarch64**: `readelf: Error: u-boot: Failed to read file's magic number` followed by `Lab failure: Marking connection bad — no other tests will run`. Lab/runner infrastructure failure, not caused by the MR.
+
+3. **make check / make qcheck**: `Coverage error: 99%, but should be 100%` — the missed coverage is in `tools/binman/btool/cst.py`, `etype/nxp_imx8mcst.py`, `etype/nxp_imx8mimage.py`, all NXP imx8m-specific files introduced by an unrelated upstream binman series (`88420ed1a9e binman: cst: Build from source` etc., already in `ci/master`). Pre-existing CI issue unrelated to this MR.
+
+### Fix applied
+
+Amended into commit `f41e9bab0f3` (the responsible commit). One added line in `arch/sandbox/dts/test.dts`:
+
+```diff
+ 		mmc14 = "/mmc14";
++		mmc15 = "/mmc15";
+ 		mmc16 = "/mmc16";
+```
+
+Pickman note appended to the commit message:
+> [pickman] Add mmc15 alias to test.dts so the BLS test can find the mmc15 device by label after mmc16 was added (without it mmc15 was assigned a non-15 sequence number, causing bootflow_cmd_bls to crash)
+
+### Verification
+
+- ✅ `um build sandbox` — clean
+- ✅ `buildman -o /tmp/pickman sandbox sandbox64 sandbox64_lwip sandbox_flattree` — 9 boards built, no errors
+- ✅ `um test bootflow_cmd_bls` — passes
+- ✅ `um py -B sandbox bootflow_cmd_bls` — passes
+- ✅ `um py -B sandbox bootflow_rauc` — passes
+- ✅ `um py -B sandbox ut_bootstd_bootflow` — 32/32 pass
+- ✅ Reproduced the SIGSEGV by removing the alias, then verified it goes away when restored
+
+Note: the efi-aarch64 lab failure and the binman 99% coverage issue are unrelated to this MR and are not addressed by this fix.
+
+---
+
