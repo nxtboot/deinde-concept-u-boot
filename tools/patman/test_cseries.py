@@ -4608,8 +4608,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Check the series was created with source='review'
         self.db_open()
@@ -4640,8 +4639,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Review the same link again
         mocks = self._mock_review()
@@ -4649,7 +4647,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, err):
-                self.run_review('-l', str(self.REVIEW_LINK), pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
         self.assertIn('Already reviewed', out.getvalue())
 
     def test_review_new_version(self):
@@ -4664,8 +4662,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Now review v2 - should detect the previous review
         mocks = self._mock_review()
@@ -4673,8 +4670,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-l', str(self.REVIEW_LINK_V2),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK_V2), pwork=pwork)
         self.assertIn('Previously reviewed', out.getvalue())
 
         # Check both versions are under the same series
@@ -4696,8 +4692,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-t', 'Disable interrupts',
-                              pwork=pwork)
+                self.run_review('-S', 'Disable interrupts', pwork=pwork)
         # Should pick the most recent (v2)
         self.assertIn('Using most recent', out.getvalue())
 
@@ -4730,7 +4725,7 @@ Date:   .*
                         return_value='test'), \
              mock.patch('patman.review._git_restore'):
             with terminal.capture() as _:
-                self.run_review('-l', str(self.REVIEW_LINK),
+                self.run_review('-s', str(self.REVIEW_LINK),
                                 pwork=pwork, expect_ret=1)
 
     def test_review_create_drafts_dry_run(self):
@@ -4744,8 +4739,8 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              '--create-drafts', '-n', pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), '--create-drafts',
+                                '-n', pwork=pwork)
         output = out.getvalue()
         self.assertIn('Would create draft', output)
         self.assertIn('author@posteo.net', output)
@@ -4773,9 +4768,8 @@ Date:   .*
                         .list.return_value \
                         .execute.return_value = {'messages': []}
                     with terminal.capture() as (out, _):
-                        self.run_review( '-l',
-                                      str(self.REVIEW_LINK),
-                                      '--create-drafts', pwork=pwork)
+                        self.run_review('-s', str(self.REVIEW_LINK),
+                                        '--create-drafts', pwork=pwork)
         output = out.getvalue()
         self.assertIn('Created 1 Gmail draft', output)
 

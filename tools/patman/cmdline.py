@@ -547,11 +547,11 @@ def add_review_subparser(subparsers):
         'review', aliases=ALIASES['review'],
         help='AI-powered review of a patchwork series')
     review.add_argument(
-        '-l', '--link', type=str, dest='pw_link',
+        '-s', '--series', type=str, dest='pw_link',
         help='Patchwork series link/ID number')
     review.add_argument(
-        '-t', '--title', type=str,
-        help='Search for series by cover-letter title')
+        '-S', '--series-title', type=str, dest='title',
+        help='Search for a series by cover-letter title')
     review.add_argument(
         '-n', '--dry-run', action='store_true', dest='dry_run',
         default=False,

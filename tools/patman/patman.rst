@@ -1251,30 +1251,30 @@ Basic usage
 
 Review a series by Patchwork link::
 
-    patman review -l 497923 -U us --reviewer 'Your Name <your@email>'
+    patman review -s 497923 -U us --reviewer 'Your Name <your@email>'
 
 Or search by cover-letter title::
 
-    patman review -t 'boot/bootm: Disable interrupts' -U us \
+    patman review -S 'boot/bootm: Disable interrupts' -U us \
         --reviewer 'Your Name <your@email>'
 
 To create Gmail drafts threaded under the original emails::
 
-    patman review -l 497923 -U us \
+    patman review -s 497923 -U us \
         --reviewer 'Your Name <your@email>' \
-        --create-drafts --gmail-account your@email
+        -d --gmail-account your@email
 
-Use ``-n`` with ``--create-drafts`` for a dry run that shows what would
-be created without calling the Gmail API.
+Use ``-n`` with ``-d`` for a dry run that shows what would be created
+without calling the Gmail API.
 
 Use ``--apply-only`` to download and apply patches without running the
-AI review  - useful for checking that patches apply cleanly.
+AI review -- useful for checking that patches apply cleanly.
 
 Use ``-f`` / ``--force`` to re-review a series that has already been
 reviewed. This deletes the old review records and runs the review
 again::
 
-    patman review -l 497923 -U us -f --reviewer 'Your Name <your@email>'
+    patman review -s 497923 -U us -f --reviewer 'Your Name <your@email>'
 
 If the reviewer email (from ``--reviewer`` or git config) differs from
 the ``--gmail-account``, patman sets the From header on the draft so
