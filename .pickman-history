@@ -71205,3 +71205,50 @@ The branch is left checked out and ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-27 (attempt 1)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me check the branch and commits before deciding what to do.
+
+The branch is checked out. Let me verify these commits really only touch the userspace tool.
+
+## Report: Infrastructure Failure (No Code Fix Needed)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged)
+
+### Diagnosis
+
+Both failed jobs are **lab/infrastructure failures**, unrelated to the cherry-picked commits.
+
+The 6 functional commits on this branch (plus the merge) all touch a single file: `tools/env/fw_env.c` — a **Linux userspace tool** for reading/writing the U-Boot environment from a running OS. These changes cannot affect SPL boot, MMC access, or any board boot path.
+
+### Job 467004 — rockpro64
+
+SPL boots but fails to load images from MMC:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  (Error: -38)
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+```
+Followed by `pexpect.TIMEOUT … waiting for login` and `Lab failure: Marking connection bad - no other tests will run`. This is a hardware/MMC-card issue on the lab board (`-110` = ETIMEDOUT on the card; `-38` = ENOSYS-type block read error). The fw_env tool plays no role in SPL or MMC.
+
+### Job 466981 — opi_pc
+
+`Timeout of 15 seconds exceeded during waiting for login` with no captured board output, immediately marked `Lab failure: Marking connection bad - no other tests will run`. No code path from these commits is exercised before login.
+
+### Action taken
+
+None. Per the instructions, infrastructure/transient lab failures are reported without code changes. **No `cherry-1197954d589-fix1` branch was created**, since there is nothing to fix in the source. The branch `cherry-1197954d589` is left checked out as-is for retry.
+
+Recommend re-running the rockpro64 and opi_pc jobs once the lab MMC/connectivity is healthy.
+
+---
+
