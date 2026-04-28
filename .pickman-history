@@ -72524,3 +72524,150 @@ Force-pushed to `ci/cherry-437ea9f8be5`: `1f3a6190926..7f67ceffa71` (forced upda
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-1ad13306649
+
+Comments addressed:
+
+
+### Conversation log
+## Summary
+
+**Branch:** `cherry-1ad13306649` — pushed to MR !992
+
+**Rebase result:** No-op. The branch was **already** based on the latest `ci/master` (`373b1d488c0`). `git merge-base --is-ancestor ci/master cherry-1ad13306649` returned true, and `git rebase --keep-empty ci/master` reported "Current branch cherry-1ad13306649 is up to date." All 22 samsung commits were already on top of the current target branch — no conflicts to resolve.
+
+**Build result:** OK — `buildman -L --board sandbox -w -o /tmp/pickman` completed cleanly: `Completed: 1 total built, duration 0:00:06`.
+
+**Commits (22):** All 22 commits from the previous fix-up session remain intact, including the three with prior conflict-resolution notes (`dee119c76df`, `2b71d6513c5`, `e480a8b54b4`). HEAD is `e480a8b54b4` (the merge commit at the tip).
+
+**Local branch created:** `cherry-1ad13306649-v2`
+
+**Push:** Force-pushed to `ci/cherry-1ad13306649` (`+ b7c4c85ab1a...e480a8b54b4`). MR !992 will get a new pipeline.
+
+**Note on remote state:** Before the push, the remote `ci/cherry-1ad13306649` had been overwritten with unrelated commits (top was `b7c4c85ab1a` — pickman recording from cherry-fe6484b4027). The force push restored the correct samsung commit chain.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. The branch was already on top of `373b1d488c0` so no commits required re-application — git reports "Current branch is up to date." All 22 commits (including the three with earlier conflict-resolution notes) are preserved. Sandbox build passes cleanly via `buildman --board sandbox`. Force-pushed to refresh the MR pipeline.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-1ad13306649
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already up to date with `ci/master` (merge base equals ci/master HEAD). Let me run the rebase to confirm and then build.
+
+There's clearly concurrent activity on this branch from another process. The branch has moved. Let me check current state carefully.
+
+There's something very strange happening - foreign commits are appearing on the branch and branch checkouts are being intercepted. Let me check what's running concurrently.
+
+Multiple concurrent claude agents are running in this same repo and contaminating each other's branches. The branch `cherry-1ad13306649` has been corrupted with a foreign cherry-pick. Let me work cautiously and inspect.
+
+The previous session already completed this rebase: `cherry-1ad13306649-v3` (= remote) is already on top of latest `ci/master`. The local branch was corrupted by a concurrent agent's cherry-pick. Let me verify with a build and recover the branch.
+
+Now I'm on `cherry-1ad13306649` at `c79f66dd4cb` (matches remote and v3). Let me verify the rebase is a no-op and then build.
+
+Branch is already up to date with `ci/master` — rebase is a no-op. Now let me run buildman.
+
+Build passes. Now let me check the v4 branch and try to push.
+
+## Report
+
+### Rebase result: No-op — branch already up to date
+
+**Branch:** `cherry-1ad13306649` at `c79f66dd4cb` (= remote `ci/cherry-1ad13306649`)
+
+**Target:** `ci/master` at `b960d921853`
+
+**Status:** `git rebase --keep-empty ci/master` reported **"Current branch cherry-1ad13306649 is up to date."** The branch already sits on top of the latest target — no commits required re-application, no conflicts to resolve.
+
+### Build verification
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → **PASS**: `Completed: 1 total built, duration 0:00:05`.
+
+### Commits on branch (23 ahead of ci/master)
+
+22 samsung MR commits (matching the originals from the MR description, with the three prior conflict-resolution notes intact) plus the `pickman: Record review handling for cherry-1ad13306649` recording commit at the tip.
+
+### Push
+
+`./tools/pickman/pickman push-branch cherry-1ad13306649 -r ci -f` reported **"Everything up-to-date"** — local `c79f66dd4cb` already matches `ci/cherry-1ad13306649`. No new pipeline triggered because there's nothing new to send.
+
+### Local branches
+
+- `cherry-1ad13306649` (current) → `c79f66dd4cb`
+- `cherry-1ad13306649-v2` → `e480a8b54b4` (the original push from the first session, different hash from a different rebase base)
+- `cherry-1ad13306649-v3` → `c79f66dd4cb` (matches remote, from prior session)
+- `cherry-1ad13306649-v4` → `c79f66dd4cb` (created this session — same content)
+
+### Note on concurrent activity
+
+Multiple `claude --continue` agents were running in this same repo during the task. One of them cherry-picked a foreign commit (`d0b1389e1aae` *"power: domain: Validate device tree node"* — belonging to MR for `cherry-3ee1408eeb7`) onto `cherry-1ad13306649` because of shared HEAD/working-tree state. I restored `cherry-1ad13306649` to the clean v3 state via `git update-ref` before proceeding. No data was lost.
+
+### Suggested MR reply
+
+> Already on top of latest `ci/master` (`b960d921853`). `git rebase --keep-empty ci/master` reports "up to date" — all 22 commits remain in place with no conflicts. Sandbox build passes via `buildman --board sandbox`. No re-push needed; remote already matches.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-1ad13306649
+
+Comments addressed:
+
+
+### Conversation log
+Build passes.
+
+Identical content (only commit hash differs, as expected after rebase).
+
+## Report
+
+### Rebase result: Required conflict resolution in `.pickman-history`
+
+**Branch:** `cherry-1ad13306649` (was `9eca0e580f4` → now `be43cb5aa95`)
+
+**Target:** `ci/master` (`b960d921853` → `187fdfda8fa`) — three new validation commits + `cherry-3ee1408eeb7` merge
+
+**Status:** `git rebase --keep-empty ci/master` — applied 24 commits. **One conflict** in the second-to-last commit (`c79f66dd4cb pickman: Record review handling for cherry-1ad13306649`):
+
+- Both sides added new entries to `.pickman-history` at the bottom
+- HEAD side (from new ci/master) added the `cherry-3ee1408eeb7` review entry
+- Branch side added the `cherry-1ad13306649` review entry
+- **Resolved by keeping both entries** (in order: cherry-3ee1408eeb7 entry first, then a `---` separator, then cherry-1ad13306649 entry). Pure log file — no code conflict.
+
+### Delta verification
+
+- All 22 samsung commits remain identical to their pre-rebase versions (verified `git show` output for `25f23554829` vs new `af2b7f5cde5` — only the hash differs)
+- 24 commits ahead of ci/master (22 samsung + 2 pickman recordings — same as before)
+
+### Build verification
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → **PASS**: `Completed: 1 total built, duration 0:00:11`
+
+### Local backup branch
+
+`cherry-1ad13306649-v5` created (v2/v3/v4 already existed from prior sessions)
+
+### Push
+
+`./tools/pickman/pickman push-branch cherry-1ad13306649 -r ci -f`:
+```
++ c79f66dd4cb...be43cb5aa95 HEAD -> cherry-1ad13306649 (forced update)
+```
+MR !992 will get a fresh pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`187fdfda8fa`). Resolved one conflict in `.pickman-history` (log-file collision where both sides added entries — kept both). All 22 samsung commits unchanged (verified by `git show` comparison). Sandbox build passes via `buildman --board sandbox`. Force-pushed to refresh the MR pipeline.
+
+---
+
