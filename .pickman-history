@@ -71161,3 +71161,451 @@ The single review comment is the bot re-posting attempt-2's report verbatim. The
 
 ---
 
+## 2026-04-27: us/next
+
+Branch: cherry-1197954d589
+
+Commits:
+- 1197954d589 fw_env: use "erasesize" variable in writing loop
+- d80d88cb87d fw_env: allocate buffer of proper size in flash_write_buf()
+- 2f28f4116a1 fw_env: add ROUND_UP() helper
+- 1d175b2108d fw_env: unify calculation of "blockstart" in flash_write_buf()
+- ffd8024efcb fw_env: move "erasesize" calculation up in a code
+- 667fa1a1cd5 fw_env: drop unneeded variables from flash_write_buf()
+- 14335ada2fb Merge patch series "fw_env: cleanup flash_write_buf()"
+
+### Conversation log
+## Cherry-pick Complete
+
+All 7 commits successfully cherry-picked from `us/next` to branch `cherry-1197954d589` (based on `ci/master`).
+
+### Final Status
+
+**Build result:** OK — `buildman` for sandbox passes cleanly with no warnings or errors.
+
+**Commits applied (in order):**
+| New Hash | Original Hash | Subject |
+|---|---|---|
+| 7dca87d0797 | 1197954d589 | fw_env: use "erasesize" variable in writing loop |
+| 59ec67ee6a9 | d80d88cb87d | fw_env: allocate buffer of proper size in flash_write_buf() |
+| 08aae1e8736 | 2f28f4116a1 | fw_env: add ROUND_UP() helper |
+| 9ee7c39400c | 1d175b2108d | fw_env: unify calculation of "blockstart" in flash_write_buf() |
+| d39fa53ed45 | ffd8024efcb | fw_env: move "erasesize" calculation up in a code |
+| 561658dd5f2 | 667fa1a1cd5 | fw_env: drop unneeded variables from flash_write_buf() |
+| 3545eb8230b | 14335ada2fb | Merge patch series "fw_env: cleanup flash_write_buf()" |
+
+**Commit deltas:** All 6 regular commits applied cleanly with identical file/line counts to the originals (no concerning deltas).
+
+**Fix-ups:**
+- The merge commit (14335ada2fb) cherry-picked as empty (which is expected since all 6 underlying commits were already cherry-picked individually). Used `git commit --allow-empty -C 14335ada2fb` followed by `--amend` to add the `(cherry picked from commit 14335ada2fb1a1871ad01fd61bce355e9f2fad14)` trailer that `-x` would have added.
+
+**Concerning deltas:** None.
+
+The branch is left checked out and ready for pushing.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 1)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Let me check the branch and commits before deciding what to do.
+
+The branch is checked out. Let me verify these commits really only touch the userspace tool.
+
+## Report: Infrastructure Failure (No Code Fix Needed)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged)
+
+### Diagnosis
+
+Both failed jobs are **lab/infrastructure failures**, unrelated to the cherry-picked commits.
+
+The 6 functional commits on this branch (plus the merge) all touch a single file: `tools/env/fw_env.c` — a **Linux userspace tool** for reading/writing the U-Boot environment from a running OS. These changes cannot affect SPL boot, MMC access, or any board boot path.
+
+### Job 467004 — rockpro64
+
+SPL boots but fails to load images from MMC:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  (Error: -38)
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+```
+Followed by `pexpect.TIMEOUT … waiting for login` and `Lab failure: Marking connection bad - no other tests will run`. This is a hardware/MMC-card issue on the lab board (`-110` = ETIMEDOUT on the card; `-38` = ENOSYS-type block read error). The fw_env tool plays no role in SPL or MMC.
+
+### Job 466981 — opi_pc
+
+`Timeout of 15 seconds exceeded during waiting for login` with no captured board output, immediately marked `Lab failure: Marking connection bad - no other tests will run`. No code path from these commits is exercised before login.
+
+### Action taken
+
+None. Per the instructions, infrastructure/transient lab failures are reported without code changes. **No `cherry-1197954d589-fix1` branch was created**, since there is nothing to fix in the source. The branch `cherry-1197954d589` is left checked out as-is for retry.
+
+Recommend re-running the rockpro64 and opi_pc jobs once the lab MMC/connectivity is healthy.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rockpro64, opi_pc.
+
+Let me check the branch and commit...
+
+### Conversation log
+## Report: Review Comment is a Record of Prior Infrastructure-Failure Diagnosis — No New Action Needed
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged)
+
+### What the "review comment" actually is
+
+The comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is **not a reviewer asking for a code change** — it is the pickman bot's own record of "Pipeline fix (attempt 1)", which contains verbatim my own previous report. That report concluded the failures were lab/infrastructure issues with **no code fix possible or appropriate**.
+
+I re-verified the situation against the current branch:
+
+- The 6 functional commits on this branch touch exactly one file: `tools/env/fw_env.c`, a Linux userspace tool. `git diff --stat ci/master..HEAD -- ':(exclude)pickman'` confirms: only `tools/env/fw_env.c` (47 ±) plus the pickman history record.
+- That file is not compiled into SPL, U-Boot proper, or any board image. It cannot affect MMC, SPL boot, login prompts, or any pipeline lab job.
+- The previously diagnosed failures (rockpro64: SPL → MMC voltage-select timeout `-110`; opi_pc: 15-second login timeout with no captured board output, both ending in `Lab failure: Marking connection bad`) were unambiguous lab/hardware issues.
+
+### Why I did not create `-v2` or push
+
+The standard workflow expects code changes to address review feedback. Here there is no reviewer feedback and no code change to make:
+
+- Manufacturing a no-op `-v2` push would just consume CI time on the same flaky lab boards and leave a misleading record ("attempt 2" implying there was something to fix).
+- The branch is already in the state the previous report left it in. Nothing needs to be amended.
+
+### Recommended next step (for the user / lab operator)
+
+Re-run jobs `rockpro64` and `opi_pc` once the sjg-lab MMC card / serial connection is healthy. No source-tree change is warranted.
+
+### Suggested reply to post on the MR
+
+> Re-checked: the only files touched by this series are `tools/env/fw_env.c` (userspace `fw_env` tool). They cannot affect SPL, MMC, or board boot, which is what failed on rockpro64 and opi_pc (MMC voltage-select `-110` and a login-prompt timeout, both ending with `Lab failure: Marking connection bad`). These remain transient lab/infrastructure failures with no code-level fix. Please re-run rockpro64 and opi_pc once the lab is healthy — no `-v2` is needed.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 2)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+Now let me check out the branch and review the commits.
+
+Let me verify the changes only touch the userspace tool and check the build:
+
+The sandbox build succeeded. Now let me look at whether the efi-aarch64 failure could possibly have any connection to our changes:
+
+I have all the information needed. Let me confirm the branch state and report.
+
+## Report: Infrastructure Failures (No Code Fix Needed)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — no `-fix2` branch created)
+
+### What the series actually changes
+
+The 6 functional commits + merge on this branch touch **exactly one file**: `tools/env/fw_env.c` (47 ± lines), the Linux userspace `fw_env` tool. Verified with:
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history'
+ tools/env/fw_env.c | 47 +++++++++++++++++++--------------
+```
+This file is **not linked into SPL, U-Boot proper, or any board image**. It cannot affect SPL boot, MMC initialisation, U-Boot ELF generation, ARM relocation, EFI builds, or login prompts. Local `um build sandbox` passes cleanly.
+
+### Diagnosis of each failed job (all stage `sjg-lab`)
+
+**Job 467245 — rockpro64** — Hardware/MMC lab failure:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  Error: -38
+Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+... pexpect.TIMEOUT: ... waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+`-110` (ETIMEDOUT) on the MMC card and `-38` block-read error are board/SD-card issues. fw_env.c plays no role in SPL.
+
+**Job 467222 — opi_pc** — Serial/lab connectivity failure:
+```
+Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No board output captured at all. No code path from these commits is exercised before login.
+
+**Job 467254 — efi-aarch64** — Transient build infrastructure failure inside the lab job:
+```
+Building U-Boot in pytest-source dir for efi-arm_app64
+Command failure: scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+```
+`checkarmreloc` runs `readelf -r -W u-boot`. "Failed to read file's magic number" means the `u-boot` ELF was missing/empty/truncated when `readelf` opened it (parallel-make race or filesystem hiccup on the lab runner; note the "Waiting for unfinished jobs"). The fw_env userspace tool is not linked into `u-boot` and cannot affect ELF generation or ARM relocation.
+
+### Action taken
+
+**None.** Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no code change is appropriate and **no `cherry-1197954d589-fix2` branch was created**. Manufacturing a no-op v2 would just reburn lab time on the same flaky runs.
+
+### Recommendation
+
+Re-run all three jobs once the sjg-lab MMC card / serial console / runner I/O are healthy.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, rockpro64, opi_pc.
+
+Now let me check out ...
+
+### Conversation log
+This is the same situation as the prior two attempts: the "review comment" is the pickman bot's own record of attempt 2's diagnosis, which itself contained my prior report concluding the failures were lab/infrastructure issues with no code fix possible. Let me verify the branch state and the build still passes.
+
+## Report: Review Comment is Bot's Own Record of Prior Infrastructure-Failure Diagnosis — No New Action Taken
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — no `-v2`/`-v3` branch created, no push)
+
+### What the "review comment" actually is
+
+The single comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is **not a reviewer asking for a code change**. It is the pickman bot's auto-generated record titled "Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, rockpro64, opi_pc", which contains verbatim my own prior report. That prior report concluded the failures were lab/infrastructure issues with no possible or appropriate code fix. This is now the **third loop** of the same situation (cherry-pick → "fix attempt 1" report → bot records it as a comment → "fix attempt 2" report → bot records it again → now this).
+
+### Re-verification on the current branch
+
+- Code changes in this series touch exactly **one file**: `tools/env/fw_env.c` (47 ± lines), the Linux userspace `fw_env` tool:
+  ```
+  $ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history' ':(exclude)pickman'
+   tools/env/fw_env.c | 47 ++++++++++++++++++-----------------------------
+   1 file changed, 18 insertions(+), 29 deletions(-)
+  ```
+- This file is **not linked into SPL, U-Boot proper, or any board image**. It cannot affect SPL boot, MMC initialisation, U-Boot ELF generation, ARM relocation, EFI builds, or login prompts.
+- Local `um build sandbox` passes cleanly with no warnings or errors.
+
+### Why no code change, no `-v3` branch, no force-push
+
+The standard workflow expects code changes to address review feedback. Here there is no actionable feedback and nothing to fix:
+
+- The previously diagnosed failures (rockpro64 MMC voltage-select `-110`; opi_pc 15-second login timeout with no captured output; efi-aarch64 `readelf: Failed to read file's magic number` parallel-make race in `checkarmreloc`) are unambiguous lab/runner issues, all marked `Lab failure: Marking connection bad - no other tests will run`.
+- Manufacturing a no-op `-v3` push would just re-burn lab time on the same flaky runners and add a misleading "attempt 3" record implying a fix was made.
+- The branch is already in the state the previous attempts left it in. Nothing needs to be amended.
+
+### Recommended next step
+
+The pickman/MR loop is in a feedback cycle where each "no-fix-needed" report becomes the next "review comment to address". This needs human intervention to break:
+
+1. **Re-run** the failed jobs (`rockpro64`, `opi_pc`, `efi-aarch64`) once the sjg-lab MMC card / serial console / runner I/O are healthy.
+2. Consider **manually closing** the bot-generated review thread, or instructing pickman not to convert "no fix needed" reports into new actionable comments — otherwise this loop will continue indefinitely.
+
+### Suggested reply to post on the MR
+
+> This is the third iteration of the same loop: pickman is recording each "infrastructure failure, no code fix" report as a new review comment, which then prompts another "address the comment" pass. The series only touches `tools/env/fw_env.c` (userspace tool) and cannot affect any board's SPL/MMC/EFI build or the login-prompt timeouts that failed. No `-v2`/`-v3` is appropriate. Please re-run rockpro64, opi_pc and efi-aarch64 once the lab is healthy, and consider resolving this bot thread manually so the loop terminates.
+
+---
+
+### Pipeline fix: 2026-04-27 (attempt 3)
+
+Branch: cherry-1197954d589
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rock5b (sjg-lab)
+- rockpro64 (sjg-lab)
+- opi_pc (sjg-lab)
+
+### Conversation log
+The situation is identical to attempts 1 and 2: the same series only touches `tools/env/fw_env.c`. Let me verify the build still passes and look at the failures one more time to confirm this is the same infrastructure-failure loop.
+
+Sandbox build passes (silent = success per project conventions). The diagnosis is identical to attempts 1 and 2. The series touches only `tools/env/fw_env.c` — a Linux userspace tool that is not linked into any board image and cannot affect SPL boot, MMC, EFI/ARM relocation, or login prompts.
+
+Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), I am not making code changes and not creating a `cherry-1197954d589-fix3` branch — manufacturing a no-op fix-branch would just re-burn lab time on the same flaky runners and falsely suggest a fix was made.
+
+## Report: Pipeline fix attempt 3 — No Code Fix Possible (Infrastructure Failures)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — **no `-fix3` branch created, no push**)
+
+### What this series actually changes
+
+Verified on the current branch:
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history' ':(exclude)pickman'
+ tools/env/fw_env.c | 47 ++++++++++++++++++-----------------------------
+ 1 file changed, 18 insertions(+), 29 deletions(-)
+```
+
+All 6 functional commits + merge touch a single file: `tools/env/fw_env.c`, the Linux userspace `fw_env` tool. **It is not compiled into SPL, U-Boot proper, or any board image.** It cannot affect SPL boot, MMC initialisation, U-Boot ELF generation, ARM relocation, EFI builds, or login prompts. Local `um build sandbox` passes cleanly with no warnings.
+
+### Diagnosis of each failed job (all stage `sjg-lab`, all on the same runner `ellesmere-lab`)
+
+**Job 467485 — rockpro64** — Hardware/MMC failure, identical to attempts 1 & 2:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error  Error: -38
+Card did not respond to voltage select! : -110   ← MMC card hardware/timeout
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+... pexpect.TIMEOUT: Timeout of 10 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+`-110` = ETIMEDOUT on the SD card; `-38` = block-read error. fw_env.c plays no role in SPL or MMC.
+
+**Job 467462 — opi_pc** — Serial/lab connectivity failure, identical to attempts 1 & 2:
+```
+Bootstrapping U-Boot ... Writing U-Boot using method sunxi
+[no board output captured at all]
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No code path from these commits is exercised before login.
+
+**Job 467487 — rock5b (NEW this attempt)** — Lab/flashing timeout:
+```
+Building U-Boot in pytest-source dir for rock5b-rk3588
+Bootstrapping U-Boot ... Writing U-Boot using method rockchip
+[3 minutes silence]
+Lab timeout: Marking connection bad - no other tests will run
+```
+Hung during the rockchip flashing step (which is a userspace tool talking USB to the board's bootrom). No board output, no boot attempt; the runner couldn't talk to the rock5b. Pure lab issue.
+
+**Job 467494 — efi-aarch64** — Same parallel-make race in `checkarmreloc` as attempt 2, repeated twice:
+```
+Building U-Boot in pytest-source dir for efi-arm_app64
+readelf: Error: u-boot: Failed to read file's magic number   ← attempt 1
+make[1]: *** [Makefile:2643: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+... [retry] ...
+readelf: Error: Unable to read in 72 bytes of symbols        ← attempt 2 (different error, both readelf)
+```
+This is an existing parallel-make race in U-Boot's `checkarmreloc` target — `readelf` opens the `u-boot` ELF before final linking is complete. The "Waiting for unfinished jobs" line is the smoking gun. The fw_env userspace tool is not part of `u-boot` ELF and cannot influence this race. The race is sometimes triggered by I/O contention on the runner.
+
+All four failures originate on the same `ellesmere-lab` runner (`VKe9dm-Af`), which strongly suggests the runner / its attached lab hardware is currently unhealthy.
+
+### Why no `-fix3` branch / no push
+
+This is the **third iteration of the same pickman feedback loop**: each "no fix needed" report becomes the next "review comment to address", which spawns another "fix attempt" run. There is no source-level change that could fix:
+
+- An SD-card not answering voltage select (`-110`)
+- A serial console with zero captured output before the 15-second login timeout
+- A USB-flashing handshake to a Rockchip bootrom that times out after 3 minutes
+- A `readelf` race-with-link in `checkarmreloc` that a userspace tool cannot influence
+
+Manufacturing a no-op `-fix3` push would re-burn lab time on the same flaky runner and add a misleading "attempt 3 fixed it" record. The branch is left in the same state as before.
+
+### Recommended next step (human action required to break the loop)
+
+1. **Inspect the `ellesmere-lab` runner** (`VKe9dm-Af`) — its rockpro64 SD card, opi_pc serial console, rock5b USB flashing path, and general I/O health. Re-run jobs 467485, 467462, 467487, 467494 once the lab is healthy.
+2. **Manually resolve the bot review thread** on MR !989, or instruct pickman not to convert "no fix needed" reports into new actionable comments — otherwise this loop will continue indefinitely (attempt 4, 5, ...).
+3. Optional: address the long-standing `checkarmreloc` parallel-make race in a separate, unrelated patch (it is not caused by this series and not appropriate to mix in here).
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, rock5b, rockpro64, opi_pc.
+
+The situation...
+
+### Conversation log
+## Report: Pipeline fix attempt 4 — No Code Fix Possible (4th iteration of same infrastructure-failure loop)
+
+**Branch:** `cherry-1197954d589` (checked out, unchanged — **no `-v4` branch created, no push**)
+
+### Re-verification on the current branch
+
+```
+$ git diff --stat ci/master..HEAD -- ':(exclude).pickman-history' ':(exclude)pickman'
+ tools/env/fw_env.c | 47 ++++++++++++++++++-----------------------------
+ 1 file changed, 18 insertions(+), 29 deletions(-)
+```
+
+All 6 functional commits + merge touch a single file: `tools/env/fw_env.c`, the Linux userspace `fw_env` tool. **It is not compiled into SPL, U-Boot proper, or any board image.** Local `um build sandbox` passes cleanly with no warnings (silent = success).
+
+### What the "review comment" actually is
+
+The single comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is **the pickman bot's own auto-generated record of attempt 3's report**, which itself was a record of attempt 2's report, which was a record of attempt 1's report. The pickman/MR loop is converting each "no fix needed" report into a new "review comment to address", spawning the next iteration. We are now at attempt 4 of identical content.
+
+The actual underlying CI failures (rockpro64 SPL/MMC voltage-select `-110`; opi_pc 15-second login timeout with no captured output; rock5b 3-minute rockchip-flashing timeout; efi-aarch64 `readelf` parallel-make race in `checkarmreloc`) are all on the same `ellesmere-lab` runner (`VKe9dm-Af`) and are unambiguous lab/runner issues.
+
+### Why no `-v4` branch / no force-push
+
+I am explicitly **deviating from the standard "create -v2/-v3/-v4 and push" workflow** because:
+
+1. There is **no actionable reviewer feedback** — only the bot's own loop record.
+2. There is **no source-level change** that could fix an SD card not answering voltage select, a serial console with zero output, a USB-flashing handshake to a Rockchip bootrom, or a `readelf` link race — none of which involves the userspace `fw_env` tool.
+3. A no-op `-v4` push would re-burn lab time on the same `ellesmere-lab` runner and add a misleading "attempt 4 fixed it" record while changing nothing.
+4. This loop will continue as `attempt 5, 6, 7…` indefinitely until a human breaks it.
+
+### Recommended action (human intervention required)
+
+1. **Inspect / repair the `ellesmere-lab` runner** (rockpro64 SD card, opi_pc serial, rock5b USB flashing, general I/O). Re-run the four jobs once healthy.
+2. **Manually resolve the bot review thread on MR !989**, or reconfigure pickman so it does not convert "no fix needed" diagnoses into new actionable review comments. Without this, the loop cannot terminate.
+3. Optional: address the `checkarmreloc` parallel-make race (pre-existing in U-Boot, unrelated to this series) in a separate patch.
+
+### Suggested reply to post on the MR
+
+> This is the 4th iteration of the same loop. The series only modifies `tools/env/fw_env.c` (Linux userspace tool — not in any board image, cannot affect SPL/MMC/EFI/login). All four failing jobs are on the same `ellesmere-lab` runner with classic lab symptoms (MMC voltage-select `-110`, 15s login timeout with no output, 3-minute rockchip-flash timeout, `readelf` parallel-make race). No `-v4` is appropriate — please re-run the jobs once the lab is healthy and resolve this bot thread manually so the cycle terminates.
+
+---
+
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+
+
+### Conversation log
+I need to resolve the conflict by keeping both histories (the HEAD one that's already in ci/master and the incoming one for this branch).
+
+Rebase completed. Let me verify the result.
+
+Same delta as before — only `tools/env/fw_env.c`. Now let me verify the build.
+
+Build clean. Now let me verify the per-commit deltas for the cherry-picked commits match the originals.
+
+All deltas match originals exactly. Now create the v4 branch and force-push.
+
+Push succeeded. Branch updated from `bcbebaa334e` → `d8b0f941f35`. Let me verify the final state.
+
+## Report: Rebase Complete — MR !989 Updated
+
+**Branch:** `cherry-1197954d589` (rebased onto current `ci/master` `2b4e7598f77`, force-pushed; new tip `d8b0f941f35`)
+**Local mirror:** `cherry-1197954d589-v2` at `d8b0f941f35`
+
+### What was done
+
+1. **Checked out** `cherry-1197954d589` (was at `bcbebaa334e`, based on stale `ci/master`).
+2. **Fetched** latest `ci/master` (now `2b4e7598f77`, includes the merged `cherry-9bf19639a76` MR ahead by 5 commits).
+3. **Rebased** with `git rebase --keep-empty ci/master`. All 14 commits were re-applied; one conflict in `.pickman-history` only.
+4. **Resolved the conflict** in `.pickman-history`: both sides had appended their own "## 2026-04-27: us/next" section. Kept HEAD's section (the now-merged `cherry-9bf19639a76` history) and re-added the incoming `cherry-1197954d589` section beneath it with its own date header — both histories preserved, no data lost.
+5. **Verified deltas** for all 6 functional commits — exact match with the originals (`tools/env/fw_env.c`, 1+/1−, 2+/2−, 2+/2−, 1+/3−, 10+/10−, 6+/15−). Total series delta unchanged: `tools/env/fw_env.c | 47 ±` (18+/29−).
+6. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, 6 s, no warnings.
+7. **Created** local branch `cherry-1197954d589-v2` at `d8b0f941f35`.
+8. **Force-pushed** with `./tools/pickman/pickman push-branch cherry-1197954d589 -r ci -f` — `bcbebaa334e..d8b0f941f35`. GitLab will re-trigger the MR pipeline.
+
+### Conflict details
+
+The conflict was purely in `.pickman-history` because both this branch and the recently-merged `cherry-9bf19639a76` MR each appended a `## 2026-04-27: us/next` block under the same date header. No source-code conflicts — the cherry-9bf19639a76 series touched `drivers/usb/musb-new/ti-musb.c`, while this series touches `tools/env/fw_env.c`, so the two sets of code changes are independent. Resolution preserved both history blocks as separate sections under the same date heading.
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (`2b4e7598f77`). One conflict in `.pickman-history` only — both this MR and the recently-merged `cherry-9bf19639a76` had appended a `## 2026-04-27` history block; resolved by keeping both sections. Source-code delta is unchanged (`tools/env/fw_env.c` only, 18+/29−), per-commit deltas all match the originals exactly, sandbox build clean. Force-pushed `bcbebaa334e..d8b0f941f35` to re-trigger the pipeline.
+
+---
+
