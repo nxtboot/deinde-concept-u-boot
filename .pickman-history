@@ -72133,3 +72133,51 @@ Note: the efi-aarch64 lab failure and the binman 99% coverage issue are unrelate
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-fe6484b4027
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) sandbox test.py, sandbox with clang test.py, sandbox64...
+
+### Conversation log
+The fix is already in place on the local `cherry-fe6484b4027` branch. The mmc15 alias is in `arch/sandbox/dts/test.dts` and is part of the RAUC test commit `f41e9bab0f3`. Let me verify the build passes and then create the v2 branch and push.
+
+Build passes. Now let me check what existing -vN branches are around to determine the next number:
+
+Successfully pushed. Let me verify the remote state:
+
+## Report: MR !990 Pipeline Fix Pushed
+
+### Status
+- **Local branch `cherry-fe6484b4027`**: at `0854d07a794` (includes the pipeline fix)
+- **Remote `ci/cherry-fe6484b4027`**: updated to `0854d07a794` (pushed `97966dd2868..0854d07a794`)
+- **Build**: ✅ `buildman -L --board sandbox -w -o /tmp/pickman` passes
+- **Backup branch**: `cherry-fe6484b4027-v7` created
+
+### What Was Done
+The fix was already applied locally to commit `f41e9bab0f3` "test: boot: Add test for bootmeth_rauc" from the previous attempt. Verified the fix is in place, ran the sandbox build to confirm it still passes, created v7 backup, and force-pushed to update the MR pipeline.
+
+### The Fix (one line in `arch/sandbox/dts/test.dts`)
+```diff
+ 		mmc14 = "/mmc14";
++		mmc15 = "/mmc15";
+ 		mmc16 = "/mmc16";
+```
+
+With a pickman note appended to the commit message:
+> [pickman] Add mmc15 alias to test.dts so the BLS test can find the mmc15 device by label after mmc16 was added (without it mmc15 was assigned a non-15 sequence number, causing bootflow_cmd_bls to crash)
+
+### Root Cause Recap
+The 6 sandbox `test.py` SIGSEGV failures (`bootflow_cmd_bls`) were caused by adding the `mmc16` alias without `mmc15` — sequence-number assignment for the dynamically-bound `mmc15` device got perturbed, causing it to land on a non-15 sequence number and crash inside `bootflow scan`. Reproduced locally by removing the alias and verified the fix by restoring it.
+
+The remaining job failures in the original pipeline (efi-aarch64 lab failure and binman 99% coverage in NXP imx8m modules) are pre-existing CI infrastructure issues unrelated to this MR.
+
+### Suggested MR Reply
+
+> Pushed pipeline fix `97966dd2868..0854d07a794`. Root cause of the 6 sandbox `test.py` `bootflow_cmd_bls` SIGSEGVs: the RAUC test commit added an `mmc16` alias to `arch/sandbox/dts/test.dts` without an `mmc15` alias. That perturbed the seq-number assignment for the dynamically-bound `mmc15` device — it ended up with a non-15 sequence number, causing the BLS test to crash inside `bootflow scan`. Reproduced locally by removing the alias; restoring it fixes the test. Amended the missing `mmc15 = "/mmc15";` alias into the RAUC commit. Sandbox build passes; `bootflow_cmd_bls`, `bootflow_rauc`, and the full `ut_bootstd_bootflow` suite (32/32) all pass locally.
+>
+> The other CI failures (efi-aarch64 lab `readelf` failure, binman 99% coverage in NXP imx8m-specific modules) are pre-existing CI infrastructure issues unrelated to this MR.
+
+---
+
