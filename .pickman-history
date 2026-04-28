@@ -72617,3 +72617,57 @@ Multiple `claude --continue` agents were running in this same repo during the ta
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-1ad13306649
+
+Comments addressed:
+
+
+### Conversation log
+Build passes.
+
+Identical content (only commit hash differs, as expected after rebase).
+
+## Report
+
+### Rebase result: Required conflict resolution in `.pickman-history`
+
+**Branch:** `cherry-1ad13306649` (was `9eca0e580f4` → now `be43cb5aa95`)
+
+**Target:** `ci/master` (`b960d921853` → `187fdfda8fa`) — three new validation commits + `cherry-3ee1408eeb7` merge
+
+**Status:** `git rebase --keep-empty ci/master` — applied 24 commits. **One conflict** in the second-to-last commit (`c79f66dd4cb pickman: Record review handling for cherry-1ad13306649`):
+
+- Both sides added new entries to `.pickman-history` at the bottom
+- HEAD side (from new ci/master) added the `cherry-3ee1408eeb7` review entry
+- Branch side added the `cherry-1ad13306649` review entry
+- **Resolved by keeping both entries** (in order: cherry-3ee1408eeb7 entry first, then a `---` separator, then cherry-1ad13306649 entry). Pure log file — no code conflict.
+
+### Delta verification
+
+- All 22 samsung commits remain identical to their pre-rebase versions (verified `git show` output for `25f23554829` vs new `af2b7f5cde5` — only the hash differs)
+- 24 commits ahead of ci/master (22 samsung + 2 pickman recordings — same as before)
+
+### Build verification
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → **PASS**: `Completed: 1 total built, duration 0:00:11`
+
+### Local backup branch
+
+`cherry-1ad13306649-v5` created (v2/v3/v4 already existed from prior sessions)
+
+### Push
+
+`./tools/pickman/pickman push-branch cherry-1ad13306649 -r ci -f`:
+```
++ c79f66dd4cb...be43cb5aa95 HEAD -> cherry-1ad13306649 (forced update)
+```
+MR !992 will get a fresh pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`187fdfda8fa`). Resolved one conflict in `.pickman-history` (log-file collision where both sides added entries — kept both). All 22 samsung commits unchanged (verified by `git show` comparison). Sandbox build passes via `buildman --board sandbox`. Force-pushed to refresh the MR pipeline.
+
+---
+
