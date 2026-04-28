@@ -71563,3 +71563,49 @@ I am explicitly **deviating from the standard "create -v2/-v3/-v4 and push" work
 
 ---
 
+### Review: 2026-04-27
+
+Branch: cherry-1197954d589
+
+Comments addressed:
+
+
+### Conversation log
+I need to resolve the conflict by keeping both histories (the HEAD one that's already in ci/master and the incoming one for this branch).
+
+Rebase completed. Let me verify the result.
+
+Same delta as before — only `tools/env/fw_env.c`. Now let me verify the build.
+
+Build clean. Now let me verify the per-commit deltas for the cherry-picked commits match the originals.
+
+All deltas match originals exactly. Now create the v4 branch and force-push.
+
+Push succeeded. Branch updated from `bcbebaa334e` → `d8b0f941f35`. Let me verify the final state.
+
+## Report: Rebase Complete — MR !989 Updated
+
+**Branch:** `cherry-1197954d589` (rebased onto current `ci/master` `2b4e7598f77`, force-pushed; new tip `d8b0f941f35`)
+**Local mirror:** `cherry-1197954d589-v2` at `d8b0f941f35`
+
+### What was done
+
+1. **Checked out** `cherry-1197954d589` (was at `bcbebaa334e`, based on stale `ci/master`).
+2. **Fetched** latest `ci/master` (now `2b4e7598f77`, includes the merged `cherry-9bf19639a76` MR ahead by 5 commits).
+3. **Rebased** with `git rebase --keep-empty ci/master`. All 14 commits were re-applied; one conflict in `.pickman-history` only.
+4. **Resolved the conflict** in `.pickman-history`: both sides had appended their own "## 2026-04-27: us/next" section. Kept HEAD's section (the now-merged `cherry-9bf19639a76` history) and re-added the incoming `cherry-1197954d589` section beneath it with its own date header — both histories preserved, no data lost.
+5. **Verified deltas** for all 6 functional commits — exact match with the originals (`tools/env/fw_env.c`, 1+/1−, 2+/2−, 2+/2−, 1+/3−, 10+/10−, 6+/15−). Total series delta unchanged: `tools/env/fw_env.c | 47 ±` (18+/29−).
+6. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, 6 s, no warnings.
+7. **Created** local branch `cherry-1197954d589-v2` at `d8b0f941f35`.
+8. **Force-pushed** with `./tools/pickman/pickman push-branch cherry-1197954d589 -r ci -f` — `bcbebaa334e..d8b0f941f35`. GitLab will re-trigger the MR pipeline.
+
+### Conflict details
+
+The conflict was purely in `.pickman-history` because both this branch and the recently-merged `cherry-9bf19639a76` MR each appended a `## 2026-04-27: us/next` block under the same date header. No source-code conflicts — the cherry-9bf19639a76 series touched `drivers/usb/musb-new/ti-musb.c`, while this series touches `tools/env/fw_env.c`, so the two sets of code changes are independent. Resolution preserved both history blocks as separate sections under the same date heading.
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (`2b4e7598f77`). One conflict in `.pickman-history` only — both this MR and the recently-merged `cherry-9bf19639a76` had appended a `## 2026-04-27` history block; resolved by keeping both sections. Source-code delta is unchanged (`tools/env/fw_env.c` only, 18+/29−), per-commit deltas all match the originals exactly, sandbox build clean. Force-pushed `bcbebaa334e..d8b0f941f35` to re-trigger the pipeline.
+
+---
+
