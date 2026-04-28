@@ -72671,3 +72671,58 @@ MR !992 will get a fresh pipeline.
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-35d9b9c70ea
+
+Commits:
+- 35d9b9c70ea tools/atmelimage: add const qualifier to fix compiler warning
+- bdc5f6531a4 MAINTAINERS: Update ARM SC5xx
+- 15e2bacc308 treewide: Remove Timesys from ADI ADSP maintenance
+- b26cc03b7ce Merge patch series "MAINTAINERS: Update ADI ADSP platform maintainers"
+
+### Conversation log
+First cherry-pick successful. Moving on.
+
+Stats match exactly. Let me proceed with the build.
+
+There's evidence of a concurrent process making cherry-picks on my branches. Let me clean up and complete my task properly.
+
+There's another concurrent agent currently in the middle of a cherry-pick on this same git repository. I cannot switch branches while their cherry-pick is in progress. Let me check if there's a way to safely resolve.
+
+Now I need to clean up the stray memsize commit and add the merge commit. Let me reset and redo cleanly.
+
+The merge commit is empty (its content was already applied via the individual commits). Per instructions, preserve it with `--allow-empty`.
+
+All four commits are now properly applied. Let me verify each one and run the final build.
+
+All stats match exactly. Now let me run the final build.
+
+The parallel agent added another commit on top of my branch. Let me reset to my expected state.
+
+The branch `cherry-35d9b9c70ea` is now in the correct state with all 4 cherry-picked commits on top of `ci/master`.
+
+## Final Status
+
+**Build result:** ✅ OK (sandbox build completed successfully, no warnings/errors)
+
+**Branch:** `cherry-35d9b9c70ea` (based on `ci/master`)
+
+**Commits applied (in order):**
+1. `3f58065fdf2` — tools/atmelimage: add const qualifier to fix compiler warning
+2. `932bd59559a` — MAINTAINERS: Update ARM SC5xx
+3. `fd0935eddcd` — treewide: Remove Timesys from ADI ADSP maintenance
+4. `a7b21e911e1` — Merge patch series "MAINTAINERS: Update ADI ADSP platform maintainers" (empty merge commit, preserved with `--allow-empty`)
+
+**Delta verification:** All file/line stats match the originals exactly:
+- atmelimage: 1 file, 1 insertion, 1 deletion ✅
+- MAINTAINERS SC5xx: 1 file, 2 insertions, 5 deletions ✅
+- treewide Timesys: 46 files, 46 insertions, 126 deletions ✅
+- Merge commit: empty (content already applied via individual commits)
+
+**Fix-ups:** None needed for content. The merge commit needed `--allow-empty` because its content was already fully applied by the three individual commits (this is normal/expected for merge commits in a cherry-pick).
+
+**Concerning observations:** During this run there was clear evidence of a concurrent process making cherry-picks on this same git working tree (stray "common/memsize.c" commit appeared on my branch between cherry-picks, my merge commit ended up on a different branch initially, and an unrelated UFS merge commit was added on top of my branch after my build). I recovered by resetting and redoing the picks cleanly. The branch is now in the correct expected state, but the shared working tree is being contended by another agent — worth being aware of.
+
+---
+
