@@ -73617,3 +73617,58 @@ No code changes per the workflow rule: *"If the failure is an infrastructure or 
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+
+
+### Conversation log
+I can see the situation clearly. The branch is 33 commits ahead of merge-base (`760c2e943c5`), and `ci/master` has new commits including 4 that are duplicates of the "4 unrelated commits" noted in the prior conversation. Let me create a backup and rebase.
+
+The conflict in `.pickman-history` is an append-merge of two records that should both be preserved. Let me resolve it by keeping both halves.
+
+Good — no real conflict markers left (those `=======` lines are test output). Continuing the rebase.
+
+Rebase completed. Let me verify state.
+
+Rebase succeeded — 29 commits (down from 33; the 4 duplicates that landed on ci/master were correctly skipped). Let me verify delta and run the build.
+
+Range-diff confirms clean rebase: the 4 duplicate commits correctly dropped, all 22 substantive commits unchanged, and the pickman-history conflict resolved as expected. Now build verification.
+
+Build successful (1 board built, no err file). Let me create the v7 backup and push.
+
+Push complete. Here's the summary:
+
+## Rebase Complete — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v7` at `4e5ad2c358d`
+**Remote pushed:** `ci/cherry-abd1efa992d` force-updated `b06c81f99ec → 4e5ad2c358d`
+**Build:** ✅ `buildman -L --board sandbox -w -o …` exit 0, 1/1 built, no err file
+
+### What was done
+
+1. **Checked out** `cherry-abd1efa992d`, created backup `cherry-abd1efa992d-backup-pre-v7` (later deleted as redundant once v7 was created).
+2. **Fetched** `ci/master` (now at `bbb3a0ec2f5`, 18 new commits since the prior `760c2e943c5` base).
+3. **Rebased** with `git rebase --keep-empty ci/master`. Of the 33 commits on the branch:
+   - **4 dropped automatically** as previously-applied: `dma: ti…CONFIG_TI_K3_NAVSS_PSILCFG`, `boot…VPL_CRYPTO`, `sandbox…KEYBOARD`, `disk: fix DOS_PARTITION` (these were the "4 unrelated commits" inherited from a parallel cherry-pick session — they have now landed on `ci/master`, so the rebase correctly identified and skipped them).
+   - **29 commits replayed**, with one conflict in `.pickman-history` (an append-only history file). Resolved by keeping both halves of the divergent record (the prior cherry-pick conversation log on HEAD plus the new review record from `c39463cade7`).
+4. **Verified** with `git range-diff`: all 22 substantive networking + merge commits and both fix commits (`fs: fat: declare disk_write…`, `fs: fat: avoid SPL size growth…`) are byte-identical (`=`) to their pre-rebase counterparts. Only the 4 duplicates marked `<` (dropped). 
+5. **Built** sandbox cleanly via `buildman -L --board sandbox -w -o /tmp/pickman-build` (status 0, no err file).
+6. **Pushed** with explicit `branch:branch` refspec (`git push ci -f cherry-abd1efa992d:cherry-abd1efa992d`) — same approach as v3 onward, to avoid the historic concurrent-HEAD-switch issue noted in earlier runs.
+
+### Branch contents on top of `ci/master` (29 commits)
+- 22 original networking commits (Airoha PCS/PHY, mt7531 mdio, lwip, etc.) + merge
+- `a063a0c724c` fs: fat: declare disk_write() in fat_internal.h (fix1)
+- `18cc5149b7f` fs: fat: avoid SPL size growth when sector mismatch is disabled (fix2)
+- 5 pickman-record commits (history of prior fix attempts)
+
+The 4 "unrelated commits" the previous runs flagged are now gone — they were absorbed into `ci/master` and the rebase dropped them automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`bbb3a0ec2f5`). One trivial conflict in the append-only `.pickman-history` log was resolved by keeping both records. The 4 unrelated commits previously flagged (`dma: ti…`, `boot…VPL_CRYPTO`, `sandbox…KEYBOARD`, `disk: fix DOS_PARTITION…`) have now landed on `ci/master` and were dropped automatically by the rebase, so this branch no longer carries them. `git range-diff` confirms all 22 networking commits and both FAT fixups are byte-identical to their pre-rebase versions. Sandbox build via `buildman -L --board sandbox` passes (status 0). Force-pushed.
+
+---
+
