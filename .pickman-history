@@ -73918,3 +73918,40 @@ Both review comments were bot notifications confirming Pipeline fix attempt 1 wa
 
 ---
 
+
+### Review: 2026-04-29
+
+Branch: cherry-0bb1d511e4f
+
+Comments addressed:
+- [sjg]: pickman: Please check https://concept.u-boot.org/u-boot/u-boot/-/jobs/476645 for the build errors for: am335x_hs_evm am335x_hs_evm_spi
+
+### Conversation log
+The CI job 476645 (pipeline 7242) ran on commit 7ef069a6 — this was an older HEAD of MR !1004, *before* the rebase onto ci/master. The errors were:
+
+```
+arm-linux-gnueabi-ld: u-boot-spl section `__u_boot_list' will not fit in region `.sram'
+arm-linux-gnueabi-ld: region `.sram' overflowed by 4 bytes
+```
+
+for both am335x_hs_evm and am335x_hs_evm_spi.
+
+### Root cause
+Reproduced locally on commit 7ef069a6: **failure confirmed** (am335x_hs_evm SPL .sram overflow by 4 bytes). The trigger is upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'") on ci/master, which added a static `fat_sect_size` global and switched a few call sites to use `blk_dread()` directly. When `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH` is *disabled* (the default for am335x_hs_evm/_spi) the new global is unused but the call-site changes still grew SPL by 4 bytes — pushing am335x_hs_evm and am335x_hs_evm_spi over their tight `CONFIG_SPL_MAX_SIZE = 0xb0b0` budget. This is *not* introduced by this MR's UFS commits; it is the same pre-existing master regression that I fixed for the previous MR (cherry-abd1efa992d).
+
+### Build verification on rebased branch
+The rebase onto ci/master in the previous review cycle (`d87b858667a`) absorbed Simon's upstream fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled"), which is now on ci/master. Built the rebased v3 branch:
+
+- am335x_hs_evm — OK (text=42083, data=3073, total .sram = 0xb074 = 45172 bytes; max 0xb0b0 = 45232; 60-byte slack)
+- am335x_hs_evm_spi — OK (same SPL size; 60-byte slack)
+- sandbox via `buildman -L --board sandbox -w -o /tmp/pickman_sandbox` — OK
+
+So the failure in job 476645 is resolved on the current MR HEAD; no new code change is needed.
+
+### Push
+This pickman-history record commit is added on top as `cherry-0bb1d511e4f-v4`, then force-pushed via `./tools/pickman/pickman push-branch cherry-0bb1d511e4f -r ci -f` to retrigger the CI pipeline (the prior pipelines on the rebased commit were `skipped`, so this re-push gives a clean run on the rebased state).
+
+### Suggested MR reply
+> Job 476645 ran on commit 7ef069a6 — the *pre-rebase* HEAD of this MR. The 4-byte SPL overflow on am335x_hs_evm and am335x_hs_evm_spi comes from upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'"), not from any of the 6 UFS commits in this MR. Your fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled") is already on ci/master and was absorbed when this branch was rebased in the prior review cycle. Rebuilt locally on the current MR HEAD (`d87b858667a`): both am335x_hs_evm and am335x_hs_evm_spi build cleanly (~60 bytes of .sram slack). Re-pushing the branch to trigger a fresh pipeline on the rebased state.
+
+---
