@@ -73568,3 +73568,52 @@ This run: verified the fix is in place, sandbox build clean, force-pushed to upd
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, play.
+
+Looking at this carefully, both fa...
+
+### Conversation log
+Build passes. The remote and local are at the same commit (`b06c81f99ec`). The review comment is the bot's record of pipeline attempt 3, which the previous run already analyzed: both `efi-aarch64` and `play` are lab infrastructure failures (post-reset I/O error and BeaglePlay login timeout, respectively), already documented as such on the MR.
+
+Let me check pickman to see if there's a way to record this review-handling note, then create v6 and push.
+
+## Summary — MR !1001 attempt 4 (review of attempt 3 record)
+
+**Branch:** `cherry-abd1efa992d` at `b06c81f99ec` (unchanged)
+**Local backup:** `cherry-abd1efa992d-v6` at `b06c81f99ec`
+**Remote:** `ci/cherry-abd1efa992d` already in sync (`Everything up-to-date`)
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Review comment
+
+The single comment is the bot's record of attempt 3 ("Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, play"). The previous run already analysed those two failures and concluded both are lab/runner infrastructure issues, not code defects:
+
+- **`play`** (BeaglePlay am62x): `pexpect.exceptions.TIMEOUT` waiting for login at `labgrid/driver/ubootdriver.py:205`. U-Boot was built and bootstrapped, but labgrid never saw the login prompt. The MR (Airoha networking + two FAT fixups) does not touch am62x boot.
+- **`efi-aarch64`**: `OSError: [Errno 5] Input/output error` during `u-boot-test-reset` after 706 prior tests passed. Serial-port / VM-state error on the lab runner.
+
+Both already-pushed code fixes (fix1 `a983573a7dd` for the qcom/allyesconfig `disk_write` declaration, and fix2 `0107b3f647b` for the am335x_hs_evm SPL .sram overflow) remain present on the tested commit `c604fb70a85`. There is no remaining code-side failure CI has flagged.
+
+### Action taken
+
+- Verified build (sandbox passes clean).
+- Created local backup `cherry-abd1efa992d-v6`.
+- Attempted force-push: remote already in sync — nothing to push.
+
+No code changes per the workflow rule: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+### Suggested MR reply
+
+> The two remaining pipeline failures (`play`, `efi-aarch64`) are lab-runner infrastructure issues, not branch-side defects:
+>
+> - `play`: BeaglePlay labgrid `TIMEOUT` waiting for the login prompt after a successful U-Boot deploy. The MR is purely networking + two FAT build fixups; it does not touch am62x.
+> - `efi-aarch64`: `OSError: [Errno 5] Input/output error` during `u-boot-test-reset`, after 706 unrelated tests passed. Classic serial-port flake.
+>
+> Both code-side failures CI flagged in earlier attempts (qcom/allyesconfig `disk_write` prototype, am335x_hs_evm SPL `.sram` overflow) are already fixed on this branch (`a983573a7dd`, `0107b3f647b`). Could you re-run the two lab jobs?
+
+---
+
