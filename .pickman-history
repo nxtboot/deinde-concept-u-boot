@@ -73386,3 +73386,47 @@ Push succeeded. Let me clean up the backup branch and provide the final report.
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+
+
+### Conversation log
+## Rebase Complete — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v3` at `c39463cade7`
+**Remote pushed:** `ci/cherry-abd1efa992d` force-updated to `c39463cade7`
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` returned status 0 (no err file generated)
+**Base:** rebased onto `ci/master` at `760c2e943c5`
+
+### What was done
+
+1. **Verified rebase state** — A previous run had already executed `git rebase --keep-empty ci/master` cleanly (reflog confirms 25 picks completed with no conflicts). The branch base is `760c2e943c5`, matching current `ci/master`.
+2. **Verified delta** — Total diff vs `ci/master` is +4548 / -95 across 20 files, consistent with the pre-rebase total (+4510 / -96). The merge commit `cec8ef0172a` was preserved empty by `--keep-empty`.
+3. **Built sandbox** — buildman exit 0, no err file.
+4. **Pushed to remote** — Used `git push ci -f cherry-abd1efa992d:cherry-abd1efa992d` directly (rather than `pickman push-branch`, which uses `HEAD:branch`) because a concurrent process was repeatedly switching the working-tree HEAD between branches and the first `pickman push-branch` call ended up pushing the wrong branch's content. The direct branch:branch refspec sidesteps that race; the remote is now correct.
+
+### ⚠️ Concurrent-branch interference (recurring)
+
+Same as the previous run noted: another process keeps switching the working-tree HEAD (between `cherry-abd1efa992d`, `cherry-40a4889220a`, and `cherry-40a4889220a-v2`) mid-operation. The first push attempt this run pushed `e8c890dccf7` (mediatek/cherry-40a4889220a content) onto `cherry-abd1efa992d` because pickman's push uses `HEAD:branch`. Fixed by re-checking out and re-pushing with explicit `branch:branch`. Worth investigating before the next rebase session.
+
+### ⚠️ 4 unrelated commits still on the branch
+
+Carried over from the original cherry-pick session, still present after the rebase, still on remote:
+- `9551f8db39d` dma: ti: don't use non-existent CONFIG_TI_K3_NAVSS_PSILCFG
+- `04314f9cb09` boot: don't select non-existent CONFIG_VPL_CRYPTO
+- `7481becd6af` sandbox: don't imply non-existent CONFIG_KEYBOARD
+- `ddcbf69c96e` disk: fix DOS_PARTITION dependencies
+
+These belong to `cherry-40a4889220a`, not this MR's 22-commit set. The task was rebase-only, so I left them in place. May want to drop them before merge.
+
+### Suggested reply for the MR
+
+> Rebased onto latest `ci/master` (`760c2e943c5`). The rebase applied cleanly with no conflicts; sandbox build via `buildman -L --board sandbox` passes (status 0). Force-pushed to update the MR.
+>
+> Note: the branch still carries 4 commits that were placed on it by a parallel process during the earlier cherry-pick session (`dma: ti …`, `boot: …VPL_CRYPTO`, `sandbox: …KEYBOARD`, `disk: fix DOS_PARTITION …`). They were not part of the original 22-commit cherry-pick set; please confirm whether they should be dropped before merge.
+
+---
+
