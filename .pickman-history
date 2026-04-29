@@ -73672,3 +73672,41 @@ The 4 "unrelated commits" the previous runs flagged are now gone — they were a
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-4dcff3b572a
+
+Comments addressed:
+
+
+### Conversation log
+## Summary
+
+**Branch:** `cherry-4dcff3b572a` (MR !1005)
+
+**Rebase result:** Successful. Old merge-base was `0ed3071a940`; new `ci/master` tip is `471c25669a3`. One commit was auto-skipped by git as already applied:
+- `1792d3f64a6` — riscv: don't imply non-existent CONFIG_IP_DYN (already in ci/master)
+
+The remaining 5 commits replayed cleanly with no conflicts. All deltas match the pre-rebase versions exactly (verified via `git show --stat` diff).
+
+**Commits on top of new ci/master tip:**
+1. `df902ced141` — sifive: switch to OF_UPSTREAM
+2. `34d916208e0` — driver: cache: Remove SiFive PL2 driver
+3. `886c82b2d0a` — openpiton: imply CONFIG_SPL_CPU
+4. `8469ebe0861` — riscv: mpfs: SIFIVE_CLINT and SPL_SIFIVE_CLINT don't exist [FAILED]
+5. `418ba7e8cab` — Merge branch 'next' of u-boot-riscv into next
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — sandbox built cleanly (1/1, 10s).
+
+**Push:** Force-pushed to `ci/cherry-4dcff3b572a` (`a983573a7dd → 418ba7e8cab`); GitLab auto-triggered the MR pipeline.
+
+**Local backups:**
+- `cherry-4dcff3b572a-v2`, `cherry-4dcff3b572a-v3` (pre-existing)
+- `cherry-4dcff3b572a-v4` (created this session)
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`471c25669a3`). Git automatically dropped commit `1792d3f64a6` ("riscv: don't imply non-existent CONFIG_IP_DYN") as it has already been merged upstream — the remaining 5 commits replayed cleanly with no conflicts and identical deltas. Sandbox build verified with buildman. Force-pushed to refresh the MR pipeline.
+
+---
+
