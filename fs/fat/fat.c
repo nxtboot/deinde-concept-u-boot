@@ -43,9 +43,10 @@ void downcase(char *str, size_t len)
 
 struct blk_desc *cur_dev;
 struct disk_partition cur_part_info;
-static int fat_sect_size;
 
 #if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
+static int fat_sect_size;
+
 static inline u32 sect_to_block(u32 sect, u32 *off)
 {
 	const ulong blksz = cur_part_info.blksz;
@@ -203,7 +204,11 @@ int fat_set_blk_dev(struct blk_desc *dev_desc, struct disk_partition *info)
 	cur_part_info = *info;
 
 	/* Make sure it has a valid FAT header */
+#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
 	if (blk_dread(cur_dev, cur_part_info.start, 1, buffer) != 1) {
+#else
+	if (disk_read(0, 1, buffer) != 1) {
+#endif
 		cur_dev = NULL;
 		return -1;
 	}
@@ -709,8 +714,12 @@ read_bootsectandvi(struct boot_sector *bs, struct volume_info *volinfo, int *fat
 		return -1;
 	}
 
+#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
 	fat_sect_size = 0;
 	if (blk_dread(cur_dev, cur_part_info.start, 1, block) != 1) {
+#else
+	if (disk_read(0, 1, block) < 0) {
+#endif
 		debug("Error: reading block\n");
 		ret = -1;
 		goto out_free;
@@ -780,7 +789,9 @@ static int get_fs_info(struct fsdata *mydata)
 	mydata->rootdir_sect = mydata->fat_sect + mydata->fatlength * bs.fats;
 
 	mydata->sect_size = get_unaligned_le16(bs.sector_size);
+#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
 	fat_sect_size = mydata->sect_size;
+#endif
 	mydata->clust_size = bs.cluster_size;
 	if (mydata->sect_size != cur_part_info.blksz) {
 		if (!IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)) {
