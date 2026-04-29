@@ -73097,3 +73097,42 @@ The branch is left ready for pushing on `cherry-af5f97aeb88`.
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-5e7b1384902
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already on top of the latest ci/master (`56ab538db90`). Let me run the rebase anyway to confirm and verify the build still works.
+
+The rebase is a no-op since the branch is already on top of the latest ci/master. Let me still verify with a build, then push the branch.
+
+Build passes and deltas match. Now let me create the v2 local branch and push.
+
+The branch has been pushed successfully. Here's the summary:
+
+## Summary
+
+**MR !1000 (cherry-5e7b1384902): rebase onto latest target branch — completed**
+
+### Result
+The rebase was a **no-op**: branch `cherry-5e7b1384902` is already on top of the current `ci/master` tip (`56ab538db90 Merge branch 'cherry-0b429f7c6b9' into 'master'`). `git rebase --keep-empty ci/master` reported "Current branch cherry-5e7b1384902 is up to date." No commits needed replaying.
+
+### Verification
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 failed (clean)
+- **Delta check**: All three commits' `git show --stat` output matches the pre-rebase output exactly:
+  - `df7a567bf08` fs: fat: Handle 'FAT sector size mismatch' — unchanged
+  - `f88fa906fa4` configs: qcom: Enable FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH — unchanged
+  - `dd7b5b063cd` Merge patch series "fs: fat: Handle 'FAT sector size mismatch'" — unchanged
+
+### Push
+- Created local marker branch `cherry-5e7b1384902-v2`
+- Force-pushed `cherry-5e7b1384902` to `ci` (forced update from `a277fc56146` → `dd7b5b063cd`); GitLab will re-trigger the MR pipeline
+
+### Suggested MR reply
+> Rebased onto latest `ci/master` (`56ab538db90`). Branch was already on top of the current target tip, so the rebase was a no-op — all three commits unchanged. Verified clean sandbox build via buildman. Force-pushed to refresh the MR pipeline.
+
+---
+
