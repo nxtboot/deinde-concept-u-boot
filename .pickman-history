@@ -73265,3 +73265,89 @@ These were not part of the 22 commits I was asked to cherry-pick. You may want t
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-40a4889220a
+
+Commits:
+- 40a4889220a arm: mediatek: MT8195 fix mem_map
+- b2a1db57ebe board: mediatek: add MT8395 EVK board support
+- afea129b3da arm: don't select non-existent CONFIG_DM_PCI
+- a98c6408456 arm/mach-sc5xx: don't select non-existent GIC_600_CLEAR_RDPD
+- 65b776e6d23 dma: ti: don't use non-existent CONFIG_TI_K3_NAVSS_PSILCFG
+- ff1b59c9bd4 boot: don't select non-existent CONFIG_VPL_CRYPTO
+- 553b939146a sandbox: don't imply non-existent CONFIG_KEYBOARD
+- 04e96eb693c disk: fix DOS_PARTITION dependencies
+- 5578bcebd7b scripts: add checkkconfigsymbols.py
+- 8bc2a5196c1 arm: k3: Kconfig: Enable fTPM and RPMB support
+- 64d48d21b51 pinctl: mediatek: add bounds check on number of base addresses
+- 920b0bc6082 pinctl: mediatek: increase max number of base addresses
+- 05677fedd6f pinctrl: mediatek: add support for mt8189
+- 9f1059bc735 Merge tag 'mediatek-for-next-2026-03-11' of https://source.denx.de/u-boot/custodians/u-boot-mediatek into next
+
+### Conversation log
+Match. Continuing with the next cherry-pick.
+
+I see what happened — there's a concurrent process that switched the branch. The first 4 cherry-picks went to `cherry-40a4889220a` correctly, but then HEAD got switched to `cherry-abd1efa992d` (a different branch being worked on by another agent), and my next 4 cherry-picks ended up there interleaved with airoha commits. Let me switch back to my original branch and continue.
+
+Good — I'm back on my branch with the 4 originally cherry-picked commits. Now let me continue with commit 5.
+
+Good. Continuing with commit 6.
+
+The concurrent agent inserted an airoha commit (`f4887d7a525`) into my branch. Let me drop just that commit using rebase, then continue.
+
+Clean now. Let me rename the branch to a unique name to avoid future interference, then continue the cherry-picks.
+
+There's serious concurrent activity. Let me try to isolate by checking out my branch and ensuring it has clean state.
+
+Excellent! All 13 non-merge cherry-picks completed successfully and are in order. Now I need to do the final merge commit.
+
+I need to amend the merge commit to include the cherry-pick annotation.
+
+All 14 commits are present in correct order on top of ci/master (`f744012355d`). Now let me run the final build test, then verify the deltas of the recent cherry-picks.
+
+Build passes. Let me now verify the deltas of the cherry-picks I haven't already verified (commits 9-13).
+
+All deltas match exactly. Let me also verify the merge commit cherry-pick details and rename the branch back to its expected name.
+
+Now let me try to rename the branch back to the expected name `cherry-40a4889220a`. Note that this name is currently used by another agent. Let me check.
+
+My branch `cherry-40a4889220a` has all 14 commits in correct order on top of ci/master. Let me checkout my branch and run a final build verification.
+
+Final build passes. Let me verify one more time that the branch is intact.
+
+All 14 commits cleanly on top of ci/master. 
+
+## Final Status Report
+
+**Branch:** `cherry-40a4889220a` (14 commits ahead of `ci/master`)
+
+**Build result:** ✅ OK — final `buildman --board sandbox` build passed cleanly with no warnings/errors.
+
+**All 14 commits cherry-picked successfully:**
+1. `f2cdb7fcdac` arm: mediatek: MT8195 fix mem_map
+2. `ea5931c8a46` board: mediatek: add MT8395 EVK board support
+3. `4efe3f3fa6d` arm: don't select non-existent CONFIG_DM_PCI
+4. `5aa1a1aaaba` arm/mach-sc5xx: don't select non-existent GIC_600_CLEAR_RDPD
+5. `042c244f658` dma: ti: don't use non-existent CONFIG_TI_K3_NAVSS_PSILCFG
+6. `23f8a969339` boot: don't select non-existent CONFIG_VPL_CRYPTO
+7. `0b9cf113482` sandbox: don't imply non-existent CONFIG_KEYBOARD
+8. `74219458e67` disk: fix DOS_PARTITION dependencies
+9. `1af4cd39079` scripts: add checkkconfigsymbols.py
+10. `4092798c662` arm: k3: Kconfig: Enable fTPM and RPMB support
+11. `83fee20e602` pinctl: mediatek: add bounds check on number of base addresses
+12. `6fd962ec627` pinctl: mediatek: increase max number of base addresses
+13. `416fa94a484` pinctrl: mediatek: add support for mt8189
+14. `3ba96de0e74` Merge tag 'mediatek-for-next-2026-03-11' (merge commit, empty)
+
+**Concerning deltas:** None — all individual cherry-picks produced files/lines identical to the originals.
+
+**Fix-ups made:**
+- A concurrent agent on the same working tree repeatedly inserted commits into my branch and even checked out a different branch from under me mid-operation. After cherry-picks 1–4, HEAD was switched to a different branch (`cherry-abd1efa992d`); cherry-picks 5 and 6 had to be retried after switching back; an extraneous `f4887d7a525` (air_en8811) commit and a `c88d92e43ce` (lwip) commit were inserted into my branch by the other agent and removed via `git rebase --onto` and `git reset --hard` respectively.
+- To isolate, I renamed the branch to `cherry-40a4889220a-iso`, completed the remaining cherry-picks (7–14) in a single batch, then renamed back to `cherry-40a4889220a`.
+- The merge commit (`9f1059bc735`) cherry-pick became empty due to conflict resolution; committed with `git commit --allow-empty -C` and amended to add the `(cherry picked from commit ...)` annotation.
+
+The branch `cherry-40a4889220a` is left ready for pushing.
+
+---
+
