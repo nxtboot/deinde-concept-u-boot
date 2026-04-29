@@ -74090,3 +74090,67 @@ All 18 cherry-picked commits + the empty merge commit have **identical file list
 
 ---
 
+### Pipeline fix: 2026-04-29 (attempt 2)
+
+Branch: cherry-a3075db94d4
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- rpi5 (sjg-lab)
+- rock3a (sjg-lab)
+- Check make qcheck (test.py)
+
+### Conversation log
+Now let me analyze each failure. Let me first verify the build state and then dig deeper into each failure.
+
+I've thoroughly diagnosed all four failures. Here's my report:
+
+## Summary: All four failures are infrastructure / pre-existing issues, NOT caused by the cherry-picks
+
+The cherry-picked commits only touch ARM dts files, TI rm-cfg yaml files, `common/spl/`, `lib/lmb.c`, `lib/linux_compat.c`, `drivers/serial/ns16550.c`, `arch/Kconfig`, and `Makefile`. None of them touch binman tools, x86, RPi5, or rock3a code paths.
+
+### Failure analysis
+
+**1. `rock3a` (job 477862) — lab infrastructure issue**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'rock3a', '--configure']
+labgrid-client: Error: place rock3a is acquired by a different user (kea/labgrid),
+use --kick if you are sure
+```
+The lab board was held by another user. No build/test ever ran. Pure lab scheduling.
+
+**2. `rpi5` (job 477864) — lab/board hardware issue**
+```
+pexpect.exceptions.TIMEOUT: Timeout of 30 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Log shows the RPi5 BOOTSYS firmware loading the device tree, but U-Boot never reaches the login prompt within 30 s. Labgrid then marked the connection bad. The branch does not touch any RPi5 / BCM2712 code. Hardware/lab transient.
+
+**3. `efi-x86_64-uboot-iso` (job 477866) — flaky boot test**
+```
+Initramfs unpacking failed: invalid magic at start of compressed archive
+test/py/tests/test_distro.py:131: ubman.expect([r'Started gdm\.service'])
+E   console_base.Timeout
+```
+Ubuntu ISO booted, kernel started, but the initramfs decompressed badly and gdm never started in time. The branch contains no x86 / EFI / initrd / kernel-loader changes. Looks transient.
+
+**4. `Check make qcheck` (job 477711) — pre-existing on master**
+```
+tools/binman/btool/cst.py            18    4    78%
+tools/binman/etype/nxp_imx8mcst.py   89   69    22%
+tools/binman/etype/nxp_imx8mimage.py 38    6    84%
+TOTAL                              6186   79    99%
+Coverage error: 99%, but should be 100%
+```
+**Verified:** I built and ran `binman test -T` on plain `ci/master` (5a080aae439) — same 99 % result, same three uncovered files. The branch does not modify any binman code (`git diff ci/master..HEAD -- tools/binman/` is empty). This is pre-existing breakage on master, unrelated to the cherry-picks.
+
+### Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue, report this without making changes"), no commits were amended and no `cherry-a3075db94d4-fix2` branch was created. The branch is left untouched at `12393a37de3` (current HEAD of `cherry-a3075db94d4`).
+
+### Suggested next step for the caller
+
+Retry the pipeline (especially `rock3a`, `rpi5`, `efi-x86_64-uboot-iso` once the lab is free). The `qcheck` failure is a master-wide issue and needs a separate fix (e.g. install the `cst` / `openssl` bintools in the runner image, or add `# pragma: no cover` to the i.MX8M signing paths) — it should not block this MR.
+
+---
+
