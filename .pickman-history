@@ -73865,3 +73865,56 @@ The two review comments from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` we
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-0bb1d511e4f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) Build allyesconfig, tools-only and envtools.
+
+All thre...
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) Build allyesconfig, tools-only and envtools.
+
+All thre...
+
+### Conversation log
+Now let me proceed with the rebase. I'll rebase the original `cherry-0bb1d511e4f` branch onto ci/master, since ci/master already includes the FAT fix (as `c81691ad483` and `2514c0a6b95`).
+
+All deltas are preserved. Now let me run buildman to verify the build:
+
+All deltas match. Now let me run buildman:
+
+Now let me force-push using pickman:
+
+## Report
+
+**MR !1004** (branch `cherry-0bb1d511e4f`) has been rebased onto `ci/master` and force-pushed.
+
+### Rebase
+- Started from existing local `cherry-0bb1d511e4f-v2` (which already contained the FAT fix and review-handling pickman record from the previous fix1 cycle).
+- Created `cherry-0bb1d511e4f-v3` and ran `git rebase --keep-empty ci/master`.
+- Rebase succeeded with **no merge conflicts**.
+- The FAT fix commit `96da13746c7` ("fs: fat: Declare disk_write() in fat_internal.h") was correctly **skipped** by git as already-applied — `ci/master` now contains both Simon's `c81691ad483` and our `2514c0a6b95` versions of the same fix, so the duplicate cherry-pick is no longer needed.
+
+### Delta verification
+All 9 retained commits have **identical file lists and line counts** vs. their pre-rebase originals:
+- 6 UFS cherry-picks (drivers/ufs, spl, scsi, lib changes)
+- Merge tag commit (empty merge, preserved with `--keep-empty`)
+- Cherry-pick pickman-history record
+- Pipeline fix pickman-history record
+- Review handling pickman-history record
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 board built, no errors/warnings).
+
+### Review comments
+Both review comments were bot notifications confirming Pipeline fix attempt 1 was applied (the FAT `disk_write()` fix). No code changes were requested. Since `ci/master` now contains the upstream version of the same fix, the rebase naturally absorbs the resolution — the pickman-history records of the fix and review-handling remain on the branch as audit trail.
+
+### Push
+`./tools/pickman/pickman push-branch cherry-0bb1d511e4f -r ci -f` → forced update `e8dd0dc1c44 → d87b858667a` on `refs/heads/cherry-0bb1d511e4f`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Suggested MR reply
+> Rebased onto current `ci/master` (no conflicts). The standalone FAT `disk_write()` fix commit dropped automatically because `ci/master` now contains the upstream version of the same fix. All 6 UFS cherry-picks plus the empty merge commit rebased cleanly with identical deltas; sandbox build passes. Local branch: `cherry-0bb1d511e4f-v3`.
+
+---
+
