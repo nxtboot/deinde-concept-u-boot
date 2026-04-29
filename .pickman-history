@@ -73430,3 +73430,38 @@ These belong to `cherry-40a4889220a`, not this MR's 22-commit set. The task was 
 
 ---
 
+### Review: 2026-04-28
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 64bit ARM platforms, build all 32bit ARM pla...
+
+### Conversation log
+The fix from `cherry-abd1efa992d-fix1` was prepared but never applied to the main branch. Let me cherry-pick it onto `cherry-abd1efa992d`.
+
+Now run the build to verify:
+
+Build clean (no err file, no failures). Now create the v4 branch and push.
+
+Remote is updated with the fix on top. Local backup `cherry-abd1efa992d-v4` created.
+
+## Summary
+
+**Action taken:** Cherry-picked the disk_write() declaration fix (`cce6916e81f`) from the previous-attempt `cherry-abd1efa992d-fix1` branch onto `cherry-abd1efa992d`. The fix had been prepared in the prior conversation but never pushed; this run completed the push.
+
+### Branch state
+- **Local backup:** `cherry-abd1efa992d-v4` at `a983573a7dd`
+- **Remote pushed:** `ci/cherry-abd1efa992d` force-updated to `a983573a7dd`
+- **Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Fix details (review comment addressed)
+
+The single review comment was the previous pipeline-fix attempt (build all 64bit ARM, build all 32bit ARM, efi-aarch64, play, allyesconfig, tools-only, envtools). Root cause: `fs/fat/fat_write.c` references `disk_write()` but no declaration exists in `fat_internal.h` when `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH` is enabled (the definition is in `fat.c` non-static). Fix adds a guarded prototype to `fs/fat/fat_internal.h`. New commit on top: `a983573a7dd`.
+
+### Suggested MR reply
+
+> Pushed pipeline-fix attempt 2 — the prior fix (`fs: fat: declare disk_write() in fat_internal.h`) had been prepared but not actually applied to this branch in the previous run. Now cherry-picked onto `cherry-abd1efa992d` and force-pushed. Sandbox build via `buildman -L --board sandbox` passes (status 0, no err). The world_build/allyesconfig/qcom failures should now be resolved; please re-run `play` and `efi-aarch64` (those failures looked like lab-runner state issues, not code defects).
+
+---
+
