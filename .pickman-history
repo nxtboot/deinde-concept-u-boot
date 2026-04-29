@@ -73955,7 +73955,6 @@ This pickman-history record commit is added on top as `cherry-0bb1d511e4f-v4`, t
 > Job 476645 ran on commit 7ef069a6 — the *pre-rebase* HEAD of this MR. The 4-byte SPL overflow on am335x_hs_evm and am335x_hs_evm_spi comes from upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'"), not from any of the 6 UFS commits in this MR. Your fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled") is already on ci/master and was absorbed when this branch was rebased in the prior review cycle. Rebuilt locally on the current MR HEAD (`d87b858667a`): both am335x_hs_evm and am335x_hs_evm_spi build cleanly (~60 bytes of .sram slack). Re-pushing the branch to trigger a fresh pipeline on the rebased state.
 
 ---
-
 ## 2026-04-29: us/next
 
 Branch: cherry-a3075db94d4
@@ -74151,6 +74150,47 @@ Per the instructions ("If the failure is an infrastructure or transient issue, r
 ### Suggested next step for the caller
 
 Retry the pipeline (especially `rock3a`, `rpi5`, `efi-x86_64-uboot-iso` once the lab is free). The `qcheck` failure is a master-wide issue and needs a separate fix (e.g. install the `cst` / `openssl` bintools in the runner image, or add `# pragma: no cover` to the i.MX8M signing paths) — it should not block this MR.
+
+---
+
+## 2026-04-29: us/next
+
+Branch: cherry-e98e9b1ec9b
+
+Commits:
+- e98e9b1ec9b misc: k3_fuse: Fix printing of error codes
+- 494782b6e0e misc: k3_fuse: Check readback on fuse prog
+- b533d457aee misc: k3_fuse: Enable fuse Sense support
+- 34c7bcacfab misc: k3_fuse: Limit writes to 25bit values
+- e298a3faa39 Merge patch series "Minor fixes for the k3_fuse driver"
+
+### Conversation log
+## Final Status Report
+
+All 5 commits successfully cherry-picked onto branch `cherry-e98e9b1ec9b` (based on `ci/master`):
+
+```
+d7b448a2adb Merge patch series "Minor fixes for the k3_fuse driver"
+18c130bd7f8 misc: k3_fuse: Limit writes to 25bit values
+70c11159728 misc: k3_fuse: Enable fuse Sense support
+29862bc1662 misc: k3_fuse: Check readback on fuse prog
+f5702efd7d6 misc: k3_fuse: Fix printing of error codes
+```
+
+**Build result:** ok (sandbox build completed successfully after every cherry-pick and at the end; 1 board built, no warnings/errors)
+
+**Deltas:** All 4 regular commits matched their originals exactly (same files, same +/- line counts):
+- `f5702efd7d6`: 1 file, +3/-3 (matches)
+- `29862bc1662`: 1 file, +8/-1 (matches)
+- `70c11159728`: 1 file, +1/-1 (matches)
+- `18c130bd7f8`: 1 file, +3/-3 (matches)
+- `d7b448a2adb`: empty merge commit preserved with `--allow-empty` (expected for cherry-picked merge)
+
+**Fix-ups:** None required — all cherry-picks applied cleanly without conflicts.
+
+**Concerning deltas:** None.
+
+The branch is left ready for pushing.
 
 ---
 
