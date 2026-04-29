@@ -73174,3 +73174,94 @@ If you want me to force-push anyway to re-trigger the MR pipeline, let me know a
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-abd1efa992d
+
+Commits:
+- abd1efa992d net: mdio-mt7531-mmio: use common header priv struct
+- 0561b0b25a1 net: airoha: add initial support for multiple GDM port
+- 7ad4c7f8cf0 net: airoha: avoid out of boundary writing/access to gdm_port_str[] array
+- be0c12296e5 net: airoha: declare airoha_eth_port as U_BOOT_DRIVER()
+- b4029a4049a net: airoha: do not call airoha_fe_init() from GDM port independent code
+- 794c30b9d89 net: airoha: init switch before GDM port initialization
+- d4dd6eb29bd net: airoha: add support for Airoha PCS driver
+- 5b6b5d6f0b3 net: airoha: pcs: improve/fix building rules
+- 2a7f69203f5 net: airoha-pcs: an7581: sync with linux code a bit
+- f1deb4f2e2b airoha: add GDM1 sub-node into EN7523 ethernet controller node
+- 161d948f57b airoha: add PCS node for AN7581
+- fdda0e2e07e configs: enable PCS for Airoha AN7581
+- a527b110514 net: airoha: fill in support for PCS/PHY in Airoha Ethernet driver
+- 08fa7baad59 net: airoha: makes PCS support optional
+- 96d9e7c4642 net: airoha: use mt7531 mdio for GDM1
+- 841e23d6861 boot: availability of command mii for NET_LWIP
+- 2a8bb06ff51 net: phy: air_en8811: add support for Airoha AN8811HB PHY
+- 1939a7f7fb0 net: do not use non-existent CONFIG_DM_CLK
+- b3ee14ea6d2 net: lwip: Fix PBUF_POOL_BUFSIZE when PROT_TCP_LWIP is disabled
+- 67586012490 net: lwip: scale buffer pool size with TFTP block size
+- a5fcbd5a835 net: Move network PHY under NETDEVICES
+- 6dc75d440db Merge tag 'net-20260312' of https://source.denx.de/u-boot/custodians/u-boot-net into next
+
+### Conversation log
+The first commit `abd1efa992d` is already applied as `145487611f6` (the patches are essentially identical). Let me proceed with the remaining commits.
+
+Good, delta matches. Let me continue with the next commits.
+
+Now I need to add the fix-up note to the commit message.
+
+Something switched my branch. Let me switch back to my branch and continue.
+
+Now the merge commit:
+
+All 21 cherry-picks plus the already-applied first commit are present. Now run the build test.
+
+Build completed successfully (status 0). Let me verify the commit count and finalize.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-abd1efa992d` (left ready for pushing)
+
+**Build result:** ✅ sandbox build succeeded (status 0, no errors)
+
+### Summary of cherry-picks
+
+| # | Commit | Status |
+|---|--------|--------|
+| 1 | `abd1efa992d` net: mdio-mt7531-mmio: use common header priv struct | **Already applied** as `145487611f6` (verified content matches) |
+| 2 | `0561b0b25a1` net: airoha: add initial support for multiple GDM port | ✅ `4faf1070ce0` |
+| 3 | `7ad4c7f8cf0` net: airoha: avoid out of boundary | ✅ `97a14dd8241` |
+| 4 | `be0c12296e5` net: airoha: declare U_BOOT_DRIVER() | ✅ `8b9d6dbc6a9` |
+| 5 | `b4029a4049a` net: airoha: do not call airoha_fe_init | ✅ `ed903251cfe` |
+| 6 | `794c30b9d89` net: airoha: init switch before GDM | ✅ `3bbba62e70e` |
+| 7 | `d4dd6eb29bd` net: airoha: add Airoha PCS driver | ✅ `5d66d9d7d9a` |
+| 8 | `5b6b5d6f0b3` net: airoha: pcs: building rules | ✅ `969208ce076` |
+| 9 | `2a7f69203f5` net: airoha-pcs: an7581: sync | ✅ `706c95e01ed` |
+| 10 | `f1deb4f2e2b` airoha: add GDM1 sub-node DT | ✅ `8f92a03c713` |
+| 11 | `161d948f57b` airoha: add PCS node for AN7581 | ✅ `f312963dcf8` |
+| 12 | `fdda0e2e07e` configs: enable PCS for AN7581 | ✅ `df6ea1479cf` (with conflict fix-up) |
+| 13 | `a527b110514` net: airoha: fill in PCS/PHY | ✅ `11591f3e13d` |
+| 14 | `08fa7baad59` net: airoha: makes PCS optional | ✅ `eff926377fd` |
+| 15 | `96d9e7c4642` net: airoha: use mt7531 mdio for GDM1 | ✅ `39bc74269e2` |
+| 16 | `841e23d6861` boot: availability of mii for NET_LWIP | ✅ `f8eadbea775` |
+| 17 | `2a8bb06ff51` net: phy: air_en8811: AN8811HB | ✅ `848d6d144cf` |
+| 18 | `1939a7f7fb0` net: do not use non-existent CONFIG_DM_CLK | ✅ `6749cbd5c83` |
+| 19 | `b3ee14ea6d2` net: lwip: Fix PBUF_POOL_BUFSIZE | ✅ `4fc9bbd3bef` |
+| 20 | `67586012490` net: lwip: scale buffer pool with TFTP | ✅ `4280d0845b2` |
+| 21 | `a5fcbd5a835` net: Move network PHY under NETDEVICES | ✅ `4ea6301acf9` |
+| 22 | `6dc75d440db` Merge tag 'net-20260312' (merge commit) | ✅ `07b89533031` (empty, with -m 1, conflict fix-up) |
+
+### Fix-ups applied
+- **`df6ea1479cf`** (configs: enable PCS for Airoha AN7581): merge conflict in `configs/an7581_evb_defconfig` — kept existing `CONFIG_DM_MDIO/CMD_MII/CMD_MDIO` entries while adding the new `CONFIG_PCS_AIROHA_AN7581=y` and `CONFIG_PHYLIB=y`. Note added to commit message.
+- **`07b89533031`** (merge commit): conflict in `configs/an7581_evb_defconfig` resolved by keeping HEAD entries; created as empty commit to preserve history. Note added to commit message.
+
+### ⚠️ Concerns
+During the cherry-pick session, **another concurrent process repeatedly switched my branch** (between `cherry-abd1efa992d` and `cherry-40a4889220a`). It appears to have also placed 4 unrelated commits onto `cherry-abd1efa992d`, interleaved with mine:
+- `6d6355e789e` dma: ti: don't use non-existent CONFIG_TI_K3_NAVSS_PSILCFG
+- `656901ef11e` boot: don't select non-existent CONFIG_VPL_CRYPTO
+- `453143fd18c` sandbox: don't imply non-existent CONFIG_KEYBOARD
+- `80240f859b1` disk: fix DOS_PARTITION dependencies
+
+These were not part of the 22 commits I was asked to cherry-pick. You may want to review and remove them with an interactive rebase before pushing. The branch is currently 25 commits ahead of `ci/master` (21 mine + 4 from the parallel process).
+
+---
+
