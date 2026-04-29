@@ -107,6 +107,15 @@ struct dir_entry *next_dent(struct fat_itr *itr);
 int disk_read(u32 block, u32 nr_blocks, void *buf);
 
 /**
+ * disk_write() - write sectors to the current FAT device
+ * @block: logical block number
+ * @nr_blocks: number of blocks to write
+ * @buf: buffer holding data to write
+ * Return: number of blocks written, -1 on error
+ */
+int disk_write(u32 block, u32 nr_blocks, void *buf);
+
+/**
  * flush_dirty_fat_buffer() - write fat buffer to disk if dirty
  * @mydata: filesystem data
  * Return: 0 on success, -1 on error

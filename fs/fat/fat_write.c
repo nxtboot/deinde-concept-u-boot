@@ -194,7 +194,7 @@ out:
 
 static int total_sector;
 #if !IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
-static int disk_write(u32 block, u32 nr_blocks, void *buf)
+int disk_write(u32 block, u32 nr_blocks, void *buf)
 {
 	ulong ret;
 
