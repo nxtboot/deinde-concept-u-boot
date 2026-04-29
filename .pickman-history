@@ -73779,3 +73779,40 @@ The branch is left ready for pushing. Not merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-04-29 (attempt 1)
+
+Branch: cherry-0bb1d511e4f
+
+Failed jobs:
+- Build allyesconfig, tools-only and envtools (test_suites)
+
+### Conversation log
+All three builds (allyesconfig, tools-only, envtools) now succeed. The fix is on local branch `cherry-0bb1d511e4f-fix1`.
+
+## Report
+
+**Root cause:** The `Build allyesconfig, tools-only and envtools` job failed during the `make allyesconfig` build of `fs/fat/fat_write.c` with:
+
+```
+fs/fat/fat_write.c:241:13: error: implicit declaration of function 'disk_write';
+did you mean 'blk_write'? [-Werror=implicit-function-declaration]
+```
+
+**Responsible commit:** `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'") — this is *not* one of the 6 cherry-picked UFS commits on this branch; it's a pre-existing commit that was already on the parent (`bbb3a0ec2f5`). The bug only triggers when `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH=y` (which allyesconfig enables): in that case `disk_write()` is provided by `fat.c`, the static fallback in `fat_write.c` is `#if`'d out, but `fat_internal.h` only declares `disk_read()` (not `disk_write()`), so `fat_write.c` ends up calling `disk_write()` with no visible prototype, tripping `-Werror=implicit-function-declaration`.
+
+**Fix applied:** Cherry-picked commit `2514c0a6b95` ("fs: fat: Declare disk_write() in fat_internal.h") from `ci/master` onto the branch as a new commit `96da13746c7`. This existing fix:
+- Adds a `disk_write()` prototype to `fs/fat/fat_internal.h` next to `disk_read()`
+- Drops `static` from the local fallback definition in `fs/fat/fat_write.c` so it matches the prototype
+
+A new fixup commit on top was used (rather than amending one of the cherry-picks) because the responsible commit predates the branch — none of the 6 UFS cherry-picks touched `fs/fat/`.
+
+**Verification:** All three CI build steps now pass locally:
+- `make allyesconfig oldconfig all -j$(nproc)` — OK
+- `make tools-only_config tools-only -j$(nproc)` — OK
+- `make tools-only_config envtools -j$(nproc)` — OK
+- `um build sandbox` — OK
+
+Branch `cherry-0bb1d511e4f-fix1` is left ready (not pushed).
+
+---
+
