@@ -72986,3 +72986,191 @@ Mid-task, another process committed a "Record review handling for cherry-35d9b9c
 
 ---
 
+## 2026-04-28: us/next
+
+Branch: cherry-af5f97aeb88
+
+Commits:
+- af5f97aeb88 rockchip: sdram: Add fallback that fixup DRAM gaps on RK3588
+- fe54fdc6f6c phy: rockchip: naneng-combphy: Enable U3 port for USB3OTG on RK3568
+- 787705814ad rockchip: Add initial RK3582 support
+- ab741f6f0e9 rockchip: rk3588-generic: Enable support for RK3582
+- eb3042dc0d9 Makefile: fix duplicate dtbs recipe
+- 045fb42827c arch: arm: dts: k3-r5: Drop a53_0 clock overrides in board files
+- 492e00e27c3 rockchip: rk3588s-rock-5c: Add support for ROCK 5C Lite variant
+- c501d837426 rockchip: rk3576: Allow pmu sram access for non-secure masters
+- bdacb08a2d7 rockchip: rk3576: Use DMA when loading FIT images
+- 804d0095381 rockchip: tiger-rk3588: disable HS400
+- ebf46b588f4 board: rockchip: Add FriendlyElec NanoPi Zero2
+- c494a49d836 ARM: dts: rockchip: Remove mshc aliases from RK3288
+- ff2a978725a ARM: dts: rockchip: Add spi_flash label to rk3288-veyron
+- d679a44ba72 ARM: dts: rockchip: move edp assigned-clocks to edp node on rk3288
+- 03253abbae3 rockchip: Switch rk3288-veyron boards to upstream devicetree
+- f339d6a9c3c rockchip: Switch remaining rk3288 boards to upstream devicetree
+- 109c7ef87d7 rockchip: imply OF_UPSTREAM for rk3288 boards
+- f273b393f7f rockchip: spl: Add common handling of USB bootsource_id 0x81
+- cde91149363 rockchip: mkimage: Re-sort the spl_infos list alphanumerically
+- 51d578ab0f0 rockchip: mkimage: Add support for RK3506
+- 05b8228648f ram: rockchip: Add basic support for RK3506
+- a445494f24b dt-bindings: clock: rockchip: Add RK3506 clock and reset unit
+- fbf72dce915 clk: rockchip: Add support for RK3506
+- ea45ebafd84 pinctrl: rockchip: Use syscon_regmap_lookup_by_phandle()
+- 6225eeff57a pinctrl: rockchip: Add support for RK3506
+- 5bc966054fd rockchip: otp: Add support for RK3506
+- 7404646f038 phy: rockchip-inno-usb2: Add support for RK3506
+- 5b5616f8465 net: dwc_eth_qos_rockchip: Add support for RK3506
+- 52877548d38 arch: arm: rockchip: Add initial support for RK3506
+- b107cfbb794 rockchip: rk3588: include all addressable DRAM in memory map
+- 9d3d4d61925 rockchip: Reduce size of ramboot usb472 payload
+- cff18cef190 arm: rockchip: don't use non-existent CONFIG_TPL_TINY_FRAMEWORK
+- d93a63acfe7 Merge tag 'u-boot-rockchip-20260309' of https://source.denx.de/u-boot/custodians/u-boot-rockchip into next
+
+### Conversation log
+Let me first check the "maybe already applied" commits referenced as `cd196688b81`:
+
+There's a stale cherry-pick state from another branch. Let me abort it.
+
+Now I'm on the correct branch. Let me start the cherry-picks.
+
+State is clean. Now let me start the actual cherry-picks.
+
+Good. Now let me run buildman to verify build passes.
+
+Build passed. Now let me proceed with batch cherry-picks for efficiency, with build checks at strategic points.
+
+Match. Let me batch cherry-pick the next several non-conflicting ones.
+
+Something switched the branch during my workflow. Let me restore the cherry-5e7b1384902 branch to its original state and continue on cherry-af5f97aeb88.
+
+Good, on the right branch. Let me continue with more cherry-picks.
+
+Now let me check the "maybe already applied" commits.
+
+c494a49d836 is already applied (empty cherry-pick). Let me skip it.
+
+All three "maybe applied" commits (c494a49d836, ff2a978725a, d679a44ba72) are confirmed already applied (skipped as empty). Let me update todos and continue.
+
+Now let me check the next "maybe applied" - a445494f24b.
+
+a445494f24b is also already applied. Let me skip and continue.
+
+Now I have a conflict to resolve in 9d3d4d61925.
+
+Now the merge commit.
+
+The merge cherry-pick is empty (all merge contents already applied as individual commits). Let me commit it as empty.
+
+All cherry-picks complete. Let me verify and run the final build.
+
+29 commits cherry-picked + 4 already-applied = 33. Now let me run the final build.
+
+Build passed. Let me update final todos.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-af5f97aeb88` (based on `ci/master`)
+**Final HEAD:** `c42ab0bd836` (Merge tag 'u-boot-rockchip-20260309')
+
+### Status
+- **Build result:** OK (sandbox build passed cleanly)
+- **Total commits in series:** 33
+  - 29 commits cherry-picked successfully
+  - 4 commits already applied via `cd196688b81` (squashed dts/upstream update) and skipped
+  - 1 merge commit (d93a63acfe7) recorded as empty (all content already applied via individual cherry-picks)
+
+### Already-applied commits (skipped)
+- `c494a49d836` ARM: dts: rockchip: Remove mshc aliases from RK3288
+- `ff2a978725a` ARM: dts: rockchip: Add spi_flash label to rk3288-veyron
+- `d679a44ba72` ARM: dts: rockchip: move edp assigned-clocks to edp node on rk3288
+- `a445494f24b` dt-bindings: clock: rockchip: Add RK3506 clock and reset unit
+
+These all touch `dts/upstream/` files included in the squashed dts subtree update `cd196688b81`. Cherry-picks were verified empty, confirming they're already present.
+
+### Fix-ups
+- **`9d3d4d61925`** (rockchip: Reduce size of ramboot usb472 payload): Conflict in `arch/arm/mach-rockchip/spl.c` where the cherry-pick added `#include <binman_sym.h>` while HEAD already had `#include <bloblist.h>` and `#include <bootm.h>`. Resolved by keeping all three includes alphabetically sorted. Commit message amended with a note describing the resolution.
+- **`d93a63acfe7`** (merge commit): Same include conflict in `spl.c` re-appeared during the merge cherry-pick; resolved identically. Final cherry-pick became empty (as expected, since all individual commits were already applied) and was committed with `--allow-empty` to preserve the merge commit message in history.
+
+### Concerning deltas
+None. All cherry-picks matched expected file/line counts.
+
+The branch is left ready for pushing on `cherry-af5f97aeb88`.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-5e7b1384902
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already on top of the latest ci/master (`56ab538db90`). Let me run the rebase anyway to confirm and verify the build still works.
+
+The rebase is a no-op since the branch is already on top of the latest ci/master. Let me still verify with a build, then push the branch.
+
+Build passes and deltas match. Now let me create the v2 local branch and push.
+
+The branch has been pushed successfully. Here's the summary:
+
+## Summary
+
+**MR !1000 (cherry-5e7b1384902): rebase onto latest target branch — completed**
+
+### Result
+The rebase was a **no-op**: branch `cherry-5e7b1384902` is already on top of the current `ci/master` tip (`56ab538db90 Merge branch 'cherry-0b429f7c6b9' into 'master'`). `git rebase --keep-empty ci/master` reported "Current branch cherry-5e7b1384902 is up to date." No commits needed replaying.
+
+### Verification
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 failed (clean)
+- **Delta check**: All three commits' `git show --stat` output matches the pre-rebase output exactly:
+  - `df7a567bf08` fs: fat: Handle 'FAT sector size mismatch' — unchanged
+  - `f88fa906fa4` configs: qcom: Enable FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH — unchanged
+  - `dd7b5b063cd` Merge patch series "fs: fat: Handle 'FAT sector size mismatch'" — unchanged
+
+### Push
+- Created local marker branch `cherry-5e7b1384902-v2`
+- Force-pushed `cherry-5e7b1384902` to `ci` (forced update from `a277fc56146` → `dd7b5b063cd`); GitLab will re-trigger the MR pipeline
+
+### Suggested MR reply
+> Rebased onto latest `ci/master` (`56ab538db90`). Branch was already on top of the current target tip, so the rebase was a no-op — all three commits unchanged. Verified clean sandbox build via buildman. Force-pushed to refresh the MR pipeline.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-5e7b1384902
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already on top of latest ci/master (3 ahead, 0 behind). Let me confirm by running the rebase:
+
+The branch is already fully rebased onto the latest `ci/master`. Summary:
+
+## Status: No Rebase Needed
+
+**State of branch `cherry-5e7b1384902`:**
+- Local HEAD: `dd7b5b063cd`
+- Remote `ci/cherry-5e7b1384902`: `dd7b5b063cd` (identical)
+- Backup branch `cherry-5e7b1384902-v2`: `dd7b5b063cd` (identical)
+- 3 commits ahead of `ci/master` (`56ab538db90`), 0 commits behind
+- `git rebase --keep-empty ci/master` → "Current branch cherry-5e7b1384902 is up to date"
+
+**Commits on top of `ci/master`:**
+1. `df7a567bf08` — fs: fat: Handle 'FAT sector size mismatch'
+2. `f88fa906fa4` — configs: qcom: Enable FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH
+3. `dd7b5b063cd` — Merge patch series "fs: fat: Handle 'FAT sector size mismatch'" (empty merge, preserved by --keep-empty)
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` with no `err` file in `/tmp/pickman/current/sandbox/` (clean build).
+
+**No push performed:** The remote branch is already at the same commit as our local branch, so a force-push would be a no-op and would not trigger a new MR pipeline. The previous run already pushed this state.
+
+## Suggested MR reply
+
+> The branch is already rebased onto the latest `ci/master` (`56ab538db90`) — `git rebase --keep-empty ci/master` reports "Current branch is up to date". The remote branch (`dd7b5b063cd`) matches the local rebased branch. Sandbox build is clean. No push was needed.
+
+If you want me to force-push anyway to re-trigger the MR pipeline, let me know and I'll run `./tools/pickman/pickman push-branch cherry-5e7b1384902 -r ci -f`.
+
+---
+
