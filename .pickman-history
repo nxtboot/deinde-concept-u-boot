@@ -74035,3 +74035,58 @@ Branch is ready for pushing.
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-a3075db94d4
+
+Comments addressed:
+
+
+### Conversation log
+The rebase hit a conflict in `.pickman-history` — a journal file where both sides added their own entries. Need to keep both.
+
+I need to resolve the conflict by keeping both sets of journal entries. The `## 2026-04-29: us/next` heading is shared but each side recorded a different MR. I'll keep HEAD's cherry-0bb1d511e4f section, then add a new heading for our cherry-a3075db94d4 section.
+
+Those are all historical text mentions in old journal entries, not actual conflict markers. Let me verify the resolved area is clean:
+
+Conflict resolved cleanly. Continuing the rebase:
+
+All 19 commits rebased successfully. Now let me verify deltas of each rebased commit match originals:
+
+All 18 functional commits + the empty merge match exactly. The pickman record commit has +1 line (80 vs 79) — that's the new `## 2026-04-29: us/next` heading I added when resolving the journal conflict (since the original heading is now shared with the cherry-0bb1d511e4f section already on ci/master). That's expected and correct.
+
+Now run the build:
+
+Build OK. Now create the v3 branch and push:
+
+Force push succeeded. Let me verify the remote is up to date:
+
+Remote updated. Pipeline will trigger automatically.
+
+## Report
+
+**MR !1006** (branch `cherry-a3075db94d4`) has been rebased onto current `ci/master` and force-pushed.
+
+### Rebase
+- Started: 19 commits ahead of `9bb1b385158` (old `ci/master`).
+- Ran `git rebase --keep-empty ci/master` → 18/19 commits applied cleanly.
+- **Conflict** on commit 19 (`pickman: Record cherry-pick of 18 commits from us/next`) in `.pickman-history`. Both this branch and the recently merged `cherry-0bb1d511e4f` MR added entries under the same `## 2026-04-29: us/next` heading. Resolved by keeping the cherry-0bb1d511e4f section as-is (now from upstream) and giving our cherry-a3075db94d4 entries their own duplicate `## 2026-04-29: us/next` heading. No code conflicts.
+
+### Delta verification
+All 18 cherry-picked commits + the empty merge commit have **identical file lists and line counts** vs. their pre-rebase originals. The pickman-history record commit grew by exactly 1 line (80 vs 79 insertions) — that 1 line is the additional `## 2026-04-29: us/next` heading added during conflict resolution. Expected and correct.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 board built in 7s, no errors/warnings).
+
+### Push
+`./tools/pickman/pickman push-branch cherry-a3075db94d4 -r ci -f` → forced update `58f6018f0f0 → d6ac2ffa944` on `refs/heads/cherry-a3075db94d4`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Branches
+- Local: `cherry-a3075db94d4-v2` (snapshot of rebased state, kept for reference)
+- Remote (`ci`): `cherry-a3075db94d4` updated to `d6ac2ffa944`
+
+### Suggested MR reply
+> Rebased onto current `ci/master`. The only conflict was a journal-style `.pickman-history` clash with the recently merged `cherry-0bb1d511e4f` MR (both wrote under the same `## 2026-04-29: us/next` heading); resolved by giving each MR its own heading. All 18 cherry-picks plus the empty merge rebased with identical deltas; sandbox build passes. Local branch: `cherry-a3075db94d4-v2`.
+
+---
+
