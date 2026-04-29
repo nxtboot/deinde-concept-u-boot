@@ -73465,3 +73465,66 @@ The single review comment was the previous pipeline-fix attempt (build all 64bit
 
 ---
 
+### Pipeline fix: 2026-04-28 (attempt 2)
+
+Branch: cherry-abd1efa992d
+
+Failed jobs:
+- build all 32bit ARM platforms (world_build)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+Now let me build to verify the fix:
+
+Now let me commit the fix:
+
+Now create the local fix branch:
+
+## Summary
+
+**Branch:** `cherry-abd1efa992d-fix2` (commit `0107b3f647b` on top of `cherry-abd1efa992d`)
+
+### Root cause
+
+Three failed jobs, two are infrastructure issues, one is a real code defect:
+
+1. **`build all 32bit ARM platforms`** (real defect): The full job log (truncated in the snippet) shows `am335x_hs_evm` and `am335x_hs_evm_spi` failing in SPL link with:
+   ```
+   arm-linux-gnueabi-ld: u-boot-spl section `__u_boot_list' will not fit in region `.sram'
+   arm-linux-gnueabi-ld: region `.sram' overflowed by 4 bytes
+   ```
+   Reproduced locally with `um build am335x_hs_evm`.
+
+2. **`efi-aarch64`** (lab infrastructure): `OSError: [Errno 5] Input/output error` after `u-boot-test-reset` in `test_distro_arm_app_efi`. Lab/serial-port flake, not a code defect.
+
+3. **`play`** (lab infrastructure): `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` on the BeaglePlay. Lab failure, not a code defect.
+
+### Responsible commit
+
+The SPL overflow is a pre-existing defect on master, introduced by `d7d948d0de7 fs: fat: Handle 'FAT sector size mismatch'` (verified by reproducing the same overflow when building at that exact commit). That commit added a `static int fat_sect_size;` and switched two early call sites in `fat_set_blk_dev()` and `read_bootsectandvi()` from `disk_read(0, 1, x)` to `blk_dread(cur_dev, cur_part_info.start, 1, x)`. Even when `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH` is disabled (which is the case for am335x_hs_evm), those changes inflate SPL by enough to overflow .sram by 4 bytes.
+
+The MR's prior fix1 (`a983573a7dd fs: fat: declare disk_write() in fat_internal.h`) addressed a different facet of the same upstream commit (missing prototype on qcom/allyesconfig) but didn't recover the lost 4 SPL bytes.
+
+Because the responsible commit is on **master**, not in this MR's commit set, an amend isn't appropriate; a fixup commit on top is the minimal, focused change (same approach as the previous fix1).
+
+### Fix
+
+Wrap `fat_sect_size` (the static variable and its two assignments) and the new direct `blk_dread()` call sites in `#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)`, falling back to the original `disk_read(0, 1, ...)` calls when the option is off. When the option is on (qcom), upstream behaviour is preserved unchanged.
+
+### Verified
+
+`buildman` clean (23 boards, all `done: 0`) for:
+- Previously-failing: `am335x_hs_evm`, `am335x_hs_evm_spi`, `am335x_hs_evm_uart`, `am43xx_hs_evm`, `am43xx_hs_evm_qspi`
+- Option-enabled: all `qcom*` (7 boards) — confirms the new code path still works
+- Smoke: `sandbox`, `sandbox64`, `sandbox_spl`, `sandbox_vpl`, `sandbox_noinst`, `sandbox_nocmdline`, `sandbox_flattree`, `sandbox64_lwip`, `tools-only`
+- MR boards: `an7581_evb`, `en7523_evb`
+
+### Lab failures — not addressed
+
+`efi-aarch64` and `play` are lab/runner failures (I/O error after reset on the EFI VM, login timeout on BeaglePlay). Both should be re-run after this fix lands; neither is caused by the branch.
+
+Branch left at `cherry-abd1efa992d-fix2`; not pushed.
+
+---
+
