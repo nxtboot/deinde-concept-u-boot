@@ -73528,3 +73528,43 @@ Branch left at `cherry-abd1efa992d-fix2`; not pushed.
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) build all 32bit ARM platforms, efi-aarch64, play.
+
+Now...
+
+### Conversation log
+The fix from the previous run (`0107b3f647b`) is already on the branch AND on the remote. Local has only one extra pickman metadata commit. Let me verify the build still passes and ensure the remote is in sync.
+
+Build succeeded (no err file). Now create v5 backup and push.
+
+## Summary — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v5` at `c604fb70a85`
+**Remote pushed:** `ci/cherry-abd1efa992d` updated `0107b3f647b..c604fb70a85`
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Review comment addressed
+
+The review comment was the bot's record of attempt 2 ("Pipeline fix (attempt 2): fixed failed job(s) build all 32bit ARM platforms, efi-aarch64, play"). The actual code fix from that attempt — `0107b3f647b fs: fat: avoid SPL size growth when sector mismatch is disabled` — was already present on the branch (carried over from the previous run's `cherry-abd1efa992d-fix2`). The previous run had pushed the code fix but truncated mid-message before pushing the pickman record commit.
+
+This run: verified the fix is in place, sandbox build clean, force-pushed to update the MR (the push promotes the pickman metadata commit `c604fb70a85` so the remote matches local).
+
+### Branch contents on top of `ci/master`
+
+- 22 networking cherry-picks (the original MR set)
+- `a983573a7dd` fs: fat: declare disk_write() in fat_internal.h (fix1 — qcom/allyesconfig)
+- `0107b3f647b` fs: fat: avoid SPL size growth when sector mismatch is disabled (fix2 — am335x_hs_evm 32-bit ARM)
+- `c604fb70a85` pickman: Record pipeline fix metadata
+- 4 unrelated commits inherited from the original cherry-pick session (still present, see prior runs)
+
+### Suggested MR reply
+
+> Force-pushed to update the MR. The fix2 patch (`fs: fat: avoid SPL size growth when sector mismatch is disabled`) was already on the branch from the previous run; this push synchronises the remaining metadata commit. Sandbox build via `buildman -L --board sandbox` passes (status 0, no err file). The pipeline should now pass `build all 32bit ARM platforms` and `Build allyesconfig`/`tools-only`/`envtools`. The `play` and `efi-aarch64` failures looked like lab-runner state issues (login timeout, I/O error after reset) rather than code defects — please re-run those if they fail again.
+
+---
+
