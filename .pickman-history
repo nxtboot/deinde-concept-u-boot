@@ -73348,6 +73348,327 @@ All 14 commits cleanly on top of ci/master.
 - The merge commit (`9f1059bc735`) cherry-pick became empty due to conflict resolution; committed with `git commit --allow-empty -C` and amended to add the `(cherry picked from commit ...)` annotation.
 
 The branch `cherry-40a4889220a` is left ready for pushing.
+### Review: 2026-04-28
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded cleanly with no conflicts. Let me verify the result.
+
+Let me verify the delta is preserved using range-diff and then build.
+
+All 25 commits are unchanged (`=` indicator) and just shifted on top of the 3 new commits from ci/master. Now let me build.
+
+Build is successful. The sandbox64 `err` file contains only DTC warnings (not errors). Now creating the v2 branch and pushing.
+
+Push succeeded. Let me clean up the backup branch and provide the final report.
+
+## Rebase Complete — MR !1001 (`cherry-abd1efa992d`)
+
+**Local branch saved as:** `cherry-abd1efa992d-v2`
+**Remote pushed:** `ci/cherry-abd1efa992d` (force-updated, tip `cec8ef0172a`)
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` returned status 0 (sandbox built clean; the only entries in `sandbox64/err` are pre-existing DTC `ranges_format` warnings, not errors)
+
+### What happened
+- Fetched latest `ci/master` — 3 new commits (the `fs: fat` series + a config commit) had landed on master.
+- Ran `git rebase --keep-empty ci/master`. Rebase completed cleanly with **no conflicts** for all 25 commits.
+- Verified delta with `git range-diff` — every one of the 25 commits maps `=` (identical patch contents) to its pre-rebase counterpart. Nothing changed except the parent chain.
+- The merge commit (`cec8ef0172a` "Merge tag 'net-20260312' …") remained empty and was preserved by `--keep-empty`.
+
+### Reply to post on the MR
+
+> Rebased onto latest `ci/master` (which now includes 3 new fs/fat commits). The rebase applied cleanly with no conflicts; `git range-diff` confirms all 25 commit patches are byte-identical to their pre-rebase versions, with only their parents shifted. Sandbox build via `buildman -L --board sandbox` passes (status 0). Force-pushed to update the MR.
+>
+> Note: the branch still carries 4 commits that were placed on it by a parallel process during the earlier cherry-pick session (`dma: ti …`, `boot: …VPL_CRYPTO`, `sandbox: …KEYBOARD`, `disk: fix DOS_PARTITION …`). They were not part of the original 22-commit cherry-pick set; flagging again in case they should be dropped before merge.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+
+
+### Conversation log
+## Rebase Complete — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v3` at `c39463cade7`
+**Remote pushed:** `ci/cherry-abd1efa992d` force-updated to `c39463cade7`
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` returned status 0 (no err file generated)
+**Base:** rebased onto `ci/master` at `760c2e943c5`
+
+### What was done
+
+1. **Verified rebase state** — A previous run had already executed `git rebase --keep-empty ci/master` cleanly (reflog confirms 25 picks completed with no conflicts). The branch base is `760c2e943c5`, matching current `ci/master`.
+2. **Verified delta** — Total diff vs `ci/master` is +4548 / -95 across 20 files, consistent with the pre-rebase total (+4510 / -96). The merge commit `cec8ef0172a` was preserved empty by `--keep-empty`.
+3. **Built sandbox** — buildman exit 0, no err file.
+4. **Pushed to remote** — Used `git push ci -f cherry-abd1efa992d:cherry-abd1efa992d` directly (rather than `pickman push-branch`, which uses `HEAD:branch`) because a concurrent process was repeatedly switching the working-tree HEAD between branches and the first `pickman push-branch` call ended up pushing the wrong branch's content. The direct branch:branch refspec sidesteps that race; the remote is now correct.
+
+### ⚠️ Concurrent-branch interference (recurring)
+
+Same as the previous run noted: another process keeps switching the working-tree HEAD (between `cherry-abd1efa992d`, `cherry-40a4889220a`, and `cherry-40a4889220a-v2`) mid-operation. The first push attempt this run pushed `e8c890dccf7` (mediatek/cherry-40a4889220a content) onto `cherry-abd1efa992d` because pickman's push uses `HEAD:branch`. Fixed by re-checking out and re-pushing with explicit `branch:branch`. Worth investigating before the next rebase session.
+
+### ⚠️ 4 unrelated commits still on the branch
+
+Carried over from the original cherry-pick session, still present after the rebase, still on remote:
+- `9551f8db39d` dma: ti: don't use non-existent CONFIG_TI_K3_NAVSS_PSILCFG
+- `04314f9cb09` boot: don't select non-existent CONFIG_VPL_CRYPTO
+- `7481becd6af` sandbox: don't imply non-existent CONFIG_KEYBOARD
+- `ddcbf69c96e` disk: fix DOS_PARTITION dependencies
+
+These belong to `cherry-40a4889220a`, not this MR's 22-commit set. The task was rebase-only, so I left them in place. May want to drop them before merge.
+
+### Suggested reply for the MR
+
+> Rebased onto latest `ci/master` (`760c2e943c5`). The rebase applied cleanly with no conflicts; sandbox build via `buildman -L --board sandbox` passes (status 0). Force-pushed to update the MR.
+>
+> Note: the branch still carries 4 commits that were placed on it by a parallel process during the earlier cherry-pick session (`dma: ti …`, `boot: …VPL_CRYPTO`, `sandbox: …KEYBOARD`, `disk: fix DOS_PARTITION …`). They were not part of the original 22-commit cherry-pick set; please confirm whether they should be dropped before merge.
+
+---
+
+### Review: 2026-04-28
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 64bit ARM platforms, build all 32bit ARM pla...
+
+### Conversation log
+The fix from `cherry-abd1efa992d-fix1` was prepared but never applied to the main branch. Let me cherry-pick it onto `cherry-abd1efa992d`.
+
+Now run the build to verify:
+
+Build clean (no err file, no failures). Now create the v4 branch and push.
+
+Remote is updated with the fix on top. Local backup `cherry-abd1efa992d-v4` created.
+
+## Summary
+
+**Action taken:** Cherry-picked the disk_write() declaration fix (`cce6916e81f`) from the previous-attempt `cherry-abd1efa992d-fix1` branch onto `cherry-abd1efa992d`. The fix had been prepared in the prior conversation but never pushed; this run completed the push.
+
+### Branch state
+- **Local backup:** `cherry-abd1efa992d-v4` at `a983573a7dd`
+- **Remote pushed:** `ci/cherry-abd1efa992d` force-updated to `a983573a7dd`
+- **Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Fix details (review comment addressed)
+
+The single review comment was the previous pipeline-fix attempt (build all 64bit ARM, build all 32bit ARM, efi-aarch64, play, allyesconfig, tools-only, envtools). Root cause: `fs/fat/fat_write.c` references `disk_write()` but no declaration exists in `fat_internal.h` when `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH` is enabled (the definition is in `fat.c` non-static). Fix adds a guarded prototype to `fs/fat/fat_internal.h`. New commit on top: `a983573a7dd`.
+
+### Suggested MR reply
+
+> Pushed pipeline-fix attempt 2 — the prior fix (`fs: fat: declare disk_write() in fat_internal.h`) had been prepared but not actually applied to this branch in the previous run. Now cherry-picked onto `cherry-abd1efa992d` and force-pushed. Sandbox build via `buildman -L --board sandbox` passes (status 0, no err). The world_build/allyesconfig/qcom failures should now be resolved; please re-run `play` and `efi-aarch64` (those failures looked like lab-runner state issues, not code defects).
+
+---
+
+### Pipeline fix: 2026-04-28 (attempt 2)
+
+Branch: cherry-abd1efa992d
+
+Failed jobs:
+- build all 32bit ARM platforms (world_build)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+Now let me build to verify the fix:
+
+Now let me commit the fix:
+
+Now create the local fix branch:
+
+## Summary
+
+**Branch:** `cherry-abd1efa992d-fix2` (commit `0107b3f647b` on top of `cherry-abd1efa992d`)
+
+### Root cause
+
+Three failed jobs, two are infrastructure issues, one is a real code defect:
+
+1. **`build all 32bit ARM platforms`** (real defect): The full job log (truncated in the snippet) shows `am335x_hs_evm` and `am335x_hs_evm_spi` failing in SPL link with:
+   ```
+   arm-linux-gnueabi-ld: u-boot-spl section `__u_boot_list' will not fit in region `.sram'
+   arm-linux-gnueabi-ld: region `.sram' overflowed by 4 bytes
+   ```
+   Reproduced locally with `um build am335x_hs_evm`.
+
+2. **`efi-aarch64`** (lab infrastructure): `OSError: [Errno 5] Input/output error` after `u-boot-test-reset` in `test_distro_arm_app_efi`. Lab/serial-port flake, not a code defect.
+
+3. **`play`** (lab infrastructure): `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` on the BeaglePlay. Lab failure, not a code defect.
+
+### Responsible commit
+
+The SPL overflow is a pre-existing defect on master, introduced by `d7d948d0de7 fs: fat: Handle 'FAT sector size mismatch'` (verified by reproducing the same overflow when building at that exact commit). That commit added a `static int fat_sect_size;` and switched two early call sites in `fat_set_blk_dev()` and `read_bootsectandvi()` from `disk_read(0, 1, x)` to `blk_dread(cur_dev, cur_part_info.start, 1, x)`. Even when `CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH` is disabled (which is the case for am335x_hs_evm), those changes inflate SPL by enough to overflow .sram by 4 bytes.
+
+The MR's prior fix1 (`a983573a7dd fs: fat: declare disk_write() in fat_internal.h`) addressed a different facet of the same upstream commit (missing prototype on qcom/allyesconfig) but didn't recover the lost 4 SPL bytes.
+
+Because the responsible commit is on **master**, not in this MR's commit set, an amend isn't appropriate; a fixup commit on top is the minimal, focused change (same approach as the previous fix1).
+
+### Fix
+
+Wrap `fat_sect_size` (the static variable and its two assignments) and the new direct `blk_dread()` call sites in `#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)`, falling back to the original `disk_read(0, 1, ...)` calls when the option is off. When the option is on (qcom), upstream behaviour is preserved unchanged.
+
+### Verified
+
+`buildman` clean (23 boards, all `done: 0`) for:
+- Previously-failing: `am335x_hs_evm`, `am335x_hs_evm_spi`, `am335x_hs_evm_uart`, `am43xx_hs_evm`, `am43xx_hs_evm_qspi`
+- Option-enabled: all `qcom*` (7 boards) — confirms the new code path still works
+- Smoke: `sandbox`, `sandbox64`, `sandbox_spl`, `sandbox_vpl`, `sandbox_noinst`, `sandbox_nocmdline`, `sandbox_flattree`, `sandbox64_lwip`, `tools-only`
+- MR boards: `an7581_evb`, `en7523_evb`
+
+### Lab failures — not addressed
+
+`efi-aarch64` and `play` are lab/runner failures (I/O error after reset on the EFI VM, login timeout on BeaglePlay). Both should be re-run after this fix lands; neither is caused by the branch.
+
+Branch left at `cherry-abd1efa992d-fix2`; not pushed.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) build all 32bit ARM platforms, efi-aarch64, play.
+
+Now...
+
+### Conversation log
+The fix from the previous run (`0107b3f647b`) is already on the branch AND on the remote. Local has only one extra pickman metadata commit. Let me verify the build still passes and ensure the remote is in sync.
+
+Build succeeded (no err file). Now create v5 backup and push.
+
+## Summary — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v5` at `c604fb70a85`
+**Remote pushed:** `ci/cherry-abd1efa992d` updated `0107b3f647b..c604fb70a85`
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Review comment addressed
+
+The review comment was the bot's record of attempt 2 ("Pipeline fix (attempt 2): fixed failed job(s) build all 32bit ARM platforms, efi-aarch64, play"). The actual code fix from that attempt — `0107b3f647b fs: fat: avoid SPL size growth when sector mismatch is disabled` — was already present on the branch (carried over from the previous run's `cherry-abd1efa992d-fix2`). The previous run had pushed the code fix but truncated mid-message before pushing the pickman record commit.
+
+This run: verified the fix is in place, sandbox build clean, force-pushed to update the MR (the push promotes the pickman metadata commit `c604fb70a85` so the remote matches local).
+
+### Branch contents on top of `ci/master`
+
+- 22 networking cherry-picks (the original MR set)
+- `a983573a7dd` fs: fat: declare disk_write() in fat_internal.h (fix1 — qcom/allyesconfig)
+- `0107b3f647b` fs: fat: avoid SPL size growth when sector mismatch is disabled (fix2 — am335x_hs_evm 32-bit ARM)
+- `c604fb70a85` pickman: Record pipeline fix metadata
+- 4 unrelated commits inherited from the original cherry-pick session (still present, see prior runs)
+
+### Suggested MR reply
+
+> Force-pushed to update the MR. The fix2 patch (`fs: fat: avoid SPL size growth when sector mismatch is disabled`) was already on the branch from the previous run; this push synchronises the remaining metadata commit. Sandbox build via `buildman -L --board sandbox` passes (status 0, no err file). The pipeline should now pass `build all 32bit ARM platforms` and `Build allyesconfig`/`tools-only`/`envtools`. The `play` and `efi-aarch64` failures looked like lab-runner state issues (login timeout, I/O error after reset) rather than code defects — please re-run those if they fail again.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, play.
+
+Looking at this carefully, both fa...
+
+### Conversation log
+Build passes. The remote and local are at the same commit (`b06c81f99ec`). The review comment is the bot's record of pipeline attempt 3, which the previous run already analyzed: both `efi-aarch64` and `play` are lab infrastructure failures (post-reset I/O error and BeaglePlay login timeout, respectively), already documented as such on the MR.
+
+Let me check pickman to see if there's a way to record this review-handling note, then create v6 and push.
+
+## Summary — MR !1001 attempt 4 (review of attempt 3 record)
+
+**Branch:** `cherry-abd1efa992d` at `b06c81f99ec` (unchanged)
+**Local backup:** `cherry-abd1efa992d-v6` at `b06c81f99ec`
+**Remote:** `ci/cherry-abd1efa992d` already in sync (`Everything up-to-date`)
+**Build:** ✅ `buildman -L --board sandbox -w -o /tmp/pickman` exit 0, no err file
+
+### Review comment
+
+The single comment is the bot's record of attempt 3 ("Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, play"). The previous run already analysed those two failures and concluded both are lab/runner infrastructure issues, not code defects:
+
+- **`play`** (BeaglePlay am62x): `pexpect.exceptions.TIMEOUT` waiting for login at `labgrid/driver/ubootdriver.py:205`. U-Boot was built and bootstrapped, but labgrid never saw the login prompt. The MR (Airoha networking + two FAT fixups) does not touch am62x boot.
+- **`efi-aarch64`**: `OSError: [Errno 5] Input/output error` during `u-boot-test-reset` after 706 prior tests passed. Serial-port / VM-state error on the lab runner.
+
+Both already-pushed code fixes (fix1 `a983573a7dd` for the qcom/allyesconfig `disk_write` declaration, and fix2 `0107b3f647b` for the am335x_hs_evm SPL .sram overflow) remain present on the tested commit `c604fb70a85`. There is no remaining code-side failure CI has flagged.
+
+### Action taken
+
+- Verified build (sandbox passes clean).
+- Created local backup `cherry-abd1efa992d-v6`.
+- Attempted force-push: remote already in sync — nothing to push.
+
+No code changes per the workflow rule: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."*
+
+### Suggested MR reply
+
+> The two remaining pipeline failures (`play`, `efi-aarch64`) are lab-runner infrastructure issues, not branch-side defects:
+>
+> - `play`: BeaglePlay labgrid `TIMEOUT` waiting for the login prompt after a successful U-Boot deploy. The MR is purely networking + two FAT build fixups; it does not touch am62x.
+> - `efi-aarch64`: `OSError: [Errno 5] Input/output error` during `u-boot-test-reset`, after 706 unrelated tests passed. Classic serial-port flake.
+>
+> Both code-side failures CI flagged in earlier attempts (qcom/allyesconfig `disk_write` prototype, am335x_hs_evm SPL `.sram` overflow) are already fixed on this branch (`a983573a7dd`, `0107b3f647b`). Could you re-run the two lab jobs?
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-abd1efa992d
+
+Comments addressed:
+
+
+### Conversation log
+I can see the situation clearly. The branch is 33 commits ahead of merge-base (`760c2e943c5`), and `ci/master` has new commits including 4 that are duplicates of the "4 unrelated commits" noted in the prior conversation. Let me create a backup and rebase.
+
+The conflict in `.pickman-history` is an append-merge of two records that should both be preserved. Let me resolve it by keeping both halves.
+
+Good — no real conflict markers left (those `=======` lines are test output). Continuing the rebase.
+
+Rebase completed. Let me verify state.
+
+Rebase succeeded — 29 commits (down from 33; the 4 duplicates that landed on ci/master were correctly skipped). Let me verify delta and run the build.
+
+Range-diff confirms clean rebase: the 4 duplicate commits correctly dropped, all 22 substantive commits unchanged, and the pickman-history conflict resolved as expected. Now build verification.
+
+Build successful (1 board built, no err file). Let me create the v7 backup and push.
+
+Push complete. Here's the summary:
+
+## Rebase Complete — MR !1001 (`cherry-abd1efa992d`)
+
+**Local backup:** `cherry-abd1efa992d-v7` at `4e5ad2c358d`
+**Remote pushed:** `ci/cherry-abd1efa992d` force-updated `b06c81f99ec → 4e5ad2c358d`
+**Build:** ✅ `buildman -L --board sandbox -w -o …` exit 0, 1/1 built, no err file
+
+### What was done
+
+1. **Checked out** `cherry-abd1efa992d`, created backup `cherry-abd1efa992d-backup-pre-v7` (later deleted as redundant once v7 was created).
+2. **Fetched** `ci/master` (now at `bbb3a0ec2f5`, 18 new commits since the prior `760c2e943c5` base).
+3. **Rebased** with `git rebase --keep-empty ci/master`. Of the 33 commits on the branch:
+   - **4 dropped automatically** as previously-applied: `dma: ti…CONFIG_TI_K3_NAVSS_PSILCFG`, `boot…VPL_CRYPTO`, `sandbox…KEYBOARD`, `disk: fix DOS_PARTITION` (these were the "4 unrelated commits" inherited from a parallel cherry-pick session — they have now landed on `ci/master`, so the rebase correctly identified and skipped them).
+   - **29 commits replayed**, with one conflict in `.pickman-history` (an append-only history file). Resolved by keeping both halves of the divergent record (the prior cherry-pick conversation log on HEAD plus the new review record from `c39463cade7`).
+4. **Verified** with `git range-diff`: all 22 substantive networking + merge commits and both fix commits (`fs: fat: declare disk_write…`, `fs: fat: avoid SPL size growth…`) are byte-identical (`=`) to their pre-rebase counterparts. Only the 4 duplicates marked `<` (dropped). 
+5. **Built** sandbox cleanly via `buildman -L --board sandbox -w -o /tmp/pickman-build` (status 0, no err file).
+6. **Pushed** with explicit `branch:branch` refspec (`git push ci -f cherry-abd1efa992d:cherry-abd1efa992d`) — same approach as v3 onward, to avoid the historic concurrent-HEAD-switch issue noted in earlier runs.
+
+### Branch contents on top of `ci/master` (29 commits)
+- 22 original networking commits (Airoha PCS/PHY, mt7531 mdio, lwip, etc.) + merge
+- `a063a0c724c` fs: fat: declare disk_write() in fat_internal.h (fix1)
+- `18cc5149b7f` fs: fat: avoid SPL size growth when sector mismatch is disabled (fix2)
+- 5 pickman-record commits (history of prior fix attempts)
+
+The 4 "unrelated commits" the previous runs flagged are now gone — they were absorbed into `ci/master` and the rebase dropped them automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`bbb3a0ec2f5`). One trivial conflict in the append-only `.pickman-history` log was resolved by keeping both records. The 4 unrelated commits previously flagged (`dma: ti…`, `boot…VPL_CRYPTO`, `sandbox…KEYBOARD`, `disk: fix DOS_PARTITION…`) have now landed on `ci/master` and were dropped automatically by the rebase, so this branch no longer carries them. `git range-diff` confirms all 22 networking commits and both FAT fixups are byte-identical to their pre-rebase versions. Sandbox build via `buildman -L --board sandbox` passes (status 0). Force-pushed.
 
 ---
 

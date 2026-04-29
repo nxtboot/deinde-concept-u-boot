@@ -106,6 +106,20 @@ struct dir_entry *next_dent(struct fat_itr *itr);
  */
 int disk_read(u32 block, u32 nr_blocks, void *buf);
 
+#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
+/**
+ * disk_write() - write sectors to the current FAT device
+ * @block: logical block number
+ * @nr_blocks: number of blocks to write
+ * @buf: buffer holding data to write
+ * Return: number of blocks written, -1 on error
+ *
+ * Defined in fat.c when CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH is
+ * enabled; otherwise fat_write.c provides a static version.
+ */
+int disk_write(u32 block, u32 nr_blocks, void *buf);
+#endif
+
 /**
  * disk_write() - write sectors to the current FAT device
  * @block: logical block number
