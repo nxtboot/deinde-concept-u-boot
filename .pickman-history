@@ -73955,3 +73955,83 @@ This pickman-history record commit is added on top as `cherry-0bb1d511e4f-v4`, t
 > Job 476645 ran on commit 7ef069a6 — the *pre-rebase* HEAD of this MR. The 4-byte SPL overflow on am335x_hs_evm and am335x_hs_evm_spi comes from upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'"), not from any of the 6 UFS commits in this MR. Your fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled") is already on ci/master and was absorbed when this branch was rebased in the prior review cycle. Rebuilt locally on the current MR HEAD (`d87b858667a`): both am335x_hs_evm and am335x_hs_evm_spi build cleanly (~60 bytes of .sram slack). Re-pushing the branch to trigger a fresh pipeline on the rebased state.
 
 ---
+
+## 2026-04-29: us/next
+
+Branch: cherry-a3075db94d4
+
+Commits:
+- a3075db94d4 lmb: Reinstate access to memory above ram_top
+- e7ad95aa3f1 spl: spi: fix loss of spl_load() error on soft reset
+- 7f35a4251da sandbox: symbol CONFIG_DM_SOUND does not exist
+- 60ef345b1a1 spl: Remake SPL elf from bin
+- 6a23c079b87 arm: dts: k3-j721s2*: Enable OSPI1 with 32-bit address mappings for R5 SPL
+- 660d8e4fe92 serial: ns16550: Fix return-type warning
+- 21edd76aded linux_compat: fix NULL pointer dereference in get_mem()
+- f3bdde84af9 arm: dts: sc594: Update sc594 EZKIT GPIO polarities
+- 7f9c2a6f7be board: ti: rm-cfg: Update rm-cfg to reflect new resource reservation
+- f2c4fb442d0 board: ti: am62px: tifs-rm-cfg: Sync tifs-rm-cfg with TIFS firmware updates
+- 964bda9e805 board: ti: am62x: tifs-rm-cfg: Add the missing tifs-rm-cfg:
+- 41814276f03 arm: dts: k3: am62x/am62px: Enable tifs-rm-cfg in binman
+- 2a64978fa89 board: beagle: beagleplay: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 19b9af32b29 board: phytec: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 64ebab10b5e toradex: verdin-am62: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 73b8caf965b board: phytec: phycore_am62ax: rm-cfg: Update rm-cfg to reflect new resource reservation
+- a66704e9a18 board: toradex: verdin-am62p: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 7403d26bea3 Merge patch series "board: k3: Sync rm-cfg with TIFS v11.02.09 firmware"
+
+### Conversation log
+Stats match. Let me run the build test now.
+
+Build OK. Continue with next commit.
+
+Now for 7f9c2a6f7be which may already be applied as 87720385ab6.
+
+These are different commits (different versions of TIFS firmware updates). Proceeding with cherry-pick.
+
+Now for 19b9af32b29 which may already be applied as e1e490929d3.
+
+These are different commits for different TIFS firmware versions. Proceeding with cherry-pick.
+
+Now the merge commit.
+
+All 18 commits are present. Final build verification.
+
+All 18 commits successfully cherry-picked to branch `cherry-a3075db94d4`.
+
+## Summary
+
+**Branch:** `cherry-a3075db94d4` (based on `ci/master`)
+
+**Build result:** OK — sandbox build passed after every cherry-pick and at the end.
+
+**Cherry-picks (18 total, all in order):**
+1. a10e1811b3d — lmb: Reinstate access to memory above ram_top
+2. 96910051838 — spl: spi: fix loss of spl_load() error on soft reset
+3. 979fcbabcc5 — sandbox: symbol CONFIG_DM_SOUND does not exist
+4. b3605fc4cbd — spl: Remake SPL elf from bin
+5. f0b6fcf0c04 — arm: dts: k3-j721s2*: Enable OSPI1
+6. 83c61bd6c26 — serial: ns16550: Fix return-type warning
+7. d50ded345ea — linux_compat: fix NULL ptr deref in get_mem()
+8. e92e0c16b9d — arm: dts: sc594: Update GPIO polarities
+9. 5fe3f298b0b — board: ti: rm-cfg: Update rm-cfg
+10. 19b80029393 — board: ti: am62px: tifs-rm-cfg: Sync
+11. 923743f3d2c — board: ti: am62x: tifs-rm-cfg: Add missing
+12. ec01b183785 — arm: dts: k3: am62x/am62px: Enable tifs-rm-cfg in binman
+13. d417ba7ad18 — beagleplay rm-cfg
+14. a5233b16c0b — phytec rm-cfg
+15. 850e450a40d — verdin-am62 rm-cfg
+16. b39897a640c — phycore_am62ax rm-cfg
+17. 2dbac5a56a1 — verdin-am62p rm-cfg
+18. 58f6018f0f0 — Merge patch series (empty merge, preserved with --allow-empty)
+
+**Already-applied verification:**
+- 7f9c2a6f7be vs 87720385ab6: Different — the older commit (87720385ab6, 2024) updated for an earlier TIFS version; the new one is for v11.02.09. Cherry-picked.
+- 19b9af32b29 vs e1e490929d3: Different — e1e490929d3 was a 2025 phytec sync-up; the new commit reflects the v11.02.09 TIFS update. Cherry-picked.
+
+**Fix-ups / concerning deltas:** None. Every cherry-pick stat matched the original exactly. The merge commit (7403d26bea3) cherry-picked as empty (expected since the patch series content was already applied via the prior commits) and was preserved with `--allow-empty`.
+
+Branch is ready for pushing.
+
+---
+
