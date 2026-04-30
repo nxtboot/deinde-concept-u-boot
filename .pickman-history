@@ -74333,3 +74333,45 @@ All identical to pre-rebase originals:
 
 ---
 
+Branch: cherry-e56228f32de
+
+Commits:
+- e56228f32de configs: k3_*: Add config fragments for enabling inline ECC and/or BIST
+- 112bb951242 doc: board: ti: Add support for config fragment builds
+- 1ad466eeae3 Merge patch series "k3_*: Add config fragments for inline ECC and BIST"
+
+### Conversation log
+Deltas match. Now run the build test.
+
+Build passes. Now cherry-pick the second commit.
+
+Deltas match. Build test for second commit.
+
+Now cherry-pick the merge commit.
+
+All 3 commits have been successfully cherry-picked. Final report:
+
+## Final Status
+
+**Branch:** `cherry-e56228f32de` (based on `ci/master`)
+
+**Cherry-picked commits (in order):**
+1. `cfa5ed62b4b` — configs: k3_*: Add config fragments for enabling inline ECC and/or BIST
+2. `7087d02d37b` — doc: board: ti: Add support for config fragment builds
+3. `04e574450eb` — Merge patch series "k3_*: Add config fragments for inline ECC and BIST" (empty merge commit, preserved with `--allow-empty`)
+
+**Delta verification:**
+- Commit 1: 2 files / +2 lines — matches original exactly
+- Commit 2: 1 file / +66 lines — matches original exactly
+- Commit 3: merge commit, empty (expected)
+
+**Build result:** OK — `buildman --board sandbox` passed cleanly after each cherry-pick and at the end (1 of 1 boards built successfully, no warnings/errors).
+
+**Fix-ups made:** None. All cherry-picks applied cleanly (the merge commit needed `git commit --allow-empty` since cherry-picking a merge that only contains already-applied content produces an empty commit, but the message was preserved).
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
