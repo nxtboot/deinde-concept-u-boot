@@ -1944,7 +1944,10 @@ def do_review(args, pwork, cser):
         ctx.repo_path = gitutil.get_top_level()
         orig_branch = gitutil.current_branch(ctx.repo_path)
         try:
-            stash_out = gitutil.stash_save(ctx.repo_path)
+            # Stash untracked files too, so build artefacts from the
+            # current branch don't leak into the review branch
+            stash_out = gitutil.stash_save(ctx.repo_path,
+                                           include_untracked=True)
             if 'No local changes' not in stash_out:
                 had_stash = True
         except command.CommandExc:
