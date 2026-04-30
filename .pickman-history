@@ -74408,3 +74408,52 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-04-29 (attempt 1)
+
+Branch: cherry-965764975e8
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- rockpro64 (sjg-lab)
+- jerry (sjg-lab)
+
+### Conversation log
+I have enough evidence. Let me verify my conclusion by checking that nothing on this branch could affect the failing boards.
+
+## Report: Infrastructure/Lab Failures — No Code Changes Needed
+
+**Branch contents** (`cherry-965764975e8`):
+- `893bb089f70` — arm: dts: k3-am68-r5-phycore-som: Add PMIC ESM node
+- `cc21f1b0758` — configs: phycore_am68x_r5_defconfig: Add ESM and AVS configs
+- `725d6a0c6dd` — Merge patch series (empty)
+
+The branch touches exactly two files, both scoped to the TI K3 phyCORE-AM68 R5 SOM:
+- `arch/arm/dts/k3-am68-r5-phycore-som-4gb.dts`
+- `configs/phycore_am68x_r5_defconfig`
+
+### Diagnosis of each failure
+
+**1. efi-aarch64 (job 479926)** — `OSError: [Errno 5] Input/output error` from `os.read(self.fd, ...)` while `restart_uboot()` was calling `+u-boot-test-reset efi-arm_app64 efi-aarch64`. The pseudo-tty died on the runner. This is a runner/pty infrastructure error in `test_distro_arm_app_extlinux` — 34 prior tests passed and the binary itself never even reaches u-boot for this restart. Not related to a defconfig/dts change for an unrelated TI K3 board.
+
+**2. rockpro64 (job 479917)** — Lab failure: `Timeout of 10 seconds exceeded during waiting for login`. The TPL built from this branch boots fine (LPDDR4 init succeeds, hand-off to SPL works), then SPL fails with `mmc_load_image_raw_sector: mmc block read error` / `Card did not respond to voltage select! : -110` on both MMC1 and MMC2. That is an SD-card / hardware fault on the lab board, not code: nothing on this branch modifies Rockchip RK3399 code, MMC drivers, or the rockpro64 defconfig.
+
+**3. jerry (job 479897)** — Lab failure: `Timeout of 15 seconds exceeded during waiting for login` — board produced no console output at all in 15 s. Chromebook Jerry is an RK3288 platform; this branch contains no Rockchip code. Pure board/lab connectivity issue.
+
+### Conclusion
+
+All three failures are **infrastructure/lab transients** (pty I/O error, dead SD card on rockpro64, no console from jerry). None of them can be caused by a TI K3 phyCORE-AM68 device-tree node or that board's defconfig — those artefacts are not in any of these jobs' build paths.
+
+No fix is warranted. Recommend a re-run of the three lab jobs.
+
+### Branch state
+
+Per protocol, the local branch `cherry-965764975e8-fix1` was created at the same commit as `cherry-965764975e8` (no changes applied). Not pushed.
+
+```
+$ git branch --list 'cherry-965764975e8*'
+  cherry-965764975e8
+  cherry-965764975e8-fix1
+```
+
+---
+
