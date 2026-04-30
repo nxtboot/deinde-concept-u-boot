@@ -74519,3 +74519,56 @@ None of efi-aarch64, rockpro64, or jerry can build or run any code from these tw
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-7b60cd933bc
+
+Commits:
+- 7b60cd933bc usb: gadget: Mark udc_disconnect as static
+- 433a17aca15 common: spl: spl_dfu.c: Fix warning associated with PCI subclass_code
+- fab3b667b41 rockchip: rk3568: Include all addressable DRAM in memory map
+- 4b77b07811c dfu: Make the DFU_WRITE_ALT symbol available outside of DFU
+- 071e914b4aa Merge tag 'u-boot-dfu-20260316' of https://source.denx.de/u-boot/custodians/u-boot-dfu into next
+
+### Conversation log
+Stats match exactly. Now let's run the build.
+
+The cherry-pick removed the prototype but bootm_final.c still has a dead call to `udc_disconnect()` guarded by `IS_ENABLED(CONFIG_USB_DEVICE)` (a config that no longer exists). Need to fix this up.
+
+Build passes. Now cherry-pick the next commit.
+
+Stats match. Now check if fab3b667b41 is already applied as f25e4e2f107.
+
+Already applied. Now build to verify second cherry-pick.
+
+Now cherry-pick 4b77b07811c.
+
+Now cherry-pick the merge commit.
+
+All cherry-picks complete and build passes.
+
+## Summary
+
+**Branch:** `cherry-7b60cd933bc` (based on `ci/master`)
+
+**Final build result:** OK ✓
+
+**Commits processed:**
+
+| Commit | Status |
+|--------|--------|
+| `7b60cd933bc` usb: gadget: Mark udc_disconnect as static | ✓ Cherry-picked **with fix-up** |
+| `433a17aca15` common: spl: spl_dfu.c: Fix warning… | ✓ Cherry-picked cleanly |
+| `fab3b667b41` rockchip: rk3568: Include all addressable DRAM… | ⊘ **Skipped** — already applied as `f25e4e2f107` (verified patches identical except hash) |
+| `4b77b07811c` dfu: Make DFU_WRITE_ALT available outside DFU | ✓ Cherry-picked cleanly |
+| `071e914b4aa` Merge tag 'u-boot-dfu-20260316' | ✓ Cherry-picked as empty merge commit (--allow-empty) |
+
+**Fix-ups made:**
+- For `7b60cd933bc`: Initial cherry-pick removed the `udc_disconnect` prototype from `include/usb.h`, which broke the build because `boot/bootm_final.c` (a file that exists in `ci/master` but not in `us/next`) still had a dead call `if (IS_ENABLED(CONFIG_USB_DEVICE)) udc_disconnect();`. Since `CONFIG_USB_DEVICE` no longer exists, I amended the commit to also remove that dead call and the now-unused `<usb.h>` include from `boot/bootm_final.c`. The fix-up note is appended to the commit message.
+
+**Concerning deltas:** None — the 1st commit's stat changed from 4 files / 1+13- to 5 files / 1+17- after the fix-up, but this was a necessary repair, not a cherry-pick problem.
+
+Branch is ready for pushing.
+
+---
+
