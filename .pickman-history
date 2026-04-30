@@ -74371,6 +74371,39 @@ All 3 commits have been successfully cherry-picked. Final report:
 
 **Concerning deltas:** None.
 
+---
+
+Branch: cherry-965764975e8
+
+Commits:
+- 965764975e8 arm: dts: k3-am68-r5-phycore-som: Add PMIC ESM node
+- 1fc549959f9 configs: phycore_am68x_r5_defconfig: Add ESM and AVS configs
+- adaa6203df4 Merge patch series "arm: dts: k3-am68-r5-phycore-som: Add PMIC ESM node"
+
+### Conversation log
+Deltas match perfectly. Now let me build test, then continue with the next commit.
+
+Deltas match. Now build test and then the merge commit.
+
+All 3 commits are present. Now run the final build test.
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-965764975e8` (based on `ci/master`)
+
+**Cherry-picked commits:**
+1. `893bb089f70` ← `965764975e8` — arm: dts: k3-am68-r5-phycore-som: Add PMIC ESM node (1 file, 9 insertions; matches original exactly)
+2. `cc21f1b0758` ← `1fc549959f9` — configs: phycore_am68x_r5_defconfig: Add ESM and AVS configs (1 file, 3 insertions; matches original exactly; minor auto-merge in defconfig context only)
+3. `725d6a0c6dd` ← `adaa6203df4` — Merge patch series (empty merge commit preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox build completed successfully with no warnings or errors after each cherry-pick and the final build.
+
+**Fix-ups:** None required. The only adjustment was using `git commit --allow-empty` for the merge commit, which is expected and per the instructions.
+
+**Concerning deltas:** None. Both content commits match their originals byte-for-byte in stat output.
+
 The branch is ready for pushing.
 
 ---
