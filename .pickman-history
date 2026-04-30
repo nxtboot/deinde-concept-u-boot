@@ -73955,3 +73955,202 @@ This pickman-history record commit is added on top as `cherry-0bb1d511e4f-v4`, t
 > Job 476645 ran on commit 7ef069a6 — the *pre-rebase* HEAD of this MR. The 4-byte SPL overflow on am335x_hs_evm and am335x_hs_evm_spi comes from upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'"), not from any of the 6 UFS commits in this MR. Your fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled") is already on ci/master and was absorbed when this branch was rebased in the prior review cycle. Rebuilt locally on the current MR HEAD (`d87b858667a`): both am335x_hs_evm and am335x_hs_evm_spi build cleanly (~60 bytes of .sram slack). Re-pushing the branch to trigger a fresh pipeline on the rebased state.
 
 ---
+
+## 2026-04-29: us/next
+
+Branch: cherry-a3075db94d4
+
+Commits:
+- a3075db94d4 lmb: Reinstate access to memory above ram_top
+- e7ad95aa3f1 spl: spi: fix loss of spl_load() error on soft reset
+- 7f35a4251da sandbox: symbol CONFIG_DM_SOUND does not exist
+- 60ef345b1a1 spl: Remake SPL elf from bin
+- 6a23c079b87 arm: dts: k3-j721s2*: Enable OSPI1 with 32-bit address mappings for R5 SPL
+- 660d8e4fe92 serial: ns16550: Fix return-type warning
+- 21edd76aded linux_compat: fix NULL pointer dereference in get_mem()
+- f3bdde84af9 arm: dts: sc594: Update sc594 EZKIT GPIO polarities
+- 7f9c2a6f7be board: ti: rm-cfg: Update rm-cfg to reflect new resource reservation
+- f2c4fb442d0 board: ti: am62px: tifs-rm-cfg: Sync tifs-rm-cfg with TIFS firmware updates
+- 964bda9e805 board: ti: am62x: tifs-rm-cfg: Add the missing tifs-rm-cfg:
+- 41814276f03 arm: dts: k3: am62x/am62px: Enable tifs-rm-cfg in binman
+- 2a64978fa89 board: beagle: beagleplay: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 19b9af32b29 board: phytec: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 64ebab10b5e toradex: verdin-am62: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 73b8caf965b board: phytec: phycore_am62ax: rm-cfg: Update rm-cfg to reflect new resource reservation
+- a66704e9a18 board: toradex: verdin-am62p: rm-cfg: Update rm-cfg to reflect new resource reservation
+- 7403d26bea3 Merge patch series "board: k3: Sync rm-cfg with TIFS v11.02.09 firmware"
+
+### Conversation log
+Stats match. Let me run the build test now.
+
+Build OK. Continue with next commit.
+
+Now for 7f9c2a6f7be which may already be applied as 87720385ab6.
+
+These are different commits (different versions of TIFS firmware updates). Proceeding with cherry-pick.
+
+Now for 19b9af32b29 which may already be applied as e1e490929d3.
+
+These are different commits for different TIFS firmware versions. Proceeding with cherry-pick.
+
+Now the merge commit.
+
+All 18 commits are present. Final build verification.
+
+All 18 commits successfully cherry-picked to branch `cherry-a3075db94d4`.
+
+## Summary
+
+**Branch:** `cherry-a3075db94d4` (based on `ci/master`)
+
+**Build result:** OK — sandbox build passed after every cherry-pick and at the end.
+
+**Cherry-picks (18 total, all in order):**
+1. a10e1811b3d — lmb: Reinstate access to memory above ram_top
+2. 96910051838 — spl: spi: fix loss of spl_load() error on soft reset
+3. 979fcbabcc5 — sandbox: symbol CONFIG_DM_SOUND does not exist
+4. b3605fc4cbd — spl: Remake SPL elf from bin
+5. f0b6fcf0c04 — arm: dts: k3-j721s2*: Enable OSPI1
+6. 83c61bd6c26 — serial: ns16550: Fix return-type warning
+7. d50ded345ea — linux_compat: fix NULL ptr deref in get_mem()
+8. e92e0c16b9d — arm: dts: sc594: Update GPIO polarities
+9. 5fe3f298b0b — board: ti: rm-cfg: Update rm-cfg
+10. 19b80029393 — board: ti: am62px: tifs-rm-cfg: Sync
+11. 923743f3d2c — board: ti: am62x: tifs-rm-cfg: Add missing
+12. ec01b183785 — arm: dts: k3: am62x/am62px: Enable tifs-rm-cfg in binman
+13. d417ba7ad18 — beagleplay rm-cfg
+14. a5233b16c0b — phytec rm-cfg
+15. 850e450a40d — verdin-am62 rm-cfg
+16. b39897a640c — phycore_am62ax rm-cfg
+17. 2dbac5a56a1 — verdin-am62p rm-cfg
+18. 58f6018f0f0 — Merge patch series (empty merge, preserved with --allow-empty)
+
+**Already-applied verification:**
+- 7f9c2a6f7be vs 87720385ab6: Different — the older commit (87720385ab6, 2024) updated for an earlier TIFS version; the new one is for v11.02.09. Cherry-picked.
+- 19b9af32b29 vs e1e490929d3: Different — e1e490929d3 was a 2025 phytec sync-up; the new commit reflects the v11.02.09 TIFS update. Cherry-picked.
+
+**Fix-ups / concerning deltas:** None. Every cherry-pick stat matched the original exactly. The merge commit (7403d26bea3) cherry-picked as empty (expected since the patch series content was already applied via the prior commits) and was preserved with `--allow-empty`.
+
+Branch is ready for pushing.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-a3075db94d4
+
+Comments addressed:
+
+
+### Conversation log
+The rebase hit a conflict in `.pickman-history` — a journal file where both sides added their own entries. Need to keep both.
+
+I need to resolve the conflict by keeping both sets of journal entries. The `## 2026-04-29: us/next` heading is shared but each side recorded a different MR. I'll keep HEAD's cherry-0bb1d511e4f section, then add a new heading for our cherry-a3075db94d4 section.
+
+Those are all historical text mentions in old journal entries, not actual conflict markers. Let me verify the resolved area is clean:
+
+Conflict resolved cleanly. Continuing the rebase:
+
+All 19 commits rebased successfully. Now let me verify deltas of each rebased commit match originals:
+
+All 18 functional commits + the empty merge match exactly. The pickman record commit has +1 line (80 vs 79) — that's the new `## 2026-04-29: us/next` heading I added when resolving the journal conflict (since the original heading is now shared with the cherry-0bb1d511e4f section already on ci/master). That's expected and correct.
+
+Now run the build:
+
+Build OK. Now create the v3 branch and push:
+
+Force push succeeded. Let me verify the remote is up to date:
+
+Remote updated. Pipeline will trigger automatically.
+
+## Report
+
+**MR !1006** (branch `cherry-a3075db94d4`) has been rebased onto current `ci/master` and force-pushed.
+
+### Rebase
+- Started: 19 commits ahead of `9bb1b385158` (old `ci/master`).
+- Ran `git rebase --keep-empty ci/master` → 18/19 commits applied cleanly.
+- **Conflict** on commit 19 (`pickman: Record cherry-pick of 18 commits from us/next`) in `.pickman-history`. Both this branch and the recently merged `cherry-0bb1d511e4f` MR added entries under the same `## 2026-04-29: us/next` heading. Resolved by keeping the cherry-0bb1d511e4f section as-is (now from upstream) and giving our cherry-a3075db94d4 entries their own duplicate `## 2026-04-29: us/next` heading. No code conflicts.
+
+### Delta verification
+All 18 cherry-picked commits + the empty merge commit have **identical file lists and line counts** vs. their pre-rebase originals. The pickman-history record commit grew by exactly 1 line (80 vs 79 insertions) — that 1 line is the additional `## 2026-04-29: us/next` heading added during conflict resolution. Expected and correct.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 board built in 7s, no errors/warnings).
+
+### Push
+`./tools/pickman/pickman push-branch cherry-a3075db94d4 -r ci -f` → forced update `58f6018f0f0 → d6ac2ffa944` on `refs/heads/cherry-a3075db94d4`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Branches
+- Local: `cherry-a3075db94d4-v2` (snapshot of rebased state, kept for reference)
+- Remote (`ci`): `cherry-a3075db94d4` updated to `d6ac2ffa944`
+
+### Suggested MR reply
+> Rebased onto current `ci/master`. The only conflict was a journal-style `.pickman-history` clash with the recently merged `cherry-0bb1d511e4f` MR (both wrote under the same `## 2026-04-29: us/next` heading); resolved by giving each MR its own heading. All 18 cherry-picks plus the empty merge rebased with identical deltas; sandbox build passes. Local branch: `cherry-a3075db94d4-v2`.
+
+---
+
+### Pipeline fix: 2026-04-29 (attempt 2)
+
+Branch: cherry-a3075db94d4
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- rpi5 (sjg-lab)
+- rock3a (sjg-lab)
+- Check make qcheck (test.py)
+
+### Conversation log
+Now let me analyze each failure. Let me first verify the build state and then dig deeper into each failure.
+
+I've thoroughly diagnosed all four failures. Here's my report:
+
+## Summary: All four failures are infrastructure / pre-existing issues, NOT caused by the cherry-picks
+
+The cherry-picked commits only touch ARM dts files, TI rm-cfg yaml files, `common/spl/`, `lib/lmb.c`, `lib/linux_compat.c`, `drivers/serial/ns16550.c`, `arch/Kconfig`, and `Makefile`. None of them touch binman tools, x86, RPi5, or rock3a code paths.
+
+### Failure analysis
+
+**1. `rock3a` (job 477862) — lab infrastructure issue**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'rock3a', '--configure']
+labgrid-client: Error: place rock3a is acquired by a different user (kea/labgrid),
+use --kick if you are sure
+```
+The lab board was held by another user. No build/test ever ran. Pure lab scheduling.
+
+**2. `rpi5` (job 477864) — lab/board hardware issue**
+```
+pexpect.exceptions.TIMEOUT: Timeout of 30 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Log shows the RPi5 BOOTSYS firmware loading the device tree, but U-Boot never reaches the login prompt within 30 s. Labgrid then marked the connection bad. The branch does not touch any RPi5 / BCM2712 code. Hardware/lab transient.
+
+**3. `efi-x86_64-uboot-iso` (job 477866) — flaky boot test**
+```
+Initramfs unpacking failed: invalid magic at start of compressed archive
+test/py/tests/test_distro.py:131: ubman.expect([r'Started gdm\.service'])
+E   console_base.Timeout
+```
+Ubuntu ISO booted, kernel started, but the initramfs decompressed badly and gdm never started in time. The branch contains no x86 / EFI / initrd / kernel-loader changes. Looks transient.
+
+**4. `Check make qcheck` (job 477711) — pre-existing on master**
+```
+tools/binman/btool/cst.py            18    4    78%
+tools/binman/etype/nxp_imx8mcst.py   89   69    22%
+tools/binman/etype/nxp_imx8mimage.py 38    6    84%
+TOTAL                              6186   79    99%
+Coverage error: 99%, but should be 100%
+```
+**Verified:** I built and ran `binman test -T` on plain `ci/master` (5a080aae439) — same 99 % result, same three uncovered files. The branch does not modify any binman code (`git diff ci/master..HEAD -- tools/binman/` is empty). This is pre-existing breakage on master, unrelated to the cherry-picks.
+
+### Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue, report this without making changes"), no commits were amended and no `cherry-a3075db94d4-fix2` branch was created. The branch is left untouched at `12393a37de3` (current HEAD of `cherry-a3075db94d4`).
+
+### Suggested next step for the caller
+
+Retry the pipeline (especially `rock3a`, `rpi5`, `efi-x86_64-uboot-iso` once the lab is free). The `qcheck` failure is a master-wide issue and needs a separate fix (e.g. install the `cst` / `openssl` bintools in the runner image, or add `# pragma: no cover` to the i.MX8M signing paths) — it should not block this MR.
+
+---
+

@@ -69,10 +69,10 @@ static struct mm_region bcm2711_mem_map[MEM_MAP_MAX_ENTRIES] = {
 
 static struct mm_region bcm2712_mem_map[MEM_MAP_MAX_ENTRIES] = {
 	{
-		/* First 1GB of DRAM */
+		/* DRAM, up to the 16 GiB maximum supported by Pi 5 models */
 		.virt = 0x00000000UL,
 		.phys = 0x00000000UL,
-		.size = 0x40000000UL,
+		.size = 0x400000000UL,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			 PTE_BLOCK_INNER_SHARE
 	}, {

@@ -249,7 +249,7 @@ config SANDBOX
 	# Re-enable this when fully implemented
 	# imply VIRTIO_BLK
 	imply VIRTIO_NET
-	imply DM_SOUND
+	imply SOUND
 	imply PCI_SANDBOX_EP
 	imply PCH
 	imply PHYLIB
