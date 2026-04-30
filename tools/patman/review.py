@@ -983,9 +983,8 @@ async def _review_single_patch(ctx, cmt, seq, all_commits):
         commit_msg = body
     else:
         commit_msg = (cmt.subject + '\n' + body).strip()
-    ctx.diffstat = command.output('git', 'diff', '--stat',
-                                  f'{cmt.hash}~..{cmt.hash}',
-                                  cwd=ctx.repo_path).strip()
+    ctx.diffstat = gitutil.diff_stat(f'{cmt.hash}~..{cmt.hash}',
+                                     ctx.repo_path).strip()
 
     previous_review = ctx.previous_reviews.get(seq)
     prompt = _build_review_prompt(ctx, cmt.hash, seq, all_commits,
@@ -1134,9 +1133,9 @@ def _git_restore(orig_branch, had_stash, repo_path):
 
     try:
         if orig_branch and repo_path:
-            command.output('git', 'checkout', orig_branch, cwd=repo_path)
+            gitutil.checkout_branch(orig_branch, repo_path)
         if had_stash:
-            command.output('git', 'stash', 'pop', cwd=repo_path)
+            gitutil.stash_pop(repo_path)
     except command.CommandExc:
         pass
 
@@ -1582,9 +1581,7 @@ def _get_upstream_branch(args, cser):
         ups = cser.db.upstream_get_default()
     if ups:
         branch = f'{ups}/next'
-        ret = command.run_one('git', 'rev-parse', '--verify', branch,
-            capture=True, raise_on_error=False)
-        if ret.return_code:
+        if not gitutil.ref_exists(branch):
             branch = f'{ups}/master'
         return branch
     return 'origin/master'
@@ -1607,9 +1604,9 @@ def _apply_and_check(ctx, link):
         ctx.upstream_branch, repo_path)
 
     if success:
-        applied = command.output('git', 'rev-list', '--count',
-            f'{ctx.upstream_branch}..{branch_name}', cwd=repo_path).strip()
-        if int(applied) == 0:
+        applied = gitutil.count_revs(
+            repo_path, f'{ctx.upstream_branch}..{branch_name}')
+        if not applied:
             success = False
 
     if not success:
@@ -1774,10 +1771,9 @@ def do_review(args, pwork, cser):
     try:
         ctx.upstream_branch = _get_upstream_branch(args, cser)
         ctx.repo_path = gitutil.get_top_level()
-        orig_branch = command.output('git', 'rev-parse', '--abbrev-ref',
-                                      'HEAD', cwd=ctx.repo_path).strip()
+        orig_branch = gitutil.current_branch(ctx.repo_path)
         try:
-            stash_out = command.output('git', 'stash', cwd=ctx.repo_path)
+            stash_out = gitutil.stash_save(ctx.repo_path)
             if 'No local changes' not in stash_out:
                 had_stash = True
         except command.CommandExc:
