@@ -224,14 +224,14 @@ def run_test_coverage(args):
         args (list): Specific tests to run, or None for all
     """
     # agent.py and gitlab_api.py require external services (Claude, GitLab)
-    # so they can't achieve 100% coverage in unit tests
+    # so they can't achieve 100% coverage in unit tests; control.py is also
+    # excluded as its remote-trigger paths cannot be exercised here
     test_util.run_test_coverage(
         'tools/pickman/pickman', None,
-        ['*test*', '*__main__.py', 'tools/u_boot_pylib/*'],
-        None, extra_args=None, args=args,
-        allow_failures=['tools/pickman/agent.py',
-                        'tools/pickman/gitlab_api.py',
-                        'tools/pickman/control.py'])
+        ['*test*', '*__main__.py', 'tools/u_boot_pylib/*',
+         'tools/pickman/agent.py', 'tools/pickman/gitlab_api.py',
+         'tools/pickman/control.py'],
+        None, extra_args=None, args=args)
 
 
 def main(argv=None):

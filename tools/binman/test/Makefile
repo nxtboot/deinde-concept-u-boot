@@ -89,7 +89,7 @@ elf_sections: elf_sections.c
 elf_sections_tee: CFLAGS += $(LDS_EFL_SECTIONS_TEE)
 elf_sections_tee: elf_sections_tee.c
 
-dummy-rsa-engine.so: dummy-rsa-engine.c
+dummy-rsa-engine.so: $(SRC)fit/dummy-rsa-engine.c
 	$(CC) -fPIC -shared -lcrypto -lssl -o $@ $<
 
 clean:

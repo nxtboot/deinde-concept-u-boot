@@ -74894,3 +74894,79 @@ Branch `cherry-256557dd9aa` is ready for pushing.
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-b16319c6439
+
+Commits:
+- b16319c6439 binman: test: Capture output from tests with warnings
+- 03d5ef3063f binman: test: Move pack/layout test files to test/pack/
+- d076ec97f0e binman: test: Move U-Boot variant test files to test/xpl/
+- b6d35dcc5d0 binman: test: Move x86 and Intel test files to test/x86/
+- 4ed7c188f93 binman: test: Move FIT image test files to test/fit/
+- 4f283a26e26 binman: test: Move FDT/fdtmap test files to test/fdt/
+- 62d2388401a binman: test: Move blob test files to test/blob/
+- dd487d0d55c binman: test: Move security test files to test/security/
+- a39fdf2aad5 binman: test: Move CBFS test files to test/cbfs/
+- b405930c8b7 binman: test: Move ChromeOS test files to test/cros/
+- 3c550094639 binman: test: Move mkimage test files to test/mkimage/
+- 52d7fe3a457 binman: test: Move FIP/TF-A test files to test/fip/
+- 90a2b8c53d1 binman: test: Move UEFI capsule test files to test/capsule/
+- 9c17d547c46 binman: test: Move vendor-specific test files to test/vendor/
+- 544dec27783 binman: test: Move symbol test files to test/symbols/
+- 1b044493e5d binman: test: Move remaining test files to test/entry/
+- c28fbed3493 binman: test: Move x86 binary test data to test/x86/
+- 0a806c3eb6a binman: test: Move FIT signing test data to test/fit/
+- b12f4bcf267 binman: test: Move shared key files to test/security/
+- 0cab35362d7 binman: test: Fix code coverage for iMX8 and cst bintool
+- dcdf2751c61 binman: Remove the coverage allow_failures list
+- d6b10d2021e binman: Drop the allow_failures parameter from run_test_coverage()
+- 4d17632b9a2 binman: doc: Update binman_tests.rst for subdirectory layout
+- 0c716a157be tools: mkeficapsule: Add support for pkcs11
+- a8c8ebc8064 binman: Accept pkcs11 URI tokens for capsule updates
+- 84432436bf5 tools: mkeficapsule: Fix dump signature long option
+- a251d46e684 binman: Add dump signature option to mkeficapsule
+- e2c46d33cfb binman: DTS: Add dump-signature option for capsules
+- e73443167be test: binman: Add test for pkcs11 signed capsule
+- 637010c9a8a Merge tag 'dm-next-18mar26' of git://git.denx.de/u-boot-dm into next
+
+### Conversation log
+Stats match. Continuing with the remaining cherry-picks.
+
+Conflict resolved correctly. Continuing the cherry-pick:
+
+Resolution looks clean (no diff content shown means it now matches both sides). Let me continue:
+
+All 30 commits applied. Now verify with log and run final build:
+
+All 30 commits are present. Now run final build verification:
+
+## Cherry-pick Summary
+
+**Branch**: `cherry-b16319c6439` (based on `ci/master`)
+
+**Status**: All 30 commits successfully cherry-picked. Final build: **OK** (sandbox built successfully in 7 seconds).
+
+### Fix-ups Applied
+
+Three commits required conflict resolution; each was amended with a one-line note in the commit message:
+
+1. **`c5278d01366`** — `binman: test: Move FIT signing test data to test/fit/`
+   - Conflict in `tools/binman/test/Makefile`: kept the upstream `elf_sections_tee` target adjacent to the moved `dummy-rsa-engine.so` rule.
+
+2. **`4e76e96826d`** — `binman: Drop the allow_failures parameter from run_test_coverage()`
+   - Trivial conflict in `tools/u_boot_pylib/test_util.py` from upstream context (HEAD had no commented-out lines around the `allow_failures` block).
+
+3. **`f393b1fd1cc`** — `binman: DTS: Add dump-signature option for capsules`
+   - `tools/binman/entries.rst` was deleted upstream (commit `0dc00c45d70` "Remove pre-generated entries.rst and bintools.rst"), so the doc hunk was dropped.
+
+4. **`d1bc8ad98fc`** — Merge commit `Merge tag 'dm-next-18mar26'`
+   - Cherry-picked as an empty commit (all changes already applied via the prior individual cherry-picks). Resolved three conflicts: `entries.rst` removal, `Makefile` (kept `elf_sections_tee`), and `tools/dtoc/test/test-include.dtsi` (kept upstream version — git rename detection erroneously matched it to a deleted test DTS file).
+
+### Concerning Deltas
+None. Where conflicts occurred, the resolutions were minor and limited to context lines (Makefile, test_util.py) or pre-existing upstream changes (entries.rst removal). The merge commit being empty is expected since its content was applied via the individual commits leading up to it.
+
+The branch is left ready to push.
+
+---
+
