@@ -74572,3 +74572,77 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-ca495f011f6
+
+Commits:
+- ca495f011f6 efi_loader: require at least 128 KiB of stack space
+- f63e95d1aa1 lib: uuid: add EBBR 2.1 conformance profile GUID
+- 1ab6d0d6bd4 efi_loader: export efi_ecpt_guid
+- cf61db3ca8a cmd: efidebug: add ecpt command
+- 41be502c1c4 test/py: add ECPT tests
+- a9080e600c2 efi_loader: avoid buffer overrun in efi_var_restore()
+- 94c5c0835bc efi_loader: avoid superfluous variable store writes on unchanged data
+- 5c83372fa6e efi_vars: Implement SPI Flash store
+- 8f83a459667 cmd/exception: missing include string.h
+- fa3a11fcf01 Merge tag 'efi-2026-03-14' of https://source.denx.de/u-boot/custodians/u-boot-efi into next
+
+### Conversation log
+Delta matches exactly. Continue with build test and next commits.
+
+Let me check if these warnings are pre-existing (they refer to lines 68 and 246 of uuid.c, but we only added at line 254):
+
+Let me set up a todo list since this is a multi-step task.
+
+The struct in ci/master only has 2 fields (`string`, `guid`), but the cherry-picked commit added 3 fields with leading `NULL`. Let me fix this:
+
+The build is failing. Let me fix the struct mismatch:
+
+Build passes. Now amend the commit with a fix-up note:
+
+Let me resolve the conflict by keeping both functions:
+
+Conflicts resolved cleanly. Let me continue the cherry-pick:
+
+Stats match. Now let me amend with a fix-up note and run a build test:
+
+Keep our HEAD version (the fix-up):
+
+Keep our HEAD version (which has do_efi_show_log):
+
+All 10 commits present. Run final build:
+
+## Final Status Report
+
+**Branch**: `cherry-ca495f011f6` (based on `ci/master`) — ready for pushing.
+
+**Build result**: OK — final `buildman --board sandbox` build passed cleanly with no warnings or errors.
+
+**All 10 commits applied successfully** (including the merge commit as an empty commit):
+
+```
+91cf5e1e116 Merge tag 'efi-2026-03-14' (empty, fix-up)
+d8e1e71539e cmd/exception: missing include string.h
+30a8f512286 efi_vars: Implement SPI Flash store
+9fe183f90b8 efi_loader: avoid superfluous variable store writes on unchanged data
+7aaa4d618df efi_loader: avoid buffer overrun in efi_var_restore()
+bf17e7d69ae test/py: add ECPT tests
+2ecaeadf862 cmd: efidebug: add ecpt command  (fix-up)
+2b377361354 efi_loader: export efi_ecpt_guid
+ecf9bb6a7b2 lib: uuid: add EBBR 2.1 conformance profile GUID  (fix-up)
+5fa7d63cdfc efi_loader: require at least 128 KiB of stack space
+```
+
+**Fix-ups applied** (all noted in commit message tails):
+
+1. **`ecf9bb6a7b2` (lib: uuid)**: Dropped leading `NULL,` field from the new EBBR 2.1 entry — `list_guid[]` in this tree is a 2-field struct (`string`, `guid`), not 3-field. Without this, the build failed with "excess elements in struct initializer".
+
+2. **`2ecaeadf862` (cmd: efidebug)**: Conflict resolved by placing the new `do_efi_show_ecpt()` block (and its `U_BOOT_CMD_MKENT`/longhelp entries) ahead of the pre-existing `do_efi_show_log()` block already in this tree.
+
+3. **`91cf5e1e116` (merge commit)**: Conflicts in `cmd/efidebug.c` and `lib/uuid.c` resolved by keeping the HEAD versions (already contained the merge content via prior cherry-picks). Committed as empty with `--allow-empty` to preserve history.
+
+**Concerning deltas**: None — every regular cherry-pick's `git show --stat` matched its upstream original exactly (file lists and line counts identical).
+
+---
+
