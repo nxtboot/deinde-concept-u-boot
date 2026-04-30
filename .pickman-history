@@ -74785,3 +74785,57 @@ Branch is left ready at `cherry-948ccdc82f5` for pushing.
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-4f821825c82
+
+Commits:
+- 4f821825c82 clk: mediatek: mt8188: fix CLK_TOP_CLK{13,26}M rates
+- 5d247265812 clk: mediatek: use correct struct type for infrasys clocks
+- 00d0ff7f81b clk: mediatek: refactor parent rate lookup functions
+- d09876c4f6a clk: mediatek: add mtk_clk_id_is_* helper functions
+- b6d11f69ac1 clk: mediatek: add CLK_PARENT_EXT
+- 97765438044 clk: mediatek: add MUX_MIXED_CLR_SET_UPD_FLAGS() macro
+- 290d17490e7 dt-bindings: clock: Add MediaTek MT8189 clock
+- 4cce6acace7 clk: mediatek: add clock driver for MT8189
+- f922929828b clk: mediatek: rename HAVE_RST_BAR
+- e40978fff3d clk: mediatek: rename CLK_DOMAIN_SCPSYS
+- 4e184ff5a0e clk: mediatek: add MUX_GATE_MIXED macros
+- 7595833599e clk: mediatek: move common PARENT macros to header
+- 142c805d470 clk: mediatek: set CLK_PARENT_XTAL on fixed factor clocks
+- eb53af2b4a4 Merge tag 'mediatek-for-next-2026-03-17' of https://source.denx.de/u-boot/custodians/u-boot-mediatek into next
+
+### Conversation log
+All 14 cherry-picks complete successfully. Final status:
+
+**Build result:** ok (sandbox builds clean)
+
+**Branch:** `cherry-4f821825c82` (based on ci/master)
+
+**All 14 commits applied (newest first):**
+1. `7080ba25420` Merge tag 'mediatek-for-next-2026-03-17' (empty merge — duplicate helpers dropped)
+2. `e807546cd98` clk: mediatek: set CLK_PARENT_XTAL on fixed factor clocks
+3. `915caa43d83` clk: mediatek: move common PARENT macros to header
+4. `c285be97af4` clk: mediatek: add MUX_GATE_MIXED macros
+5. `52ad0e33da0` clk: mediatek: rename CLK_DOMAIN_SCPSYS
+6. `d31ca9e6e69` clk: mediatek: rename HAVE_RST_BAR
+7. `f113df0126a` clk: mediatek: add clock driver for MT8189
+8. `f80d2e76e88` dt-bindings: clock: Add MediaTek MT8189 clock
+9. `4eaed81fa8e` clk: mediatek: add MUX_MIXED_CLR_SET_UPD_FLAGS() macro
+10. `0e37935ca8d` clk: mediatek: add CLK_PARENT_EXT
+11. `d432020f7d8` clk: mediatek: add mtk_clk_id_is_* helper functions
+12. `62311599d67` clk: mediatek: refactor parent rate lookup functions
+13. `9b21f3e54bb` clk: mediatek: use correct struct type for infrasys clocks
+14. `b9d40e3e324` clk: mediatek: mt8188: fix CLK_TOP_CLK{13,26}M rates
+
+**Fix-ups applied (commit message annotated):**
+- **`62311599d67`** (refactor parent rate lookup): Conflict in `clk-mtk.c` — accepted upstream `IS_ERR_VALUE(rate)` check, replacing the existing `(long)rate < 0` check at the topckgen and infrasys factor-rate sites.
+- **`d432020f7d8`** (add mtk_clk_id_is_* helpers): The upstream parent commit included `mtk_common_clk_get_unmapped_id()` and a `parent_unmapped_id` variable that don't exist in ci/master (commit `c196b0a6882` is missing from the base). Dropped the unrelated additions and kept only the actual subject of this commit (the five `mtk_clk_id_is_*` helpers).
+- **`7080ba25420`** (merge commit): The merge re-added the five `mtk_clk_id_is_*` helpers (because they were "new" relative to the merge base), producing a duplicate definition. Removed the duplicates so the merge is now empty (--allow-empty preserves history).
+
+**Concerning deltas:** None. After the fix-ups, all per-commit insert/delete counts match upstream within ±2 lines (just contextual differences). No build warnings or errors.
+
+The branch is left ready for review/push; not merged anywhere.
+
+---
+
