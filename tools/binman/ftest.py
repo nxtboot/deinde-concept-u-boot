@@ -7605,6 +7605,20 @@ fdt         fdtmap                Extract the devicetree blob from the fdtmap
         self.assertIsNotNone(result.stdout)
         self.assertIn('Verification successful', result.stderr)
 
+    def testCapsuleGenPkcs11Coverage(self):
+        """Exercise the pkcs11 URI and dump-signature code paths
+
+        The full pkcs11 capsule test (testPkcs11SignedCapsuleGen) needs
+        softhsm2 and pkcs11-tool, and is skipped when those are not
+        available. Force mkeficapsule to be missing so binman runs the
+        Python paths for pkcs11: URIs and the dump-signature option
+        without needing a real PKCS11 setup.
+        """
+        with terminal.capture():
+            self._DoTestFile('capsule/signed_pkcs11.dts',
+                             force_missing_bintools='mkeficapsule',
+                             allow_missing=True)
+
     def testCapsuleGenVersionSupport(self):
         """Test generation of EFI capsule with version support"""
         data = self._DoReadFile('capsule/version.dts')
