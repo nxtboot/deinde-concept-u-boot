@@ -74646,3 +74646,59 @@ ecf9bb6a7b2 lib: uuid: add EBBR 2.1 conformance profile GUID  (fix-up)
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-0d5ddcc50b2
+
+Commits:
+- 0d5ddcc50b2 arm: mach-k3: j784s4: Update SoC autogen data to enable PCIe boot
+- 2a21f48771a phy: cadence: Add config to enable Cadence Torrent PHY at SPL stage
+- 35e1083fb93 phy: ti: Add config to enable J721E WIZ SERDES wrapper at SPL stage
+- d83eefab8cf configs: j784s4_evm_r5_defconfig: Enable configs for PCIe boot
+- 3c28bf77191 configs: j784s4_evm_a72_defconfig: Enable configs for PCIe boot
+- 014d9c5ac34 configs: am69_sk_r5_defconfig: Disable PCIe boot configs
+- af3800c83dc configs: am69_sk_a72_defconfig: Disable PCIe boot configs
+- 2abd957503e configs: j742s2_evm_r5_defconfig: Disable PCIe boot configs
+- 078200f1ee1 configs: j742s2_evm_a72_defconfig: Disable PCIe boot configs
+- 6230a595a73 docs: board: ti: j784s4_evm: Add PCIe boot documentation
+- 841856ed967 Merge patch series "Add PCIe Boot support for TI J784S4 SoC"
+
+### Conversation log
+Deltas match. Now build test:
+
+Build OK. Continue with next commit:
+
+Now the merge commit:
+
+All 11 commits present. Now the final build:
+
+## Final Status Report
+
+**Branch:** `cherry-0d5ddcc50b2` (based on `ci/master`)
+
+**Build result:** OK — sandbox builds clean after every cherry-pick and at the final state.
+
+**Cherry-picks completed:** All 11 commits applied in order.
+
+| # | Original | New | Notes |
+|---|---|---|---|
+| 1 | 0d5ddcc50b2 | 90eda59d37f | clean |
+| 2 | 2a21f48771a | c6012f7047c | clean |
+| 3 | 35e1083fb93 | da7d4217e04 | clean |
+| 4 | d83eefab8cf | 4217189f89f | auto-merged (configs/j784s4_evm_r5_defconfig) |
+| 5 | 3c28bf77191 | b617cc94f54 | auto-merged (configs/j784s4_evm_a72_defconfig) |
+| 6 | 014d9c5ac34 | 10c45235b0c | clean |
+| 7 | af3800c83dc | ae24e82047b | clean |
+| 8 | 2abd957503e | e12ce125d5a | clean |
+| 9 | 078200f1ee1 | c9fa5777d68 | clean |
+| 10 | 6230a595a73 | 5a3bc061dac | clean |
+| 11 | 841856ed967 | ebb47159ab0 | merge commit, empty (preserved with `--allow-empty`) |
+
+**Fix-ups required:** None. The two auto-merges resolved cleanly without manual intervention; file/line stats match the originals exactly.
+
+**Concerning deltas:** None. All cherry-picks produced identical diffstats to the originals.
+
+The merge commit was preserved as an empty commit since its content was already absorbed into the base, but the message is retained for history tracking. Branch is left ready for pushing.
+
+---
+
