@@ -74457,3 +74457,65 @@ $ git branch --list 'cherry-965764975e8*'
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-965764975e8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, rockpro64, jerry.
+
+I have enough evidence...
+
+### Conversation log
+Let me check the pickman conventions for handling pipeline fix attempts:
+
+Now I understand the situation. The MR comment is the bot's own "Pipeline fix (attempt 1)" announcement, which I previously addressed by diagnosing the failures as infrastructure/lab transients (no code fix needed). The system is now asking me to address this same comment again — i.e., handle attempt 2.
+
+Let me check the current state of the failed jobs to confirm the diagnosis still stands:
+
+Confirmed - no code differences between the two branches. The previous fix1 attempt applied no code changes. Let me verify the failures haven't changed since attempt 1:
+
+Confirmed: the branch only touches TI K3 phyCORE-AM68 specific files, which cannot affect efi-aarch64, rockpro64, or jerry. The previous diagnosis is sound.
+
+Build succeeded. Now create the -v2 branch:
+
+Push succeeded. The push advances the remote from `1756323b2bb` to `6616a7bfadf` (which only added the .pickman-history record from attempt 1, no code changes), triggering a new pipeline run.
+
+## Report
+
+**MR:** !1009 (branch `cherry-965764975e8`)
+
+**Comment addressed:** Bot comment "Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, rockpro64, jerry" — i.e. the previous attempt-1 announcement requesting a follow-up.
+
+### Re-verification
+
+The branch's content is unchanged since attempt 1. It still touches **only** two files, both scoped to the TI K3 phyCORE-AM68 R5 SOM:
+- `arch/arm/dts/k3-am68-r5-phycore-som-4gb.dts` (+9)
+- `configs/phycore_am68x_r5_defconfig` (+3)
+
+None of efi-aarch64, rockpro64, or jerry can build or run any code from these two files:
+- **efi-aarch64** — generic AArch64 EFI app target; no TI K3 device tree or defconfig in its build path. Failure was a pseudo-tty `OSError [Errno 5]` on the runner — pure infrastructure.
+- **rockpro64** — Rockchip RK3399; failure was `mmc block read error` / `Card did not respond to voltage select! : -110` on both MMC1 and MMC2 — SD-card hardware fault on the lab board.
+- **jerry** — Rockchip RK3288 Chromebook; no console output in 15 s — lab connectivity issue.
+
+### Actions
+
+1. Verified diagnosis still holds — no code change is appropriate.
+2. Sandbox build via `buildman -L --board sandbox -w -o /tmp/pickman` — **OK** (1/1 built, no warnings or errors).
+3. Created local branch `cherry-965764975e8-v2` at the same commit as `cherry-965764975e8` (no code changes).
+4. Force-pushed `cherry-965764975e8` to `ci` — this advanced the remote from `1756323b2bb` to `6616a7bfadf`. The advance is purely the `.pickman-history` record from attempt 1 (no source-code delta). The push triggers a fresh CI pipeline, which is the correct remedy for transient lab failures.
+
+### Branches present
+
+```
+  cherry-965764975e8       (HEAD pushed)
+  cherry-965764975e8-fix1  (attempt-1 marker, unchanged)
+  cherry-965764975e8-v2    (attempt-2 marker, same commit)
+```
+
+### Suggested reply to MR
+
+> Pipeline fix (attempt 2): the three previously-failed jobs (efi-aarch64, rockpro64, jerry) are all infrastructure/lab transients (pty I/O error on the EFI runner; SD-card voltage-select failure on rockpro64; no console output from jerry). The branch only touches `k3-am68-r5-phycore-som-4gb.dts` and `phycore_am68x_r5_defconfig`, neither of which is in any of these jobs' build paths, so no code fix is warranted. Sandbox build is clean. Re-pushed the branch to retrigger the pipeline.
+
+---
+
