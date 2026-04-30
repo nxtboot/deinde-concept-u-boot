@@ -74839,3 +74839,58 @@ The branch is left ready for review/push; not merged anywhere.
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-256557dd9aa
+
+Commits:
+- 256557dd9aa sunxi: remove usage of legacy LED API
+- 3d769809474 sunxi: a133: dram: Fix PHY dx delays offsets and add dmb
+- 98429b7be6f sunxi: a133: dram: Align parameters terminology with Allwinner
+- 0e16a814399 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sunxi into next
+
+### Conversation log
+Let me check if these commits are already present in ci/master with different hashes.
+
+The commits aren't already applied - these are real conflicts. Let me examine them.
+
+Let me look at the original commit and understand both conflicts fully.
+
+Now I understand. Let me look at the actual files to resolve them.
+
+Now I'll resolve both conflicts. For board.c, keep the new call (the function is already added). For pinephone_defconfig, remove SPL_DRIVERS_MISC (per the patch), keep CONFIG_LED=y/CONFIG_LED_BOOT=y (already in HEAD).
+
+Now let me amend the commit message to document the conflict resolution.
+
+Now let me verify the delta and run a build test.
+
+Delta looks reasonable (same files, similar changes). Let me now run the build test, and continue with the next cherry-picks.
+
+Build passed. Now cherry-pick the second commit.
+
+Same files, same line counts. Now build test and the merge commit.
+
+All 4 commits done. Let me verify and run the final build.
+
+All cherry-picks complete and the final build passes.
+
+## Final Status
+
+**Build result:** OK — sandbox builds cleanly.
+
+**Cherry-picked commits (in order):**
+1. `df43ac6f150` — sunxi: remove usage of legacy LED API (was 256557dd9aa)
+2. `bb2911e7a15` — sunxi: a133: dram: Fix PHY dx delays offsets and add dmb (was 3d769809474)
+3. `a189b0b8cb9` — sunxi: a133: dram: Align parameters terminology with Allwinner (was 98429b7be6f)
+4. `19078251769` — Merge branch 'master' ... sunxi into next (was 0e16a814399, empty merge)
+
+**Fix-ups made:**
+- **Commit 1** (`256557dd9aa`): Conflicts in `board/sunxi/board.c` and `configs/pinephone_defconfig`. Resolved by removing the `<<<<<<<` markers and keeping the patch's new `status_led_init()` call alongside the existing `CONFIG_LED=y` / `CONFIG_LED_BOOT=y` already in ci/master. `CONFIG_DRAM_CLK=552` was already present elsewhere in the file. Commit message amended with a one-line note about the conflict resolution.
+- **Commit 4** (`0e16a814399`, merge): Conflict in `configs/pinephone_defconfig` (same area as above). Resolved with the same approach. Committed as empty (with `--allow-empty`) to preserve merge history. Commit message includes a one-line resolution note.
+
+**Concerning deltas:** None. All non-merge commits modify the same files as their originals with comparable line counts (commit 1's deletions are slightly lower because `#include <status_led.h>` and the legacy `#ifdef CONFIG_LED_STATUS` block were already removed in ci/master).
+
+Branch `cherry-256557dd9aa` is ready for pushing.
+
+---
+
