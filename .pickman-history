@@ -74702,3 +74702,86 @@ The merge commit was preserved as an empty commit since its content was already 
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-948ccdc82f5
+
+Commits:
+- 948ccdc82f5 configs: Add fragment config for snagfactory tool
+- d89dd94c0ad toradex: tdx-cfg-block: add aquila tda4 0223 pid4
+- c4fcf9b806a board: ti: j7*: Update rm-cfg and tifs-rm-cfg
+- 041364141b7 scsi: Adjust SCSI inquiry command data length
+- a27980786cf kbuild: strip sub_make_done from test-script environment
+- 6015c98be50 eeprom: starfive: Simplify get_ddr_size_from_eeprom()
+- 78253aeeecd eeprom: starfive: Correct get_pcb_revision_from_eeprom()
+- ab4f610debf eeprom: starfive: Support eeprom data format v3
+- a10587939bc pcie: starfive: Add a optional power gpio support
+- 3e9ee92d7f4 configs: visionfive2: Add VisionFive 2 Lite DT to OF_LIST
+- f566788ca12 board: starfive: spl: Support VisionFive 2 Lite
+- 52c382798c5 board: starfive: visionfive2: Add VisionFive 2 Lite fdt selection
+- b2c92a7b1fd board: starfive: visionfive2: Add Orange Pi RV selection by product_id
+- 473c1a76692 configs: starfive: Add Orange Pi RV to visionfive2
+- 3ff56c603a6 doc: board: starfive: Add Xunlong OrangePi RV
+- 24662f698f5 doc: board: starfive: jh7110 common give build output dir by env not arg
+- 1edeb52086c doc: board: starfive: jh7110 common update OPENSBI build env reference
+- b51e59c8b34 riscv: Add support for BeagleV-Fire
+- fac5bce2a1e Merge branch 'next' of https://source.denx.de/u-boot/custodians/u-boot-riscv into next
+
+### Conversation log
+Build passed. Let me continue with the next cherry-pick.
+
+Now I need to add the `FDTFILE_VISIONFIVE2_LITE` macro to match the existing style.
+
+Now I need to add FDTFILE_ORANGEPI_RV macro:
+
+Now let me update the previous commit messages to add fix-up notes (for the f566788ca12 and 52c382798c5 commits I had to resolve). But let me first build test to ensure everything works.
+
+Now let me check the fac5bce2a1e merge commit before adding fix-up notes:
+
+Now let me add fix-up notes to the commits that had conflicts (f566788ca12 and 52c382798c5 / b2c92a7b1fd). Let me use git rebase with edit:
+
+All fix-up notes are added. Let me run the final verification.
+
+All 19 commits are present. Let me run the final build test:
+
+## Cherry-pick Summary
+
+All 19 commits successfully cherry-picked onto branch `cherry-948ccdc82f5` (based on `ci/master`).
+
+**Build result**: ok — sandbox build passed cleanly after the final cherry-pick.
+
+**Commits (oldest → newest)**:
+- `ef7bcc718dc` configs: Add fragment config for snagfactory tool
+- `3355028fd30` toradex: tdx-cfg-block: add aquila tda4 0223 pid4
+- `e1aefb02c48` board: ti: j7*: Update rm-cfg and tifs-rm-cfg
+- `b1271bfbb8e` scsi: Adjust SCSI inquiry command data length **[fix-up]**
+- `efe1401b5fe` kbuild: strip sub_make_done from test-script environment **[fix-up]**
+- `3ae5b1fb9a0` eeprom: starfive: Simplify get_ddr_size_from_eeprom()
+- `82c63250065` eeprom: starfive: Correct get_pcb_revision_from_eeprom()
+- `4167b49da6b` eeprom: starfive: Support eeprom data format v3
+- `82a3b0c127c` pcie: starfive: Add a optional power gpio support
+- `651ded00746` configs: visionfive2: Add VisionFive 2 Lite DT to OF_LIST
+- `db7fdbb4af3` board: starfive: spl: Support VisionFive 2 Lite **[fix-up]**
+- `42d32180eb7` board: starfive: visionfive2: Add VisionFive 2 Lite fdt selection **[fix-up]**
+- `419498cdc01` board: starfive: visionfive2: Add Orange Pi RV selection by product_id **[fix-up]**
+- `53c59a5a5f9` configs: starfive: Add Orange Pi RV to visionfive2
+- `896463d380d` doc: board: starfive: Add Xunlong OrangePi RV
+- `9043dab34de` doc: board: starfive: jh7110 build output dir by env not arg
+- `01573c6dd48` doc: board: starfive: jh7110 OPENSBI build env reference
+- `1b93f3319eb` riscv: Add support for BeagleV-Fire **[fix-up]**
+- `6c1fe4b7901` Merge branch 'next' (empty merge — all changes already applied earlier in series)
+
+**Fix-ups applied during conflict resolution**:
+1. **scsi (b1271bfbb8e)**: resolved conflict on `pccb->datalen` (TEMPBUFF_SIZE → 36)
+2. **kbuild (efe1401b5fe)**: dropped `ifneq sub_make_done` block (replaced by `env -u sub_make_done` recipe)
+3. **starfive spl (db7fdbb4af3)**: also folded VF7110a/VF7110b mixed-case product_id deprecation into this commit (a separate upstream commit `b82fa9d752b` was a prerequisite that wasn't in the pick list)
+4. **visionfive2 fdt (42d32180eb7)**: added `FDTFILE_VISIONFIVE2_LITE` macro and adapted to local FDTFILE_* macro style (kept existing pcb_revision matching for VF7110A/B)
+5. **orangepi rv (419498cdc01)**: added `FDTFILE_ORANGEPI_RV` macro and adapted to local style
+6. **BeagleV-Fire Kconfig (1b93f3319eb)**: dropped unrelated K230_CANMV context lines (not in HEAD)
+
+**Concerning deltas**: None significant. All cherry-picks had stats matching their originals (within minor adjustments for fix-ups noted above). The merge commit `fac5bce2a1e` is intentionally empty as all its content arrived via the preceding individual cherry-picks.
+
+Branch is left ready at `cherry-948ccdc82f5` for pushing.
+
+---
+
