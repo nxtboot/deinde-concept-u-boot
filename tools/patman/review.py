@@ -1632,6 +1632,12 @@ def _apply_and_check(ctx, link):
         applied = gitutil.count_revs(
             repo_path, f'{ctx.upstream_branch}..{branch_name}')
         if not applied:
+            # Zero commits, or branch missing because apply was interrupted
+            success = False
+        elif applied != ctx.patch_count:
+            tout.error(f'Only {applied} of {ctx.patch_count} patches '
+                       f'applied to {branch_name}; aborting. Fix the '
+                       'conflicts manually and retry.')
             success = False
 
     if not success:
