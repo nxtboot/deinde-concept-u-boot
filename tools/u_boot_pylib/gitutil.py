@@ -206,6 +206,113 @@ def count_commits_in_range(git_dir, range_expr):
     return patch_count, None
 
 
+def count_revs(git_dir, range_expr):
+    """Count revisions in a range using 'git rev-list --count'.
+
+    Args:
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+        range_expr (str): Range to count, e.g. 'upstream..branch'
+    Return:
+        int: Number of revisions in the range, or None if the range is
+        invalid (e.g. one of the refs does not exist).
+    """
+    result = command.run_one('git', 'rev-list', '--count', range_expr,
+                             cwd=git_dir, capture=True,
+                             capture_stderr=True, raise_on_error=False)
+    if result.return_code:
+        return None
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        return None
+
+
+def diff_stat(commit_range, git_dir=None):
+    """Get a 'git diff --stat' summary for a commit range.
+
+    Args:
+        commit_range (str): Range to diff (e.g. 'upstream..HEAD')
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    Return:
+        str: Output of 'git diff --stat <range>', or '' on failure
+    """
+    result = command.run_one('git', 'diff', '--stat', commit_range,
+                             cwd=git_dir, capture=True,
+                             capture_stderr=True, raise_on_error=False)
+    if result.return_code:
+        return ''
+    return result.stdout
+
+
+def checkout_branch(branch, git_dir=None):
+    """Run 'git checkout <branch>' from a working tree.
+
+    Args:
+        branch (str): Branch name to check out
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    """
+    command.output('git', 'checkout', branch, cwd=git_dir)
+
+
+def stash_save(git_dir=None, include_untracked=False):
+    """Save the working tree to a new stash.
+
+    Args:
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+        include_untracked (bool): True to also stash untracked files
+            ('git stash -u'), False for the default tracked-only behaviour
+    Return:
+        str: Output from 'git stash'
+    """
+    cmd = ['git', 'stash']
+    if include_untracked:
+        cmd.append('-u')
+    return command.output(*cmd, cwd=git_dir)
+
+
+def stash_pop(git_dir=None):
+    """Pop the most-recent stash back into the working tree.
+
+    Args:
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    """
+    command.output('git', 'stash', 'pop', cwd=git_dir)
+
+
+def ref_exists(ref, git_dir=None):
+    """Check whether a git ref resolves.
+
+    Args:
+        ref (str): Ref to check (branch name, tag, commit, etc.)
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    Return:
+        bool: True if the ref resolves, False otherwise
+    """
+    result = command.run_one('git', 'rev-parse', '--verify', ref,
+                             cwd=git_dir, capture=True,
+                             capture_stderr=True, raise_on_error=False)
+    return result.return_code == 0
+
+
+def current_branch(git_dir=None):
+    """Get the name of the currently checked-out branch.
+
+    Args:
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    Return:
+        str: Branch name, or 'HEAD' if the worktree is detached
+    """
+    return command.output('git', 'rev-parse', '--abbrev-ref', 'HEAD',
+                          cwd=git_dir).strip()
+
+
 def count_commits_in_branch(git_dir, branch, include_upstream=False):
     """Returns the number of commits in the given branch.
 
