@@ -19,6 +19,9 @@
 #include <linux/delay.h>
 #include <net/tftp.h>
 #include "bootp.h"
+#if IS_ENABLED(CONFIG_LED_BOOT)
+#include <led.h>
+#endif
 #ifdef CONFIG_BOOTP_RANDOM_DELAY
 #include "net_rand.h"
 #endif
@@ -393,6 +396,10 @@ static void bootp_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 	/*
 	 *	Got a good BOOTP reply.	 Copy the data into our variables.
 	 */
+#if IS_ENABLED(CONFIG_LED_BOOT)
+	led_boot_off();
+#endif
+
 	store_net_params(bp);		/* Store net parameters from reply */
 
 	/* Retrieve extended information (we must parse the vendor area) */
