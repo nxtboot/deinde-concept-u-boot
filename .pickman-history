@@ -73955,7 +73955,6 @@ This pickman-history record commit is added on top as `cherry-0bb1d511e4f-v4`, t
 > Job 476645 ran on commit 7ef069a6 — the *pre-rebase* HEAD of this MR. The 4-byte SPL overflow on am335x_hs_evm and am335x_hs_evm_spi comes from upstream commit `d7d948d0de7` ("fs: fat: Handle 'FAT sector size mismatch'"), not from any of the 6 UFS commits in this MR. Your fix `d0e6169e329` ("fs: fat: avoid SPL size growth when sector mismatch is disabled") is already on ci/master and was absorbed when this branch was rebased in the prior review cycle. Rebuilt locally on the current MR HEAD (`d87b858667a`): both am335x_hs_evm and am335x_hs_evm_spi build cleanly (~60 bytes of .sram slack). Re-pushing the branch to trigger a fresh pipeline on the rebased state.
 
 ---
-
 ## 2026-04-29: us/next
 
 Branch: cherry-a3075db94d4
@@ -74151,6 +74150,186 @@ Per the instructions ("If the failure is an infrastructure or transient issue, r
 ### Suggested next step for the caller
 
 Retry the pipeline (especially `rock3a`, `rpi5`, `efi-x86_64-uboot-iso` once the lab is free). The `qcheck` failure is a master-wide issue and needs a separate fix (e.g. install the `cst` / `openssl` bintools in the runner image, or add `# pragma: no cover` to the i.MX8M signing paths) — it should not block this MR.
+
+---
+
+## 2026-04-29: us/next
+
+Branch: cherry-e98e9b1ec9b
+
+Commits:
+- e98e9b1ec9b misc: k3_fuse: Fix printing of error codes
+- 494782b6e0e misc: k3_fuse: Check readback on fuse prog
+- b533d457aee misc: k3_fuse: Enable fuse Sense support
+- 34c7bcacfab misc: k3_fuse: Limit writes to 25bit values
+- e298a3faa39 Merge patch series "Minor fixes for the k3_fuse driver"
+
+### Conversation log
+## Final Status Report
+
+All 5 commits successfully cherry-picked onto branch `cherry-e98e9b1ec9b` (based on `ci/master`):
+
+```
+d7b448a2adb Merge patch series "Minor fixes for the k3_fuse driver"
+18c130bd7f8 misc: k3_fuse: Limit writes to 25bit values
+70c11159728 misc: k3_fuse: Enable fuse Sense support
+29862bc1662 misc: k3_fuse: Check readback on fuse prog
+f5702efd7d6 misc: k3_fuse: Fix printing of error codes
+```
+
+**Build result:** ok (sandbox build completed successfully after every cherry-pick and at the end; 1 board built, no warnings/errors)
+
+**Deltas:** All 4 regular commits matched their originals exactly (same files, same +/- line counts):
+- `f5702efd7d6`: 1 file, +3/-3 (matches)
+- `29862bc1662`: 1 file, +8/-1 (matches)
+- `70c11159728`: 1 file, +1/-1 (matches)
+- `18c130bd7f8`: 1 file, +3/-3 (matches)
+- `d7b448a2adb`: empty merge commit preserved with `--allow-empty` (expected for cherry-picked merge)
+
+**Fix-ups:** None required — all cherry-picks applied cleanly without conflicts.
+
+**Concerning deltas:** None.
+
+The branch is left ready for pushing.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-e98e9b1ec9b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, tk1, rock3a.
+
+Let me check the branch and...
+
+### Conversation log
+Let me check the current pipeline state of the MR to understand what's happening now.
+
+Now I have the full picture. The "review comment" is the bot's own report from the previous fix1 attempt — and since that attempt determined no code changes were needed, the bot pushed a pickman-record commit (`e954c2ef`) which triggered fresh pipelines 7272/7273 that are still running.
+
+Let me verify the sandbox build is still clean, then write up findings.
+
+## Report
+
+**No code changes were made and no force push was performed.** The "review comment" is a self-loop: the only non-system note on MR !1007 (note 43441, by `project_1_bot_2541d37e7146e9c25808a380e05ebef0`, the bot's own user) is the verbatim report from the previous fix1 attempt, which already concluded that the rock3a / tk1 / efi-aarch64 failures were infrastructure issues unrelated to `drivers/misc/k3_fuse.c`. There is no actionable feedback in it.
+
+### What I checked
+- **MR state:** 1 user note (43441 = bot's own fix1 report), 2 system notes ("changed the description", "added 1 commit e954c2ef"). No human reviewer comments.
+- **Branch state:** Local `cherry-e98e9b1ec9b` HEAD = `e954c2ef583` matches `ci/cherry-e98e9b1ec9b` exactly (no diverged commits).
+- **Pipelines:** `7272` and `7273` are **currently running** on the current SHA `e954c2ef58`. The previously-failed `7269` was on the older SHA `d7b448a2ad`; the pickman-record commit pushed at the end of fix1 already retriggered CI.
+- **Sandbox build:** clean (1 board built, no warnings/errors).
+- **Code change reasonability:** Branch only touches `drivers/misc/k3_fuse.c` (depends on `ARCH_K3`); none of the previously-failing boards (rock3a/RK3568, tk1/Tegra K1, efi-aarch64) compile this driver — so no code change to that file could affect them.
+
+### Why I did NOT force-push `-v2`
+1. There is nothing to push: no diff vs. the remote, no code change addresses an infra-failure root cause.
+2. Pipelines 7272/7273 are mid-run on the current SHA. A force-push of the same SHA (or a no-op pickman-record commit) would cancel those in-progress runs and restart from zero — making the situation strictly worse.
+3. The fix1 attempt already pushed a pickman-record commit and re-triggered CI; doubling that would just be churn.
+
+A local `cherry-e98e9b1ec9b-v2` branch was created for bookkeeping (identical SHA to base).
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 2): no action — the previous attempt's analysis stands. The only review comment is the bot's own fix1 report, which correctly identified rock3a/tk1/efi-aarch64 as infra/transient failures unrelated to `drivers/misc/k3_fuse.c` (the only file this MR touches; `K3_FUSE` depends on `ARCH_K3`, none of the failing boards). Pipelines 7272 and 7273 are currently running on the latest SHA `e954c2ef58`; force-pushing now would cancel them. Sandbox build verified clean locally. Awaiting pipeline 7272/7273 results.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-e98e9b1ec9b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rock3a.
+
+This is the same labgrid infrastructure confl...
+
+### Conversation log
+The branch is in good shape and the build passes. This is the third iteration of the same self-loop — the "review comment" being addressed is the bot's own fix2 report from the previous attempt, which (correctly) concluded that no code change was warranted because the rock3a failure was an infrastructure/labgrid scheduling conflict.
+
+## Report
+
+**No code changes were made and no force-push was performed.**
+
+### State check
+- Local `cherry-e98e9b1ec9b` HEAD = `1f788333a5` (already includes the prior `pickman: Record review handling…` commit)
+- Remote `ci/cherry-e98e9b1ec9b` is at the same SHA — local matches remote, nothing to push.
+- MR !1007 head pipeline = **`7275` running** on SHA `1f788333a5`.
+
+### Build verification
+```
+buildman -L --board sandbox -w -o /tmp/pickman
+Completed: 1 total built, duration 0:00:15, rate 0.07
+```
+Sandbox build clean (no warnings/errors).
+
+### Why no code change
+The "review comment to address" is note from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the same bot user — quoting the attempt-2 pipeline-fix report verbatim. There is no human reviewer feedback. The underlying failure was rock3a (Rockchip RK3568) failing with `labgrid-client: Error: place rock3a is acquired by a different user (kea/labgrid)` at `pytest_configure` time, before any test ran. The MR only touches `drivers/misc/k3_fuse.c`, which depends on `ARCH_K3` and is not compiled for rock3a — so no code change to that file can affect rock3a's lab acquisition.
+
+### Why no force-push
+1. Local and remote are at the **same SHA** (`1f788333a5`) — there is nothing to push.
+2. Pipeline `7275` is **currently running** on that SHA. A no-op force-push of the same SHA would either be rejected as up-to-date or (worse) cancel the running pipeline. Both outcomes are strictly worse than waiting.
+3. There is no defect to fix — the previous reports correctly identified the failures as infrastructure-only.
+
+### Branch
+- `cherry-e98e9b1ec9b-v3` created locally at `1f788333a5` for bookkeeping (identical to `cherry-e98e9b1ec9b`). Existing branches retained: `-fix1`, `-fix2`, `-v2`.
+
+### Suggested MR reply
+> Pipeline fix (attempt 3): no action — same diagnosis as attempts 1 and 2. The only outstanding "review comment" is the bot's own attempt-2 report; rock3a failed with `place rock3a is acquired by a different user (kea/labgrid)` (a labgrid scheduling race), and this MR only touches `drivers/misc/k3_fuse.c` which is not compiled for rock3a (Rockchip RK3568, not ARCH_K3). Pipeline 7275 is running on the latest SHA `1f788333a5`; force-pushing the identical SHA now would cancel it. Sandbox build verified clean locally. Awaiting pipeline 7275 result.
+
+---
+
+### Review: 2026-04-29
+
+Branch: cherry-e98e9b1ec9b
+
+Comments addressed:
+
+
+### Conversation log
+Conflict markers removed (the remaining matches are old `===` lines in test output captured in the journal). Now let me continue the rebase.
+
+Now let me verify deltas match originals:
+
+All k3_fuse commit deltas match the originals exactly. Let me also check the merge commit is empty as expected:
+
+The k3_fuse code commits all have identical deltas. Now run the build:
+
+Build OK (1 board built, no errors/warnings). Now create the v2 branch and force-push:
+
+Push succeeded. Let me verify final state:
+
+Local HEAD matches remote `ci/cherry-e98e9b1ec9b` exactly. Rebase complete.
+
+## Report
+
+**MR !1007** (branch `cherry-e98e9b1ec9b`) has been rebased onto current `ci/master` and force-pushed.
+
+### Rebase
+- 8 commits ahead of old base (`d7b448a2adb`'s parent on prior `ci/master`).
+- Ran `git rebase --keep-empty ci/master` → 7/8 commits applied cleanly.
+- **Conflict** on commit 6 (`pickman: Record cherry-pick of 5 commits from us/next`) in `.pickman-history`. Both this MR and the recently merged `cherry-a3075db94d4` MR added entries under the same `## 2026-04-29: us/next` heading. Resolved by keeping the `cherry-a3075db94d4` section (now from upstream) intact and appending our `cherry-e98e9b1ec9b` section after a fresh `---` separator. No code conflicts.
+
+### Delta verification (k3_fuse code commits + merge)
+All identical to pre-rebase originals:
+- `6fdbf78bc62`: 1 file, +3/-3 (matches)
+- `8fc8fa86482`: 1 file, +8/-1 (matches)
+- `e7474f1dd17`: 1 file, +1/-1 (matches)
+- `6d97a3bfe5e`: 1 file, +3/-3 (matches)
+- `8d081d3a499`: empty merge preserved (matches)
+- `1272ae7ac75` (pickman record): +41/-1 vs original +41/-0 — 1-line diff is the conflict-resolution journal bookkeeping, not a code change.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 board built in 15s, no warnings/errors).
+
+### Push
+`./tools/pickman/pickman push-branch cherry-e98e9b1ec9b -r ci -f` → forced update `1f788333a52 → d0a83654e5f`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Branches
+- Local snapshot: `cherry-e98e9b1ec9b-v4` (created at the rebased HEAD; `-v2` and `-v3` already existed from prior pipeline-fix attempts)
+- Remote `ci/cherry-e98e9b1ec9b` updated to `d0a83654e5f`
+
+### Suggested MR reply
+> Rebased onto current `ci/master`. The only conflict was a journal-style `.pickman-history` clash with the recently merged `cherry-a3075db94d4` MR (both wrote under the same `## 2026-04-29: us/next` heading); resolved by giving each MR its own section under a separator. All 4 k3_fuse commits plus the empty merge rebased with identical deltas; sandbox build passes locally. New HEAD: `d0a83654e5f`.
 
 ---
 
