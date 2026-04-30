@@ -74278,3 +74278,58 @@ The "review comment to address" is note from `project_1_bot_2541d37e7146e9c25808
 
 ---
 
+### Review: 2026-04-29
+
+Branch: cherry-e98e9b1ec9b
+
+Comments addressed:
+
+
+### Conversation log
+Conflict markers removed (the remaining matches are old `===` lines in test output captured in the journal). Now let me continue the rebase.
+
+Now let me verify deltas match originals:
+
+All k3_fuse commit deltas match the originals exactly. Let me also check the merge commit is empty as expected:
+
+The k3_fuse code commits all have identical deltas. Now run the build:
+
+Build OK (1 board built, no errors/warnings). Now create the v2 branch and force-push:
+
+Push succeeded. Let me verify final state:
+
+Local HEAD matches remote `ci/cherry-e98e9b1ec9b` exactly. Rebase complete.
+
+## Report
+
+**MR !1007** (branch `cherry-e98e9b1ec9b`) has been rebased onto current `ci/master` and force-pushed.
+
+### Rebase
+- 8 commits ahead of old base (`d7b448a2adb`'s parent on prior `ci/master`).
+- Ran `git rebase --keep-empty ci/master` → 7/8 commits applied cleanly.
+- **Conflict** on commit 6 (`pickman: Record cherry-pick of 5 commits from us/next`) in `.pickman-history`. Both this MR and the recently merged `cherry-a3075db94d4` MR added entries under the same `## 2026-04-29: us/next` heading. Resolved by keeping the `cherry-a3075db94d4` section (now from upstream) intact and appending our `cherry-e98e9b1ec9b` section after a fresh `---` separator. No code conflicts.
+
+### Delta verification (k3_fuse code commits + merge)
+All identical to pre-rebase originals:
+- `6fdbf78bc62`: 1 file, +3/-3 (matches)
+- `8fc8fa86482`: 1 file, +8/-1 (matches)
+- `e7474f1dd17`: 1 file, +1/-1 (matches)
+- `6d97a3bfe5e`: 1 file, +3/-3 (matches)
+- `8d081d3a499`: empty merge preserved (matches)
+- `1272ae7ac75` (pickman record): +41/-1 vs original +41/-0 — 1-line diff is the conflict-resolution journal bookkeeping, not a code change.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 board built in 15s, no warnings/errors).
+
+### Push
+`./tools/pickman/pickman push-branch cherry-e98e9b1ec9b -r ci -f` → forced update `1f788333a52 → d0a83654e5f`. GitLab will trigger a fresh MR pipeline automatically.
+
+### Branches
+- Local snapshot: `cherry-e98e9b1ec9b-v4` (created at the rebased HEAD; `-v2` and `-v3` already existed from prior pipeline-fix attempts)
+- Remote `ci/cherry-e98e9b1ec9b` updated to `d0a83654e5f`
+
+### Suggested MR reply
+> Rebased onto current `ci/master`. The only conflict was a journal-style `.pickman-history` clash with the recently merged `cherry-a3075db94d4` MR (both wrote under the same `## 2026-04-29: us/next` heading); resolved by giving each MR its own section under a separator. All 4 k3_fuse commits plus the empty merge rebased with identical deltas; sandbox build passes locally. New HEAD: `d0a83654e5f`.
+
+---
+
