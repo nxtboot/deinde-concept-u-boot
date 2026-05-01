@@ -100,11 +100,11 @@ class ReviewContext:  # pylint: disable=R0902
         return self.series_data.get('date', '')
 
 
-async def fetch_mbox(pwork_url, link):
+async def fetch_mbox(pwork, link):
     """Download the series mbox file from patchwork
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
 
     Returns:
@@ -113,19 +113,13 @@ async def fetch_mbox(pwork_url, link):
     Raises:
         ValueError: if the download fails
     """
-    url = f'{pwork_url}/series/{link}/mbox/'
-    tout.notice(f'Downloading mbox from {url}')
+    tout.notice(f'Downloading mbox for series {link} from {pwork.url}')
     mbox_path = os.path.join(tempfile.gettempdir(),
                              f'patman_review_{link}.mbox')
     async with aiohttp.ClientSession() as client:
-        async with client.get(url) as response:
-            if response.status != 200:
-                raise ValueError(
-                    f'Failed to download mbox: HTTP {response.status}')
-
-            content = await response.read()
-            if not content:
-                raise ValueError(f'Empty mbox downloaded from {url}')
+        content = await pwork.get_series_mbox(client, link)
+    if not content:
+        raise ValueError(f'Empty mbox downloaded for series {link}')
 
     tools.write_file(mbox_path, content)
     tout.notice(f'Downloaded {len(content)} bytes to {mbox_path}')
@@ -205,7 +199,7 @@ IMPORTANT:
 '''
 
 
-async def apply_series(pwork_url, link, branch_name, upstream_branch,
+async def apply_series(pwork, link, branch_name, upstream_branch,
                        repo_path):
     """Download and apply a patch series to a new local branch
 
@@ -213,7 +207,7 @@ async def apply_series(pwork_url, link, branch_name, upstream_branch,
     resolution.
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
         branch_name (str): Name for the new branch
         upstream_branch (str): Branch to base from
@@ -228,7 +222,7 @@ async def apply_series(pwork_url, link, branch_name, upstream_branch,
         return False, None
 
     # Download the mbox
-    mbox_path = await fetch_mbox(pwork_url, link)
+    mbox_path = await fetch_mbox(pwork, link)
 
     # Build the prompt and run the agent
     prompt = _build_apply_prompt(mbox_path, branch_name, upstream_branch)
@@ -1058,11 +1052,11 @@ def review_patches_sync(ctx):
     return loop.run_until_complete(review_patches(ctx))
 
 
-def apply_series_sync(pwork_url, link, branch_name, upstream_branch, repo_path):
+def apply_series_sync(pwork, link, branch_name, upstream_branch, repo_path):
     """Synchronous wrapper for apply_series()
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
         branch_name (str): Name for the new branch
         upstream_branch (str): Branch to base from
@@ -1073,7 +1067,7 @@ def apply_series_sync(pwork_url, link, branch_name, upstream_branch, repo_path):
     """
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(apply_series(
-        pwork_url, link, branch_name, upstream_branch, repo_path))
+        pwork, link, branch_name, upstream_branch, repo_path))
 
 
 def search_series(pwork, title):
@@ -1273,12 +1267,10 @@ def _do_learn_voice(args, pwork):
 
     if pwork and pwork.proj_id:
         async def _get_list_email():
-            async with aiohttp.ClientSession() as client:
-                # pylint: disable=W0212
-                projects = await pwork._request(client, 'projects/')
-                for proj in projects:
-                    if proj['id'] == pwork.proj_id:
-                        return proj.get('list_email')
+            projects = await pwork.get_projects()
+            for proj in projects:
+                if proj['id'] == pwork.proj_id:
+                    return proj.get('list_email')
             return None
 
         loop = asyncio.get_event_loop()
@@ -1600,7 +1592,7 @@ def _apply_and_check(ctx, link):
     """
     branch_name = f'review{ctx.series_id}'
     repo_path = gitutil.get_top_level()
-    success, branch_name = apply_series_sync(ctx.pwork.url, link, branch_name,
+    success, branch_name = apply_series_sync(ctx.pwork, link, branch_name,
         ctx.upstream_branch, repo_path)
 
     if success:

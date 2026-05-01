@@ -449,6 +449,52 @@ class Patchwork:
         """
         return await self._request(client, f'series/{link}/')
 
+    async def get_series_mbox(self, client, link):
+        """Download the raw mbox file for a series.
+
+        The mbox URL lives directly under '/series/<link>/mbox/' rather
+        than the JSON API, so this fetches the bytes directly rather
+        than routing through self._request().
+
+        Args:
+            client (aiohttp.ClientSession): Session to use
+            link (str): Patchwork series link/ID
+
+        Returns:
+            bytes: Raw mbox content
+
+        Raises:
+            ValueError: if the download fails
+        """
+        self.request_count += 1
+        full_url = f'{self.url}/series/{link}/mbox/'
+        async with self.semaphore:
+            async with client.get(full_url) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f'Failed to download mbox: HTTP {response.status}')
+                return await response.read()
+
+    async def search_patches(self, client, query, project_id=None,
+                             per_page=20):
+        """Search patches by free-text query, most-recent first.
+
+        Args:
+            client (aiohttp.ClientSession): Session to use
+            query (str): Text to match against patch titles
+            project_id (int): Project ID to scope to, or None to use
+                self.proj_id
+            per_page (int): Maximum number of results to return
+
+        Returns:
+            list of dict: Patch records matching the query
+        """
+        if project_id is None:
+            project_id = self.proj_id
+        subpath = (f'patches/?project={project_id}&q={query}'
+                   f'&order=-date&per_page={per_page}')
+        return await self._request(client, subpath)
+
     async def get_patch(self, client, patch_id):
         """Read information about a patch
 
