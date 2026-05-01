@@ -75483,3 +75483,52 @@ Force-push succeeded — the MR pipeline will be retriggered automatically.
 
 ---
 
+### Review: 2026-05-01
+
+Branch: cherry-67fc5052285
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed without conflicts. Let me verify the deltas.
+
+All deltas are identical. Now run the build.
+
+Build passes cleanly. Now create the v2 branch and force-push.
+
+Force-push succeeded. Pipeline retriggered for MR !1020.
+
+## Report
+
+**Result: Rebase successful, no conflicts, build passes.**
+
+**Action taken:** Rebased `cherry-67fc5052285` onto `ci/master` and force-pushed to update MR !1020.
+
+**Rebase details:**
+- 7 commits replayed cleanly with `git rebase --keep-empty ci/master`
+- No conflicts encountered
+- All commit deltas are identical before/after rebase:
+
+| Commit | Before | After | Stats |
+|---|---|---|---|
+| mmc: Add eMMC 5.1B | aeb4f2bf56a | d35bdc95e72 | 2 files, +3/-1 |
+| dm: regulator: fix quote | 1a7c8371c40 | 60a1e4f7490 | 1 file, +1/-1 |
+| ti env: move scripts | a61762e4e1c | 083da4ca8c3 | 3 files, +19/-5 |
+| Merge mmc-next-2026-03-23 | f9d0e270133 | f721c927576 | empty (preserved) |
+| pickman: cherry-pick record | 46b929b3bf2 | 1c29b219f49 | 1 file, +41 |
+| pickman: pipeline fix record | 91712a977b9 | eeaad84bdcc | 1 file, +65 |
+| pickman: review record | fd49d21eb80 | 0cf5bceeaa4 | 1 file, +45 |
+
+**Verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 8 s, no warnings or errors.
+
+**Branches:**
+- Local: `cherry-67fc5052285-v3` created at the rebased HEAD `0cf5bceeaa4`
+- Remote: pushed `cherry-67fc5052285` → `0cf5bceeaa4` (was `91712a977b9`, forced)
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. All 7 commits replayed cleanly with no conflicts; the empty merge commit was preserved with `--keep-empty`. Per-commit deltas are byte-identical to pre-rebase. Sandbox build passes. Force-pushed to retrigger the pipeline.
+
+---
+
