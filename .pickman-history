@@ -75124,3 +75124,76 @@ Added one new commit `7339ffd26a5 bootm: Convert bootm_final() to use the upstre
 
 ---
 
+### Pipeline fix: 2026-04-30 (attempt 1)
+
+Branch: cherry-714dd2252da
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- sandbox64 with clang test.py (test.py)
+- sandbox_flattree test.py (test.py)
+- sandbox64 test.py (test.py)
+- sandbox64_lwip test.py (test.py)
+- qemu-x86_64_nospl test.py (test.py)
+- qemu-x86_64 test.py (test.py)
+- qemu-x86 test.py (test.py)
+- qemu-riscv64_smode_acpi test.py (test.py)
+- qemu_arm64_tfa_fw_handoff test.py (test.py)
+- qemu_arm test.py (test.py)
+- qemu_arm64 test.py (test.py)
+- qemu_arm64_lwip test.py (test.py)
+- build all other platforms (world_build)
+- build all 64bit ARM platforms (world_build)
+- build all 32bit ARM platforms (world_build)
+- qemu-x86_64 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+I'll keep investigating without TodoWrite for now since this is a focused single-issue fix.
+
+Now I'm on the actual state CI tested. Let me reproduce the build error:
+
+Build succeeds now. Let me check the test failure:
+
+Now let me add the missing include:
+
+Now let me verify the fix works:
+
+The IDE diagnostics are spurious — actual build succeeded (exit 0). Let me verify a few more boards:
+
+All boards build. Now amend the commit and continue:
+
+Now let me run buildman to verify all the affected boards:
+
+No errors. Let me also try a wider build to ensure I haven't broken anything else:
+
+Let me run a smaller representative build instead. First, stop the long arm build:
+
+The fix is now part of the conversion commit. Let me run a broader build to confirm my fix doesn't break unrelated things — let me build a representative arch sampling:
+
+The fix is on the requested branch `cherry-714dd2252da-fix1`. Let me confirm the final state:
+
+## Summary
+
+**Root cause:** A single missing `#include <linker_lists.h>` in `include/event.h` broke ALL qemu builds (and any other code using `EVENT_SPY_FULL` directly via `<event.h>`).
+
+**Responsible commit:** `5e08c92af92 bootm: Convert bootm_final() to use the upstream API` (the conversion fixup pushed in v3 of this MR). It deleted `include/event_decl.h` and removed `#include <event_decl.h>` from `event.h`. The deleted header pulled in `linux/bitops.h`, which transitively pulled in `linux/kernel.h` → `linux/printk.h` → `log.h` → `linker_lists.h`. With that chain gone, `EVENT_SPY_FULL` (which calls `ll_entry_declare`) no longer expanded, producing the compiler errors:
+```
+unknown type name 'EVT_BOOTCMD_3_qemu_get_bootcmd'
+unknown type name 'evspy_info'
+```
+in `board/emulation/common/bootcmd.c` for every qemu/sandbox/x86/arm/riscv/m68k board that builds it. This single error cascaded into the test.py jobs (no kernel to test) and the world_build jobs.
+
+**Fix:** Amended the responsible commit `5e08c92af92` with a one-line `#include <linker_lists.h>` directly in `event.h`, and a `[pickman] Fix …` note appended to the commit message. The commit-message description of file changes (which mentions deleting `event_decl.h`) is unchanged.
+
+**Verification:** `buildman` clean across 31 boards spanning the affected archs (arm, aarch64, x86, riscv64, m68k, microblaze, mips, sandbox) including all qemu boards from the failing CI list — `(no errors to report)`. Only pre-existing DTS warnings remain.
+
+**Out-of-scope failures NOT addressed:**
+- `Check make check` / `Check make qcheck` and `bootflow_efi` test failures show `bootstage: Failed to add to device tree` between `Starting kernel ...` and `Timer summary` (test/boot/bootflow.c:1481). This same failure reproduces on `ci/master` itself in standalone runs, so it's a pre-existing test/code mismatch in `bootm_final()` calling `bootstage_fdt_add_report()` (added by `a1ae8de12c6 riscv: Call bootm_final()` already in ci/master) without the test being updated. Not introduced by this MR.
+
+**Branch:** `cherry-714dd2252da-fix1` at `90669959230`, ready for push (not pushed).
+
+---
+
