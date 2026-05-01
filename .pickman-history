@@ -75332,3 +75332,44 @@ If this re-runs and fails again with the same single test, it's worth: (a) bumpi
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-67fc5052285
+
+Commits:
+- 67fc5052285 mmc: Add support for eMMC 5.1B specification
+- 9936e1083dd dm: regulator: fix missing quote in error message
+- e853610b560 include: env: ti: move board specific scripts out of ti_common
+- 056d77e93d3 Merge tag 'mmc-next-2026-03-23' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+Identical. Now build test.
+
+Identical stats. Build test now.
+
+Identical. Build test.
+
+All 4 commits present. Final build test.
+
+All 4 cherry-picks completed successfully on branch `cherry-67fc5052285`.
+
+## Final Status
+
+**Build result:** OK (sandbox build passed cleanly with no warnings or errors)
+
+**Commits applied (in order):**
+1. `aeb4f2bf56a` - mmc: Add support for eMMC 5.1B specification (clean)
+2. `1a7c8371c40` - dm: regulator: fix missing quote in error message (fix-up)
+3. `a61762e4e1c` - include: env: ti: move board specific scripts out of ti_common (clean)
+4. `f9d0e270133` - Merge tag 'mmc-next-2026-03-23' (empty merge, fix-up note)
+
+**Fix-ups made:**
+- **Commit #2 (`1a7c8371c40`)**: Conflict in `drivers/power/regulator/regulator-uclass.c`. HEAD already had a different control-flow form for the same code block (early-return style) and contained the same missing-quote bug. Resolved by applying the one-character fix (`'%s\n` → `'%s'\n`) to HEAD's early-return version. Added trailer: `[sjg: Adapt to the existing early-return control flow in HEAD]`.
+- **Commit #4 (merge `f9d0e270133`)**: Conflict in the same regulator file because the merge brings in the alternate (non-early-return) form already fixed by commit #2. Kept HEAD's version (`--ours`), making the cherry-pick empty but preserved as required. Added trailer: `[sjg: Drop the regulator-uclass change since it was already applied]`.
+
+**Concerning deltas:** None — all non-merge commits matched their originals exactly in file count and line counts. The merge commit naturally produced no diff, as expected after conflict resolution.
+
+The branch is left at `cherry-67fc5052285`, ready for pushing. No other branches were modified.
+
+---
+
