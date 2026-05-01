@@ -861,7 +861,9 @@ coreboot test.py:
       when: manual
       allow_failure: true
   dependencies: []
-  needs: [ "sandbox test.py" ]
+  needs:
+    - job: "sandbox test.py"
+      optional: true
   tags: [ 'lab' ]
   script:
     # Environment:
