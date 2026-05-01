@@ -126,8 +126,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         ser = self._parse_series(series)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         max_vers = self._series_max_version(ser.idnum)
         if max_vers < 2:
@@ -170,8 +169,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         ser = self._parse_series(series_name)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         max_vers = self._series_max_version(ser.idnum)
 
@@ -230,6 +228,7 @@ class Cseries(cser_helper.CseriesHelper):
                 link
         """
         ser, version = self._parse_series_and_version(series_name, version)
+        self._ensure_in_db(ser)
         self._ensure_version(ser, version)
 
         self._set_link(ser.idnum, ser.name, version, link, update_commit)
@@ -248,6 +247,7 @@ class Cseries(cser_helper.CseriesHelper):
             str: Patchwork link as a string, e.g. '12325'
         """
         ser, version = self._parse_series_and_version(series, version)
+        self._ensure_in_db(ser)
         self._ensure_version(ser, version)
         return self.db.ser_ver_get_link(ser.idnum, version)
 
@@ -825,8 +825,7 @@ class Cseries(cser_helper.CseriesHelper):
         """
         ser = self._parse_series(name)
         name = ser.name
-        if not ser.idnum:
-            raise ValueError(f"No such series '{name}'")
+        self._ensure_in_db(ser)
 
         self.db.ser_ver_remove(ser.idnum, None)
         if not dry_run:
@@ -851,8 +850,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         old_ser, _ = self._parse_series_and_version(series, None)
-        if not old_ser.idnum:
-            raise ValueError(f"Series '{old_ser.name}' not found in database")
+        self._ensure_in_db(old_ser)
         if old_ser.name != series:
             raise ValueError(f"Invalid series name '{series}': "
                              'did you use the branch name?')
@@ -922,6 +920,7 @@ class Cseries(cser_helper.CseriesHelper):
 
         notes = tools.read_file(notes_file, binary=False).strip()
         ser, version = self._parse_series_and_version(series, None)
+        self._ensure_in_db(ser)
         svid = self.get_series_svid(ser.idnum, version)
         self.db.ser_ver_set_notes(svid, notes)
         self.commit()
@@ -934,6 +933,7 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Series name, or None for current branch
         """
         ser, _ = self._parse_series_and_version(series, None)
+        self._ensure_in_db(ser)
         all_notes = self.db.ser_ver_get_all_notes(ser.idnum)
         if not all_notes:
             tout.notice(f"No review notes for '{ser.name}'")
@@ -954,8 +954,7 @@ class Cseries(cser_helper.CseriesHelper):
                 the listed patch numbers (1-based).
         """
         ser, _ = self._parse_series_and_version(series, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         with terminal.pager():
             self._show_info(ser, show_reviews)
@@ -1058,8 +1057,7 @@ class Cseries(cser_helper.CseriesHelper):
         if not ups:
             raise ValueError('Please specify the upstream name')
         ser, _ = self._parse_series_and_version(series, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         self.db.series_set_upstream(ser.idnum, ups)
 
@@ -1093,6 +1091,7 @@ class Cseries(cser_helper.CseriesHelper):
             tout.info(f'{oper} {seq:3} {out}')
 
         name, ser, version, msg = self.prep_series(branch_name, end)
+        self._ensure_in_db(ser)
         svid = self.get_ser_ver(ser.idnum, version).idnum
         pcdict = self.get_pcommit_dict(svid)
 
@@ -1191,8 +1190,7 @@ class Cseries(cser_helper.CseriesHelper):
                 succeed
         """
         ser, version = self._parse_series_and_version(name, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         ups = self.get_series_upstream(name)
         if ups:
@@ -1226,8 +1224,7 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Name of series to use, or None to use current branch
         """
         ser = self._parse_series(series, include_archived=True)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         svlist = self.db.ser_ver_get_for_series(ser.idnum)
 
@@ -1275,8 +1272,7 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Name of series to use, or None to use current branch
         """
         ser = self._parse_series(series, include_archived=True)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
         self.db.series_set_archived(ser.idnum, False)
 
         svlist = self.db.ser_ver_get_for_series(ser.idnum)

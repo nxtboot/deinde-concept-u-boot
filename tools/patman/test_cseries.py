@@ -2384,7 +2384,10 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with self.stage('remove non-existent series'):
             with self.assertRaises(ValueError) as exc:
                 cser.remove('first')
-            self.assertEqual("No such series 'first'", str(exc.exception))
+            self.assertEqual(
+                "Series 'first' not found in database; use "
+                "'patman series add' first",
+                str(exc.exception))
 
         with self.stage('add'):
             with terminal.capture() as (out, _):
@@ -2410,8 +2413,10 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
             with terminal.capture() as (out, _):
                 self.run_args('series', '-s', 'first', 'rm', expect_ret=1,
                               pwork=True)
-            self.assertEqual("patman: ValueError: No such series 'first'",
-                             out.getvalue().strip())
+            self.assertEqual(
+                "patman: ValueError: Series 'first' not found in database;"
+                " use 'patman series add' first",
+                out.getvalue().strip())
 
         with self.stage('add'):
             with terminal.capture() as (out, _):

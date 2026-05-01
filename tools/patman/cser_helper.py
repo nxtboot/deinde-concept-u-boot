@@ -731,6 +731,26 @@ class CseriesHelper:
         recs = self.get_ser_ver(series_id, version)
         return recs.idnum, recs.link
 
+    def _ensure_in_db(self, ser):
+        """Verify a series object came from the database.
+
+        Many subcommands look up a series by name, get a Series object back
+        with idnum unset when no row exists, then pass that idnum on to the
+        database where it is reported only as 'series_id NULL'. Raise a
+        clear ValueError up front so the caller knows to register the
+        series first.
+
+        Args:
+            ser (Series): Series object whose idnum must be set
+
+        Raises:
+            ValueError: if ser.idnum is None
+        """
+        if not ser.idnum:
+            raise ValueError(
+                f"Series '{ser.name}' not found in database; "
+                "use 'patman series add' first")
+
     def get_ser_ver(self, series_id, version):
         """Get the patchwork details for a series version
 
