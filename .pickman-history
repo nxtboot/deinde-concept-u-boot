@@ -75332,3 +75332,251 @@ If this re-runs and fails again with the same single test, it's worth: (a) bumpi
 
 ---
 
+## 2026-04-30: us/next
+
+Branch: cherry-67fc5052285
+
+Commits:
+- 67fc5052285 mmc: Add support for eMMC 5.1B specification
+- 9936e1083dd dm: regulator: fix missing quote in error message
+- e853610b560 include: env: ti: move board specific scripts out of ti_common
+- 056d77e93d3 Merge tag 'mmc-next-2026-03-23' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+Identical. Now build test.
+
+Identical stats. Build test now.
+
+Identical. Build test.
+
+All 4 commits present. Final build test.
+
+All 4 cherry-picks completed successfully on branch `cherry-67fc5052285`.
+
+## Final Status
+
+**Build result:** OK (sandbox build passed cleanly with no warnings or errors)
+
+**Commits applied (in order):**
+1. `aeb4f2bf56a` - mmc: Add support for eMMC 5.1B specification (clean)
+2. `1a7c8371c40` - dm: regulator: fix missing quote in error message (fix-up)
+3. `a61762e4e1c` - include: env: ti: move board specific scripts out of ti_common (clean)
+4. `f9d0e270133` - Merge tag 'mmc-next-2026-03-23' (empty merge, fix-up note)
+
+**Fix-ups made:**
+- **Commit #2 (`1a7c8371c40`)**: Conflict in `drivers/power/regulator/regulator-uclass.c`. HEAD already had a different control-flow form for the same code block (early-return style) and contained the same missing-quote bug. Resolved by applying the one-character fix (`'%s\n` → `'%s'\n`) to HEAD's early-return version. Added trailer: `[sjg: Adapt to the existing early-return control flow in HEAD]`.
+- **Commit #4 (merge `f9d0e270133`)**: Conflict in the same regulator file because the merge brings in the alternate (non-early-return) form already fixed by commit #2. Kept HEAD's version (`--ours`), making the cherry-pick empty but preserved as required. Added trailer: `[sjg: Drop the regulator-uclass change since it was already applied]`.
+
+**Concerning deltas:** None — all non-merge commits matched their originals exactly in file count and line counts. The merge commit naturally produced no diff, as expected after conflict resolution.
+
+The branch is left at `cherry-67fc5052285`, ready for pushing. No other branches were modified.
+
+---
+
+### Pipeline fix: 2026-04-30 (attempt 1)
+
+Branch: cherry-67fc5052285
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+This is a "play" job which is a hardware lab test on a TI BeaglePlay (am62x) board. The failure is a labgrid `TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` — the board didn't reach the U-Boot prompt. Let me check whether one of the cherry-picked commits could plausibly affect the board's boot.
+
+Let me verify the cherry-picks build cleanly. The play job is a hardware lab test that timed out at U-Boot prompt — none of the cherry-picks plausibly affect early U-Boot boot:
+
+- mmc: just adds a new version constant to the recognition array — no behavioural change
+- regulator: only changes a string in an error message
+- ti env: changes `bootcmd_ti_mmc` (which runs *after* U-Boot reaches the prompt, not during boot)
+
+The "Timeout of 20 seconds exceeded during waiting for login" + "Lab failure: Marking connection bad" indicates the board never reached a U-Boot prompt at all — which happens long before any of these changes can run.
+
+Let me still do quick sanity builds.
+
+Both `am62x_beagleplay_a53` and `am62x_beagleplay_r5` build successfully (only the expected warnings about missing TI firmware blobs, which are environmental/local and unrelated to the cherry-picks). The sandbox build also passes.
+
+This confirms the failure is **not** a build/code issue. The job log shows:
+
+```
+Bootstrapping U-Boot from dirs ...
+Writing U-Boot using method ti,am625
+... (20 second wait)
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The board (BeaglePlay/am62x) failed to reach a U-Boot prompt after the bootstrap step. Critically:
+
+1. **None of the four cherry-picks plausibly affect early U-Boot boot:**
+   - `mmc: Add support for eMMC 5.1B`: just appends a constant to a recognition array. No behavioural change for existing chips.
+   - `regulator: fix missing quote`: only changes characters inside an error string.
+   - `ti env: move board specific scripts`: changes `bootcmd_ti_mmc`, which only runs *after* the U-Boot prompt is reached. Does not affect getting to the prompt.
+   - The merge commit is empty.
+
+2. **The "Lab failure: Marking connection bad" message** is the test framework's signal that the lab connection itself is bad — not a test result. It tells subsequent tests to be skipped because the hardware/serial connection is unhealthy.
+
+3. The same source still builds clean for `am62x_beagleplay_a53` and `am62x_beagleplay_r5`.
+
+This is an **infrastructure/transient lab failure** — the BeaglePlay didn't boot or the serial console didn't respond, which is unrelated to the code changes on this branch.
+
+## Report
+
+**Result: No code change made — infrastructure/transient lab failure.**
+
+**Root cause:** The `play` job is a hardware-lab pytest run on a TI BeaglePlay (am62x). The labgrid driver timed out after 20 s waiting for the U-Boot prompt during `_await_prompt()`, and the framework declared "Lab failure: Marking connection bad - no other tests will run." The board/serial connection was unresponsive after the U-Boot bootstrap step.
+
+**Why this is not a code issue on this branch:**
+- `mmc: Add support for eMMC 5.1B` — only adds a new constant to the version-recognition array; no behavioural change.
+- `dm: regulator: fix missing quote in error message` — pure string-content change.
+- `include: env: ti: move board specific scripts out of ti_common` — modifies `bootcmd_ti_mmc`, which runs *after* the U-Boot prompt is reached, so it cannot affect *getting to* the prompt.
+- The merge commit is empty.
+- Local builds of `am62x_beagleplay_a53`, `am62x_beagleplay_r5`, and sandbox all succeed cleanly with this branch.
+
+**No commit was responsible**, no fix is required, and no commits were amended or added.
+
+**Branch state:** `cherry-67fc5052285-fix1` was created pointing at the same commit as `cherry-67fc5052285` (no changes). Recommend retrying the `play` job; if it fails again with a real (non-timeout) error, that may indicate a separate hardware/lab problem to investigate.
+
+---
+
+### Review: 2026-04-30
+
+Branch: cherry-67fc5052285
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) play.
+
+This is a "play" job which is a hardware lab te...
+
+### Conversation log
+Now let me read and understand the review comment. The comment is actually the bot's own previous "Pipeline fix (attempt 1)" report, indicating that the previous failure was a transient hardware/lab failure (BeaglePlay timeout) — not a code issue. Let me verify the current state of the branch.
+
+The local branch is ahead of remote by one commit (the pipeline fix record `91712a977b9`). The actual code is identical. The review comment is the bot's own previous report concluding no fix is needed — the BeaglePlay `play` job failed with a transient lab timeout, not a code issue.
+
+Let me verify the build still passes and then retrigger the pipeline by force-pushing.
+
+Build passes. Now create the v2 branch and force-push to retrigger the pipeline.
+
+Force-push succeeded — the MR pipeline will be retriggered automatically.
+
+## Report
+
+**Action taken:** No code changes. The branch was force-pushed to retrigger the pipeline.
+
+**What the comment said:** The review comment is the bot's own previous "Pipeline fix (attempt 1)" report. It concluded the failure of the `play` job was a transient hardware/lab failure on the TI BeaglePlay (am62x): a 20 s labgrid timeout waiting for the U-Boot prompt with `Lab failure: Marking connection bad - no other tests will run`. None of the four cherry-picked commits could plausibly affect early U-Boot boot:
+
+- `mmc: Add support for eMMC 5.1B` — adds one constant to a recognition array
+- `dm: regulator: fix missing quote` — string-content change only
+- `include: env: ti: move board specific scripts` — modifies `bootcmd_ti_mmc`, runs *after* the prompt
+- The merge commit is empty
+
+**Verification done:**
+- `buildman -L --board sandbox` — builds clean (1 built, no warnings, 11 s)
+- Branch state matches the previously-verified working set (commits `aeb4f2bf56a`, `1a7c8371c40`, `a61762e4e1c`, `f9d0e270133`)
+
+**Branches:**
+- Local: `cherry-67fc5052285-v2` created at `91712a977b9` (same as `cherry-67fc5052285`)
+- Remote: pushed `cherry-67fc5052285` → `91712a977b9` (was `46b929b3bf2`)
+
+**Suggested MR reply:**
+
+> Re-running the `play` job — the previous failure was a transient lab/hardware issue (BeaglePlay 20 s labgrid timeout waiting for U-Boot prompt; "Marking connection bad"), not a code defect. None of the four cherry-picked commits can affect early boot: the mmc commit only appends a version constant, the regulator commit is a one-character string fix, the TI env commit changes `bootcmd_ti_mmc` which runs after the prompt, and the merge is empty. Local sandbox + `am62x_beagleplay_{a53,r5}` builds all pass. Force-pushed to retrigger the pipeline; no code amend needed.
+
+---
+
+### Review: 2026-05-01
+
+Branch: cherry-67fc5052285
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed without conflicts. Let me verify the deltas.
+
+All deltas are identical. Now run the build.
+
+Build passes cleanly. Now create the v2 branch and force-push.
+
+Force-push succeeded. Pipeline retriggered for MR !1020.
+
+## Report
+
+**Result: Rebase successful, no conflicts, build passes.**
+
+**Action taken:** Rebased `cherry-67fc5052285` onto `ci/master` and force-pushed to update MR !1020.
+
+**Rebase details:**
+- 7 commits replayed cleanly with `git rebase --keep-empty ci/master`
+- No conflicts encountered
+- All commit deltas are identical before/after rebase:
+
+| Commit | Before | After | Stats |
+|---|---|---|---|
+| mmc: Add eMMC 5.1B | aeb4f2bf56a | d35bdc95e72 | 2 files, +3/-1 |
+| dm: regulator: fix quote | 1a7c8371c40 | 60a1e4f7490 | 1 file, +1/-1 |
+| ti env: move scripts | a61762e4e1c | 083da4ca8c3 | 3 files, +19/-5 |
+| Merge mmc-next-2026-03-23 | f9d0e270133 | f721c927576 | empty (preserved) |
+| pickman: cherry-pick record | 46b929b3bf2 | 1c29b219f49 | 1 file, +41 |
+| pickman: pipeline fix record | 91712a977b9 | eeaad84bdcc | 1 file, +65 |
+| pickman: review record | fd49d21eb80 | 0cf5bceeaa4 | 1 file, +45 |
+
+**Verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 8 s, no warnings or errors.
+
+**Branches:**
+- Local: `cherry-67fc5052285-v3` created at the rebased HEAD `0cf5bceeaa4`
+- Remote: pushed `cherry-67fc5052285` → `0cf5bceeaa4` (was `91712a977b9`, forced)
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. All 7 commits replayed cleanly with no conflicts; the empty merge commit was preserved with `--keep-empty`. Per-commit deltas are byte-identical to pre-rebase. Sandbox build passes. Force-pushed to retrigger the pipeline.
+
+---
+
+### Review: 2026-05-01
+
+Branch: cherry-67fc5052285
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match identically. Now run the build.
+
+Build passes cleanly. Now create the v4 branch and push.
+
+Force-push succeeded. Pipeline retriggered for MR !1020.
+
+## Report
+
+**Result: Rebase successful, no conflicts, build passes.**
+
+**Action taken:** Rebased `cherry-67fc5052285` onto latest `ci/master` (`8cb1bda70c2`) and force-pushed to update MR !1020.
+
+**Rebase details:**
+- 8 commits replayed cleanly with `git rebase --keep-empty ci/master`
+- No conflicts encountered
+- All commit deltas are byte-identical before/after rebase:
+
+| Commit | Before | After | Stats |
+|---|---|---|---|
+| mmc: Add eMMC 5.1B | d35bdc95e72 | 5a2ef0149ae | 2 files, +3/-1 |
+| dm: regulator: fix quote | 60a1e4f7490 | d13bed2f824 | 1 file, +1/-1 |
+| ti env: move scripts | 083da4ca8c3 | 70d2eb98e4c | 3 files, +19/-5 |
+| Merge mmc-next-2026-03-23 | f721c927576 | b8dce447f68 | empty (preserved) |
+| pickman: cherry-pick record | 1c29b219f49 | c65a02d45a3 | 1 file, +41 |
+| pickman: pipeline fix record | eeaad84bdcc | 15df8553aab | 1 file, +65 |
+| pickman: review record | 0cf5bceeaa4 | d453b6aa8b0 | 1 file, +45 |
+| pickman: review record | 81659ecf1f8 | 7ec48301ed7 | 1 file, +49 |
+
+**Verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 8 s, no warnings or errors.
+
+**Branches:**
+- Local: `cherry-67fc5052285-v4` created at the rebased HEAD `7ec48301ed7`
+- Remote: pushed `cherry-67fc5052285` → `7ec48301ed7` (was `0cf5bceeaa4`, forced)
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master` (`8cb1bda70c2`). All 8 commits replayed cleanly with no conflicts; the empty merge commit was preserved with `--keep-empty`. Per-commit deltas are identical to pre-rebase. Sandbox build passes. Force-pushed to retrigger the pipeline.
+
+---
+
