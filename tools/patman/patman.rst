@@ -759,7 +759,10 @@ Here is a short overview of the available subcommands:
     info
         Show detailed information about a series, including each
         version's link, description, patches and any stored reviews.
-        Use ``-r`` to include review text.
+        The output is colour-coded by patchwork state (e.g. ``new``,
+        ``accepted``). Use ``-r`` to include review text; pass a list
+        of patch numbers (``-r 1 3``) to limit the review text to those
+        patches.
 
     ls
         Lists the series in the database. Use ``-r`` to show only
@@ -894,6 +897,10 @@ series is linked.
 To gather tags (Reviewed-by ...) for your series from patchwork::
 
     patman series gather
+
+If every patch in the gathered version has reached state ``accepted``,
+patman prints a notice that the series has been applied upstream. The
+same check runs for ``patman series gather-all``.
 
 Now you can check your progress::
 
@@ -1338,6 +1345,21 @@ excluded from refinement to preserve their quoted commit messages.
 
 A mechanical cleanup step also runs to remove backticks and fix function
 quoting style (e.g. ``malloc()`` not ```malloc```).
+
+Apply step
+~~~~~~~~~~
+
+Before checking out the review branch, patman stashes any uncommitted
+changes -- including untracked files -- so build artefacts on the
+current branch don't leak into the review. The original branch and
+stash are restored at the end of the run, including on failure.
+
+If the apply agent finishes but the resulting branch holds fewer
+commits than the series cover letter advertises, patman aborts with a
+message of the form ``Only N of M patches applied to <branch>;
+aborting. Fix the conflicts manually and retry.`` The database row
+for the new version is rolled back so a retry starts from a clean
+state.
 
 Patchwork subcommands
 ---------------------
