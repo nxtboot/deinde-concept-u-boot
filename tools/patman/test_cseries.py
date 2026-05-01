@@ -21,6 +21,7 @@ from u_boot_pylib import tools
 from patman import cmdline
 from patman import control
 from patman import cser_helper
+from patman import review
 from patman import cseries
 from patman.database import Pcommit
 from patman import database
@@ -1101,16 +1102,19 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         self.assertFalse(cser.project_get())
         cser.project_set(pwork, 'U-Boot', quiet=True)
 
-        self.assertEqual(
-            (self.SERIES_ID_SECOND_V1, None, 'second', 1,
-             'Series for my board'),
-            cser.link_search(pwork, 'second', 1))
+        with terminal.capture():
+            self.assertEqual(
+                (self.SERIES_ID_SECOND_V1, None, 'second', 1,
+                 'Series for my board'),
+                cser.link_search(pwork, 'second', 1))
 
         with terminal.capture():
             cser.increment('second')
 
-        self.assertEqual((457, None, 'second', 2, 'Series for my board'),
-                         cser.link_search(pwork, 'second', 2))
+        with terminal.capture():
+            self.assertEqual(
+                (457, None, 'second', 2, 'Series for my board'),
+                cser.link_search(pwork, 'second', 2))
 
     def test_series_link_auto_name(self):
         """Test finding the patchwork link for a cseries with auto name"""
@@ -1197,13 +1201,15 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         self.assertFalse(cser.project_get())
         cser.project_set(pwork, 'U-Boot', quiet=True)
 
-        self.assertEqual(
-            (self.SERIES_ID_SECOND_V1, None, 'second', 1,
-             'Series for my board'),
-            cser.link_search(pwork, 'second', 1))
-        self.assertEqual((457, None, 'second', 2, 'Series for my board'),
-                         cser.link_search(pwork, 'second', 2))
-        res = cser.link_search(pwork, 'second', 3)
+        with terminal.capture():
+            self.assertEqual(
+                (self.SERIES_ID_SECOND_V1, None, 'second', 1,
+                 'Series for my board'),
+                cser.link_search(pwork, 'second', 1))
+            self.assertEqual(
+                (457, None, 'second', 2, 'Series for my board'),
+                cser.link_search(pwork, 'second', 2))
+            res = cser.link_search(pwork, 'second', 3)
         self.assertEqual(
             (None,
              [{'id': self.SERIES_ID_SECOND_V1, 'name': 'Series for my board',
@@ -1444,7 +1450,9 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with terminal.capture() as (out, _):
             self.run_args('series', 'autolink-all', '-a', '--no-update',
                           pwork=pwork)
-        itr = iter(out.getvalue().splitlines())
+        lines = [ln for ln in out.getvalue().splitlines()
+                 if not ln.startswith('Searching for ')]
+        itr = iter(lines)
         self.assertEqual(
             '1 series linked, 1 already linked, 1 not found (3 requests)',
             next(itr))
@@ -2376,7 +2384,10 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
         with self.stage('remove non-existent series'):
             with self.assertRaises(ValueError) as exc:
                 cser.remove('first')
-            self.assertEqual("No such series 'first'", str(exc.exception))
+            self.assertEqual(
+                "Series 'first' not found in database; use "
+                "'patman series add' first",
+                str(exc.exception))
 
         with self.stage('add'):
             with terminal.capture() as (out, _):
@@ -2402,8 +2413,10 @@ Tested-by: Mary Smith <msmith@wibble.com>   # yak
             with terminal.capture() as (out, _):
                 self.run_args('series', '-s', 'first', 'rm', expect_ret=1,
                               pwork=True)
-            self.assertEqual("patman: ValueError: No such series 'first'",
-                             out.getvalue().strip())
+            self.assertEqual(
+                "patman: ValueError: Series 'first' not found in database;"
+                " use 'patman series add' first",
+                out.getvalue().strip())
 
         with self.stage('add'):
             with terminal.capture() as (out, _):
@@ -3784,7 +3797,9 @@ Date:   .*
         cser.set_fake_time(h_sleep)
         with terminal.capture() as (out, _):
             cser.link_auto(pwork, 'second3', 3, True, 50)
-        itr = iter(out.getvalue().splitlines())
+        lines = [ln for ln in out.getvalue().splitlines()
+                 if not ln.startswith('Searching for ')]
+        itr = iter(lines)
 
         # Matches shown only once (they don't change between retries)
         self.assertEqual(
@@ -4452,7 +4467,6 @@ Date:   .*
         svid2 = cser.db.ser_ver_add(series_id, 2, desc='Second version desc')
 
         # Add patches to v1
-        from patman.database import Pcommit
         cser.db.pcommit_add_list(svid1, [
             Pcommit(idnum=None, seq=0, subject='Fix the widget',
                     svid=svid1, change_id=None, state=None,
@@ -4481,6 +4495,57 @@ Date:   .*
         self.assertIn('Version 2:', output)
         self.assertIn('Second version desc', output)
         self.assertIn('Notes: Fixed review feedback', output)
+
+    def test_series_find(self):
+        """Test the series find command"""
+        cser = self.get_database()
+
+        # Create two series: one with patches matching 'widget', one with
+        # matching cover description, one with neither
+        alpha_id = cser.db.series_add('alpha', 'Widget subsystem refresh')
+        alpha_svid = cser.db.ser_ver_add(alpha_id, 1)
+        cser.db.pcommit_add_list(alpha_svid, [
+            Pcommit(idnum=None, seq=0, subject='Fix the widget',
+                    svid=alpha_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+
+        beta_id = cser.db.series_add('beta', 'Unrelated cleanup')
+        beta_svid = cser.db.ser_ver_add(beta_id, 1,
+                                         desc='Touch up the widget driver')
+        cser.db.pcommit_add_list(beta_svid, [
+            Pcommit(idnum=None, seq=0, subject='cleanup',
+                    svid=beta_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+
+        gamma_id = cser.db.series_add('gamma', 'Something different')
+        gamma_svid = cser.db.ser_ver_add(gamma_id, 1)
+        cser.db.pcommit_add_list(gamma_svid, [
+            Pcommit(idnum=None, seq=0, subject='other work',
+                    svid=gamma_svid, change_id=None, state=None,
+                    patch_id=None, num_comments=0)])
+        cser.commit()
+
+        # Match on cover-letter description and per-version description
+        with terminal.capture() as (out, _):
+            cser.series_find('widget')
+        output = out.getvalue()
+        self.assertIn('2 match(es)', output)
+        self.assertIn('alpha', output)
+        self.assertIn('beta', output)
+        self.assertNotIn('gamma', output)
+
+        # Match only on patch subject
+        with terminal.capture() as (out, _):
+            cser.series_find('Fix the')
+        output = out.getvalue()
+        self.assertIn('1 match(es)', output)
+        self.assertIn('alpha', output)
+
+        # No matches
+        with terminal.capture() as (out, _):
+            cser.series_find('nonexistent')
+        output = out.getvalue()
+        self.assertIn("No series match 'nonexistent'", output)
 
     # Series link used by the review tests
     REVIEW_LINK = 497923
@@ -4599,15 +4664,14 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Check the series was created with source='review'
         self.db_open()
         result = cser.db.series_find_by_link(str(self.REVIEW_LINK))
         self.assertIsNotNone(result)
         series_id, name, version, svid = result
-        self.assertEqual(self.REVIEW_NAME, name)
+        self.assertEqual(f'pw-{self.REVIEW_LINK}-review', name)
         self.assertEqual(1, version)
 
         # Check source is 'review'
@@ -4631,8 +4695,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Review the same link again
         mocks = self._mock_review()
@@ -4640,7 +4703,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, err):
-                self.run_review('-l', str(self.REVIEW_LINK), pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
         self.assertIn('Already reviewed', out.getvalue())
 
     def test_review_new_version(self):
@@ -4655,8 +4718,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as _:
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), pwork=pwork)
 
         # Now review v2 - should detect the previous review
         mocks = self._mock_review()
@@ -4664,8 +4726,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-l', str(self.REVIEW_LINK_V2),
-                              pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK_V2), pwork=pwork)
         self.assertIn('Previously reviewed', out.getvalue())
 
         # Check both versions are under the same series
@@ -4687,8 +4748,7 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-t', 'Disable interrupts',
-                              pwork=pwork)
+                self.run_review('-S', 'Disable interrupts', pwork=pwork)
         # Should pick the most recent (v2)
         self.assertIn('Using most recent', out.getvalue())
 
@@ -4721,7 +4781,7 @@ Date:   .*
                         return_value='test'), \
              mock.patch('patman.review._git_restore'):
             with terminal.capture() as _:
-                self.run_review('-l', str(self.REVIEW_LINK),
+                self.run_review('-s', str(self.REVIEW_LINK),
                                 pwork=pwork, expect_ret=1)
 
     def test_review_create_drafts_dry_run(self):
@@ -4735,8 +4795,8 @@ Date:   .*
             for m in mocks:
                 stack.enter_context(m)
             with terminal.capture() as (out, _):
-                self.run_review( '-l', str(self.REVIEW_LINK),
-                              '--create-drafts', '-n', pwork=pwork)
+                self.run_review('-s', str(self.REVIEW_LINK), '--create-drafts',
+                                '-n', pwork=pwork)
         output = out.getvalue()
         self.assertIn('Would create draft', output)
         self.assertIn('author@posteo.net', output)
@@ -4764,9 +4824,8 @@ Date:   .*
                         .list.return_value \
                         .execute.return_value = {'messages': []}
                     with terminal.capture() as (out, _):
-                        self.run_review( '-l',
-                                      str(self.REVIEW_LINK),
-                                      '--create-drafts', pwork=pwork)
+                        self.run_review('-s', str(self.REVIEW_LINK),
+                                        '--create-drafts', pwork=pwork)
         output = out.getvalue()
         self.assertIn('Created 1 Gmail draft', output)
 
@@ -5170,3 +5229,71 @@ VERDICT: changes_needed"""
         self.assertEqual(2, len(notes))
         self.assertEqual(1, notes[0][0])
         self.assertEqual(3, notes[1][0])
+
+
+class TestGetUpstreamBranch(unittest.TestCase):
+    """Tests for review._get_upstream_branch() base-branch selection."""
+
+    def _cser(self, default_upstream=None):
+        cser = mock.Mock()
+        cser.db.upstream_get_default.return_value = default_upstream
+        return cser
+
+    def test_explicit_base_branch_wins(self):
+        """An explicit -b/--base-branch overrides every other check."""
+        args = Namespace(base_branch='custom/branch', upstream='us')
+        with mock.patch('patman.review.gitutil') as gu:
+            self.assertEqual(
+                'custom/branch',
+                review._get_upstream_branch(args, self._cser()))
+            gu.ref_exists.assert_not_called()
+            gu.count_revs.assert_not_called()
+
+    def test_next_ahead_of_master_picks_next(self):
+        """When next has commits ahead of master, next is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=3):
+            self.assertEqual(
+                'us/next',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_next_empty_falls_back_to_master(self):
+        """When next exists but has no commits ahead, master is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=0):
+            self.assertEqual(
+                'us/master',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_next_missing_falls_back_to_master(self):
+        """When next does not exist at all, master is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=False):
+            self.assertEqual(
+                'us/master',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_default_upstream_used_when_unset(self):
+        """When args.upstream is unset, the cser default is consulted."""
+        args = Namespace(base_branch=None, upstream=None)
+        cser = self._cser(default_upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=5):
+            self.assertEqual(
+                'us/next', review._get_upstream_branch(args, cser))
+
+    def test_no_upstream_returns_origin_master(self):
+        """With no upstream configured anywhere, return 'origin/master'."""
+        args = Namespace(base_branch=None, upstream=None)
+        self.assertEqual(
+            'origin/master',
+            review._get_upstream_branch(args, self._cser()))

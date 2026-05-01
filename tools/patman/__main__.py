@@ -40,13 +40,14 @@ def run_patman():
         from patman import func_test
         from patman import test_checkpatch
         from patman import test_cseries
+        from u_boot_pylib import test_command
 
         to_run = args.testname if args.testname not in [None, 'test'] else None
         result = test_util.run_test_suites(
             'patman', False, args.verbose, args.no_capture,
             args.test_preserve_dirs, None, to_run, None,
             [test_checkpatch.TestPatch, func_test.TestFunctional, 'settings',
-             test_cseries.TestCseries])
+             test_cseries.TestCseries, test_command.TestRunInteractive])
         sys.exit(0 if result.wasSuccessful() else 1)
 
     # Process commits, produce patches files, check them, email them

@@ -731,6 +731,26 @@ class CseriesHelper:
         recs = self.get_ser_ver(series_id, version)
         return recs.idnum, recs.link
 
+    def _ensure_in_db(self, ser):
+        """Verify a series object came from the database.
+
+        Many subcommands look up a series by name, get a Series object back
+        with idnum unset when no row exists, then pass that idnum on to the
+        database where it is reported only as 'series_id NULL'. Raise a
+        clear ValueError up front so the caller knows to register the
+        series first.
+
+        Args:
+            ser (Series): Series object whose idnum must be set
+
+        Raises:
+            ValueError: if ser.idnum is None
+        """
+        if not ser.idnum:
+            raise ValueError(
+                f"Series '{ser.name}' not found in database; "
+                "use 'patman series add' first")
+
     def get_ser_ver(self, series_id, version):
         """Get the patchwork details for a series version
 
@@ -1377,6 +1397,29 @@ class CseriesHelper:
         self.db.ser_ver_set_info(info)
 
         return updated, 1 if cover else 0
+
+    def check_applied(self, svid, series_name, version):
+        """Check if all patches in a series version are accepted
+
+        If every patch has state 'accepted', notify the user that the
+        series has been applied upstream.
+
+        Args:
+            svid (int): Ser/ver ID
+            series_name (str): Series name (for display)
+            version (int): Version number (for display)
+
+        Returns:
+            bool: True if all patches are accepted
+        """
+        pclist = self.db.pcommit_get_list(svid)
+        if not pclist:
+            return False
+        if all(pc.state == 'accepted' for pc in pclist):
+            tout.notice(f"Series '{series_name}' v{version}: all patches "
+                        'accepted upstream')
+            return True
+        return False
 
     async def _gather(self, pwork, link, show_cover_comments):
         """Sync the series status from patchwork

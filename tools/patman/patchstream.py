@@ -687,6 +687,21 @@ class PatchStream:
 
         self._write_message_id(outfd)
 
+        inserted_base = False
+
+        def _write_base():
+            if not self.series.base_commit and not self.series.branch:
+                return
+            # '---' separator line before the trailers for readability
+            # and to match the b4 convention
+            print('---', file=outfd)
+            if self.series.base_commit:
+                print(f'base-commit: {self.series.base_commit.hash}',
+                      file=outfd)
+            if self.series.branch:
+                print(f'branch: {self.series.branch}', file=outfd)
+            print('', file=outfd)
+
         while True:
             line = infd.readline()
             if not line:
@@ -705,16 +720,18 @@ class PatchStream:
                     if self.blank_count and (line == '-- ' or match):
                         self._add_warn("Found possible blank line(s) at end of file '%s'" %
                                        last_fname)
+                    # Write base-commit/branch before git's '-- ' signature
+                    # so patchwork parses them as the series base.
+                    if (self.insert_base_commit and not inserted_base
+                            and line == '-- '):
+                        _write_base()
+                        inserted_base = True
                     outfd.write('+\n' * self.blank_count)
                     outfd.write(line + '\n')
                     self.blank_count = 0
         self.finalise()
-        if self.insert_base_commit:
-            if self.series.base_commit:
-                print(f'base-commit: {self.series.base_commit.hash}',
-                      file=outfd)
-            if self.series.branch:
-                print(f'branch: {self.series.branch}', file=outfd)
+        if self.insert_base_commit and not inserted_base:
+            _write_base()
 
 
 def insert_tags(msg, tags_to_emit):
@@ -924,6 +941,21 @@ def insert_cover_letter(fname, series, count, cwd=None):
     fil = open(fname, 'w')
     text = series.cover
     prefix = series.GetPatchPrefix()
+    inserted_base = False
+
+    def _insert_base():
+        """Write base-commit and branch trailers before the signature"""
+        if not series.base_commit and not series.branch:
+            return
+        # '---' separator line before the trailers for readability
+        # and to match the b4 convention
+        fil.write('---\n')
+        if series.base_commit:
+            fil.write(f'base-commit: {series.base_commit.hash}\n')
+        if series.branch:
+            fil.write(f'branch: {series.branch}\n')
+        fil.write('\n')
+
     for line in lines:
         if line.startswith('Subject:'):
             # if more than 10 or 100 patches, it should say 00/xx, 000/xxx, etc
@@ -941,12 +973,14 @@ def insert_cover_letter(fname, series, count, cwd=None):
             # Now the change list
             out = series.MakeChangeLog(None)
             line += '\n' + '\n'.join(out)
+        elif line.startswith('-- ') and not inserted_base:
+            # Insert base-commit/branch before git's signature so that
+            # patchwork parses them as the series base.
+            _insert_base()
+            inserted_base = True
         fil.write(line)
 
-    # Insert the base commit and branch
-    if series.base_commit:
-        print(f'base-commit: {series.base_commit.hash}', file=fil)
-    if series.branch:
-        print(f'branch: {series.branch}', file=fil)
+    if not inserted_base:
+        _insert_base()
 
     fil.close()

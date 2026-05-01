@@ -229,6 +229,7 @@ def add_series_subparser(subparsers):
                                    help='Manage series of patches')
     series.defaults_cmds = [
         ['set-link', 'fred'],
+        ['find', 'dummy'],
     ]
     series.add_argument(
         '-n', '--dry-run', action='store_true', dest='dry_run', default=False,
@@ -292,11 +293,20 @@ def add_series_subparser(subparsers):
     _add_show_comments(sall)
     _add_show_cover_comments(sall)
 
+    find = series_subparsers.add_parser(
+        'find', help='Search for series by subject fragment')
+    find.add_argument('query', help='Text to search for')
+    _add_archived(find)
+
     series_subparsers.add_parser('get-link')
     series_subparsers.add_parser('inc')
-    series_subparsers.add_parser('info')
+    info = series_subparsers.add_parser('info')
+    info.add_argument('-r', '--reviews', nargs='*', type=int, default=None,
+                      help='Show review text (optionally for specific patches)')
     ls = series_subparsers.add_parser('ls', aliases=['list'])
     _add_archived(ls)
+    ls.add_argument('-r', '--reviews', action='store_true',
+                    help='Show only review series')
 
     mar = series_subparsers.add_parser('mark')
     mar.add_argument('-m', '--allow-marked', action='store_true',
@@ -543,17 +553,29 @@ def add_review_subparser(subparsers):
         'review', aliases=ALIASES['review'],
         help='AI-powered review of a patchwork series')
     review.add_argument(
-        '-l', '--link', type=str, dest='pw_link',
+        '-s', '--series', type=str, dest='pw_link',
         help='Patchwork series link/ID number')
     review.add_argument(
-        '-t', '--title', type=str,
-        help='Search for series by cover-letter title')
+        '-S', '--series-title', type=str, dest='title',
+        help='Search for a series by cover-letter title')
+    review.add_argument(
+        '-p', '--patch', type=int,
+        help='Patchwork patch ID (finds the series and reviews just '
+        'that patch)')
+    review.add_argument(
+        '-P', '--patch-title', type=str,
+        help='Search for a patch by title (finds its series and reviews '
+        'just that patch)')
+    review.add_argument(
+        '-i', '--index', type=str, dest='patches',
+        help='Review only specific patches by index (e.g. 3 or 1,3,5 '
+        'or 2-7)')
     review.add_argument(
         '-n', '--dry-run', action='store_true', dest='dry_run',
         default=False,
         help='Show what would be done without creating drafts')
     review.add_argument(
-        '--create-drafts', action='store_true',
+        '-d', '--create-drafts', action='store_true',
         help='Create Gmail draft emails for each review')
     review.add_argument(
         '--gmail-account', type=str, default=None,
@@ -567,6 +589,11 @@ def add_review_subparser(subparsers):
     review.add_argument(
         '-U', '--upstream', type=str, default=None,
         help='Upstream name (for patchwork URL lookup)')
+    review.add_argument(
+        '-b', '--base-branch', type=str, default=None,
+        help="Base branch to apply review patches onto (e.g. 'us/master', "
+             "'us/next'). If unset, picks the upstream's '/next' branch "
+             "when it has commits ahead of '/master', otherwise '/master'.")
     review.add_argument(
         '--apply-only', action='store_true',
         help='Only download and apply patches, skip AI review')

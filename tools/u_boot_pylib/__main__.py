@@ -29,13 +29,15 @@ def run_tests():
     args = parser.parse_args()
 
     from u_boot_pylib import test_claude
+    from u_boot_pylib import test_command
 
     to_run = args.testname if args.testname not in [None, 'test'] else None
     result = test_util.run_test_suites(
         'u_boot_pylib', False, args.verbose, False,
         False, None, to_run, None,
         ['u_boot_pylib.terminal', 'u_boot_pylib.gitutil',
-         cros_subprocess.TestSubprocess, test_claude.TestClaude])
+         cros_subprocess.TestSubprocess, test_claude.TestClaude,
+         test_command.TestRunInteractive])
 
     sys.exit(0 if result.wasSuccessful() else 1)
 

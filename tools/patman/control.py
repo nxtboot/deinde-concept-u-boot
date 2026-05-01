@@ -201,8 +201,11 @@ def do_series(args, test_db=None, pwork=None, cser=None):
                                dry_run=args.dry_run, show_summary=True)
         elif args.subcmd == 'dec':
             cser.decrement(args.series, args.dry_run)
+        elif args.subcmd == 'find':
+            cser.series_find(args.query, args.include_archived)
         elif args.subcmd == 'info':
-            cser.show_info(args.series)
+            cser.show_info(args.series,
+                           show_reviews=getattr(args, 'reviews', None))
         elif args.subcmd == 'gather':
             cser.gather(pwork, args.series, args.version, args.show_comments,
                         args.show_cover_comments, args.gather_tags,
@@ -217,7 +220,8 @@ def do_series(args, test_db=None, pwork=None, cser=None):
         elif args.subcmd == 'inc':
             cser.increment(args.series, args.dry_run)
         elif args.subcmd == 'ls':
-            cser.series_list(args.include_archived)
+            cser.series_list(args.include_archived,
+                             reviews_only=getattr(args, 'reviews', False))
         elif args.subcmd == 'open':
             cser.open(pwork, args.series, args.version)
         elif args.subcmd == 'mark':

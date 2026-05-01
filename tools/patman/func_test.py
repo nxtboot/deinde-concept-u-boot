@@ -308,11 +308,13 @@ Simon Glass (2):
  lib/fdtdec.c                | 3 ++-
  4 files changed, 6 insertions(+), 2 deletions(-)
 
+---
+base-commit: 1a44532
+branch: mybranch
+
 --\x20
 2.7.4
 
-base-commit: 1a44532
-branch: mybranch
 '''
         lines = tools.read_file(cover_fname, binary=False).splitlines()
         self.assertEqual(
@@ -375,14 +377,16 @@ Changes in v2:
         lines = tools.read_file(args[0], binary=False).splitlines()
         pos = lines.index('-- ')
 
-        # We expect these lines at the end:
-        # -- (with trailing space)
-        # 2.7.4
-        # (empty)
+        # We expect these lines before the signature:
+        # ---
         # base-commit: xxx
         # branch: xxx
-        self.assertEqual('base-commit: 1a44532', lines[pos + 3])
-        self.assertEqual('branch: mybranch', lines[pos + 4])
+        # (blank)
+        # -- (with trailing space)
+        # 2.7.4
+        self.assertEqual('---', lines[pos - 4])
+        self.assertEqual('base-commit: 1a44532', lines[pos - 3])
+        self.assertEqual('branch: mybranch', lines[pos - 2])
 
     def test_branch(self):
         """Test creating patches from a branch"""
@@ -416,10 +420,12 @@ Changes in v2:
             self.assertEqual(3, len(patch_files))
 
             cover = tools.read_file(cover_fname, binary=False)
-            lines = cover.splitlines()[-2:]
+            cover_lines = cover.splitlines()
+            sig_pos = cover_lines.index('-- ')
             base = repo.lookup_reference('refs/heads/base').target
-            self.assertEqual(f'base-commit: {base}', lines[0])
-            self.assertEqual('branch: second', lines[1])
+            self.assertEqual(f'base-commit: {base}',
+                             cover_lines[sig_pos - 3])
+            self.assertEqual('branch: second', cover_lines[sig_pos - 2])
 
             # Make sure that the base-commit is not present when it is in the
             # cover letter
@@ -435,11 +441,12 @@ Changes in v2:
             self.assertEqual(2, len(patch_files))
 
             cover = tools.read_file(cover_fname, binary=False)
-            lines = cover.splitlines()[-2:]
+            cover_lines = cover.splitlines()
+            sig_pos = cover_lines.index('-- ')
             base2 = repo.lookup_reference('refs/heads/second')
             ref = base2.peel(pygit2.GIT_OBJ_COMMIT).parents[0].parents[0].id
-            self.assertEqual(f'base-commit: {ref}', lines[0])
-            self.assertEqual('branch: second', lines[1])
+            self.assertEqual(f'base-commit: {ref}', cover_lines[sig_pos - 3])
+            self.assertEqual('branch: second', cover_lines[sig_pos - 2])
         finally:
             os.chdir(orig_dir)
 

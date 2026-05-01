@@ -94,6 +94,7 @@ def check_patch_parse_one_message(message):
     no_file_match = any(s in message for s in [
         '\nSubject:', 'Missing Signed-off-by:',
         'does MAINTAINERS need updating',
+        'email address mismatch',
         'should have a',
     ])
 

@@ -13,6 +13,7 @@ import pygit2
 from u_boot_pylib import cros_subprocess
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
+from u_boot_pylib.terminal import tprint
 from u_boot_pylib import tools
 from u_boot_pylib import tout
 
@@ -125,8 +126,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         ser = self._parse_series(series)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         max_vers = self._series_max_version(ser.idnum)
         if max_vers < 2:
@@ -169,8 +169,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         ser = self._parse_series(series_name)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         max_vers = self._series_max_version(ser.idnum)
 
@@ -229,6 +228,7 @@ class Cseries(cser_helper.CseriesHelper):
                 link
         """
         ser, version = self._parse_series_and_version(series_name, version)
+        self._ensure_in_db(ser)
         self._ensure_version(ser, version)
 
         self._set_link(ser.idnum, ser.name, version, link, update_commit)
@@ -247,6 +247,7 @@ class Cseries(cser_helper.CseriesHelper):
             str: Patchwork link as a string, e.g. '12325'
         """
         ser, version = self._parse_series_and_version(series, version)
+        self._ensure_in_db(ser)
         self._ensure_version(ser, version)
         return self.db.ser_ver_get_link(ser.idnum, version)
 
@@ -462,7 +463,7 @@ class Cseries(cser_helper.CseriesHelper):
 
         return summary
 
-    def series_list(self, include_archived=False):
+    def series_list(self, include_archived=False, reviews_only=False):
         """List all series
 
         Lines all series along with their description, number of patches
@@ -470,8 +471,11 @@ class Cseries(cser_helper.CseriesHelper):
 
         Args:
             include_archived (bool): True to include archived series also
+            reviews_only (bool): True to show only review series
         """
-        sdict = self.db.series_get_dict(include_archived)
+        sdict = self.db.series_get_dict(include_archived,
+                                        include_reviews=reviews_only,
+                                        reviews_only=reviews_only)
         print(f"{'Name':15}  {'Description':40}  Accepted  Us  Versions")
         border = f"{'-' * 15}  {'-' * 40}  --------  --  {'-' * 15}"
         print(border)
@@ -487,6 +491,49 @@ class Cseries(cser_helper.CseriesHelper):
             print(f'{name:16.16} {ser.desc:41.41} {stat.rjust(8)}  '
                   f'{ups:2}  {vlist}')
         print(border)
+
+    def series_find(self, query, include_archived=False):
+        """Search for series by subject fragment
+
+        Args:
+            query (str): Text to search for in series/version/patch
+                subjects
+            include_archived (bool): True to include archived series
+        """
+        col = self.col
+        rows = self.db.series_search(query, include_archived)
+        if not rows:
+            tout.notice(f"No series match '{query}'")
+            return
+
+        # Deduplicate: for each (series_id, version), keep the best match
+        # priority: series > version > patch
+        priority = {'series': 0, 'version': 1, 'patch': 2}
+        best = {}
+        for sid, name, desc, version, link, mtype, mtext in rows:
+            key = (sid, version)
+            prev = best.get(key)
+            if prev is None or priority[mtype] < priority[prev[5]]:
+                best[key] = (sid, name, desc, version, link, mtype, mtext)
+
+        with terminal.pager():
+            terminal.tprint(f"{len(best)} match(es) for '{query}':",
+                            colour=col.WHITE, col=col)
+            last_sid = None
+            for key in sorted(best,
+                              key=lambda k: (best[k][1], best[k][3])):
+                sid, name, desc, version, link, mtype, mtext = best[key]
+                if sid != last_sid:
+                    terminal.tprint('')
+                    terminal.tprint(f'{name}', colour=col.YELLOW,
+                                    col=col)
+                    terminal.tprint(f'  {desc or "(no description)"}',
+                                    col=col)
+                    last_sid = sid
+                link_str = link or '(no link)'
+                terminal.tprint(f'  v{version} [{link_str}]',
+                                colour=col.BLUE, col=col, newline=False)
+                terminal.tprint(f' {mtype}: {mtext}', col=col)
 
     def list_patches(self, series, version, show_commit=False,
                      show_patch=False):
@@ -778,8 +825,7 @@ class Cseries(cser_helper.CseriesHelper):
         """
         ser = self._parse_series(name)
         name = ser.name
-        if not ser.idnum:
-            raise ValueError(f"No such series '{name}'")
+        self._ensure_in_db(ser)
 
         self.db.ser_ver_remove(ser.idnum, None)
         if not dry_run:
@@ -804,8 +850,7 @@ class Cseries(cser_helper.CseriesHelper):
             dry_run (bool): True to do a dry run
         """
         old_ser, _ = self._parse_series_and_version(series, None)
-        if not old_ser.idnum:
-            raise ValueError(f"Series '{old_ser.name}' not found in database")
+        self._ensure_in_db(old_ser)
         if old_ser.name != series:
             raise ValueError(f"Invalid series name '{series}': "
                              'did you use the branch name?')
@@ -875,6 +920,7 @@ class Cseries(cser_helper.CseriesHelper):
 
         notes = tools.read_file(notes_file, binary=False).strip()
         ser, version = self._parse_series_and_version(series, None)
+        self._ensure_in_db(ser)
         svid = self.get_series_svid(ser.idnum, version)
         self.db.ser_ver_set_notes(svid, notes)
         self.commit()
@@ -887,29 +933,47 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Series name, or None for current branch
         """
         ser, _ = self._parse_series_and_version(series, None)
+        self._ensure_in_db(ser)
         all_notes = self.db.ser_ver_get_all_notes(ser.idnum)
         if not all_notes:
             tout.notice(f"No review notes for '{ser.name}'")
             return
         for version, notes in all_notes:
-            terminal.tprint(f'\n--- v{version} ---',
+            tprint(f'\n--- v{version} ---',
                             colour=terminal.Color.YELLOW)
             print(notes)
             print()
 
-    def show_info(self, series):
+    def show_info(self, series, show_reviews=None):
         """Show detailed information about a series and all its versions
 
         Args:
             series (str): Series name, or None for current branch
+            show_reviews (list of int or None): If not None, show review
+                text. An empty list means all patches; otherwise only
+                the listed patch numbers (1-based).
         """
         ser, _ = self._parse_series_and_version(series, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
-        print(f"Series: {ser.name}")
-        print(f"  Description: {ser.desc}")
-        print(f"  Upstream: {ser.upstream or '(none)'}")
+        with terminal.pager():
+            self._show_info(ser, show_reviews)
+
+    def _show_info(self, ser, show_reviews):
+        """Show series info (called within a pager context)
+
+        Args:
+            ser (Series): Series object with idnum set
+            show_reviews (list of int or None): Patch numbers to show
+                reviews for, or empty list for all, or None for none
+        """
+        col = self.col
+        tprint('Series: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.name, colour=col.WHITE, col=col)
+        tprint('  Description: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.desc, col=col)
+        tprint('  Upstream: ', newline=False, colour=col.BLUE, col=col)
+        tprint(ser.upstream or '(none)', col=col)
 
         versions = self.db.ser_ver_get_for_series(ser.idnum)
         if not isinstance(versions, list):
@@ -917,32 +981,70 @@ class Cseries(cser_helper.CseriesHelper):
 
         for sv in versions:
             link_str = sv.link or '(none)'
-            print(f"\n  Version {sv.version}:")
-            print(f"    Link: {link_str}")
-            print(f"    Description: {sv.desc or '(none)'}")
+            tprint(f'\n  Version {sv.version}:', colour=col.YELLOW, col=col)
+            tprint('    Link: ', newline=False, colour=col.BLUE, col=col)
+            tprint(link_str, col=col)
+            tprint('    Description: ', newline=False, colour=col.BLUE, col=col)
+            tprint(sv.desc or '(none)', col=col)
             if sv.name:
-                print(f"    Cover: {sv.name}")
+                tprint('    Cover: ', newline=False, colour=col.BLUE, col=col)
+                tprint(sv.name, col=col)
             if sv.archive_tag:
-                print(f"    Archive tag: {sv.archive_tag}")
+                tprint('    Archive tag: ', newline=False, colour=col.BLUE,
+                       col=col)
+                tprint(sv.archive_tag, col=col)
 
-            # Show patches
-            try:
-                pclist = self.db.pcommit_get_list(sv.idnum)
-                print(f"    Patches: {len(pclist)}")
-                for pc in pclist:
-                    state = f' [{pc.state}]' if pc.state else ''
-                    print(f"      {pc.seq + 1}: {pc.subject}{state}")
-            except (ValueError, AttributeError):
-                pass
+            self._show_version_info(sv, show_reviews)
 
-            # Show notes if any
-            if sv.notes:
-                lines = sv.notes.strip().splitlines()
-                print(f"    Notes: {lines[0]}")
-                for line in lines[1:3]:
-                    print(f"           {line}")
-                if len(lines) > 3:
-                    print(f"           ... ({len(lines)} lines)")
+    def _show_version_info(self, sv, show_reviews):
+        """Show patches, reviews and notes for one series version
+
+        Args:
+            sv (SerVer): Series-version record to display
+            show_reviews (list of int or None): Patch numbers to show
+                reviews for, or empty list for all, or None for none
+        """
+        col = self.col
+
+        # Show patches
+        pclist = self.db.pcommit_get_list(sv.idnum)
+        tprint('    Patches: ', newline=False, colour=col.BLUE, col=col)
+        tprint(str(len(pclist)), col=col)
+        for pc in pclist:
+            state = f' [{pc.state}]' if pc.state else ''
+            colour = col.GREEN if pc.state == 'accepted' else None
+            tprint(f'      {pc.seq + 1}: {pc.subject}{state}', colour=colour,
+                   col=col)
+
+        # Show reviews if requested
+        if show_reviews is not None:
+            reviews = self.db.review_get_for_version(sv.idnum)
+            if reviews:
+                shown = [r for r in reviews if not show_reviews
+                         or r.seq in show_reviews]
+                tprint('    Reviews: ', newline=False, colour=col.BLUE, col=col)
+                tprint(f'{len(shown)}/{len(reviews)}', col=col)
+                for rev in shown:
+                    colour = col.GREEN if rev.approved else col.YELLOW
+                    stat = 'approved' if rev.approved else 'comments'
+                    tprint(f'      Patch {rev.seq}: [{stat}]', colour=colour,
+                           col=col)
+                    for line in rev.body.splitlines():
+                        if line.startswith('> '):
+                            tprint(f'        {line}', colour=col.MAGENTA,
+                                   col=col)
+                        else:
+                            tprint(f'        {line}', colour=col.WHITE, col=col)
+
+        # Show notes if any
+        if sv.notes:
+            lines = sv.notes.strip().splitlines()
+            tprint('    Notes: ', newline=False, colour=col.BLUE, col=col)
+            tprint(lines[0], colour=col.CYAN, col=col)
+            for line in lines[1:3]:
+                tprint(f'           {line}', colour=col.CYAN, col=col)
+            if len(lines) > 3:
+                tprint(f'           ... ({len(lines)} lines)', col=col)
 
     def set_upstream(self, series, ups, dry_run=False):
         """Set the upstream for a series
@@ -955,8 +1057,7 @@ class Cseries(cser_helper.CseriesHelper):
         if not ups:
             raise ValueError('Please specify the upstream name')
         ser, _ = self._parse_series_and_version(series, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         self.db.series_set_upstream(ser.idnum, ups)
 
@@ -990,6 +1091,7 @@ class Cseries(cser_helper.CseriesHelper):
             tout.info(f'{oper} {seq:3} {out}')
 
         name, ser, version, msg = self.prep_series(branch_name, end)
+        self._ensure_in_db(ser)
         svid = self.get_ser_ver(ser.idnum, version).idnum
         pcdict = self.get_pcommit_dict(svid)
 
@@ -1088,8 +1190,7 @@ class Cseries(cser_helper.CseriesHelper):
                 succeed
         """
         ser, version = self._parse_series_and_version(name, None)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         ups = self.get_series_upstream(name)
         if ups:
@@ -1123,8 +1224,7 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Name of series to use, or None to use current branch
         """
         ser = self._parse_series(series, include_archived=True)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
 
         svlist = self.db.ser_ver_get_for_series(ser.idnum)
 
@@ -1172,8 +1272,7 @@ class Cseries(cser_helper.CseriesHelper):
             series (str): Name of series to use, or None to use current branch
         """
         ser = self._parse_series(series, include_archived=True)
-        if not ser.idnum:
-            raise ValueError(f"Series '{ser.name}' not found in database")
+        self._ensure_in_db(ser)
         self.db.series_set_archived(ser.idnum, False)
 
         svlist = self.db.ser_ver_get_for_series(ser.idnum)
@@ -1286,6 +1385,7 @@ class Cseries(cser_helper.CseriesHelper):
 
             if not dry_run:
                 self.commit()
+                self.check_applied(svid, ser.name, version)
             else:
                 self.rollback()
                 tout.info('Dry run completed')
@@ -1320,8 +1420,14 @@ class Cseries(cser_helper.CseriesHelper):
                 f"{tot_cover} cover letter{'s' if tot_cover != 1 else ''} "
                 f'updated, {missing} missing '
                 f"link{'s' if missing != 1 else ''} ({requests} requests)")
+            applied = []
             if not dry_run:
                 self.commit()
+                for svid, sync in to_fetch.items():
+                    if self.check_applied(svid, sync.series_name, sync.version):
+                        applied.append(sync.series_name)
+                if applied:
+                    tout.notice(f'{len(applied)} series applied upstream')
             else:
                 self.rollback()
                 tout.info('Dry run completed')

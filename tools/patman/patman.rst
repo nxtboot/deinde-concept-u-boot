@@ -745,11 +745,28 @@ Here is a short overview of the available subcommands:
         removing that version from the data. If you use this comment on branch
         'video3' Patman will delete version 3 and branch 'video3'.
 
+    find
+        Search the database for series matching a subject fragment.
+        Matches against the series description, per-version description,
+        and individual patch subjects. Use ``-A`` to include archived
+        series. Example::
+
+            patman series find 'fs loader'
+
     get-link
         Shows the Patchwork link for a series/version
 
+    info
+        Show detailed information about a series, including each
+        version's link, description, patches and any stored reviews.
+        The output is colour-coded by patchwork state (e.g. ``new``,
+        ``accepted``). Use ``-r`` to include review text; pass a list
+        of patch numbers (``-r 1 3``) to limit the review text to those
+        patches.
+
     ls
-        Lists the series in the database
+        Lists the series in the database. Use ``-r`` to show only
+        review series (series fetched by ``patman review``).
 
     mark
         Mark a series with 'Change-Id' tags so that Patman can track patches
@@ -880,6 +897,10 @@ series is linked.
 To gather tags (Reviewed-by ...) for your series from patchwork::
 
     patman series gather
+
+If every patch in the gathered version has reached state ``accepted``,
+patman prints a notice that the series has been applied upstream. The
+same check runs for ``patman series gather-all``.
 
 Now you can check your progress::
 
@@ -1251,30 +1272,55 @@ Basic usage
 
 Review a series by Patchwork link::
 
-    patman review -l 497923 -U us --reviewer 'Your Name <your@email>'
+    patman review -s 497923 -U us --reviewer 'Your Name <your@email>'
 
 Or search by cover-letter title::
 
-    patman review -t 'boot/bootm: Disable interrupts' -U us \
+    patman review -S 'boot/bootm: Disable interrupts' -U us \
         --reviewer 'Your Name <your@email>'
+
+To review a single patch by its Patchwork patch ID (the series is
+found automatically)::
+
+    patman review -p 2219748
+
+Or search for a patch by title::
+
+    patman review -P 'Add SPL support for Qualcomm'
+
+To review only specific patches by index within the series::
+
+    patman review -s 497923 -i 1,3,5
 
 To create Gmail drafts threaded under the original emails::
 
-    patman review -l 497923 -U us \
+    patman review -s 497923 -U us \
         --reviewer 'Your Name <your@email>' \
-        --create-drafts --gmail-account your@email
+        -d --gmail-account your@email
 
-Use ``-n`` with ``--create-drafts`` for a dry run that shows what would
-be created without calling the Gmail API.
+Use ``-n`` with ``-d`` for a dry run that shows what would be created
+without calling the Gmail API.
 
 Use ``--apply-only`` to download and apply patches without running the
-AI review  - useful for checking that patches apply cleanly.
+AI review -- useful for checking that patches apply cleanly.
+
+By default the review branch is created from ``<upstream>/next`` when
+that branch has commits ahead of ``<upstream>/master``, and from
+``<upstream>/master`` otherwise. This tracks U-Boot's release cadence:
+right after a release ``next`` is merged into ``master`` and stays
+empty until the next cycle's RC1, so reviews land on ``master`` during
+that window and switch back to ``next`` automatically once it
+diverges. Use ``-b`` / ``--base-branch`` to override the choice for a
+particular run::
+
+    patman review -s 497923 -U us -b us/master \
+        --reviewer 'Your Name <your@email>'
 
 Use ``-f`` / ``--force`` to re-review a series that has already been
 reviewed. This deletes the old review records and runs the review
 again::
 
-    patman review -l 497923 -U us -f --reviewer 'Your Name <your@email>'
+    patman review -s 497923 -U us -f --reviewer 'Your Name <your@email>'
 
 If the reviewer email (from ``--reviewer`` or git config) differs from
 the ``--gmail-account``, patman sets the From header on the draft so
@@ -1299,6 +1345,21 @@ excluded from refinement to preserve their quoted commit messages.
 
 A mechanical cleanup step also runs to remove backticks and fix function
 quoting style (e.g. ``malloc()`` not ```malloc```).
+
+Apply step
+~~~~~~~~~~
+
+Before checking out the review branch, patman stashes any uncommitted
+changes -- including untracked files -- so build artefacts on the
+current branch don't leak into the review. The original branch and
+stash are restored at the end of the run, including on failure.
+
+If the apply agent finishes but the resulting branch holds fewer
+commits than the series cover letter advertises, patman aborts with a
+message of the form ``Only N of M patches applied to <branch>;
+aborting. Fix the conflicts manually and retry.`` The database row
+for the new version is rolled back so a retry starts from a clean
+state.
 
 Patchwork subcommands
 ---------------------

@@ -32,6 +32,7 @@ from u_boot_pylib import tout
 from patman import database
 from patman import gmail
 from patman import patchstream
+from patman import workflow
 
 try:
     from claude_agent_sdk import ClaudeAgentOptions
@@ -100,11 +101,11 @@ class ReviewContext:  # pylint: disable=R0902
         return self.series_data.get('date', '')
 
 
-async def fetch_mbox(pwork_url, link):
+async def fetch_mbox(pwork, link):
     """Download the series mbox file from patchwork
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
 
     Returns:
@@ -113,19 +114,13 @@ async def fetch_mbox(pwork_url, link):
     Raises:
         ValueError: if the download fails
     """
-    url = f'{pwork_url}/series/{link}/mbox/'
-    tout.notice(f'Downloading mbox from {url}')
+    tout.notice(f'Downloading mbox for series {link} from {pwork.url}')
     mbox_path = os.path.join(tempfile.gettempdir(),
                              f'patman_review_{link}.mbox')
     async with aiohttp.ClientSession() as client:
-        async with client.get(url) as response:
-            if response.status != 200:
-                raise ValueError(
-                    f'Failed to download mbox: HTTP {response.status}')
-
-            content = await response.read()
-            if not content:
-                raise ValueError(f'Empty mbox downloaded from {url}')
+        content = await pwork.get_series_mbox(client, link)
+    if not content:
+        raise ValueError(f'Empty mbox downloaded for series {link}')
 
     tools.write_file(mbox_path, content)
     tout.notice(f'Downloaded {len(content)} bytes to {mbox_path}')
@@ -205,7 +200,7 @@ IMPORTANT:
 '''
 
 
-async def apply_series(pwork_url, link, branch_name, upstream_branch,
+async def apply_series(pwork, link, branch_name, upstream_branch,
                        repo_path):
     """Download and apply a patch series to a new local branch
 
@@ -213,7 +208,7 @@ async def apply_series(pwork_url, link, branch_name, upstream_branch,
     resolution.
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
         branch_name (str): Name for the new branch
         upstream_branch (str): Branch to base from
@@ -228,13 +223,13 @@ async def apply_series(pwork_url, link, branch_name, upstream_branch,
         return False, None
 
     # Download the mbox
-    mbox_path = await fetch_mbox(pwork_url, link)
+    mbox_path = await fetch_mbox(pwork, link)
 
     # Build the prompt and run the agent
     prompt = _build_apply_prompt(mbox_path, branch_name, upstream_branch)
     options = ClaudeAgentOptions(
-        allowed_tools=['Bash', 'Read', 'Grep'], cwd=repo_path,
-        max_buffer_size=claude_mod.MAX_BUFFER_SIZE)
+        allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
+        cwd=repo_path, max_buffer_size=claude_mod.MAX_BUFFER_SIZE)
 
     tout.notice(f'Applying series to branch {branch_name}...')
     success, _ = await claude_mod.run_agent_collect(prompt, options)
@@ -374,19 +369,44 @@ VERDICT: changes_needed
 
 Rules:
 - Always start with GREETING: (first name or empty)
-- Each COMMENT: block MUST include the diff header lines (the
-  'diff --git' and '@@' lines) before the quoted code, so the file
-  and line number are clear
-- Each COMMENT: block starts with quoted diff lines (using '> ' prefix),
-  followed by a blank line, then your comment text
+- Each COMMENT: block MUST start with the two diff header lines
+  copied VERBATIM from 'git show {commit_hash}':
+    > diff --git a/<path> b/<path>
+    > @@ -<old>,<n> +<new>,<m> @@ <function-context>
+  then the quoted code lines (with '> ' prefix), then a blank line,
+  then your comment. This is NOT optional — without the headers, the
+  reader cannot tell which file or function the comment refers to.
+  BAD:
+    COMMENT:
+    > +#include <foo.h>
+
+    This include is unnecessary.
+  GOOD:
+    COMMENT:
+    > diff --git a/drivers/clk/qcom/clock-ipq5210.c b/drivers/clk/qcom/clock-ipq5210.c
+    > @@ -0,0 +1,97 @@
+    > +#include <foo.h>
+
+    This include is unnecessary.
 - Quote enough context from the diff to identify the location
+- CRITICAL: Every quoted line MUST be copied EXACTLY from the output
+  of 'git show {commit_hash}'. Do NOT reconstruct, paraphrase, or
+  combine lines from memory. Do NOT mix content between nearby macros,
+  functions or files. If you need to check a line before quoting it,
+  run 'git show {commit_hash}' again and copy the characters exactly,
+  including whitespace, punctuation, and backslashes. A comment that
+  points at a problem in a quoted line that does not actually exist
+  in the patch is worse than no comment at all.
 - Be specific and constructive, but brief — use as few words as
   possible to make the point. Avoid restating what the code does;
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
-  'malloc()' or `malloc`. For other identifiers (variables, struct
-  names, filenames) do not quote them unless they are common English
-  words where the reader might not realise they are code references
+  'malloc()' or `malloc`. For all other quoting (identifiers,
+  filenames, string literals, misspelled words, etc.) use single
+  quotes: 'my_var' and 'handoff' not "my_var" or "handoff". Do not
+  quote identifiers that are obviously code (e.g. CONFIG_FOO)
+- Never put a period directly after a code identifier — rephrase,
+  omit the period, or use an em dash to start the next clause
 - If another reviewer has already made a point, do NOT repeat it,
   rephrase it, or add to it — skip it entirely
 - Focus on what is wrong and what to do instead
@@ -485,8 +505,15 @@ VERDICT: changes_needed
 Rules:
 - NEVER use backticks — this is plain-text email, not markdown.
   For functions, always use parentheses with no quotes: malloc() not
-  'malloc()' or `malloc`. For other identifiers do not quote them
-  unless they are common English words that might confuse the reader
+  'malloc()' or `malloc`. For all other quoting (identifiers,
+  filenames, string literals, misspelled words, etc.) use single
+  quotes: 'my_var' and 'handoff' not "my_var" or "handoff". Do not
+  quote identifiers that are obviously code (e.g. CONFIG_FOO)
+- Never put a period directly after a code identifier — rephrase,
+  omit the period, or use an em dash to start the next clause
+- Do NOT quote code fragments in the cover-letter reply — code
+  belongs in the per-patch reviews. Describe series-level issues in
+  prose only.
 - Use {ctx.spelling} spelling
 - Be brief — only raise series-level concerns, not per-patch nits
 - Do NOT repeat issues that belong on individual patches
@@ -663,7 +690,14 @@ def _format_with_comments(ctx, greeting, verdict, comments,
             lines.append(f'> {cl}')
         if len(msg_lines) > max_quote:
             lines.append('> [...]')
-        lines.append('')
+    diffstat = getattr(ctx, 'diffstat', None)
+    if diffstat:
+        ds_lines = diffstat.strip().splitlines()
+        if len(ds_lines) <= 30:
+            lines.append('>')
+            for dl in ds_lines:
+                lines.append(f'> {dl}')
+    lines.append('')
 
     for hunk, comment in comments:
         if hunk:
@@ -724,6 +758,14 @@ def cleanup_review_text(text):
 
     # Remove double quotes around function references: "func()" -> func()
     text = re.sub(r'"(\w+\(\))"', r'\1', text)
+
+    # Convert double-quoted short tokens to single quotes:
+    # "handoff" -> 'handoff'. Leave longer quoted text (full sentences
+    # or phrases) alone, since they may be intentional quotations.
+    text = re.sub(r'"([^"\n]{1,40})"',
+                  lambda m: f"'{m.group(1)}'"
+                  if ' ' not in m.group(1) else m.group(0),
+                  text)
 
     return text
 
@@ -983,9 +1025,8 @@ async def _review_single_patch(ctx, cmt, seq, all_commits):
         commit_msg = body
     else:
         commit_msg = (cmt.subject + '\n' + body).strip()
-    ctx.diffstat = command.output('git', 'diff', '--stat',
-                                  f'{cmt.hash}~..{cmt.hash}',
-                                  cwd=ctx.repo_path).strip()
+    ctx.diffstat = gitutil.diff_stat(f'{cmt.hash}~..{cmt.hash}',
+                                     ctx.repo_path).strip()
 
     previous_review = ctx.previous_reviews.get(seq)
     prompt = _build_review_prompt(ctx, cmt.hash, seq, all_commits,
@@ -999,13 +1040,37 @@ async def _review_single_patch(ctx, cmt, seq, all_commits):
     return format_review_email(ctx, greeting, verdict, comments, commit_msg)
 
 
+def parse_patch_selection(spec):
+    """Parse a patch selection string into a set of patch numbers
+
+    Supports comma-separated numbers and ranges, e.g. '1,3,5' or '2-7'
+    or '1,3-5,8'.
+
+    Args:
+        spec (str or None): Selection string, or None for all patches
+
+    Returns:
+        set of int or None: Selected patch numbers, or None for all
+    """
+    if not spec:
+        return None
+    result = set()
+    for part in spec.split(','):
+        if '-' in part:
+            start, end = part.split('-', 1)
+            result.update(range(int(start), int(end) + 1))
+        else:
+            result.add(int(part))
+    return result
+
+
 async def review_patches(ctx):
     """Run AI review on each patch in the applied branch
 
     Args:
         ctx (ReviewContext): Review context (uses branch_name,
             upstream_branch, patch_count, cover_content,
-            previous_reviews, repo_path, etc.)
+            previous_reviews, repo_path, patch_selection, etc.)
 
     Returns:
         dict: Map of patch index (1-based) to review body
@@ -1026,14 +1091,29 @@ async def review_patches(ctx):
 
     review_bodies = {}
 
-    if ctx.cover_content and ctx.patch_count > 1:
+    patch_sel = getattr(ctx, 'patch_selection', None)
+
+    if ctx.cover_content and ctx.patch_count > 1 and not patch_sel:
         body = await _review_cover_letter(ctx, all_commits)
         if body:
             review_bodies[0] = body
+    # Check which patches already have stored reviews
+    existing_reviews = set()
+    if hasattr(ctx, 'svid') and ctx.svid:
+        for rev in ctx.cser.db.review_get_for_version(ctx.svid):
+            existing_reviews.add(rev.seq)
 
     reviewer_tag = ctx.reviewer_tag
     for i, cmt in enumerate(series.commits):
         seq = i + 1
+
+        if patch_sel and seq not in patch_sel:
+            continue
+
+        if seq in existing_reviews:
+            tout.notice(f'Skipping patch {seq}/{len(commits)}'
+                        ' (already in database)')
+            continue
 
         if (reviewer_tag in cmt.rtags.get('Reviewed-by', set()) or
                 reviewer_tag in cmt.rtags.get('Tested-by', set())):
@@ -1059,11 +1139,11 @@ def review_patches_sync(ctx):
     return loop.run_until_complete(review_patches(ctx))
 
 
-def apply_series_sync(pwork_url, link, branch_name, upstream_branch, repo_path):
+def apply_series_sync(pwork, link, branch_name, upstream_branch, repo_path):
     """Synchronous wrapper for apply_series()
 
     Args:
-        pwork_url (str): Patchwork server URL
+        pwork (Patchwork): Patchwork instance to fetch from
         link (str): Patchwork series link/ID
         branch_name (str): Name for the new branch
         upstream_branch (str): Branch to base from
@@ -1074,7 +1154,87 @@ def apply_series_sync(pwork_url, link, branch_name, upstream_branch, repo_path):
     """
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(apply_series(
-        pwork_url, link, branch_name, upstream_branch, repo_path))
+        pwork, link, branch_name, upstream_branch, repo_path))
+
+
+def search_patch(pwork, title):
+    """Search patchwork for a patch by title and return its series and index
+
+    Queries the patchwork patches API by title, picks the most recent
+    match, then looks up its series.
+
+    Args:
+        pwork (Patchwork): Configured patchwork instance
+        title (str): Patch title text to search for
+
+    Returns:
+        tuple: (series_link, patch_seq)
+
+    Raises:
+        ValueError: if no matching patch is found
+    """
+    from urllib.parse import quote_plus
+
+    async def _query():
+        query = quote_plus(title, safe=':')
+        async with aiohttp.ClientSession() as client:
+            return await pwork.search_patches(client, query)
+
+    loop = asyncio.get_event_loop()
+    results = loop.run_until_complete(_query())
+
+    if not results:
+        raise ValueError(f"No patch found matching '{title}'")
+
+    if len(results) > 1:
+        tout.notice(f"Found {len(results)} matching patches:")
+        for i, p in enumerate(results[:10]):
+            tout.notice(f"  {i + 1}. [{p['id']}] {p['name']}")
+
+    best = results[0]
+    patch_id = best['id']
+    tout.notice(f"Using: [{patch_id}] {best['name']}")
+    return lookup_patch_series(pwork, patch_id)
+
+
+def lookup_patch_series(pwork, patch_id):
+    """Look up a patch on patchwork and return its series link and position
+
+    Args:
+        pwork (Patchwork): Configured patchwork instance
+        patch_id (int): Patchwork patch ID
+
+    Returns:
+        tuple: (series_link, patch_seq) where series_link is the series
+            ID as a string and patch_seq is the 1-based position
+
+    Raises:
+        ValueError: if the patch or its series cannot be found
+    """
+    async def _query():
+        async with aiohttp.ClientSession() as client:
+            return await pwork.get_patch(client, patch_id)
+
+    loop = asyncio.get_event_loop()
+    data = loop.run_until_complete(_query())
+
+    series_list = data.get('series', [])
+    if not series_list:
+        raise ValueError(f'Patch {patch_id} has no associated series')
+
+    series_link = str(series_list[0]['id'])
+    patch_name = data.get('name', '')
+    tout.notice(f"Patch {patch_id}: '{patch_name}'")
+    tout.notice(f"Series: {series_list[0].get('name', '')} "
+                f"(link {series_link})")
+
+    # Fetch the series to find the patch position
+    series_data = _fetch_series(pwork, series_link)[0]
+    patches = series_data.get('patches', [])
+    for i, patch in enumerate(patches):
+        if patch.get('id') == patch_id:
+            return series_link, i + 1
+    return series_link, 1
 
 
 def search_series(pwork, title):
@@ -1134,9 +1294,9 @@ def _git_restore(orig_branch, had_stash, repo_path):
 
     try:
         if orig_branch and repo_path:
-            command.output('git', 'checkout', orig_branch, cwd=repo_path)
+            gitutil.checkout_branch(orig_branch, repo_path)
         if had_stash:
-            command.output('git', 'stash', 'pop', cwd=repo_path)
+            gitutil.stash_pop(repo_path)
     except command.CommandExc:
         pass
 
@@ -1274,12 +1434,10 @@ def _do_learn_voice(args, pwork):
 
     if pwork and pwork.proj_id:
         async def _get_list_email():
-            async with aiohttp.ClientSession() as client:
-                # pylint: disable=W0212
-                projects = await pwork._request(client, 'projects/')
-                for proj in projects:
-                    if proj['id'] == pwork.proj_id:
-                        return proj.get('list_email')
+            projects = await pwork.get_projects()
+            for proj in projects:
+                if proj['id'] == pwork.proj_id:
+                    return proj.get('list_email')
             return None
 
         loop = asyncio.get_event_loop()
@@ -1434,7 +1592,22 @@ def _clean_series_name(name):
     return name
 
 
-def _register_series(cser, clean_name, version, link, series_data):
+def _make_review_name(link, upstream=None):
+    """Build a series name for a review branch
+
+    Args:
+        link (str): Patchwork series link/ID
+        upstream (str or None): Upstream name
+
+    Returns:
+        str: Branch-style name, e.g. 'us-498633-review'
+    """
+    ups = upstream or 'pw'
+    return f'{ups}-{link}-review'
+
+
+def _register_series(cser, clean_name, version, link, series_data,
+                     upstream=None):
     """Register a series in the database for review
 
     Creates or finds the series record, adds a ser_ver entry and pcommit
@@ -1446,6 +1619,7 @@ def _register_series(cser, clean_name, version, link, series_data):
         version (int): Series version number
         link (str): Patchwork series link/ID
         series_data (dict): Series data from patchwork
+        upstream (str or None): Upstream name for branch naming
 
     Returns:
         tuple or None: (series_id, svid) or None if already reviewed
@@ -1460,12 +1634,13 @@ def _register_series(cser, clean_name, version, link, series_data):
         tout.notice(f"Previously reviewed '{db_name}' v{prev_version};"
                     f" adding v{version}")
     else:
+        branch_name = _make_review_name(link, upstream)
         series_id = cser.db.series_find_by_name(
-            clean_name, include_archived=True)
+            branch_name, include_archived=True)
         if not series_id:
             desc = series_data.get('cover_letter', {})
-            desc = desc.get('name', '') if desc else ''
-            series_id = cser.db.series_add(clean_name, desc)
+            desc = desc.get('name', '') if desc else clean_name
+            series_id = cser.db.series_add(branch_name, desc, ups=upstream)
         cser.db.series_set_source(series_id, 'review')
 
     svid = cser.db.ser_ver_add(series_id, version, link=str(link))
@@ -1566,27 +1741,35 @@ def _draft_stored_reviews(args, reviews, series_data, pwork, cser):
 
 
 def _get_upstream_branch(args, cser):
-    """Determine the upstream branch for applying patches
+    """Determine the base branch for applying patches
 
-    Prefers 'next' over 'master' if it exists.
+    Honours --base-branch if the user supplied one. Otherwise prefers
+    '<upstream>/next' when it has commits ahead of '<upstream>/master',
+    falling back to '<upstream>/master' when next is empty (e.g. just
+    after a release, when next has been merged into master and has not
+    yet been reopened for the next cycle).
 
     Args:
         args (Namespace): Command-line arguments
         cser (Cseries): Open cseries instance
 
     Returns:
-        str: Upstream branch ref, e.g. 'us/next'
+        str: Base branch ref, e.g. 'us/next' or 'us/master'
     """
+    if args.base_branch:
+        return args.base_branch
     ups = args.upstream
     if not ups:
         ups = cser.db.upstream_get_default()
     if ups:
-        branch = f'{ups}/next'
-        ret = command.run_one('git', 'rev-parse', '--verify', branch,
-            capture=True, raise_on_error=False)
-        if ret.return_code:
-            branch = f'{ups}/master'
-        return branch
+        next_branch = f'{ups}/next'
+        master_branch = f'{ups}/master'
+        if gitutil.ref_exists(next_branch):
+            ahead = gitutil.count_revs(
+                None, f'{master_branch}..{next_branch}')
+            if ahead:
+                return next_branch
+        return master_branch
     return 'origin/master'
 
 
@@ -1601,15 +1784,22 @@ def _apply_and_check(ctx, link):
     Returns:
         str or None: Branch name, or None on failure
     """
-    branch_name = f'review{ctx.series_id}'
+    ups = ctx.pwork.upstream if ctx.pwork else None
+    branch_name = _make_review_name(link, ups)
     repo_path = gitutil.get_top_level()
-    success, branch_name = apply_series_sync(ctx.pwork.url, link, branch_name,
+    success, branch_name = apply_series_sync(ctx.pwork, link, branch_name,
         ctx.upstream_branch, repo_path)
 
     if success:
-        applied = command.output('git', 'rev-list', '--count',
-            f'{ctx.upstream_branch}..{branch_name}', cwd=repo_path).strip()
-        if int(applied) == 0:
+        applied = gitutil.count_revs(
+            repo_path, f'{ctx.upstream_branch}..{branch_name}')
+        if not applied:
+            # Zero commits, or branch missing because apply was interrupted
+            success = False
+        elif applied != ctx.patch_count:
+            tout.error(f'Only {applied} of {ctx.patch_count} patches '
+                       f'applied to {branch_name}; aborting. Fix the '
+                       'conflicts manually and retry.')
             success = False
 
     if not success:
@@ -1700,8 +1890,9 @@ def _find_or_register(ctx, args, clean_name, link):
         tuple or None: (series_id, svid) or None if already reviewed and
             not forcing
     """
+    ups = ctx.pwork.upstream if ctx.pwork else None
     result = _register_series(ctx.cser, clean_name, ctx.version, link,
-                              ctx.series_data)
+                              ctx.series_data, upstream=ups)
     if result is not None:
         return result
 
@@ -1709,10 +1900,25 @@ def _find_or_register(ctx, args, clean_name, link):
     if not existing:
         return None
 
-    _, _, _, svid = existing
+    series_id, _, _, svid = existing
     reviews = ctx.cser.db.review_get_for_version(svid)
 
-    if reviews and not args.force:
+    if not reviews:
+        # Interrupted previous attempt — resume with existing record
+        tout.notice('Resuming incomplete review')
+        return series_id, svid
+
+    # When reviewing specific patches, allow adding to existing reviews
+    patch_sel = parse_patch_selection(args.patches)
+    if patch_sel:
+        reviewed_seqs = {r.seq for r in reviews}
+        new_seqs = patch_sel - reviewed_seqs
+        if new_seqs:
+            tout.notice(f'Adding review for patch(es) '
+                        f'{", ".join(str(s) for s in sorted(new_seqs))}')
+            return series_id, svid
+
+    if not args.force:
         _, db_name, db_version, _ = existing
         tout.notice(f"Already reviewed: '{db_name}' v{db_version}")
         _show_reviews(reviews, ctx.series_data)
@@ -1721,14 +1927,10 @@ def _find_or_register(ctx, args, clean_name, link):
                                   ctx.cser)
         return None
 
-    if reviews and args.force:
-        ctx.cser.db.review_delete_for_version(svid)
-        ctx.cser.commit()
-        tout.notice('Re-reviewing (forced)')
-
-    # Re-register for re-review
-    return _register_series(ctx.cser, clean_name, ctx.version, link,
-                            ctx.series_data)
+    ctx.cser.db.review_delete_for_version(svid)
+    ctx.cser.commit()
+    tout.notice('Re-reviewing (forced)')
+    return series_id, svid
 
 
 def do_review(args, pwork, cser):
@@ -1748,12 +1950,21 @@ def do_review(args, pwork, cser):
     if args.sync:
         return _do_sync(args, cser)
 
-    if not args.pw_link and not args.title:
-        raise ValueError("Please provide -l <link> or -t <title> "
-            "to identify the series")
+    has_patch = getattr(args, 'patch', None)
+    has_patch_title = getattr(args, 'patch_title', None)
+    if not args.pw_link and not args.title and not has_patch and \
+            not has_patch_title:
+        raise ValueError("Please provide -s <series>, -S <title>, "
+            "-p <patch-id> or -P <patch-title>")
 
     link = args.pw_link
-    if not link:
+    if not link and has_patch:
+        link, patch_seq = lookup_patch_series(pwork, args.patch)
+        args.patches = str(patch_seq)
+    elif not link and has_patch_title:
+        link, patch_seq = search_patch(pwork, args.patch_title)
+        args.patches = str(patch_seq)
+    elif not link:
         link = search_series(pwork, args.title)
 
     series_data, clean_name, version, patch_count = \
@@ -1774,10 +1985,12 @@ def do_review(args, pwork, cser):
     try:
         ctx.upstream_branch = _get_upstream_branch(args, cser)
         ctx.repo_path = gitutil.get_top_level()
-        orig_branch = command.output('git', 'rev-parse', '--abbrev-ref',
-                                      'HEAD', cwd=ctx.repo_path).strip()
+        orig_branch = gitutil.current_branch(ctx.repo_path)
         try:
-            stash_out = command.output('git', 'stash', cwd=ctx.repo_path)
+            # Stash untracked files too, so build artefacts from the
+            # current branch don't leak into the review branch
+            stash_out = gitutil.stash_save(ctx.repo_path,
+                                           include_untracked=True)
             if 'No local changes' not in stash_out:
                 had_stash = True
         except command.CommandExc:
@@ -1791,14 +2004,16 @@ def do_review(args, pwork, cser):
             tout.notice('Apply-only mode; skipping review')
             return 0
 
+        ctx.patch_selection = parse_patch_selection(args.patches)
         ctx.reviewer_name, ctx.reviewer_email = _parse_reviewer(args)
-        ctx.signoff = getattr(args, 'signoff', '') or None
+        ctx.signoff = args.signoff or None
         if ctx.signoff:
             ctx.signoff = ctx.signoff.replace('\\n', '\n')
-        ctx.spelling = getattr(args, 'spelling', 'British')
+        ctx.spelling = args.spelling
         ctx.comments_path = _write_comments_file(series_data, pwork)
 
         _run_and_store_reviews(ctx, args)
+        workflow.reviewed(cser, ctx.series_id, ctx.svid)
 
         _git_restore(orig_branch, had_stash, ctx.repo_path)
         orig_branch = None
