@@ -590,6 +590,11 @@ def add_review_subparser(subparsers):
         '-U', '--upstream', type=str, default=None,
         help='Upstream name (for patchwork URL lookup)')
     review.add_argument(
+        '-b', '--base-branch', type=str, default=None,
+        help="Base branch to apply review patches onto (e.g. 'us/master', "
+             "'us/next'). If unset, picks the upstream's '/next' branch "
+             "when it has commits ahead of '/master', otherwise '/master'.")
+    review.add_argument(
         '--apply-only', action='store_true',
         help='Only download and apply patches, skip AI review')
     review.add_argument(

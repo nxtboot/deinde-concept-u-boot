@@ -1741,25 +1741,35 @@ def _draft_stored_reviews(args, reviews, series_data, pwork, cser):
 
 
 def _get_upstream_branch(args, cser):
-    """Determine the upstream branch for applying patches
+    """Determine the base branch for applying patches
 
-    Prefers 'next' over 'master' if it exists.
+    Honours --base-branch if the user supplied one. Otherwise prefers
+    '<upstream>/next' when it has commits ahead of '<upstream>/master',
+    falling back to '<upstream>/master' when next is empty (e.g. just
+    after a release, when next has been merged into master and has not
+    yet been reopened for the next cycle).
 
     Args:
         args (Namespace): Command-line arguments
         cser (Cseries): Open cseries instance
 
     Returns:
-        str: Upstream branch ref, e.g. 'us/next'
+        str: Base branch ref, e.g. 'us/next' or 'us/master'
     """
+    if args.base_branch:
+        return args.base_branch
     ups = args.upstream
     if not ups:
         ups = cser.db.upstream_get_default()
     if ups:
-        branch = f'{ups}/next'
-        if not gitutil.ref_exists(branch):
-            branch = f'{ups}/master'
-        return branch
+        next_branch = f'{ups}/next'
+        master_branch = f'{ups}/master'
+        if gitutil.ref_exists(next_branch):
+            ahead = gitutil.count_revs(
+                None, f'{master_branch}..{next_branch}')
+            if ahead:
+                return next_branch
+        return master_branch
     return 'origin/master'
 
 

@@ -21,6 +21,7 @@ from u_boot_pylib import tools
 from patman import cmdline
 from patman import control
 from patman import cser_helper
+from patman import review
 from patman import cseries
 from patman.database import Pcommit
 from patman import database
@@ -5223,3 +5224,71 @@ VERDICT: changes_needed"""
         self.assertEqual(2, len(notes))
         self.assertEqual(1, notes[0][0])
         self.assertEqual(3, notes[1][0])
+
+
+class TestGetUpstreamBranch(unittest.TestCase):
+    """Tests for review._get_upstream_branch() base-branch selection."""
+
+    def _cser(self, default_upstream=None):
+        cser = mock.Mock()
+        cser.db.upstream_get_default.return_value = default_upstream
+        return cser
+
+    def test_explicit_base_branch_wins(self):
+        """An explicit -b/--base-branch overrides every other check."""
+        args = Namespace(base_branch='custom/branch', upstream='us')
+        with mock.patch('patman.review.gitutil') as gu:
+            self.assertEqual(
+                'custom/branch',
+                review._get_upstream_branch(args, self._cser()))
+            gu.ref_exists.assert_not_called()
+            gu.count_revs.assert_not_called()
+
+    def test_next_ahead_of_master_picks_next(self):
+        """When next has commits ahead of master, next is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=3):
+            self.assertEqual(
+                'us/next',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_next_empty_falls_back_to_master(self):
+        """When next exists but has no commits ahead, master is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=0):
+            self.assertEqual(
+                'us/master',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_next_missing_falls_back_to_master(self):
+        """When next does not exist at all, master is chosen."""
+        args = Namespace(base_branch=None, upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=False):
+            self.assertEqual(
+                'us/master',
+                review._get_upstream_branch(args, self._cser()))
+
+    def test_default_upstream_used_when_unset(self):
+        """When args.upstream is unset, the cser default is consulted."""
+        args = Namespace(base_branch=None, upstream=None)
+        cser = self._cser(default_upstream='us')
+        with mock.patch('patman.review.gitutil.ref_exists',
+                        return_value=True), \
+             mock.patch('patman.review.gitutil.count_revs',
+                        return_value=5):
+            self.assertEqual(
+                'us/next', review._get_upstream_branch(args, cser))
+
+    def test_no_upstream_returns_origin_master(self):
+        """With no upstream configured anywhere, return 'origin/master'."""
+        args = Namespace(base_branch=None, upstream=None)
+        self.assertEqual(
+            'origin/master',
+            review._get_upstream_branch(args, self._cser()))

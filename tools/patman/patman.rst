@@ -1297,6 +1297,18 @@ without calling the Gmail API.
 Use ``--apply-only`` to download and apply patches without running the
 AI review -- useful for checking that patches apply cleanly.
 
+By default the review branch is created from ``<upstream>/next`` when
+that branch has commits ahead of ``<upstream>/master``, and from
+``<upstream>/master`` otherwise. This tracks U-Boot's release cadence:
+right after a release ``next`` is merged into ``master`` and stays
+empty until the next cycle's RC1, so reviews land on ``master`` during
+that window and switch back to ``next`` automatically once it
+diverges. Use ``-b`` / ``--base-branch`` to override the choice for a
+particular run::
+
+    patman review -s 497923 -U us -b us/master \
+        --reviewer 'Your Name <your@email>'
+
 Use ``-f`` / ``--force`` to re-review a series that has already been
 reviewed. This deletes the old review records and runs the review
 again::
