@@ -7,7 +7,6 @@
 #ifndef _BOOTM_H
 #define _BOOTM_H
 
-#include <event_decl.h>
 #include <image.h>
 
 struct boot_params;
@@ -460,9 +459,12 @@ int bootm_boot_start(ulong addr, const char *cmdline);
 /**
  * bootm_final() - Announce and do cleanup before boot
  *
- * @flags: Flags to control what this function does
+ * This performs the common pre-boot steps: printing the "Starting kernel"
+ * message, recording bootstage data, and removing active devices.
+ *
+ * @flag: Boot state flags (BOOTM_STATE_OS_FAKE_GO prints a fake-run message)
  */
-void bootm_final(enum bootm_final_t flags);
+void bootm_final(int flag);
 
 int cleanup_before_linux(void);
 

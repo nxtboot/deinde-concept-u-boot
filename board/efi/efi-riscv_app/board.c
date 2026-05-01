@@ -29,7 +29,7 @@ int board_exit_boot_services(void *ctx, struct event *evt)
 	uint key;
 	int ret;
 
-	if (evt->data.bootm_final.flags & BOOTM_FINAL_FAKE) {
+	if (evt->data.bootm_final.flag & BOOTM_STATE_OS_FAKE_GO) {
 		printf("Not exiting EFI (fake go)\n");
 		return 0;
 	}

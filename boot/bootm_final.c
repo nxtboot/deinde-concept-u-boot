@@ -15,13 +15,14 @@ __weak void board_quiesce_devices(void)
 {
 }
 
-void bootm_final(enum bootm_final_t flags)
+void bootm_final(int flag)
 {
 	struct event_bootm_final final;
 	int ret;
 
-	printf("\nStarting kernel ...%s\n\n", flags & BOOTM_FINAL_FAKE ?
-		"(fake run for tracing)" : "");
+	printf("\nStarting kernel ...%s\n\n",
+	       (flag & BOOTM_STATE_OS_FAKE_GO) ?
+	       "(fake run for tracing)" : "");
 
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
 
@@ -47,17 +48,11 @@ void bootm_final(enum bootm_final_t flags)
 	 */
 	dm_remove_devices_active();
 
-	final.flags = flags;
+	final.flag = flag;
 	ret = event_notify(EVT_BOOTM_FINAL, &final, sizeof(final));
 	if (ret) {
 		printf("Event handler failed to finalise (err %dE\n",
 		       ret);
 		return;
-	}
-	if (!(flags & BOOTM_FINAL_FAKE)) {
-		bootm_disable_interrupts();
-
-		if (!(flags & BOOTM_FINAL_NO_CLEANUP))
-			cleanup_before_linux();
 	}
 }

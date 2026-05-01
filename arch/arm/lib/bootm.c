@@ -273,7 +273,8 @@ static void boot_jump_linux(struct bootm_headers *images, int flag)
 		(ulong)images->ep);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
-	bootm_final(fake ? BOOTM_FINAL_FAKE : 0);
+	bootm_final(flag);
+	cleanup_before_linux();
 
 	if (!fake) {
 #ifdef CONFIG_ARMV8_PSCI
@@ -323,7 +324,8 @@ static void boot_jump_linux(struct bootm_headers *images, int flag)
 	debug("## Transferring control to Linux (at address %08lx)" \
 		"...\n", (ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
-	bootm_final(fake ? BOOTM_FINAL_FAKE : 0);
+	bootm_final(flag);
+	cleanup_before_linux();
 
 	if (CONFIG_IS_ENABLED(OF_LIBFDT) && images->ft_len)
 		r2 = (unsigned long)images->ft_addr;

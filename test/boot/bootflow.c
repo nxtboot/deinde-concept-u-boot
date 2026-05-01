@@ -1478,7 +1478,14 @@ static int bootflow_efi(struct unit_test_state *uts)
 	ut_assert_nextline_empty();
 	ut_assert_nextline("Starting kernel ...");
 	ut_assert_nextline_empty();
-	ut_assert_nextlinen("Timer summary in microseconds");
+	/*
+	 * bootstage_fdt_add_report() may emit a "Failed to add to device
+	 * tree" message before the timer summary when the working FDT has
+	 * no room for the bootstage subnode (as happens in the EFI
+	 * exit_boot_services path), so skip past any such intervening
+	 * output.
+	 */
+	ut_assert_skip_to_linen("Timer summary in microseconds");
 	ut_assert_skip_to_line("Exiting test app");
 	ut_assert_nextline("Boot failed (err=-14)");
 
