@@ -75373,3 +75373,68 @@ The branch is left at `cherry-67fc5052285`, ready for pushing. No other branches
 
 ---
 
+### Pipeline fix: 2026-04-30 (attempt 1)
+
+Branch: cherry-67fc5052285
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+This is a "play" job which is a hardware lab test on a TI BeaglePlay (am62x) board. The failure is a labgrid `TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` — the board didn't reach the U-Boot prompt. Let me check whether one of the cherry-picked commits could plausibly affect the board's boot.
+
+Let me verify the cherry-picks build cleanly. The play job is a hardware lab test that timed out at U-Boot prompt — none of the cherry-picks plausibly affect early U-Boot boot:
+
+- mmc: just adds a new version constant to the recognition array — no behavioural change
+- regulator: only changes a string in an error message
+- ti env: changes `bootcmd_ti_mmc` (which runs *after* U-Boot reaches the prompt, not during boot)
+
+The "Timeout of 20 seconds exceeded during waiting for login" + "Lab failure: Marking connection bad" indicates the board never reached a U-Boot prompt at all — which happens long before any of these changes can run.
+
+Let me still do quick sanity builds.
+
+Both `am62x_beagleplay_a53` and `am62x_beagleplay_r5` build successfully (only the expected warnings about missing TI firmware blobs, which are environmental/local and unrelated to the cherry-picks). The sandbox build also passes.
+
+This confirms the failure is **not** a build/code issue. The job log shows:
+
+```
+Bootstrapping U-Boot from dirs ...
+Writing U-Boot using method ti,am625
+... (20 second wait)
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The board (BeaglePlay/am62x) failed to reach a U-Boot prompt after the bootstrap step. Critically:
+
+1. **None of the four cherry-picks plausibly affect early U-Boot boot:**
+   - `mmc: Add support for eMMC 5.1B`: just appends a constant to a recognition array. No behavioural change for existing chips.
+   - `regulator: fix missing quote`: only changes characters inside an error string.
+   - `ti env: move board specific scripts`: changes `bootcmd_ti_mmc`, which only runs *after* the U-Boot prompt is reached. Does not affect getting to the prompt.
+   - The merge commit is empty.
+
+2. **The "Lab failure: Marking connection bad" message** is the test framework's signal that the lab connection itself is bad — not a test result. It tells subsequent tests to be skipped because the hardware/serial connection is unhealthy.
+
+3. The same source still builds clean for `am62x_beagleplay_a53` and `am62x_beagleplay_r5`.
+
+This is an **infrastructure/transient lab failure** — the BeaglePlay didn't boot or the serial console didn't respond, which is unrelated to the code changes on this branch.
+
+## Report
+
+**Result: No code change made — infrastructure/transient lab failure.**
+
+**Root cause:** The `play` job is a hardware-lab pytest run on a TI BeaglePlay (am62x). The labgrid driver timed out after 20 s waiting for the U-Boot prompt during `_await_prompt()`, and the framework declared "Lab failure: Marking connection bad - no other tests will run." The board/serial connection was unresponsive after the U-Boot bootstrap step.
+
+**Why this is not a code issue on this branch:**
+- `mmc: Add support for eMMC 5.1B` — only adds a new constant to the version-recognition array; no behavioural change.
+- `dm: regulator: fix missing quote in error message` — pure string-content change.
+- `include: env: ti: move board specific scripts out of ti_common` — modifies `bootcmd_ti_mmc`, which runs *after* the U-Boot prompt is reached, so it cannot affect *getting to* the prompt.
+- The merge commit is empty.
+- Local builds of `am62x_beagleplay_a53`, `am62x_beagleplay_r5`, and sandbox all succeed cleanly with this branch.
+
+**No commit was responsible**, no fix is required, and no commits were amended or added.
+
+**Branch state:** `cherry-67fc5052285-fix1` was created pointing at the same commit as `cherry-67fc5052285` (no changes). Recommend retrying the `play` job; if it fails again with a real (non-timeout) error, that may indicate a separate hardware/lab problem to investigate.
+
+---
+
