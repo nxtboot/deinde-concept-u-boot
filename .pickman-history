@@ -75580,3 +75580,43 @@ Force-push succeeded. Pipeline retriggered for MR !1020.
 
 ---
 
+## 2026-05-01: us/next
+
+Branch: cherry-80bdc86db5a
+
+Commits:
+- 80bdc86db5a scmi: Rework SCMI_FIRMWARE implementation
+- 264cbb18718 scmi: pinctrl: add pinctrl message IDs
+- 33dbe00fbb2 scmi: update comments for scmi_pinctrl_config_set_in()
+- 0cb160f1b62 scmi: pinctrl: add pinctrl driver for SCMI
+- 5600255dfc3 Merge tag 'fsl-qoriq-next-2026-03-23' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq into next
+
+### Conversation log
+Identical. Now build test.
+
+All 5 commits present. Now run final build.
+
+## Cherry-pick Status Report
+
+**Branch:** `cherry-80bdc86db5a` (based on `ci/master`)
+
+**All 5 commits successfully cherry-picked:**
+
+| Original | New | Subject | Stat Match |
+|----------|-----|---------|------------|
+| 80bdc86db5a | 2f8cecccc4f | scmi: Rework SCMI_FIRMWARE implementation | Identical (12 files, 12+/1-) |
+| 264cbb18718 | 5bdadc2751f | scmi: pinctrl: add pinctrl message IDs | Identical (2 files, 9+/2-) |
+| 33dbe00fbb2 | 2a4c5045463 | scmi: update comments for scmi_pinctrl_config_set_in() | Identical (1 file, 7+/7-) |
+| 0cb160f1b62 | 4e9f4140a67 | scmi: pinctrl: add pinctrl driver for SCMI | Identical (8 files, 1100+/3-) |
+| 5600255dfc3 | 56e8c2bbe07 | Merge tag 'fsl-qoriq-next-2026-03-23' | Empty merge (preserved) |
+
+**Build results:** All builds passed with no warnings or errors (sandbox).
+
+**Conflicts/Fix-ups:** Auto-merging occurred in some defconfigs and `scmi_agent-uclass.c` but resolved automatically. The merge commit cherry-pick became empty after conflict resolution (expected since underlying patches were already applied) and was preserved with `--allow-empty`.
+
+**Concerning deltas:** None — all stats match the originals exactly.
+
+The branch is ready for pushing.
+
+---
+
