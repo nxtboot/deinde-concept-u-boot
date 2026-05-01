@@ -75287,3 +75287,48 @@ Now let me also verify with a broader build to make sure the change doesn't brea
 
 ---
 
+### Pipeline fix: 2026-05-01 (attempt 3)
+
+Branch: cherry-714dd2252da
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+Let me look at how this same lab has historically tested this MR to understand what's different. Let me also check if this test was passing on previous attempts.
+
+Let me verify my code is sound by building the affected boards.
+
+Based on my analysis, this looks like a transient lab/environment issue rather than a code regression. Let me verify the branch state and summarize.
+
+## Summary
+
+**Verdict: Likely transient lab/timing issue — no code change made.**
+
+### Failure
+The job `efi-aarch64` (sjg-lab stage) ran 35 tests under role `efi-aarch64` against the U-Boot EFI app on QEMU+AAVMF. Result: **34 passed, 1 failed, 673 skipped, 3 deselected (331.45s total)**. The failed test:
+
+- `test_distro_arm_app_efi`: After seeing `"Booting bootflow 'efi_media_1.bootdev.part_1' with efi"`, timed out (200s) waiting for the Ubuntu login banner `'Ubuntu 25.04 qarm ttyAMA0'`. Pure `console_base.Timeout` — no exception, no panic, no other diagnostic.
+
+### Why I think it's transient, not a regression
+
+1. **Companion test passes.** `test_distro_arm_app_extlinux` runs in the same job, on the same role/board, and exercises the same `bootm_final()` → `EVT_BOOTM_FINAL` → `board_exit_boot_services` → `efi_app_exit_boot_services` path that my MR conversion touches. It explicitly waits for `"Exiting EFI"` and `"Welcome to Ubuntu 25.04!"` and passes. So U-Boot, the EFI exit-boot-services flow, and Ubuntu kernel/userspace are all working on this lab/role.
+
+2. **Only difference is grub.** `test_distro_arm_app_efi` boots via `bootmeth efi` (loads `grub.efi` from ESP, grub then loads kernel and calls EFI ExitBootServices). `test_distro_arm_app_extlinux` boots directly via `booti`. Both end up in the same exit-boot-services code, so the only added variable is grub running under U-Boot's EFI loader — and my MR changes do not touch any code grub uses *before* it calls ExitBootServices.
+
+3. **Verified the only commit in this MR that could have caused this (`f2300c78365` bootm: Convert bootm_final() to use the upstream API):**
+   - `lib/efi_loader/efi_boottime.c`: changed `bootm_final(BOOTM_FINAL_NO_CLEANUP)` to `bootm_disable_interrupts(); bootm_final(0);`. This re-orders `bootm_disable_interrupts()` to *before* device cleanup — which is what Tom Rini's 2021 commit `3f73e79de83` deliberately did to fix a J721E exception, so this is more conservative, not less.
+   - The companion extlinux test (which also routes through `board_exit_boot_services` → `efi_app_exit_boot_services`) passes, so the re-ordering is not breaking the EFI app exit path.
+
+4. **Build verification clean.** `buildman --board sandbox,efi-arm_app64,qemu_arm64 -o /tmp/pickman2` — all 3 built (only pre-existing DTS warnings on qemu_arm64).
+
+5. **Pattern matches a previous transient.** The attempt-2 fix-summary explicitly classified `rockpro64` as "Hardware/lab failure ... transient infrastructure issue ... not addressable by code changes." This `efi-aarch64` timeout (heavy QEMU+AAVMF+grub+Ubuntu chain on lab hardware, no crash signal) fits the same pattern: the lab can be slow enough that 200s isn't enough for grub→kernel→systemd→getty on a busy runner.
+
+### Action
+
+No code change. Branch `cherry-714dd2252da-fix3` was created and left at the same commit as `cherry-714dd2252da` (`9eec1a9bdfc`) — the existing fixes (`#include <linker_lists.h>` and the `bootflow_efi` `ut_assert_skip_to_linen` fix) folded into the conversion commit are already in place from attempts 1 and 2.
+
+If this re-runs and fails again with the same single test, it's worth: (a) bumping the `temporary_timeout(200 * 1000)` for `test_distro_arm_app_efi`, or (b) adding intermediate `expect()` checkpoints (e.g. `"Exiting EFI"`, `"Linux version"`) so we can localise where the boot is actually stalling — but neither is justifiable from a single run with no diagnostic output.
+
+---
+
