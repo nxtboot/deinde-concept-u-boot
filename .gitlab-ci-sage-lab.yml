@@ -3,15 +3,21 @@
 .sage_lab_template: &sage_lab_dfn
   stage: sage-lab
   rules:
-    - if: $SAGE_LAB == "1"
+    - if: $CI_MERGE_REQUEST_DESCRIPTION =~ /\[skip-sage\]/
+      when: never
+    - if: $SAGE_LAB == $CI_JOB_NAME || $SAGE_LAB == "1"
       when: always
-    - if: $SAGE_LAB != "1"
+    - if: $SAGE_LAB != "" && $SAGE_LAB != "1" && $SAGE_LAB != $CI_JOB_NAME
+      when: never
+    - if: $SAGE_LAB == ""
       when: manual
       allow_failure: true
   # USB can be unreliable.
   retry: 2
   dependencies: []
-  needs: [ "sandbox test.py" ]
+  needs:
+    - job: "sandbox test.py"
+      optional: true
   tags: [ 'konsulko-sage-labgrid' ]
   before_script:
     # Clone uboot-test-hooks
