@@ -75197,3 +75197,48 @@ in `board/emulation/common/bootcmd.c` for every qemu/sandbox/x86/arm/riscv/m68k 
 
 ---
 
+### Review: 2026-05-01
+
+Branch: cherry-714dd2252da
+
+Comments addressed:
+
+
+### Conversation log
+The local branch is behind the remote (missing v4's pipeline-fix push). I need to sync local to remote first, then rebase. Let me reset local to match remote.
+
+Now record per-commit deltas before rebase, then run the rebase.
+
+Clean rebase, no conflicts. Now let me verify per-commit deltas.
+
+All 22 per-commit deltas are identical before and after rebase. Now run the build verification.
+
+Build OK: `done`=0, no `err` file, empty `log`. Now push to the remote.
+
+Push succeeded. Remote `cherry-714dd2252da` updated to `8123ab82a93`.
+
+## Summary
+
+Rebased MR !1019 (`cherry-714dd2252da`) onto the latest `ci/master`. Push completed.
+
+### What was done
+
+1. **Synced local to remote**: local `cherry-714dd2252da` was at the v3 tip (`7d22366a558`); remote was at v4 (`3d709d6a01e`, which includes the `#include <linker_lists.h>` pipeline fix and a `pickman: Record pipeline fix` commit). Reset local to match remote before rebasing.
+2. **Created `cherry-714dd2252da-v5`** from the synced state (22 commits ahead of `ci/master`).
+3. **Rebased**: `git rebase --keep-empty ci/master` — completed cleanly with **no conflicts**. The 26 new ci/master commits since the previous base (`47ac06e6993` → `0e4603827df`) are all patman-related and don't touch any files in this MR.
+4. **Verified per-commit deltas**: captured `git show --stat` for all 22 commits before and after the rebase; the diff of stat lines shows `DELTAS IDENTICAL`. Six placeholder commits remained empty; the other 16 have unchanged file counts and insertion/deletion totals.
+5. **Build verification**: `buildman -L --board sandbox -w -o /tmp/pickman` — `/tmp/pickman/done` = `0`, empty `log`, no `err` file.
+6. **Force-pushed** via `./tools/pickman/pickman push-branch cherry-714dd2252da -r ci -f`. Remote updated `3d709d6a01e...8123ab82a93`.
+
+### Branch state
+
+- Old remote tip: `3d709d6a01e` (v4, based on `ci/master` at `47ac06e6993`)
+- New remote tip: `8123ab82a93` (v5, based on `ci/master` at `0e4603827df`)
+- Only difference: the parent chain — content (per-commit `git show` patches) is unchanged.
+
+### Suggested reply for the MR
+
+> Rebased onto latest ci/master. Clean rebase — no conflicts; per-commit `git show --stat` deltas are identical before and after. The 26 new ci/master commits since the previous base are all patman changes that don't touch any files in this series. Sandbox builds clean (`buildman --board sandbox`).
+
+---
+
