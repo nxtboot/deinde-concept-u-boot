@@ -11,8 +11,8 @@
 #define __event_h
 
 #include <dm/ofnode_decl.h>
+#include <linker_lists.h>
 #include <linux/types.h>
-#include <event_decl.h>
 
 /**
  * enum event_t - Types of events supported by U-Boot
@@ -294,10 +294,10 @@ union event_data {
 	/**
 	 * struct event_bootm_final - State information
 	 *
-	 * @flags: Flags passed to bootm_final()
+	 * @flag: Flag passed to bootm_final() (BOOTM_STATE_OS_*)
 	 */
 	struct event_bootm_final {
-		enum bootm_final_t flags;
+		int flag;
 	} bootm_final;
 
 	/**

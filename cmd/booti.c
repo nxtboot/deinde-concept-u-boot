@@ -126,6 +126,12 @@ int do_booti(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (booti_start(&bmi))
 		return 1;
 
+	/*
+	 * We are doing the BOOTM_STATE_LOADOS state ourselves, so must
+	 * disable interrupts ourselves
+	 */
+	bootm_disable_interrupts();
+
 	images.os.os = IH_OS_LINUX;
 	if (IS_ENABLED(CONFIG_RISCV_SMODE))
 		images.os.arch = IH_ARCH_RISCV;

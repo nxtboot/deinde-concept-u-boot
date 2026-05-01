@@ -54,7 +54,8 @@ static void boot_jump_linux(struct bootm_headers *images, int flag)
 	debug("## Transferring control to kernel (at address %08lx) ...\n",
 	      (ulong)kernel);
 
-	bootm_final(fake ? BOOTM_FINAL_FAKE : 0);
+	bootm_final(flag);
+	cleanup_before_linux();
 
 	if (!fake) {
 		if (CONFIG_IS_ENABLED(OF_LIBFDT) && images->ft_len) {
