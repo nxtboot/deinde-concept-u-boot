@@ -75071,3 +75071,56 @@ The branch is ready for review/push but **NOT** merged anywhere.
 
 ---
 
+### Review: 2026-04-30
+
+Branch: cherry-714dd2252da
+
+Comments addressed:
+- [sjg]: pickman: I would like to go with the upstream API, rather than the one in ci/master...
+
+### Conversation log
+Now I have enough context. Let me make all the changes for the conversion to the upstream API.
+
+Now let me make the fixup. I'll edit all required files.
+
+Now let me update the callers. First, arm:
+
+Now riscv:
+
+Now efi_loader:
+
+Now the EFI app boards:
+
+Now let me build to verify:
+
+Sandbox build succeeded. Now let me run buildman as the task requires:
+
+Buildman returned exit 0 for sandbox with no errors/warnings. Now let me create the fixup commit:
+
+## Summary
+
+Force-pushed v2 of `cherry-714dd2252da` updating MR !1019.
+
+### What was done
+
+Added one new commit `7339ffd26a5 bootm: Convert bootm_final() to use the upstream API` that converts the existing ci/master design over to match the upstream API from us/next:
+
+- **Signature**: `bootm_final(enum bootm_final_t flags)` → `bootm_final(int flag)`
+- **Flag**: `BOOTM_FINAL_FAKE` → `BOOTM_STATE_OS_FAKE_GO` (the existing flag from `images.h`)
+- **Removed** `BOOTM_FINAL_NO_CLEANUP` and the `enum bootm_final_t`; deleted now-empty `include/event_decl.h`
+- **Moved out** of `bootm_final()` and back to original callers:
+  - `cleanup_before_linux()` → restored to `arch/arm/lib/bootm.c`, `arch/riscv/lib/bootm.c`
+  - `bootm_disable_interrupts()` → restored to `boot/bootm.c` BOOTM_STATE_LOADOS, `cmd/booti.c`, `lib/efi_loader/efi_boottime.c`
+- **Updated** the `EVT_BOOTM_FINAL` event payload (`int flag` instead of `enum bootm_final_t flags`) and its two consumers (`board/efi/efi-arm_app/board.c`, `board/efi/efi-riscv_app/board.c`)
+- **Fixed** a latent runtime bug: the cherry-picked per-arch commits passed `flag` (BOOTM_STATE_OS_FAKE_GO=BIT(11)) to a function expecting `BOOTM_FINAL_FAKE=BIT(0)`, so the fake-run branch was silently never taken on those archs
+
+### Build result
+
+`buildman -L --board sandbox -w -o /tmp/pickman` passes with no errors or warnings (sandbox `done` file shows exit 0, empty log).
+
+### Suggested reply for the MR
+
+> Done. v2 adds a single fixup commit (`bootm: Convert bootm_final() to use the upstream API`) that switches `bootm_final()` to the us/next signature `void bootm_final(int flag)` taking `BOOTM_STATE_OS_*` flags, drops the custom `enum bootm_final_t` (and `BOOTM_FINAL_NO_CLEANUP`), and moves `cleanup_before_linux()` / `bootm_disable_interrupts()` back to their original callers (arm/riscv `boot_jump_linux()`, `bootm_run_states()` LOADOS handler, `cmd/booti.c`, EFI `efi_exit_boot_services()`). The two `EVT_BOOTM_FINAL` consumers (efi-arm_app, efi-riscv_app) and the event payload were updated to match. Sandbox builds clean. This also fixes a latent issue where the cherry-picked per-arch commits passed `BOOTM_STATE_OS_FAKE_GO=BIT(11)` to a function expecting `BOOTM_FINAL_FAKE=BIT(0)`, silently breaking the fake-run path.
+
+---
+
