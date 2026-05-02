@@ -1465,6 +1465,17 @@ Patman stores series tracking, review and workflow state in a SQLite
 database (``.patman.db``) in the top-level git directory. The schema is
 versioned and auto-migrated on startup (currently at v10).
 
+Set the ``PATMAN_DB_DIR`` environment variable to use a database elsewhere
+(``~`` is expanded). The variable names a *directory* in which patman looks
+for ``.patman.db``, mirroring the default layout. This is useful if you keep
+a single 'main' patman database in one repo but want to run, for example,
+``patman review`` in another worktree or repo: the DB path is overridden but
+git operations still run against the current repo. For instance::
+
+    export PATMAN_DB_DIR=~/u-boot
+    cd ~/some-other-tree
+    patman review -s my-series
+
 The connection is opened in WAL mode (``journal_mode=WAL``,
 ``synchronous=NORMAL``) with a 30-second busy timeout, which lets multiple
 patman invocations share the database safely: concurrent readers do not block
