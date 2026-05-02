@@ -75851,3 +75851,90 @@ The final merge commit `fce03583510` was cherry-picked with `-m 1 --allow-empty`
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-8019e3b35df
+
+Commits:
+- 8019e3b35df test: dm: virtio_rng: Update virtio-rng test
+- e0eef12a1f4 virtio: rng: Handle oversized return buffers
+- b8e6c5d0ddc Merge patch series "virtio: rng: Handle oversized return buffers"
+
+### Conversation log
+Deltas match perfectly. Now run build test.
+
+Build OK. Now cherry-pick the second commit.
+
+Deltas match. Build test next.
+
+Build OK. Now cherry-pick the merge commit.
+
+Merge commit is empty as expected (since the changes were already brought in via the prior cherry-picks). Now run final verification.
+
+All cherry-picks complete successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-8019e3b35df` (based on `ci/master`)
+
+**Cherry-picks completed (3 of 3):**
+1. `47010c39950` - test: dm: virtio_rng: Update virtio-rng test (from `8019e3b35df`)
+   - Delta matched exactly: 1 file, 12 insertions, 2 deletions
+2. `6af0efacdfb` - virtio: rng: Handle oversized return buffers (from `e0eef12a1f4`)
+   - Delta matched exactly: 1 file, 1 insertion, 1 deletion
+   - Required auto-merge in `drivers/virtio/virtio_rng.c` (resolved cleanly)
+3. `43db51fc524` - Merge patch series "virtio: rng: Handle oversized return buffers" (from `b8e6c5d0ddc`)
+   - Empty commit preserved with `--allow-empty` (changes already applied via prior commits)
+
+**Build result:** OK (sandbox built cleanly with no warnings/errors)
+
+**Fix-ups:** None needed
+
+**Concerning deltas:** None
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-05-02
+
+Branch: cherry-8019e3b35df
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) snow.
+
+This is a transient infrastructure / timing fla...
+
+### Conversation log
+Let me understand the current state. The "review comment" is the bot's own previous pipeline-fix report, which concluded the `snow` failure was a transient timing flake requiring no code changes — only a retry. Let me verify the branch state and proceed.
+
+The branch is clean and matches the prior analysis exactly. The review comment is the prior pipeline-fix report itself. Since the prior analysis was correct (a ~5ms timing overshoot on `test_sleep` is unrelated to a virtio_rng buffer-size fix), the appropriate action is no code change — just verify build and re-push to retrigger CI.
+
+Build passes cleanly. Now create `-v2` local branch and force-push to retrigger the pipeline.
+
+The remote already has the exact branch state (no changes needed since prior analysis correctly diagnosed the flake). Build passes cleanly. Here is the final report:
+
+## Report
+
+**Branch:** `cherry-8019e3b35df`
+**Local v2 branch created:** `cherry-8019e3b35df-v2`
+**Code changes:** None
+**Build verification:** OK (sandbox built cleanly, no warnings/errors)
+**Push result:** "Everything up-to-date" — remote already matches local state, since the prior fix-attempt-1 made no code changes.
+
+### Why no code change
+
+The review comment is the prior pipeline-fix-attempt-1 report itself. That analysis was correct and stands:
+
+- **Failing job:** `snow` (sjg-lab) → `test/py/tests/test_sleep.py::test_sleep`
+- **Mode of failure:** `sleep 3` measured 3.255s vs. a 3.25s ceiling — **~5ms over a 250ms margin** on a real lab board.
+- **Branch scope:** only `drivers/virtio/virtio_rng.c` (2 lines) and `test/dm/virtio_rng.c` (14 lines) — no contact whatsoever with the `sleep` command, `get_timer()`, the snow board build, or pytest timing infrastructure.
+
+There is no plausible mechanism by which a virtio RNG buffer-size fix could perturb `sleep` timing on an Exynos5 lab board. This is a hardware/CI timing flake, not a code defect.
+
+### Suggested MR reply
+
+> Acknowledged. Re-confirming the prior diagnosis: the `snow` `test_sleep` failure was a ~5ms overshoot on a 250ms margin — a transient timing flake on the lab board, unrelated to this branch (which only touches `drivers/virtio/virtio_rng.c` and `test/dm/virtio_rng.c`). Build remains clean on sandbox; no code change is appropriate here. Recommend simply retrying the `snow` job. If the flake reproduces persistently, the proper fix is a standalone change to bump `env__sleep_margin` for snow's boardenv (or `xfail` `test_sleep` on that runner), not an addendum to this virtio_rng cherry-pick series.
+
+---
+
