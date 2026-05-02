@@ -75896,3 +75896,45 @@ The branch is ready for pushing.
 
 ---
 
+### Review: 2026-05-02
+
+Branch: cherry-8019e3b35df
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) snow.
+
+This is a transient infrastructure / timing fla...
+
+### Conversation log
+Let me understand the current state. The "review comment" is the bot's own previous pipeline-fix report, which concluded the `snow` failure was a transient timing flake requiring no code changes — only a retry. Let me verify the branch state and proceed.
+
+The branch is clean and matches the prior analysis exactly. The review comment is the prior pipeline-fix report itself. Since the prior analysis was correct (a ~5ms timing overshoot on `test_sleep` is unrelated to a virtio_rng buffer-size fix), the appropriate action is no code change — just verify build and re-push to retrigger CI.
+
+Build passes cleanly. Now create `-v2` local branch and force-push to retrigger the pipeline.
+
+The remote already has the exact branch state (no changes needed since prior analysis correctly diagnosed the flake). Build passes cleanly. Here is the final report:
+
+## Report
+
+**Branch:** `cherry-8019e3b35df`
+**Local v2 branch created:** `cherry-8019e3b35df-v2`
+**Code changes:** None
+**Build verification:** OK (sandbox built cleanly, no warnings/errors)
+**Push result:** "Everything up-to-date" — remote already matches local state, since the prior fix-attempt-1 made no code changes.
+
+### Why no code change
+
+The review comment is the prior pipeline-fix-attempt-1 report itself. That analysis was correct and stands:
+
+- **Failing job:** `snow` (sjg-lab) → `test/py/tests/test_sleep.py::test_sleep`
+- **Mode of failure:** `sleep 3` measured 3.255s vs. a 3.25s ceiling — **~5ms over a 250ms margin** on a real lab board.
+- **Branch scope:** only `drivers/virtio/virtio_rng.c` (2 lines) and `test/dm/virtio_rng.c` (14 lines) — no contact whatsoever with the `sleep` command, `get_timer()`, the snow board build, or pytest timing infrastructure.
+
+There is no plausible mechanism by which a virtio RNG buffer-size fix could perturb `sleep` timing on an Exynos5 lab board. This is a hardware/CI timing flake, not a code defect.
+
+### Suggested MR reply
+
+> Acknowledged. Re-confirming the prior diagnosis: the `snow` `test_sleep` failure was a ~5ms overshoot on a 250ms margin — a transient timing flake on the lab board, unrelated to this branch (which only touches `drivers/virtio/virtio_rng.c` and `test/dm/virtio_rng.c`). Build remains clean on sandbox; no code change is appropriate here. Recommend simply retrying the `snow` job. If the flake reproduces persistently, the proper fix is a standalone change to bump `env__sleep_margin` for snow's boardenv (or `xfail` `test_sleep` on that runner), not an addendum to this virtio_rng cherry-pick series.
+
+---
+
