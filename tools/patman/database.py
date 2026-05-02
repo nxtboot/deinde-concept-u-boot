@@ -12,6 +12,7 @@ and write some code in migrate_to() to call it.
 """
 
 from collections import namedtuple, OrderedDict
+import fcntl
 import os
 import sqlite3
 
@@ -275,7 +276,20 @@ class Database:  # pylint:disable=R0904
         Args:
             dest_version (int): Version to migrate to
         """
+        # Serialise migrations across processes via an advisory lock on a
+        # sentinel file beside the DB. Without this, two patman processes
+        # starting against the same out-of-date DB can both decide they
+        # need to run the next migration step, and the second one crashes
+        # on a duplicate-column ALTER TABLE
+        with open(f'{self.db_path}.lock', 'w', encoding='utf-8') as lock_fd:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            self._migrate_locked(dest_version)
+
+    def _migrate_locked(self, dest_version):
+        """Run the migration loop; caller holds the migration lock"""
         while True:
+            # Re-read each iteration: a peer process may have advanced the
+            # version while we were waiting for the lock
             version = self.get_schema_version()
             if version == dest_version:
                 break
