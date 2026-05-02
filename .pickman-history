@@ -75792,3 +75792,62 @@ If a fresh pipeline run is desired, please **manually retry the failed `efi-aarc
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-ef1501932b5
+
+Commits:
+- ef1501932b5 doc: board: tegra: improve documentation
+- eb1f4fd7190 ARM: tegra: ap: add support T20 A04 SKU id
+- 0d26afc4848 ARM: tegra: ap: add default fallback for Tegra20 SKU
+- 1f32eff8ced ARM: tegra: ap: add debug prints for unknown SKU
+- 5dcdbcf7833 pwm: tegra: add probe function
+- 0623b8512e2 pwm: tegra: add set_invert PWM operation
+- 2fcb08a2b47 pwm: tegra: fix pulse_width calculation
+- 412f7666069 pwm: tegra: properly calculate pulse and frequency divider fields
+- 0a1f0404a6f power: regulator: cpcap: remove bit_offset_from_cpcap_lowest_voltage
+- d79350d1622 power: pmic: cpcap: add Mapphone and Mot compatibles
+- 36b142e11f4 power: cpcap: make regulator node names case independent
+- b0c5baa89b1 input: cpcap_pwrbutton: set default keycode fallback
+- b14a6635d86 input: cpcap_pwrbutton: simplify parent verification
+- ecd3b67fcc5 video: r61307: adjust property name
+- 490a9238918 video: ltl106hl02: adjust power supply name
+- dd701a47f54 ARM: tegra: lg-x3: fix panel property
+- a6a057ab17f ARM: tegra: surface-2: fix panel supply
+- da468e2da2c ARM: tegra: mot: change backlight LED source
+- b0721ec89dc ARM: tegra: remove unsupported properties from the max8907 node
+- 670915a86e3 ARM: tegra: rename sdhci nodes to mmc
+- 67ef43b491b board: lg: star: make panel fix optional
+- 20531fa6183 power: pmic: enable sysreset function with device tree property
+- fce03583510 Merge branch 'staging' of https://source.denx.de/u-boot/custodians/u-boot-tegra into next
+
+### Conversation log
+Now to the merge commit. Let me check if it's already applied as db3e3787efd:
+
+All 23 commits are present. Now run the final build:
+
+## Cherry-Pick Status Report
+
+**Branch**: `cherry-ef1501932b5` (based on `ci/master`)
+
+**Result**: All 23 commits were cherry-picked successfully without any conflicts.
+
+### Commit Deltas
+Every single commit produced byte-identical file/line counts compared to the original (i.e. the same files modified with the same number of insertions/deletions). No concerning deltas were found anywhere in the series.
+
+### Build Result
+**OK** — `buildman -L --board sandbox -w -o /tmp/pickman` passed cleanly after every individual cherry-pick and after the final state. No warnings, no errors. 1 board built successfully.
+
+### Fix-ups
+**None** — every cherry-pick applied cleanly with `git cherry-pick -x`.
+
+### Merge commit handling
+The final merge commit `fce03583510` was cherry-picked with `-m 1 --allow-empty`. It became empty (because all 22 child commits already brought in the changes), and was preserved as an empty commit `dc6981ecb16` with the original merge message intact for history-tracking purposes. The "maybe already applied as db3e3787efd" candidate was checked and confirmed to be a *different* merge (a master-side merge of a `cherry-*` branch with a different message), so the cherry-pick proceeded as expected.
+
+### Final state
+- 22 regular commits + 1 (empty) merge commit on top of `ci/master`
+- HEAD: `dc6981ecb16` (the merge)
+- Branch is ready to push; no merge back to other branches performed.
+
+---
+
