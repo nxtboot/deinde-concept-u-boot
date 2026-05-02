@@ -75620,3 +75620,58 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-01: us/next
+
+Branch: cherry-f1fa4221485
+
+Commits:
+- f1fa4221485 board: toradex: aquila-am69: refactor memory configuration
+- 39e014f43a1 board: toradex: aquila-am69: Add support for 16GB dual rank memory configuration
+- 1ffc541eafc Merge patch series "DDR configuration refactor and 16GB dual-rank support"
+
+### Conversation log
+The first cherry-pick failed. Let me check if the commits are already applied with different hashes.
+
+The commits aren't already applied. Let me investigate the conflict - the file was deleted in ci/master.
+
+The `board/toradex/aquila-am69/` board directory doesn't exist in ci/master at all - the underlying files these commits modify aren't present. Let me try cherry-picking with empty commits since the patches can't apply:
+
+The board directory doesn't exist in ci/master. Let me abort and try to apply manually as patches.
+
+The board doesn't exist in ci/master so the patches can't apply. Per instructions, I'll create empty [FAILED] commits for each.
+
+All 3 commits in place. Now let me run the final build test:
+
+Build succeeded. Final report:
+
+## Status Report
+
+**All 3 cherry-picks FAILED** - Created empty `[FAILED]` commits to preserve sequence.
+
+### Reason for Failure
+The `board/toradex/aquila-am69/` directory does not exist in `ci/master`. The board was added by commit `3f0528882c0` ("board: toradex: add aquila am69 support"), which is only in `us/next` but never merged into `ci/master`. All 3 commits modify files in this missing directory, so neither `git cherry-pick` nor `git apply --3way` could apply the patches - the base files are absent.
+
+### Verification Performed
+- Searched `ci/master` for the commit subjects: not found (not already applied via different path)
+- Tried `git cherry-pick -x f1fa4221485`: conflict - "deleted in HEAD and modified in commit"
+- Tried `git apply --3way` on patch: failed - "does not exist in index"
+- Confirmed `board/toradex/aquila-am69/` is missing from working tree
+
+### Commits Created (all empty `[FAILED]`)
+```
+a5d7ebff3da Merge patch series "DDR configuration refactor..." [FAILED]
+e1441353314 board: toradex: aquila-am69: Add support for 16GB dual rank... [FAILED]
+4b33699e2d7 board: toradex: aquila-am69: refactor memory configuration [FAILED]
+```
+
+### Build Result
+**OK** - `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully with no warnings/errors (1 board built in 10s).
+
+### Fix-ups Made
+None - the [FAILED] tag was added to subjects per instructions. Each empty commit's body documents the cherry-picked-from hash and explains the missing-directory issue.
+
+### Concerning Deltas
+N/A - no patches were applied, so no diff-vs-original comparison applies. The branch `cherry-f1fa4221485` is left ready for inspection but the underlying patches cannot be applied to `ci/master` until the aquila-am69 board itself is brought in.
+
+---
+
