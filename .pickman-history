@@ -75675,3 +75675,74 @@ N/A - no patches were applied, so no diff-vs-original comparison applies. The br
 
 ---
 
+## 2026-05-01: us/next
+
+Branch: cherry-c4173429dbd
+
+Commits:
+- c4173429dbd clk: mediatek: mt7622: convert to struct mtk_parent
+- b3455b3986d clk: mediatek: mt7623: convert to struct mtk_parent
+- 5e145c04481 clk: mediatek: mt7629: convert to struct mtk_parent
+- 8fd90b148f2 clk: mediatek: mt7981: convert to struct mtk_parent
+- 1ed05de4abd clk: mediatek: mt7987: convert to struct mtk_parent
+- a2d600dba36 clk: mediatek: mt7988: convert to struct mtk_parent
+- 326d9c01f81 clk: mediatek: mt8183: convert to struct mtk_parent
+- d632daabdce clk: mediatek: mt8188: convert to struct mtk_parent
+- 3c46c551fa1 clk: mediatek: mt8195: convert to struct mtk_parent
+- ec7f2425a19 clk: mediatek: mt8365: convert to struct mtk_parent
+- e4ade301cae clk: mediatek: mt8512: convert to struct mtk_parent
+- 585748a7163 clk: mediatek: mt8516: convert to struct mtk_parent
+- cc8738cadc5 clk: mediatek: mt8518: convert to struct mtk_parent
+- a56b24bf58d clk: mediatek: remove use of CLK_BYPASS_XTAL flag
+- 84c89c25291 clk: mediatek: remove CLK_PARENT_MIXED flag
+- 256499eebf4 clk: mediatek: refactor duplicate *_mux_get_rate()
+- de935cb5191 clk: mediatek: mt8365: drop topckgen map
+- f7d48558cf1 clk: mediatek: mt8188: use ext_clock_rates
+- 6bbfa8fba55 clk: mediatek: mt8195: use ext_clock_rates
+- 39b6394831d clk: mediatek: replace xtal2_rate with struct mtk_parent
+- bd07ed20643 clk: mediatek: mt7622: convert CLK_XTAL to CLK_PAD_CLK25M
+- 284025cc6e3 clk: mediatek: mt7623: convert CLK_XTAL to CLK_PAD_CLK26M
+- 57a3c93336f clk: mediatek: mt7629: convert CLK_XTAL to CLK_PAD_CLK40M
+- ca0d2abc27d clk: mediatek: mt7981: convert CLK_XTAL to CLK_PAD_CLK40M
+- 7ad6dab0dc0 clk: mediatek: mt7986: convert CLK_XTAL to CLK_PAD_CLK40M
+- b8189e6e148 clk: mediatek: mt7987: convert CLK_XTAL to CLK_PAD_CLK40M
+- e60c459757a clk: mediatek: mt7988: convert CLK_XTAL to CLK_PAD_CLK40M
+- 999c169c354 clk: mediatek: mt8183: convert CLK_XTAL to CLK_PAD_CLK26M
+- bd547724395 clk: mediatek: mt8188: convert CLK_XTAL to CLK_PAD_CLK26M
+- 7c95a2a95c7 clk: mediatek: mt8195: convert CLK_XTAL to CLK_PAD_CLK26M
+- c15c522fa3c clk: mediatek: mt8365: convert CLK_XTAL to CLK_PAD_CLK26M
+- 93a3f1677b6 clk: mediatek: mt8512: convert CLK_XTAL to CLK_PAD_CLK26M
+- ecea053c46d clk: mediatek: mt8516: convert CLK_XTAL to CLK_PAD_CLK26M
+- a3ff5a95860 clk: mediatek: mt8518: convert CLK_XTAL to CLK_PAD_CLK26M
+- f2ee4a49347 clk: mediatek: remove CLK_PARENT_XTAL
+- f82f50caa1d MAINTAINERS: add new MediaTek custodians
+- 71e736ed6d4 pinctrl: mediatek: Add missing bind callback for several SoCs
+- 730958e9b01 clk: mediatek: mt7623: fix pericfg priv_auto size
+- 5a36f434254 Merge tag 'mediatek-for-next-2026-03-24' of https://source.denx.de/u-boot/custodians/u-boot-mediatek into next
+
+### Conversation log
+Now the merge commit:
+
+All cherry-picks done. Now verify and run final build.
+
+All 39 commits are present (the 40th one is from ci/master). Now run the final build:
+
+Build passed.
+
+## Summary
+
+All 39 commits from `us/next` were successfully cherry-picked onto a new branch `cherry-c4173429dbd` based on `ci/master`.
+
+### Results
+
+- **Cherry-picks completed**: 39/39 (38 regular commits + 1 merge commit)
+- **Conflicts**: None requiring manual resolution. Several commits triggered automatic merges (e.g. `clk-mtk.c`, `MAINTAINERS`, `pinctrl-mt8365.c`) which Git resolved cleanly.
+- **Empty merge commit**: The final merge commit (`5a36f434254`) became empty after conflict resolution — committed via `--allow-empty` to preserve history, as instructed.
+- **Commit deltas**: Every cherry-pick produced identical file lists and line counts vs. the original commit. No concerning deltas.
+- **Fix-ups required**: None.
+- **Build result**: ✅ OK — `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully (1 board, 0 errors, 0 warnings).
+
+The branch `cherry-c4173429dbd` is ready for pushing.
+
+---
+
