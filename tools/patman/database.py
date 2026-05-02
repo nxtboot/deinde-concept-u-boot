@@ -122,8 +122,13 @@ class Database:  # pylint:disable=R0904
             raise ValueError('Already open')
         if not os.path.exists(self.db_path):
             tout.warning(f'Creating new database {self.db_path}')
-        self.con = sqlite3.connect(self.db_path)
+        self.con = sqlite3.connect(self.db_path, timeout=30)
         self.cur = self.con.cursor()
+        # WAL lets readers and a writer coexist across processes; the busy
+        # timeout above rides out brief contention before raising 'database
+        # is locked'
+        self.cur.execute('PRAGMA journal_mode=WAL')
+        self.cur.execute('PRAGMA synchronous=NORMAL')
         self.is_open = True
 
     def close(self):
