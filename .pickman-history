@@ -76040,3 +76040,50 @@ Branch is ready for pushing (no merge performed).
 
 ---
 
+### Review: 2026-05-02
+
+Branch: cherry-30e1733297a
+
+Comments addressed:
+
+
+### Conversation log
+Now let me run the rebase. Let me save these stats first for comparison.
+
+The conflict is in `.pickman-history`. Both sides added new sections after the same point. The resolution is to keep the HEAD side (cherry-8019e3b35df entry already in ci/master) followed by our new cherry-30e1733297a entry.
+
+Now let me verify each commit's delta is unchanged.
+
+All deltas match exactly. The pickman commit's delta is also OK because the conflict resolution preserved both the existing HEAD section and our new section, resulting in the same insertion count (60 lines).
+
+Wait — let me verify the pickman commit's stat actually accounts for the 60 lines we added on top of the existing sections.
+
+Both 60-line insertions match perfectly. Now let me run the build verification.
+
+Build successful. Now let me push to the remote.
+
+## Rebase Report — MR !1029 (cherry-30e1733297a)
+
+**Local branch created:** `cherry-30e1733297a-v2`
+**Pushed to:** `ci/cherry-30e1733297a` (force update: `1bac37e3e1b...f27c4462589`)
+**Build result:** OK (sandbox built cleanly in ~10s)
+
+### What happened
+
+1. Rebased onto current `ci/master` tip `9f257a35687` (`Merge branch 'cherry-8019e3b35df' into 'master'`). Six new commits had landed on `ci/master` since the original branch base — the cherry-8019e3b35df series (virtio rng buffer fixes) plus its pickman/review entries.
+
+2. **Single conflict** in `.pickman-history` on the final commit (`bf52480ec66 pickman: Record cherry-pick of 11 commits from us/next`):
+   - `ci/master` had appended a new `## 2026-05-02: us/next / Branch: cherry-8019e3b35df` section in the same place where our branch wanted to append `## 2026-05-02: us/next / Branch: cherry-30e1733297a`.
+   - **Resolution:** kept both sections in chronological order (cherry-8019e3b35df first since it was already merged to master, then cherry-30e1733297a after a `---` separator). No content lost from either side.
+   - The pickman commit's stat post-resolution remains exactly `1 file changed, 60 insertions(+)` — identical to the original.
+
+3. **All 12 deltas verified identical** to the originals via `git show --stat`. No concerning changes.
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (now at `9f257a35687`). The only conflict was in `.pickman-history`, where the cherry-8019e3b35df series had landed on master in the same `## 2026-05-02: us/next` slot — resolved by appending both entries in order (8019e3b35df first, then 30e1733297a). All 12 commit deltas verified identical to pre-rebase. Sandbox build passes. Force-pushed; pipeline should retrigger automatically.
+>
+> Note: the previously reported `[FAILED]` empty commit (`arm: mach-k3: use Kconfig options for ATF/OPTEE size`) is unchanged — its prerequisite (`6c8dee07c34` "ti: k3: abstract common fdt api for reserved mem fixups") is still not present on master, so the commit remains an empty placeholder per the original analysis.
+
+---
+
