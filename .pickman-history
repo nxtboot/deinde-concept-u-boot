@@ -75980,3 +75980,63 @@ The branch `cherry-b02b0a0c6cb` is ready for pushing. It has not been merged any
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-30e1733297a
+
+Commits:
+- 30e1733297a virtio: Fix virtio initialization sequence
+- e641ac90c26 configs: adi: sc5xx: sync command configuration
+- e67cf100eea fdt: Prefer %pap over %llx
+- 4ed440e6be8 fw_loader: Introduce SUPPORTS_FW_LOADER symbol
+- b2c02c04ec7 arm: mach-k3: use Kconfig options for ATF/OPTEE size
+- 1e2052f76e9 mach-k3: move k3_falcon_fdt_fixup out of r5/common.c
+- fc8bf9a984c cmd: test: allow using [ as alias for test
+- d44f6158294 doc: test: document [ ] spelling of test
+- 6f9cc3310a7 test: add tests for left-bracket alias for 'test' command
+- 8b0619579b2 cmd: test: fix handling of single-argument form of test
+- 6701997e9ca Merge patch series "add [ as alias for test, fix 0/1 argument handling"
+
+### Conversation log
+Delta matches. Now build test.
+
+Now amend the commit message to add a fix-up note:
+
+Stats match exactly. Let me build test and continue:
+
+All 11 commits are present. Let me run final build and update todos:
+
+## Cherry-pick Status Report
+
+**Branch**: `cherry-30e1733297a` (based on `ci/master`)
+
+**Build result**: OK — sandbox build passes after each cherry-pick and final verification.
+
+**All 11 commits present** (`git log --oneline -n 13`):
+- `1bac37e3e1b` Merge patch series "add [ as alias for test, fix 0/1 argument handling"
+- `35319f1f65c` cmd: test: fix handling of single-argument form of test
+- `c7fa03b5e85` test: add tests for left-bracket alias for 'test' command
+- `94e60c79362` doc: test: document [ ] spelling of test
+- `d55afe080a0` cmd: test: allow using [ as alias for test
+- `5c990d9b66c` mach-k3: move k3_falcon_fdt_fixup out of r5/common.c
+- `0ffb35578f4` arm: mach-k3: use Kconfig options for ATF/OPTEE size **[FAILED]**
+- `95d0684d6f1` fw_loader: Introduce SUPPORTS_FW_LOADER symbol
+- `73d5cc07ae3` fdt: Prefer %pap over %llx
+- `610e773396f` configs: adi: sc5xx: sync command configuration
+- `12dab7ddec6` virtio: Fix virtio initialization sequence
+
+### Issues encountered
+
+1. **`b2c02c04ec7` (arm: mach-k3 ATF/OPTEE) — FAILED, empty commit preserved**
+   The commit only changes `0x80000` → `CONFIG_K3_ATF_RESERVED_SIZE` and `0x1800000` → `CONFIG_K3_OPTEE_RESERVED_SIZE` inside a function `fdt_fixup_reserved(void *blob)`. That function does not exist in this branch — its prerequisite (commit `6c8dee07c34` "ti: k3: abstract common fdt api for reserved mem fixups") is not present. Our tree has a different `fdt_fixup_reserved(blob, name, addr, size)` API. `git apply --3way` failed the same way. Created `[FAILED]` empty commit per instructions, with details in the message.
+
+2. **`1e2052f76e9` (mach-k3 falcon fdt fixup) — Fixed up, applied successfully**
+   Conflict in `arch/arm/mach-k3/common.c` `spl_perform_arch_fixups()`: cherry-pick used the new (missing) `fdt_fixup_reserved(fdt)` form. Resolution: kept the existing two-call form and added the new `k3_falcon_fdt_fixup(fdt)` invocation. Final stat matches original commit exactly (`3 files changed, 84 insertions(+), 78 deletions(-)`). Fix-up note appended to the commit message.
+
+### Concerning deltas
+None. All other cherry-picks have stats identical to the originals.
+
+Branch is ready for pushing (no merge performed).
+
+---
+
