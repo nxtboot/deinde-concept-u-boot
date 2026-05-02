@@ -75675,3 +75675,120 @@ N/A - no patches were applied, so no diff-vs-original comparison applies. The br
 
 ---
 
+## 2026-05-01: us/next
+
+Branch: cherry-c4173429dbd
+
+Commits:
+- c4173429dbd clk: mediatek: mt7622: convert to struct mtk_parent
+- b3455b3986d clk: mediatek: mt7623: convert to struct mtk_parent
+- 5e145c04481 clk: mediatek: mt7629: convert to struct mtk_parent
+- 8fd90b148f2 clk: mediatek: mt7981: convert to struct mtk_parent
+- 1ed05de4abd clk: mediatek: mt7987: convert to struct mtk_parent
+- a2d600dba36 clk: mediatek: mt7988: convert to struct mtk_parent
+- 326d9c01f81 clk: mediatek: mt8183: convert to struct mtk_parent
+- d632daabdce clk: mediatek: mt8188: convert to struct mtk_parent
+- 3c46c551fa1 clk: mediatek: mt8195: convert to struct mtk_parent
+- ec7f2425a19 clk: mediatek: mt8365: convert to struct mtk_parent
+- e4ade301cae clk: mediatek: mt8512: convert to struct mtk_parent
+- 585748a7163 clk: mediatek: mt8516: convert to struct mtk_parent
+- cc8738cadc5 clk: mediatek: mt8518: convert to struct mtk_parent
+- a56b24bf58d clk: mediatek: remove use of CLK_BYPASS_XTAL flag
+- 84c89c25291 clk: mediatek: remove CLK_PARENT_MIXED flag
+- 256499eebf4 clk: mediatek: refactor duplicate *_mux_get_rate()
+- de935cb5191 clk: mediatek: mt8365: drop topckgen map
+- f7d48558cf1 clk: mediatek: mt8188: use ext_clock_rates
+- 6bbfa8fba55 clk: mediatek: mt8195: use ext_clock_rates
+- 39b6394831d clk: mediatek: replace xtal2_rate with struct mtk_parent
+- bd07ed20643 clk: mediatek: mt7622: convert CLK_XTAL to CLK_PAD_CLK25M
+- 284025cc6e3 clk: mediatek: mt7623: convert CLK_XTAL to CLK_PAD_CLK26M
+- 57a3c93336f clk: mediatek: mt7629: convert CLK_XTAL to CLK_PAD_CLK40M
+- ca0d2abc27d clk: mediatek: mt7981: convert CLK_XTAL to CLK_PAD_CLK40M
+- 7ad6dab0dc0 clk: mediatek: mt7986: convert CLK_XTAL to CLK_PAD_CLK40M
+- b8189e6e148 clk: mediatek: mt7987: convert CLK_XTAL to CLK_PAD_CLK40M
+- e60c459757a clk: mediatek: mt7988: convert CLK_XTAL to CLK_PAD_CLK40M
+- 999c169c354 clk: mediatek: mt8183: convert CLK_XTAL to CLK_PAD_CLK26M
+- bd547724395 clk: mediatek: mt8188: convert CLK_XTAL to CLK_PAD_CLK26M
+- 7c95a2a95c7 clk: mediatek: mt8195: convert CLK_XTAL to CLK_PAD_CLK26M
+- c15c522fa3c clk: mediatek: mt8365: convert CLK_XTAL to CLK_PAD_CLK26M
+- 93a3f1677b6 clk: mediatek: mt8512: convert CLK_XTAL to CLK_PAD_CLK26M
+- ecea053c46d clk: mediatek: mt8516: convert CLK_XTAL to CLK_PAD_CLK26M
+- a3ff5a95860 clk: mediatek: mt8518: convert CLK_XTAL to CLK_PAD_CLK26M
+- f2ee4a49347 clk: mediatek: remove CLK_PARENT_XTAL
+- f82f50caa1d MAINTAINERS: add new MediaTek custodians
+- 71e736ed6d4 pinctrl: mediatek: Add missing bind callback for several SoCs
+- 730958e9b01 clk: mediatek: mt7623: fix pericfg priv_auto size
+- 5a36f434254 Merge tag 'mediatek-for-next-2026-03-24' of https://source.denx.de/u-boot/custodians/u-boot-mediatek into next
+
+### Conversation log
+Now the merge commit:
+
+All cherry-picks done. Now verify and run final build.
+
+All 39 commits are present (the 40th one is from ci/master). Now run the final build:
+
+Build passed.
+
+## Summary
+
+All 39 commits from `us/next` were successfully cherry-picked onto a new branch `cherry-c4173429dbd` based on `ci/master`.
+
+### Results
+
+- **Cherry-picks completed**: 39/39 (38 regular commits + 1 merge commit)
+- **Conflicts**: None requiring manual resolution. Several commits triggered automatic merges (e.g. `clk-mtk.c`, `MAINTAINERS`, `pinctrl-mt8365.c`) which Git resolved cleanly.
+- **Empty merge commit**: The final merge commit (`5a36f434254`) became empty after conflict resolution — committed via `--allow-empty` to preserve history, as instructed.
+- **Commit deltas**: Every cherry-pick produced identical file lists and line counts vs. the original commit. No concerning deltas.
+- **Fix-ups required**: None.
+- **Build result**: ✅ OK — `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully (1 board, 0 errors, 0 warnings).
+
+The branch `cherry-c4173429dbd` is ready for pushing.
+
+---
+
+### Review: 2026-05-01
+
+Branch: cherry-c4173429dbd
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64.
+
+Let me build both boards from scratch to...
+
+### Conversation log
+The review comment is a bot-generated summary of the previous pipeline fix attempt (attempt 1), which diagnosed the failure as a transient race condition in CI infrastructure (not a real code defect). No code changes were made in that attempt, and the recommendation was to re-run the CI job.
+
+Let me verify the build is still healthy and re-push to trigger a fresh pipeline run.
+
+Build passes. Now create the v2 branch and push to trigger a fresh CI pipeline.
+
+The remote branch is already up-to-date — the previous push from attempt 1 already moved `cherry-c4173429dbd` to the current HEAD (`470fc107528`). Since the previous diagnosis correctly concluded no code change is warranted, there's nothing new to push.
+
+## Report
+
+**Result: No action taken — the review comment is the bot's own attempt-1 report, which correctly concluded no code change is needed.**
+
+### What the review comment is
+
+The "review comment" is the bot-generated summary from **pipeline fix attempt 1**, posted to the MR. It diagnosed the `efi-aarch64` failure as a **transient race condition on the CI runner** (Makefile ran `readelf` while another step was still touching `u-boot`, producing "Failed to read file's magic number"). The MR's commits only touch `drivers/clk/mediatek/*` and four `pinctrl/mediatek` files — none of which can affect ARM relocations or the EFI link step.
+
+### What I verified
+
+- **Branch state:** `cherry-c4173429dbd` HEAD is `470fc107528` — identical to what attempt 1 left.
+- **Local build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors, 0 warnings.
+- **Remote state:** `pickman push-branch cherry-c4173429dbd -r ci -f` reports "Everything up-to-date" — remote already has the exact same SHA.
+- **v2 branch:** Created `cherry-c4173429dbd-v2` pointing at the same HEAD as a record marker.
+
+### What is not done and why
+
+- **No code change.** Attempt 1's analysis stands: the EFI relocation failure is unrelated to mediatek clk/pinctrl changes, and the artifact left on the runner showed only valid `R_AARCH64_RELATIVE` relocations. Re-introducing changes to "address" a transient flake would be incorrect.
+- **No new push.** Force-pushing the same SHA does not retrigger a GitLab pipeline; the branch already reflects the latest state.
+
+### Suggested reply to post on the MR
+
+> The previous comment was attempt 1's own diagnosis report. The `efi-aarch64` failure was a transient race on the CI runner (Makefile ran `readelf` against `u-boot` while another step was still writing to it — the artifact left behind has correct `R_AARCH64_RELATIVE` relocations). The MR only touches `drivers/clk/mediatek/*` and four `pinctrl-mt81*.c` files, none of which affect EFI ARM relocations. Local sandbox build passes cleanly. **Please retry the `efi-aarch64` job** rather than expecting a code change here.
+
+If a fresh pipeline run is desired, please **manually retry the failed `efi-aarch64` job** via the GitLab UI, or let me know and I can add an empty marker commit to force a pipeline retrigger.
+
+---
+
