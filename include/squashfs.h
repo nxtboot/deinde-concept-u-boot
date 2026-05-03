@@ -10,10 +10,10 @@
 #ifndef _SQFS_H_
 #define _SQFS_H_
 
-struct blk_desc;
-struct disk_partition;
-struct fs_dirent;
-struct fs_dir_stream;
+#include <fs.h>
+#include <blk.h>
+#include <part.h>
+#include <linux/types.h>
 
 int sqfs_opendir(const char *filename, struct fs_dir_stream **dirsp);
 int sqfs_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp);

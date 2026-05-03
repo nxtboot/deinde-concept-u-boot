@@ -76185,3 +76185,89 @@ Recommend retry of the pipeline after the lab is healthy.
 
 ---
 
+## 2026-05-03: us/next
+
+Branch: cherry-f0b4f502bdd
+
+Commits:
+- f0b4f502bdd fs/squashfs: fix sqfs_decompressor.c build in SPL
+- 0fe2801730e fs/squashfs: sqfs_decompressor: simplify code
+- 5e23f7f9f3b fs/squashfs: squashfs.h: include file should be self dependent
+- 6494e823b46 spl: add squashfs support
+- fb0df355289 spl: mmc: support squashfs
+- eed18b1e250 MAINTAINERS: SQUASHFS: update João Marcos Costa email
+- 868233099d8 MAINTAINERS: SQUASHFS: Add myself as co-maintainer
+- 80a4c49a4ab Merge patch series "Introduce SQUASHFS support in SPL"
+
+### Conversation log
+The intent of the commit is to replace forward declarations with proper #include directives. The current HEAD has more forward declarations than the original base, but the goal is the same — replace them with includes.
+
+Resolution looks correct. Now I'll continue the cherry-pick and amend the message with a fix-up note.
+
+Same file, +4/-4 vs +4/-1 — small acceptable difference (4 forward declarations removed instead of 1). Let me build.
+
+Identical file changes. Build test:
+
+Now the merge commit:
+
+All 8 commits present. Final build:
+
+All cherry-picks complete. Summary:
+
+**Final Status: SUCCESS**
+
+**Build result:** OK (sandbox built cleanly with no warnings/errors)
+
+**Cherry-picked commits (8/8):**
+1. `d03b7c0cac9` - fs/squashfs: fix sqfs_decompressor.c build in SPL — clean
+2. `66a5db8e30e` - fs/squashfs: sqfs_decompressor: simplify code — clean
+3. `9d083d21219` - fs/squashfs: squashfs.h: include file should be self dependent — **conflict resolved**
+4. `93ce9525af3` - spl: add squashfs support — auto-merged cleanly
+5. `580fc99ee68` - spl: mmc: support squashfs — clean
+6. `830d4da1658` - MAINTAINERS: SQUASHFS: update João Marcos Costa email — auto-merged cleanly
+7. `814439e918d` - MAINTAINERS: SQUASHFS: Add myself as co-maintainer — auto-merged cleanly
+8. `d8f14cc4ae5` - Merge patch series "Introduce SQUASHFS support in SPL" — empty merge commit (preserved with --allow-empty)
+
+**Fix-ups made:**
+- Commit #3 (`squashfs.h: self dependent`): HEAD already had 4 forward declarations (`struct blk_desc`, `struct disk_partition`, `struct fs_dirent`, `struct fs_dir_stream`) instead of the original's single one. Resolved by removing all forward declarations and keeping the upstream `#include <fs.h>`, `<blk.h>`, `<part.h>`, `<linux/types.h>` directives. Added one-line note `[sjg: Drop forward declarations added in HEAD; replace with includes per upstream]` to commit message.
+
+**Concerning deltas:** None. Commit #3 has +4/-4 vs original +4/-1 (an extra 3 lines removed because HEAD had more forward declarations to eliminate). All other commits have identical file lists and line counts to the originals.
+
+Branch `cherry-f0b4f502bdd` is ready and not merged anywhere.
+
+---
+
+
+### Review: 2026-05-03 (v2)
+
+Branch: cherry-f0b4f502bdd
+
+Comments addressed:
+- [project_1_bot]: Pipeline fix (attempt 1) — the bot's previous report concluding both failed jobs (efi-aarch64, colibrimx8) were transient sjg-lab infrastructure issues unrelated to the squashfs/SPL changes on the branch.
+
+### Conversation log
+Re-checked the previous failure analysis. Pipeline 7473 (sha d8f14cc4ae5a) failed exactly as reported: 102 success, 2 failed (efi-aarch64, colibrimx8), 11 skipped, 5 manual. Both failed jobs are in the `sjg-lab` stage:
+
+- **colibrimx8**: lab-board connection drop at the very first test (test_000_version) — board never responded after reset.
+- **efi-aarch64**: distro EFI boot test (test_distro_arm_app_efi) timed out waiting for Ubuntu boot output under QEMU.
+
+The branch (cherry-f0b4f502bdd) only modifies fs/squashfs/*, common/spl/{spl_mmc.c,spl_squashfs.c,Makefile}, include/{part.h,spl.h,squashfs.h}, and MAINTAINERS. None of these touch the colibrimx8 board path, EFI subsystem, distro_bootcmd, or aarch64 boot path. The colibrimx8 board does not even enable SPL squashfs.
+
+Sandbox build verified clean (buildman -L --board sandbox -w -o /tmp/pickman): 1 board built in 6s, no warnings or errors.
+
+No code changes warranted. Force-pushing the same code as -v2 to trigger a fresh CI pipeline run, since the previous fix1 attempt was prepared locally but never pushed to remote.
+
+## Report
+
+**Result: No code changes — both failures are transient sjg-lab infrastructure issues**
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built cleanly, no warnings/errors.
+- Branch `cherry-f0b4f502bdd-v2` created at the same code state as `cherry-f0b4f502bdd` (only adds this journal entry).
+
+### Recommendation
+
+Force-push to trigger a fresh CI run. The two previously failed jobs are sjg-lab hardware-lab tests (one a board-connection drop before any test ran, one a distro-boot timeout under QEMU) and are unrelated to the squashfs/SPL changes on the branch.
+
+---
