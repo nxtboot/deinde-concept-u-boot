@@ -76237,3 +76237,37 @@ Branch `cherry-f0b4f502bdd` is ready and not merged anywhere.
 
 ---
 
+
+### Review: 2026-05-03 (v2)
+
+Branch: cherry-f0b4f502bdd
+
+Comments addressed:
+- [project_1_bot]: Pipeline fix (attempt 1) — the bot's previous report concluding both failed jobs (efi-aarch64, colibrimx8) were transient sjg-lab infrastructure issues unrelated to the squashfs/SPL changes on the branch.
+
+### Conversation log
+Re-checked the previous failure analysis. Pipeline 7473 (sha d8f14cc4ae5a) failed exactly as reported: 102 success, 2 failed (efi-aarch64, colibrimx8), 11 skipped, 5 manual. Both failed jobs are in the `sjg-lab` stage:
+
+- **colibrimx8**: lab-board connection drop at the very first test (test_000_version) — board never responded after reset.
+- **efi-aarch64**: distro EFI boot test (test_distro_arm_app_efi) timed out waiting for Ubuntu boot output under QEMU.
+
+The branch (cherry-f0b4f502bdd) only modifies fs/squashfs/*, common/spl/{spl_mmc.c,spl_squashfs.c,Makefile}, include/{part.h,spl.h,squashfs.h}, and MAINTAINERS. None of these touch the colibrimx8 board path, EFI subsystem, distro_bootcmd, or aarch64 boot path. The colibrimx8 board does not even enable SPL squashfs.
+
+Sandbox build verified clean (buildman -L --board sandbox -w -o /tmp/pickman): 1 board built in 6s, no warnings or errors.
+
+No code changes warranted. Force-pushing the same code as -v2 to trigger a fresh CI pipeline run, since the previous fix1 attempt was prepared locally but never pushed to remote.
+
+## Report
+
+**Result: No code changes — both failures are transient sjg-lab infrastructure issues**
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built cleanly, no warnings/errors.
+- Branch `cherry-f0b4f502bdd-v2` created at the same code state as `cherry-f0b4f502bdd` (only adds this journal entry).
+
+### Recommendation
+
+Force-push to trigger a fresh CI run. The two previously failed jobs are sjg-lab hardware-lab tests (one a board-connection drop before any test ran, one a distro-boot timeout under QEMU) and are unrelated to the squashfs/SPL changes on the branch.
+
+---
