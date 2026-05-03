@@ -76535,3 +76535,76 @@ The branch is left ready for pushing. No merging back to other branches was perf
 
 ---
 
+## 2026-05-03: us/next
+
+Branch: cherry-f7e7c55e53e
+
+Commits:
+- f7e7c55e53e cmd: test: add bug-compatibility special case for 'test -n'
+- 021e3828fbd sandbox: Add missing select's to the architecture symbol
+- 0b1a7935021 optee: Correct dependencies for BOOTM_OPTEE
+- b0eaaa067ea global: Audit Kconfig usage of PARTITION_TYPE_GUID
+- d05ef0f258c sata: Rework the CMD_SATA and SATA symbols
+- e5e268091e5 bootcount: Give i2c-eeprom a unique identifier
+- 592c244a3a7 rtc: Remove legacy DS1338 support
+- 8c1ffb09d5b rtc: ds1337: Remove various legacy code and update dependencies
+- 99bc9d07b73 rtc: Update Kconfig dependencies
+- 0a0c3a40018 env: Correct dependency for ENV_IS_IN_NAND
+- c1e17ac2846 env: Make use of IF_ENABLED_INT in spi flash support
+- 5116481a7e6 lmb: Correct dependency around CMD_BOOT[IMZ]
+- 79a99781127 loads: Add LMB as a dependency
+- 70b5afb9057 boot: Add DM_RTC as a dependency to CEDIT
+- af54c2185e1 cmd: Add missing dependency to CMD_PMC
+- 2e676dbf073 clk: Add missing dependency for SANDBOX_CLK_CCF
+- 56b896511c0 gpio: Correct dependencies for legacy CMD_PCA953X
+- a05d59a1cf7 misc: Add missing dependency to CROS_EC_SANDBOX
+- 7b53fbb2740 spi: Correct dependency on SPI_MEM for many drivers
+- 1c1bfb1cf34 acpi: Correct dependencies for GENERATE_ACPI_TABLE
+
+### Conversation log
+Both "maybe already applied" commits are confirmed already applied. Now I'll cherry-pick the remaining 18 commits in order.
+
+## Cherry-pick Complete
+
+### Summary
+
+**Branch:** `cherry-f7e7c55e53e` (based on `ci/master`)
+
+**Build:** ok (sandbox builds clean with no warnings)
+
+### Cherry-pick Status (20 commits total)
+
+**Already applied in ci/master (skipped):**
+- `f7e7c55e53e` - cmd: test -n bug-compatibility (already applied as `4f0c5c1fb23`, only line numbers differ)
+- `1c1bfb1cf34` - acpi: GENERATE_ACPI_TABLE (already applied via merge `1d2dbf74986` containing `f9d0e84afd6`)
+
+**Cherry-picked successfully (18 commits):**
+1. `e897d78d700` - sandbox: Add missing select's to the architecture symbol
+2. `9efca73f123` - optee: Correct dependencies for BOOTM_OPTEE
+3. `1bc97d1a4e0` - global: Audit Kconfig usage of PARTITION_TYPE_GUID
+4. `848dbab2c54` - sata: Rework the CMD_SATA and SATA symbols
+5. `297989b7972` - bootcount: Give i2c-eeprom a unique identifier
+6. `43f7989b86e` - rtc: Remove legacy DS1338 support
+7. `4b0953abb08` - rtc: ds1337: Remove various legacy code and update dependencies
+8. `68788d69557` - rtc: Update Kconfig dependencies
+9. `48e47faba87` - env: Correct dependency for ENV_IS_IN_NAND
+10. `f102cf435e0` - env: Make use of IF_ENABLED_INT in spi flash support
+11. `c5b30115235` - lmb: Correct dependency around CMD_BOOT[IMZ] **[fix-up applied]**
+12. `fa754d2eb67` - loads: Add LMB as a dependency
+13. `71b1f608f22` - boot: Add DM_RTC as a dependency to CEDIT
+14. `09e5e3b44d3` - cmd: Add missing dependency to CMD_PMC
+15. `f16ecddb845` - clk: Add missing dependency for SANDBOX_CLK_CCF
+16. `00b2a5d2648` - gpio: Correct dependencies for legacy CMD_PCA953X
+17. `a09c377712d` - misc: Add missing dependency to CROS_EC_SANDBOX
+18. `75a1d8e4ea0` - spi: Correct dependency on SPI_MEM for many drivers
+
+### Fix-ups
+- **`c5b30115235` (lmb CMD_BOOT)**: Conflict in `cmd/Kconfig` for `CMD_BOOTM` (existing `depends on BOOT` vs incoming `depends on LMB`). Resolved by keeping both dependency lines. Annotation added to commit message: *"[sjg: Resolve conflict in cmd/Kconfig CMD_BOOTM by keeping both 'depends on BOOT' and 'depends on LMB']"*
+
+### Concerning Deltas
+None — all stat counts matched the originals exactly.
+
+The branch is left ready for pushing.
+
+---
+

@@ -283,6 +283,7 @@ config CMD_LICENSE
 
 config CMD_PMC
 	bool "pmc"
+	depends on ACPI_PMC
 	help
 	  Provides access to the Intel Power-Management Controller (PMC) so
 	  that its state can be examined. This does not currently support
@@ -370,6 +371,7 @@ config CMD_BOOTD
 config CMD_BOOTM
 	bool "bootm"
 	depends on BOOT
+	depends on LMB
 	default y
 	select LIB_BOOTM
 	help
@@ -444,6 +446,7 @@ config CMD_BOOTSTD
 
 config CMD_BOOTZ
 	bool "bootz"
+	depends on LMB
 	select LIB_BOOTZ
 	select LIB_BOOTM
 	help
@@ -453,6 +456,7 @@ config CMD_BOOTI
 	bool "booti"
 	depends on BOOT
 	depends on ARM64 || RISCV || SANDBOX
+	depends on LMB
 	default y
 	select LIB_BOOTI
 	select LIB_BOOTM
@@ -1471,6 +1475,7 @@ config CMD_LOADM
 
 config CMD_LOADS
 	bool "loads - Load a file over serial in S-Record format"
+	depends on LMB
 	default y
 	help
 	  Load an S-Record file over serial line
@@ -1798,7 +1803,8 @@ config CMD_REMOTEPROC
 
 config CMD_SATA
 	bool "sata - Access SATA subsystem"
-	select SATA
+	depends on SATA && AHCI
+	default y
 	help
 	  SATA (Serial Advanced Technology Attachment) is a serial bus
 	  standard for connecting to hard drives and other storage devices.
