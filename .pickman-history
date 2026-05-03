@@ -75980,3 +75980,110 @@ The branch `cherry-b02b0a0c6cb` is ready for pushing. It has not been merged any
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-30e1733297a
+
+Commits:
+- 30e1733297a virtio: Fix virtio initialization sequence
+- e641ac90c26 configs: adi: sc5xx: sync command configuration
+- e67cf100eea fdt: Prefer %pap over %llx
+- 4ed440e6be8 fw_loader: Introduce SUPPORTS_FW_LOADER symbol
+- b2c02c04ec7 arm: mach-k3: use Kconfig options for ATF/OPTEE size
+- 1e2052f76e9 mach-k3: move k3_falcon_fdt_fixup out of r5/common.c
+- fc8bf9a984c cmd: test: allow using [ as alias for test
+- d44f6158294 doc: test: document [ ] spelling of test
+- 6f9cc3310a7 test: add tests for left-bracket alias for 'test' command
+- 8b0619579b2 cmd: test: fix handling of single-argument form of test
+- 6701997e9ca Merge patch series "add [ as alias for test, fix 0/1 argument handling"
+
+### Conversation log
+Delta matches. Now build test.
+
+Now amend the commit message to add a fix-up note:
+
+Stats match exactly. Let me build test and continue:
+
+All 11 commits are present. Let me run final build and update todos:
+
+## Cherry-pick Status Report
+
+**Branch**: `cherry-30e1733297a` (based on `ci/master`)
+
+**Build result**: OK — sandbox build passes after each cherry-pick and final verification.
+
+**All 11 commits present** (`git log --oneline -n 13`):
+- `1bac37e3e1b` Merge patch series "add [ as alias for test, fix 0/1 argument handling"
+- `35319f1f65c` cmd: test: fix handling of single-argument form of test
+- `c7fa03b5e85` test: add tests for left-bracket alias for 'test' command
+- `94e60c79362` doc: test: document [ ] spelling of test
+- `d55afe080a0` cmd: test: allow using [ as alias for test
+- `5c990d9b66c` mach-k3: move k3_falcon_fdt_fixup out of r5/common.c
+- `0ffb35578f4` arm: mach-k3: use Kconfig options for ATF/OPTEE size **[FAILED]**
+- `95d0684d6f1` fw_loader: Introduce SUPPORTS_FW_LOADER symbol
+- `73d5cc07ae3` fdt: Prefer %pap over %llx
+- `610e773396f` configs: adi: sc5xx: sync command configuration
+- `12dab7ddec6` virtio: Fix virtio initialization sequence
+
+### Issues encountered
+
+1. **`b2c02c04ec7` (arm: mach-k3 ATF/OPTEE) — FAILED, empty commit preserved**
+   The commit only changes `0x80000` → `CONFIG_K3_ATF_RESERVED_SIZE` and `0x1800000` → `CONFIG_K3_OPTEE_RESERVED_SIZE` inside a function `fdt_fixup_reserved(void *blob)`. That function does not exist in this branch — its prerequisite (commit `6c8dee07c34` "ti: k3: abstract common fdt api for reserved mem fixups") is not present. Our tree has a different `fdt_fixup_reserved(blob, name, addr, size)` API. `git apply --3way` failed the same way. Created `[FAILED]` empty commit per instructions, with details in the message.
+
+2. **`1e2052f76e9` (mach-k3 falcon fdt fixup) — Fixed up, applied successfully**
+   Conflict in `arch/arm/mach-k3/common.c` `spl_perform_arch_fixups()`: cherry-pick used the new (missing) `fdt_fixup_reserved(fdt)` form. Resolution: kept the existing two-call form and added the new `k3_falcon_fdt_fixup(fdt)` invocation. Final stat matches original commit exactly (`3 files changed, 84 insertions(+), 78 deletions(-)`). Fix-up note appended to the commit message.
+
+### Concerning deltas
+None. All other cherry-picks have stats identical to the originals.
+
+Branch is ready for pushing (no merge performed).
+
+---
+
+### Review: 2026-05-02
+
+Branch: cherry-30e1733297a
+
+Comments addressed:
+
+
+### Conversation log
+Now let me run the rebase. Let me save these stats first for comparison.
+
+The conflict is in `.pickman-history`. Both sides added new sections after the same point. The resolution is to keep the HEAD side (cherry-8019e3b35df entry already in ci/master) followed by our new cherry-30e1733297a entry.
+
+Now let me verify each commit's delta is unchanged.
+
+All deltas match exactly. The pickman commit's delta is also OK because the conflict resolution preserved both the existing HEAD section and our new section, resulting in the same insertion count (60 lines).
+
+Wait — let me verify the pickman commit's stat actually accounts for the 60 lines we added on top of the existing sections.
+
+Both 60-line insertions match perfectly. Now let me run the build verification.
+
+Build successful. Now let me push to the remote.
+
+## Rebase Report — MR !1029 (cherry-30e1733297a)
+
+**Local branch created:** `cherry-30e1733297a-v2`
+**Pushed to:** `ci/cherry-30e1733297a` (force update: `1bac37e3e1b...f27c4462589`)
+**Build result:** OK (sandbox built cleanly in ~10s)
+
+### What happened
+
+1. Rebased onto current `ci/master` tip `9f257a35687` (`Merge branch 'cherry-8019e3b35df' into 'master'`). Six new commits had landed on `ci/master` since the original branch base — the cherry-8019e3b35df series (virtio rng buffer fixes) plus its pickman/review entries.
+
+2. **Single conflict** in `.pickman-history` on the final commit (`bf52480ec66 pickman: Record cherry-pick of 11 commits from us/next`):
+   - `ci/master` had appended a new `## 2026-05-02: us/next / Branch: cherry-8019e3b35df` section in the same place where our branch wanted to append `## 2026-05-02: us/next / Branch: cherry-30e1733297a`.
+   - **Resolution:** kept both sections in chronological order (cherry-8019e3b35df first since it was already merged to master, then cherry-30e1733297a after a `---` separator). No content lost from either side.
+   - The pickman commit's stat post-resolution remains exactly `1 file changed, 60 insertions(+)` — identical to the original.
+
+3. **All 12 deltas verified identical** to the originals via `git show --stat`. No concerning changes.
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (now at `9f257a35687`). The only conflict was in `.pickman-history`, where the cherry-8019e3b35df series had landed on master in the same `## 2026-05-02: us/next` slot — resolved by appending both entries in order (8019e3b35df first, then 30e1733297a). All 12 commit deltas verified identical to pre-rebase. Sandbox build passes. Force-pushed; pipeline should retrigger automatically.
+>
+> Note: the previously reported `[FAILED]` empty commit (`arm: mach-k3: use Kconfig options for ATF/OPTEE size`) is unchanged — its prerequisite (`6c8dee07c34` "ti: k3: abstract common fdt api for reserved mem fixups") is still not present on master, so the commit remains an empty placeholder per the original analysis.
+
+---
+
