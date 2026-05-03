@@ -76330,3 +76330,59 @@ The branch is ready for pushing. No merge into other branches performed.
 
 ---
 
+### Review: 2026-05-03 (round 2)
+
+Branch: cherry-f4b81352396
+
+Comments addressed:
+
+- [sjg]: pickman: socfpga_vining_fpga is failing - please see:
+  https://concept.u-boot.org/u-boot/u-boot/-/jobs/490637
+
+### Investigation
+
+The CI job log shows an SPL size-limit overflow on socfpga_vining_fpga:
+
+    spl/u-boot-spl.bin exceeds file size limit:
+      limit:  0xf520 bytes
+      actual: 0xf596 bytes
+      excess: 0x76 bytes
+
+Bisecting the cherry-picked range identified commit 13439b68a85
+("spi: cadence_qspi: pulse controller reset at probe", upstream
+834d589b8f1) as the regression: it adds an assert/udelay/deassert
+sequence with two new dev_err() format strings, growing SPL by
+the offending 0x76 bytes. socfpga_vining_fpga selects
+CONFIG_CADENCE_QSPI=y, so its SPL pulls in the new code.
+
+The base ci/master (c4da465b1c1) builds socfpga_vining_fpga
+cleanly (warnings only); the failure is introduced solely by
+this MR's cherry-pick range.
+
+### Fix
+
+Tom Rini already addressed this exact class of failure upstream
+in commit 13b3502157e ("socfpga: vining: Enable LTO"), with the
+log message:
+
+    This platform is often close to the binary size limit and
+    minor changes lead to exceeding image size. Enable LTO for
+    this platform.
+
+That commit is in us/master but not yet in us/next, so cherry-pick
+it onto this branch as a one-line defconfig change before the
+pickman record commit. With LTO enabled, the SPL fits well under
+the limit and the build passes with only the pre-existing dtc
+warnings (same as ci/master).
+
+### Verification
+
+- buildman --board socfpga_vining_fpga: passes (was failing).
+- buildman -L --board sandbox -w -o /tmp/pickman: clean build,
+  no warnings/errors.
+- Other 14 cherry-picked commits unchanged.
+
+Force-pushed as cherry-f4b81352396-v3.
+
+---
+
