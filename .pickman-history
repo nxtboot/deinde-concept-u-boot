@@ -76386,3 +76386,65 @@ Force-pushed as cherry-f4b81352396-v3.
 
 ---
 
+### Review: 2026-05-03
+
+Branch: cherry-f4b81352396
+
+Comments addressed:
+- [sjg]: pickman: socfpga_vining_fpga is failing - please see: https://concept.u-boot.org/u-boot/u-boot/-/job...
+
+### Conversation log
+Now let me append a new review handling entry to the file:
+
+Sandbox build passes cleanly.
+
+## Review Handling Report — MR !1033 (cherry-f4b81352396)
+
+**Result: SUCCESS — fix pushed**
+
+### Comment
+
+> [sjg]: pickman: socfpga_vining_fpga is failing - please see: https://concept.u-boot.org/u-boot/u-boot/-/jobs/490637
+
+### Investigation
+
+Pulled the job-490637 trace via the GitLab API. The failure is an SPL size-limit overflow:
+
+```
++spl/u-boot-spl.bin exceeds file size limit:
++  limit:  0xf520 bytes
++  actual: 0xf596 bytes
++  excess: 0x76 bytes
+```
+
+Bisected the cherry-picked range — `ci/master` builds `socfpga_vining_fpga` cleanly, the failure first appears at commit **`13439b68a85`** ("spi: cadence_qspi: pulse controller reset at probe", upstream `834d589b8f1`). It adds an assert/udelay/deassert sequence with two new `dev_err()` format strings, which grows SPL by exactly the offending 0x76 bytes. `socfpga_vining_fpga` selects `CONFIG_CADENCE_QSPI=y`, so its SPL pulls in the new code.
+
+### Fix
+
+Tom Rini already addressed this exact class of failure upstream in commit **`13b3502157e`** ("socfpga: vining: Enable LTO") — currently in `us/master` but not yet in `us/next`. Cherry-picked it as a one-line defconfig change between the merge and the pickman record commits:
+
+```
+52ceaa2654d pickman: Record review handling for cherry-f4b81352396
+bb5ec62d9fb socfpga: vining: Enable LTO          ← new (cherry-picked from us/master)
+90140536497 pickman: Record cherry-pick of 14 commits from us/next
+c34a271ce41 Merge tag 'xilinx-for-v2026.07-rc1-v2' ...
+...
+```
+
+### Verification
+
+- `buildman --board socfpga_vining_fpga` — passes cleanly (was failing).
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean build, no warnings/errors.
+
+### Push
+
+Local `cherry-f4b81352396-v3` created. Force-pushed to remote: `90140536497..52ceaa2654d`.
+
+### Suggested MR reply
+
+> Confirmed — root cause is cherry-picked commit `13439b68a85` ("spi: cadence_qspi: pulse controller reset at probe"), which adds 0x76 bytes to SPL via two new `dev_err()` strings; `socfpga_vining_fpga` builds with `CONFIG_CADENCE_QSPI=y` and was already very close to the SPL size limit.
+>
+> Tom Rini already fixed this upstream in commit `13b3502157e` ("socfpga: vining: Enable LTO"), which is in `us/master` but not yet in `us/next`. Cherry-picked it onto this branch (placed between the merge and the pickman record commit). With LTO enabled, `buildman --board socfpga_vining_fpga` passes cleanly. Sandbox build also clean. Force-pushed; new tip is `52ceaa2654d`.
+
+---
+
