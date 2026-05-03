@@ -76087,3 +76087,44 @@ Build successful. Now let me push to the remote.
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-1c821b592f1
+
+Commits:
+- 1c821b592f1 tools: gitignore: Add mkfwumdata to the git ignore file
+- 876fc8df120 tools: Reorganize mkfwumdata tool into fwumdata_src directory
+- bcae1381f88 tools: mkfwumdata: Improve error message specificity
+- e3757929646 tools: mkfwumdata: Add bank count validation for FWU metadata v2
+- 02673659e81 tools: Add support for fwumdata tool
+- 44a1e17b2a4 tools: mkfwumdata: Remove dependency on fwu_mdata.h header
+- 5673d25fd82 Merge tag 'fwu-next-26032026' of https://source.denx.de/u-boot/custodians/u-boot-tpm into next
+
+### Conversation log
+All 7 commits are present. Now run final build verification.
+
+## Cherry-pick Complete
+
+All 7 commits successfully cherry-picked onto branch `cherry-1c821b592f1` (based on `ci/master`):
+
+```
+7ed4dcc90fe Merge tag 'fwu-next-26032026' (empty merge commit, --allow-empty)
+d7a1f2da574 tools: mkfwumdata: Remove dependency on fwu_mdata.h header
+cf2525673e8 tools: Add support for fwumdata tool
+341352807ec tools: mkfwumdata: Add bank count validation for FWU metadata v2
+0ca359f694d tools: mkfwumdata: Improve error message specificity
+935f14a402a tools: Reorganize mkfwumdata tool into fwumdata_src directory
+393098b899a tools: gitignore: Add mkfwumdata to the git ignore file
+```
+
+### Status Report
+
+- **Build result**: OK (sandbox built successfully after every cherry-pick and on final verification)
+- **Fix-ups**: None required for content. The merge commit (5673d25fd82) became empty after cherry-pick (its file changes were already integrated by the prior 6 commits), so it was committed with `--allow-empty` and the cherry-pick reference (`(cherry picked from commit ...)`) was added via amend to preserve provenance.
+- **Concerning deltas**: None. All 6 non-merge commits matched their originals exactly (same files, same line counts).
+- **Auto-merges**: `MAINTAINERS` and `tools/Makefile` were auto-merged cleanly during the reorganize and add-fwumdata commits, and `MAINTAINERS` + `tools/Makefile` again for the merge commit (resulting in no net diff).
+
+The branch is ready for pushing.
+
+---
+
