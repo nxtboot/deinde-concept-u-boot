@@ -76687,3 +76687,45 @@ Created local branch `cherry-eeca6ed86ff-fix1` at the same commit as `cherry-eec
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-52d84fccfd7
+
+Commits:
+- 52d84fccfd7 clk: mediatek: mt7622: fix infracfg and pericfg clock operations
+- 33756fd4a81 Merge tag 'mediatek-for-master-2026-03-17' of https://source.denx.de/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+Delta matches exactly. Now build test.
+
+Build passes. Now the merge commit.
+
+Empty merge commit (expected). Now run the build test.
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-52d84fccfd7` (based on `ci/master`)
+
+**Cherry-picks completed:** 2/2
+
+1. **52d84fccfd7** → `155143d7c26` — `clk: mediatek: mt7622: fix infracfg and pericfg clock operations`
+   - Delta: identical (1 file, 4 insertions, 4 deletions — matches original exactly)
+   - Build: ok
+
+2. **33756fd4a81** → `9d88ce8c0b8` — `Merge tag 'mediatek-for-master-2026-03-17' ...`
+   - Empty merge commit (expected — content of the merge was already applied via the previous cherry-pick); preserved with `--allow-empty`
+   - Build: ok
+
+**Build result:** ok — `buildman -L --board sandbox` completed cleanly after each cherry-pick and at the end.
+
+**Fix-ups:**
+- The merge commit cherry-pick became empty due to conflict resolution. I created the commit with `--allow-empty` and amended the message to add the `(cherry picked from commit 33756fd4a8157d1d921a703c4fa172f6d2eadbd2)` reference (since `git cherry-pick -x` doesn't add it automatically when you fall back to `git commit --allow-empty`).
+
+**Concerning deltas:** none.
+
+The branch is ready for pushing.
+
+---
+
