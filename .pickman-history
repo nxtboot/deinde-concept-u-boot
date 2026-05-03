@@ -76448,3 +76448,90 @@ Local `cherry-f4b81352396-v3` created. Force-pushed to remote: `90140536497..52c
 
 ---
 
+## 2026-05-03: us/next
+
+Branch: cherry-97979e894ba
+
+Commits:
+- 97979e894ba pci: imx: Properly support upstream Linux reset-gpios property
+- 77801f4b644 board: phytec: phycore-imx91-93: Add phyCORE-i.MX91 support
+- de27ed88b32 env: tq: add shareable environment settings
+- 6c591676a93 configs: tqma6.h: remove unused define for PHYS_SDRAM_SIZE
+- b08dc109dad configs: tqma6.h: remove unused define for PFUZE100_I2C
+- 8ff44f6f615 board: tqma6: change to use shareable tq environment
+- 46de8729952 configs: tqma6: change to include tqma6.h in baseboard headers
+- b162ec2a08b board/tq: Add common baseboard API
+- c7626d61a5a board: tqma6: use common TQ baseboard
+- e9b935a8ade board/tq: Add common mmc API
+- af6b4134359 board: tqma6: use common TQ mmc function
+- 1e7250ce94d board: tqma6: update eMMC DSR handling
+- c42db5019df crypto: fsl: Select ARCH_MISC_INIT for CAAM driver
+- 7917c2e3560 spi: fsl_espi: fix din offset
+- 94c660cfd33 engicam: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 79f8f60cc66 osm-s-mx93: Drop unnecessary BOARD_EARLY_INIT_F usage
+- a88d6525f6e imx8ulp_evk: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 6e209fc6e74 imx93_frdm: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 775431adbd5 mx6sllevk: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 4efab3ab4fe mx6sxsabreauto: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 91ba8ab13f0 mx6ullevk: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 55ac1191b30 o4-imx6ull-nano: Drop unnecessary BOARD_EARLY_INIT_F usage
+- bc7a0494a7b librem5: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 417f6585670 arm: dts: imx95-toradex-smarc: migrate to OF_UPSTREAM
+- bf7dbb75fe4 configs: toradex-smarc-imx95: Add gpio-hog support
+- d515edf2ad0 imx8mp: phyboard-pollux-rdk: Convert to DM_PMIC
+- b1e8c95e2bf imx8mp: verdin: Convert to DM_PMIC
+- c93520a4ba3 imx8mp: libra-fpsc: Convert to DM_PMIC
+- b94d20f66e1 imx8mp: icore-edimm2.2: Convert to DM_PMIC
+- 245d4a60ded arm64: imx8mp: Fold inline ECC into spl.c on DH i.MX8MP DHCOM SoM
+- de3955d8bf1 arm64: imx8mp: Deduplicate DRAM size tables on DH i.MX8MP DHCOM SoM
+- 848f845916a arm64: imx8mp: Deduplicate 2G and 4G 2r DRAM timings on DH i.MX8MP DHCOM SoM
+- 90f3d2a89f5 arm64: imx8mp: Add 4G 1r DRAM timings on DH i.MX8MP DHCOM SoM
+- 9152da7313d MAINTAINERS: update entry for TQ-Systems
+- fbfa30e5d69 tq: add TQ board MAINTAINERS
+- 4d612ec4354 tqma6: remove board MAINTAINERS
+- ff7039032b7 env: flash: add catch-all for unrecognized flags in env_flash_init()
+- 39214eb49b6 serial: pl011: Remove legacy serial driver options
+- 91c27b21b10 arm: relocate: Make data-only relocation mode non-user-configurable
+- d1cd6733917 Merge tag 'u-boot-imx-next-20260402' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+Good, the deltas match. Let me continue with the remaining commits.
+
+The old MAINTAINERS file should be deleted (the original commit deletes it as it's renamed). Let me resolve this:
+
+Let me amend with a note about the fix-up:
+
+Stats match closely (385 vs 386 deletions). Continuing:
+
+Now the merge commit:
+
+All 40 commits are present. Now run the build:
+
+Build successful — no errors to report. Let me verify the cherry-pick of the second (conflicting) commit again to ensure correctness:
+
+All done. Final report:
+
+## Cherry-pick Summary
+
+**Branch**: `cherry-97979e894ba` (based on `ci/master`)
+**Result**: All 40 commits successfully cherry-picked
+
+### Build Status
+✅ **PASSED**: `buildman -L --board sandbox -w -o /tmp/pickman` completed with no errors to report.
+
+### Fix-ups Applied
+1. **Commit `77801f4b644` (board: phytec: phycore-imx91-93: Add phyCORE-i.MX91 support)** — Conflict resolved:
+   - Conflict: `board/phytec/phycore_imx93/MAINTAINERS` was deleted in the original commit (file was renamed to the new `phycore_imx91_93/` directory) but had been modified in HEAD (an `L:` line was previously removed via an unrelated edit on `ci/master`).
+   - Resolution: Deleted the old MAINTAINERS file (`git rm`), aligning with the original commit's intent (the renamed-to file at `board/phytec/phycore_imx91_93/MAINTAINERS` is created by the same commit).
+   - Amended commit message with one-line note: `[Fix-up: removed old MAINTAINERS file (modify/delete conflict; HEAD modified upstream)]`
+   - Stats vs original: 25 files changed, 2637 insertions, 385 deletions (vs original 386 deletions — 1-line difference from the prior HEAD edit).
+
+2. **Merge commit `d1cd6733917`** — Empty after conflict resolution (all changes already present from individual cherry-picks). Preserved using `git commit --allow-empty` and amended to add `(cherry picked from commit d1cd6733917...)` line.
+
+### Concerning Deltas
+None — all other 38 commits applied with stats matching their originals exactly.
+
+The branch is left ready for pushing. No merging back to other branches was performed.
+
+---
+
