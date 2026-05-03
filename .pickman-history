@@ -76608,3 +76608,36 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-eeca6ed86ff
+
+Commits:
+- eeca6ed86ff image-fit: Fix mismatched parameter type in comment
+- a5533e7417b MAINTAINERS: rename LED into PWM LED
+- b28b77caacc MAINTAINERS: make PWM LED orphan
+- e6e3383f5b5 Merge patch series "update MAINTAINERS for PWM LED"
+
+### Conversation log
+Build OK. Now cherry-pick the next commit.
+
+All cherry-picks completed successfully. Final status:
+
+**Branch:** `cherry-eeca6ed86ff` (based on `ci/master`)
+
+**Cherry-picked commits (4/4):**
+1. `9af7b2500b5` — image-fit: Fix mismatched parameter type in comment (1 file, 2/2)
+2. `76a921eb2e8` — MAINTAINERS: rename LED into PWM LED (1 file, 6/6)
+3. `4d871a044c4` — MAINTAINERS: make PWM LED orphan (1 file, 1/2)
+4. `ef178785ef9` — Merge patch series "update MAINTAINERS for PWM LED" (empty merge, preserved with --allow-empty)
+
+**Build result:** OK (sandbox built cleanly after each cherry-pick and at the end)
+
+**Deltas:** All non-merge commits matched the originals exactly (same files, same insertion/deletion counts). The merge commit became empty in the linear cherry-pick (expected — the changes from the underlying commits are already applied), and was preserved with `--allow-empty` to maintain history.
+
+**Fix-ups:** None required. No conflicts encountered.
+
+Branch is ready for pushing.
+
+---
+
