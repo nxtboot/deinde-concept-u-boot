@@ -76271,3 +76271,62 @@ No code changes warranted. Force-pushing the same code as -v2 to trigger a fresh
 Force-push to trigger a fresh CI run. The two previously failed jobs are sjg-lab hardware-lab tests (one a board-connection drop before any test ran, one a distro-boot timeout under QEMU) and are unrelated to the squashfs/SPL changes on the branch.
 
 ---
+
+## 2026-05-03: us/next
+
+Branch: cherry-f4b81352396
+
+Commits:
+- f4b81352396 i2c: muxes: pca954x: Add support for pca9848
+- c82aedd1859 xilinx: Enable GPIO delay driver on Versal platforms
+- 79a647c6b7d spi: cadence_qspi: Disable the DAC mode in indirect read
+- 1dcaeffc9ca arm64: versal2: Enable GIC600 support
+- 834d589b8f1 spi: cadence_qspi: pulse controller reset at probe
+- 3371da09c57 net: zynq_gem: Disable broadcast packets
+- 0d96ce69d40 net: zynq_gem: clear TXSR transfer complete
+- 6ead1d0b0fe net: zynq_gem: Add support for dma-coherent flag
+- 07de5c1e019 arm64: versal2: Fix UFS boot command sequence
+- c54a0a8ed90 timer: Correct Kconfig entry for XILINX_TIMER
+- 5b55dbbf3e5 microblaze: Rework TARGET_MICROBLAZE_GENERIC implementation
+- 5d771fc6844 board/BuR/zynq: don't select non-existent SPL_BINMAN_FDT
+- fcc50761f3d cpu: microblaze: Fix unmet direct dependencies for XILINX_MICROBLAZE0_PVR
+- 6334f296787 Merge tag 'xilinx-for-v2026.07-rc1-v2' of https://source.denx.de/u-boot/custodians/u-boot-microblaze into next
+
+### Conversation log
+All 14 commits are present. Let me run the final build verification.
+
+## Cherry-pick Status Report
+
+**Branch:** `cherry-f4b81352396` (based on `ci/master`)
+
+**All 14 commits cherry-picked successfully:**
+
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| f98020c85e1 | f4b81352396 | i2c: muxes: pca954x: Add support for pca9848 |
+| ea4f71a91c8 | c82aedd1859 | xilinx: Enable GPIO delay driver on Versal platforms |
+| 06d78922ff9 | 79a647c6b7d | spi: cadence_qspi: Disable the DAC mode in indirect read |
+| 9d5f7b788a7 | 1dcaeffc9ca | arm64: versal2: Enable GIC600 support |
+| 3549f2123c8 | 834d589b8f1 | spi: cadence_qspi: pulse controller reset at probe |
+| 3b566bd427f | 3371da09c57 | net: zynq_gem: Disable broadcast packets |
+| 04220573410 | 0d96ce69d40 | net: zynq_gem: clear TXSR transfer complete |
+| 9a70f77da29 | 6ead1d0b0fe | net: zynq_gem: Add support for dma-coherent flag |
+| 13ffc1bf669 | 07de5c1e019 | arm64: versal2: Fix UFS boot command sequence |
+| 9ac49e910ba | c54a0a8ed90 | timer: Correct Kconfig entry for XILINX_TIMER |
+| eda7f134c44 | 5b55dbbf3e5 | microblaze: Rework TARGET_MICROBLAZE_GENERIC implementation |
+| 18db8058242 | 5d771fc6844 | board/BuR/zynq: don't select non-existent SPL_BINMAN_FDT |
+| 51841307fd0 | fcc50761f3d | cpu: microblaze: Fix unmet direct dependencies for XILINX_MICROBLAZE0_PVR |
+| d5f94a5e3ad | 6334f296787 | Merge tag 'xilinx-for-v2026.07-rc1-v2' (empty merge commit) |
+
+**Build result:** OK — sandbox builds cleanly after each cherry-pick and the final build.
+
+**Deltas:** All 13 regular commits had identical file lists and line counts vs. the originals (no concerning deltas).
+
+**Fix-ups:** None required — only one minor adjustment was needed automatically:
+- `c82aedd1859` triggered an auto-merge in `configs/amd_versal2_virt_defconfig`, which Git resolved cleanly. Result matched the original (2 files, +2 lines).
+- The merge commit `6334f296787` resolved to empty (as expected — its individual children were applied above), and was preserved with `--allow-empty` per instructions.
+
+The branch is ready for pushing. No merge into other branches performed.
+
+---
+
