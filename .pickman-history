@@ -76128,3 +76128,60 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-02 (attempt 1)
+
+Branch: cherry-1c821b592f1
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+- vf2 (sjg-lab)
+
+### Conversation log
+I have enough info to diagnose. Let me verify the branch contents to confirm these failures are unrelated to the cherry-picked commits.
+
+The branch only modifies the host-side `mkfwumdata` tool, documentation, MAINTAINERS, and `.pickman-history`. None of these touch board configs, MMC/SDMMC drivers, EFI loader, kernel boot path, or test infrastructure.
+
+Let me confirm the failing tests are unrelated to mkfwumdata:
+
+Confirmed. None of the cherry-picked commits touch test_distro.py, MMC drivers, rockchip arch code, or any board configs for the failing platforms.
+
+## Diagnosis: All three failures are infrastructure/lab issues, not commit bugs
+
+The branch `cherry-1c821b592f1` contains 7 commits — all confined to the host-side `mkfwumdata` tool plus its docs/MAINTAINERS/gitignore. Files touched:
+
+```
+.pickman-history, MAINTAINERS, doc/develop/uefi/fwu_updates.rst,
+doc/fwumdata.1, tools/.gitignore, tools/Kconfig, tools/Makefile,
+tools/fwumdata_src/* (relocated mkfwumdata.c + new headers/Kconfig)
+```
+
+This is a build-tool that runs on the developer host. It cannot affect any board's runtime behaviour, MMC driver, EFI loader, or Linux boot.
+
+### Job 489170 — rockpro64
+SPL boot loop, repeating:
+```
+mmc_load_image_raw_sector: mmc block read error
+Card did not respond to voltage select! : -110
+spl: mmc init failed with error: -95
+```
+followed by `Lab failure: Marking connection bad`. Hardware/SD-card/lab issue.
+
+### Job 489168 — vf2
+SPL stage failure:
+```
+dwmci_s: Response Timeout.
+BOOT fail,Error is 0xffffffff
+```
+followed by `Lab failure: Marking connection bad`. Hardware/dwmmc/lab issue.
+
+### Job 489175 — efi-x86_64-uboot-iso
+U-Boot boots fine, finds the BLS bootflow on the ISO, loads `/casper/vmlinuz` and `/casper/initrd`, hands off to the kernel. The kernel itself reports `Initramfs unpacking failed: no cpio magic`, then the test eventually times out waiting for `Started gdm.service`. This is a kernel/initramfs/timing issue downstream of U-Boot — and `mkfwumdata` host-tool changes cannot affect it.
+
+### Action taken
+None — per the instructions, infrastructure/transient failures should be reported without changes. The branch is left as-is on `cherry-1c821b592f1`. I did not create `cherry-1c821b592f1-fix1` because there is no fix to apply; the cherry-picked series builds and is unrelated to the failures.
+
+Recommend retry of the pipeline after the lab is healthy.
+
+---
+
