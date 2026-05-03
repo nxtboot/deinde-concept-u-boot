@@ -1737,6 +1737,15 @@ config CMD_PART_FIND
 	  Find a partition with a given type GUID and set the target_part
 	  environment variable if located.
 
+config CMD_PART_DUPCHECK
+	bool "part dupcheck"
+	depends on CMD_PART && BLK
+	help
+	  Adds the 'part dupcheck' subcommand, which scans all block devices
+	  and reports any duplicate partition UUIDs (PARTUUIDs) or partition
+	  labels (PARTLABELs). Returns failure if any duplicates are found,
+	  making it suitable for use in boot scripts.
+
 config CMD_PCI
 	bool "pci - Access PCI devices"
 	help
@@ -2245,6 +2254,7 @@ endif  # if NET
 config CMD_DHCP
 	bool "dhcp"
 	select PROT_DHCP_LWIP if NET_LWIP
+	select CMD_BOOTP if NET
 	help
 	  Boot image via network using DHCP/TFTP protocol
 
@@ -2279,6 +2289,7 @@ config CMD_MDIO
 
 config CMD_NFS
 	bool "nfs"
+	select PROT_UDP_LWIP if NET_LWIP
 	help
 	  Boot image via network using NFS protocol.
 
@@ -2363,7 +2374,7 @@ config WGET_BUILTIN_CACERT_PATH
 config CMD_PXE
 	bool "pxe"
 	select PXE_UTILS
-	imply CMD_TFTPBOOT
+	select CMD_TFTPBOOT
 	help
 	  Boot image via network using PXE protocol
 
