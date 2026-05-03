@@ -75938,3 +75938,45 @@ There is no plausible mechanism by which a virtio RNG buffer-size fix could pert
 
 ---
 
+## 2026-05-02: us/next
+
+Branch: cherry-b02b0a0c6cb
+
+Commits:
+- b02b0a0c6cb test/py: gpio: remove unused imports
+- 908db6c647c test/py: gpio: removing trailing semicolons
+- 0f101dac8fb test/py: gpio: allow omitting gpio_op_pin
+- 8813d74163e Merge patch series "test/py: gpio: cleanups and improvement"
+
+### Conversation log
+Deltas match. Let me run the build test.
+
+Build passed. Now cherry-pick the next commit.
+
+Now the merge commit.
+
+All 4 commits present. Now run the final build.
+
+## Final Status Report
+
+**All 4 commits cherry-picked successfully on branch `cherry-b02b0a0c6cb`:**
+
+| Original Hash | New Hash | Subject |
+|---|---|---|
+| b02b0a0c6cb | 4c91fc9057a | test/py: gpio: remove unused imports |
+| 908db6c647c | 99a7fec54ad | test/py: gpio: removing trailing semicolons |
+| 0f101dac8fb | 25dd943a263 | test/py: gpio: allow omitting gpio_op_pin |
+| 8813d74163e | 1a447315c13 | Merge patch series "test/py: gpio: cleanups and improvement" |
+
+**Build result:** OK — sandbox build completed without warnings or errors (final build run).
+
+**Deltas:** All cherry-picks produced identical file/line counts to their originals (2 deletions, 11+/11-, 15+/3-). No concerning deltas.
+
+**Fix-ups:** None needed. The merge commit was empty (as expected, since the underlying patches were already applied) and was committed with `--allow-empty` to preserve commit history.
+
+**Conflicts:** None.
+
+The branch `cherry-b02b0a0c6cb` is ready for pushing. It has not been merged anywhere.
+
+---
+
