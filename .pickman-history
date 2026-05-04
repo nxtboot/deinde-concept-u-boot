@@ -76687,3 +76687,408 @@ Created local branch `cherry-eeca6ed86ff-fix1` at the same commit as `cherry-eec
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-52d84fccfd7
+
+Commits:
+- 52d84fccfd7 clk: mediatek: mt7622: fix infracfg and pericfg clock operations
+- 33756fd4a81 Merge tag 'mediatek-for-master-2026-03-17' of https://source.denx.de/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+Delta matches exactly. Now build test.
+
+Build passes. Now the merge commit.
+
+Empty merge commit (expected). Now run the build test.
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch:** `cherry-52d84fccfd7` (based on `ci/master`)
+
+**Cherry-picks completed:** 2/2
+
+1. **52d84fccfd7** → `155143d7c26` — `clk: mediatek: mt7622: fix infracfg and pericfg clock operations`
+   - Delta: identical (1 file, 4 insertions, 4 deletions — matches original exactly)
+   - Build: ok
+
+2. **33756fd4a81** → `9d88ce8c0b8` — `Merge tag 'mediatek-for-master-2026-03-17' ...`
+   - Empty merge commit (expected — content of the merge was already applied via the previous cherry-pick); preserved with `--allow-empty`
+   - Build: ok
+
+**Build result:** ok — `buildman -L --board sandbox` completed cleanly after each cherry-pick and at the end.
+
+**Fix-ups:**
+- The merge commit cherry-pick became empty due to conflict resolution. I created the commit with `--allow-empty` and amended the message to add the `(cherry picked from commit 33756fd4a8157d1d921a703c4fa172f6d2eadbd2)` reference (since `git cherry-pick -x` doesn't add it automatically when you fall back to `git commit --allow-empty`).
+
+**Concerning deltas:** none.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-05-03 (attempt 1)
+
+Branch: cherry-52d84fccfd7
+
+Failed jobs:
+- bbb (sjg-lab)
+
+### Conversation log
+This failure looks like an infrastructure issue, not a code problem. Let me verify by checking the branch and confirming.
+
+This is an infrastructure issue, not a code problem. Reporting without changes.
+
+## Diagnosis
+
+**Root cause: Infrastructure failure (lab reservation conflict) — not a code issue.**
+
+The `bbb` job (sjg-lab stage) failed in the test infrastructure setup phase, before any test ran:
+
+```
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+```
+
+The labgrid "place" (physical BeagleBone Black board) was already reserved by user `okaro` when the runner tried to acquire it. Pytest's `conftest.py:194` (`get_details`) raised because `u-boot-test-getrole bbb --configure` returned exit 1 — the board could not be configured for use by the runner.
+
+## Why this is unrelated to the branch
+
+The branch `cherry-52d84fccfd7` contains only:
+1. `155143d7c26` — `clk: mediatek: mt7622: fix infracfg and pericfg clock operations` (touches `drivers/clk/mediatek/clk-mt7622.c` only)
+2. `9d88ce8c0b8` — empty merge commit (cherry-picked with `--allow-empty`)
+3. `62a50a88e50` — pickman record commit
+
+None of these changes affect:
+- BeagleBone Black (TI AM335x) code
+- The U-Boot test framework / `conftest.py`
+- Labgrid configuration or `u-boot-test-getrole`
+
+The MediaTek MT7622 clock fix has zero overlap with BBB hardware. The failure occurred at the `pytest_configure` phase, before any U-Boot binary was even loaded onto the board.
+
+## Conclusion
+
+**No code change made.** This is a transient lab-reservation conflict (another user held `bbb`). The job should pass on retry once the place is released. No `cherry-52d84fccfd7-fix1` branch was created because there is nothing to fix in the source tree.
+
+Recommended action: re-run the `bbb` job once the lab place is free (or use `--kick` per the labgrid hint, if appropriate per local policy).
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) bbb.
+
+This failure looks like an infrastructure issue,...
+
+### Conversation log
+Let me look at the previous failed pipeline to understand what was fixed and check if the current pipeline shows the same issue:
+
+Let me check the actual log of the failed bbb job from pipeline 7508 to confirm the infra-issue diagnosis:
+
+The diagnosis from attempt 1 is confirmed by the actual log:
+
+```
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+```
+
+This is a labgrid place-reservation conflict — the BeagleBone Black board was held by another user (`okaro`) at the time `u-boot-test-getrole bbb --configure` ran. The branch only touches `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622), which has zero overlap with BBB hardware or the test framework.
+
+Let me confirm the current state — there's already a fresh pipeline running on the same SHA:
+
+Build passes. No code change is needed.
+
+## Report
+
+### Action taken: none (same diagnosis as attempt 1 — confirmed by job log)
+
+The review comment is the bot's auto-recorded "Pipeline fix (attempt 1)" report stating that bbb failed due to a labgrid lab-reservation conflict. I verified this by pulling the actual `bbb` job log from pipeline **7508**:
+
+```
+$ ${SRC}/test/py/test.py --role ${ROLE} ...
+INTERNALERROR> File ".../test/py/conftest.py", line 194, in get_details
+INTERNALERROR>   raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+$ U_BOOT_BOARD_IDENTITY="${ROLE}" u-boot-test-release || true
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+ERROR: Job failed: exit status 3
+```
+
+The failure is a transient lab reservation conflict — **place `bbb` was held by user `okaro` when the runner tried to acquire it.** The job aborted in `pytest_configure` before any U-Boot binary was loaded onto the board.
+
+### Why no code change
+
+The branch `cherry-52d84fccfd7` only touches `drivers/clk/mediatek/clk-mt7622.c` (a MediaTek MT7622 clock fix) plus an empty merge commit. Nothing on the branch overlaps:
+- BeagleBone Black / TI AM335x code
+- `test/py/conftest.py` or any test framework
+- Labgrid configuration or `u-boot-test-getrole`
+
+There is no source-tree change that can fix a labgrid place-reservation conflict.
+
+### Current state
+
+- **Pipeline 7508**: failed (bbb only, infra cause confirmed)
+- **Pipeline 7510**: running on the same SHA (`62a50a88e5`) — `bbb` job is queued (`created` state). This is an automatic re-run that will likely succeed once the place is released.
+- **Local branch**: `cherry-52d84fccfd7` is 1 commit ahead of `ci/cherry-52d84fccfd7` with only the attempt-1 `.pickman-history` record commit (`f6a7c31dc5d`); no code delta.
+- **Sandbox build**: passes (`buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 failed).
+
+### No -v2 branch pushed
+
+Per the task instructions ("If a comment is unclear or cannot be addressed, note this in your report"), I did not create `cherry-52d84fccfd7-v2` or force-push. There is no source-tree change to put on it; pushing only a `.pickman-history` record commit would trigger yet another redundant pipeline without addressing the underlying transient lab issue.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 2): no code change — same infrastructure issue as attempt 1.**
+>
+> Re-checked the `bbb` failure log from pipeline 7508. Same root cause as attempt 1: `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)`. The runner's `u-boot-test-getrole bbb --configure` call returned exit 1 because the BeagleBone Black labgrid place was held by another user.
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622 clock fix). It cannot affect BBB hardware, the test framework, or labgrid reservations.
+>
+> Pipeline 7510 is already running on the same SHA — the `bbb` job is queued and will retry once the place is free. Sandbox build still passes locally. **No code change made; no -v2 branch pushed.** Recommended action: let pipeline 7510 complete, or use `--kick` per the labgrid hint if local policy allows.
+
+---
+
+### Pipeline fix: 2026-05-03 (attempt 2)
+
+Branch: cherry-52d84fccfd7
+
+Failed jobs:
+- bbb (sjg-lab)
+
+### Conversation log
+This is the same infrastructure failure as attempts 1 and 2. Let me verify the diagnosis and confirm the source tree is clean.
+
+## Report
+
+### Diagnosis: Infrastructure failure (same as attempts 1 and 2) — no code change made
+
+**Root cause:** Labgrid lab-reservation conflict. The `bbb` job (sjg-lab stage) failed in `pytest_configure`, before any test or U-Boot binary ran:
+
+```
+INTERNALERROR>   File ".../test/py/conftest.py", line 194, in get_details
+INTERNALERROR>     raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+$ U_BOOT_BOARD_IDENTITY="${ROLE}" u-boot-test-release || true
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+```
+
+The BeagleBone Black labgrid place was held by user `okaro` when the runner tried to acquire it. This is identical to the failure observed in attempts 1 and 2.
+
+### Why this cannot be fixed in the source tree
+
+Branch `cherry-52d84fccfd7` only changes:
+- `drivers/clk/mediatek/clk-mt7622.c` — MediaTek MT7622 clock fix (commit `155143d7c26`)
+- `9d88ce8c0b8` — empty merge commit (`--allow-empty`)
+- `62a50a88e50`, `f6a7c31dc5d`, `058b24a9fb1` — pickman record commits (touch only `.pickman-history`)
+
+`git diff ci/master..HEAD --stat` confirms only `.pickman-history` and `drivers/clk/mediatek/clk-mt7622.c` are touched. Nothing on the branch overlaps:
+- BeagleBone Black / TI AM335x code
+- `test/py/conftest.py` or any test framework
+- Labgrid configuration or `u-boot-test-getrole`
+
+The MediaTek MT7622 clock fix has zero overlap with BBB hardware, and the failure occurred before any U-Boot binary was loaded onto the board.
+
+### Verification
+
+- Sandbox build still passes (`um build sandbox` → silent success)
+- Source tree is identical to attempt 1/2 state — same diagnosis applies
+
+### No branch created
+
+Per task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), I did **not** create `cherry-52d84fccfd7-fix2`. Creating a branch with no code delta would only spawn another redundant pipeline that would hit the same lab-reservation conflict.
+
+**Recommended action:** retry the `bbb` job once the labgrid place is released, or use `--kick` per the labgrid hint if local policy permits.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) bbb.
+
+This is the same infrastructure failure as attem...
+
+### Conversation log
+## Report
+
+### Diagnosis: Infrastructure failure (same as attempts 1 and 2) — no code change made
+
+I confirmed the diagnosis by pulling the actual `bbb` job log from the most recent failure (pipeline **7510**, job **492220**). It is byte-for-byte the same lab-reservation conflict:
+
+```
+INTERNALERROR>   File ".../test/py/conftest.py", line 194, in get_details
+INTERNALERROR>     raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+$ U_BOOT_BOARD_IDENTITY="${ROLE}" u-boot-test-release || true
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+ERROR: Job failed: exit status 3
+```
+
+The BeagleBone Black labgrid place was held by user `okaro` when the runner tried to acquire it. The job aborted in `pytest_configure` before any U-Boot binary was loaded onto the board. This is the third time in a row this exact scenario has occurred on this MR.
+
+### Why this cannot be fixed in the source tree
+
+`git diff ci/master..HEAD --stat`:
+```
+.pickman-history                  | 218 +++++++++++++++++++++
+drivers/clk/mediatek/clk-mt7622.c |   8 +-
+2 files changed, 222 insertions(+), 4 deletions(-)
+```
+
+The branch only changes:
+- `drivers/clk/mediatek/clk-mt7622.c` — MediaTek MT7622 clock fix
+- `.pickman-history` — pickman record commits
+
+Nothing on the branch overlaps with BeagleBone Black / TI AM335x code, `test/py/conftest.py`, or labgrid configuration. The MT7622 clock fix has zero overlap with BBB hardware.
+
+### Verification
+
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total built` (success)
+- **Current pipelines**: 7515 and 7516 are already running on the same SHA `058b24a9fb`. Pipeline 7516's `bbb` job is in `created` state — it will retry the place acquisition shortly.
+
+### No -v2 branch created, no force-push
+
+Following the precedent set by attempts 1 and 2, and per the task instruction *"If a comment is unclear or cannot be addressed, note this in your report"*: I did **not** create `cherry-52d84fccfd7-v2` or force-push. Force-pushing only a `.pickman-history` record commit (with no source-tree delta) would trigger yet another redundant pipeline that would hit the exact same lab-reservation conflict.
+
+Two pipelines (7515, 7516) are already running on the existing SHA — adding a third by force-pushing solves nothing.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 3): no code change — same infrastructure issue as attempts 1 and 2.**
+>
+> Re-checked the `bbb` failure log from pipeline 7510, job 492220. Same root cause: `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)`. The runner's `u-boot-test-getrole bbb --configure` returned exit 1 because the BeagleBone Black labgrid place was held by another user.
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622) and `.pickman-history`. It cannot affect BBB hardware, the test framework, or labgrid reservations. Sandbox build still passes locally.
+>
+> Pipelines 7515 and 7516 are already running on the same SHA `058b24a9fb`; the `bbb` job will retry place acquisition. **No code change made; no -v2 branch pushed** — pushing a record-only commit would just spawn another pipeline likely to hit the same transient conflict. Recommended: let pipeline 7516 complete, or use `--kick` per the labgrid hint if local policy allows.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) bbb, jerry.
+
+Both failures are infrastructure-related,...
+
+### Conversation log
+## Report
+
+### Diagnosis: Repeat of infrastructure issues from attempts 1–3 — no code change made
+
+The review comment is the bot's auto-recorded "Pipeline fix (attempt 3)" report, which itself documented the same diagnosis I (and the prior attempts) reached: the `bbb` and `jerry` job failures are transient lab/infrastructure issues, not code regressions on this branch.
+
+### Verification this turn
+
+**Branch state** (`git diff ci/master..HEAD --stat`):
+```
+.pickman-history                  | 283 ++++++++++++++++++++++++++++++++++++++
+drivers/clk/mediatek/clk-mt7622.c |   8 +-
+2 files changed, 287 insertions(+), 4 deletions(-)
+```
+
+The only code change on the branch is `drivers/clk/mediatek/clk-mt7622.c` — a MediaTek MT7622 clock fix. Everything else is `.pickman-history` record commits.
+
+**Sandbox build** (`buildman -L --board sandbox -w -o /tmp/pickman`):
+```
+Completed: 1 total built, duration 0:00:05, rate 0.20
+```
+Pass.
+
+### Why neither failure can be fixed in source
+
+- **`bbb`** (BeagleBone Black, TI AM335x) — failed with `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)` in `pytest_configure`, before any U-Boot binary was loaded. Lab-reservation conflict.
+- **`jerry`** (Chromebook Jerry, Rockchip RK3288) — failed with `Lab timeout: Marking connection bad` during the `rockchip-em100` flash bootstrap, before reset. Lab-link timeout.
+
+Neither hardware (TI AM335x, Rockchip RK3288) shares any code path with the MediaTek MT7622 clock driver this MR touches. Both failures occurred before any code from this branch was running on the device. There is nothing in the source tree that can fix a labgrid place reservation or an em100 lab-link timeout.
+
+### Branch state
+
+- **Local branch created:** `cherry-52d84fccfd7-v2` at the current SHA `6a172d073bd` (same as `cherry-52d84fccfd7`). No code delta vs. the existing remote branch.
+- **No force-push performed.** Pushing only a `.pickman-history` record commit (with no source-tree change) would just spawn another pipeline that would very likely hit the same transient lab issue, adding noise without fixing anything. This is consistent with the decision in attempts 1, 2, and 3.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 4): no code change — same infrastructure issues as attempts 1, 2, and 3.**
+>
+> The bbb failure is the recurring `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)` lab-reservation conflict (job aborts in `pytest_configure` before any U-Boot binary loads). The jerry failure is a `Lab timeout: Marking connection bad` during the `rockchip-em100` flash bootstrap (before the device runs any branch code).
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622 networking SoC) and `.pickman-history`. Nothing here can affect TI AM335x (bbb) or Rockchip RK3288 (jerry) hardware, the labgrid framework, or the em100 flash bootstrap path. Sandbox build still passes locally.
+>
+> **No code change, no -v2 force-push.** Force-pushing a record-only commit would only spawn another pipeline that will likely hit the same transient lab issues. Recommended action: free the `bbb` labgrid place (or use `--kick` per the labgrid hint if local policy allows) and let the lab link to jerry recover, then retry both jobs.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The sandbox build passes. The branch is in the same state as the previous 4 attempts — only the MediaTek MT7622 clock fix and `.pickman-history` records.
+
+## Report
+
+### The review comment is the bot's "give up" signal
+
+The new comment says:
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is the auto-fix bot explicitly **stopping** automated retries and handing the MR back to a human. It is not a request for another code change — it is a notification that the previous 3 attempts (all infrastructure-related lab failures on `bbb` and once on `jerry`) have exhausted the retry budget, and the bot will not try again on its own.
+
+### Verification this turn
+
+- **Working tree:** clean on `cherry-52d84fccfd7`
+- **Diff vs `ci/master`:** unchanged — `drivers/clk/mediatek/clk-mt7622.c` (8 lines) plus `.pickman-history` records only
+- **Sandbox build:** `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total built` (success)
+
+### Why no -v2 branch and no force-push
+
+Per the task instruction *"If a comment is unclear or cannot be addressed, note this in your report"*: this comment **cannot be addressed by a code change**. Every prior attempt (1, 2, 3) confirmed the failures are transient lab issues:
+
+| Attempt | Failed jobs | Root cause |
+|---|---|---|
+| 1 | bbb | `labgrid: place bbb is acquired by a different user (okaro/sglass)` |
+| 2 | bbb | Same labgrid place reservation conflict |
+| 3 | bbb, jerry | Same bbb conflict + jerry `Lab timeout: Marking connection bad` during em100 flash |
+
+The branch only changes a MediaTek MT7622 (networking SoC) clock driver. It cannot affect TI AM335x (`bbb`), Rockchip RK3288 (`jerry`), `test/py/conftest.py`, labgrid, `u-boot-test-getrole`, or `rockchip-em100`. Force-pushing another `.pickman-history`-only commit would just spawn another pipeline that is statistically very likely to hit the same transient lab issue, defeating the purpose of the bot's "manual intervention required" stop signal.
+
+### Recommended manual intervention (for the human reviewer)
+
+1. **Free the `bbb` labgrid place** (currently held by user `okaro`) — or use `--kick` per the labgrid hint, if local policy allows
+2. **Wait for the `jerry` lab link to recover** (the rockchip-em100 connection went bad)
+3. **Manually retry the `bbb` and `jerry` jobs** on the existing pipeline once the lab is healthy
+4. The MR can then be merged on its merits — the only code change (MT7622 clock fix, cherry-pick of `52d84fccfd7`) is unrelated to the failing boards
+
+### Suggested MR reply
+
+> **Acknowledging the bot's "retry limit reached" signal — manual intervention requested.**
+>
+> All 3 prior auto-fix attempts diagnosed the same root cause: transient lab infrastructure failures unrelated to this branch.
+>
+> - `bbb` (attempts 1, 2, 3): `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)` — labgrid place-reservation conflict, fails in `pytest_configure` before any U-Boot binary is loaded.
+> - `jerry` (attempt 3): `Lab timeout: Marking connection bad` during the `rockchip-em100` flash bootstrap — lab-link transient, fails before reset.
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622 networking SoC) and `.pickman-history`. It has zero overlap with TI AM335x (`bbb`), Rockchip RK3288 (`jerry`), the test framework, or labgrid. Sandbox build passes locally.
+>
+> **No code change to make. Requesting manual lab intervention:** free the `bbb` place (or `--kick` per local policy), wait for the jerry lab link to recover, then retry the two jobs on the existing pipeline. Branch SHA is unchanged.
+
+### Branch state for the user
+
+- Local branch: `cherry-52d84fccfd7` (HEAD `397cdbba8d5`) — unchanged
+- No `cherry-52d84fccfd7-v2` branch created — there is no code delta to put on it
+- No force-push performed — would only spawn another pipeline likely to hit the same transient lab issue and would contradict the bot's explicit "manual intervention required" signal
+
+---
+
