@@ -77173,3 +77173,63 @@ The branch `cherry-b04e4b19d4d` is left ready for pushing. No merges performed.
 
 ---
 
+### Pipeline fix: 2026-05-04 (attempt 1)
+
+Branch: cherry-b04e4b19d4d
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+
+### Conversation log
+Both failures are clearly infrastructure/lab issues unrelated to the cherry-picked commits. Let me confirm and report.
+
+Both failures are clearly infrastructure issues:
+
+1. **rockpro64**: SPL fails to read from MMC entirely (`mmc_load_image_raw_sector: mmc block read error`, `Card did not respond to voltage select`) before any U-Boot code from these commits could run. The board never reaches the U-Boot prompt, then labgrid times out. This is a lab-board SD/MMC hardware failure.
+
+2. **efi-x86_64-uboot-iso**: U-Boot does its job correctly — boots, scans, finds the bootflow, loads kernel + initrd, and jumps to the kernel. The **Linux kernel** then reports `Initramfs unpacking failed: invalid magic at start of compressed archive`, and the test times out waiting for `Started gdm.service`. This is a flaky distro/initrd boot issue, not a U-Boot regression.
+
+The cherry-picked commits in this branch only modify `arch/arm/mach-bcm283x/msg.c` (one `#include <errno.h>` line, RPi/BCM283x only) and `.pickman-history` (not built). Neither touches anything related to RK3399 (rockpro64) or x86_64 EFI/distro boot. There's no plausible mechanism for these changes to break either job.
+
+Per the task instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), I'm making no code changes.
+
+## Report
+
+**Result: No code changes made — both failures are infrastructure/lab issues, unrelated to the cherry-picked commits.**
+
+**Branch contents** (`cherry-b04e4b19d4d`, 3 cherry-picks + 1 history record):
+- `2021f70a2ba` arm: bcm: Include missing errno.h — adds `#include <errno.h>` to `arch/arm/mach-bcm283x/msg.c` (RPi/BCM283x only)
+- `4887f01018d` rpi: Update the naming for bcm2712 SoC RevD naming — empty (marked `[FAILED]`)
+- `bc85501bca2` Merge tag 'rpi-2026.04-rc5' — empty merge
+- `16b41b8d9d6` pickman history record
+
+Total functional change: 1 line in a BCM283x file. Nothing that can affect RK3399 (rockpro64) or x86_64 EFI builds.
+
+### Diagnosis
+
+**rockpro64 (job 494168):** TPL/SPL reaches the boot ROM and tries to load FIT from MMC, but every read fails:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Error: -38
+... Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+```
+The board never reaches U-Boot proper, so labgrid times out (`Timeout of 10 seconds exceeded during waiting for login`) and marks the connection bad. This is a lab-side SD/MMC hardware fault.
+
+**efi-x86_64-uboot-iso (job 494173):** U-Boot works correctly all the way through — bootflow scan, kernel + initrd load via BLS, and kernel handoff. Then the **Linux kernel** itself reports:
+```
+[    0.637808] Initramfs unpacking failed: invalid magic at start of compressed archive
+```
+The pytest then times out waiting for `Started gdm.service`. This is a distro/initrd issue inside the Ubuntu ISO boot path, not a U-Boot regression.
+
+### Action
+
+- No commits amended, no fixup added.
+- Branch `cherry-b04e4b19d4d-fix1` created pointing at the same HEAD as `cherry-b04e4b19d4d` (so the caller has the expected ref).
+- Recommend a pipeline retry; if both jobs reproduce, escalate to lab maintenance (rockpro64 SD card, x86_64 ISO image / runner).
+
+---
+
