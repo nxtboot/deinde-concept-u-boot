@@ -78438,3 +78438,61 @@ Push successful. Here's the report:
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-74f5e3ef30d
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match pre-rebase exactly (the cherry-pick record at 48+ vs 49+ is the trailing `---` separator absorbed during conflict resolution — substance unchanged). Now build verification:
+
+Build clean. Now create the v4 backup and force-push:
+
+Push successful. Final report:
+
+## Report
+
+**Action taken:** Rebased `cherry-74f5e3ef30d` onto latest `ci/master`, resolved one conflict in `.pickman-history`, force-pushed to update MR !1043.
+
+### Rebase details
+
+- **Old base:** `a31ecc0c29c` (`Merge branch 'cherry-72cc446490e' into 'master'`)
+- **New base:** `2104a31c85d` (`Merge branch 'cherry-0290cec364f' into 'master'`) — ci/master advanced by 4 commits (cherry-0290cec364f MR landed plus pickman tracking commits)
+- 9 commits replayed onto the new base; 8 applied cleanly, 1 conflict resolved.
+
+### Conflict resolved
+
+- **`.pickman-history`** in commit `35ce77360bf` (was `b91be48be3f`, the cherry-pick record): both branches added a new top-level `## 2026-05-04: us/master` section at the same place. HEAD had the `cherry-0290cec364f` section; ours added the `cherry-74f5e3ef30d` section. Resolved by keeping both sections in chronological order with a `---` separator (cherry-0290cec364f first, then cherry-74f5e3ef30d). No content lost.
+
+### Delta verification (pre vs post-rebase)
+
+| Commit | Pre | Post | Match |
+|---|---|---|---|
+| powerpc/mpc83xx u-boot.lds | 1 file 2+/1- | 1 file 2+/1- | ✓ |
+| .mailmap | 1 file 2+/1- | 1 file 2+/1- | ✓ |
+| Revert cdns3 VBUS Valid | 2 files 64- | 2 files 64- | ✓ |
+| Renesas R-Car X5H DT | 1 file 1+/1- | 1 file 1+/1- | ✓ |
+| Merge u-boot-sh (empty) | — | — | ✓ |
+| pickman cherry-pick record | 1 file 49+ | 1 file 48+ | ≈ (1-line diff from conflict resolution absorbing trailing `---`; substance unchanged) |
+| pickman pipeline-fix record | 1 file 51+ | 1 file 51+ | ✓ |
+| pickman review-handling record | 1 file 40+ | 1 file 40+ | ✓ |
+| pickman review-handling record | 1 file 59+ | 1 file 59+ | ✓ |
+
+### Build verification
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 errors/warnings, duration 0:00:05.**
+
+### Push
+
+- Local backup branch `cherry-74f5e3ef30d-v4` created at the rebased tip (`8138d4d0111`).
+- Force-pushed: `+ 55ba841e42b...8138d4d0111 HEAD -> cherry-74f5e3ef30d (forced update)`.
+- GitLab MR !1043 pipeline will auto-trigger.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`2104a31c85d`). Resolved a single conflict in `.pickman-history` — both branches had added a `## 2026-05-04: us/master` top-level section at the same anchor (cherry-0290cec364f's record landed first; this branch's record needed to follow). Kept both sections in chronological order with a `---` separator. All 4 cherry-picked commits (powerpc/mpc83xx, .mailmap, cdns3 revert, Renesas R-Car DT) plus the empty merge commit replayed with byte-identical deltas. Sandbox build passes (`buildman -L --board sandbox` → 1 built, 0 errors/warnings). Pipeline will auto-trigger.
+
+---
+
