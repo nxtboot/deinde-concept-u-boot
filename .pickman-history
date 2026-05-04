@@ -77282,3 +77282,662 @@ branch as standalone cherry-picks (with -x source references).
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-eb95914b9f5
+
+Commits:
+- eb95914b9f5 Prepare v2026.04-rc5
+- c4f40d09259 clk: qcom: qcs615: Add GCC_USB3_PRIM_CLKREF_CLK support
+- c4169dfa1dc clk: qcom: qcs615: Add GCC_AHB2PHY_WEST_CLK clock support
+- 0f265c20a56 phy: qcom: qusb2: Add QCS615 QUSB2 PHY support
+- bb5012fb66c power: regulator: qcom: Correct dependenecies for DM_REGULATOR_QCOM_USB_VBUS
+- 7f09aff3992 serial: msm-geni: allow invalid clock
+- 4577a672ece qcom: rpmh: don't error for SLEEP requests
+- 1cf505e51b4 watchdog: qcom: stop watchdog by default
+- 075bd023c77 Merge tag 'qcom-fixes-24Mar2026' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+None of the commits are already present in ci/master. Let me resolve the Makefile conflict.
+
+Now let me amend the commit message to note the fix-up:
+
+Now let me verify the deltas match:
+
+Deltas match. Let me run the build test:
+
+Build passed. Now cherry-pick the second commit:
+
+Now the merge commit:
+
+All 9 commits are present. Let me run the final build:
+
+All cherry-picks complete and final build passes.
+
+## Final Status
+
+**Build result:** OK (sandbox build clean, no warnings/errors)
+
+**All 9 commits successfully cherry-picked** onto branch `cherry-eb95914b9f5` (based on `ci/master`):
+
+| New Hash | Original | Subject |
+|---|---|---|
+| dbdcf46eedd | eb95914b9f5 | Prepare v2026.04-rc5 |
+| f3e4a8b9f05 | c4f40d09259 | clk: qcom: qcs615: Add GCC_USB3_PRIM_CLKREF_CLK support |
+| 79056c29c40 | c4169dfa1dc | clk: qcom: qcs615: Add GCC_AHB2PHY_WEST_CLK clock support |
+| 713b2d82215 | 0f265c20a56 | phy: qcom: qusb2: Add QCS615 QUSB2 PHY support |
+| 898452318ab | bb5012fb66c | power: regulator: qcom: Correct dependenecies for DM_REGULATOR_QCOM_USB_VBUS |
+| d85f722193d | 7f09aff3992 | serial: msm-geni: allow invalid clock |
+| 07723b60572 | 4577a672ece | qcom: rpmh: don't error for SLEEP requests |
+| 50da7b561ed | 1cf505e51b4 | watchdog: qcom: stop watchdog by default |
+| 40559f87788 | 075bd023c77 | Merge tag 'qcom-fixes-24Mar2026' (empty merge commit, preserved) |
+
+**Fix-ups applied:**
+- **Commit 1 (Prepare v2026.04-rc5):** Resolved Makefile EXTRAVERSION conflict (HEAD had `EXTRAVERSION =`, original set `EXTRAVERSION = -rc5`). Took the rc5 value. Annotated the commit message with `[sjg: Resolve Makefile EXTRAVERSION conflict]`.
+
+**Concerning deltas:** None — all commits matched the original file/line counts exactly.
+
+**Other notes:**
+- The `power: regulator: qcom: Correct dependenecies` commit had a clean auto-merge in `drivers/power/regulator/Kconfig` (no fix-up needed).
+- The merge commit `075bd023c77` was empty after cherry-pick (its child commits were already applied); committed with `--allow-empty` to preserve sequence/history as instructed.
+
+Branch `cherry-eb95914b9f5` is left ready for pushing.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) play, rockpro64, bbb, jerry.
+
+All four failures look l...
+
+### Conversation log
+## Report
+
+### Summary
+
+The "review comment to address" on MR !1040 is the bot's own previous diagnostic report ("Pipeline fix (attempt 1)"), which correctly concluded that the 4 failing jobs (`play`, `rockpro64`, `bbb`, `jerry`) were lab/infrastructure issues with no code fix possible. There is nothing actionable in this comment.
+
+### State checks
+
+- **Branch**: `cherry-eb95914b9f5` is checked out at `d9c563dd6af` (the pickman record commit on top of the 9 cherry-picked commits — all Qualcomm-only changes).
+- **Current MR pipeline**: Pipeline 7530 is **already running** on this exact SHA — no new push would help.
+- **Sandbox build sanity check**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### No code changes made / no -v2 branch pushed
+
+The previous diagnosis stands and is unchanged:
+- Branch only touches `clk: qcom:`, `phy: qcom:`, `power: regulator: qcom:`, `serial: msm-geni:`, `qcom: rpmh:`, `watchdog: qcom:` plus a version bump.
+- Failing boards are all non-Qualcomm (TI AM62, TI AM335, Rockchip RK3399, Rockchip RK3288).
+- Failure modes were: serial-login pexpect timeouts (`play`, `jerry`), MMC voltage-select failure on lab SD card (`rockpro64`), and labgrid place locked by another user (`bbb`) — all transient lab-side problems.
+
+Pushing an identical `-v2` branch would just trigger a redundant pipeline alongside the one already running, so I deliberately skipped step 5–6 of the workflow.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 2): no action — same diagnosis as attempt 1.**
+>
+> Re-checked the branch state and the previous diagnosis still holds: the 4 failing jobs (`play`, `rockpro64`, `bbb`, `jerry`) were all lab/infrastructure failures (serial-login timeouts, an MMC voltage-select error on a lab SD card, and a labgrid place locked by another user). None of the failing boards are Qualcomm targets, and every commit on this branch is Qualcomm-Snapdragon-specific (clk/phy/regulator/serial/rpmh/watchdog) plus a version bump — there is no code path linking them to the failures.
+>
+> Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Pipeline 7530 is already running on the current HEAD, so no new branch was pushed. Recommend retrying the failed lab jobs once those boards are available.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already on top of `ci/master`. Let me verify by running the rebase explicitly to confirm it's a no-op.
+
+The branch is already on top of `ci/master` — no rebase needed. Let me verify the build still passes.
+
+Build is clean. Since the branch is already on top of the latest `ci/master`, no v2 branch is needed and no force-push is required.
+
+## Report
+
+### Summary
+
+**No rebase action needed.** The branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **Merge-base check**: `git merge-base cherry-eb95914b9f5 ci/master` returns `00abf8860cc` — the tip of `ci/master`. This means `ci/master` is already an ancestor of the branch.
+- **`ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+11 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 2 pickman record commits (cherry-pick record + review-handling record)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push, and creating a `-v2` branch identical to `cherry-eb95914b9f5` would only generate a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch.**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-03
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed.** The branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`. This is the third time this same task has been requested with the same outcome.
+
+### Verification
+
+- **Merge-base check**: `git merge-base cherry-eb95914b9f5 ci/master` returns `00abf8860cc` — which is the current tip of `ci/master`. So `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged since previous run)
+
+11 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 3 pickman record commits (1 cherry-pick record + 2 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch as `-v2` would only trigger a redundant pipeline alongside whatever is already running (or has already run) on this SHA.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (4th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fetched fresh — `ci/master` tip is `00abf8860cc`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty.
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:12` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+13 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 4 pickman record commits (1 cherry-pick record + 3 review-handling records, including this one once written)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch as `-v2` would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 4th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (5th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fetched fresh — `ci/master` tip is `00abf8860cc`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:10` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+14 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 5 pickman record commits (1 cherry-pick record + 4 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch as `-v2` would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 5th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (6th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc2ec02bba594cecf8907cf6ae50993`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+15 commits ahead of `ci/master` (HEAD = `e537e0edcad`):
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 6 pickman record commits (1 cherry-pick record + 5 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch as `-v2` would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 6th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (7th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc2ec02bba594cecf8907cf6ae50993`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+16 commits ahead of `ci/master` (HEAD = `fb322d0d9f6`):
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 7 pickman record commits (1 cherry-pick record + 6 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch as `-v2` would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 7th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (8th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc2ec02bba594cecf8907cf6ae50993`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+17 commits ahead of `ci/master` (HEAD = `25abea4d1ef`):
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 8 pickman record commits (1 cherry-pick record + 7 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 8th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (9th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc2ec02bba594cecf8907cf6ae50993`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+18 commits ahead of `ci/master` (HEAD = `b2daf7fe656`):
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 9 pickman record commits (1 cherry-pick record + 8 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 9th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**No rebase action needed (10th request, same outcome).** Branch `cherry-eb95914b9f5` is already on top of the latest `ci/master`.
+
+### Verification
+
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc2ec02bba594cecf8907cf6ae50993`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`**: returns `00abf8860cc` — the tip of `ci/master` is already an ancestor of the branch.
+- **`git log ci/master ^cherry-eb95914b9f5`**: empty (no commits in `ci/master` that aren't already in the branch).
+- **`git rebase --keep-empty ci/master`**: returned `Current branch cherry-eb95914b9f5 is up to date.` — confirmed no-op.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Branch state (unchanged)
+
+19 commits ahead of `ci/master` (HEAD = `9c45cd414d0`):
+- 9 cherry-picks from `us/master` (`Prepare v2026.04-rc5` through the empty `Merge tag 'qcom-fixes-24Mar2026'`)
+- 10 pickman record commits (1 cherry-pick record + 9 review-handling records)
+
+### No code changes / no `-v2` branch / no push
+
+Skipped steps 5–6 because the rebase was a no-op — there is nothing new to push. Force-pushing an identical branch would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Rebase: no action — already on top of latest target branch (re-verified for the 10th time).**
+>
+> Branch `cherry-eb95914b9f5` is already based on the current tip of `ci/master` (`00abf8860cc`). After `git fetch ci master`, `git rebase --keep-empty ci/master` reports `Current branch cherry-eb95914b9f5 is up to date.`, and `git log ci/master ^cherry-eb95914b9f5` is empty. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no change to apply.
+
+---
+
+### Pipeline fix: 2026-05-04 (attempt 3)
+
+Branch: cherry-eb95914b9f5
+
+Failed jobs:
+- play (sjg-lab)
+- bbb (sjg-lab)
+
+### Conversation log
+I've verified the branch state and reviewed both failure logs. Both failures are clearly lab/infrastructure issues unrelated to any code on this branch.
+
+## Report: Infrastructure / Lab Failures (no code fix possible)
+
+### Branch state
+- **Branch**: `cherry-eb95914b9f5` checked out at `8a5ee397130` (HEAD).
+- **Code commits**: All 9 cherry-picked commits are Qualcomm-Snapdragon-specific:
+  - `clk: qcom: qcs615:` (×2)
+  - `phy: qcom: qusb2:`
+  - `power: regulator: qcom:`
+  - `serial: msm-geni:`
+  - `qcom: rpmh:`
+  - `watchdog: qcom:`
+  - `Prepare v2026.04-rc5` (version bump only)
+  - `Merge tag 'qcom-fixes-24Mar2026'` (empty merge)
+- **No commit on this branch touches any TI AM62 / TI AM335 file or any code path used by `play` or `bbb`.**
+
+### Failure analysis
+
+| Job | Board | Failure | Type |
+|---|---|---|---|
+| `play` (493931) | TI AM62 BeaglePlay | `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` after flash — board never produced a U-Boot prompt | Lab hardware/serial timeout |
+| `bbb` (493912) | TI AM335 BeagleBone Black | `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure` → `INTERNALERROR ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']` | Lab resource locked by another user |
+
+### Root cause
+- **`play`**: Lab-side serial/login timeout. The runner flashed the image (`Building U-Boot in pytest-source dir for am62x_beagleplay_a53` … `Writing U-Boot using method ti,am625`) but the board never reached a login prompt within 20 s. This is a hardware/serial transient — common on the ellesmere-lab runner.
+- **`bbb`**: The labgrid place `bbb` was already acquired by user `okaro/sglass` when this job started. Pure resource contention; the test never even got past `pytest_configure`.
+
+### No commit is responsible
+Neither failure is reachable from any code on this branch. There is no plausible causal path from a Qualcomm clk/phy/regulator/serial/rpmh/watchdog change (or a version bump) to:
+- a TI AM62 board failing to print a login prompt, or
+- labgrid concurrency on a TI AM335 board.
+
+Both attempts 1 and 2 reached the same conclusion for the same reason; this attempt 3 is consistent.
+
+### Action taken
+**None.** No source changes made. Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no `cherry-eb95914b9f5-fix3` branch was created — there is no code fix to leave on it. Recommend retrying the failed lab jobs once the `bbb` place is released and the `play` board's serial is stable.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) play, bbb.
+
+I've verified the branch state and reviewe...
+
+### Conversation log
+## Report
+
+### Summary
+
+**No code action needed (Pipeline fix attempt 4 — same outcome as attempts 1, 2, and 3).** The "review comment" being addressed is the bot's own previous "Pipeline fix (attempt 3)" diagnostic report, which correctly concluded that the `play` and `bbb` failures were lab/infrastructure issues with no code fix possible. There is nothing actionable in this comment.
+
+### State checks
+
+- **Branch**: `cherry-eb95914b9f5` checked out at `596c43d6f0f` (HEAD).
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`** → `00abf8860cc` (= ci/master tip). Branch is already on top of latest `ci/master`.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean.
+
+### Branch contents (unchanged)
+
+20 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (Qualcomm-Snapdragon-only: `clk: qcom:` ×2, `phy: qcom:`, `power: regulator: qcom:`, `serial: msm-geni:`, `qcom: rpmh:`, `watchdog: qcom:`, plus the `Prepare v2026.04-rc5` version bump and an empty merge commit).
+- 11 pickman record commits (1 cherry-pick record + 10 review/pipeline-handling records).
+
+### Why no code change / no `-v2` push
+
+The previous diagnosis stands and is unchanged across all prior attempts:
+
+| Job | Board | Failure | Type |
+|---|---|---|---|
+| `play` | TI AM62 BeaglePlay | `pexpect.exceptions.TIMEOUT` waiting for login after flash | Lab serial timeout |
+| `bbb` | TI AM335 BeagleBone Black | `place bbb is acquired by a different user (okaro/sglass)` | Labgrid resource contention |
+
+Neither failing board is a Qualcomm target. Every commit on this branch is Qualcomm-Snapdragon-specific (or a version bump). There is no plausible causal path from a `qcom: rpmh` / `clk: qcom: qcs615` / `phy: qcom: qusb2` / `serial: msm-geni` / `watchdog: qcom` change to a TI AM62 board failing to print a login prompt or to a TI AM335 labgrid place being held by another user.
+
+Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no source changes were made and no `cherry-eb95914b9f5-v2` branch was pushed. Force-pushing an identical branch would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 4): no action — same diagnosis as attempts 1–3.**
+>
+> Re-verified: the two failing jobs (`play` on TI AM62 BeaglePlay, `bbb` on TI AM335 BeagleBone Black) are lab/infrastructure failures (a serial-login pexpect timeout and a labgrid place locked by user `okaro/sglass`). Neither board is a Qualcomm target, and every commit on this branch is Qualcomm-Snapdragon-specific (clk/phy/regulator/serial/rpmh/watchdog) plus a version bump — there is no code path linking them to the failures. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no code fix to apply. Recommend retrying the failed lab jobs once `bbb` is released and the `play` board's serial is stable.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**Rebase needed and completed successfully.** Unlike the previous 10 invocations of this task (when `ci/master` was unchanged), this time `ci/master` advanced by 8 commits (cherry-a22e9e1b8ec was merged in), so a real rebase was required.
+
+### What changed since last time
+
+- **Old `ci/master` tip**: `00abf8860cc`
+- **New `ci/master` tip**: `d9920c548e8` (+8 commits from cherry-a22e9e1b8ec MR — `tests: FIT clone attack test`, `arm: dts: ls1021a-tsn`, `configs: ls1021atsn`, `armv7: ls102xa SPI flash clock`, `serial: SYS_NS16550`, `Merge tag fsl-qoriq-for-2026.04-rc5`, plus the pickman record and merge commit).
+
+### Conflict resolved
+
+- **`.pickman-history`**: both branches added new sections under `## 2026-05-03: us/master`. Resolved by keeping both sections in chronological order (cherry-a22e9e1b8ec first, then a new `## 2026-05-03: us/master` header for cherry-eb95914b9f5). No content lost.
+- All other 21 commits applied cleanly with no conflicts.
+
+### Verification
+
+- `git rebase --keep-empty ci/master`: 22 steps, completed successfully.
+- `git log ci/master..HEAD` shows 22 commits: 9 cherry-picks (Qualcomm + version bump + empty merge) + 13 pickman record commits.
+- All Qualcomm commits intact: `Prepare v2026.04-rc5`, `clk: qcom: qcs615` ×2, `phy: qcom: qusb2`, `power: regulator: qcom`, `serial: msm-geni`, `qcom: rpmh`, `watchdog: qcom`, `Merge tag 'qcom-fixes-24Mar2026'`.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings/errors.
+
+### Push
+
+- Local backup branch `cherry-eb95914b9f5-v2` created at `c5ffa050e41`.
+- Force-pushed to `ci/cherry-eb95914b9f5` (`8a5ee397130 → c5ffa050e41`). MR pipeline will auto-trigger.
+
+### Suggested MR reply
+
+> **Rebased onto latest ci/master (d9920c548e8).** Resolved a single conflict in `.pickman-history` (both branches added a new `## 2026-05-03: us/master` section — kept both in chronological order). All 9 cherry-picked Qualcomm commits intact and unchanged. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Force-pushed; new pipeline should trigger automatically.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed. Let me verify and run the build.
+
+All 9 cherry-picks plus 14 pickman record commits are present. Let me run the build.
+
+Build is clean. Let me create the v2 backup branch and push.
+
+Push completed successfully. Let me record the rebase action in the history and check final state.
+
+## Report
+
+### Summary
+
+**Rebase completed successfully with one conflict resolved.** Unlike previous task invocations on this MR (when `ci/master` had not advanced), this time `ci/master` had moved forward by 9 commits (the cherry-b04e4b19d4d MR was merged), so a real rebase was required.
+
+### What changed since last time
+
+- **Old `ci/master` tip**: `00abf8860cc`
+- **New `ci/master` tip**: `e3bf3b6174d` (+9 commits from the cherry-b04e4b19d4d MR — `arm: bcm: Include missing errno.h`, `board/raspberrypi: add multi-FDT support`, `board/raspberrypi: add bcm2712d0-rpi-5-b for Raspberry Pi 5`, the rpi-2026.04-rc5 merge tag, plus 4 pickman record commits and the merge-into-master commit).
+
+### Conflict resolved
+
+- **`.pickman-history`**: both branches added new sections at the same location. The HEAD (incoming from ci/master) had a `## 2026-05-04: us/master` section for cherry-b04e4b19d4d, while the rebased branch added a `## 2026-05-03: us/master` section for cherry-eb95914b9f5. Resolved by keeping both sections in chronological order (2026-05-04 cherry-b04e4b19d4d first, then `---` separator, then 2026-05-03 cherry-eb95914b9f5). No content lost.
+- All other 22 commits applied cleanly with no conflicts.
+
+### Verification
+
+- `git rebase --keep-empty ci/master`: 23 steps, completed successfully after the one resolved conflict.
+- All 9 cherry-picks intact: `Prepare v2026.04-rc5`, `clk: qcom: qcs615` ×2, `phy: qcom: qusb2`, `power: regulator: qcom`, `serial: msm-geni`, `qcom: rpmh`, `watchdog: qcom`, `Merge tag 'qcom-fixes-24Mar2026'` (empty merge preserved).
+- Plus 14 pickman record commits (1 cherry-pick record + 13 review/pipeline-handling records).
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Push
+
+- Local backup branch `cherry-eb95914b9f5-v2` created at `ac7ec556cab`.
+- Force-pushed to `ci/cherry-eb95914b9f5` (`c5ffa050e41 → ac7ec556cab`). MR pipeline will auto-trigger.
+
+### Suggested MR reply
+
+> **Rebased onto latest ci/master (`e3bf3b6174d`).** Resolved a single conflict in `.pickman-history` (both branches added a new top-level dated section — kept both in chronological order with a `---` separator). All 9 cherry-picked Qualcomm commits applied cleanly with no further conflicts. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Force-pushed; new pipeline should trigger automatically.
+
+---
+
