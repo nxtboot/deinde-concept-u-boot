@@ -77138,3 +77138,38 @@ All 6 commits are present.
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-b04e4b19d4d
+
+Commits:
+- b04e4b19d4d arm: bcm: Include missing errno.h
+- 4e64ea88585 rpi: Update the naming for bcm2712 SoC RevD naming
+- c24a72c35ab Merge tag 'rpi-2026.04-rc5' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+
+### Conversation log
+Identical. Now let's run the build test.
+
+Build passed. Now the second commit.
+
+Now the merge commit.
+
+All three commits are in place and the final build passes.
+
+## Final Status
+
+**Build result:** OK (sandbox built successfully after each cherry-pick and at the end).
+
+**Commits on `cherry-b04e4b19d4d`:**
+1. `2021f70a2ba` — `arm: bcm: Include missing errno.h` — clean cherry-pick, identical delta (1 file, 1 insertion).
+2. `4887f01018d` — `rpi: Update the naming for bcm2712 SoC RevD naming [FAILED]` — empty commit. The original rename (`bcm2712d0-rpi-5-b.dtb` → `bcm2712-d-rpi-5-b.dtb`) targets a string inside an `FDTFILES(...)` multi-DTB list that is not present in this branch (the branch still has a single-DTB entry for the RPi 5). Both `git cherry-pick` and `git apply --3way` produced the same conflict; the original change has nothing applicable to apply against, so it is preserved as an empty `[FAILED]` commit per the procedure.
+3. `bc85501bca2` — `Merge tag 'rpi-2026.04-rc5' ...` — preserved as an empty merge cherry-pick. The merge introduces only the same two commits above; the conflict was on the same `rpi.c` lines. Resolved with `--ours` and committed empty with `--allow-empty`. A note was appended to the commit message recording the conflict resolution.
+
+**Concerning deltas / fix-ups:**
+- Commit #2 has a 100% delta loss (cannot apply to this codebase). Tagged `[FAILED]` in the subject and explanation in body.
+- Commit #3 is empty after `--ours` resolution (its only useful content was the rename which can't apply here). Note appended explaining the resolution.
+
+The branch `cherry-b04e4b19d4d` is left ready for pushing. No merges performed.
+
+---
+
