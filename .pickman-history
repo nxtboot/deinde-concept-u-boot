@@ -77799,3 +77799,53 @@ Both attempts 1 and 2 reached the same conclusion for the same reason; this atte
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) play, bbb.
+
+I've verified the branch state and reviewe...
+
+### Conversation log
+## Report
+
+### Summary
+
+**No code action needed (Pipeline fix attempt 4 — same outcome as attempts 1, 2, and 3).** The "review comment" being addressed is the bot's own previous "Pipeline fix (attempt 3)" diagnostic report, which correctly concluded that the `play` and `bbb` failures were lab/infrastructure issues with no code fix possible. There is nothing actionable in this comment.
+
+### State checks
+
+- **Branch**: `cherry-eb95914b9f5` checked out at `596c43d6f0f` (HEAD).
+- **`git fetch ci master`**: fresh fetch — `ci/master` tip is `00abf8860cc`.
+- **`git merge-base cherry-eb95914b9f5 ci/master`** → `00abf8860cc` (= ci/master tip). Branch is already on top of latest `ci/master`.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean.
+
+### Branch contents (unchanged)
+
+20 commits ahead of `ci/master`:
+- 9 cherry-picks from `us/master` (Qualcomm-Snapdragon-only: `clk: qcom:` ×2, `phy: qcom:`, `power: regulator: qcom:`, `serial: msm-geni:`, `qcom: rpmh:`, `watchdog: qcom:`, plus the `Prepare v2026.04-rc5` version bump and an empty merge commit).
+- 11 pickman record commits (1 cherry-pick record + 10 review/pipeline-handling records).
+
+### Why no code change / no `-v2` push
+
+The previous diagnosis stands and is unchanged across all prior attempts:
+
+| Job | Board | Failure | Type |
+|---|---|---|---|
+| `play` | TI AM62 BeaglePlay | `pexpect.exceptions.TIMEOUT` waiting for login after flash | Lab serial timeout |
+| `bbb` | TI AM335 BeagleBone Black | `place bbb is acquired by a different user (okaro/sglass)` | Labgrid resource contention |
+
+Neither failing board is a Qualcomm target. Every commit on this branch is Qualcomm-Snapdragon-specific (or a version bump). There is no plausible causal path from a `qcom: rpmh` / `clk: qcom: qcs615` / `phy: qcom: qusb2` / `serial: msm-geni` / `watchdog: qcom` change to a TI AM62 board failing to print a login prompt or to a TI AM335 labgrid place being held by another user.
+
+Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no source changes were made and no `cherry-eb95914b9f5-v2` branch was pushed. Force-pushing an identical branch would only trigger a redundant pipeline.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 4): no action — same diagnosis as attempts 1–3.**
+>
+> Re-verified: the two failing jobs (`play` on TI AM62 BeaglePlay, `bbb` on TI AM335 BeagleBone Black) are lab/infrastructure failures (a serial-login pexpect timeout and a labgrid place locked by user `okaro/sglass`). Neither board is a Qualcomm target, and every commit on this branch is Qualcomm-Snapdragon-specific (clk/phy/regulator/serial/rpmh/watchdog) plus a version bump — there is no code path linking them to the failures. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). No new branch was pushed since there is no code fix to apply. Recommend retrying the failed lab jobs once `bbb` is released and the `play` board's serial is stable.
+
+---
+
