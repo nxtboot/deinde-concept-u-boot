@@ -78036,3 +78036,57 @@ There is nothing actionable here. The comment is not requesting any change — i
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-72cc446490e
+
+Comments addressed:
+
+
+### Conversation log
+The rebase is a no-op — the local branch is already on top of the latest `ci/master`. Let me verify state and run the build.
+
+All commits are intact. Now run the buildman build.
+
+Build passed cleanly. Now create the v2 branch and force-push.
+
+## Report
+
+**Action taken:** Rebased and force-pushed `cherry-72cc446490e` to update MR !1042.
+
+### Rebase details
+- **Local branch state pre-rebase:** Already on top of `ci/master` HEAD (`e3bf3b6174d`). `git rebase --keep-empty ci/master` reported "Current branch cherry-72cc446490e is up to date." — i.e., a no-op.
+- **Why a force-push was still required:** The remote `cherry-72cc446490e` had drifted to unrelated content (it pointed at `dda622368e5 pickman: Record pipeline fix for cherry-eb95914b9f5`, a different MR's tip). The local branch contained the correct 8 cherry-pick commits + 2 pickman tracking commits, so force-pushing the local branch was needed to restore the MR's actual content.
+
+### Branch contents (10 commits on top of ci/master `e3bf3b6174d`)
+| # | Hash | Subject |
+|---|------|---------|
+| 1 | 828552cf77d | treewide: fix uImage.FIT document paths |
+| 2 | a48e25fb356 | doc: pstore: fix typo |
+| 3 | aede64bd7ac | doc/buildman: fix missing :: on examples |
+| 4 | d2b9650128b | doc: Use sys.path.append for pytests being found |
+| 5 | 113dedfa52b | doc: board: fix OPTEE args for TI SoCs |
+| 6 | fee6f789f5a | doc: board: ti: fix incorrect labels for boot switches |
+| 7 | 74b7495baba | doc: overlay-fdt-boot: .dtbos do not need load addresses |
+| 8 | 8c6e68714ba | Merge tag 'doc-2026-04-rc6' (empty merge, preserved) |
+| 9 | c2604ae3a01 | pickman: Record cherry-pick of 8 commits from us/master |
+| 10 | 650eb88c91d | pickman: Record review handling for cherry-72cc446490e |
+
+### Delta verification
+All 7 non-merge documentation commits show identical file lists and line counts as before — no rebase reshuffling, no conflicts, no fix-ups required.
+
+### Build verification
+`buildman -L --board sandbox -w -o /tmp/pickman` → **1 board built, 0 warnings/errors, duration 0:00:13.**
+
+### Push
+- Local branch `cherry-72cc446490e-v2` created at the rebased tip (`650eb88c91d`).
+- `./tools/pickman/pickman push-branch cherry-72cc446490e -r ci -f` succeeded:
+  `+ dda622368e5...650eb88c91d HEAD -> cherry-72cc446490e (forced update)`
+- GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested reply for the MR
+
+> Rebased onto latest `ci/master` (`e3bf3b6174d`). Branch was already on top of master so the rebase was a no-op for the doc commits, but the remote tip had drifted to unrelated content, so I force-pushed the correct 8 cherry-picks (plus pickman tracking commits) back. All 7 non-merge commits match the originals byte-for-byte; the merge commit (8) is preserved empty as before. `buildman -L --board sandbox` passes cleanly. Pipeline auto-triggered.
+
+---
+
