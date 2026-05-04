@@ -77092,3 +77092,49 @@ The branch only changes a MediaTek MT7622 (networking SoC) clock driver. It cann
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-a22e9e1b8ec
+
+Commits:
+- a22e9e1b8ec tests: FIT: Add "clone" image attack image test
+- 6dad9838d34 arm: dts: ls1021a-tsn: add default serial output
+- a5e46ecc359 configs: ls1021atsn: enable serial driver
+- 1f305f99d20 armv7: ls102xa: fix SPI flash clock
+- f09e500f6d2 serial: Enable SYS_NS16550 on incorrectly migrated platforms
+- e21ac930911 Merge tag 'fsl-qoriq-for-2026.04-rc5' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+Delta matches. Now build test:
+
+Build OK. Continue with next commit:
+
+Note: The cherry-pick has 38 files vs 39 in original. The missing file is `configs/ls1021atsn_qspi_defconfig`, which was already updated by the previous commit (a5e46ecc359). This is expected and within the 20% threshold (~2.6% diff). Let me amend the commit message to note this fix-up:
+
+All 6 commits are present.
+
+## Final Status Report
+
+**Branch**: `cherry-a22e9e1b8ec` (based on `ci/master`)
+
+**Build result**: ✅ OK (sandbox built successfully after every cherry-pick and at the end)
+
+**All 6 commits cherry-picked successfully:**
+
+| New hash | Original | Subject |
+|----------|----------|---------|
+| `89a54c7cda2` | a22e9e1b8ec | tests: FIT: Add "clone" image attack image test |
+| `d5a2d0f6330` | 6dad9838d34 | arm: dts: ls1021a-tsn: add default serial output |
+| `cc55717174c` | a5e46ecc359 | configs: ls1021atsn: enable serial driver |
+| `ed04eff5bc9` | 1f305f99d20 | armv7: ls102xa: fix SPI flash clock |
+| `e0e7a4ff67e` | f09e500f6d2 | serial: Enable SYS_NS16550 on incorrectly migrated platforms |
+| `184b9b05ff2` | e21ac930911 | Merge tag 'fsl-qoriq-for-2026.04-rc5' (empty, --allow-empty) |
+
+**Fix-ups made:**
+- **`e0e7a4ff67e` (f09e500f6d2)**: Cherry-pick auto-resolved into 38 files instead of 39 — `configs/ls1021atsn_qspi_defconfig` was already updated by the preceding `cc55717174c` commit. Amended the commit message with a one-line note documenting this fix-up. Delta diff is well under 20% (~2.6%).
+- **`184b9b05ff2` (e21ac930911)**: Merge commit was empty after cherry-pick (changes already integrated via picked side); preserved with `--allow-empty` per instructions.
+
+**No concerning deltas** beyond the documented fix-up above. No unresolved conflicts. The branch is ready for pushing.
+
+---
+
