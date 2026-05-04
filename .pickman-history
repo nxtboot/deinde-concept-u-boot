@@ -76729,3 +76729,50 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-03 (attempt 1)
+
+Branch: cherry-52d84fccfd7
+
+Failed jobs:
+- bbb (sjg-lab)
+
+### Conversation log
+This failure looks like an infrastructure issue, not a code problem. Let me verify by checking the branch and confirming.
+
+This is an infrastructure issue, not a code problem. Reporting without changes.
+
+## Diagnosis
+
+**Root cause: Infrastructure failure (lab reservation conflict) — not a code issue.**
+
+The `bbb` job (sjg-lab stage) failed in the test infrastructure setup phase, before any test ran:
+
+```
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+```
+
+The labgrid "place" (physical BeagleBone Black board) was already reserved by user `okaro` when the runner tried to acquire it. Pytest's `conftest.py:194` (`get_details`) raised because `u-boot-test-getrole bbb --configure` returned exit 1 — the board could not be configured for use by the runner.
+
+## Why this is unrelated to the branch
+
+The branch `cherry-52d84fccfd7` contains only:
+1. `155143d7c26` — `clk: mediatek: mt7622: fix infracfg and pericfg clock operations` (touches `drivers/clk/mediatek/clk-mt7622.c` only)
+2. `9d88ce8c0b8` — empty merge commit (cherry-picked with `--allow-empty`)
+3. `62a50a88e50` — pickman record commit
+
+None of these changes affect:
+- BeagleBone Black (TI AM335x) code
+- The U-Boot test framework / `conftest.py`
+- Labgrid configuration or `u-boot-test-getrole`
+
+The MediaTek MT7622 clock fix has zero overlap with BBB hardware. The failure occurred at the `pytest_configure` phase, before any U-Boot binary was even loaded onto the board.
+
+## Conclusion
+
+**No code change made.** This is a transient lab-reservation conflict (another user held `bbb`). The job should pass on retry once the place is released. No `cherry-52d84fccfd7-fix1` branch was created because there is nothing to fix in the source tree.
+
+Recommended action: re-run the `bbb` job once the lab place is free (or use `--kick` per the labgrid hint, if appropriate per local policy).
+
+---
+
