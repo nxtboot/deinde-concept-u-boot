@@ -78090,3 +78090,116 @@ All 7 non-merge documentation commits show identical file lists and line counts 
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-0290cec364f
+
+Commits:
+- 0290cec364f Add an initial CONTRIBUTE.rst
+- 88dc2788777 Prepare v2026.04
+
+### Conversation log
+The found commit 0043dbe2e65 is just a pickman record commit, not actually the same as 88dc2788777. Let me check if the real "Prepare v2026.04" is already applied:
+
+The "Prepare v2026.04" commit is not yet on ci/master. Let's also check if 0290cec364f is already applied:
+
+Stats match exactly. Now build test:
+
+Build passed. Now cherry-pick the second commit:
+
+I'll resolve the conflict by accepting the 88dc2788777 version (the new release schedule):
+
+Wait, let me verify by checking what HEAD looked like before:
+
+Good, HEAD had v2026.04. The --theirs resolution is correct. Let me also check the Makefile state:
+
+The Makefile auto-merge was already a no-op (HEAD already had empty EXTRAVERSION). Let me continue:
+
+Now let me check the delta and amend with conflict resolution note:
+
+Delta differs by only 1 line (Makefile already updated). Let me amend with a conflict note:
+
+Now run a build test:
+
+Build passed. Verify the final log:
+
+Both commits applied cleanly. Final summary:
+
+**Build result:** OK (sandbox build passed for both cherry-picks)
+
+**Commits applied:**
+- `8c5b1c3a6b1` - Add an initial CONTRIBUTE.rst (clean cherry-pick, stats matched exactly)
+- `ba5817c9273` - Prepare v2026.04 (had conflict; resolved)
+
+**Verification of "maybe already applied" hint:** The hash `0043dbe2e65` was actually a `pickman: Record cherry-pick of 9 commits` commit, not the same as `88dc2788777`. The actual "Prepare v2026.04" commit was NOT yet on ci/master (only rc5 was), so the cherry-pick was needed.
+
+**Fix-ups made:**
+- `Prepare v2026.04`: Conflict in `doc/develop/release_cycle.rst` for the rc2 commented date line — resolved by accepting upstream's `25 May 2026` value (consistent with the new v2026.07 release schedule). The Makefile change to clear `EXTRAVERSION` was a no-op because ci/master already had `EXTRAVERSION =` empty (via prior commit `5e4095914fb Makefile: Drop EXTRAVERSION`). Added a note to the commit message explaining the resolution.
+
+**Concerning deltas:** None. The cherry-picked `Prepare v2026.04` shows 816 insertions/16 deletions vs original's 817/17 — a single-line difference from the already-applied Makefile change, well within tolerance.
+
+The branch `cherry-0290cec364f` is left ready for pushing.
+
+---
+
+### Review: 2026-05-04
+
+Branch: cherry-0290cec364f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) minnowmax.
+
+This is an infrastructure failure, not a c...
+
+### Conversation log
+Let me check the current MR pipeline status to see if anything has changed:
+
+Let me verify the branch builds cleanly and check what's really being asked:
+
+Let me run the build verification to confirm the branch is still healthy:
+
+Build passes. Now let me analyze what this "review comment" actually is:
+
+## Report: Non-Actionable Review Comment — No Code Changes Warranted
+
+### Summary
+
+**Action taken:** None. No `-v2` branch created, no force-push performed.
+
+### Analysis
+
+The "review comment" being asked about is **the bot's own previous pipeline-fix-attempt-1 report** (recorded as commit `43d0de9c9b0` in `.pickman-history`). It is not a human reviewer's request for a code change — it is the bot's own infrastructure-failure diagnosis from attempt 1, now being surfaced back as if it were a comment to address.
+
+The comment's content is the verbatim "Infrastructure Failure — No Code Fix Applied" report from attempt 1. There is nothing in it that requests a code change.
+
+### Branch state verification
+
+- **Branch:** `cherry-0290cec364f`
+- **Commits ahead of `ci/master`:** 3 (the 2 cherry-picks + 1 pickman tracking record)
+- **Files changed vs `ci/master`:**
+  - `doc/CONTRIBUTE.rst` (new, +76)
+  - `doc/index.rst` (+10)
+  - `doc/develop/release_cycle.rst` (±32)
+  - `doc/develop/statistics/u-boot-stats-v2026.04.rst` (new, +800)
+  - `.pickman-history` (tracking only)
+- **Build check:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, 0 failures.
+
+### Why no fix is possible
+
+The MR contains **only documentation changes**. The job that failed (`minnowmax` at `sjg-lab`) failed at hardware-flash time because the EM100pro SPI emulator (serial `DP139140`) on lab host `kea` was not reachable. There is no source-code path between a `doc/*.rst` change and the visibility of a USB-attached SPI emulator on a remote lab host. Force-pushing an identical tree as `-v2` would:
+- Not trigger a new pipeline (same SHA), or
+- If it did (e.g. via an empty/no-op commit), it would only re-run the same failing infrastructure job.
+
+### Suggested reply to post on the MR
+
+> Pipeline fix attempt 2: still infrastructure-only. The previous comment was itself the bot's attempt-1 diagnosis — there is no human-requested code change to address. The branch contains only documentation changes (`doc/CONTRIBUTE.rst`, `doc/index.rst`, `doc/develop/release_cycle.rst`, `doc/develop/statistics/u-boot-stats-v2026.04.rst`) which cannot affect the `minnowmax` `sjg-lab` failure (EM100pro `DP139140` not found on host `kea`). Sandbox build still passes. Recommend retrying the pipeline once the EM100pro is reconnected on `kea`, or skipping the `sjg-lab` job for documentation-only MRs.
+
+### Recommendation
+
+The pickman `review` workflow appears to be looping on its own previous report. Suggest one of:
+1. **Manual retry** of the failed job once lab hardware is restored, then re-run `pickman review`.
+2. **Filter** in `pickman review` to ignore comments authored by `project_1_bot_*` that are themselves pipeline-fix reports (they're status records, not actionable feedback).
+3. **Mark the MR's pipeline as passed** (or re-trigger only non-lab jobs) since the source-changed files are docs-only.
+
+---
+
