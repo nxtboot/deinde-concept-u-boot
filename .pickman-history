@@ -77233,3 +77233,20 @@ The pytest then times out waiting for `Started gdm.service`. This is a distro/in
 
 ---
 
+### Review handling: 2026-05-04
+
+Branch: cherry-b04e4b19d4d
+
+Comment: Pipeline fix (attempt 1) report quoted back by the bot — both
+failed jobs (efi-x86_64-uboot-iso, rockpro64) diagnosed as infrastructure
+issues unrelated to the cherry-picked changes.
+
+Action: Re-confirmed diagnosis. The branch's only functional change is
+the single `#include <errno.h>` line in `arch/arm/mach-bcm283x/msg.c`
+(RPi/BCM283x only). It cannot affect RK3399 (rockpro64) SD/MMC behaviour
+nor x86_64 EFI/distro initrd unpack. No code changes made. Pushing -v2
+to retrigger the pipeline; if either job reproduces it should be
+escalated to lab maintenance.
+
+---
+
