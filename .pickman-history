@@ -77849,3 +77849,45 @@ Per the task instructions ("If the failure is an infrastructure or transient iss
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+### Summary
+
+**Rebase needed and completed successfully.** Unlike the previous 10 invocations of this task (when `ci/master` was unchanged), this time `ci/master` advanced by 8 commits (cherry-a22e9e1b8ec was merged in), so a real rebase was required.
+
+### What changed since last time
+
+- **Old `ci/master` tip**: `00abf8860cc`
+- **New `ci/master` tip**: `d9920c548e8` (+8 commits from cherry-a22e9e1b8ec MR — `tests: FIT clone attack test`, `arm: dts: ls1021a-tsn`, `configs: ls1021atsn`, `armv7: ls102xa SPI flash clock`, `serial: SYS_NS16550`, `Merge tag fsl-qoriq-for-2026.04-rc5`, plus the pickman record and merge commit).
+
+### Conflict resolved
+
+- **`.pickman-history`**: both branches added new sections under `## 2026-05-03: us/master`. Resolved by keeping both sections in chronological order (cherry-a22e9e1b8ec first, then a new `## 2026-05-03: us/master` header for cherry-eb95914b9f5). No content lost.
+- All other 21 commits applied cleanly with no conflicts.
+
+### Verification
+
+- `git rebase --keep-empty ci/master`: 22 steps, completed successfully.
+- `git log ci/master..HEAD` shows 22 commits: 9 cherry-picks (Qualcomm + version bump + empty merge) + 13 pickman record commits.
+- All Qualcomm commits intact: `Prepare v2026.04-rc5`, `clk: qcom: qcs615` ×2, `phy: qcom: qusb2`, `power: regulator: qcom`, `serial: msm-geni`, `qcom: rpmh`, `watchdog: qcom`, `Merge tag 'qcom-fixes-24Mar2026'`.
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings/errors.
+
+### Push
+
+- Local backup branch `cherry-eb95914b9f5-v2` created at `c5ffa050e41`.
+- Force-pushed to `ci/cherry-eb95914b9f5` (`8a5ee397130 → c5ffa050e41`). MR pipeline will auto-trigger.
+
+### Suggested MR reply
+
+> **Rebased onto latest ci/master (d9920c548e8).** Resolved a single conflict in `.pickman-history` (both branches added a new `## 2026-05-03: us/master` section — kept both in chronological order). All 9 cherry-picked Qualcomm commits intact and unchanged. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Force-pushed; new pipeline should trigger automatically.
+
+---
+
