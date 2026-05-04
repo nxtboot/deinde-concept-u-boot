@@ -77891,3 +77891,53 @@ Comments addressed:
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed. Let me verify and run the build.
+
+All 9 cherry-picks plus 14 pickman record commits are present. Let me run the build.
+
+Build is clean. Let me create the v2 backup branch and push.
+
+Push completed successfully. Let me record the rebase action in the history and check final state.
+
+## Report
+
+### Summary
+
+**Rebase completed successfully with one conflict resolved.** Unlike previous task invocations on this MR (when `ci/master` had not advanced), this time `ci/master` had moved forward by 9 commits (the cherry-b04e4b19d4d MR was merged), so a real rebase was required.
+
+### What changed since last time
+
+- **Old `ci/master` tip**: `00abf8860cc`
+- **New `ci/master` tip**: `e3bf3b6174d` (+9 commits from the cherry-b04e4b19d4d MR — `arm: bcm: Include missing errno.h`, `board/raspberrypi: add multi-FDT support`, `board/raspberrypi: add bcm2712d0-rpi-5-b for Raspberry Pi 5`, the rpi-2026.04-rc5 merge tag, plus 4 pickman record commits and the merge-into-master commit).
+
+### Conflict resolved
+
+- **`.pickman-history`**: both branches added new sections at the same location. The HEAD (incoming from ci/master) had a `## 2026-05-04: us/master` section for cherry-b04e4b19d4d, while the rebased branch added a `## 2026-05-03: us/master` section for cherry-eb95914b9f5. Resolved by keeping both sections in chronological order (2026-05-04 cherry-b04e4b19d4d first, then `---` separator, then 2026-05-03 cherry-eb95914b9f5). No content lost.
+- All other 22 commits applied cleanly with no conflicts.
+
+### Verification
+
+- `git rebase --keep-empty ci/master`: 23 steps, completed successfully after the one resolved conflict.
+- All 9 cherry-picks intact: `Prepare v2026.04-rc5`, `clk: qcom: qcs615` ×2, `phy: qcom: qusb2`, `power: regulator: qcom`, `serial: msm-geni`, `qcom: rpmh`, `watchdog: qcom`, `Merge tag 'qcom-fixes-24Mar2026'` (empty merge preserved).
+- Plus 14 pickman record commits (1 cherry-pick record + 13 review/pipeline-handling records).
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### Push
+
+- Local backup branch `cherry-eb95914b9f5-v2` created at `ac7ec556cab`.
+- Force-pushed to `ci/cherry-eb95914b9f5` (`c5ffa050e41 → ac7ec556cab`). MR pipeline will auto-trigger.
+
+### Suggested MR reply
+
+> **Rebased onto latest ci/master (`e3bf3b6174d`).** Resolved a single conflict in `.pickman-history` (both branches added a new top-level dated section — kept both in chronological order with a `---` separator). All 9 cherry-picked Qualcomm commits applied cleanly with no further conflicts. Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Force-pushed; new pipeline should trigger automatically.
+
+---
+
