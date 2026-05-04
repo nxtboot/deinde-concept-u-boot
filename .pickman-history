@@ -78288,3 +78288,54 @@ The branch is left ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-04 (attempt 1)
+
+Branch: cherry-74f5e3ef30d
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+Both failures look like infrastructure issues. Let me confirm by checking the branch contents.
+
+I have enough information. Let me analyze:
+
+**Failure 1 — minnowmax:** `Could not find EM100pro with serial number DP139140.` The EM100pro is a SPI-flash hardware emulator at the lab. The lab tooling can't see it (USB disconnect / hardware issue). The job fails before any U-Boot code runs.
+
+**Failure 2 — efi-aarch64:** `OSError: [Errno 5] Input/output error` while reading from the serial pty during `restart_uboot()` in `test_distro_arm_app_extlinux`. EIO on a pty is a transient I/O error from the test infrastructure (the labgrid console connection broke), not a code bug. Note that 34 tests passed before this transient I/O error; only this single test failed and only on a reset operation.
+
+**Branch contents:** the cherry-picks touch `arch/powerpc/cpu/mpc83xx/u-boot.lds` (PowerPC), `.mailmap` (docs), `drivers/usb/cdns3/*` (TI cdns3 USB driver), and a Renesas R-Car DT — none of which affect `efi-aarch64` (EFI app on QEMU AArch64) or `minnowmax` (Intel Atom x86). It is not possible for any of these commits to cause an EM100pro USB-not-found error or a serial pty EIO.
+
+Both failures are lab/infrastructure issues. Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), I will not modify any commits. I will, however, still create the `cherry-74f5e3ef30d-fix1` branch pointing at the unchanged tip so the caller's machinery has a consistent reference.
+
+(Not using TodoWrite — this task is essentially diagnostic with a single mechanical step, no progress to track.)
+
+## Report
+
+**No code fix made — both failures are lab infrastructure issues, not problems on this branch.**
+
+### Branch contents (cherry-74f5e3ef30d, 6 commits above ci/master)
+| Commit | Files touched | Affects efi-aarch64? | Affects minnowmax? |
+|---|---|---|---|
+| `b78ea42aa47` powerpc/mpc83xx u-boot.lds align | `arch/powerpc/cpu/mpc83xx/u-boot.lds` | No | No |
+| `586a0f62955` .mailmap | `.mailmap` | No | No |
+| `05c9cdec1dc` Revert cdns3 VBUS Valid | `drivers/usb/cdns3/*` | No | No |
+| `c1f5d12e529` Renesas R-Car X5H DT SCIF1 | `arch/arm/dts/r8a78000*` | No | No |
+| `565c6b3f422` Merge commit (empty) | — | No | No |
+| `7236366e273` pickman record | (commit msg only) | No | No |
+
+### Job 495142 — efi-aarch64
+Failure: `OSError: [Errno 5] Input/output error` in `test_distro_arm_app_extlinux` at `os.read(self.fd, ...)` during `u-boot-test-reset`. Reading from the test pty/serial connection raised EIO — a transient lab console/hardware glitch. 34 tests passed and 673 were skipped before this, then a single failure on the very first `restart_uboot()` operation of this test. Classic transient infrastructure failure.
+
+### Job 495114 — minnowmax
+Failure: `Could not find EM100pro with serial number DP139140.` The EM100pro SPI flash emulator (used to flash `u-boot.rom` onto the minnowmax DUT) is not visible to the lab host `kea`. The job fails during `u-boot-test-flash` before U-Boot is ever booted. This is pure hardware/USB infrastructure, unrelated to the source tree under test.
+
+### Action taken
+- Created local branch `cherry-74f5e3ef30d-fix1` at the unchanged tip `7236366e273` (so the caller's pipeline has the expected branch name).
+- No commits modified, no fixup added.
+
+**Recommendation:** retry the pipeline. If `minnowmax` keeps failing with "Could not find EM100pro ... DP139140", someone needs to power-cycle / re-plug the EM100pro on host `kea`.
+
+---
+
