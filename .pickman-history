@@ -76905,3 +76905,68 @@ Per task instructions ("If the failure is an infrastructure or transient issue (
 
 ---
 
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) bbb.
+
+This is the same infrastructure failure as attem...
+
+### Conversation log
+## Report
+
+### Diagnosis: Infrastructure failure (same as attempts 1 and 2) — no code change made
+
+I confirmed the diagnosis by pulling the actual `bbb` job log from the most recent failure (pipeline **7510**, job **492220**). It is byte-for-byte the same lab-reservation conflict:
+
+```
+INTERNALERROR>   File ".../test/py/conftest.py", line 194, in get_details
+INTERNALERROR>     raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+INTERNALERROR> ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']: 'None ''
+$ U_BOOT_BOARD_IDENTITY="${ROLE}" u-boot-test-release || true
+labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure
+ERROR: Job failed: exit status 3
+```
+
+The BeagleBone Black labgrid place was held by user `okaro` when the runner tried to acquire it. The job aborted in `pytest_configure` before any U-Boot binary was loaded onto the board. This is the third time in a row this exact scenario has occurred on this MR.
+
+### Why this cannot be fixed in the source tree
+
+`git diff ci/master..HEAD --stat`:
+```
+.pickman-history                  | 218 +++++++++++++++++++++
+drivers/clk/mediatek/clk-mt7622.c |   8 +-
+2 files changed, 222 insertions(+), 4 deletions(-)
+```
+
+The branch only changes:
+- `drivers/clk/mediatek/clk-mt7622.c` — MediaTek MT7622 clock fix
+- `.pickman-history` — pickman record commits
+
+Nothing on the branch overlaps with BeagleBone Black / TI AM335x code, `test/py/conftest.py`, or labgrid configuration. The MT7622 clock fix has zero overlap with BBB hardware.
+
+### Verification
+
+- **Sandbox build**: `buildman -L --board sandbox -w -o /tmp/pickman` → `Completed: 1 total built` (success)
+- **Current pipelines**: 7515 and 7516 are already running on the same SHA `058b24a9fb`. Pipeline 7516's `bbb` job is in `created` state — it will retry the place acquisition shortly.
+
+### No -v2 branch created, no force-push
+
+Following the precedent set by attempts 1 and 2, and per the task instruction *"If a comment is unclear or cannot be addressed, note this in your report"*: I did **not** create `cherry-52d84fccfd7-v2` or force-push. Force-pushing only a `.pickman-history` record commit (with no source-tree delta) would trigger yet another redundant pipeline that would hit the exact same lab-reservation conflict.
+
+Two pipelines (7515, 7516) are already running on the existing SHA — adding a third by force-pushing solves nothing.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 3): no code change — same infrastructure issue as attempts 1 and 2.**
+>
+> Re-checked the `bbb` failure log from pipeline 7510, job 492220. Same root cause: `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)`. The runner's `u-boot-test-getrole bbb --configure` returned exit 1 because the BeagleBone Black labgrid place was held by another user.
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622) and `.pickman-history`. It cannot affect BBB hardware, the test framework, or labgrid reservations. Sandbox build still passes locally.
+>
+> Pipelines 7515 and 7516 are already running on the same SHA `058b24a9fb`; the `bbb` job will retry place acquisition. **No code change made; no -v2 branch pushed** — pushing a record-only commit would just spawn another pipeline likely to hit the same transient conflict. Recommended: let pipeline 7516 complete, or use `--kick` per the labgrid hint if local policy allows.
+
+---
+
