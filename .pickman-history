@@ -77282,3 +77282,66 @@ branch as standalone cherry-picks (with -x source references).
 
 ---
 
+## 2026-05-03: us/master
+
+Branch: cherry-eb95914b9f5
+
+Commits:
+- eb95914b9f5 Prepare v2026.04-rc5
+- c4f40d09259 clk: qcom: qcs615: Add GCC_USB3_PRIM_CLKREF_CLK support
+- c4169dfa1dc clk: qcom: qcs615: Add GCC_AHB2PHY_WEST_CLK clock support
+- 0f265c20a56 phy: qcom: qusb2: Add QCS615 QUSB2 PHY support
+- bb5012fb66c power: regulator: qcom: Correct dependenecies for DM_REGULATOR_QCOM_USB_VBUS
+- 7f09aff3992 serial: msm-geni: allow invalid clock
+- 4577a672ece qcom: rpmh: don't error for SLEEP requests
+- 1cf505e51b4 watchdog: qcom: stop watchdog by default
+- 075bd023c77 Merge tag 'qcom-fixes-24Mar2026' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+None of the commits are already present in ci/master. Let me resolve the Makefile conflict.
+
+Now let me amend the commit message to note the fix-up:
+
+Now let me verify the deltas match:
+
+Deltas match. Let me run the build test:
+
+Build passed. Now cherry-pick the second commit:
+
+Now the merge commit:
+
+All 9 commits are present. Let me run the final build:
+
+All cherry-picks complete and final build passes.
+
+## Final Status
+
+**Build result:** OK (sandbox build clean, no warnings/errors)
+
+**All 9 commits successfully cherry-picked** onto branch `cherry-eb95914b9f5` (based on `ci/master`):
+
+| New Hash | Original | Subject |
+|---|---|---|
+| dbdcf46eedd | eb95914b9f5 | Prepare v2026.04-rc5 |
+| f3e4a8b9f05 | c4f40d09259 | clk: qcom: qcs615: Add GCC_USB3_PRIM_CLKREF_CLK support |
+| 79056c29c40 | c4169dfa1dc | clk: qcom: qcs615: Add GCC_AHB2PHY_WEST_CLK clock support |
+| 713b2d82215 | 0f265c20a56 | phy: qcom: qusb2: Add QCS615 QUSB2 PHY support |
+| 898452318ab | bb5012fb66c | power: regulator: qcom: Correct dependenecies for DM_REGULATOR_QCOM_USB_VBUS |
+| d85f722193d | 7f09aff3992 | serial: msm-geni: allow invalid clock |
+| 07723b60572 | 4577a672ece | qcom: rpmh: don't error for SLEEP requests |
+| 50da7b561ed | 1cf505e51b4 | watchdog: qcom: stop watchdog by default |
+| 40559f87788 | 075bd023c77 | Merge tag 'qcom-fixes-24Mar2026' (empty merge commit, preserved) |
+
+**Fix-ups applied:**
+- **Commit 1 (Prepare v2026.04-rc5):** Resolved Makefile EXTRAVERSION conflict (HEAD had `EXTRAVERSION =`, original set `EXTRAVERSION = -rc5`). Took the rc5 value. Annotated the commit message with `[sjg: Resolve Makefile EXTRAVERSION conflict]`.
+
+**Concerning deltas:** None — all commits matched the original file/line counts exactly.
+
+**Other notes:**
+- The `power: regulator: qcom: Correct dependenecies` commit had a clean auto-merge in `drivers/power/regulator/Kconfig` (no fix-up needed).
+- The merge commit `075bd023c77` was empty after cherry-pick (its child commits were already applied); committed with `--allow-empty` to preserve sequence/history as instructed.
+
+Branch `cherry-eb95914b9f5` is left ready for pushing.
+
+---
+
