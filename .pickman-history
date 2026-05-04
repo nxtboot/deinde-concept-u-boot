@@ -78339,3 +78339,43 @@ Failure: `Could not find EM100pro with serial number DP139140.` The EM100pro SPI
 
 ---
 
+### Review: 2026-05-04
+
+Branch: cherry-74f5e3ef30d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, minnowmax.
+
+Both failures look like infra...
+
+### Conversation log
+The review comment is the bot reporting back my previous diagnosis (Pipeline fix attempt 1). Both failures (efi-aarch64 and minnowmax) were diagnosed as lab infrastructure issues - not problems with the source. Since the review comment is literally my own previous report being fed back, and no code changes were made or are warranted, the action here is to retry the pipeline by force-pushing the branch.
+
+Let me verify the build still passes and then push.
+
+Build passes. Now let me create the v2 branch and push.
+
+Pushed successfully. The pipeline will be re-triggered automatically.
+
+## Report
+
+**Action taken:** No code changes; force-pushed the unchanged branch tip (`87ebd78bf1f`) to retrigger the pipeline.
+
+### Why no code changes
+The review comment is my own previous diagnosis from "Pipeline fix attempt 1". Both failed jobs were lab infrastructure issues:
+- **efi-aarch64**: `OSError: EIO` reading from serial pty during `restart_uboot()` — transient labgrid console glitch (34 tests passed first).
+- **minnowmax**: `Could not find EM100pro with serial number DP139140` — SPI flash emulator hardware not visible to lab host `kea`. Fails before U-Boot boots.
+
+The branch only touches `arch/powerpc/cpu/mpc83xx/u-boot.lds`, `.mailmap`, `drivers/usb/cdns3/*`, and Renesas R-Car DT files — none can plausibly affect an EFI app on QEMU AArch64 or an Intel Atom x86 board, let alone cause USB-disconnect / pty-EIO errors.
+
+### Verification
+- `buildman -L --board sandbox -w -o /tmp/pickman` passed (1 built, 0 errors)
+- Created local branch `cherry-74f5e3ef30d-v2` at the unchanged tip
+- Force-pushed to remote `cherry-74f5e3ef30d` on `ci` to retrigger the MR pipeline
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 2): Re-pushed unchanged branch to retrigger the pipeline. Both previously-failed jobs were diagnosed as lab infrastructure issues (efi-aarch64: transient pty EIO during `restart_uboot()`; minnowmax: EM100pro SPI flash emulator not visible to host `kea`) — neither can be caused by the cherry-picked commits, which only touch PowerPC mpc83xx, .mailmap, cdns3 USB driver, and Renesas R-Car DT. If `minnowmax` keeps failing with the EM100pro USB error, the EM100pro on host `kea` likely needs a power-cycle / re-plug.
+
+---
+
