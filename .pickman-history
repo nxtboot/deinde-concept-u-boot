@@ -76641,3 +76641,49 @@ Branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-03 (attempt 1)
+
+Branch: cherry-eeca6ed86ff
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- bbb (sjg-lab)
+
+### Conversation log
+The cherry-picked commits only modify:
+- `boot/image-fit.c` — comment-only changes (documentation)
+- `MAINTAINERS` — text updates renaming/marking PWM LED orphan
+- `.pickman-history` — meta file
+
+None of these changes affect runtime behavior. Let me look at the failures more carefully to confirm they are infrastructure/transient issues.
+
+## Report
+
+**No code changes were made.** All three failures are infrastructure / transient issues unrelated to the cherry-picked commits.
+
+### Root cause analysis
+
+The branch contains 4 cherry-picks (plus a pickman history meta-commit):
+1. `9af7b2500b5` image-fit: comment-only fix in `boot/image-fit.c`
+2. `76a921eb2e8` MAINTAINERS: rename LED → PWM LED
+3. `4d871a044c4` MAINTAINERS: mark PWM LED orphan
+4. `ef178785ef9` Merge commit (empty)
+
+All non-merge commits touch only `boot/image-fit.c` (comments) and `MAINTAINERS`. **None of them modify any runtime code path** that could affect the failing tests.
+
+### Per-job assessment
+
+- **bbb (job 491860)** — Infrastructure failure. The labgrid client reports:
+  `place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure`. The pytest `INTERNALERROR` came from `u-boot-test-getrole bbb --configure` failing for that reason, before any U-Boot test ran.
+
+- **qemu-x86_64 (job 491875)** — Transient test timeout in `test_efi_selftest_text_input` (`console_base.Timeout`). 44 passed, 1 failed. The EFI selftest text-input test depends on simulated keyboard input timing; it cannot be impacted by MAINTAINERS or image-fit comment changes.
+
+- **efi-aarch64 (job 491880)** — Transient test timeout in `test_distro_arm_app_efi` waiting for the `Ubuntu 25.04 qarm ttyAMA0` login banner. 34 passed, 1 failed. This test boots an external Ubuntu distro image over network/disk; failures here are nearly always lab/network/timing related and cannot stem from this MR's content.
+
+### Action
+
+Created local branch `cherry-eeca6ed86ff-fix1` at the same commit as `cherry-eeca6ed86ff` (HEAD `1a8841f022c`). No build was run because there is nothing to fix — the tree is identical to the input branch. Recommend re-running the failed jobs to clear the transient infrastructure issues.
+
+---
+
