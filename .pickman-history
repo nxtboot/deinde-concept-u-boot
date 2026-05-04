@@ -77750,3 +77750,52 @@ Skipped steps 5–6 because the rebase was a no-op — there is nothing new to p
 
 ---
 
+### Pipeline fix: 2026-05-04 (attempt 3)
+
+Branch: cherry-eb95914b9f5
+
+Failed jobs:
+- play (sjg-lab)
+- bbb (sjg-lab)
+
+### Conversation log
+I've verified the branch state and reviewed both failure logs. Both failures are clearly lab/infrastructure issues unrelated to any code on this branch.
+
+## Report: Infrastructure / Lab Failures (no code fix possible)
+
+### Branch state
+- **Branch**: `cherry-eb95914b9f5` checked out at `8a5ee397130` (HEAD).
+- **Code commits**: All 9 cherry-picked commits are Qualcomm-Snapdragon-specific:
+  - `clk: qcom: qcs615:` (×2)
+  - `phy: qcom: qusb2:`
+  - `power: regulator: qcom:`
+  - `serial: msm-geni:`
+  - `qcom: rpmh:`
+  - `watchdog: qcom:`
+  - `Prepare v2026.04-rc5` (version bump only)
+  - `Merge tag 'qcom-fixes-24Mar2026'` (empty merge)
+- **No commit on this branch touches any TI AM62 / TI AM335 file or any code path used by `play` or `bbb`.**
+
+### Failure analysis
+
+| Job | Board | Failure | Type |
+|---|---|---|---|
+| `play` (493931) | TI AM62 BeaglePlay | `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` after flash — board never produced a U-Boot prompt | Lab hardware/serial timeout |
+| `bbb` (493912) | TI AM335 BeagleBone Black | `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass), use --kick if you are sure` → `INTERNALERROR ValueError: Error 1 running ['u-boot-test-getrole', 'bbb', '--configure']` | Lab resource locked by another user |
+
+### Root cause
+- **`play`**: Lab-side serial/login timeout. The runner flashed the image (`Building U-Boot in pytest-source dir for am62x_beagleplay_a53` … `Writing U-Boot using method ti,am625`) but the board never reached a login prompt within 20 s. This is a hardware/serial transient — common on the ellesmere-lab runner.
+- **`bbb`**: The labgrid place `bbb` was already acquired by user `okaro/sglass` when this job started. Pure resource contention; the test never even got past `pytest_configure`.
+
+### No commit is responsible
+Neither failure is reachable from any code on this branch. There is no plausible causal path from a Qualcomm clk/phy/regulator/serial/rpmh/watchdog change (or a version bump) to:
+- a TI AM62 board failing to print a login prompt, or
+- labgrid concurrency on a TI AM335 board.
+
+Both attempts 1 and 2 reached the same conclusion for the same reason; this attempt 3 is consistent.
+
+### Action taken
+**None.** No source changes made. Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), no `cherry-eb95914b9f5-fix3` branch was created — there is no code fix to leave on it. Recommend retrying the failed lab jobs once the `bbb` place is released and the `play` board's serial is stable.
+
+---
+
