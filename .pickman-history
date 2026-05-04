@@ -77138,3 +77138,147 @@ All 6 commits are present.
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-b04e4b19d4d
+
+Commits:
+- b04e4b19d4d arm: bcm: Include missing errno.h
+- 4e64ea88585 rpi: Update the naming for bcm2712 SoC RevD naming
+- c24a72c35ab Merge tag 'rpi-2026.04-rc5' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+
+### Conversation log
+Identical. Now let's run the build test.
+
+Build passed. Now the second commit.
+
+Now the merge commit.
+
+All three commits are in place and the final build passes.
+
+## Final Status
+
+**Build result:** OK (sandbox built successfully after each cherry-pick and at the end).
+
+**Commits on `cherry-b04e4b19d4d`:**
+1. `2021f70a2ba` — `arm: bcm: Include missing errno.h` — clean cherry-pick, identical delta (1 file, 1 insertion).
+2. `4887f01018d` — `rpi: Update the naming for bcm2712 SoC RevD naming [FAILED]` — empty commit. The original rename (`bcm2712d0-rpi-5-b.dtb` → `bcm2712-d-rpi-5-b.dtb`) targets a string inside an `FDTFILES(...)` multi-DTB list that is not present in this branch (the branch still has a single-DTB entry for the RPi 5). Both `git cherry-pick` and `git apply --3way` produced the same conflict; the original change has nothing applicable to apply against, so it is preserved as an empty `[FAILED]` commit per the procedure.
+3. `bc85501bca2` — `Merge tag 'rpi-2026.04-rc5' ...` — preserved as an empty merge cherry-pick. The merge introduces only the same two commits above; the conflict was on the same `rpi.c` lines. Resolved with `--ours` and committed empty with `--allow-empty`. A note was appended to the commit message recording the conflict resolution.
+
+**Concerning deltas / fix-ups:**
+- Commit #2 has a 100% delta loss (cannot apply to this codebase). Tagged `[FAILED]` in the subject and explanation in body.
+- Commit #3 is empty after `--ours` resolution (its only useful content was the rename which can't apply here). Note appended explaining the resolution.
+
+The branch `cherry-b04e4b19d4d` is left ready for pushing. No merges performed.
+
+---
+
+### Pipeline fix: 2026-05-04 (attempt 1)
+
+Branch: cherry-b04e4b19d4d
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+
+### Conversation log
+Both failures are clearly infrastructure/lab issues unrelated to the cherry-picked commits. Let me confirm and report.
+
+Both failures are clearly infrastructure issues:
+
+1. **rockpro64**: SPL fails to read from MMC entirely (`mmc_load_image_raw_sector: mmc block read error`, `Card did not respond to voltage select`) before any U-Boot code from these commits could run. The board never reaches the U-Boot prompt, then labgrid times out. This is a lab-board SD/MMC hardware failure.
+
+2. **efi-x86_64-uboot-iso**: U-Boot does its job correctly — boots, scans, finds the bootflow, loads kernel + initrd, and jumps to the kernel. The **Linux kernel** then reports `Initramfs unpacking failed: invalid magic at start of compressed archive`, and the test times out waiting for `Started gdm.service`. This is a flaky distro/initrd boot issue, not a U-Boot regression.
+
+The cherry-picked commits in this branch only modify `arch/arm/mach-bcm283x/msg.c` (one `#include <errno.h>` line, RPi/BCM283x only) and `.pickman-history` (not built). Neither touches anything related to RK3399 (rockpro64) or x86_64 EFI/distro boot. There's no plausible mechanism for these changes to break either job.
+
+Per the task instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), I'm making no code changes.
+
+## Report
+
+**Result: No code changes made — both failures are infrastructure/lab issues, unrelated to the cherry-picked commits.**
+
+**Branch contents** (`cherry-b04e4b19d4d`, 3 cherry-picks + 1 history record):
+- `2021f70a2ba` arm: bcm: Include missing errno.h — adds `#include <errno.h>` to `arch/arm/mach-bcm283x/msg.c` (RPi/BCM283x only)
+- `4887f01018d` rpi: Update the naming for bcm2712 SoC RevD naming — empty (marked `[FAILED]`)
+- `bc85501bca2` Merge tag 'rpi-2026.04-rc5' — empty merge
+- `16b41b8d9d6` pickman history record
+
+Total functional change: 1 line in a BCM283x file. Nothing that can affect RK3399 (rockpro64) or x86_64 EFI builds.
+
+### Diagnosis
+
+**rockpro64 (job 494168):** TPL/SPL reaches the boot ROM and tries to load FIT from MMC, but every read fails:
+```
+spl_load_simple_fit: can't load image loadables index 0 (ret = -5)
+mmc_load_image_raw_sector: mmc block read error
+Error: -38
+... Card did not respond to voltage select! : -110
+SPL: failed to boot from all boot devices
+### ERROR ### Please RESET the board ###
+```
+The board never reaches U-Boot proper, so labgrid times out (`Timeout of 10 seconds exceeded during waiting for login`) and marks the connection bad. This is a lab-side SD/MMC hardware fault.
+
+**efi-x86_64-uboot-iso (job 494173):** U-Boot works correctly all the way through — bootflow scan, kernel + initrd load via BLS, and kernel handoff. Then the **Linux kernel** itself reports:
+```
+[    0.637808] Initramfs unpacking failed: invalid magic at start of compressed archive
+```
+The pytest then times out waiting for `Started gdm.service`. This is a distro/initrd issue inside the Ubuntu ISO boot path, not a U-Boot regression.
+
+### Action
+
+- No commits amended, no fixup added.
+- Branch `cherry-b04e4b19d4d-fix1` created pointing at the same HEAD as `cherry-b04e4b19d4d` (so the caller has the expected ref).
+- Recommend a pipeline retry; if both jobs reproduce, escalate to lab maintenance (rockpro64 SD card, x86_64 ISO image / runner).
+
+---
+
+### Review handling: 2026-05-04
+
+Branch: cherry-b04e4b19d4d
+
+Comment: Pipeline fix (attempt 1) report quoted back by the bot — both
+failed jobs (efi-x86_64-uboot-iso, rockpro64) diagnosed as infrastructure
+issues unrelated to the cherry-picked changes.
+
+Action: Re-confirmed diagnosis. The branch's only functional change is
+the single `#include <errno.h>` line in `arch/arm/mach-bcm283x/msg.c`
+(RPi/BCM283x only). It cannot affect RK3399 (rockpro64) SD/MMC behaviour
+nor x86_64 EFI/distro initrd unpack. No code changes made. Pushing -v2
+to retrigger the pipeline; if either job reproduces it should be
+escalated to lab maintenance.
+
+---
+
+### Review handling: 2026-05-04 (v3)
+
+Branch: cherry-b04e4b19d4d
+
+Comment from sjg: "pickman: Please can you recreated the failed commit
+manually?"
+
+Diagnosis: The original `[FAILED]` commit (4887f01018d, recreating
+upstream `4e64ea88585`) was empty because the rename target string
+`bcm2712d0-rpi-5-b.dtb` did not exist in this branch. The string is
+introduced by upstream `c15a7919725` ("board/raspberrypi: add
+bcm2712d0-rpi-5-b for Raspberry Pi 5") which depends on `e263f901c10`
+("board/raspberrypi: add multi-FDT support"). Both were merged via
+`rpi-2026.04-rc4` (eefb822fb57), which had not been cherry-picked here.
+
+Action: Rebuilt the branch starting from the errno.h commit
+(2021f70a2ba), then:
+  1. Cherry-picked e263f901c10 (multi-FDT support, +52/-41).
+  2. Cherry-picked c15a7919725 (add bcm2712d0-rpi-5-b, +4/-1).
+  3. Re-cherry-picked the merge tag rpi-2026.04-rc5 (-m 1) — now
+     applies cleanly and brings in the rename (+1/-1) as the upstream
+     fix intended.
+  4. Re-applied the prior pickman-history commits.
+  5. Built sandbox with buildman — clean.
+
+Result: The `[FAILED]` empty commit and the empty merge cherry-pick
+are gone. The merge commit now contains the actual rename, matching
+the upstream commit's effect. Two prerequisite commits are now in this
+branch as standalone cherry-picks (with -x source references).
+
+---
+
