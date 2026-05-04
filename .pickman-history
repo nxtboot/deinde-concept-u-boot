@@ -77345,3 +77345,44 @@ Branch `cherry-eb95914b9f5` is left ready for pushing.
 
 ---
 
+### Review: 2026-05-03
+
+Branch: cherry-eb95914b9f5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) play, rockpro64, bbb, jerry.
+
+All four failures look l...
+
+### Conversation log
+## Report
+
+### Summary
+
+The "review comment to address" on MR !1040 is the bot's own previous diagnostic report ("Pipeline fix (attempt 1)"), which correctly concluded that the 4 failing jobs (`play`, `rockpro64`, `bbb`, `jerry`) were lab/infrastructure issues with no code fix possible. There is nothing actionable in this comment.
+
+### State checks
+
+- **Branch**: `cherry-eb95914b9f5` is checked out at `d9c563dd6af` (the pickman record commit on top of the 9 cherry-picked commits — all Qualcomm-only changes).
+- **Current MR pipeline**: Pipeline 7530 is **already running** on this exact SHA — no new push would help.
+- **Sandbox build sanity check**: `buildman -L --board sandbox -w -o /tmp/pickman` → `1 total built, duration 0:00:05` — clean, no warnings or errors.
+
+### No code changes made / no -v2 branch pushed
+
+The previous diagnosis stands and is unchanged:
+- Branch only touches `clk: qcom:`, `phy: qcom:`, `power: regulator: qcom:`, `serial: msm-geni:`, `qcom: rpmh:`, `watchdog: qcom:` plus a version bump.
+- Failing boards are all non-Qualcomm (TI AM62, TI AM335, Rockchip RK3399, Rockchip RK3288).
+- Failure modes were: serial-login pexpect timeouts (`play`, `jerry`), MMC voltage-select failure on lab SD card (`rockpro64`), and labgrid place locked by another user (`bbb`) — all transient lab-side problems.
+
+Pushing an identical `-v2` branch would just trigger a redundant pipeline alongside the one already running, so I deliberately skipped step 5–6 of the workflow.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 2): no action — same diagnosis as attempt 1.**
+>
+> Re-checked the branch state and the previous diagnosis still holds: the 4 failing jobs (`play`, `rockpro64`, `bbb`, `jerry`) were all lab/infrastructure failures (serial-login timeouts, an MMC voltage-select error on a lab SD card, and a labgrid place locked by another user). None of the failing boards are Qualcomm targets, and every commit on this branch is Qualcomm-Snapdragon-specific (clk/phy/regulator/serial/rpmh/watchdog) plus a version bump — there is no code path linking them to the failures.
+>
+> Sandbox build remains clean (`buildman -L --board sandbox -w` → 1 built, 0 errors/warnings). Pipeline 7530 is already running on the current HEAD, so no new branch was pushed. Recommend retrying the failed lab jobs once those boards are available.
+
+---
+
