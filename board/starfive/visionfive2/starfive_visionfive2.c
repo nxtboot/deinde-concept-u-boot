@@ -31,6 +31,8 @@ DECLARE_GLOBAL_DATA_PTR;
 	"starfive/jh7110-starfive-visionfive-2-v1.3b.dtb"
 #define FDTFILE_VISIONFIVE2_LITE \
 	"starfive/jh7110-starfive-visionfive-2-lite.dtb"
+#define FDTFILE_VISIONFIVE2_LITE_EMMC \
+	"starfive/jh7110-starfive-visionfive-2-lite-emmc.dtb"
 #define FDTFILE_ORANGEPI_RV \
 	"starfive/jh7110-orangepi-rv.dtb"
 #define FDTFILE_PINE64_STAR64 \
@@ -102,7 +104,10 @@ static void set_fdtfile(void)
 	} else if (!strncmp(product_id, "STAR64", 6)) {
 		fdtfile = FDTFILE_PINE64_STAR64;
 	} else if (!strncmp(product_id, "VF7110SL", 8)) {
-		fdtfile = FDTFILE_VISIONFIVE2_LITE;
+		if (get_mmc_size_from_eeprom())
+			fdtfile = FDTFILE_VISIONFIVE2_LITE_EMMC;
+		else
+			fdtfile = FDTFILE_VISIONFIVE2_LITE;
 	} else {
 		log_err("Unknown product\n");
 		return;
