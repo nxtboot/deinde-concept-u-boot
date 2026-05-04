@@ -77250,3 +77250,35 @@ escalated to lab maintenance.
 
 ---
 
+### Review handling: 2026-05-04 (v3)
+
+Branch: cherry-b04e4b19d4d
+
+Comment from sjg: "pickman: Please can you recreated the failed commit
+manually?"
+
+Diagnosis: The original `[FAILED]` commit (4887f01018d, recreating
+upstream `4e64ea88585`) was empty because the rename target string
+`bcm2712d0-rpi-5-b.dtb` did not exist in this branch. The string is
+introduced by upstream `c15a7919725` ("board/raspberrypi: add
+bcm2712d0-rpi-5-b for Raspberry Pi 5") which depends on `e263f901c10`
+("board/raspberrypi: add multi-FDT support"). Both were merged via
+`rpi-2026.04-rc4` (eefb822fb57), which had not been cherry-picked here.
+
+Action: Rebuilt the branch starting from the errno.h commit
+(2021f70a2ba), then:
+  1. Cherry-picked e263f901c10 (multi-FDT support, +52/-41).
+  2. Cherry-picked c15a7919725 (add bcm2712d0-rpi-5-b, +4/-1).
+  3. Re-cherry-picked the merge tag rpi-2026.04-rc5 (-m 1) — now
+     applies cleanly and brings in the rename (+1/-1) as the upstream
+     fix intended.
+  4. Re-applied the prior pickman-history commits.
+  5. Built sandbox with buildman — clean.
+
+Result: The `[FAILED]` empty commit and the empty merge cherry-pick
+are gone. The merge commit now contains the actual rename, matching
+the upstream commit's effect. Two prerequisite commits are now in this
+branch as standalone cherry-picks (with -x source references).
+
+---
+
