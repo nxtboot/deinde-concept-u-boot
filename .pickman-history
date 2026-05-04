@@ -78200,6 +78200,54 @@ The pickman `review` workflow appears to be looping on its own previous report. 
 1. **Manual retry** of the failed job once lab hardware is restored, then re-run `pickman review`.
 2. **Filter** in `pickman review` to ignore comments authored by `project_1_bot_*` that are themselves pipeline-fix reports (they're status records, not actionable feedback).
 3. **Mark the MR's pipeline as passed** (or re-trigger only non-lab jobs) since the source-changed files are docs-only.
+---
+
+## 2026-05-04: us/master
+
+Branch: cherry-74f5e3ef30d
+
+Commits:
+- 74f5e3ef30d powerpc/mpc83xx: Move alignment padding into __u_boot_list section
+- 4dc4080805f .mailmap: Fix Jerome's entry
+- 214aababe07 Revert "usb: cdns3: use VBUS Valid to determine role for dr_mode OTG"
+- e7b5aee706f net: rswitch: Avoid NULL pointer dereference during PHY access
+- d8bd70741f0 arm64: dts: renesas: Disable SCIF1 in Renesas R-Car X5H R8A78000 SoC DT
+- 47e064f1317 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+The delta looks fine (1 file, same line count). Let me run a quick build test:
+
+Delta matches exactly. Continuing:
+
+Delta matches exactly. Build test:
+
+Skipping e7b5aee706f (already applied as 61d24087683 - patches are identical except for cherry-pick line). Continuing:
+
+Delta matches exactly. Build test:
+
+Now for the merge commit 47e064f1317:
+
+All cherry-picks complete. Final status:
+
+## Summary
+
+**Branch:** `cherry-74f5e3ef30d` (based on `ci/master`)
+
+**Cherry-picks applied (4):**
+- `b78ea42aa47` — powerpc/mpc83xx: Move alignment padding into __u_boot_list section (from 74f5e3ef30d)
+- `586a0f62955` — .mailmap: Fix Jerome's entry (from 4dc4080805f)
+- `05c9cdec1dc` — Revert "usb: cdns3: use VBUS Valid to determine role for dr_mode OTG" (from 214aababe07)
+- `c1f5d12e529` — arm64: dts: renesas: Disable SCIF1 in Renesas R-Car X5H R8A78000 SoC DT (from d8bd70741f0)
+- `565c6b3f422` — Merge branch 'master' of u-boot-sh (empty merge commit from 47e064f1317, preserved with --allow-empty)
+
+**Skipped as already applied (1):**
+- `e7b5aee706f` — net: rswitch: Avoid NULL pointer dereference during PHY access — verified identical to existing `61d24087683` (only difference is a cherry-picked-from line)
+
+**Build:** sandbox build passed after each cherry-pick and at the end (no warnings/errors)
+
+**Deltas:** All cherry-picks matched original commit stats exactly (1 file 2+/1- for mpc83xx, 1 file 2+/1- for mailmap, 2 files 64- for cdns3 revert, 1 file 1+/1- for SCIF1). The mpc83xx commit had a small auto-merge conflict resolution (1 deletion vs 2 deletions in original) but the substance is unchanged.
+
+**No fix-ups required.** Branch is ready for pushing.
 
 ---
 
