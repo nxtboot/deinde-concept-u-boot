@@ -76970,3 +76970,60 @@ Two pipelines (7515, 7516) are already running on the existing SHA — adding a 
 
 ---
 
+### Review: 2026-05-03
+
+Branch: cherry-52d84fccfd7
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) bbb, jerry.
+
+Both failures are infrastructure-related,...
+
+### Conversation log
+## Report
+
+### Diagnosis: Repeat of infrastructure issues from attempts 1–3 — no code change made
+
+The review comment is the bot's auto-recorded "Pipeline fix (attempt 3)" report, which itself documented the same diagnosis I (and the prior attempts) reached: the `bbb` and `jerry` job failures are transient lab/infrastructure issues, not code regressions on this branch.
+
+### Verification this turn
+
+**Branch state** (`git diff ci/master..HEAD --stat`):
+```
+.pickman-history                  | 283 ++++++++++++++++++++++++++++++++++++++
+drivers/clk/mediatek/clk-mt7622.c |   8 +-
+2 files changed, 287 insertions(+), 4 deletions(-)
+```
+
+The only code change on the branch is `drivers/clk/mediatek/clk-mt7622.c` — a MediaTek MT7622 clock fix. Everything else is `.pickman-history` record commits.
+
+**Sandbox build** (`buildman -L --board sandbox -w -o /tmp/pickman`):
+```
+Completed: 1 total built, duration 0:00:05, rate 0.20
+```
+Pass.
+
+### Why neither failure can be fixed in source
+
+- **`bbb`** (BeagleBone Black, TI AM335x) — failed with `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)` in `pytest_configure`, before any U-Boot binary was loaded. Lab-reservation conflict.
+- **`jerry`** (Chromebook Jerry, Rockchip RK3288) — failed with `Lab timeout: Marking connection bad` during the `rockchip-em100` flash bootstrap, before reset. Lab-link timeout.
+
+Neither hardware (TI AM335x, Rockchip RK3288) shares any code path with the MediaTek MT7622 clock driver this MR touches. Both failures occurred before any code from this branch was running on the device. There is nothing in the source tree that can fix a labgrid place reservation or an em100 lab-link timeout.
+
+### Branch state
+
+- **Local branch created:** `cherry-52d84fccfd7-v2` at the current SHA `6a172d073bd` (same as `cherry-52d84fccfd7`). No code delta vs. the existing remote branch.
+- **No force-push performed.** Pushing only a `.pickman-history` record commit (with no source-tree change) would just spawn another pipeline that would very likely hit the same transient lab issue, adding noise without fixing anything. This is consistent with the decision in attempts 1, 2, and 3.
+
+### Suggested MR reply
+
+> **Pipeline fix (attempt 4): no code change — same infrastructure issues as attempts 1, 2, and 3.**
+>
+> The bbb failure is the recurring `labgrid-client: Error: place bbb is acquired by a different user (okaro/sglass)` lab-reservation conflict (job aborts in `pytest_configure` before any U-Boot binary loads). The jerry failure is a `Lab timeout: Marking connection bad` during the `rockchip-em100` flash bootstrap (before the device runs any branch code).
+>
+> The branch only changes `drivers/clk/mediatek/clk-mt7622.c` (MediaTek MT7622 networking SoC) and `.pickman-history`. Nothing here can affect TI AM335x (bbb) or Rockchip RK3288 (jerry) hardware, the labgrid framework, or the em100 flash bootstrap path. Sandbox build still passes locally.
+>
+> **No code change, no -v2 force-push.** Force-pushing a record-only commit would only spawn another pipeline that will likely hit the same transient lab issues. Recommended action: free the `bbb` labgrid place (or use `--kick` per the labgrid hint if local policy allows) and let the lab link to jerry recover, then retry both jobs.
+
+---
+
