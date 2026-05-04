@@ -77941,3 +77941,51 @@ Push completed successfully. Let me record the rebase action in the history and 
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-72cc446490e
+
+Commits:
+- 72cc446490e treewide: fix uImage.FIT document paths
+- 4bcac9511c8 doc: pstore: fix typo
+- 2632deee5fa doc/buildman: fix missing :: on examples
+- d0dfaacf57a doc: Use sys.path.append for pytests being found
+- 155cd085616 doc: board: fix OPTEE args for TI SoCs
+- 22037a6ebb3 doc: board: ti: fix incorrect labels for boot switches
+- c0097714277 doc: overlay-fdt-boot: .dtbos do not need load addresses
+- c704af3c8b0 Merge tag 'doc-2026-04-rc6' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Stats match. Now build test.
+
+All 8 commits are present. Now do the final build.
+
+## Final Status Report
+
+**Branch created:** `cherry-72cc446490e` (based on `ci/master`)
+
+**All 8 commits successfully cherry-picked:**
+
+| # | New Hash | Original Hash | Subject |
+|---|----------|--------------|---------|
+| 1 | 828552cf77d | 72cc446490e | treewide: fix uImage.FIT document paths |
+| 2 | a48e25fb356 | 4bcac9511c8 | doc: pstore: fix typo |
+| 3 | aede64bd7ac | 2632deee5fa | doc/buildman: fix missing :: on examples |
+| 4 | d2b9650128b | d0dfaacf57a | doc: Use sys.path.append for pytests being found |
+| 5 | 113dedfa52b | 155cd085616 | doc: board: fix OPTEE args for TI SoCs |
+| 6 | fee6f789f5a | 22037a6ebb3 | doc: board: ti: fix incorrect labels for boot switches |
+| 7 | 74b7495baba | c0097714277 | doc: overlay-fdt-boot: .dtbos do not need load addresses |
+| 8 | 8c6e68714ba | c704af3c8b0 | Merge tag 'doc-2026-04-rc6' (empty merge commit, preserved with --allow-empty) |
+
+**Build result:** OK (sandbox build completed successfully on every step including the final verification — no warnings or errors)
+
+**Delta checks:** All 7 non-merge commits matched the originals exactly (same files, same line counts).
+
+**Fix-ups:** None required. All cherry-picks applied cleanly via auto-merge. The merge commit (#8) became empty because its content was already brought in by the 7 preceding individual cherry-picks; it was preserved with `--allow-empty` per the instructions to maintain history tracking.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing. Not merged anywhere.
+
+---
+
