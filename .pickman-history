@@ -78892,3 +78892,35 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-884b10e86a0
+
+Commits:
+- 884b10e86a0 usb: dwc3: core: fix memory leaks in event buffer cleanup
+- 56905deb20d Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+Delta matches exactly. Let me run the build test.
+
+Build passed. Now cherry-pick the merge commit.
+
+All cherry-picks complete successfully. Final status:
+
+**Cherry-pick Summary:**
+
+| Original | Cherry-picked | Status |
+|----------|---------------|--------|
+| `884b10e86a0` | `53b21a4cb5f` | usb: dwc3: core: fix memory leaks in event buffer cleanup — clean cherry-pick, delta matches exactly (1 file, 3 insertions) |
+| `56905deb20d` | `c199e940fac` | Merge branch 'master' of git://source.denx.de/u-boot-usb — empty merge commit preserved with `--allow-empty` |
+
+**Build result:** OK (sandbox built successfully both after the dwc3 commit and after the merge commit)
+
+**Fix-ups:** None needed. Both commits applied cleanly.
+
+**Concerning deltas:** None. The dwc3 cherry-pick had identical stats to the original.
+
+The branch `cherry-884b10e86a0` is left ready for pushing, with both commits present in order at HEAD and HEAD~1.
+
+---
+
