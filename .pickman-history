@@ -78496,3 +78496,100 @@ Push successful. Final report:
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-56183fb025c
+
+Commits:
+- 56183fb025c arm: mediatek: mt7987: drop dram_init_banksize()
+- bddd6bbef3d arm: mediatek: mt7988: drop dram_init_banksize()
+- 85da6716498 arm: mediatek: mt8183: drop dram_init_banksize()
+- d3edeaf9681 arm: mediatek: mt8183: remove call to fdtdec_setup_memory_banksize()
+- b3467e51e92 arm: mediatek: mt8188: drop dram_init_banksize()
+- 34fb6b7ba77 arm: mediatek: mt8188: check return value of fdtdec_setup_mem_size_base()
+- f14635b20aa arm: mediatek: mt8188: remove call to fdtdec_setup_memory_banksize()
+- 7518e10cd23 arm: mediatek: mt8188: fix gd->ram_top limit
+- d83bd9729d7 arm: mediatek: mt8195: drop dram_init_banksize()
+- 387b4c15b34 arm: mediatek: mt8195: check return value of fdtdec_setup_mem_size_base()
+- e620d592e80 arm: mediatek: mt8195: remove call to fdtdec_setup_memory_banksize()
+- af4cba9a05a arm: mediatek: mt8195: fix gd->ram_top limit
+- c83f9aa56db arm: mediatek: mt8365: drop dram_init_banksize()
+- b9e6281632a arm: mediatek: mt8512: drop dram_init_banksize()
+- afa09789835 arm: mediatek: mt8516: drop dram_init_banksize()
+- bfb5ccfccec arm: mediatek: mt8518: drop dram_init_banksize()
+- c11370994d5 arm: mediatek: mt8518: remove call to fdtdec_setup_memory_banksize()
+- 116cc3e7504 configs: mt8390_evk: remove useless CONFIG_SYS_BOARD
+- 5288f1f0bf8 configs: mt8395_evk: rename to mt8395_genio_1200_evk_defconfig
+- a1e72c381b2 configs: mt8370_evk: rename to mt8370_genio_510_evk_defconfig
+- a5d2dd7683e configs: mt8390_evk: rename to mt8390_genio_700_evk_defconfig
+- f72ecf8edb1 configs: mt8370/mt8390: introduce mt8188.config to avoid duplication
+- 6db02cfebf6 configs: mt8370/mt8390/mt8395 add myself as maintainer
+- 937884083ea pinctrl: mediatek: add handling for RSEL register
+- 108e752b2af pinctrl: mediatek: mt8189: fix pinconf bias
+- 76da7482cf3 pinctrl: mediatek: print bias info along with pinmux
+- 29739f15c06 pinctrl: mediatek: mtk8189: set get_pinconf functions
+- 04b3a834c65 clk: mediatek: mt8189: add some VLP clocks
+- a7c682565b4 arm: mediatek: add support of MT8189 SoC family
+- 8dfbebc31cb arm: dts: mediatek: mt8189: Add pinmux macro header file
+- 8971055fe45 arm: dts: mediatek: Add MediaTek MT8189 dtsi file
+- 2eca8b0b9eb arm: dts: mediatek: Add MediaTek Genio 520/720 EVK DTS
+- ed53a7b2a6d board: mediatek: Add Genio 520/720 EVK defconfigs
+- 34b43ab5e15 arm: dts: mt8371: add SD card nodes
+- fbd4bd3a1e4 arm: dts: add U-Boot overrides for Genio 520 and 720 SD card
+- 1be992a8a27 configs: mt8189: enable GPIO support
+- 8af4e124875 env: Make more use of the ENV_SAVE_PTR macro
+- 67e72e9686e env: remote: Disallow CMD_SAVEENV
+- 7396dca4053 dts: Disallow OF_UPSTREAM for sandbox
+- 504c4cdabda lmb: Rework the LMB_ARCH_MEM_MAP symbol
+- a6594e82bb9 lmb: boot: Update dependencies within BOOT_DEFAULTS_CMDS
+- 1fd04cf46ba cmd: Correct dependencies for CMD_BOOTD
+- 7289867a8d7 w1: Correct dependencies for CMD_W1
+- b25d864a97b spl: env: Correct dependencies for SPL_SAVEENV and MMC
+- ff031c34210 input: Correct dependencies for CROS_EC_KEYB
+- 25d55485dbc serial: ns16550: Fix an "unused" warning with SERIAL_PRESENT=n and OF_REAL=y
+- 3fe899fbeae serial: omap: Fix "unused" warnings with SERIAL_PRESENT=n and OF_REAL=y
+- 9eb3592cbcb tpl: Correct dependencies for TPL_OF_CONTROL
+- 8c212d6e2e7 global: Correct duplicate U_BOOT_DRIVER entry names
+- c98bf0533be arm: mach-sc5xx: Align header paths with SYS_SOC convention
+- 738428dc0e7 sandbox: Adjust how OS-interface files are built
+- cde43f9bbd5 arm: mediatek: add SIP platform bininfo lookups
+- c344faa37d2 arm: mediatek: mt8189: print specific CPU information
+- c3062edfed2 doc: release cycle: fix 2026.04 stats link
+- 0a7e2a90ad4 Merge tag 'mediatek-for-master-2026-04-07' of https://source.denx.de/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+Now continuing with the cherry-picks.
+
+Now amend that commit with a fixup note:
+
+Build passed. Final verification:
+
+All 55 commits successfully cherry-picked onto branch `cherry-56183fb025c` (based on `ci/master`).
+
+## Summary
+
+**Build result:** OK — sandbox build completed successfully.
+
+**Fix-ups made (2 conflicts resolved):**
+
+1. **`a1e72c381b2` — configs: mt8370_evk: rename to mt8370_genio_510_evk_defconfig**
+   - Conflict in `board/mediatek/MAINTAINERS` because the base branch did not contain an `MT8370 EVK` entry yet (the upstream commit that added it isn't in our cherry-pick list).
+   - Resolution: kept the new `MT8370` entry from the cherry-pick.
+   - Commit message amended with: `Fix-up: add new MT8370 entry to MAINTAINERS as base did not contain MT8370 EVK.`
+
+2. **`8c212d6e2e7` — global: Correct duplicate U_BOOT_DRIVER entry names**
+   - Conflict in `drivers/block/efi_blk.c` because HEAD contains additional `efi_bootdev` driver code immediately before the `U_BOOT_DRIVER(efi_block)` entry that the patch wanted to rename.
+   - Resolution: preserved the `efi_bootdev` block and applied the rename `efi_block` → `efi_media_block` on the correct line.
+   - Commit message amended with: `Fix-up: keep efi_bootdev driver code in efi_blk.c when applying rename.`
+
+**Commits with concerning deltas / skipped:**
+
+- **`738428dc0e7` — sandbox: Adjust how OS-interface files are built**
+  - Marked as "maybe already applied as `3b8ed0cebb3`". After diffing, the two patches take **different** approaches: the upstream commit introduces a `foreach syshdrs_rule` template inside `arch/sandbox/cpu/Makefile`, while the in-tree `3b8ed0cebb3` already implements the same functionality more generically via `scripts/Makefile.lib` (`use_syshdrs`/`nostdinc`/`ubootinclude`).
+  - The cherry-pick conflicted because `obj-y` and `CFLAGS_USE_SYSHDRS` have since gained more entries (`mem.o`, `tty.o`, `fuzz.o`, `main.o`, `backtrace.o`) and the foreach approach is incompatible with the existing `Makefile.lib` mechanism.
+  - Functionally the goal is already achieved upstream, so an empty marker commit was created: `sandbox: Adjust how OS-interface files are built [ALREADY APPLIED]`.
+
+**Branch left at:** `cherry-56183fb025c`, 55 commits ahead of `ci/master`, ready for pushing. Not merged anywhere.
+
+---
+

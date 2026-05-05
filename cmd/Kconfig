@@ -363,6 +363,7 @@ menu "Boot commands"
 
 config CMD_BOOTD
 	bool "bootd"
+	depends on CMD_BOOTM
 	default y
 	help
 	  Run the command stored in the environment "bootcmd", i.e.
@@ -775,6 +776,7 @@ config CMD_GREPENV
 
 config CMD_SAVEENV
 	bool "saveenv"
+	depends on !(SRIO_PCIE_BOOT_SLAVE && ENV_IS_IN_REMOTE)
 	default y
 	help
 	  Save all environment variables into the compiled-in persistent
@@ -1456,7 +1458,7 @@ config CMD_I3C
 	  and perform read and write on the connected i3c devices.
 
 config CMD_W1
-	depends on W1
+	depends on W1 && W1_EEPROM
 	default y if W1
 	bool "w1 - Support for Dallas 1-Wire protocol"
 	help
