@@ -78203,3 +78203,40 @@ The pickman `review` workflow appears to be looping on its own previous report. 
 
 ---
 
+## 2026-05-04: us/master
+
+Branch: cherry-e2138cf1e60
+
+Commits:
+- e2138cf1e60 linker_lists.h: drop never used ll_start, ll_end macros
+
+### Conversation log
+Cherry-pick deltas match exactly (1 file changed, 50 deletions). Now run the build test.
+
+Build succeeded. Now verify final state.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-e2138cf1e60` (based on ci/master)
+
+**Status:** All 1 commit successfully cherry-picked.
+
+### Summary
+
+| Original Hash | New Hash | Subject | Delta Match |
+|---|---|---|---|
+| e2138cf1e60 | a5b6134c457 | linker_lists.h: drop never used ll_start, ll_end macros | ✅ Identical (1 file, 50 deletions) |
+
+### Build Result
+✅ **Build OK** — `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully (1/1 built, 0 errors, 0 warnings).
+
+### Fix-ups
+None — the cherry-pick applied cleanly with only an automatic auto-merge in `include/linker_lists.h` (no manual conflict resolution needed).
+
+### Concerning Deltas
+None — the cherry-picked commit's stat exactly matches the original.
+
+The branch is left ready for pushing.
+
+---
+
