@@ -156,12 +156,16 @@ def _run(*cmd) -> None:
 
     On failure u_boot_pylib's CommandExc still carries the captured
     output, so the user sees what went wrong.
+
+    Args:
+        *cmd: Command and its arguments, as separate strings
     """
     quiet = _quiet()
     command.run(*cmd, capture=quiet, capture_stderr=quiet)
 
 
 def check_tools() -> None:
+    """Abort with a helpful message if any REQUIRED_TOOLS binary is missing."""
     missing = [t for t in REQUIRED_TOOLS if not shutil.which(t)]
     if missing:
         tout.fatal(
@@ -176,6 +180,13 @@ def parse_grub_cmdline(iso: Path, kernel: str) -> str:
     Parses the first `linux <kernel> ...` line in /boot/grub/grub.cfg
     and strips the kernel path, so the caller can pass the remaining tokens
     to the kernel (e.g. '--- quiet splash' on Ubuntu 24.04.1).
+
+    Args:
+        iso (Path): Input ISO to inspect
+        kernel (str): Kernel path inside the ISO to look for in grub.cfg
+
+    Returns:
+        str: Kernel cmdline tokens, with whitespace collapsed
     """
     with tempfile.TemporaryDirectory(prefix='iso2uboot.grub.') as td:
         dst = Path(td) / 'grub.cfg'
@@ -203,8 +214,16 @@ def parse_grub_cmdline(iso: Path, kernel: str) -> str:
 def parse_boot_report(iso: Path) -> tuple[str, str]:
     """Return (volume_label, esp_partition_guid) from xorriso's mkisofs report.
 
-    Raises SystemExit if the ISO does not have an appended EFI System
-    Partition on slot 2
+    Args:
+        iso (Path): Input ISO to inspect
+
+    Returns:
+        tuple[str, str]: (volume label, partition-2 GUID) parsed from
+            xorriso's '-report_el_torito as_mkisofs' output
+
+    Raises:
+        SystemExit: if the ISO does not have an appended EFI System
+            Partition on slot 2
     """
     # xorriso prints the report on stdout (which we need to parse) and
     # progress/status on stderr (which we swallow unless -v was passed).
@@ -264,6 +283,15 @@ def repack_iso(
     xorriso refuses to write to an existing non-empty file when -indev
     and -outdev differ (it would treat the outdev as a session to
     extend), so unlink any stale output first.
+
+    Args:
+        in_iso (Path): Source ISO to read
+        out_iso (Path): Destination ISO; unlinked first if it exists
+        esp_img (Path): FAT image to splice in as the appended partition
+        esp_guid (str): GPT type GUID for the appended partition (from
+            parse_boot_report())
+        file_maps (list[tuple[Path, str]]): (src, dst) pairs added to the
+            ISO 9660 tree via xorriso -map
     """
     if out_iso.exists():
         out_iso.unlink()
@@ -291,10 +319,10 @@ def inject_first_boot_unit(
     """Unpack the install squashfs, drop in a first-boot BLS-setup unit
     plus its helper script and a copy of u-boot.efi, and repack.
 
-    u-boot.efi travels through the install at /usr/lib/u-boot/u-boot.efi
-    so the first-boot unit (and the autoinstall late-commands, which
-    also run in-target after the squashfs has been unpacked) can copy
-    it onto the installed ESP.
+    u-boot.efi travels through the install at TARGET_UBOOT_EFI so the
+    first-boot unit (and the autoinstall late-commands, which also run
+    in-target after the squashfs has been unpacked) can copy it onto
+    the installed ESP.
 
     The whole unpack/modify/repack cycle runs under one fakeroot
     invocation so ownership survives round-tripping through a regular
@@ -302,7 +330,16 @@ def inject_first_boot_unit(
     resulting ISO close to the source in size; that does mean the
     rewrite takes several minutes.
 
-    Returns the path to the modified squashfs.
+    Args:
+        iso (Path): Input ISO containing the install squashfs to extract
+        sqfs_in_iso (str): Path of the install squashfs inside @iso
+            (e.g. 'casper/minimal.squashfs')
+        uboot_efi (Path): U-Boot EFI app to plant inside the squashfs at
+            TARGET_UBOOT_EFI
+        work (Path): Scratch directory for the unpack/repack staging
+
+    Returns:
+        Path: Modified squashfs ready to splice back into the ISO
     """
     extracted = work / 'orig.squashfs'
     modified = work / 'modified.squashfs'
@@ -350,6 +387,13 @@ def hash_password(password: str) -> str:
     Subiquity's identity.password field wants a crypt(3) hash, not a plaintext
     password. Shelling out to openssl keeps the script's dependency list
     unchanged (Python's crypt module is gone in 3.13).
+
+    Args:
+        password (str): Plaintext password, fed via stdin so it never appears
+            on the openssl command line
+
+    Returns:
+        str: SHA-512 crypt hash, with trailing newline stripped
     """
     return command.run(
         'openssl', 'passwd', '-6', '-stdin',
@@ -382,6 +426,19 @@ def autoinstall_yaml(
     When @unattended is True, also emit identity and storage sections so
     subiquity can complete without user input - required for the
     test_distro_ubuntu_iso_install CI path.
+
+    Args:
+        unattended (bool): True to emit the identity/storage/ssh sections
+            needed for an end-to-end autoinstall
+        hostname (str): Hostname for the autoinstalled system
+            (used only when @unattended)
+        username (str): Login user created by autoinstall
+            (used only when @unattended)
+        password_hash (str): SHA-512 crypt hash for that user, as
+            produced by hash_password() (used only when @unattended)
+
+    Returns:
+        str: autoinstall.yaml document body
     """
     head = '''\
 #cloud-config
