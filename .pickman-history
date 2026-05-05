@@ -78704,3 +78704,43 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-9a6dd68323c
+
+Commits:
+- 9a6dd68323c doc: Use sys.path.append for pytests
+- cbfb9b3f224 serial: goldfish: Add debug uart support
+- 2df4926ca4f m68k: m680x0: Initialise the debug uart
+- c15a08b730e doc: board: virt: m68k: Detail how to use debug uart
+- 8f6a5932aae Merge patch series "serial: goldfish: Add debug uart support"
+
+### Conversation log
+The first commit is already applied as d6db69d381f. Now proceeding with the remaining commits.
+
+Stats match exactly. Build test.
+
+## Final Status Report
+
+**Branch created:** `cherry-9a6dd68323c` (based on `ci/master`)
+
+**Cherry-pick results:**
+
+| # | New Hash | Original Hash | Subject | Status |
+|---|----------|--------------|---------|--------|
+| 1 | (skipped) | 9a6dd68323c | doc: Use sys.path.append for pytests | **Already applied** as `d6db69d381f` (verified — same content changes, only line numbers differ) |
+| 2 | ad810e46db0 | cbfb9b3f224 | serial: goldfish: Add debug uart support | OK |
+| 3 | e157f846af4 | 2df4926ca4f | m68k: m680x0: Initialise the debug uart | OK |
+| 4 | 8311c415950 | c15a08b730e | doc: board: virt: m68k: Detail how to use debug uart | OK |
+| 5 | d3b31648d5d | 8f6a5932aae | Merge patch series "serial: goldfish: Add debug uart support" | OK (empty merge commit, preserved with --allow-empty; cherry-pick line added) |
+
+**Build result:** OK (sandbox build completed successfully on every step including the final verification — no warnings or errors)
+
+**Delta checks:** All non-merge commits matched the originals exactly (same files, same line counts).
+
+**Fix-ups:** None needed. The first commit was verified as already present on `ci/master` (as `d6db69d381f`) by comparing patches — the diffs only differed in commit metadata and surrounding context line numbers (Makefile @@ -2759 vs @@ -2934), not in the actual changes. The merge commit `8f6a5932aae` came through as empty (its content was already on the branch via the individual picks), so it was preserved with `--allow-empty` and the cherry-pick reference appended to the message.
+
+Branch is ready for pushing.
+
+---
+
