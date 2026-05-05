@@ -26,8 +26,11 @@ Quick start (run from the root of the U-Boot tree)::
     # 1. Install host tools
     sudo apt install xorriso mtools dosfstools qemu-system-x86 ovmf
 
-    # 2. Download an Ubuntu live ISO (desktop or server both work)
-    curl -LO https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso
+    # 2. Download an Ubuntu live ISO (desktop or server both work).
+    #    Pick the current point release listed at
+    #    https://releases.ubuntu.com/noble/
+    ISO=ubuntu-24.04.1-desktop-amd64.iso
+    curl -LO https://releases.ubuntu.com/noble/$ISO
 
     # 3. Build U-Boot as an x86_64 EFI application. The defconfig enables
     #    BOOTMETH_BLS, FS_ISOFS and JOLIET. If rustc is not installed,
@@ -38,7 +41,7 @@ Quick start (run from the root of the U-Boot tree)::
     # produces /tmp/b/efi-x86_app64/u-boot-app.efi
 
     # 4. Rewrite the ISO to boot via U-Boot
-    scripts/ubuntu-iso-to-uboot.py ubuntu-24.04.1-desktop-amd64.iso \\
+    scripts/ubuntu-iso-to-uboot.py $ISO \\
         -u /tmp/b/efi-x86_app64/u-boot-app.efi \\
         -o ubuntu-uboot.iso
 
