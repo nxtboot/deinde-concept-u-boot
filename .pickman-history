@@ -78983,3 +78983,35 @@ The branch is ready to push.
 
 ---
 
+### Review: 2026-05-05
+
+Branch: cherry-30429c8bd2f
+
+Comments addressed:
+
+
+### Conversation log
+Build passed. Now let me create the v2 branch and push.
+
+Local and remote are now in sync. Here's a summary of what was done:
+
+## Summary
+
+**Rebase result**: No-op — the local branch `cherry-30429c8bd2f` was already on top of `ci/master` (8438d1a06d1). After `git fetch ci master`, ci/master had not advanced beyond the merge base, so `git rebase --keep-empty ci/master` reported "Current branch cherry-30429c8bd2f is up to date."
+
+However, the **remote** MR branch (`ci/cherry-30429c8bd2f`) had different commit hashes than the local — likely from an earlier cherry-pick run before the local was rebuilt. The local branch additionally carries the `pickman: Record cherry-pick of 24 commits from us/master` bookkeeping commit at the tip, which the remote was missing.
+
+**Build**: `buildman -L --board sandbox -w -o /tmp/pickman` completed successfully (1 board built, no errors/warnings, 24 s).
+
+**Per-commit checks**: Skipped — no commits were rebased, so there is no before/after delta to compare. All 25 commits remained on top of unchanged `ci/master`.
+
+**Local branch created**: `cherry-30429c8bd2f-v2` (snapshot of pre-push state).
+
+**Push**: Force-pushed to `ci/cherry-30429c8bd2f` via `pickman push-branch -r ci -f`. Remote moved `a5b5e06e9e6 → 60ddfd2104c`. MR pipeline will be triggered automatically.
+
+## Suggested MR reply
+
+> Rebased onto latest `ci/master`. As it turns out, `ci/master` had not advanced since the original cherry-pick run, so `git rebase --keep-empty ci/master` was effectively a no-op. The remote branch did however differ from my local copy (likely an older re-pick), so I force-pushed the up-to-date local branch (which also adds the pickman bookkeeping commit at the tip). Sandbox build via `buildman` passes cleanly.
+
+---
+
