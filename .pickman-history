@@ -78643,3 +78643,64 @@ The branch `cherry-d113b295232` is ready for pushing.
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-c8afe949d3d
+
+Commits:
+- c8afe949d3d rtc: rv3028: fix PORF flag not being cleared
+- b0d731d9563 arm: Add ARMv8-M aarch32 support
+- 163d939b283 board: nanopi2: fix bd_update_env() cmdline buffer overflow
+- f7bef8f81f4 config_distro_bootcmd: do not scan boot partitions if distro_bootpart is defined
+- e228b6a5041 board: samsung: fix set_board_info() board_name buffer overflow
+- 564e180d701 board: toradex: fix tdx-cfg-block prompt buffer overflow
+- f9b50774808 linker_lists: Fix end-marker alignment to prevent padding
+- a6672a4804d dm: Fix linker list alignment for ll_entry_get()
+- 5a998ab0075 Merge patch series "A few linker-list fixes"
+
+### Conversation log
+Build passed. Continuing with next commit.
+
+Let me resolve the conflict in arch/arm/lib/Makefile - keep the local EFI_APP additions but apply the rename to CPU_V7M_V8M:
+
+Now resolve the cmd/Kconfig conflict:
+
+Identical delta. Now build test:
+
+Now check the linker_lists fixes - these may already be applied:
+
+The patches are identical (only commit message wording differs). f9b50774808 is already applied as 9ab3308d646. Now check a6672a4804d:
+
+Identical patches. Both linker_lists fixes are already applied. Now cherry-pick the merge commit:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-c8afe949d3d` (based on `ci/master`)
+
+**Final build:** OK — sandbox built successfully with no warnings/errors.
+
+### Commits applied (7)
+| Hash | Subject |
+|---|---|
+| `1d01eda62e3` | rtc: rv3028: fix PORF flag not being cleared |
+| `ab4de46980b` | arm: Add ARMv8-M aarch32 support *(fix-up applied)* |
+| `d2a9c23e3c1` | board: nanopi2: fix bd_update_env() cmdline buffer overflow |
+| `d36a9580733` | config_distro_bootcmd: do not scan boot partitions if distro_bootpart is defined |
+| `08a96a833ea` | board: samsung: fix set_board_info() board_name buffer overflow |
+| `9bfab7fc627` | board: toradex: fix tdx-cfg-block prompt buffer overflow |
+| `645d4f37d23` | Merge patch series "A few linker-list fixes" *(empty, preserved)* |
+
+### Already-applied commits (skipped)
+- `f9b50774808` linker_lists end-marker alignment — already applied as `9ab3308d646` (only commit message wording differs)
+- `a6672a4804d` dm linker list alignment — already applied as `efce3aafa50` (only Co-developed-by tag differs)
+
+### Fix-ups
+- **`b0d731d9563` ARMv8-M aarch32**: Conflicts in `arch/arm/lib/Makefile` and `cmd/Kconfig`. Resolved by keeping the local `EFI_APP` context already present in `ci/master` while applying the `CPU_V7M` → `CPU_V7M_V8M` renames from upstream. A note was appended to the commit message. File list and line counts match the original exactly.
+
+### Deltas
+All non-skipped commits show identical file lists and line counts to the originals.
+
+The branch is ready for pushing.
+
+---
+
