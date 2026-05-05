@@ -104,10 +104,10 @@ def check_tools() -> None:
         )
 
 
-def parse_grub_cmdline(iso: Path) -> str:
+def parse_grub_cmdline(iso: Path, kernel: str) -> str:
     """Return the kernel cmdline from the ISO's default grub entry.
 
-    Parses the first `linux /casper/vmlinuz ...` line in /boot/grub/grub.cfg
+    Parses the first `linux <kernel> ...` line in /boot/grub/grub.cfg
     and strips the kernel path, so the caller can pass the remaining tokens
     to the kernel (e.g. '--- quiet splash' on Ubuntu 24.04.1).
     """
@@ -119,12 +119,17 @@ def parse_grub_cmdline(iso: Path) -> str:
         )
         cfg = dst.read_text(errors='replace')
 
+    # The kernel path comes from the user (or its default), so escape it
+    # before splicing it into the regex.
+    kernel_re = re.escape(kernel.lstrip('/'))
     m = re.search(
-        r'^\s*linux\s+\S*casper/vmlinuz\S*\s*(.*)$',
+        rf'^\s*linux\s+\S*{kernel_re}\S*\s*(.*)$',
         cfg, re.MULTILINE,
     )
     if not m:
-        tout.fatal('could not find a casper linux entry in /boot/grub/grub.cfg')
+        tout.fatal(
+            f'could not find a {kernel} linux entry in /boot/grub/grub.cfg'
+        )
     # Collapse any run of whitespace to a single space
     return ' '.join(m.group(1).split())
 
@@ -249,7 +254,7 @@ def main() -> None:
     title = args.title or f'U-Boot BLS boot ({vol_id})'
     cmdline = args.cmdline
     if cmdline is None:
-        cmdline = parse_grub_cmdline(args.iso)
+        cmdline = parse_grub_cmdline(args.iso, args.kernel)
     tout.notice(f'   Volume label: {vol_id}')
     tout.notice(f'   ESP GUID:     {esp_guid}')
     tout.notice(f'   Cmdline:      {cmdline}')
