@@ -6,6 +6,7 @@
 #ifndef _BCM2835_MBOX_H
 #define _BCM2835_MBOX_H
 
+#include <string.h>
 #include <linux/compiler.h>
 #include <asm/arch/base.h>
 
