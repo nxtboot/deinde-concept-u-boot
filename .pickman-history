@@ -78704,3 +78704,121 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-9a6dd68323c
+
+Commits:
+- 9a6dd68323c doc: Use sys.path.append for pytests
+- cbfb9b3f224 serial: goldfish: Add debug uart support
+- 2df4926ca4f m68k: m680x0: Initialise the debug uart
+- c15a08b730e doc: board: virt: m68k: Detail how to use debug uart
+- 8f6a5932aae Merge patch series "serial: goldfish: Add debug uart support"
+
+### Conversation log
+The first commit is already applied as d6db69d381f. Now proceeding with the remaining commits.
+
+Stats match exactly. Build test.
+
+## Final Status Report
+
+**Branch created:** `cherry-9a6dd68323c` (based on `ci/master`)
+
+**Cherry-pick results:**
+
+| # | New Hash | Original Hash | Subject | Status |
+|---|----------|--------------|---------|--------|
+| 1 | (skipped) | 9a6dd68323c | doc: Use sys.path.append for pytests | **Already applied** as `d6db69d381f` (verified — same content changes, only line numbers differ) |
+| 2 | ad810e46db0 | cbfb9b3f224 | serial: goldfish: Add debug uart support | OK |
+| 3 | e157f846af4 | 2df4926ca4f | m68k: m680x0: Initialise the debug uart | OK |
+| 4 | 8311c415950 | c15a08b730e | doc: board: virt: m68k: Detail how to use debug uart | OK |
+| 5 | d3b31648d5d | 8f6a5932aae | Merge patch series "serial: goldfish: Add debug uart support" | OK (empty merge commit, preserved with --allow-empty; cherry-pick line added) |
+
+**Build result:** OK (sandbox build completed successfully on every step including the final verification — no warnings or errors)
+
+**Delta checks:** All non-merge commits matched the originals exactly (same files, same line counts).
+
+**Fix-ups:** None needed. The first commit was verified as already present on `ci/master` (as `d6db69d381f`) by comparing patches — the diffs only differed in commit metadata and surrounding context line numbers (Makefile @@ -2759 vs @@ -2934), not in the actual changes. The merge commit `8f6a5932aae` came through as empty (its content was already on the branch via the individual picks), so it was preserved with `--allow-empty` and the cherry-pick reference appended to the message.
+
+Branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-05-05 (attempt 1)
+
+Branch: cherry-9a6dd68323c
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+I have diagnosed the failure. Let me confirm my understanding by reviewing the key signals:
+
+## Report: Infrastructure / Transient Failure — No Code Fix Needed
+
+### Root cause
+This is an **infrastructure / lab hardware failure**, not a code bug.
+
+The failure timeline on the lab runner (qarm machine, `ttyAMA0`):
+1. The pytest test `test_distro_arm_app_efi` tried to build U-Boot for `efi-arm_app64`/`efi-aarch64` and run it on the lab board.
+2. Two consecutive build attempts failed with different errors against the **same** `u-boot` ELF file:
+   - `readelf: Error: u-boot: Failed to read file's magic number` (during `checkarmreloc`)
+   - `aarch64-linux-objdump: u-boot: file format not recognized` (during `u-boot.sym`)
+   
+   These errors indicate the `u-boot` binary in the lab's build directory is corrupted/truncated — typical of an interrupted parallel make (note the `make[1]: *** Waiting for unfinished jobs....` line).
+3. The harness then hit `OSError: [Errno 5] Input/output error` reading from the lab board's serial console, and pytest emitted: *"Lab failure: Marking connection bad — no other tests will run"*.
+
+The serial-link going bad mid-build is what caused the build process to be killed and leave a half-written `u-boot` ELF behind.
+
+### Why this can't be the MR's fault
+The five commits in `cherry-9a6dd68323c` only touch:
+- `drivers/serial/Kconfig`
+- `drivers/serial/serial_goldfish.c` (m68k QEMU goldfish UART)
+- `arch/m68k/cpu/m680x0/start.S`
+- `doc/board/emulation/qemu-m68k.rst`
+
+None of these are compiled into an aarch64 / EFI-ARM build, so they cannot affect the `u-boot` ELF for `efi-arm_app64` or `efi-aarch64`.
+
+### Local verification
+- `um build efi-arm_app64` → succeeds, produces a valid ELF: `ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), statically linked …`
+- `um build sandbox` → succeeds with no warnings.
+
+### Action
+**No changes made**, per the instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+Branch `cherry-9a6dd68323c-fix1` was **not** created — there is nothing to fix. The job should be retried in CI; the failure should not recur on a healthy lab runner.
+
+---
+
+### Review: 2026-05-05
+
+Branch: cherry-9a6dd68323c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64.
+
+I have diagnosed the failure. Let me con...
+
+### Conversation log
+Looking at the review comment, it is the previous pipeline fix report I (the bot) posted, not a reviewer's request for code changes. The comment author is `project_1_bot_2541d37e7146e9c25808a380e05ebef0` (the bot itself), and the content is the exact "Infrastructure / Transient Failure — No Code Fix Needed" report I posted to the MR previously.
+
+Let me verify by checking the state of the branch and confirm there's nothing actionable.
+
+## Report
+
+**The "review comment" is not actionable.** It is the bot's own previous pipeline-fix report (commenter ID `project_1_bot_2541d37e7146e9c25808a380e05ebef0` matches the project bot, and the body is verbatim the "Infrastructure / Transient Failure — No Code Fix Needed" message I posted on the previous attempt). It contains no reviewer feedback, no requested change, and no new failing job — only a record of the prior diagnosis.
+
+### State of the branch
+- Branch `cherry-9a6dd68323c` is unchanged: 5 cherry-picked commits + 2 pickman record commits.
+- The cherry-picked commits only touch `drivers/serial/serial_goldfish.c`, `drivers/serial/Kconfig`, `arch/m68k/cpu/m680x0/start.S`, and `doc/board/emulation/qemu-m68k.rst` — none of which affect aarch64/EFI-ARM builds.
+- The previous failure on `efi-aarch64` was a lab-runner serial-link fault (truncated `u-boot` ELF, `OSError: [Errno 5]`, "Lab failure: Marking connection bad"), wholly unrelated to this MR.
+
+### Action taken
+**None.** No code changes, no new branch, no force-push. There is nothing to amend — the comment is self-referential and the diagnosis still stands.
+
+### Suggested reply to post on the MR
+> The flagged "review comment" is the previous automated pipeline-fix report I posted, not new reviewer feedback. The diagnosis stands: the `efi-aarch64` failure was an infrastructure issue (lab serial-link failure causing a truncated `u-boot` ELF on the qarm runner), and none of the files this MR touches are compiled into an aarch64/EFI-ARM build. No code changes are required; please retry the failed job in CI.
+
+---
+
