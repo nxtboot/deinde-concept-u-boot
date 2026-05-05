@@ -59,8 +59,6 @@ Assumptions:
     - xorriso, mtools and dosfstools are installed on the host
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import re
