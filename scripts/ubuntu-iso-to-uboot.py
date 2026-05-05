@@ -83,12 +83,23 @@ REQUIRED_TOOLS = (
 )
 MIB = 1024 * 1024
 
+# Name shared by the first-boot helper script (under /usr/local/sbin)
+# and its systemd unit (with .service appended); also used as the
+# stem of the done-file under /var/lib that gates the unit.
+BLS_SETUP_NAME = 'ubuntu-iso-to-uboot-bls-setup'
+BLS_SETUP_DONE = f'/var/lib/{BLS_SETUP_NAME}.done'
+
+# Where u-boot.efi lands inside the install squashfs. The first-boot
+# unit, the autoinstall late-commands and inject_first_boot_unit()
+# all read or write this path, so keep them in sync via this constant.
+TARGET_UBOOT_EFI = '/usr/lib/u-boot/u-boot.efi'
+
 # First-boot systemd unit + helper script written into the install
 # squashfs so kernel-install manages BLS entries on the installed
 # system. ConditionPathExists=!/cdrom keeps the unit dormant inside
 # the live session, and the done-file stops it re-running on every
 # subsequent boot.
-FIRST_BOOT_SCRIPT = '''\
+FIRST_BOOT_SCRIPT = f'''\
 #!/bin/sh
 # Set up BLS entries and install U-Boot on the target ESP so the
 # installed system boots via U-Boot + BLS without the live ISO
@@ -109,25 +120,25 @@ done
 # fallback; shimx64.efi is what the 'ubuntu' NVRAM entry Subiquity
 # registers points at, so overwriting both means the disk boots
 # U-Boot whichever path the firmware takes.
-UBOOT=/usr/lib/u-boot/u-boot.efi
+UBOOT={TARGET_UBOOT_EFI}
 install -D -m 644 "$UBOOT" /boot/efi/EFI/BOOT/BOOTX64.EFI
 if [ -f /boot/efi/EFI/ubuntu/shimx64.efi ]; then
 	install -m 644 "$UBOOT" /boot/efi/EFI/ubuntu/shimx64.efi
 fi
-touch /var/lib/ubuntu-iso-to-uboot-bls-setup.done
+touch {BLS_SETUP_DONE}
 '''
 
-FIRST_BOOT_UNIT = '''\
+FIRST_BOOT_UNIT = f'''\
 [Unit]
 Description=Set up BLS entries for future kernel updates
-ConditionPathExists=!/var/lib/ubuntu-iso-to-uboot-bls-setup.done
+ConditionPathExists=!{BLS_SETUP_DONE}
 ConditionPathExists=!/cdrom
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/ubuntu-iso-to-uboot-bls-setup
+ExecStart=/usr/local/sbin/{BLS_SETUP_NAME}
 RemainAfterExit=yes
 
 [Install]
@@ -298,10 +309,10 @@ def inject_first_boot_unit(
     stage = work / 'sqfs-stage'
     aux = work / 'aux'
     aux.mkdir()
-    script_src = aux / 'ubuntu-iso-to-uboot-bls-setup'
+    script_src = aux / BLS_SETUP_NAME
     script_src.write_text(FIRST_BOOT_SCRIPT)
     script_src.chmod(0o755)
-    unit_src = aux / 'ubuntu-iso-to-uboot-bls-setup.service'
+    unit_src = aux / f'{BLS_SETUP_NAME}.service'
     unit_src.write_text(FIRST_BOOT_UNIT)
 
     tout.notice(f'=> Extracting {sqfs_in_iso}')
@@ -311,20 +322,22 @@ def inject_first_boot_unit(
     )
 
     tout.notice('=> Unpacking, injecting unit, repacking (xz, slow)')
+    unit_in_etc = f'/etc/systemd/system/{BLS_SETUP_NAME}.service'
+    wants_link = (
+        f'/etc/systemd/system/multi-user.target.wants/{BLS_SETUP_NAME}.service'
+    )
     shell = f'''
 set -e
 unsquashfs -d '{stage}' '{extracted}'
 install -D -m 755 -o root -g root '{script_src}' \\
-    '{stage}/usr/local/sbin/ubuntu-iso-to-uboot-bls-setup'
+    '{stage}/usr/local/sbin/{BLS_SETUP_NAME}'
 install -D -m 644 -o root -g root '{unit_src}' \\
-    '{stage}/etc/systemd/system/ubuntu-iso-to-uboot-bls-setup.service'
+    '{stage}{unit_in_etc}'
 install -D -m 644 -o root -g root '{uboot_efi}' \\
-    '{stage}/usr/lib/u-boot/u-boot.efi'
+    '{stage}{TARGET_UBOOT_EFI}'
 mkdir -p '{stage}/etc/systemd/system/multi-user.target.wants'
-ln -sf ../ubuntu-iso-to-uboot-bls-setup.service \\
-    '{stage}/etc/systemd/system/multi-user.target.wants/ubuntu-iso-to-uboot-bls-setup.service'
-chown -h root:root \\
-    '{stage}/etc/systemd/system/multi-user.target.wants/ubuntu-iso-to-uboot-bls-setup.service'
+ln -sf ../{BLS_SETUP_NAME}.service '{stage}{wants_link}'
+chown -h root:root '{stage}{wants_link}'
 mksquashfs '{stage}' '{modified}' -noappend -comp xz -no-progress
 '''
     _run('fakeroot', 'sh', '-c', shell)
@@ -433,12 +446,12 @@ options root=UUID=%s ro console=ttyS0,115200 console=tty0\\n"\
         # 'ubuntu' NVRAM entry points at, so the disk boots U-Boot
         # whichever path firmware takes - no need to keep the ISO
         # attached after the install reboot.
-        '''    - curtin in-target -- install -D -m 644\
- /usr/lib/u-boot/u-boot.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+        f'''    - curtin in-target -- install -D -m 644\
+ {TARGET_UBOOT_EFI} /boot/efi/EFI/BOOT/BOOTX64.EFI
     - |
       curtin in-target -- sh -c '[ -f\
  /boot/efi/EFI/ubuntu/shimx64.efi ] && install -m 644\
- /usr/lib/u-boot/u-boot.efi\
+ {TARGET_UBOOT_EFI}\
  /boot/efi/EFI/ubuntu/shimx64.efi; true'
 '''
     )
