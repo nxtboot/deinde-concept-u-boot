@@ -78822,3 +78822,73 @@ Let me verify by checking the state of the branch and confirm there's nothing ac
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-dc8f56e0087
+
+Commits:
+- dc8f56e0087 x86/apollolake: don't select non-existent INTEL_PMC
+- 70fd0c3bb7c x86: there is no CONFIG_UBOOT_ROMSIZE_KB_12288
+- b6dbbfa71e4 mtd: spi-nor: ids: Add support for Puyasemi flash chips
+- fba24192698 mtd: spi: spi-nor-ids: Add support for XMC XM25QH01D
+- c56db9b4a44 mtd: spi-nor: Add Dosilicon DS25M/Q series support
+- 39d1a96d71f spi: cadence_xspi: enable automatic platform data allocation
+- 3d623b9d39c mtd: spi-nor: ids: add ISSI IS25LP*J/*MJ/*E and IS25WP*J/*MJ device IDs
+- 3009978976e mtd: spi-nor: Add gd25lx128j chip
+- 3e33474a0c6 mtd: spi-nor-ids: Add support for IS25WP01GG SPI NOR flash
+- 3ee5a4c5994 mtd: spi-nor: Add is25wx128 and is25lx128 chips
+- 301d2d32738 spi: Correct dependencies for SPI_FLASH_SST
+- bc6c4ee8d43 mtd: spi-nor-ids: add flags for mx25u12835f
+- 1ab7f4e2ed5 binman: Add Sphinx extension to auto-generate entry and bintool docs
+- 090a7eb9cf3 binman: Remove pre-generated entries.rst and bintools.rst
+- 57eae396ec9 efi_loader: efi_var_sf: Do not fail on blank SPI Flash
+- 583efb50405 event: Check return value from event_notify_null()
+- fc36b912433 event: Introduce EVT_POST_PREBOOT event
+- 353166279c3 fwu: Move boottime checks to EVT_POST_PREBOOT
+- 0c3eb097d9e efi_loader: Allow disabling ANSI console queries via Kconfig
+- 586e4f340af doc: Fix fdt resize argument in fdt_overlays.rst
+- ee4bcfc6597 bootstd: efi: Handle prior-stage FDT in network path
+- 47ae8e77f9a doc: api: bootcount: correct bootcount description
+- 1659cd1f456 doc: correct title of CONTRIBUTE.rst
+- 98d1d3227e8 doc: board: ti: j784s4_evm: Automate BAR address lookup for PCIe Boot
+- 7decfc66197 Merge tag 'efi-2026-07-rc1' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Good. Now let me proceed with the rest of the cherry-picks. I'll continue one at a time.
+
+Now let me check the two "maybe already applied" commits:
+
+Only metadata differences - same patch. Skip this one.
+
+Both deletion commits already applied. Skipping these. Continuing:
+
+I need to amend with a fix-up note:
+
+All 23 cherry-picked commits present (2 were skipped as already applied). Now run the build:
+
+Build succeeded. Let me complete the final verification:
+
+## Final Status Report
+
+**Branch:** `cherry-dc8f56e0087` (based on `ci/master`)
+
+**Build result:** OK — sandbox build passed cleanly (1/1 boards built, no warnings/errors).
+
+**Commits applied:** 23 of 25 cherry-picked, 2 skipped as already-applied.
+
+### Skipped commits (already in ci/master via different hashes)
+- `1ab7f4e2ed5` (binman Sphinx extension) — already present as `dc053c9ba7c` (only metadata/SHA-context differences).
+- `090a7eb9cf3` (remove pre-generated entries.rst/bintools.rst) — already present as `0dc00c45d70` (entries.rst was 14 lines longer in our tree, but same intent: remove generated files; both files already absent).
+
+### Fix-ups made (conflict resolutions)
+1. **`583efb50405` (event: Check return value from event_notify_null())** — Conflict in `common/board_r.c` `run_main_loop()`: local branch added `if (gd_ulib()) return 0;` while upstream added `int ret;`. Combined both. Note added to commit message.
+2. **`fc36b912433` (event: Introduce EVT_POST_PREBOOT)** — Conflict in `include/event.h` between local additions of `EVT_BOOTCMD/EVT_BOOT_OS_ADDR/EVT_BOOTM_FINAL` and the new `EVT_POST_PREBOOT`. Placed `EVT_POST_PREBOOT` immediately after `EVT_MAIN_LOOP` (matching upstream order) ahead of the local extras. Reordered `type_name[]` in `common/event.c` to keep enum and string array in sync. Note added.
+3. **`7decfc66197` (Merge tag 'efi-2026-07-rc1')** — Conflicts in `common/board_r.c`, `common/event.c`, `include/event.h` from already-applied component commits. Took `--ours` for all three; merge committed empty with `--allow-empty`. Note added explaining the empty merge.
+
+### Concerning deltas
+None — all stat counts matched their originals (or, for the empty merge, matched the expected post-deduplication state).
+
+The branch is ready for pushing.
+
+---
+
