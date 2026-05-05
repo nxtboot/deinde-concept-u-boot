@@ -66,7 +66,6 @@ import argparse
 import os
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -339,11 +338,10 @@ def hash_password(password: str) -> str:
     password. Shelling out to openssl keeps the script's dependency list
     unchanged (Python's crypt module is gone in 3.13).
     """
-    out = subprocess.run(
-        ['openssl', 'passwd', '-6', '-stdin'],
-        input=password, capture_output=True, text=True, check=True,
-    )
-    return out.stdout.strip()
+    return command.run(
+        'openssl', 'passwd', '-6', '-stdin',
+        capture=True, stdin_data=password,
+    ).strip()
 
 
 def autoinstall_yaml(
