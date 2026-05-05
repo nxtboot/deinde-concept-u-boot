@@ -5,8 +5,24 @@
  */
 
 #include <cpu_func.h>
+#include <hang.h>
 #include <spl.h>
 #include <asm/spl.h>
+
+void board_init_f(ulong dummy)
+{
+	if (CONFIG_IS_ENABLED(OF_CONTROL)) {
+		int ret;
+
+		ret = spl_early_init();
+		if (ret) {
+			debug("spl_early_init() failed: %d\n", ret);
+			hang();
+		}
+	}
+
+	preloader_console_init();
+}
 
 u32 spl_boot_device(void)
 {
