@@ -78593,3 +78593,53 @@ All 55 commits successfully cherry-picked onto branch `cherry-56183fb025c` (base
 
 ---
 
+## 2026-05-05: us/master
+
+Branch: cherry-d113b295232
+
+Commits:
+- d113b295232 clk: scmi: Fix protocol version fetch for non-CCF platforms
+- af7b6bb05a8 gpio: scmi: Add gpio_scmi driver
+- 3a29dfc92e9 firmware: scmi: Fix setting the function
+- a2536daf93d pinctrl: scmi: Use standard device tree pin muxing format
+- d6e73ce02e5 drivers: net: fsl-mc: remove unused parameter from the wait_for_mc() function
+- d3c0f53d65e drivers: net: fsl-mc: cleanup the fsl_mc command help text
+- f0dbde4675e drivers: net: fsl-mc: add the nowait option when applying the DPL
+- 0cbf30fbbfc ls1028ardb: add env variables to assist boot
+- 496504be0b8 ls1046a: add env variables to assist boot
+- 3e99d17ab37 lx2160ardb: add env variables to assist boot
+- f98f2e26125 ls1043a: add env variables to assist boot
+- ca179432354 Merge tag 'fsl-qoriq-for-2026.07-rc1' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+All 12 commits are present. Now run the final build.
+
+## Cherry-pick Summary
+
+All 12 commits successfully cherry-picked onto branch `cherry-d113b295232` (based on `ci/master`).
+
+### Commits applied (in order):
+1. `f07d5b78317` - clk: scmi: Fix protocol version fetch for non-CCF platforms
+2. `c5a01d23972` - gpio: scmi: Add gpio_scmi driver
+3. `6e7c4d72600` - firmware: scmi: Fix setting the function
+4. `7559ebb69f7` - pinctrl: scmi: Use standard device tree pin muxing format
+5. `b5da05d4ade` - drivers: net: fsl-mc: remove unused parameter from the wait_for_mc() function
+6. `e37823f0e7d` - drivers: net: fsl-mc: cleanup the fsl_mc command help text
+7. `55d28d477dd` - drivers: net: fsl-mc: add the nowait option when applying the DPL
+8. `6f2400c5822` - ls1028ardb: add env variables to assist boot
+9. `f5e85b881d3` - ls1046a: add env variables to assist boot
+10. `d81727f1b05` - lx2160ardb: add env variables to assist boot
+11. `c87c01d5f40` - ls1043a: add env variables to assist boot
+12. `c758aa6fdac` - Merge tag 'fsl-qoriq-for-2026.07-rc1' (empty merge commit, preserved)
+
+### Build result: **OK** (sandbox build passed cleanly with no warnings/errors after every cherry-pick)
+
+### Fix-ups:
+- The merge commit (`ca179432354`) resolved as empty (as expected, since all its content was already applied via the preceding 11 commits). The cherry-pick didn't auto-record it, so I created an empty commit using `git commit --allow-empty -C` and then amended it to add the standard `(cherry picked from commit ca179432354...)` reference line. The original merge commit message and authorship are preserved.
+
+### Concerning deltas: **None** — every commit's stat (files changed and line counts) matches the original exactly.
+
+The branch `cherry-d113b295232` is ready for pushing.
+
+---
+
