@@ -79015,3 +79015,78 @@ However, the **remote** MR branch (`ci/cherry-30429c8bd2f`) had different commit
 
 ---
 
+## 2026-05-05: us/master (second entry)
+
+Branch: cherry-968164b6863
+
+Commits:
+- 968164b6863 vsprintf: add %pOF
+- f5e96fdffc0 common: add an option to skip DM pre-relocation
+- 139f5292e79 string: add strdup_const and kstrdup_const
+- 45c610d718b ofnode: add read_u64_array and count_elems_of_size
+- 3f6f674b4a5 compat: add PTR_ERR_OR_ZERO
+- 70b55377553 compat: add kref implementation
+- 8e0ed228d8b compat: add dev_name()
+- fae701400dd compat: add linux/regmap.h symlink
+- 6c11994b7e7 regmap: add regmap_assign_bits
+- 076265b75e6 compat: regulator: add enable/disable macros
+- f1f4a1d1d83 compat: math64: add abs_diff()
+- 052988aa29b Merge patch series "Linux compat improvements and CCF prep"
+
+### Conversation log
+Stats match perfectly. Let me run the build test.
+
+Build passed. Continuing with next commit.
+
+The conflict is just both sides adding new config options - I'll keep both.
+
+Stats match. Let me build.
+
+Now I need to add the kstrdup_const macro somewhere accessible. Let me add it to linux/slab.h near kmemdup_nul.
+
+Stats match perfectly (just compat.h → slab.h). Build test:
+
+Continuing with the next commit.
+
+Stats match (just 1 line less for ofnode.h since we skipped duplicate oftree_dispose). Now build test:
+
+Continuing.
+
+Now the merge commit:
+
+All 12 commits are present. Final build:
+
+Build passed.
+
+## Summary
+
+**Branch:** `cherry-968164b6863` (12 commits ahead of `ci/master`)
+
+**Build result:** OK (sandbox builds cleanly)
+
+**Cherry-picks:**
+1. `78c1ee3deb2` vsprintf: add %pOF — clean
+2. `f06ffc77fd8` common: add an option to skip DM pre-relocation — **conflict**: kept both `SKIP_RELOCATE_CODE` and `SKIP_EARLY_DM` in Kconfig
+3. `0aeada76bf0` string: add strdup_const and kstrdup_const — **conflict**: `kstrdup_const` macro moved to `linux/slab.h` (compat.h was refactored upstream)
+4. `b4d9f1ddd19` ofnode: add read_u64_array and count_elems_of_size — **conflict**: skipped duplicate `oftree_dispose` declaration; placed `count_elems_of_size` helpers in OF_REAL `#elif` branch
+5. `792ba7a7150` PTR_ERR_OR_ZERO — clean
+6. `eb3a2871293` kref implementation — clean
+7. `dc96b6d2ab9` dev_name() — clean
+8. `e8146b5948b` linux/regmap.h symlink — clean
+9. `c90ae5722d1` regmap_assign_bits — clean
+10. `edbd17d902a` regulator enable/disable macros — clean
+11. `1934405cd00` math64 abs_diff() — clean
+12. `50814e0925d` Merge commit — empty (all changes already applied via individual cherry-picks)
+
+**Concerning deltas:** None. All non-merge cherry-picks have file/line counts matching the originals (the ofnode.h delta is 49 lines vs 50 because the duplicate `oftree_dispose` declaration was skipped).
+
+**Fix-up notes** (added as one-line trailers to commit messages):
+- Commit 2: "Resolved Kconfig conflict: kept both SKIP_RELOCATE_CODE and SKIP_EARLY_DM options."
+- Commit 3: "Move kstrdup_const macro to linux/slab.h (compat.h refactored upstream)."
+- Commit 4: "Skip duplicate oftree_dispose declaration; place count_elems helpers in OF_REAL #elif branch."
+- Commit 12 (merge): "Empty merge commit: all changes already applied via individual cherry-picks."
+
+The branch is ready for pushing. Not merged anywhere.
+
+---
+
