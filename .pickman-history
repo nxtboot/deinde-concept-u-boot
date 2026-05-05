@@ -78744,3 +78744,50 @@ Branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-05 (attempt 1)
+
+Branch: cherry-9a6dd68323c
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+I have diagnosed the failure. Let me confirm my understanding by reviewing the key signals:
+
+## Report: Infrastructure / Transient Failure — No Code Fix Needed
+
+### Root cause
+This is an **infrastructure / lab hardware failure**, not a code bug.
+
+The failure timeline on the lab runner (qarm machine, `ttyAMA0`):
+1. The pytest test `test_distro_arm_app_efi` tried to build U-Boot for `efi-arm_app64`/`efi-aarch64` and run it on the lab board.
+2. Two consecutive build attempts failed with different errors against the **same** `u-boot` ELF file:
+   - `readelf: Error: u-boot: Failed to read file's magic number` (during `checkarmreloc`)
+   - `aarch64-linux-objdump: u-boot: file format not recognized` (during `u-boot.sym`)
+   
+   These errors indicate the `u-boot` binary in the lab's build directory is corrupted/truncated — typical of an interrupted parallel make (note the `make[1]: *** Waiting for unfinished jobs....` line).
+3. The harness then hit `OSError: [Errno 5] Input/output error` reading from the lab board's serial console, and pytest emitted: *"Lab failure: Marking connection bad — no other tests will run"*.
+
+The serial-link going bad mid-build is what caused the build process to be killed and leave a half-written `u-boot` ELF behind.
+
+### Why this can't be the MR's fault
+The five commits in `cherry-9a6dd68323c` only touch:
+- `drivers/serial/Kconfig`
+- `drivers/serial/serial_goldfish.c` (m68k QEMU goldfish UART)
+- `arch/m68k/cpu/m680x0/start.S`
+- `doc/board/emulation/qemu-m68k.rst`
+
+None of these are compiled into an aarch64 / EFI-ARM build, so they cannot affect the `u-boot` ELF for `efi-arm_app64` or `efi-aarch64`.
+
+### Local verification
+- `um build efi-arm_app64` → succeeds, produces a valid ELF: `ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), statically linked …`
+- `um build sandbox` → succeeds with no warnings.
+
+### Action
+**No changes made**, per the instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes
+
+Branch `cherry-9a6dd68323c-fix1` was **not** created — there is nothing to fix. The job should be retried in CI; the failure should not recur on a healthy lab runner.
+
+---
+
