@@ -79755,3 +79755,63 @@ The single review comment is verbatim the bot's own attempt-2 report concluding 
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-2d0de938571
+
+Commits:
+- 2d0de938571 lib/Kconfig: Fix SUPPORTS_FW_LOADER option
+- 0d2e561ce40 Mailmap entry for Javier Tia
+- 30885b01aaa fs/squashfs: Set ret to 0 on successful read
+- d64c4a69585 common: update: Fix TFTP return value handling
+- b67267c6211 tools/asn1_compiler: avoid -Wdiscarded-qualifiers
+- c6faf583c4c scripts/dtc: avoid discarded qualifiers in overlay_fixup_phandle
+- 9f61fd5b80a Makefile: fix host CPP pollution in cmd_gen_envp
+- 6602a93d392 usb: gadget: rcar: Fix gadget registration lifecycle in remove
+- dc9f0d71778 usb: gadget: rcar: Add support for reset controller
+- d0d1d111192 usb: gadget: rcar: Add support for RZ/G2L (R9A07G044)
+- 53f8419ce4c MAINTAINERS, mailmap: Change email for Eugen Hristev
+- 9271f908b4e Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The merge commit appears to already be applied. Let me proceed with the cherry-picks for the regular commits.
+
+Delta matches. Continue to next.
+
+Now for the merge commit. We already verified it appears to be already applied as 8438d1a06d1, but the task states to always include merge commits even if empty.
+
+The empty commit was created but it's missing the cherry picked from line. Let me fix that by amending.
+
+All 12 commits are present. Now run the final build.
+
+Build passed. Final summary:
+
+## Summary
+
+All 12 commits from us/master have been successfully cherry-picked onto branch `cherry-2d0de938571` (based on ci/master).
+
+**Build result:** ✅ OK — sandbox build completed in 15s with no warnings/errors.
+
+**Commits applied (oldest to newest):**
+1. `64a88f20ad2` lib/Kconfig: Fix SUPPORTS_FW_LOADER option
+2. `bdfdfe37d65` Mailmap entry for Javier Tia
+3. `6e571f75a6c` fs/squashfs: Set ret to 0 on successful read
+4. `1de14fa8bdc` common: update: Fix TFTP return value handling
+5. `a263a4c1650` tools/asn1_compiler: avoid -Wdiscarded-qualifiers
+6. `28e124cef29` scripts/dtc: avoid discarded qualifiers in overlay_fixup_phandle
+7. `4838e9f49ec` Makefile: fix host CPP pollution in cmd_gen_envp
+8. `24c2b63323e` usb: gadget: rcar: Fix gadget registration lifecycle in remove
+9. `7d8cbc451e2` usb: gadget: rcar: Add support for reset controller
+10. `f5374b87788` usb: gadget: rcar: Add support for RZ/G2L (R9A07G044)
+11. `4f437056735` MAINTAINERS, mailmap: Change email for Eugen Hristev
+12. `813934a9681` Merge branch 'master' of git://source.denx.de/u-boot-usb (empty)
+
+**Deltas:** All non-merge commits cherry-picked cleanly with identical file/line counts to the originals — no concerning deltas.
+
+**Fix-ups:**
+- The merge commit `9271f908b4e` cherry-picked as empty (its content was already in the tree via prior cherry-picks `dc9f0d71778`/`d0d1d111192` plus the previously-applied `8438d1a06d1`). Preserved as an empty commit using `git commit --allow-empty -C`, then amended to add the `(cherry picked from commit 9271f908b4eea4fa127c2ec0d910e71b05ac2d64)` trailer for traceability.
+
+The branch is left ready for pushing.
+
+---
+
