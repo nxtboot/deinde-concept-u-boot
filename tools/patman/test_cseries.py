@@ -4642,16 +4642,15 @@ Date:   .*
         """Context manager to mock apply, upstream, git and AI review"""
         fake_review = {1: f'Reviewed-by: {self.REVIEWER}'}
         return (mock.patch('patman.review._apply_and_check',
-                           return_value='review1'),
+                           return_value=True),
                 mock.patch('patman.review._get_upstream_branch',
                            return_value='origin/master'),
                 mock.patch('patman.review.review_patches_sync',
                            return_value=fake_review),
                 mock.patch('patman.review.gitutil.get_top_level',
                            return_value=self.tmpdir),
-                mock.patch('patman.review.command.output',
-                           return_value='pati'),
-                mock.patch('patman.review._git_restore'))
+                mock.patch('patman.review.gitutil.ensure_worktree',
+                           return_value=self.tmpdir))
 
     def test_review_new_series(self):
         """Test reviewing a new series creates database records"""
@@ -4772,14 +4771,13 @@ Date:   .*
         pwork.project_set(self.PROJ_ID, self.PROJ_LINK_NAME)
 
         with mock.patch('patman.review._apply_and_check',
-                        return_value=None), \
+                        return_value=False), \
              mock.patch('patman.review._get_upstream_branch',
                         return_value='origin/master'), \
              mock.patch('patman.review.gitutil.get_top_level',
                         return_value=self.tmpdir), \
-             mock.patch('patman.review.command.output',
-                        return_value='test'), \
-             mock.patch('patman.review._git_restore'):
+             mock.patch('patman.review.gitutil.ensure_worktree',
+                        return_value=self.tmpdir):
             with terminal.capture() as _:
                 self.run_review('-s', str(self.REVIEW_LINK),
                                 pwork=pwork, expect_ret=1)

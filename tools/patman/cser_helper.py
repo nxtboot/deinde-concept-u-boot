@@ -49,6 +49,19 @@ SHORTEN_STATE = {
 AUTOLINK = namedtuple('autolink', 'name,version,link,desc,result')
 
 
+def review_worktree_path(repo, branch_name):
+    """Get the on-disk path for a per-review worktree
+
+    Args:
+        repo (str): Top-level dir of the main checkout
+        branch_name (str): Review branch name
+
+    Return:
+        str: Path where the review worktree lives (may not yet exist)
+    """
+    return os.path.join(repo, '.git', 'patman', 'worktrees', branch_name)
+
+
 def oid(oid_val):
     """Convert a hash string into a shortened hash
 
@@ -106,7 +119,14 @@ class CseriesHelper:
             if not self.topdir:
                 raise ValueError('No git repo detected in current directory')
         self.gitdir = os.path.join(self.topdir, '.git')
-        fname = f'{self.topdir}/.patman.db'
+
+        # PATMAN_DB_DIR lets the user keep a single 'main' database while
+        # running patman in other repos. Only the DB path is overridden;
+        # git operations still run against the current repo. Use 'or' (not
+        # os.environ.get(key, default)) so an empty PATMAN_DB_DIR='' falls
+        # back to topdir rather than producing '/.patman.db'
+        db_dir = os.environ.get('PATMAN_DB_DIR') or self.topdir
+        fname = os.path.join(os.path.expanduser(db_dir), '.patman.db')
 
         # For the first instance, start it up with the expected schema
         self.db, is_new = Database.get_instance(fname)

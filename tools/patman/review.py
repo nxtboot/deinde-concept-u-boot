@@ -23,12 +23,12 @@ import tempfile
 import aiohttp
 
 from u_boot_pylib import claude as claude_mod
-from u_boot_pylib import command
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
 from u_boot_pylib import tools
 from u_boot_pylib import tout
 
+from patman import cser_helper
 from patman import database
 from patman import gmail
 from patman import patchstream
@@ -46,7 +46,10 @@ class ReviewContext:  # pylint: disable=R0902
         reviewer_name (str): Reviewer's name
         reviewer_email (str): Reviewer's email
         series_data (dict): Series data from patchwork
-        repo_path (str): Path to the git repository
+        main_repo (str): Top-level of the user's main checkout (where
+            the .git dir lives and where shared refs are resolved)
+        repo_path (str): Path to the per-review worktree (used as cwd
+            for apply/build/agent)
         signoff (str or None): Sign-off text for reviews with comments
         spelling (str): Spelling convention
         comments_path (str or None): Path to existing patchwork comments
@@ -58,6 +61,8 @@ class ReviewContext:  # pylint: disable=R0902
         branch_name (str or None): Branch with applied patches
         upstream_branch (str or None): Upstream branch ref
         patch_count (int or None): Number of patches
+        patch_selection (set of int or None): Patch indices to review
+            (None means all)
     """
 
     def __init__(self, pwork, cser, series_data):
@@ -66,6 +71,7 @@ class ReviewContext:  # pylint: disable=R0902
         self.series_data = series_data
         self.reviewer_name = None
         self.reviewer_email = None
+        self.main_repo = None
         self.repo_path = None
         self.signoff = None
         self.spelling = 'British'
@@ -76,6 +82,7 @@ class ReviewContext:  # pylint: disable=R0902
         self.branch_name = None
         self.upstream_branch = None
         self.patch_count = None
+        self.patch_selection = None
         self.cover_content = None
         self.previous_reviews = {}
         self.diffstat = None
@@ -130,28 +137,29 @@ async def fetch_mbox(pwork, link):
 def _build_apply_prompt(mbox_path, branch_name, upstream_branch):
     """Build the Claude agent prompt for applying patches
 
-    The agent will create a branch and apply the mbox using git am,
-    handling any conflicts that arise.
+    The cwd is already a per-review worktree on branch '{branch_name}'
+    reset to '{upstream_branch}', so the agent just needs to run git am
+    and handle any conflicts.
 
     Args:
         mbox_path (str): Path to the downloaded mbox file
-        branch_name (str): Name for the new branch
-        upstream_branch (str): Branch to start from (e.g. 'origin/master')
+        branch_name (str): Name of the (already-checked-out) review branch
+        upstream_branch (str): Upstream ref the branch is based on
 
     Returns:
         str: The prompt text for the agent
     """
     return f'''Apply a patch series from a patchwork mbox \
-file to a new git branch.
+file to the current branch.
+
+You are in a git worktree on branch '{branch_name}', already reset to
+'{upstream_branch}'. Do NOT create a new branch.
 
 TASK:
-1. Create a new branch called '{branch_name}' from '{upstream_branch}':
-   git checkout -b {branch_name} {upstream_branch}
-
-2. Apply the patches from the mbox file:
+1. Apply the patches from the mbox file:
    git am {mbox_path}
 
-3. If git am fails, try this recovery sequence:
+2. If git am fails, try this recovery sequence:
 
    a. First, abort the failed git am:
       git am --abort
@@ -183,10 +191,10 @@ TASK:
       If a patch is completely irrelevant (e.g. already applied),
       skip it and note which patch was skipped.
 
-4. After all patches are applied (or skipped), run:
+3. After all patches are applied (or skipped), run:
    git log --oneline {upstream_branch}..HEAD
 
-5. Report the result:
+4. Report the result:
    - How many patches were applied successfully
    - Which patches (if any) were skipped and why
    - The branch name: {branch_name}
@@ -1079,7 +1087,9 @@ async def review_patches(ctx):
         return {}
 
     commit_range = f'{ctx.upstream_branch}..{ctx.branch_name}'
-    git_dir = os.path.join(ctx.repo_path, '.git')
+    # The branch is a shared ref, so use the main repo's .git directory
+    # — the worktree's .git is a pointer file, not a real git_dir
+    git_dir = os.path.join(ctx.main_repo, '.git')
     series = patchstream.get_metadata_for_list(commit_range, git_dir=git_dir)
     all_commits = [(i + 1, cmt.hash, cmt.subject)
                    for i, cmt in enumerate(series.commits)]
@@ -1281,24 +1291,6 @@ def search_series(pwork, title):
     best = max(results, key=lambda r: (r.get('version', 0), r.get('date', '')))
     tout.notice(f"Using most recent: {best['name']} (link {best['id']})")
     return str(best['id'])
-
-
-def _git_restore(orig_branch, had_stash, repo_path):
-    """Restore git branch and stash after review
-
-    Args:
-        orig_branch (str or None): Branch to restore
-        had_stash (bool): Whether changes were stashed
-        repo_path (str or None): Repository path
-    """
-
-    try:
-        if orig_branch and repo_path:
-            gitutil.checkout_branch(orig_branch, repo_path)
-        if had_stash:
-            gitutil.stash_pop(repo_path)
-    except command.CommandExc:
-        pass
 
 
 def create_drafts(ctx, args, review_bodies, review_ids):
@@ -1776,29 +1768,30 @@ def _get_upstream_branch(args, cser):
 def _apply_and_check(ctx, link):
     """Download, apply patches and verify they applied
 
+    Runs in the per-review worktree at ctx.repo_path; the branch
+    ctx.branch_name has already been created and reset to upstream by
+    worktree.ensure_worktree(), so the agent only needs to 'git am'.
+
     Args:
         ctx (ReviewContext): Review context (uses pwork, cser, series_id,
-            version, upstream_branch)
+            version, upstream_branch, branch_name, repo_path)
         link (str): Patchwork series link/ID
 
     Returns:
-        str or None: Branch name, or None on failure
+        bool: True if the patches applied cleanly
     """
-    ups = ctx.pwork.upstream if ctx.pwork else None
-    branch_name = _make_review_name(link, ups)
-    repo_path = gitutil.get_top_level()
-    success, branch_name = apply_series_sync(ctx.pwork, link, branch_name,
-        ctx.upstream_branch, repo_path)
+    success, _ = apply_series_sync(ctx.pwork, link, ctx.branch_name,
+        ctx.upstream_branch, ctx.repo_path)
 
     if success:
         applied = gitutil.count_revs(
-            repo_path, f'{ctx.upstream_branch}..{branch_name}')
+            ctx.repo_path, f'{ctx.upstream_branch}..{ctx.branch_name}')
         if not applied:
             # Zero commits, or branch missing because apply was interrupted
             success = False
         elif applied != ctx.patch_count:
             tout.error(f'Only {applied} of {ctx.patch_count} patches '
-                       f'applied to {branch_name}; aborting. Fix the '
+                       f'applied to {ctx.branch_name}; aborting. Fix the '
                        'conflicts manually and retry.')
             success = False
 
@@ -1806,9 +1799,9 @@ def _apply_and_check(ctx, link):
         tout.error('Failed to apply patches to branch')
         ctx.cser.db.ser_ver_remove(ctx.series_id, ctx.version)
         ctx.cser.commit()
-        return None
-    tout.notice(f'Patches applied to branch: {branch_name}')
-    return branch_name
+        return False
+    tout.notice(f'Patches applied to branch: {ctx.branch_name}')
+    return True
 
 
 def _fetch_cover_content(pwork, series_data):
@@ -1979,47 +1972,33 @@ def do_review(args, pwork, cser):
         return 0
     ctx.series_id, ctx.svid = result
 
-    orig_branch = None
-    had_stash = False
+    ctx.upstream_branch = _get_upstream_branch(args, cser)
+    ctx.main_repo = gitutil.get_top_level()
+    ups = pwork.upstream if pwork else None
+    ctx.branch_name = _make_review_name(link, ups)
+    wt_path = cser_helper.review_worktree_path(ctx.main_repo, ctx.branch_name)
+    tout.notice(f'Using review worktree {wt_path}')
+    ctx.repo_path = gitutil.ensure_worktree(
+        ctx.main_repo, wt_path, ctx.branch_name, ctx.upstream_branch)
 
-    try:
-        ctx.upstream_branch = _get_upstream_branch(args, cser)
-        ctx.repo_path = gitutil.get_top_level()
-        orig_branch = gitutil.current_branch(ctx.repo_path)
-        try:
-            # Stash untracked files too, so build artefacts from the
-            # current branch don't leak into the review branch
-            stash_out = gitutil.stash_save(ctx.repo_path,
-                                           include_untracked=True)
-            if 'No local changes' not in stash_out:
-                had_stash = True
-        except command.CommandExc:
-            pass
+    if not _apply_and_check(ctx, link):
+        return 1
 
-        ctx.branch_name = _apply_and_check(ctx, link)
-        if not ctx.branch_name:
-            return 1
+    if args.apply_only:
+        tout.notice('Apply-only mode; skipping review')
+        return 0
 
-        if args.apply_only:
-            tout.notice('Apply-only mode; skipping review')
-            return 0
+    ctx.patch_selection = parse_patch_selection(args.patches)
+    ctx.reviewer_name, ctx.reviewer_email = _parse_reviewer(args)
+    ctx.signoff = args.signoff or None
+    if ctx.signoff:
+        ctx.signoff = ctx.signoff.replace('\\n', '\n')
+    ctx.spelling = args.spelling
+    ctx.comments_path = _write_comments_file(series_data, pwork)
 
-        ctx.patch_selection = parse_patch_selection(args.patches)
-        ctx.reviewer_name, ctx.reviewer_email = _parse_reviewer(args)
-        ctx.signoff = args.signoff or None
-        if ctx.signoff:
-            ctx.signoff = ctx.signoff.replace('\\n', '\n')
-        ctx.spelling = args.spelling
-        ctx.comments_path = _write_comments_file(series_data, pwork)
-
-        _run_and_store_reviews(ctx, args)
-        workflow.reviewed(cser, ctx.series_id, ctx.svid)
-
-        _git_restore(orig_branch, had_stash, ctx.repo_path)
-        orig_branch = None
-
-    finally:
-        _git_restore(orig_branch, had_stash, ctx.repo_path)
+    _run_and_store_reviews(ctx, args)
+    workflow.reviewed(cser, ctx.series_id, ctx.svid)
+    gitutil.remove_worktree(ctx.main_repo, wt_path)
 
     return 0
 

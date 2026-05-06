@@ -830,6 +830,11 @@ class Cseries(cser_helper.CseriesHelper):
         self.db.ser_ver_remove(ser.idnum, None)
         if not dry_run:
             self.commit()
+            # The review worktree (if any) has no value once the db row
+            # is gone; v1 review series share their branch name with the
+            # series name, so review_worktree_path() resolves it directly
+            gitutil.remove_worktree(self.topdir,
+                cser_helper.review_worktree_path(self.topdir, name))
         else:
             self.rollback()
 
@@ -1252,6 +1257,11 @@ class Cseries(cser_helper.CseriesHelper):
 
         # Delete the branches
         for idnum, name, tag_name in tag_info.values():
+            # Drop any review worktree first; a checked-out branch
+            # cannot be deleted
+            gitutil.remove_worktree(self.topdir,
+                cser_helper.review_worktree_path(self.topdir, name))
+
             # Detach HEAD from the branch if pointing to this branch
             commit = repo.revparse_single(name)
             if repo.head.target == commit.oid:
