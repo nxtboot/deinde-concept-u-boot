@@ -79225,3 +79225,58 @@ Local branch `cherry-968164b6863-fix2` was created at the same commit as `cherry
 
 ---
 
+### Review: 2026-05-05
+
+Branch: cherry-968164b6863
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-x86_64-uboot-iso.
+
+Let me check the current state ...
+
+### Conversation log
+No commits on this branch touch `scripts/ubuntu-iso-to-uboot.py` or `test/py/tests/test_distro.py`. Confirms previous diagnosis: this is an infrastructure failure (stale `/tmp/ubuntu-24.04.1-uboot.iso` with wrong ownership on the `ellesmere-lab` runner), not a code regression.
+
+Let me verify the build still passes and create a new local branch.
+
+The `-fix2` branch already exists with a pickman-history record but was never pushed. The diagnosis remains correct (infrastructure issue, not code). Let me verify the build on `-fix2` and create the v3 branch.
+
+Push succeeded. The pipeline will auto-trigger.
+
+## Report
+
+**Branch:** `cherry-968164b6863` (now at `8519a2a31a5`, force-pushed to `ci/cherry-968164b6863`)
+**Local snapshot:** `cherry-968164b6863-v3`
+**MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/1056
+
+### Comment addressed
+
+> [bot]: Pipeline fix (attempt 2): fixed failed job(s) `efi-x86_64-uboot-iso`.
+
+### Conclusion: infrastructure failure — no code changes warranted
+
+The previous diagnosis still stands. The `efi-x86_64-uboot-iso` job fails in `scripts/ubuntu-iso-to-uboot.py:197` with `PermissionError: [Errno 1] Operation not permitted: '/tmp/ubuntu-24.04.1-uboot.iso'`. The script tries to remove a stale output file before xorriso writes a fresh one, but the file is owned by a different user/process from a previous job on the shared `ellesmere-lab` runner.
+
+**Verification that this MR is not responsible:**
+
+```
+$ git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py
+(no output)
+```
+
+The 14 commits on this branch only touch Linux-compat headers, ofnode helpers, vsprintf, regmap, etc. — nothing related to EFI ISO test infrastructure or `/tmp` file management.
+
+### What changed in this push
+
+- Brought `cherry-968164b6863-fix2` (pickman-history record from prior attempt) up onto the remote so the diagnosis is recorded in the branch and the pipeline auto-retriggers
+- Sandbox build verified clean (`buildman -L --board sandbox`)
+- No source code changes
+
+### Suggested MR reply
+
+> The `efi-x86_64-uboot-iso` failure is the same infrastructure issue diagnosed before — `scripts/ubuntu-iso-to-uboot.py` fails to unlink a stale `/tmp/ubuntu-24.04.1-uboot.iso` left over from a previous job on the `ellesmere-lab` runner (`PermissionError: [Errno 1] Operation not permitted`). None of the commits on this branch touch `scripts/ubuntu-iso-to-uboot.py`, `test/py/tests/test_distro.py`, or anything related to `/tmp` cleanup (`git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py` is empty).
+>
+> A real fix would be to make the script tolerant of `EPERM` on unlink (or use a per-runner-scoped path under `/tmp`), but that's a runner/scripts change, not within scope of this MR. Force-pushed to retrigger the pipeline; if the same job fails again, the runner's `/tmp` needs cleaning by an admin.
+
+---
+
