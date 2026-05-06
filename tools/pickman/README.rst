@@ -438,6 +438,24 @@ After successfully applying commits, update the database to record progress::
 This updates the last cherry-picked commit for the source branch, so subsequent
 ``next-set`` and ``apply`` commands will start from the new position.
 
+To pivot to a renamed or post-release upstream branch (for example, when
+``us/next`` is exhausted and integration moves to ``us/master``)::
+
+    ./tools/pickman/pickman switch-source us/next us/master
+
+This seeds a new ``us/master`` source entry with the last commit cherry-picked
+from ``us/next``, so subsequent ``next-set``/``apply``/``step`` commands resume
+from the same point on the new branch. Pickman verifies the seed commit is
+reachable from the new source so it does not re-apply already-picked commits.
+The old source entry is kept in the database for reference; remove it manually
+if no longer needed.
+
+Options for the switch-source command:
+
+- ``--at <commit>``: Override the start commit (default: inherit from the old
+  source's last cherry-picked commit)
+- ``-f, --force``: Overwrite an existing entry for the new source
+
 To check open MRs for comments and address them::
 
     ./tools/pickman/pickman review

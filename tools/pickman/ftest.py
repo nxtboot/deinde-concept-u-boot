@@ -154,6 +154,22 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(args.source, 'us/next')
         self.assertEqual(args.commit, 'abc123')
 
+    def test_parse_switch_source(self):
+        """Test parsing switch-source command."""
+        args = pickman.parse_args(['switch-source', 'us/next', 'us/master'])
+        self.assertEqual(args.cmd, 'switch-source')
+        self.assertEqual(args.old_source, 'us/next')
+        self.assertEqual(args.new_source, 'us/master')
+        self.assertIsNone(args.at)
+        self.assertFalse(args.force)
+
+    def test_parse_switch_source_options(self):
+        """Test parsing switch-source with --at and --force."""
+        args = pickman.parse_args(['switch-source', 'us/next', 'us/master',
+                                   '--at', 'abc123', '-f'])
+        self.assertEqual(args.at, 'abc123')
+        self.assertTrue(args.force)
+
     def test_parse_compare(self):
         """Test parsing compare command."""
         args = pickman.parse_args(['compare'])
@@ -4663,6 +4679,161 @@ class TestDoCommitSourceResolveError(unittest.TestCase):
             ret = control.do_commit_source(args, None)
         self.assertEqual(ret, 1)
         self.assertIn('Could not resolve', stderr.getvalue())
+
+
+def _make_switch_mock(seed_reachable=True, new_source_valid=True,
+                      at_resolves_to=None):
+    """Build a TEST_RESULT callable for switch-source tests.
+
+    Args:
+        seed_reachable (bool): Whether merge-base --is-ancestor returns 0
+        new_source_valid (bool): Whether rev-parse --verify of the new source
+            succeeds
+        at_resolves_to (str or None): If set, what `git rev-parse <at>` returns
+    """
+    def handler(pipe_list=None, **_):
+        cmd = list(pipe_list[0])
+        if cmd[:3] == ['git', 'merge-base', '--is-ancestor']:
+            return command.CommandResult(
+                stdout='', return_code=0 if seed_reachable else 1)
+        if cmd[:3] == ['git', 'rev-parse', '--verify']:
+            if new_source_valid:
+                return command.CommandResult(stdout='deadbeef\n',
+                                             return_code=0)
+            return command.CommandResult(stdout='', return_code=128)
+        if (cmd[:4] == ['git', 'show', '-s', '--pretty=format:%H']
+                and at_resolves_to is not None):
+            return command.CommandResult(stdout=f'{at_resolves_to}\n',
+                                         return_code=0)
+        raise AssertionError(f'unexpected command: {cmd}')
+    return handler
+
+
+class TestSwitchSource(unittest.TestCase):
+    """Tests for switch-source command."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+        command.TEST_RESULT = _make_switch_mock()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        control.DB_FNAME = self.old_db_fname
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        database.Database.instances.clear()
+        command.TEST_RESULT = None
+
+    def _seed_source(self, name, commit):
+        """Seed (or update) a tracked source entry in the DB."""
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set(name, commit)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+    def _get_source(self, name):
+        """Read a tracked source's commit from the DB."""
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            commit = dbs.source_get(name)
+            dbs.close()
+        return commit
+
+    def _run(self, **overrides):
+        """Invoke do_pickman with default switch-source args.
+
+        Args:
+            **overrides: Namespace attributes to override (e.g. force=True)
+
+        Returns:
+            tuple: (ret, stdout, stderr) where stdout and stderr are strings
+        """
+        args = argparse.Namespace(
+            cmd='switch-source', old_source='us/next',
+            new_source='us/master', at=None, force=False)
+        for key, val in overrides.items():
+            setattr(args, key, val)
+        with terminal.capture() as (stdout, stderr):
+            ret = control.do_pickman(args)
+        return ret, stdout.getvalue(), stderr.getvalue()
+
+    def test_switch_source_success(self):
+        """Switch copies the old source's last_commit to the new source."""
+        self._seed_source('us/next', 'oldcommit12345')
+
+        ret, stdout, _ = self._run()
+        self.assertEqual(ret, 0)
+        self.assertIn("'us/next' -> 'us/master'", stdout)
+
+        self.assertEqual(self._get_source('us/master'), 'oldcommit12345')
+        # Old entry preserved
+        self.assertEqual(self._get_source('us/next'), 'oldcommit12345')
+
+    def test_switch_source_old_not_found(self):
+        """Switch fails when the old source isn't tracked."""
+        ret, _, stderr = self._run()
+        self.assertEqual(ret, 1)
+        self.assertIn("Source 'us/next' not found", stderr)
+
+    def test_switch_source_new_invalid(self):
+        """Switch fails when the new source is not a valid git ref."""
+        self._seed_source('us/next', 'oldcommit12345')
+        command.TEST_RESULT = _make_switch_mock(new_source_valid=False)
+
+        ret, _, stderr = self._run(new_source='nope')
+        self.assertEqual(ret, 1)
+        self.assertIn("not a valid git ref", stderr)
+
+    def test_switch_source_seed_unreachable(self):
+        """Switch fails when seed isn't an ancestor of the new source."""
+        self._seed_source('us/next', 'oldcommit12345')
+        command.TEST_RESULT = _make_switch_mock(seed_reachable=False)
+
+        ret, _, stderr = self._run()
+        self.assertEqual(ret, 1)
+        self.assertIn("not reachable from 'us/master'", stderr)
+
+    def test_switch_source_already_tracked_no_force(self):
+        """Switch refuses to overwrite an existing new-source entry."""
+        self._seed_source('us/next', 'oldcommit12345')
+        self._seed_source('us/master', 'existing12345')
+
+        ret, _, stderr = self._run()
+        self.assertEqual(ret, 1)
+        self.assertIn('already tracked', stderr)
+
+    def test_switch_source_already_tracked_force(self):
+        """--force overwrites an existing new-source entry."""
+        self._seed_source('us/next', 'oldcommit12345')
+        self._seed_source('us/master', 'existing12345')
+
+        ret, stdout, _ = self._run(force=True)
+        self.assertEqual(ret, 0)
+        self.assertIn('overwritten', stdout)
+
+        self.assertEqual(self._get_source('us/master'), 'oldcommit12345')
+
+    def test_switch_source_at_override(self):
+        """--at uses the specified commit instead of the inherited one."""
+        self._seed_source('us/next', 'oldcommit12345')
+        command.TEST_RESULT = _make_switch_mock(
+            at_resolves_to='newcommit98765')
+
+        ret, stdout, _ = self._run(at='HEAD')
+        self.assertEqual(ret, 0)
+        self.assertIn('newcommit987', stdout)
+
+        self.assertEqual(self._get_source('us/master'), 'newcommit98765')
 
 
 class TestRewind(unittest.TestCase):
