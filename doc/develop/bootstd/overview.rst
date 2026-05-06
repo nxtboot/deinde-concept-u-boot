@@ -815,10 +815,13 @@ calls the bootmeth device once more, this time to read the bootflow.
 
 Note: Normally a filesystem is needed for the bootmeth to be called on block
 devices, but bootmeths which don't need that can set the BOOTMETHF_ANY_PART
-flag to indicate that they can scan any partition. An example is the ChromiumOS
-bootmeth which can store a kernel in a raw partition. Note also that sandbox is
-a special case, since in that case the host filesystem can be accessed even
-though the block device is NULL.
+flag to indicate that they can scan any partition. The ChromiumOS bootmeth
+sets it because it stores a kernel in a raw partition; the BLS bootmeth sets
+it so it can find ``loader/entries/`` on the rootfs partition that distros
+mount at ``/boot`` (in addition to the ESP and XBOOTLDR partitions called out
+by the BLS spec). Note also that sandbox is a special case, since in that
+case the host filesystem can be accessed even though the block device is
+NULL.
 
 If we take the example of the `bootmeth_extlinux` driver, this call ends up at
 `extlinux_read_bootflow()`. It has the filesystem ready, so tries various
