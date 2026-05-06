@@ -79356,3 +79356,242 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-70101c3217a
+
+Commits:
+- 70101c3217a virtio: mmio: Return error codes on probe failures
+- 58e523fedf4 gunzip: Implement chunked decompression
+- 1994e69d4e5 board: adi: Fix exception when using standalone SoM
+- 6f44d897435 configs: aquila-am69: Set ENV_MMC_EMMC_HW_PARTITION and ENV_RELOC_GD_ENV_ADDR
+- 3abc7c1d46d board: ti: cape_detect: Add overlay name lookup table for extension boards
+- 2c8fdd7aea1 console: add console_flush_stdin()
+- e973fa5115e cli: flush stdin before enabling cli
+- 863446256b0 test: fit: Drop the fit_signature buildconfigspec
+- 1cd07d900c5 test: fit: Avoid restarting U-Boot
+- 875ebafe448 test: Rename test_fit() to test_fit_base()
+- 55aa0c5acc4 test: Add a check for a missing kernel
+- 09a9dd3780c test: Update fit test to fix a few Python warnings
+- cd6e1f6dbe4 test: Convert FIT test to use a class
+- 06b12fba0ce test: Add fsetup fixture and prepare helper for FIT test
+- 65c036eeecb test: Add documentation for the FIT test
+- bfe90a308a9 Merge patch series "test: Refactor FIT test for clarity and extensibility"
+
+### Conversation log
+Stats match. Let me proceed with the next commits.
+
+Let me look at the conflict in `lib/efi_loader/efi_console.c` to understand it:
+
+Now resolve the efi_console.c conflict by keeping HEAD's version (no `query_console_serial`):
+
+Stats are very close. Let me proceed to next commits.
+
+Now for the "maybe already applied" commits. Based on my earlier comparison, these all have very minor differences - let me try cherry-picking them and see what happens. Some might be no-ops, some might apply cleanly with their original content:
+
+Let me create empty commits for the already-applied commits to maintain the sequence, then do the merge:
+
+Now cherry-pick 65c036eeecb (documentation):
+
+Now the merge commit:
+
+All 16 commits are present. Now run the build test:
+
+Build passed. Let me verify the final state:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-70101c3217a` (16 commits ahead of `ci/master`)
+**Final build:** ✅ Sandbox build passed (1/1 boards built, 0 warnings, 0 errors)
+
+### Commits Applied Cleanly (8)
+- `0460cacc10e` virtio: mmio: Return error codes on probe failures
+- `eb628fa8145` gunzip: Implement chunked decompression
+- `9ee575bd2fc` board: adi: Fix exception when using standalone SoM
+- `1f933321c0d` board: ti: cape_detect: Add overlay name lookup table
+- `ad8dcd469ce` cli: flush stdin before enabling cli
+- `7e909c4a392` test: fit: Drop the fit_signature buildconfigspec
+- `bf5650b12cf` test: Add documentation for the FIT test
+- (merge commit info absorbed into `cc90d0e8a2a`)
+
+### Commits Applied With Fix-up (1)
+- `53321f0ccde` console: add console_flush_stdin() — **conflicts in `include/console.h` (merged new declaration alongside `calc_check_console_lines()`) and `lib/efi_loader/efi_console.c` (kept HEAD's removal of `query_console_serial()`).** Fix-up note appended to commit message. Stats: 25/21 vs original 26/23 (very close).
+
+### Failed Cherry-Pick (1)
+- `64a2035054e` **[FAILED]** `configs: aquila-am69`: file `configs/aquila-am69_a72_defconfig` doesn't exist on `ci/master` (board not yet merged into ci/master). Empty placeholder commit created.
+
+### Already Applied (5 + 1)
+Verified via patch comparison; empty placeholder commits created to preserve sequence:
+- `7cd3c6f0554` test: fit: Avoid restarting U-Boot ↔ `cfb854b2f34`
+- `405e585ad60` test: Rename test_fit() to test_fit_base() ↔ `b833ab6b795`
+- `25afd45fd88` test: Add a check for a missing kernel ↔ `95707a38408`
+- `fba19f580ce` test: Update fit test to fix Python warnings ↔ `ec17e2265c7`
+- `9512e6bc07c` test: Convert FIT test to use a class ↔ `7615680c4a5`
+- `45299f7009f` test: Add fsetup fixture ↔ `d2141140983` (test: Convert FIT test into separate pieces — equivalent expanded version)
+
+### Empty Merge Commit (1)
+- `cc90d0e8a2a` Merge patch series "test: Refactor FIT test for clarity and extensibility" — created empty since equivalent FIT refactor chain is already on ci/master and merge content conflicted with it.
+
+### Concerning Deltas
+- `64a2035054e` (aquila-am69): empty due to missing target file
+- `cc90d0e8a2a` (FIT merge) and 6 FIT test commits: empty markers because equivalent changes already present in ci/master via different chain
+
+Branch is ready for pushing. No history was rewritten beyond the build.
+
+---
+
+### Review: 2026-05-06
+
+Branch: cherry-70101c3217a
+
+Comments addressed:
+
+
+### Conversation log
+Now perform the rebase:
+
+Rebase succeeded cleanly. Let me verify the deltas haven't changed:
+
+Only the SHAs differ — all file/line stats are identical. The rebase was clean. Now run the build:
+
+Build passed (1/1, no warnings or errors). Now create the v2 branch and push:
+
+Push succeeded. Here's a summary of what was done:
+
+## Rebase Summary for MR !1059
+
+**Branch:** `cherry-70101c3217a` rebased onto latest `ci/master` (was 7 commits behind).
+
+### Result
+- ✅ **Rebase: clean** — no conflicts (`ci/master` had only 7 patman-related commits, no overlap with the cherry-picked virtio/gunzip/board/console/FIT-test changes)
+- ✅ **Deltas: identical** — `git show --stat` byte-for-byte matches pre/post rebase for every commit (only SHAs differ)
+- ✅ **Build: passed** — `buildman --board sandbox` 1/1, 0 warnings, 0 errors
+- ✅ **Local v2 branch created:** `cherry-70101c3217a-v2`
+- ✅ **Force-pushed** to remote `cherry-70101c3217a` (`cc90d0e8a2a...2fce3f77f2f`)
+
+### Pre-existing concerning deltas (unchanged by this rebase)
+These were noted in the previous cherry-pick conversation log and remain as-is:
+- `2cce4e979fa` (configs: aquila-am69) — empty placeholder, target file `configs/aquila-am69_a72_defconfig` doesn't exist on `ci/master`
+- 6 FIT test commits + merge `57b777e95bc` — empty placeholders because equivalent FIT refactor chain is already on `ci/master` via a different chain
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (was 7 commits behind, all patman changes — no conflicts). Per-commit deltas are identical to the pre-rebase state. Sandbox build passes (1/1, 0 warnings/errors). The previously-noted empty placeholders (aquila-am69 missing target, FIT test chain already applied) are unchanged.
+
+---
+
+### Pipeline fix: 2026-05-06 (attempt 2)
+
+Branch: cherry-70101c3217a
+
+Failed jobs:
+- minnowmax (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- docs (test_suites)
+
+### Conversation log
+Let me analyze:
+
+1. **minnowmax**: Lab failure (pexpect TIMEOUT during login) - infrastructure/transient
+2. **efi-aarch64**: Lab failure (OSError I/O error) - infrastructure/transient
+3. **docs**: Real code issue! Docstring formatting errors in `test/py/tests/test_fit.py`
+
+Let me look at the docs failure in detail and find the relevant commit.
+
+I can see the docs failure is due to docstring formatting in `test/py/tests/test_fit.py`. The `find_matching` and `prepare` methods were added/edited in the FIT documentation commit. Let me check which commit introduced them.
+
+Let me run the docs build to verify the issue and confirm errors:
+
+Now I understand both issues. Let me fix the docstrings. The doctest examples in `find_matching` have malformed Python (missing `[`, stray `\` escapes), and Sphinx is confused by the block structure. The `prepare` docstring has a triple-indented `kwargs` sub-args that Sphinx flags as unexpected indentation.
+
+Let me view the prepare docstring more carefully:
+
+Now let me start the interactive rebase to amend `cf0395f029c` (HEAD~3, the docs commit):
+
+Good — stopped at the doc commit. Now fix the docstrings:
+
+Now let me verify the fix builds the docs cleanly:
+
+Let me make the kwargs description single-line to avoid the indentation issue:
+
+Docs build is now clean. Let me amend the commit and continue the rebase:
+
+Rebase successful. Now build sandbox and the affected boards to verify:
+
+All builds pass. Docs build is clean. Now create the fix branch:
+
+Branch `cherry-70101c3217a-fix2` is created at the fixed HEAD.
+
+## Summary
+
+### Failure analysis
+
+**1. `minnowmax` (sjg-lab) — INFRASTRUCTURE / TRANSIENT**
+`pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` while flashing the board via em100. The board never reached a login prompt — labgrid then marked the connection bad. No code change can address this; it's a hardware/lab connectivity issue.
+
+**2. `efi-aarch64` (sjg-lab) — INFRASTRUCTURE / TRANSIENT**
+`OSError: [Errno 5] Input/output error` reading from the serial pty in `test_distro_arm_app_efi`. The lab session died mid-test. Same class of issue — lab/runner instability, not a code defect.
+
+**3. `docs` (test_suites) — REAL CODE BUG, FIXED**
+Sphinx failed building `htmldocs` because the new `doc/develop/pytest/test_fit.rst` (added by commit `cf0395f029c` "test: Add documentation for the FIT test") pulls `test/py/tests/test_fit.py` through `automodule`, which exposed two pre-existing reST defects in docstrings:
+- `TestFitImage.find_matching` had a malformed doctest block (stray `\'` escapes, missing opening `[`, and a `Traceback`/`...` literal block that ran straight into the next `>>>` with no blank line). Two warnings: "Block quote ends without a blank line; unexpected unindent."
+- `TestFitImage.prepare` had a multi-line `kwargs` description nested under another indent level inside the Args list, producing "ERROR: Unexpected indentation."
+
+### Fix
+Amended commit `cf0395f029c` (now `2c388ad8582`) — the same commit that introduced the automodule reference, since that's what surfaced the problem:
+- Replaced the malformed `find_matching` doctests with a clean reST `Examples::` literal block.
+- Flattened the `kwargs` description in `prepare()` to a single line.
+
+A `[pickman]` note describing the fix was appended to the commit message. `make htmldocs KDOC_WERROR=1` now succeeds; `buildman` cleanly builds all 10 boards across `efi-aarch64`, `minnowmax`, `sandbox` (and their derivatives).
+
+Local branch `cherry-70101c3217a-fix2` is ready (not pushed).
+
+---
+
+### Review: 2026-05-06
+
+Branch: cherry-70101c3217a
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) minnowmax, efi-aarch64, docs.
+
+Let me analyze:
+
+1. **m...
+
+### Conversation log
+Let me analyze the situation. The comment is the bot's own previous "Pipeline fix (attempt 2)" record, and the actual fix is already on the remote. Let me verify the current state and run the build.
+
+The fix is already in commit `2c388ad8582` on the remote. The local branch only differs from remote by a `.pickman-history` record commit. Let me run the sandbox build to confirm the current state is good.
+
+Local build passes cleanly. Now let me summarize the situation.
+
+## Report
+
+### Analysis
+
+The single unresolved review comment on MR !1059 is the bot's own previous **"Pipeline fix (attempt 2)"** log entry from session at `2026-05-06T17:33:09Z`, which describes work that has **already been completed and pushed**:
+
+- **Fix already on remote**: Commit `2c388ad8582` ("test: Add documentation for the FIT test") on `ci/cherry-70101c3217a` already contains the docstring fixes — the `[pickman]` note describing the rST fix to `find_matching()` (Examples literal block) and `prepare()` (flattened kwargs) is in the commit message.
+- **Pipeline currently running**: GitLab pipeline #7678 is in `running` state, validating that fix right now.
+- **Local vs remote**: Local branch is only 1 commit ahead of remote — `18913251a66` ("pickman: Record pipeline fix") which adds 68 lines to `.pickman-history`. **Zero code changes**.
+
+### Verification performed
+- ✅ Local sandbox build (`buildman -L --board sandbox -w -o /tmp/pickman`) — 1/1 boards built, 0 warnings, 0 errors
+- ✅ Confirmed `2c388ad8582` on remote contains the `[pickman]` fix note in its commit message
+- ✅ Confirmed pipeline #7678 is running against the fixed remote state
+
+### Action taken
+**No code changes made.** No force-push performed because:
+1. The remote already contains the fix
+2. Pushing would only update `.pickman-history` (a record-keeping file) and would needlessly re-trigger CI, cancelling the in-flight pipeline #7678 that's currently validating the existing fix
+3. No new code change is requested by the comment — it's a self-log of completed work
+
+No new local branch (`-v3`) was created since no code changes were made.
+
+### Suggested MR reply
+
+> This comment is the previous session's own log of attempt 2; the described fix (docstring rST cleanup in `test/py/tests/test_fit.py`, amended into `2c388ad8582`) is already on this branch and pipeline #7678 is currently running to validate it. Local sandbox build still passes (1/1, 0 warnings/errors). No further action needed — awaiting pipeline result.
+
+---
+

@@ -9,6 +9,7 @@
 
 #include <ansi.h>
 #include <charset.h>
+#include <console.h>
 #include <efi_device_path.h>
 #include <malloc.h>
 #include <time.h>
@@ -842,8 +843,7 @@ static void efi_cin_check(void)
  */
 static void efi_cin_empty_buffer(void)
 {
-	while (tstc())
-		getchar();
+	console_flush_stdin();
 	key_available = false;
 }
 
