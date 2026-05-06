@@ -79595,3 +79595,65 @@ No new local branch (`-v3`) was created since no code changes were made.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-54bd858843c
+
+Commits:
+- 54bd858843c net: xilinx: Reject broadcast and multicast packets in AXI Ethernet MAC
+- a25549d14bc clk: versal: Fix out-of-bounds parent id for DUMMY_PARENT
+- 3ac0ecb42f9 pci: Add AMD Versal2 DW PCIe host controller driver
+- 7612d5874a2 arm: versal2: Map PCIe DBI and config regions when PCIe is enabled
+- 9e17b275c56 amd: versal2: Enable PCIe/NVMe support and add NVMe boot target
+- 1938e7ee4ef soc: xilinx: zynqmp: Add support for new ZynqMP devices
+- 106a7f7d7fd board: xilinx: zynqmp: Register alternate FPGA device for zu63dr_SE
+- b82846dd813 cmd: fpga: Fix wrong preprocessor guard for loadb help text
+- 8342f575796 net: zynq_gem: add SPEED_10000 case in clock rate selection
+- 0443deb4285 net: zynq_gem: set 128-bit AXI bus width for 10GBE
+- 89c269154bf net: zynq_gem: reinitialize RX BDs on every init
+- 8669c34566c fpga: xilinx: Add option to skip bitstream ID check
+- 9e051126122 net: zynq_gem: Clear stale speed bits in NWCFG before setting new ones
+- 03fcc16d580 Merge tag 'xilinx-for-v2026.07-rc1-v3' of https://source.denx.de/u-boot/custodians/u-boot-microblaze
+
+### Conversation log
+Delta matches. Now let's run the build test.
+
+Build OK. Continue with next commit.
+
+Now the merge commit:
+
+I need to add the cherry-pick notation since I used -C instead of cherry-pick command:
+
+All 14 commits are present. Final build verification:
+
+## Final Status Report
+
+**Branch**: `cherry-54bd858843c` (based on `ci/master`)
+
+**All 14 commits cherry-picked successfully:**
+1. `797a2940fdc` - net: xilinx: Reject broadcast and multicast packets in AXI Ethernet MAC
+2. `ed70921b0ac` - clk: versal: Fix out-of-bounds parent id for DUMMY_PARENT
+3. `bf24fb63a9c` - pci: Add AMD Versal2 DW PCIe host controller driver
+4. `bbde7797616` - arm: versal2: Map PCIe DBI and config regions when PCIe is enabled
+5. `6f8a2a35872` - amd: versal2: Enable PCIe/NVMe support and add NVMe boot target
+6. `f9846789e64` - soc: xilinx: zynqmp: Add support for new ZynqMP devices
+7. `3acd752ff05` - board: xilinx: zynqmp: Register alternate FPGA device for zu63dr_SE
+8. `6c0b83dddc0` - cmd: fpga: Fix wrong preprocessor guard for loadb help text
+9. `a8560e9de3b` - net: zynq_gem: add SPEED_10000 case in clock rate selection
+10. `76b2bbbe014` - net: zynq_gem: set 128-bit AXI bus width for 10GBE
+11. `0065cd656c4` - net: zynq_gem: reinitialize RX BDs on every init
+12. `092f9b7ce6d` - fpga: xilinx: Add option to skip bitstream ID check
+13. `81544b511d3` - net: zynq_gem: Clear stale speed bits in NWCFG before setting new ones
+14. `a9ef995607a` - Merge tag 'xilinx-for-v2026.07-rc1-v3' (empty merge commit, preserved with `-x` notation manually appended)
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and at final verification.
+
+**Fix-ups made**:
+- Merge commit (`03fcc16d580`) resolved as empty due to all child commits being cherry-picked individually. Committed via `git commit --allow-empty -C` and amended to append the `(cherry picked from commit …)` trailer manually (since `cherry-pick -x` exited before recording the trailer when content was empty).
+
+**Concerning deltas**: None. All non-merge commits had identical file lists and line counts vs. originals.
+
+The branch is ready for pushing.
+
+---
+
