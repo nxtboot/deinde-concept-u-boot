@@ -681,9 +681,9 @@ int fdtdec_lookup_phandle(const void *blob, int node, const char *prop_name)
 			found, or -FDT_ERR_BADLAYOUT if not enough data
  * Return: pointer to cell, which is only valid if err == 0
  */
-static const void *get_prop_check_min_len(const void *blob, int node,
-					  const char *prop_name, int min_len,
-					  int *err)
+static inline const void *get_prop_check_min_len(const void *blob, int node,
+						 const char *prop_name,
+						 int min_len, int *err)
 {
 	const void *cell;
 	int len;
@@ -713,6 +713,24 @@ int fdtdec_get_int_array(const void *blob, int node, const char *prop_name,
 
 		for (i = 0; i < count; i++)
 			array[i] = fdt32_to_cpu(cell[i]);
+	}
+	return err;
+}
+
+int fdtdec_get_long_array(const void *blob, int node, const char *prop_name,
+			 u64 *array, int count)
+{
+	const u64 *cell;
+	int err = 0;
+
+	debug("%s: %s\n", __func__, prop_name);
+	cell = get_prop_check_min_len(blob, node, prop_name,
+				      sizeof(u64) * count, &err);
+	if (!err) {
+		int i;
+
+		for (i = 0; i < count; i++)
+			array[i] = fdt64_to_cpu(cell[i]);
 	}
 	return err;
 }

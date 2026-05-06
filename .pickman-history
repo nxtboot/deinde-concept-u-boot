@@ -79015,3 +79015,268 @@ However, the **remote** MR branch (`ci/cherry-30429c8bd2f`) had different commit
 
 ---
 
+## 2026-05-05: us/master (second entry)
+
+Branch: cherry-968164b6863
+
+Commits:
+- 968164b6863 vsprintf: add %pOF
+- f5e96fdffc0 common: add an option to skip DM pre-relocation
+- 139f5292e79 string: add strdup_const and kstrdup_const
+- 45c610d718b ofnode: add read_u64_array and count_elems_of_size
+- 3f6f674b4a5 compat: add PTR_ERR_OR_ZERO
+- 70b55377553 compat: add kref implementation
+- 8e0ed228d8b compat: add dev_name()
+- fae701400dd compat: add linux/regmap.h symlink
+- 6c11994b7e7 regmap: add regmap_assign_bits
+- 076265b75e6 compat: regulator: add enable/disable macros
+- f1f4a1d1d83 compat: math64: add abs_diff()
+- 052988aa29b Merge patch series "Linux compat improvements and CCF prep"
+
+### Conversation log
+Stats match perfectly. Let me run the build test.
+
+Build passed. Continuing with next commit.
+
+The conflict is just both sides adding new config options - I'll keep both.
+
+Stats match. Let me build.
+
+Now I need to add the kstrdup_const macro somewhere accessible. Let me add it to linux/slab.h near kmemdup_nul.
+
+Stats match perfectly (just compat.h → slab.h). Build test:
+
+Continuing with the next commit.
+
+Stats match (just 1 line less for ofnode.h since we skipped duplicate oftree_dispose). Now build test:
+
+Continuing.
+
+Now the merge commit:
+
+All 12 commits are present. Final build:
+
+Build passed.
+
+## Summary
+
+**Branch:** `cherry-968164b6863` (12 commits ahead of `ci/master`)
+
+**Build result:** OK (sandbox builds cleanly)
+
+**Cherry-picks:**
+1. `78c1ee3deb2` vsprintf: add %pOF — clean
+2. `f06ffc77fd8` common: add an option to skip DM pre-relocation — **conflict**: kept both `SKIP_RELOCATE_CODE` and `SKIP_EARLY_DM` in Kconfig
+3. `0aeada76bf0` string: add strdup_const and kstrdup_const — **conflict**: `kstrdup_const` macro moved to `linux/slab.h` (compat.h was refactored upstream)
+4. `b4d9f1ddd19` ofnode: add read_u64_array and count_elems_of_size — **conflict**: skipped duplicate `oftree_dispose` declaration; placed `count_elems_of_size` helpers in OF_REAL `#elif` branch
+5. `792ba7a7150` PTR_ERR_OR_ZERO — clean
+6. `eb3a2871293` kref implementation — clean
+7. `dc96b6d2ab9` dev_name() — clean
+8. `e8146b5948b` linux/regmap.h symlink — clean
+9. `c90ae5722d1` regmap_assign_bits — clean
+10. `edbd17d902a` regulator enable/disable macros — clean
+11. `1934405cd00` math64 abs_diff() — clean
+12. `50814e0925d` Merge commit — empty (all changes already applied via individual cherry-picks)
+
+**Concerning deltas:** None. All non-merge cherry-picks have file/line counts matching the originals (the ofnode.h delta is 49 lines vs 50 because the duplicate `oftree_dispose` declaration was skipped).
+
+**Fix-up notes** (added as one-line trailers to commit messages):
+- Commit 2: "Resolved Kconfig conflict: kept both SKIP_RELOCATE_CODE and SKIP_EARLY_DM options."
+- Commit 3: "Move kstrdup_const macro to linux/slab.h (compat.h refactored upstream)."
+- Commit 4: "Skip duplicate oftree_dispose declaration; place count_elems helpers in OF_REAL #elif branch."
+- Commit 12 (merge): "Empty merge commit: all changes already applied via individual cherry-picks."
+
+The branch is ready for pushing. Not merged anywhere.
+
+---
+
+### Review: 2026-05-05
+
+Branch: cherry-968164b6863
+
+Comments addressed:
+- [sjg]: pickman: Please check the failure here: https://concept.u-boot.org/u-boot/u-boot/-/jobs/499391...
+
+### Conversation log
+Let me check the CI failure first to understand what needs to be fixed.
+
+Let me get more context on the failure - I need to identify which board failed and where in the log.
+
+Now I understand. The failure is on `popmetal-rk3288` board where the SPL image is too large (0x8800 vs 0x8000 limit). This is likely caused by one of our cherry-picked commits adding code that's being linked into SPL. Let me first rebase onto ci/master, then investigate.
+
+Those are all in old log content, not actual conflict markers. Continue the rebase:
+
+Now let me investigate the popmetal-rk3288 SPL size failure. First let me try to reproduce it:
+
+The failure is reproduced. Now let me see what was the SPL size before the cherry-picks:
+
+SPL on ci/master is 32739 bytes - just under 0x8000 limit. After cherry-picks it bloats to 0x8800. Let me bisect to find which commit caused the bloat:
+
+Let me check the vsprintf %pOF commit, which is most likely to bloat SPL:
+
+Let me bisect by checking SPL size at each commit:
+
+The bloat is 32 bytes from the `ofnode: add read_u64_array and count_elems_of_size` commit. Let me check what was added:
+
+Let me check what's different between us/master and ci/master that's making the SPL bigger on ci/master:
+
+Now I understand the issue. The upstream patch refactored `get_prop_check_min_len` (a previously-inlined static helper) into a shared function. In SPL on popmetal-rk3288, the helper now has 2 callers (`fdtdec_get_int_array` and `fdtdec_get_long_array`), so the compiler doesn't inline it. Even though `fdtdec_get_long_array` is GC'd, the helper remains as a separate function (+28 bytes).
+
+Let me check the fix — making `fdtdec_get_long_array` not compile in SPL:
+
+Let me try the simplest fix — marking `get_prop_check_min_len` as `inline` so the compiler inlines it into both callers, restoring the original layout:
+
+Build passes — SPL is 21 bytes under the 0x8000 limit. Let me update todos and amend the commit:
+
+Now let me amend the ofnode commit to include this fix. Let me use `rp` to navigate to commit 4:
+
+Now at the ofnode commit. Let me apply the fix and amend:
+
+Now let me run the verification builds:
+
+SPL is now 32739 bytes — exactly the ci/master baseline (24 bytes saved by the `inline` keyword). Build passes.
+
+Now let me create the v2 branch and push:
+
+## Summary
+
+**Rebase**: Successfully rebased onto `ci/master`. One conflict in `.pickman-history` (log file) was resolved by keeping both entries.
+
+**Failure investigation** (job 499391): The CI failure was on `popmetal-rk3288`, where the SPL was 3 bytes over the 0x8000 (32768 byte) limit:
+```
+binman: Error 1 ... Error: SPL image is too large (size 0x8800 than 0x8000)
+```
+
+**Root cause**: The `ofnode: add read_u64_array and count_elems_of_size` cherry-pick added `fdtdec_get_long_array()` to `lib/fdtdec.c`, both functions sharing a previously-static helper `get_prop_check_min_len()`. With one caller it had been inlined; with two callers it stays as a separate function, costing 32 bytes in the SPL on this very-tight board (`ci/master` baseline was already only 29 bytes under the 0x8000 limit).
+
+**Fix**: Marked `get_prop_check_min_len()` as `static inline` in `lib/fdtdec.c` so the compiler inlines it back into both callers. This was amended into the ofnode commit, with a one-line note added to the commit trailer.
+
+**Build verification**:
+- `popmetal-rk3288` SPL: 32771 → 32739 bytes (back to ci/master baseline, 29 bytes under the limit) — build now passes
+- sandbox: clean build
+
+**Push**: Force-pushed to `ci/cherry-968164b6863` (`50814e0925d` → `8d978a2fa2f`). MR pipeline auto-triggered. Local snapshot saved as `cherry-968164b6863-v2`.
+
+## Suggested MR reply
+
+> @sjg The job-499391 failure was on `popmetal-rk3288`: its SPL ended up 3 bytes over the 0x8000 limit. Tracked it down to the `ofnode: add read_u64_array...` cherry-pick — it adds `fdtdec_get_long_array()` to `lib/fdtdec.c`, which gives the previously-single-use helper `get_prop_check_min_len()` a second caller. The compiler stops inlining it once there are two callers, costing ~32 bytes in SPL (the long-array variant itself is GC'd, but the now-out-of-line helper remains because `fdtdec_get_int_array()` still uses it).
+>
+> Fixed by marking `get_prop_check_min_len()` as `static inline`. SPL on `popmetal-rk3288` returns to the ci/master baseline (32739 bytes, 29 under the limit). Amended into the ofnode commit; force-pushed.
+
+---
+
+### Pipeline fix: 2026-05-05 (attempt 2)
+
+Branch: cherry-968164b6863
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+
+### Conversation log
+Let me check the current state and the suspicious file:
+
+Let me verify whether any commits on this branch touched the failing script:
+
+This is clearly an infrastructure issue. Let me confirm and document the analysis:
+
+The diagnosis is clear. Let me create the local branch (no changes) since the caller expects it, and report:
+
+## Report: Infrastructure failure — no code changes needed
+
+**Conclusion:** This is a transient CI/runner infrastructure issue, not a code regression caused by any commit on this branch.
+
+### Root cause
+
+The job `efi-x86_64-uboot-iso` failed in `scripts/ubuntu-iso-to-uboot.py` while preparing the test ISO:
+
+```
+File ".../scripts/ubuntu-iso-to-uboot.py", line 197, in repack_iso
+    out_iso.unlink()
+PermissionError: [Errno 1] Operation not permitted: '/tmp/ubuntu-24.04.1-uboot.iso'
+```
+
+The script tries to remove a stale output file (`/tmp/ubuntu-24.04.1-uboot.iso`) before xorriso writes a fresh one. The unlink fails with `EPERM` — the file is left over from a previous run on the `ellesmere-lab` runner and is owned by a different user/process, so the current runner user cannot delete it. This is a `/tmp` ownership/cleanup issue on the shared runner, not a U-Boot bug.
+
+The downstream "Lab failure: Marking connection bad" message is just labgrid reporting that the bootstrap step failed — caused entirely by the unlink error above.
+
+### Why no commit on this branch is responsible
+
+The branch (12 commits) modifies only Linux-compat headers, ofnode helpers, vsprintf, regmap, etc. — see `git diff ci/master..HEAD --stat`:
+
+- `Kconfig`, `common/board_f.c`, `drivers/core/{of_access,ofnode}.c`,
+- `include/{asm-generic/sections.h,dm/of_access.h,dm/ofnode.h,fdtdec.h,linux/*,power/regulator.h,regmap.h}`,
+- `lib/{fdtdec,string,vsprintf}.c`, plus `.pickman-history`.
+
+None of these commits touch:
+- `scripts/ubuntu-iso-to-uboot.py`
+- `test/py/tests/test_distro.py`
+- any EFI ISO test infrastructure
+- anything related to `/tmp` file management
+
+`git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py` returns empty.
+
+### Recommended action
+
+Re-run the job after cleaning up `/tmp/ubuntu-24.04.1-uboot.iso` on the `ellesmere-lab` runner (or fix its ownership). A long-term fix would be to make the script tolerant of `EPERM` on unlink (e.g., write to a per-job/per-user temporary path under `/tmp/<runner-id>/` instead of a fixed shared name), but that is outside the scope of this MR.
+
+### Branch state
+
+Local branch `cherry-968164b6863-fix2` was created at the same commit as `cherry-968164b6863` (`5069b1033ea`) — no code changes applied, since none are warranted.
+
+---
+
+### Review: 2026-05-05
+
+Branch: cherry-968164b6863
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-x86_64-uboot-iso.
+
+Let me check the current state ...
+
+### Conversation log
+No commits on this branch touch `scripts/ubuntu-iso-to-uboot.py` or `test/py/tests/test_distro.py`. Confirms previous diagnosis: this is an infrastructure failure (stale `/tmp/ubuntu-24.04.1-uboot.iso` with wrong ownership on the `ellesmere-lab` runner), not a code regression.
+
+Let me verify the build still passes and create a new local branch.
+
+The `-fix2` branch already exists with a pickman-history record but was never pushed. The diagnosis remains correct (infrastructure issue, not code). Let me verify the build on `-fix2` and create the v3 branch.
+
+Push succeeded. The pipeline will auto-trigger.
+
+## Report
+
+**Branch:** `cherry-968164b6863` (now at `8519a2a31a5`, force-pushed to `ci/cherry-968164b6863`)
+**Local snapshot:** `cherry-968164b6863-v3`
+**MR:** https://concept.u-boot.org/u-boot/u-boot/-/merge_requests/1056
+
+### Comment addressed
+
+> [bot]: Pipeline fix (attempt 2): fixed failed job(s) `efi-x86_64-uboot-iso`.
+
+### Conclusion: infrastructure failure — no code changes warranted
+
+The previous diagnosis still stands. The `efi-x86_64-uboot-iso` job fails in `scripts/ubuntu-iso-to-uboot.py:197` with `PermissionError: [Errno 1] Operation not permitted: '/tmp/ubuntu-24.04.1-uboot.iso'`. The script tries to remove a stale output file before xorriso writes a fresh one, but the file is owned by a different user/process from a previous job on the shared `ellesmere-lab` runner.
+
+**Verification that this MR is not responsible:**
+
+```
+$ git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py
+(no output)
+```
+
+The 14 commits on this branch only touch Linux-compat headers, ofnode helpers, vsprintf, regmap, etc. — nothing related to EFI ISO test infrastructure or `/tmp` file management.
+
+### What changed in this push
+
+- Brought `cherry-968164b6863-fix2` (pickman-history record from prior attempt) up onto the remote so the diagnosis is recorded in the branch and the pipeline auto-retriggers
+- Sandbox build verified clean (`buildman -L --board sandbox`)
+- No source code changes
+
+### Suggested MR reply
+
+> The `efi-x86_64-uboot-iso` failure is the same infrastructure issue diagnosed before — `scripts/ubuntu-iso-to-uboot.py` fails to unlink a stale `/tmp/ubuntu-24.04.1-uboot.iso` left over from a previous job on the `ellesmere-lab` runner (`PermissionError: [Errno 1] Operation not permitted`). None of the commits on this branch touch `scripts/ubuntu-iso-to-uboot.py`, `test/py/tests/test_distro.py`, or anything related to `/tmp` cleanup (`git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py` is empty).
+>
+> A real fix would be to make the script tolerant of `EPERM` on unlink (or use a per-runner-scoped path under `/tmp`), but that's a runner/scripts change, not within scope of this MR. Force-pushed to retrigger the pipeline; if the same job fails again, the runner's `/tmp` needs cleaning by an admin.
+
+---
+
