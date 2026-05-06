@@ -49,6 +49,19 @@ SHORTEN_STATE = {
 AUTOLINK = namedtuple('autolink', 'name,version,link,desc,result')
 
 
+def review_worktree_path(repo, branch_name):
+    """Get the on-disk path for a per-review worktree
+
+    Args:
+        repo (str): Top-level dir of the main checkout
+        branch_name (str): Review branch name
+
+    Return:
+        str: Path where the review worktree lives (may not yet exist)
+    """
+    return os.path.join(repo, '.git', 'patman', 'worktrees', branch_name)
+
+
 def oid(oid_val):
     """Convert a hash string into a shortened hash
 
