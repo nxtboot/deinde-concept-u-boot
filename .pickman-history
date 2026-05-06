@@ -79657,3 +79657,57 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-06 (attempt 2)
+
+Branch: cherry-54bd858843c
+
+Failed jobs:
+- minnowmax (sjg-lab)
+
+### Conversation log
+## Report
+
+**Verdict: Infrastructure / lab failure — no code change made.**
+
+### Failure analysis (job 502670, minnowmax)
+
+The minnowmax job fails with:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+This occurs during the very first test (`test_000_version`) while flashing the board via em100. The traceback originates entirely in labgrid's `ubootdriver.on_activate()` → `_await_prompt()` — i.e. the runner could not get a login prompt from the physical board after flashing. The explicit `Lab failure: Marking connection bad` marker is the lab harness's own infrastructure-failure flag.
+
+### Why this is not caused by the branch
+
+The branch's diff vs. `ci/master` touches only Xilinx/AMD code:
+- `drivers/net/xilinx_axi_emac.c`, `drivers/net/zynq_gem.c`
+- `drivers/clk/clk_versal.c`
+- `drivers/pci/pcie_dw_amd.c` (new), `drivers/pci/{Kconfig,Makefile}`, MAINTAINERS
+- `arch/arm/mach-versal2/cpu.c`
+- `configs/amd_versal2_virt_defconfig`, `include/configs/amd_versal2.h`
+- `drivers/soc/soc_xilinx_zynqmp.c`, `board/xilinx/zynqmp/zynqmp.c`
+- `drivers/fpga/xilinx.c`
+- `cmd/fpga.c` — one-line preprocessor-guard fix to help text only
+- `.pickman-history`
+
+minnowmax is Intel Bay Trail x86. None of the changed files are compiled into the minnowmax image, and no shared infrastructure (boot flow, console, EFI, etc.) is touched.
+
+This is the identical failure mode as attempt 1 (em100 login timeout, lab marked bad). It is a transient/infrastructure issue with the minnowmax lab runner.
+
+### Verification performed
+
+- `um build sandbox` → clean (no output).
+- `buildman -o /tmp/pickman minnowmax sandbox` → 10/10 boards built, duration 1:05. The minnowmax warnings shown (missing intel-descriptor/me/vga/fsp blobs and the IURT ASL `_SRS` warning) are pre-existing on master, unrelated to this MR.
+
+### Action taken
+
+- Created local branch `cherry-54bd858843c-fix2` at the same tip (`8849dce3b7d`) as `cherry-54bd858843c`.
+- No commits amended, no fixup commit added.
+- Recommendation: retry the minnowmax pipeline job (or skip — it's a known flaky lab board with em100 flashing).
+
+---
+
