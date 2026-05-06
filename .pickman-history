@@ -79815,3 +79815,34 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-c7299ff33eb
+
+Commits:
+- c7299ff33eb ufs: rockchip: Make use of controller resets
+- c7ebdb9871d ufs: core: Fix heap corruption due to out of bounds write
+- 1089ed95f54 ufs: rcar-gen5: Update line reset configuration
+- 1a4cb8dc038 Merge tag 'u-boot-ufs-20260427' of https://source.denx.de/u-boot/custodians/u-boot-ufs
+
+### Conversation log
+All 4 commits successfully cherry-picked onto branch `cherry-c7299ff33eb` (based on `ci/master`).
+
+## Final Status
+
+**Build result**: OK (sandbox builds cleanly after each cherry-pick and final build)
+
+**Commits applied (in order)**:
+1. `c2b634efc57` - ufs: rockchip: Make use of controller resets (1 file, +12/-1) — matches original exactly
+2. `c80679622b4` - ufs: core: Fix heap corruption due to out of bounds write (1 file, +9/-1) — matches original exactly
+3. `201dd069eb1` - ufs: rcar-gen5: Update line reset configuration (1 file, +8/-8) — matches original exactly
+4. `ec15e17c5d0` - Merge tag 'u-boot-ufs-20260427' (empty merge commit, preserved with `--allow-empty`)
+
+**Fix-ups**: None required. All cherry-picks applied cleanly without conflicts.
+
+**Concerning deltas**: None. Each individual cherry-pick exactly matches its original commit's stats and content. The merge commit was preserved as an empty commit per instructions, since its three constituent changes were already applied as the previous three cherry-picks.
+
+The branch is ready for pushing.
+
+---
+
