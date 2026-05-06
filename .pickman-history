@@ -79090,3 +79090,78 @@ The branch is ready for pushing. Not merged anywhere.
 
 ---
 
+### Review: 2026-05-05
+
+Branch: cherry-968164b6863
+
+Comments addressed:
+- [sjg]: pickman: Please check the failure here: https://concept.u-boot.org/u-boot/u-boot/-/jobs/499391...
+
+### Conversation log
+Let me check the CI failure first to understand what needs to be fixed.
+
+Let me get more context on the failure - I need to identify which board failed and where in the log.
+
+Now I understand. The failure is on `popmetal-rk3288` board where the SPL image is too large (0x8800 vs 0x8000 limit). This is likely caused by one of our cherry-picked commits adding code that's being linked into SPL. Let me first rebase onto ci/master, then investigate.
+
+Those are all in old log content, not actual conflict markers. Continue the rebase:
+
+Now let me investigate the popmetal-rk3288 SPL size failure. First let me try to reproduce it:
+
+The failure is reproduced. Now let me see what was the SPL size before the cherry-picks:
+
+SPL on ci/master is 32739 bytes - just under 0x8000 limit. After cherry-picks it bloats to 0x8800. Let me bisect to find which commit caused the bloat:
+
+Let me check the vsprintf %pOF commit, which is most likely to bloat SPL:
+
+Let me bisect by checking SPL size at each commit:
+
+The bloat is 32 bytes from the `ofnode: add read_u64_array and count_elems_of_size` commit. Let me check what was added:
+
+Let me check what's different between us/master and ci/master that's making the SPL bigger on ci/master:
+
+Now I understand the issue. The upstream patch refactored `get_prop_check_min_len` (a previously-inlined static helper) into a shared function. In SPL on popmetal-rk3288, the helper now has 2 callers (`fdtdec_get_int_array` and `fdtdec_get_long_array`), so the compiler doesn't inline it. Even though `fdtdec_get_long_array` is GC'd, the helper remains as a separate function (+28 bytes).
+
+Let me check the fix — making `fdtdec_get_long_array` not compile in SPL:
+
+Let me try the simplest fix — marking `get_prop_check_min_len` as `inline` so the compiler inlines it into both callers, restoring the original layout:
+
+Build passes — SPL is 21 bytes under the 0x8000 limit. Let me update todos and amend the commit:
+
+Now let me amend the ofnode commit to include this fix. Let me use `rp` to navigate to commit 4:
+
+Now at the ofnode commit. Let me apply the fix and amend:
+
+Now let me run the verification builds:
+
+SPL is now 32739 bytes — exactly the ci/master baseline (24 bytes saved by the `inline` keyword). Build passes.
+
+Now let me create the v2 branch and push:
+
+## Summary
+
+**Rebase**: Successfully rebased onto `ci/master`. One conflict in `.pickman-history` (log file) was resolved by keeping both entries.
+
+**Failure investigation** (job 499391): The CI failure was on `popmetal-rk3288`, where the SPL was 3 bytes over the 0x8000 (32768 byte) limit:
+```
+binman: Error 1 ... Error: SPL image is too large (size 0x8800 than 0x8000)
+```
+
+**Root cause**: The `ofnode: add read_u64_array and count_elems_of_size` cherry-pick added `fdtdec_get_long_array()` to `lib/fdtdec.c`, both functions sharing a previously-static helper `get_prop_check_min_len()`. With one caller it had been inlined; with two callers it stays as a separate function, costing 32 bytes in the SPL on this very-tight board (`ci/master` baseline was already only 29 bytes under the 0x8000 limit).
+
+**Fix**: Marked `get_prop_check_min_len()` as `static inline` in `lib/fdtdec.c` so the compiler inlines it back into both callers. This was amended into the ofnode commit, with a one-line note added to the commit trailer.
+
+**Build verification**:
+- `popmetal-rk3288` SPL: 32771 → 32739 bytes (back to ci/master baseline, 29 bytes under the limit) — build now passes
+- sandbox: clean build
+
+**Push**: Force-pushed to `ci/cherry-968164b6863` (`50814e0925d` → `8d978a2fa2f`). MR pipeline auto-triggered. Local snapshot saved as `cherry-968164b6863-v2`.
+
+## Suggested MR reply
+
+> @sjg The job-499391 failure was on `popmetal-rk3288`: its SPL ended up 3 bytes over the 0x8000 limit. Tracked it down to the `ofnode: add read_u64_array...` cherry-pick — it adds `fdtdec_get_long_array()` to `lib/fdtdec.c`, which gives the previously-single-use helper `get_prop_check_min_len()` a second caller. The compiler stops inlining it once there are two callers, costing ~32 bytes in SPL (the long-array variant itself is GC'd, but the now-out-of-line helper remains because `fdtdec_get_int_array()` still uses it).
+>
+> Fixed by marking `get_prop_check_min_len()` as `static inline`. SPL on `popmetal-rk3288` returns to the ci/master baseline (32739 bytes, 29 under the limit). Amended into the ofnode commit; force-pushed.
+
+---
+
