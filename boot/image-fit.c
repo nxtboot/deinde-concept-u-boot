@@ -2066,7 +2066,7 @@ static int handle_load_op(const void *fit, int noffset, const char *prop_name,
 		printf("   Loading %s from 0x%08lx to 0x%08lx\n",
 		       prop_name, data, load);
 	} else {
-		load = data;	/* No load address specified */
+		load = data;	/* load address specified but set to 0 */
 		log_debug("No load\n");
 	}
 

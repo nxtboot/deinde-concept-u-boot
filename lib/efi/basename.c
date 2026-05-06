@@ -9,6 +9,7 @@
 #include <efi_load_initrd.h>
 #include <env.h>
 #include <errno.h>
+#include <host_arch.h>
 
 #undef BOOTEFI_NAME
 

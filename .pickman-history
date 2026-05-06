@@ -79280,3 +79280,79 @@ The 14 commits on this branch only touch Linux-compat headers, ofnode helpers, v
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-86122451b5b
+
+Commits:
+- 86122451b5b boot/fit: fix misleading comment
+- 24b99d29334 kbuild: Move U-Boot .incbin rules to Makefile.lib-u-boot
+- 09297182ad7 kbuild: Use if_changed for font and splash .incbin rules
+- 3814d57597b drivers: ddr: imx: Fix Kconfig for SAVED_DRAM_TIMING_BASE
+- faa8c17995e configs: imx9{43, 5}: Enable SPI SFDP support
+- 60d41b6551c Kconfig: update build-target for MX7 with SPL
+- c8eebe0a707 board/tq: Add common SoM API
+- 9f1807e57cb env: add env_set_runtime() helper
+- ae0d13f59d2 arch: arm: dts: tqma7x: add u-boot device tree fragments
+- 77375425023 arch: arm: dts: tqma7x: add boot phase properties
+- d000ce5efee board: tqma7: add code for u-boot with spl
+- 1bcdfc07dc1 configs: tqma7: add defconfigs
+- cf5c9f2a144 doc: tqma7: add documentation
+- 73d093afdf1 net: phy: aquantia: Increase timeout for out of reset
+- e7e35b85dec net: fsl_enetc: Add iMX95 enetc4 10Gbps port support
+- 69d43875759 board: dhelectronics: imx: Use second Ethernet MAC also from fuse
+- 60f65146084 imx: imx9: Select ARCH_MISC_INIT for all i.MX9 SoCs
+- 0977448b45e common: memsize: add RAM size probe based on alias detection
+- 60d8255d8dc board: toradex: add Toradex Verdin iMX95
+- a6d6fc94f0c toradex: tdx-cfg-block: add verdin imx95 0226, 0227 and 0228 pid4
+- 5a9da0e505b imx8mq: evk: drop redundant gd clearing in board_init_f
+- bb95b525822 imx8mq: pitx: drop redundant gd clearing in board_init_f
+- 27d49fc9ec7 imx8mq: phanbell: drop redundant gd clearing in board_init_f
+- b79b9635e2c imx8mq: reform2: drop redundant gd clearing in board_init_f
+- 10ca7ec2002 imx8mq: pico: drop redundant gd clearing in board_init_f
+- 913b8c6cb86 imx8mq: cm: drop redundant gd clearing in board_init_f
+- 5b6dba2924b imx8mq: Correct signed_hdmi firmware position
+- b29ce12fc24 mx6: sabreauto/sd: Exclude power_init_board from SPL build
+- 64e99567648 board: nxp: common: fix PFUZE100 DM build and unify DM/non-DM handling
+- 186011ec8d1 imx8mq: evk: Migrate to DM PMIC framework
+- 606d57ef6fd imx8mq: phanbell: Drop SPL_POWER_LEGACY
+- c2f0d5ddb26 imx8mq: reform2: Drop SPL_POWER_LEGACY
+- 146079d8d1d imx8mq: pico: Drop SPL_POWER_LEGACY
+- 8b77b55aa67 imx8mq: kontron: migrate PITX-IMX8M to DM PMIC framework
+- 589153f6070 imx8mq: phanbell: enable SPL DM
+- 7fbed708d92 Merge tag 'u-boot-imx-master-20260421' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+
+### Conversation log
+Build passes. Now let me proceed with the rest of the cherry-picks.
+
+Build passes. Let me continue with the next commits.
+
+Now resolve the Makefile.lib-u-boot conflict:
+
+All 36 commits are present. Now let me run the final build verification.
+
+Build succeeded - artifacts are present.
+
+## Cherry-pick Complete
+
+**Build result:** OK — sandbox builds cleanly (`buildman -L --board sandbox -w -o /tmp/pickman` succeeded with no warnings/errors).
+
+**All 36 commits applied** to branch `cherry-86122451b5b` (based on `ci/master`).
+
+**Fix-ups made (3 commits had conflicts; notes appended to commit messages):**
+
+1. **`27dc956545b` boot/fit: fix misleading comment** — `boot/image-fit.c` was refactored on ci/master so the target comment now lives in the new `handle_load_op()` function alongside a `log_debug("No load\n");` call. Resolved by updating the comment text in place and keeping the new `log_debug` line.
+
+2. **`0aedd1893df` kbuild: Move U-Boot .incbin rules to Makefile.lib-u-boot** — ci/master's `scripts/Makefile.lib` had additional rule blocks (TKey signer, drivers/video/images linker-list rule) and used `$(src)/$(notdir $<)` syntax. Resolved by populating `scripts/Makefile.lib-u-boot` with the full extended ci/master rule set rather than just the original 96 lines.
+
+3. **`8cfa2780a7c` kbuild: Use if_changed for font and splash .incbin rules** —
+   - `drivers/video/Makefile`: dropped the `obj-$(CONFIG_VIDEO_LOGO) += u_boot_logo.bmp.o` addition because logo handling moved to `drivers/video/images/` on ci/master.
+   - `drivers/video/fonts/Makefile`: extended the `.ttf.o` rename to also cover ci/master's `UBUNTU_LIGHT` and `UBUNTU_BOLD` fonts.
+   - `scripts/Makefile.lib-u-boot`: replaced the `%_logo.bmp` splash rule with the new `%.bmp.S: %.bmp FORCE` form using `if_changed`.
+
+**Concerning deltas:** None. The merge commit `0855ccfb71d` ("Merge tag 'u-boot-imx-master-20260421'") was empty after cherry-picking all the individual commits in the merge — committed with `--allow-empty` per the instructions to preserve the merge marker in history.
+
+The branch is left ready for pushing.
+
+---
+
