@@ -79595,3 +79595,163 @@ No new local branch (`-v3`) was created since no code changes were made.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-54bd858843c
+
+Commits:
+- 54bd858843c net: xilinx: Reject broadcast and multicast packets in AXI Ethernet MAC
+- a25549d14bc clk: versal: Fix out-of-bounds parent id for DUMMY_PARENT
+- 3ac0ecb42f9 pci: Add AMD Versal2 DW PCIe host controller driver
+- 7612d5874a2 arm: versal2: Map PCIe DBI and config regions when PCIe is enabled
+- 9e17b275c56 amd: versal2: Enable PCIe/NVMe support and add NVMe boot target
+- 1938e7ee4ef soc: xilinx: zynqmp: Add support for new ZynqMP devices
+- 106a7f7d7fd board: xilinx: zynqmp: Register alternate FPGA device for zu63dr_SE
+- b82846dd813 cmd: fpga: Fix wrong preprocessor guard for loadb help text
+- 8342f575796 net: zynq_gem: add SPEED_10000 case in clock rate selection
+- 0443deb4285 net: zynq_gem: set 128-bit AXI bus width for 10GBE
+- 89c269154bf net: zynq_gem: reinitialize RX BDs on every init
+- 8669c34566c fpga: xilinx: Add option to skip bitstream ID check
+- 9e051126122 net: zynq_gem: Clear stale speed bits in NWCFG before setting new ones
+- 03fcc16d580 Merge tag 'xilinx-for-v2026.07-rc1-v3' of https://source.denx.de/u-boot/custodians/u-boot-microblaze
+
+### Conversation log
+Delta matches. Now let's run the build test.
+
+Build OK. Continue with next commit.
+
+Now the merge commit:
+
+I need to add the cherry-pick notation since I used -C instead of cherry-pick command:
+
+All 14 commits are present. Final build verification:
+
+## Final Status Report
+
+**Branch**: `cherry-54bd858843c` (based on `ci/master`)
+
+**All 14 commits cherry-picked successfully:**
+1. `797a2940fdc` - net: xilinx: Reject broadcast and multicast packets in AXI Ethernet MAC
+2. `ed70921b0ac` - clk: versal: Fix out-of-bounds parent id for DUMMY_PARENT
+3. `bf24fb63a9c` - pci: Add AMD Versal2 DW PCIe host controller driver
+4. `bbde7797616` - arm: versal2: Map PCIe DBI and config regions when PCIe is enabled
+5. `6f8a2a35872` - amd: versal2: Enable PCIe/NVMe support and add NVMe boot target
+6. `f9846789e64` - soc: xilinx: zynqmp: Add support for new ZynqMP devices
+7. `3acd752ff05` - board: xilinx: zynqmp: Register alternate FPGA device for zu63dr_SE
+8. `6c0b83dddc0` - cmd: fpga: Fix wrong preprocessor guard for loadb help text
+9. `a8560e9de3b` - net: zynq_gem: add SPEED_10000 case in clock rate selection
+10. `76b2bbbe014` - net: zynq_gem: set 128-bit AXI bus width for 10GBE
+11. `0065cd656c4` - net: zynq_gem: reinitialize RX BDs on every init
+12. `092f9b7ce6d` - fpga: xilinx: Add option to skip bitstream ID check
+13. `81544b511d3` - net: zynq_gem: Clear stale speed bits in NWCFG before setting new ones
+14. `a9ef995607a` - Merge tag 'xilinx-for-v2026.07-rc1-v3' (empty merge commit, preserved with `-x` notation manually appended)
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and at final verification.
+
+**Fix-ups made**:
+- Merge commit (`03fcc16d580`) resolved as empty due to all child commits being cherry-picked individually. Committed via `git commit --allow-empty -C` and amended to append the `(cherry picked from commit …)` trailer manually (since `cherry-pick -x` exited before recording the trailer when content was empty).
+
+**Concerning deltas**: None. All non-merge commits had identical file lists and line counts vs. originals.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-05-06 (attempt 2)
+
+Branch: cherry-54bd858843c
+
+Failed jobs:
+- minnowmax (sjg-lab)
+
+### Conversation log
+## Report
+
+**Verdict: Infrastructure / lab failure — no code change made.**
+
+### Failure analysis (job 502670, minnowmax)
+
+The minnowmax job fails with:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+This occurs during the very first test (`test_000_version`) while flashing the board via em100. The traceback originates entirely in labgrid's `ubootdriver.on_activate()` → `_await_prompt()` — i.e. the runner could not get a login prompt from the physical board after flashing. The explicit `Lab failure: Marking connection bad` marker is the lab harness's own infrastructure-failure flag.
+
+### Why this is not caused by the branch
+
+The branch's diff vs. `ci/master` touches only Xilinx/AMD code:
+- `drivers/net/xilinx_axi_emac.c`, `drivers/net/zynq_gem.c`
+- `drivers/clk/clk_versal.c`
+- `drivers/pci/pcie_dw_amd.c` (new), `drivers/pci/{Kconfig,Makefile}`, MAINTAINERS
+- `arch/arm/mach-versal2/cpu.c`
+- `configs/amd_versal2_virt_defconfig`, `include/configs/amd_versal2.h`
+- `drivers/soc/soc_xilinx_zynqmp.c`, `board/xilinx/zynqmp/zynqmp.c`
+- `drivers/fpga/xilinx.c`
+- `cmd/fpga.c` — one-line preprocessor-guard fix to help text only
+- `.pickman-history`
+
+minnowmax is Intel Bay Trail x86. None of the changed files are compiled into the minnowmax image, and no shared infrastructure (boot flow, console, EFI, etc.) is touched.
+
+This is the identical failure mode as attempt 1 (em100 login timeout, lab marked bad). It is a transient/infrastructure issue with the minnowmax lab runner.
+
+### Verification performed
+
+- `um build sandbox` → clean (no output).
+- `buildman -o /tmp/pickman minnowmax sandbox` → 10/10 boards built, duration 1:05. The minnowmax warnings shown (missing intel-descriptor/me/vga/fsp blobs and the IURT ASL `_SRS` warning) are pre-existing on master, unrelated to this MR.
+
+### Action taken
+
+- Created local branch `cherry-54bd858843c-fix2` at the same tip (`8849dce3b7d`) as `cherry-54bd858843c`.
+- No commits amended, no fixup commit added.
+- Recommendation: retry the minnowmax pipeline job (or skip — it's a known flaky lab board with em100 flashing).
+
+---
+
+### Review: 2026-05-06
+
+Branch: cherry-54bd858843c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) minnowmax.
+
+## Report
+
+**Verdict: Infrastructure / lab...
+
+### Conversation log
+## Report
+
+**Verdict: No code change needed — comment is a self-referential re-post of attempt-2's infrastructure-failure report.**
+
+### What the "comment" says
+
+The single review comment is verbatim the bot's own attempt-2 report concluding that the `minnowmax` job failure was a lab/infrastructure issue (em100 flashing → `pexpect.exceptions.TIMEOUT` waiting for login → `Lab failure: Marking connection bad`). It contains no new actionable feedback.
+
+### Verification performed this round
+
+1. Confirmed branch tip `cherry-54bd858843c` is at `b907979f90e` (`pickman: Record pipeline fix for cherry-54bd858843c`), with the cherry-pick commit `8849dce3b7d` underneath. No code commits added since attempt 2.
+2. Ran `buildman -L --board sandbox -w -o /tmp/pickman` → **1/1 built OK**, 13s.
+3. Created `cherry-54bd858843c-v3` at `b907979f90e` (no code changes).
+4. `./tools/pickman/pickman push-branch cherry-54bd858843c -r ci -f` → updated remote `8849dce3b7d..b907979f90e` (the `.pickman-history` record commit), which re-triggers the pipeline.
+
+### Suggested MR reply
+
+> The review comment is a re-post of the previous attempt-2 report, which itself concluded the failure was infrastructure-only. The diagnosis stands:
+>
+> - **minnowmax**: `pexpect.exceptions.TIMEOUT` waiting for login during em100 flashing, followed by `Lab failure: Marking connection bad - no other tests will run`. This is a labgrid/runner failure on a known-flaky physical board.
+>
+> The MR's diff is Xilinx/AMD-only (versal2, zynqmp, zynq_gem, xilinx_axi_emac, pcie_dw_amd, clk_versal, plus a help-text-only one-liner in `cmd/fpga.c`). None of those files are compiled into the minnowmax (Intel Bay Trail x86) image, and no shared infrastructure is touched. Local sandbox build passes.
+>
+> Branch re-pushed to re-trigger the pipeline.
+
+### Branches
+
+- Local: `cherry-54bd858843c-v3` at `b907979f90e`
+- Remote: `cherry-54bd858843c` updated to `b907979f90e`
+
+---
+
