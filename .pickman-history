@@ -79846,3 +79846,48 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-723f14c946c
+
+Commits:
+- 723f14c946c clk: meson: do not fail when setting SD_EMMC_x_CLK0
+- 93c13379a44 arm: mach-meson: provide reset_cpu only when SYSRESET is disabled
+- 63a0b3e9abb arm: meson: enable SYSRESET_PSCI
+- 94deb742654 configs: libretech-ac_defconfig: enable EFI Capsule on Disk
+- e07cc9e7fdc configs: libretech-cc_defconfig: enable EFI Capsule on Disk
+- ee35366a640 Merge tag 'u-boot-amlogic-next-20260427' of https://source.denx.de/u-boot/custodians/u-boot-amlogic
+
+### Conversation log
+All 6 commits present. Let me run the final build.
+
+All cherry-picks complete successfully. Final report:
+
+## Status: Success
+
+**Branch:** `cherry-723f14c946c` (based on `ci/master`)
+
+**Build Result:** OK — sandbox builds clean with no warnings or errors
+
+**Commits cherry-picked (6/6):**
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| `cde36c4adcf` | `723f14c946c` | clk: meson: do not fail when setting SD_EMMC_x_CLK0 |
+| `9cd9eca1c24` | `93c13379a44` | arm: mach-meson: provide reset_cpu only when SYSRESET is disabled |
+| `7c28785a0a1` | `63a0b3e9abb` | arm: meson: enable SYSRESET_PSCI |
+| `8fcc4f787e8` | `94deb742654` | configs: libretech-ac_defconfig: enable EFI Capsule on Disk |
+| `a8b79553a06` | `e07cc9e7fdc` | configs: libretech-cc_defconfig: enable EFI Capsule on Disk |
+| `01f89914065` | `ee35366a640` | Merge tag 'u-boot-amlogic-next-20260427' (empty, preserved) |
+
+**Fix-ups applied:**
+- **`93c13379a44` (mach-meson reset_cpu):** Conflict in `arch/arm/mach-meson/board-common.c`. The current branch had `psci_system_reset()` as the body of `reset_cpu()`, while the upstream pre-state had a `#if CONFIG_SPL_BUILD … #else psci_system_reset() … #endif` block. Resolved by accepting the patch's intended outcome — wrapping `reset_cpu()` in `#if defined(CONFIG_XPL) || !CONFIG_IS_ENABLED(SYSRESET)` with the watchdog-loop body. A `[sjg: …]` note was added to the commit message documenting the resolution.
+
+**Concerning deltas:**
+- `9cd9eca1c24` had a slightly different stat (+8/-1 vs. upstream's +2/-4) due to the conflict-resolution path described above. Functional outcome is equivalent to the upstream patch's intent.
+
+**Merge commit:** Cherry-pick produced an empty diff, so committed via `git commit --allow-empty -C ee35366a640` and amended to append the `(cherry picked from commit ee35366a6405fb4bbdfdd839cd7a17a4079be78f)` reference.
+
+The branch is left ready on `cherry-723f14c946c` for pushing.
+
+---
+
