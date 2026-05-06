@@ -27,6 +27,7 @@ from pickman import database
 from pickman import ftest
 from pickman import gitlab_api
 from u_boot_pylib import command
+from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
 from u_boot_pylib import tools
 from u_boot_pylib import tout
@@ -2135,6 +2136,73 @@ def do_commit_source(args, dbs):
     return 0
 
 
+def do_switch_source(args, dbs):
+    """Copy a tracked source's position to a new source branch
+
+    Used when upstream renames or pivots the branch being tracked (e.g.
+    after a release the integration moves from us/next to us/master). The
+    new source is seeded with the old source's last cherry-picked commit
+    so subsequent next-set/apply commands resume from the same point.
+
+    Args:
+        args (Namespace): Parsed arguments with 'old_source', 'new_source',
+            'at' and 'force' attributes
+        dbs (Database): Database instance
+
+    Returns:
+        int: 0 on success, 1 on failure
+    """
+    old_source = args.old_source
+    new_source = args.new_source
+
+    last_commit = dbs.source_get(old_source)
+    if not last_commit:
+        tout.error(f"Source '{old_source}' not found in database")
+        return 1
+
+    if args.at:
+        try:
+            seed = gitutil.get_hash(args.at)
+        except Exception:  # pylint: disable=broad-except
+            tout.error(f"Could not resolve commit '{args.at}'")
+            return 1
+    else:
+        seed = last_commit
+
+    if not gitutil.ref_exists(new_source):
+        tout.error(f"New source '{new_source}' is not a valid git ref")
+        return 1
+
+    if not gitutil.is_ancestor(seed, new_source):
+        tout.error(
+            f"Commit {seed[:12]} is not reachable from '{new_source}'; "
+            "cherry-picking from it would re-apply commits. Use --at to "
+            "pick a different start point.")
+        return 1
+
+    existing = dbs.source_get(new_source)
+    if existing and not args.force:
+        tout.error(
+            f"Source '{new_source}' already tracked at {existing[:12]}; "
+            "use --force to overwrite")
+        return 1
+
+    dbs.source_set(new_source, seed)
+    dbs.commit()
+
+    tout.info(
+        f"Switched source: '{old_source}' -> '{new_source}' at {seed[:12]}")
+    if existing:
+        tout.info(
+            f"  (previous '{new_source}' position {existing[:12]} "
+            "overwritten)")
+    tout.info(
+        f"Old source '{old_source}' kept at {last_commit[:12]}; remove "
+        "manually if no longer needed.")
+
+    return 0
+
+
 def _rewind_fetch_merges(current, count):
     """Fetch first-parent merges and find target index.
 
@@ -3027,6 +3095,7 @@ COMMANDS = {
     'review': do_review,
     'rewind': do_rewind,
     'step': do_step,
+    'switch-source': do_switch_source,
     'test': do_test,
 }
 

@@ -300,6 +300,23 @@ def ref_exists(ref, git_dir=None):
     return result.return_code == 0
 
 
+def is_ancestor(commit, ref, git_dir=None):
+    """Check whether a commit is reachable from a ref.
+
+    Args:
+        commit (str): Commit to test (hash or any refish)
+        ref (str): Ref to walk from
+        git_dir (str): Directory containing git repo, or None for the
+            current working directory
+    Return:
+        bool: True if @commit is an ancestor of @ref, False otherwise
+    """
+    result = command.run_one('git', 'merge-base', '--is-ancestor', commit,
+                             ref, cwd=git_dir, capture=True,
+                             raise_on_error=False)
+    return result.return_code == 0
+
+
 def current_branch(git_dir=None):
     """Get the name of the currently checked-out branch.
 

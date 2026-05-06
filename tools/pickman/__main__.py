@@ -110,6 +110,18 @@ def add_main_commands(subparsers):
     rewind_cmd.add_argument('-r', '--remote', default='ci',
                             help='Git remote for MR lookup (default: ci)')
 
+    switch_src = subparsers.add_parser(
+        'switch-source',
+        help='Copy a source position to a new branch (e.g. us/next -> '
+             'us/master)')
+    switch_src.add_argument('old_source', help='Existing source branch name')
+    switch_src.add_argument('new_source', help='New source branch name')
+    switch_src.add_argument('--at',
+                            help='Override start commit (default: inherit '
+                                 'from old source)')
+    switch_src.add_argument('-f', '--force', action='store_true',
+                            help='Overwrite an existing new-source entry')
+
     step_cmd = subparsers.add_parser('step',
                                      help='Create MR if none pending')
     step_cmd.add_argument('source', help='Source branch name')
