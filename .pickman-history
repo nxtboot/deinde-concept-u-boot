@@ -79480,3 +79480,71 @@ These were noted in the previous cherry-pick conversation log and remain as-is:
 
 ---
 
+### Pipeline fix: 2026-05-06 (attempt 2)
+
+Branch: cherry-70101c3217a
+
+Failed jobs:
+- minnowmax (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- docs (test_suites)
+
+### Conversation log
+Let me analyze:
+
+1. **minnowmax**: Lab failure (pexpect TIMEOUT during login) - infrastructure/transient
+2. **efi-aarch64**: Lab failure (OSError I/O error) - infrastructure/transient
+3. **docs**: Real code issue! Docstring formatting errors in `test/py/tests/test_fit.py`
+
+Let me look at the docs failure in detail and find the relevant commit.
+
+I can see the docs failure is due to docstring formatting in `test/py/tests/test_fit.py`. The `find_matching` and `prepare` methods were added/edited in the FIT documentation commit. Let me check which commit introduced them.
+
+Let me run the docs build to verify the issue and confirm errors:
+
+Now I understand both issues. Let me fix the docstrings. The doctest examples in `find_matching` have malformed Python (missing `[`, stray `\` escapes), and Sphinx is confused by the block structure. The `prepare` docstring has a triple-indented `kwargs` sub-args that Sphinx flags as unexpected indentation.
+
+Let me view the prepare docstring more carefully:
+
+Now let me start the interactive rebase to amend `cf0395f029c` (HEAD~3, the docs commit):
+
+Good — stopped at the doc commit. Now fix the docstrings:
+
+Now let me verify the fix builds the docs cleanly:
+
+Let me make the kwargs description single-line to avoid the indentation issue:
+
+Docs build is now clean. Let me amend the commit and continue the rebase:
+
+Rebase successful. Now build sandbox and the affected boards to verify:
+
+All builds pass. Docs build is clean. Now create the fix branch:
+
+Branch `cherry-70101c3217a-fix2` is created at the fixed HEAD.
+
+## Summary
+
+### Failure analysis
+
+**1. `minnowmax` (sjg-lab) — INFRASTRUCTURE / TRANSIENT**
+`pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` while flashing the board via em100. The board never reached a login prompt — labgrid then marked the connection bad. No code change can address this; it's a hardware/lab connectivity issue.
+
+**2. `efi-aarch64` (sjg-lab) — INFRASTRUCTURE / TRANSIENT**
+`OSError: [Errno 5] Input/output error` reading from the serial pty in `test_distro_arm_app_efi`. The lab session died mid-test. Same class of issue — lab/runner instability, not a code defect.
+
+**3. `docs` (test_suites) — REAL CODE BUG, FIXED**
+Sphinx failed building `htmldocs` because the new `doc/develop/pytest/test_fit.rst` (added by commit `cf0395f029c` "test: Add documentation for the FIT test") pulls `test/py/tests/test_fit.py` through `automodule`, which exposed two pre-existing reST defects in docstrings:
+- `TestFitImage.find_matching` had a malformed doctest block (stray `\'` escapes, missing opening `[`, and a `Traceback`/`...` literal block that ran straight into the next `>>>` with no blank line). Two warnings: "Block quote ends without a blank line; unexpected unindent."
+- `TestFitImage.prepare` had a multi-line `kwargs` description nested under another indent level inside the Args list, producing "ERROR: Unexpected indentation."
+
+### Fix
+Amended commit `cf0395f029c` (now `2c388ad8582`) — the same commit that introduced the automodule reference, since that's what surfaced the problem:
+- Replaced the malformed `find_matching` doctests with a clean reST `Examples::` literal block.
+- Flattened the `kwargs` description in `prepare()` to a single line.
+
+A `[pickman]` note describing the fix was appended to the commit message. `make htmldocs KDOC_WERROR=1` now succeeds; `buildman` cleanly builds all 10 boards across `efi-aarch64`, `minnowmax`, `sandbox` (and their derivatives).
+
+Local branch `cherry-70101c3217a-fix2` is ready (not pushed).
+
+---
+
