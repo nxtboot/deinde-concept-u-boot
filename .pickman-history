@@ -79356,3 +79356,87 @@ The branch is left ready for pushing.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-70101c3217a
+
+Commits:
+- 70101c3217a virtio: mmio: Return error codes on probe failures
+- 58e523fedf4 gunzip: Implement chunked decompression
+- 1994e69d4e5 board: adi: Fix exception when using standalone SoM
+- 6f44d897435 configs: aquila-am69: Set ENV_MMC_EMMC_HW_PARTITION and ENV_RELOC_GD_ENV_ADDR
+- 3abc7c1d46d board: ti: cape_detect: Add overlay name lookup table for extension boards
+- 2c8fdd7aea1 console: add console_flush_stdin()
+- e973fa5115e cli: flush stdin before enabling cli
+- 863446256b0 test: fit: Drop the fit_signature buildconfigspec
+- 1cd07d900c5 test: fit: Avoid restarting U-Boot
+- 875ebafe448 test: Rename test_fit() to test_fit_base()
+- 55aa0c5acc4 test: Add a check for a missing kernel
+- 09a9dd3780c test: Update fit test to fix a few Python warnings
+- cd6e1f6dbe4 test: Convert FIT test to use a class
+- 06b12fba0ce test: Add fsetup fixture and prepare helper for FIT test
+- 65c036eeecb test: Add documentation for the FIT test
+- bfe90a308a9 Merge patch series "test: Refactor FIT test for clarity and extensibility"
+
+### Conversation log
+Stats match. Let me proceed with the next commits.
+
+Let me look at the conflict in `lib/efi_loader/efi_console.c` to understand it:
+
+Now resolve the efi_console.c conflict by keeping HEAD's version (no `query_console_serial`):
+
+Stats are very close. Let me proceed to next commits.
+
+Now for the "maybe already applied" commits. Based on my earlier comparison, these all have very minor differences - let me try cherry-picking them and see what happens. Some might be no-ops, some might apply cleanly with their original content:
+
+Let me create empty commits for the already-applied commits to maintain the sequence, then do the merge:
+
+Now cherry-pick 65c036eeecb (documentation):
+
+Now the merge commit:
+
+All 16 commits are present. Now run the build test:
+
+Build passed. Let me verify the final state:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-70101c3217a` (16 commits ahead of `ci/master`)
+**Final build:** ✅ Sandbox build passed (1/1 boards built, 0 warnings, 0 errors)
+
+### Commits Applied Cleanly (8)
+- `0460cacc10e` virtio: mmio: Return error codes on probe failures
+- `eb628fa8145` gunzip: Implement chunked decompression
+- `9ee575bd2fc` board: adi: Fix exception when using standalone SoM
+- `1f933321c0d` board: ti: cape_detect: Add overlay name lookup table
+- `ad8dcd469ce` cli: flush stdin before enabling cli
+- `7e909c4a392` test: fit: Drop the fit_signature buildconfigspec
+- `bf5650b12cf` test: Add documentation for the FIT test
+- (merge commit info absorbed into `cc90d0e8a2a`)
+
+### Commits Applied With Fix-up (1)
+- `53321f0ccde` console: add console_flush_stdin() — **conflicts in `include/console.h` (merged new declaration alongside `calc_check_console_lines()`) and `lib/efi_loader/efi_console.c` (kept HEAD's removal of `query_console_serial()`).** Fix-up note appended to commit message. Stats: 25/21 vs original 26/23 (very close).
+
+### Failed Cherry-Pick (1)
+- `64a2035054e` **[FAILED]** `configs: aquila-am69`: file `configs/aquila-am69_a72_defconfig` doesn't exist on `ci/master` (board not yet merged into ci/master). Empty placeholder commit created.
+
+### Already Applied (5 + 1)
+Verified via patch comparison; empty placeholder commits created to preserve sequence:
+- `7cd3c6f0554` test: fit: Avoid restarting U-Boot ↔ `cfb854b2f34`
+- `405e585ad60` test: Rename test_fit() to test_fit_base() ↔ `b833ab6b795`
+- `25afd45fd88` test: Add a check for a missing kernel ↔ `95707a38408`
+- `fba19f580ce` test: Update fit test to fix Python warnings ↔ `ec17e2265c7`
+- `9512e6bc07c` test: Convert FIT test to use a class ↔ `7615680c4a5`
+- `45299f7009f` test: Add fsetup fixture ↔ `d2141140983` (test: Convert FIT test into separate pieces — equivalent expanded version)
+
+### Empty Merge Commit (1)
+- `cc90d0e8a2a` Merge patch series "test: Refactor FIT test for clarity and extensibility" — created empty since equivalent FIT refactor chain is already on ci/master and merge content conflicted with it.
+
+### Concerning Deltas
+- `64a2035054e` (aquila-am69): empty due to missing target file
+- `cc90d0e8a2a` (FIT merge) and 6 FIT test commits: empty markers because equivalent changes already present in ci/master via different chain
+
+Branch is ready for pushing. No history was rewritten beyond the build.
+
+---
+
