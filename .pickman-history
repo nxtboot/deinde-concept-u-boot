@@ -79165,3 +79165,63 @@ binman: Error 1 ... Error: SPL image is too large (size 0x8800 than 0x8000)
 
 ---
 
+### Pipeline fix: 2026-05-05 (attempt 2)
+
+Branch: cherry-968164b6863
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+
+### Conversation log
+Let me check the current state and the suspicious file:
+
+Let me verify whether any commits on this branch touched the failing script:
+
+This is clearly an infrastructure issue. Let me confirm and document the analysis:
+
+The diagnosis is clear. Let me create the local branch (no changes) since the caller expects it, and report:
+
+## Report: Infrastructure failure — no code changes needed
+
+**Conclusion:** This is a transient CI/runner infrastructure issue, not a code regression caused by any commit on this branch.
+
+### Root cause
+
+The job `efi-x86_64-uboot-iso` failed in `scripts/ubuntu-iso-to-uboot.py` while preparing the test ISO:
+
+```
+File ".../scripts/ubuntu-iso-to-uboot.py", line 197, in repack_iso
+    out_iso.unlink()
+PermissionError: [Errno 1] Operation not permitted: '/tmp/ubuntu-24.04.1-uboot.iso'
+```
+
+The script tries to remove a stale output file (`/tmp/ubuntu-24.04.1-uboot.iso`) before xorriso writes a fresh one. The unlink fails with `EPERM` — the file is left over from a previous run on the `ellesmere-lab` runner and is owned by a different user/process, so the current runner user cannot delete it. This is a `/tmp` ownership/cleanup issue on the shared runner, not a U-Boot bug.
+
+The downstream "Lab failure: Marking connection bad" message is just labgrid reporting that the bootstrap step failed — caused entirely by the unlink error above.
+
+### Why no commit on this branch is responsible
+
+The branch (12 commits) modifies only Linux-compat headers, ofnode helpers, vsprintf, regmap, etc. — see `git diff ci/master..HEAD --stat`:
+
+- `Kconfig`, `common/board_f.c`, `drivers/core/{of_access,ofnode}.c`,
+- `include/{asm-generic/sections.h,dm/of_access.h,dm/ofnode.h,fdtdec.h,linux/*,power/regulator.h,regmap.h}`,
+- `lib/{fdtdec,string,vsprintf}.c`, plus `.pickman-history`.
+
+None of these commits touch:
+- `scripts/ubuntu-iso-to-uboot.py`
+- `test/py/tests/test_distro.py`
+- any EFI ISO test infrastructure
+- anything related to `/tmp` file management
+
+`git log ci/master..HEAD -- scripts/ubuntu-iso-to-uboot.py test/py/tests/test_distro.py` returns empty.
+
+### Recommended action
+
+Re-run the job after cleaning up `/tmp/ubuntu-24.04.1-uboot.iso` on the `ellesmere-lab` runner (or fix its ownership). A long-term fix would be to make the script tolerant of `EPERM` on unlink (e.g., write to a per-job/per-user temporary path under `/tmp/<runner-id>/` instead of a fixed shared name), but that is outside the scope of this MR.
+
+### Branch state
+
+Local branch `cherry-968164b6863-fix2` was created at the same commit as `cherry-968164b6863` (`5069b1033ea`) — no code changes applied, since none are warranted.
+
+---
+
