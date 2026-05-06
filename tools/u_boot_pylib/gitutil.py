@@ -445,6 +445,59 @@ def prune_worktrees(git_dir):
         raise OSError(f'git worktree prune: {result.stderr}')
 
 
+def _is_worktree_registered(repo, path):
+    """Return True if git already has a worktree registered at path"""
+    out = command.output('git', '-C', repo, 'worktree', 'list',
+                         '--porcelain')
+    target = os.path.realpath(path)
+    for line in out.splitlines():
+        if line.startswith('worktree '):
+            registered = os.path.realpath(line[len('worktree '):])
+            if registered == target:
+                return True
+    return False
+
+
+def ensure_worktree(repo, path, branch_name, upstream_branch):
+    """Create or reuse a worktree at path on branch_name
+
+    If a worktree at path already exists, reset it to upstream_branch
+    so the next operation starts clean. Otherwise create one via
+    'git worktree add -B <branch> <path> <upstream>'.
+
+    Args:
+        repo (str): Top-level dir of the repo to add the worktree under
+        path (str): Path where the worktree should live
+        branch_name (str): Branch to create/reuse in the worktree
+        upstream_branch (str): Ref to base the branch on (e.g. 'us/next')
+
+    Return:
+        str: path, ready to be used as cwd
+    """
+    if _is_worktree_registered(repo, path):
+        command.output('git', '-C', path, 'reset', '--hard', upstream_branch)
+        command.output('git', '-C', path, 'clean', '-fdx')
+        return path
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    command.output('git', '-C', repo, 'worktree', 'add',
+                   '-B', branch_name, path, upstream_branch)
+    return path
+
+
+def remove_worktree(repo, path):
+    """Remove the worktree at path, if any
+
+    Args:
+        repo (str): Top-level dir of the repo to add the worktree under
+        path (str): Path of the worktree to remove
+    """
+    if not _is_worktree_registered(repo, path):
+        return
+    command.output('git', '-C', repo, 'worktree', 'remove', '--force',
+                   path)
+
+
 def create_patches(branch, start, count, ignore_binary, series, signoff=True,
                    git_dir=None, cwd=None):
     """Create a series of patches from the top of the current branch.
