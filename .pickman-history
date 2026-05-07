@@ -80208,3 +80208,54 @@ Branch is ready to push. No merge performed.
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-4433253ecf2
+
+Commits:
+- 4433253ecf2 Prepare v2026.07-rc1
+- b27a31665da cmd: ums: Switch HW partition before block access
+- 13b3502157e socfpga: vining: Enable LTO
+- 6211462c922 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+Good, b27a31665da is not in ci/master. Now let me proceed with the cherry-picks:
+
+Stats match exactly. Now let me build test:
+
+Build passes. Cherry-pick the next commit:
+
+Stats match. Now build:
+
+Good. Now for 13b3502157e - already verified as applied as 6ca70422379 (the patches matched apart from cherry-pick line and line numbers due to context drift). Skip.
+
+For 6211462c922 - this is a merge commit. The note says "maybe already applied as b3a3bfedf04". Let me look more carefully - b3a3bfedf04 has a different parent (9b8c3a507ea is "Merge branch 'master' of git://source.denx.de/u-boot-usb"). That means the merge of u-boot-usb was already represented in ci/master via 9b8c3a507ea. Let me check.
+
+Now skip 13b3502157e (already applied as 6ca70422379) and cherry-pick the merge commit 6211462c922:
+
+All operations completed successfully. Here's the final status:
+
+## Summary
+
+**Branch:** `cherry-4433253ecf2` (based on `ci/master`)
+
+**Cherry-pick results:**
+
+| Original Hash | Subject | Result |
+|---|---|---|
+| `4433253ecf2` | Prepare v2026.07-rc1 | ✅ Applied as `f250fc0f506` (stats match: 2 files, 10+/8-) |
+| `b27a31665da` | cmd: ums: Switch HW partition before block access | ✅ Applied as `817d650e8e4` (stats match: 2 files, 12+) |
+| `13b3502157e` | socfpga: vining: Enable LTO | ⏭️ Skipped — already applied as `6ca70422379` (verified: only line numbers differ) |
+| `6211462c922` | Merge branch 'master' of git://source.denx.de/u-boot-usb | ✅ Applied as empty merge `617b9a8c99b` (its content was already brought in by the cherry-picks of `13b3502157e`/`b27a31665da`) |
+
+**Build:** ✅ Sandbox build passes (1 total built, no warnings/errors)
+
+**Fix-ups:**
+- For the merge commit `6211462c922`, the cherry-pick produced an empty commit (since both parents' content was already present). Committed with `--allow-empty` and amended to include the `(cherry picked from commit ...)` reference, preserving the merge commit message for history tracking.
+
+**Concerning deltas:** None — both non-merge cherry-picks have identical file/line stats vs. the originals.
+
+Branch is ready for pushing. Not merged anywhere.
+
+---
+
