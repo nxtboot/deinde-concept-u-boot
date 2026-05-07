@@ -483,7 +483,7 @@ static int initr_malloc_bootparams(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(NET) || CONFIG_IS_ENABLED(NET_LWIP)
+#if CONFIG_IS_ENABLED(NET)
 static int initr_net(void)
 {
 	if (gd_ulib())
@@ -750,7 +750,7 @@ static void initcall_run_r(void)
 #ifdef CONFIG_PCI_ENDPOINT
 	INITCALL(pci_ep_init);
 #endif
-#if CONFIG_IS_ENABLED(NET) || CONFIG_IS_ENABLED(NET_LWIP)
+#if CONFIG_IS_ENABLED(NET)
 	WATCHDOG_RESET();
 	INITCALL(initr_net);
 #endif

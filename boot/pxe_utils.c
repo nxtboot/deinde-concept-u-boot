@@ -75,6 +75,9 @@ int format_mac_pxe(char *outbuf, size_t outbuf_len)
 		return -ENOSPC;
 	}
 
+	if (!IS_ENABLED(CONFIG_NET))
+		return -ENOENT;
+
 	if (!eth_env_get_enetaddr_by_index("eth", eth_get_dev_index(), ethaddr))
 		return -ENOENT;
 

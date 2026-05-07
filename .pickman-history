@@ -80152,3 +80152,59 @@ Branch is ready for pushing. Not merged anywhere.
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-8080ab6c284
+
+Commits:
+- 8080ab6c284 move networking menu in net/Kconfig
+- b8cd4442257 rename NET to NET_LEGACY
+- bd275172a84 net: make NET a menuconfig (and downgrade NO_NET to a simple config)
+- 95d66d2eb02 simplify NET_LEGACY || NET_LWIP condition with NET condition
+- 0d98f68579b doc: remove mention to non-existing TPL_NET
+- b06c5ef4ddf boot: remove NO_NET use
+- 96c8b9c4ceb Merge patch series "net: migrate NO_NET out of the networking stack choice"
+
+### Conversation log
+Identical. Now build test and continue with next commit.
+
+I made a mistake resolving the board_r.c conflict — the LED functions were removed in ci/master but I brought them back. Let me fix this.
+
+Build clean. Now cherry-pick #3.
+
+All 7 commits present. Now final build verification.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-8080ab6c284` (based on `ci/master`)
+
+**Final build:** OK — sandbox builds clean with no warnings or errors.
+
+**All 7 commits applied successfully:**
+```
+0e6373f3fdd Merge patch series "net: migrate NO_NET out of the networking stack choice"
+d2f00bee88c boot: remove NO_NET use
+39e0364b11d doc: remove mention to non-existing TPL_NET
+9fa7f0574b9 simplify NET_LEGACY || NET_LWIP condition with NET condition
+11c327fe044 net: make NET a menuconfig (and downgrade NO_NET to a simple config)
+0e0258701ff rename NET to NET_LEGACY
+017ab801eb7 move networking menu in net/Kconfig
+```
+
+**Fix-ups applied** (noted in commit messages):
+
+1. **`b8cd4442257` (rename NET to NET_LEGACY)** — Resolved 3 conflicts:
+   - `common/board_r.c`: kept HEAD's removal of `initr_boot_led_blink`/`initr_boot_led_on` (they were converted to event spies in ci/master commit `7f3ce47a0ae`); applied just the `NET → NET_LEGACY` rename.
+   - `lib/efi_loader/Kconfig`: kept `MACH_QEMU` (HEAD) over `ARCH_QEMU` (incoming), applied `NET → NET_LEGACY` rename.
+   - `test/cmd/Makefile`: kept HEAD's `CONFIG_CMD_TKEY` line, applied `NET → NET_LEGACY` rename.
+
+2. **`95d66d2eb02` (simplify condition)** — Same 2 files (`board_r.c`, `efi_loader/Kconfig`) re-conflicted; same resolution pattern (drop LED context, keep `MACH_QEMU`).
+
+3. **`96c8b9c4ceb` (merge commit)** — Merge cherry-pick became empty after individual commits were applied. Conflicts were resolved by keeping HEAD's state. Committed with `--allow-empty` to preserve series history; added `(cherry picked from commit ...)` line manually.
+
+**Concerning deltas:** None — final stat counts match originals (e.g. 57 files / 104 insertions / 101 deletions for the rename commit matches upstream exactly).
+
+Branch is ready to push. No merge performed.
+
+---
+
