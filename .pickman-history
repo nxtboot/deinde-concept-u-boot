@@ -79846,3 +79846,161 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-723f14c946c
+
+Commits:
+- 723f14c946c clk: meson: do not fail when setting SD_EMMC_x_CLK0
+- 93c13379a44 arm: mach-meson: provide reset_cpu only when SYSRESET is disabled
+- 63a0b3e9abb arm: meson: enable SYSRESET_PSCI
+- 94deb742654 configs: libretech-ac_defconfig: enable EFI Capsule on Disk
+- e07cc9e7fdc configs: libretech-cc_defconfig: enable EFI Capsule on Disk
+- ee35366a640 Merge tag 'u-boot-amlogic-next-20260427' of https://source.denx.de/u-boot/custodians/u-boot-amlogic
+
+### Conversation log
+All 6 commits present. Let me run the final build.
+
+All cherry-picks complete successfully. Final report:
+
+## Status: Success
+
+**Branch:** `cherry-723f14c946c` (based on `ci/master`)
+
+**Build Result:** OK — sandbox builds clean with no warnings or errors
+
+**Commits cherry-picked (6/6):**
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| `cde36c4adcf` | `723f14c946c` | clk: meson: do not fail when setting SD_EMMC_x_CLK0 |
+| `9cd9eca1c24` | `93c13379a44` | arm: mach-meson: provide reset_cpu only when SYSRESET is disabled |
+| `7c28785a0a1` | `63a0b3e9abb` | arm: meson: enable SYSRESET_PSCI |
+| `8fcc4f787e8` | `94deb742654` | configs: libretech-ac_defconfig: enable EFI Capsule on Disk |
+| `a8b79553a06` | `e07cc9e7fdc` | configs: libretech-cc_defconfig: enable EFI Capsule on Disk |
+| `01f89914065` | `ee35366a640` | Merge tag 'u-boot-amlogic-next-20260427' (empty, preserved) |
+
+**Fix-ups applied:**
+- **`93c13379a44` (mach-meson reset_cpu):** Conflict in `arch/arm/mach-meson/board-common.c`. The current branch had `psci_system_reset()` as the body of `reset_cpu()`, while the upstream pre-state had a `#if CONFIG_SPL_BUILD … #else psci_system_reset() … #endif` block. Resolved by accepting the patch's intended outcome — wrapping `reset_cpu()` in `#if defined(CONFIG_XPL) || !CONFIG_IS_ENABLED(SYSRESET)` with the watchdog-loop body. A `[sjg: …]` note was added to the commit message documenting the resolution.
+
+**Concerning deltas:**
+- `9cd9eca1c24` had a slightly different stat (+8/-1 vs. upstream's +2/-4) due to the conflict-resolution path described above. Functional outcome is equivalent to the upstream patch's intent.
+
+**Merge commit:** Cherry-pick produced an empty diff, so committed via `git commit --allow-empty -C ee35366a640` and amended to append the `(cherry picked from commit ee35366a6405fb4bbdfdd839cd7a17a4079be78f)` reference.
+
+The branch is left ready on `cherry-723f14c946c` for pushing.
+
+---
+
+### Pipeline fix: 2026-05-06 (attempt 1)
+
+Branch: cherry-723f14c946c
+
+Failed job:
+- build all 64bit ARM platforms (job 503377)
+
+### Conversation log
+The CI job failed with a link error for `libretech-cc`:
+
+```
++aarch64-linux-ld: lib/efi_loader/efi_firmware.o: in function `efi_firmware_get_image_type_id':
++lib/efi_loader/efi_firmware.c:75: undefined reference to `update_info'
++make[1]: *** [Makefile:2153: u-boot] Error 1
+```
+
+Root cause: the cherry-picked commits `94deb742654` (libretech-ac) and
+`e07cc9e7fdc` (libretech-cc) enable `CONFIG_EFI_CAPSULE_ON_DISK=y` etc.
+On upstream, `libretech-ac` already had `update_info` in
+`board/libre-computer/aml-s805x-ac/aml-s805x-ac.c`, so it builds.
+However, `libretech-cc` uses `board/amlogic/p212/p212.c` which has no
+`update_info` — that symbol is provided by upstream commit
+`1bb973b4db6 arm: meson: add support for EFI capsule updates`
+(Dec 2025), which adds a common `arch/arm/mach-meson/capsule.c`
+defining `update_info` for all Amlogic boards. That commit, plus its
+cleanup follow-up `6e844dd4df6 board: libre-computer: use common
+Amlogic EFI capsule support`, were missing from `ci/master` — so the
+two libretech config commits could not work in isolation.
+
+### Fix
+
+Cherry-picked the two missing prerequisite commits into the branch,
+inserted between `arm: meson: enable SYSRESET_PSCI` and the libretech
+config commits to keep bisect cleanliness:
+
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| `d660809eed7` | `1bb973b4db6` | arm: meson: add support for EFI capsule updates |
+| `35eae6846b4` | `6e844dd4df6` | board: libre-computer: use common Amlogic EFI capsule support |
+
+Both applied cleanly (auto-merge in `arch/arm/mach-meson/Makefile` and
+`arch/arm/mach-meson/board-common.c`, no manual conflict resolution
+needed — `1bb973b4db6` adds 5 lines to `board_late_init()`, while our
+existing `9cd9eca1c24` modifies the separate `reset_cpu()` function).
+
+### Verification
+
+- `buildman -L --board sandbox` — clean (16s)
+- `buildman -L --board libretech-cc` — clean (5s, previously failed
+  with the link error)
+- `buildman -L --board libretech-ac` — clean (7s)
+
+The libretech-cc build now succeeds because `update_info` is now
+provided by `arch/arm/mach-meson/capsule.c`.
+
+The branch is left ready on `cherry-723f14c946c-v3` for pushing.
+
+---
+
+### Review: 2026-05-06
+
+Branch: cherry-723f14c946c
+
+Comments addressed:
+- [sjg]: pickman: Please check the failure here: https://concept.u-boot.org/u-boot/u-boot/-/jobs/503377...
+
+### Conversation log
+Now cherry-pick the libretech configs and merge from the previous branch:
+
+Both build cleanly with no warnings/errors. Let me also build sandbox without LTO using the `um` command to be sure:
+
+Now add a pickman bookkeeping commit documenting the pipeline fix:
+
+## Status: Success
+
+**Local branch:** `cherry-723f14c946c-v3`
+**Remote push:** force-pushed to `cherry-723f14c946c` on `ci` (MR !1064 will rebuild automatically)
+
+### Root cause of CI job 503377 failure
+
+The `build all 64bit ARM platforms` job failed with a **link error on `libretech-cc`**:
+
+```
+aarch64-linux-ld: lib/efi_loader/efi_firmware.o: in function `efi_firmware_get_image_type_id':
+lib/efi_loader/efi_firmware.c:75: undefined reference to `update_info'
+make[1]: *** [Makefile:2153: u-boot] Error 1
+```
+
+The cherry-picked commit `e07cc9e7fdc` enables `CONFIG_EFI_CAPSULE_ON_DISK=y` (and friends) on `libretech-cc_defconfig`. That defconfig uses `board/amlogic/p212/p212.c`, which does **not** define `update_info`. (`libretech-ac` uses `board/libre-computer/aml-s805x-ac/` which still had its own per-board `update_info`, so it built — but only by accident.) The symbol is supposed to come from common Amlogic capsule support added in a separate upstream commit that was missing from `ci/master`.
+
+### Fix
+
+Cherry-picked the two missing upstream prerequisite commits and inserted them between `arm: meson: enable SYSRESET_PSCI` and the libretech config commits, so the series remains bisect-clean:
+
+| New Hash | Original | Subject |
+|----------|----------|---------|
+| `d660809eed7` | `1bb973b4db6` | arm: meson: add support for EFI capsule updates |
+| `35eae6846b4` | `6e844dd4df6` | board: libre-computer: use common Amlogic EFI capsule support |
+
+Both applied cleanly — `1bb973b4db6` adds 5 lines to `board_late_init()` while our existing `9cd9eca1c24` modified the separate `reset_cpu()` function in the same file, so no manual conflict resolution was needed. A new pickman bookkeeping commit (`e07eb7b96e5`) records the diagnosis and fix.
+
+### Verification
+
+- `buildman -L --board sandbox` — clean
+- `buildman -L --board libretech-cc` — **clean** (was the failing build)
+- `buildman -L --board libretech-ac` — clean
+
+### Suggested MR reply
+
+> Pipeline failure was a link error on `libretech-cc`: `undefined reference to 'update_info'`. The cherry-picked `e07cc9e7fdc` (libretech-cc EFI Capsule on Disk) needs the common Amlogic capsule support from upstream `1bb973b4db6 arm: meson: add support for EFI capsule updates`, which provides `update_info` via the new `arch/arm/mach-meson/capsule.c`. That commit (and its libre-computer cleanup `6e844dd4df6`) was on `us/master` but not yet on `ci/master`, so the libretech config commits could not stand alone. Picked both prereqs into the series before the libretech config commits and verified `libretech-cc`, `libretech-ac` and `sandbox` all now build clean with `buildman -L`.
+
+---
+
