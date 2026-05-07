@@ -80083,3 +80083,72 @@ Branch is ready for pushing. Not merged anywhere.
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: next-pick
+
+Commits:
+- 9d89fc4054f bloblist: add blob type for DT overlay
+- ad82e750fd2 bloblist: add helper functions
+- 63cc797a7e8 bloblist: fix a potential negative size for memmove
+- 25baace9429 bloblist: add API for applying blobs with specified tag
+- b70cbbfbf94 fdtdec: apply DT overlays from bloblist
+- d3935134c9d configs: Select OF_LIBFDT_OVERLAY to hand over DTO via bloblist
+- d7b23b2477e Merge patch series "Add support for DT overlays handoff"
+
+### Conversation log
+
+Earlier attempt (`cherry-9d89fc4054f`) was aborted at commit 5 due to a
+conflict in `lib/fdtdec.c` from the local `OF_PASSAGE` refactor in
+`fdtdec_setup()`. This rerun rebases on the current `ci/master` and
+applies all 6 source commits (the 7th is a merge commit, no code).
+
+**Build result:** OK — sandbox, qemu_arm64, vexpress_fvp_bloblist all
+build cleanly. `ut bloblist` passes (15/15).
+
+### Fix-ups applied (2 conflicts resolved)
+
+1. **`b70cbbfbf94` fdtdec: apply DT overlays from bloblist**
+   Conflict in `lib/fdtdec.c`: upstream adds the
+   `fdtdec_apply_bloblist_dtos()` call inside the older `BLOBLIST`
+   branch of `fdtdec_setup()` (with `bloblist_maybe_init()` and
+   `goto setup_fdt`), which the local branch has replaced with an
+   `OF_PASSAGE` branch. Helper functions
+   (`fdtdec_match_dto_compatible`, `fdtdec_apply_dto_blob`,
+   `fdtdec_apply_bloblist_dtos`) merged cleanly.
+
+   First attempt placed the call inside the `OF_PASSAGE` branch right
+   after `gd->fdt_src = FDTSRC_PASSAGE`. The
+   `qemu_arm64_tfa_fw_handoff` test (job 505325) then failed with
+   `initcall fdtdec_setup() failed`: the local code calls
+   `fdtdec_setup` as the *first* initcall, before `bloblist_init`, so
+   `bloblist_get_blob(BLOBLISTT_CONTROL_FDT, ...)` returned NULL and
+   the function returned `-ENOENT`.
+
+   Final resolution: drop the call from `fdtdec_setup()`, expose
+   `fdtdec_apply_bloblist_dtos()` in `include/fdtdec.h`, schedule it
+   as its own `INITCALL` immediately after `bloblist_init` in
+   `common/board_f.c`, and treat `live_fdt != gd->fdt_blob` as a
+   no-op (return 0) instead of `-ENOENT` so boards whose FDT does not
+   come from bloblist boot cleanly.
+
+2. **`d3935134c9d` configs: Select OF_LIBFDT_OVERLAY to hand over DTO via bloblist**
+   Conflict in `configs/vexpress_fvp_bloblist_defconfig`: upstream uses
+   an `#include <configs/vexpress_fvp_defconfig>` style, the local file
+   is flat. Kept the local flat layout and added
+   `CONFIG_OF_LIBFDT_OVERLAY=y` alongside the existing BLOBLIST options.
+   The `qemu_arm64_defconfig` change in the same commit applied cleanly.
+
+### Delta verification
+
+Bloblist patches (1–4) applied with identical diffs. Patch 5
+(`fdtdec`) adds the helper functions identically; the call site is
+moved to a new initcall after `bloblist_init` (3 extra lines in
+`board_f.c`, 13 lines added in `fdtdec.h` for the prototype and
+docstring) and the function is now non-static. Patch 6 (configs)
+adds the same `CONFIG_OF_LIBFDT_OVERLAY=y` setting to both files.
+
+Branch is ready for pushing. Not merged anywhere.
+
+---
+
