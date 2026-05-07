@@ -920,6 +920,9 @@ static void initcall_run_f(void)
 #ifdef CONFIG_BLOBLIST
 	INITCALL(bloblist_init);
 #endif
+#if CONFIG_IS_ENABLED(OF_CONTROL)
+	INITCALL(fdtdec_apply_bloblist_dtos);
+#endif
 	INITCALL(setup_spl_handoff);
 #if CONFIG_IS_ENABLED(CONSOLE_RECORD_INIT_F)
 	INITCALL(console_record_init);

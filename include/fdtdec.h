@@ -1191,6 +1191,20 @@ void fdtdec_setup_embed(void);
 int fdtdec_setup(void);
 
 /**
+ * fdtdec_apply_bloblist_dtos() - apply DT overlays from the bloblist
+ *
+ * If the control FDT in @gd->fdt_blob is the same one held in the bloblist,
+ * resize the FDT to allow room for overlay nodes and apply each overlay
+ * blob in the bloblist (tag BLOBLISTT_FDT_OVERLAY) to it. Otherwise the
+ * function is a no-op.
+ *
+ * This must be called after bloblist_init() so the bloblist is ready.
+ *
+ * Return: 0 if OK (or nothing to do), -ve error on failure
+ */
+int fdtdec_apply_bloblist_dtos(void);
+
+/**
  * Perform board-specific early DT adjustments
  */
 int fdtdec_board_setup(const void *fdt_blob);

@@ -1752,7 +1752,7 @@ static int fdtdec_apply_dto_blob(void **blob, __maybe_unused int size)
 	return fdt_overlay_apply_verbose((void *)gd->fdt_blob, *blob);
 }
 
-static int fdtdec_apply_bloblist_dtos(void)
+int fdtdec_apply_bloblist_dtos(void)
 {
 	int ret;
 	struct fdt_header *live_fdt;
@@ -1765,8 +1765,8 @@ static int fdtdec_apply_bloblist_dtos(void)
 
 	/* Get the total space reserved for FDT in blob */
 	live_fdt = bloblist_get_blob(BLOBLISTT_CONTROL_FDT, &blob_size);
-	if (live_fdt != gd->fdt_blob)
-		return -ENOENT;
+	if (!live_fdt || live_fdt != gd->fdt_blob)
+		return 0;
 
 	/* Calculate the allowed padded size */
 	padded_size = fdt_totalsize(live_fdt) + CONFIG_SYS_FDT_PAD;
@@ -1808,9 +1808,6 @@ int fdtdec_setup(void)
 		gd->fdt_blob = map_sysmem(gd_passage_dtb(), 0);
 		gd->fdt_src = FDTSRC_PASSAGE;
 		log_debug("Devicetree is in bloblist at %p\n", gd->fdt_blob);
-		ret = fdtdec_apply_bloblist_dtos();
-		if (ret)
-			return ret;
 	} else {
 		/* The devicetree is typically appended to U-Boot */
 		if (IS_ENABLED(CONFIG_OF_SEPARATE)) {
