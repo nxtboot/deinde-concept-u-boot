@@ -80259,3 +80259,64 @@ Branch is ready for pushing. Not merged anywhere.
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-ecde6614bc6
+
+Commits:
+- ecde6614bc6 board: stm32pm1: Fix board_check_usb_power()
+- 51678d9479e video: stm32: dsi: fix unchecked return values
+- c8f7b41730b spi: add STM32MP23 OSPI support
+- 5a379cca5b7 clk: stm32: Add STM32MP23 support
+- 5166658ac60 ARM: stm32mp2: Factorize TAMP_FWU_BOOT_IDX_MASK/OFFSET definition
+- 5ab39c8a669 arm: stm32mp: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 7b879ddbc56 spi: add support for bits-per-word setting
+- fa1801abc71 spi: sandbox_spi: support wordlen setup
+- ab5c0191e1c test: spi: add sandbox_spi_get_wordlen interface
+- 2b3a73116af test: dm: spi: add testcase for spi_set_wordlen()
+- 17c022271d9 spi: stm32: clean up buffer length assignment
+- dd5002856ad spi: stm32: add stm32_spi_is_enabled() helper
+- 011feb00288 spi: stm32: add support for bits-per-word setting
+- 723e0360ee4 spi: stm32: extend support to STM32MP25
+- 49e78d12565 video: support Rocktech RK050HR345-CT106A panel
+- ae1966e2436 arm/mach-stm32: don't select non-existent STM32_RESET
+- 817653c53de Merge tag 'u-boot-stm32-20260430' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+All 17 commits are present. Now run the final build:
+
+## Cherry-pick Report
+
+**Branch**: `cherry-ecde6614bc6` (based on `ci/master`)
+
+**Status**: All 17 commits successfully cherry-picked
+
+**Build result**: OK (sandbox build succeeded with no warnings/errors)
+
+**Commits applied** (in order, oldest first):
+1. `610b812ecba` board: stm32pm1: Fix board_check_usb_power()
+2. `36e180e827b` video: stm32: dsi: fix unchecked return values
+3. `4ee13177a76` spi: add STM32MP23 OSPI support
+4. `c0eafb84c7e` clk: stm32: Add STM32MP23 support
+5. `793bbbb3132` ARM: stm32mp2: Factorize TAMP_FWU_BOOT_IDX_MASK/OFFSET
+6. `b7f1446432f` arm: stm32mp: Drop unnecessary BOARD_EARLY_INIT_F usage
+7. `8575eabe3d1` spi: add support for bits-per-word setting
+8. `4a04968e6b3` spi: sandbox_spi: support wordlen setup
+9. `9bb0c360ec1` test: spi: add sandbox_spi_get_wordlen interface (auto-merged test.h)
+10. `2d6c2b645d1` test: dm: spi: add testcase for spi_set_wordlen()
+11. `56fd913f11f` spi: stm32: clean up buffer length assignment
+12. `6c1f76a5ea7` spi: stm32: add stm32_spi_is_enabled() helper
+13. `748d7cd962c` spi: stm32: add support for bits-per-word setting
+14. `2679ff053c9` spi: stm32: extend support to STM32MP25
+15. `dd58577a54d` video: support Rocktech RK050HR345-CT106A panel (auto-merged Kconfig/Makefile)
+16. `ffdee4da7fc` arm/mach-stm32: don't select non-existent STM32_RESET
+17. `39670802aaf` Merge tag 'u-boot-stm32-20260430' (empty merge commit, preserved with --allow-empty)
+
+**Fix-ups**: None required. All cherry-picks applied cleanly; a few had auto-merges in test.h, drivers/video/Kconfig, and drivers/video/Makefile, all resolved automatically.
+
+**Concerning deltas**: None. All cherry-picks matched the original commits' file lists and line counts exactly.
+
+The branch is ready for pushing.
+
+---
+
