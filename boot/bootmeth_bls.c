@@ -48,6 +48,13 @@
 #define BLS_ENTRIES_DIR		"loader/entries"
 #define BLS_ENTRY_FILE		"loader/entry.conf"
 
+/*
+ * Minimum partition size, in blocks, that is plausibly a filesystem.
+ * Partitions below this are skipped before FS probing to avoid
+ * out-of-bounds superblock reads on raw data slots
+ */
+#define BLS_MIN_PART_BLOCKS	64
+
 /**
  * struct bls_info - context information for BLS getfile callback
  *
@@ -320,6 +327,21 @@ static int bls_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	prefixes = bootstd_get_prefixes(bootstd);
 	desc = bflow->blk ? dev_get_uclass_plat(bflow->blk) : NULL;
 
+	/*
+	 * BOOTMETHF_ANY_PART makes the iterator visit every partition,
+	 * including small non-filesystem ones (e.g. ChromeOS kernel slots).
+	 * Skip partitions too small to hold any filesystem before probing,
+	 * so probe-time reads do not trip the "Read outside partition"
+	 * error path
+	 */
+	if (desc) {
+		struct disk_partition info;
+
+		if (!part_get_info(desc, bflow->part, &info) &&
+		    info.size < BLS_MIN_PART_BLOCKS)
+			return -ENOENT;
+	}
+
 	/* Try each prefix: first scan entries/, then fall back to entry.conf */
 	i = 0;
 	ret = -ENOENT;
@@ -521,7 +543,7 @@ static int bls_bootmeth_bind(struct udevice *dev)
 
 	plat->desc = IS_ENABLED(CONFIG_BOOTSTD_FULL) ?
 		"Boot Loader Specification (BLS) Type #1" : "bls";
-	plat->flags = BOOTMETHF_MULTI;
+	plat->flags = BOOTMETHF_MULTI | BOOTMETHF_ANY_PART;
 
 	return 0;
 }

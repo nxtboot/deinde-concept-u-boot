@@ -13,11 +13,13 @@ Overview
 
 BLS provides a standardised way to describe boot entries. U-Boot's BLS support
 allows it to boot operating systems configured with BLS entries, which is used
-by Fedora, RHEL, and other distributions.
+by Fedora, RHEL, Ubuntu (via ``kernel-install``) and other distributions.
 
-The current implementation supports a single BLS entry file at
-``loader/entry.conf``. Future versions may support multiple entries in
-``loader/entries/``.
+U-Boot scans both the standard ``loader/entries/<machine-id>-<version>.conf``
+layout used by ``kernel-install`` and a single ``loader/entry.conf`` fallback
+under each boot prefix. When an entries directory is present, each ``.conf``
+file becomes a separate bootflow; ``loader/entry.conf`` is consulted only when
+the directory is absent or empty.
 
 Configuration
 -------------
@@ -27,6 +29,30 @@ Enable BLS support with::
     CONFIG_BOOTMETH_BLS=y
 
 This automatically selects ``CONFIG_PXE_UTILS`` for booting.
+
+Discovery
+---------
+
+The BLS bootmeth sets ``BOOTMETHF_ANY_PART``, so the bootflow iterator hands
+it every partition on each bootdev rather than just the bootable partition or
+those typed as ESP / XBOOTLDR / MBR-0xea. This matches the way ``kernel-install``
+places entries: distros that mount the ESP at ``/boot/efi`` keep
+``loader/entries/`` on the ext4 rootfs at ``/boot/loader/entries/``, while
+distros that mount the ESP at ``/boot`` keep them on the ESP at
+``loader/entries/``. Both cases are reached without any board configuration.
+
+For each partition the bootmeth tries each filename prefix configured on the
+bootstd device (``/`` and ``/boot/`` by default; see ``filename-prefixes`` in
+:doc:`/develop/bootstd/overview`) and within each prefix tries the entries
+directory first, then the singular ``entry.conf`` fallback::
+
+    <prefix>loader/entries/*.conf
+    <prefix>loader/entry.conf
+
+Partitions too small to hold any filesystem are filtered out before the
+filesystem probe runs, so raw data partitions (for example ChromeOS kernel
+slots, which are a single LBA) do not produce spurious "Read outside
+partition" probe errors.
 
 BLS Entry Format
 ----------------
@@ -128,23 +154,27 @@ BLS boot entries are discovered automatically by standard boot::
     => bootflow select 0
     => bootflow boot
 
-The BLS entry at ``loader/entry.conf`` on any available media is recognised as
-a bootflow.
+Each ``.conf`` file in a discovered ``loader/entries/`` directory, or the
+single ``loader/entry.conf`` fallback, becomes its own bootflow.
 
 Implementation Notes
 --------------------
 
-* Single BLS entry file support (``loader/entry.conf``)
 * Boot execution reuses U-Boot's PXE infrastructure for kernel loading
 * Unknown fields are ignored for forward compatibility
 * The bootmethod is ordered as ``bootmeth_2bls`` (after extlinux)
 * Zero-copy parsing: most fields point into bootflow buffer (except ``options``
   which is allocated for concatenation)
+* ``BOOTMETHF_MULTI`` is set, so each ``.conf`` file in the entries directory
+  produces a separate bootflow
+* ``BOOTMETHF_ANY_PART`` is set, so the iterator visits every partition rather
+  than only those tagged as bootable or as BLS-target
 
 Current Limitations
 -------------------
 
-* Only single entry file, not multiple entries directory scanning
+* Only the first ``.conf`` file in ``loader/entries/`` is loaded per call;
+  the iterator advances ``bflow->entry`` to retrieve subsequent ones
 * No devicetree-overlay support
 * No architecture/machine-id filtering
 * No version-based or sort-key sorting
