@@ -80386,3 +80386,46 @@ The branch is left ready for pushing; not merged anywhere.
 
 ---
 
+### Review: 2026-05-07
+
+Branch: cherry-8ef8dee4f3a
+
+Comments addressed:
+
+
+### Conversation log
+Let me record the diff stats for each commit before the rebase, so I can compare after.
+
+Rebase completed cleanly with no conflicts. Let me verify the deltas.
+
+All 15 commits preserved. Let me verify the deltas match before/after.
+
+All deltas match exactly. The empty merge commit was preserved. Now run the build.
+
+Build OK. Now push to the remote.
+
+## Rebase Complete — MR !1075
+
+**Branch:** `cherry-8ef8dee4f3a` (local backup at `cherry-8ef8dee4f3a-v2`)
+
+**Result:** Clean rebase onto latest `ci/master` (544d1aa3092). No conflicts.
+
+### Verification
+
+- **All 15 commits preserved** (14 cherry-picks + the empty `efi-2026-07-rc2` merge tag + the pickman record).
+- **Per-commit delta diff before/after rebase: identical** for every commit (file-counts, insertions, deletions all match).
+- **Empty merge commit retained** via `--keep-empty` (`303f2b52205 Merge tag 'efi-2026-07-rc2' …`).
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built OK in 13s.
+
+### Push
+
+`pickman push-branch cherry-8ef8dee4f3a -r ci -f` succeeded:
+- Forced update on remote `ci`: `2f22ebc735d → f6fe5f74b7f`
+- GitLab will auto-trigger the MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (544d1aa3092). Clean rebase — no conflicts, all 15 commits replay with identical per-commit deltas, empty `efi-2026-07-rc2` merge commit preserved. Sandbox build passes. Force-pushed to update the MR.
+
+---
+
