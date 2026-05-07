@@ -80508,3 +80508,80 @@ No code changes applied. Force-pushing the v2 branch (with this history note) so
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-2472b31997a
+
+Commits:
+- 2472b31997a sunxi: use vendor prefix for $fdtfile on RISC-V too
+- dc2427ab20d sunxi: spl: fix SPL_SUNXI_LED active low configuration
+- c3297cb93ef sunxi: configs: enable power LEDs on 32-bit boards
+- 06b3ae910f1 sunxi: configs: enable power LEDs on 64-bit boards
+- 9d3bbc99b90 pinctrl: sunxi: add I2C3 mux for D1/T113-s3 (PG10/PG11)
+- 5a24cc0740e sunxi: H616: dram: fix LPDDR3 TPR6 parsing
+- 7ad8e387d6d sunxi: H616: dram: drop default TPR6 Kconfig value
+- 11b5cd22bae spi: sunxi: wait for TX/RX fifo reset done
+- 125bba0f61e mtd: rawnand: sunxi: Replace hard coded value by a define
+- 6b33232e328 mtd: rawnand: sunxi: make the code mode self-explanatory
+- a776cb833d8 mtd: rawnand: sunxi: clean sunxi_nand_chip_init()
+- dbed35acee3 mtd: rawnand: sunxi: introduce variable user data length
+- 4c8d2a633ed mtd: nand: raw: sunxi_spl: remove user data length reset
+- bb0f3eebb3c Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sunxi
+
+### Conversation log
+None of the individual commits are in ci/master. Let me proceed with cherry-picks.
+
+Let me restart the cherry-pick and resolve manually:
+
+Now I'll manually apply the change to `board/sunxi/sunxi.env`:
+
+Now create a commit with the original message and a fix-up note:
+
+Stats reasonable for the adapted change. Now build test:
+
+Build OK. Continuing:
+
+Stats match. Build:
+
+All 14 commits applied. Let me verify the log:
+
+All 14 commits present. Final build:
+
+## Summary
+
+All 14 commits successfully cherry-picked onto branch `cherry-2472b31997a` (based on `ci/master`).
+
+**Build result:** OK — sandbox build passes after every cherry-pick and at the end (1 board built, no warnings/errors).
+
+**Fix-ups made:**
+
+1. **2472b31997a** (sunxi: vendor prefix for `$fdtfile` on RISC-V): Original commit modified `include/configs/sunxi-common.h`, but on `ci/master` the FDTFILE definition was moved to `board/sunxi/sunxi.env` (commit `dadcfcb889b`, "sunxi: Move to text environment") — and the move dropped the original ARM64 vendor-prefix conditional. Manually applied the equivalent change to `board/sunxi/sunxi.env`, adding a conditional that prefixes `allwinner/` when ARM64 or RISC-V. Note added to commit message.
+
+2. **c3297cb93ef** (enable power LEDs on 32-bit boards): Conflicts in 7 defconfigs (`bananapi_m2_berry`, `bananapi_m2_zero`, `icnova-a20-adb4006`, `orangepi_2`, `orangepi_lite`, `orangepi_one`, `orangepi_pc`) because `CONFIG_DRAM_CLK=…` had been reordered earlier on ci/master. Resolved by keeping both lines in the new ordering. Note added to commit message.
+
+3. **bb0f3eebb3c** (Merge commit): Same `sunxi-common.h` and 7 defconfig conflicts as above (since the merge re-introduces the same diffs). Resolved by keeping HEAD; resulted in an empty commit, preserved with `--allow-empty` per instructions.
+
+**Concerning deltas:** None. All non-merge cherry-picks have stat output identical to the originals except for commit 1, where the adapted change (4 insertions in sunxi.env vs 1 insertion/1 deletion in sunxi-common.h) is the intended adaptation.
+
+**Final log (top 14 commits):**
+```
+28ac6e4b45a Merge branch 'master' of .../u-boot-sunxi
+d169a7af0d0 mtd: nand: raw: sunxi_spl: remove user data length reset
+d005c867271 mtd: rawnand: sunxi: introduce variable user data length
+f84b50c7f44 mtd: rawnand: sunxi: clean sunxi_nand_chip_init()
+1aba0351b96 mtd: rawnand: sunxi: make the code mode self-explanatory
+e4c3893128b mtd: rawnand: sunxi: Replace hard coded value by a define
+355ea1695c8 spi: sunxi: wait for TX/RX fifo reset done
+a777617b220 sunxi: H616: dram: drop default TPR6 Kconfig value
+170a7457376 sunxi: H616: dram: fix LPDDR3 TPR6 parsing
+4f4818da150 pinctrl: sunxi: add I2C3 mux for D1/T113-s3 (PG10/PG11)
+9fb2aa0591c sunxi: configs: enable power LEDs on 64-bit boards
+a5032889ee5 sunxi: configs: enable power LEDs on 32-bit boards
+6a9eab59423 sunxi: spl: fix SPL_SUNXI_LED active low configuration
+2c9567536dc sunxi: use vendor prefix for $fdtfile on RISC-V too
+```
+
+Branch `cherry-2472b31997a` is left ready for pushing.
+
+---
+
