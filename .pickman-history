@@ -80585,3 +80585,48 @@ Branch `cherry-2472b31997a` is left ready for pushing.
 
 ---
 
+### Review: 2026-05-07
+
+Branch: cherry-2472b31997a
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed. Now let me compare deltas before/after rebase:
+
+All 15 deltas match exactly. Now let me run the build:
+
+Build passes. Now create the v2 backup branch and push:
+
+Push succeeded. Summary:
+
+## Rebase Complete — MR !1077
+
+**Branch:** `cherry-2472b31997a` (local backup at `cherry-2472b31997a-v2`)
+
+**Result:** Rebased onto latest `ci/master` (180b7bb4de6). One conflict resolved.
+
+### Conflict resolution
+
+- **`.pickman-history`** in commit `a410e9a09fb` ("pickman: Record cherry-pick of 14 commits from us/master"): Both HEAD (which now contains the cherry-8ef8dee4f3a record from MR !1075) and our pickman record commit added new sections under the `## 2026-05-07: us/master` heading. Resolved by keeping both — the HEAD entry for cherry-8ef8dee4f3a, then a `---` separator and a fresh `## 2026-05-07: us/master` heading for our cherry-2472b31997a entry.
+
+### Verification
+
+- **All 15 commits preserved** (14 cherry-picks + 1 pickman record).
+- **Per-commit delta diff before/after rebase: identical** for every commit (file counts, insertions, deletions all match — verified via `git show --stat` comparison).
+- **Empty merge commit retained** via `--keep-empty` (`0d2f49d0493 Merge branch 'master' of … u-boot-sunxi`).
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built OK in 23s.
+
+### Push
+
+`pickman push-branch cherry-2472b31997a -r ci -f` succeeded:
+- Forced update on remote `ci`: `28ac6e4b45a → 47538516094`
+- GitLab will auto-trigger the MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (180b7bb4de6). One trivial conflict in `.pickman-history` (both branches added entries under the same date heading) — resolved by keeping both records side-by-side. All 15 commits replay with identical per-commit deltas; empty `u-boot-sunxi` merge commit preserved. Sandbox build passes. Force-pushed to update the MR.
+
+---
+
