@@ -522,6 +522,9 @@ int board_late_init(void)
 	addr = addr_alloc(SZ_2M);
 	status |= env_set_hex("fdt_addr_r", addr);
 
+	if (IS_ENABLED(CONFIG_OF_LIBFDT_OVERLAY))
+		status |= env_set_hex("fdtoverlay_addr_r", addr_alloc(SZ_1M));
+
 	if (status)
 		log_warning("%s: Failed to set run time variables\n", __func__);
 

@@ -32,6 +32,8 @@ DDR and peripherals, on some boards also resets external PMIC.
     performs a warm reset, causing the firmware to boot directly to its
     setup/configuration interface.
 
+-edl
+    Boot to Emergency DownLoad mode on supported Qualcomm platforms.
 
 Return value
 ------------

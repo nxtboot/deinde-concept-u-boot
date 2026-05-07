@@ -80004,3 +80004,82 @@ Both applied cleanly — `1bb973b4db6` adds 5 lines to `board_late_init()` while
 
 ---
 
+## 2026-05-06: us/master
+
+Branch: cherry-f55efa447dd
+
+Commits:
+- f55efa447dd pinctrl: qcom: Add pingroup definitions for SC7280
+- bf119f79b50 power-domain: Add QCOM RPMH Power Domain Driver Support
+- 8e2ac60bb8c power-domain: Add warning when power-domain driver is missing
+- 3fbd82eb67b mach-snapdragon: Remove RPMH power domain DT fixup code
+- ca080b83a41 qcom_defconfig: Add QCOM_RPMH_POWER_DOMAIN config
+- 0bbde64361d mach-snapdragon: allocate memory for DT overlays
+- c808ab5fed9 drivers: clk: qcom: sc7280: Add USB3 PHY pipe clock
+- 6de333b5caf drivers: usb: dwc3: Add delay after core soft reset
+- 2c93971ba3b drivers: phy: qcom: Add QMP USB3-DP Combo PHY driver
+- 5ebc47d984c arch: arm: mach-snapdragon: Auto-detect USB SSPHY driver support
+- b20d13e4e6a configs: qcm6490: Enable super-speed USB support
+- c3d00f18278 MAINTAINERS: Add entry for Qualcomm PHY drivers
+- f9e3f5f75c5 arm: psci: Add API to check for support of specific PSCI function
+- fcb48b89813 drivers: sysreset: Add sysreset op that can take arguments
+- 32825eaddc3 sysreset: Implement PSCI based reset to EDL mode for QCOM SoCs
+- ef06c5d76ff cmd: boot: Add '-edl' option to reset command documentation
+- 63c806ba0e1 qcom_defconfig: enable psci based sysreset
+- 3eefe12b4b4 tee: optee: Export OP-TEE message UID check API
+- 3f3f832bc98 mach-snapdragon: of_fixup: Add OP-TEE DT fixup support
+- 8459d9c3b41 board/qualcomm: Introduce TF-A and OP-TEE config fragment
+- 16a16b55ce5 clk: qcom: sc7280: add missing SDCC1 clocks
+- 8e4fd3d1c31 drivers: pinctrl: Add Qualcomm Milos TLMM driver
+- 0661dc33050 clk/qcom: Add Milos clock driver
+- a0c9ff699fd phy: qcom: Add Milos to QMP UFS PHY driver
+- d23376cb7cd regulator: qcom-rpmh-regulator: add support for PM7550 regulators
+- 50154283d7d gpio: qcom: Support GPIOs on PM7550 PMIC
+- 589e6eb7c27 qcom_defconfig: Enable Milos clock driver
+- 714baccc338 board/qualcomm: add debug config fragment for Milos
+- 40be6826334 dts: qcs6490-rb3gen2: Remove USB controller dr_mode override
+- ef3f08ae78a efi_loader: make EFI_HAVE_RUNTIME_RESET a user-selectable option
+- fabf5878bb8 qcom_defconfig: Disable EFI_HAVE_RUNTIME_RESET in qcom_defconfig
+- e0991f42aa7 Merge branch 'casey/qcom-main-13Apr2026' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+Build passed. Continuing with cherry-picks.
+
+Good, conflict is resolved. Now finishing the cherry-pick.
+
+All 32 commits present. Running final build.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-f55efa447dd` (based on `ci/master`)
+
+**Build result:** OK (sandbox builds successfully — `1 total built, 0 errors`)
+
+**Commits applied:** All 32 commits present in `git log --oneline -n 34`
+
+### Fix-ups applied (3 conflicts resolved)
+
+1. **`0bbde64361d` mach-snapdragon: allocate memory for DT overlays**  
+   Conflict in `arch/arm/mach-snapdragon/board.c`: upstream had refactored `lmb_alloc()` calls to use the `addr_alloc()` helper macro after this commit was authored. Adapted the new `fdtoverlay_addr_r` allocation to use `addr_alloc()` and folded `fdt_status` back into `status` to match the new style. Note added to commit message.
+
+2. **`ef06c5d76ff` cmd: boot: Add '-edl' option to reset command documentation**  
+   Trivial conflicts in `cmd/boot.c` and `doc/usage/cmd/reset.rst` — `reset -h` and `reset -u` options had been added upstream in adjacent locations. Kept both sets of additions. Note added to commit message.
+
+3. **`40be6826334` dts: qcs6490-rb3gen2: Remove USB controller dr_mode override**  
+   Conflict in `arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi`: upstream had added `/delete-property/ usb-role-switch;` to the same `&usb_1` block. Removed the entire block (consistent with the commit's intent of letting upstream OTG configuration take effect). Note added to commit message.
+
+4. **`e0991f42aa7` Merge commit (Tom Rini)**  
+   All individual commits already applied via cherry-pick. Conflicts resolved by taking `--ours` for the three files; result is an empty merge commit preserving the merge subject. Note added to commit message.
+
+### Delta verification
+
+All non-conflicted commits had identical file/line counts to their originals (verified with `git show --stat`).
+
+### Build warnings/errors
+
+None — final `buildman` run completed cleanly.
+
+Branch is ready for pushing. Not merged anywhere.
+
+---
+
