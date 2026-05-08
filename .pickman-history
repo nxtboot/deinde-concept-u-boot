@@ -80982,3 +80982,65 @@ Branch is ready for pushing.
 
 ---
 
+Branch: cherry-28980318032
+
+Commits:
+- 28980318032 efi_loader: initialize variables in efi_dp_from_http()
+- 7d48344aff1 cmd: eficonfig: adjust struct eficonfig_entry, field key
+- a2f27310085 lmb: allocation flags macro documentation
+- 3ad3243f8a0 efi_dt_fixup: use fdtdec_get_bool
+- 025c4cbd422 efi_selftest_memory: check for duplicates first
+- b1c28ad5faf efi_mem_sort: use list_for_each_entry_safe instead
+- 8399b039b03 Merge tag 'efi-2026-07-rc2-2' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The commits are not already applied. Let me investigate the conflict.
+
+The file has been moved to `lib/efi/device_path.c`. The cherry-pick failed because it's trying to apply to the old location. Let me apply manually to the new location.
+
+Same line counts (4 changes), different file path (file moved). Now let me build-test, then continue with the next commits.
+
+Build succeeded. Now the next commits:
+
+Identical delta. Continue:
+
+The data structure was refactored from `efi_mem_list` to `mem_node`. Let me adapt the patch:
+
+Good. Now let me verify the build before committing:
+
+I need to add a fix-up note since I had to adapt to the new struct layout:
+
+Delta is reasonable (44 vs 47 lines, ~6% difference). Now the merge commit:
+
+The merge only brings in the 6 commits we've already cherry-picked. Let me do this as an empty commit to preserve the merge message:
+
+All 7 commits are present. Final build:
+
+## Final Status
+
+**Build result:** OK (sandbox build passed)
+
+**All 7 commits successfully cherry-picked to branch `cherry-28980318032`:**
+
+1. `4b0847f6359` efi_loader: initialize variables in efi_dp_from_http()
+2. `fba14e9c4e6` cmd: eficonfig: adjust struct eficonfig_entry, field key
+3. `979c8c5c017` lmb: allocation flags macro documentation
+4. `0948a0ec6e8` efi_dt_fixup: use fdtdec_get_bool
+5. `3281c08fd0f` efi_selftest_memory: check for duplicates first
+6. `cf9bae9412c` efi_mem_sort: use list_for_each_entry_safe instead
+7. `62535b79a8c` Merge tag 'efi-2026-07-rc2-2' (empty merge commit, preserved)
+
+**Fix-ups made:**
+
+- **Commit 1 (`28980318032`)**: The original commit modified `lib/efi_loader/efi_device_path.c`, but in our branch the file has been refactored and the function `efi_dp_from_http()` was moved to `lib/efi/device_path.c`. The cherry-pick failed with conflicts; aborted and applied the same 2-line change manually to the new file location. Note added: `[sjg: applied to new lib/efi/device_path.c location]`. Same line count (4 changes).
+
+- **Commit 6 (`b1c28ad5faf`)**: The `efi_mem_sort()` function had been refactored: the data structure changed from `struct efi_mem_list` (with nested `desc` field) to `struct mem_node` (flat structure with `base`, `type`, `attribute` directly). Adapted the patch to use the new struct/field names. Note added: `[sjg: adapted to refactored mem_node struct]`. Delta: 44 vs 47 lines (~6% smaller, well within tolerance).
+
+- **Commit 7 (merge `8399b039b03`)**: All 6 individual commits from the merged branch were already cherry-picked, so the merge would re-apply already-present changes with conflicts. Used `--strategy=ours` to produce an empty commit, preserving the merge commit message for history tracking.
+
+**Concerning deltas:** None. All deltas were within tolerance and explained by upstream refactoring.
+
+The branch is left checked out and ready for pushing.
+
+---
+
