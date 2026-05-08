@@ -80630,3 +80630,45 @@ Push succeeded. Summary:
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-d0abd8b4c51
+
+Commits:
+- d0abd8b4c51 arm: dts: renesas: Clean up RPC DT nodes
+- 529e62ecc70 arm: dts: renesas: Remove duplicate AVB pinmux assignment on V3M
+- 8528f2ed208 arm: renesas: Fix Kconfig indent
+- 9f71b271dbe remoteproc: renesas: Add Renesas R-Car Gen5 remote processor driver
+- 7ad9d8a24cf watchdog: Add Renesas R-Car Gen5 window watchdog driver
+- 20b124d1bc6 arm64: renesas: Add Cortex-M33 build option to R-Car Gen5
+- 70434636c3d Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+None of the individual commits are in ci/master. The "found" merge commit fff2df4255d is a different merge. Let me proceed with cherry-picking.
+
+## Cherry-pick Complete
+
+All 7 commits cherry-picked successfully onto branch `cherry-d0abd8b4c51`:
+
+| Original Hash | New Hash | Subject |
+|---|---|---|
+| d0abd8b4c51 | de1182355d6 | arm: dts: renesas: Clean up RPC DT nodes |
+| 529e62ecc70 | 2bfed338c30 | arm: dts: renesas: Remove duplicate AVB pinmux assignment on V3M |
+| 8528f2ed208 | 94fba3f7833 | arm: renesas: Fix Kconfig indent |
+| 9f71b271dbe | 9e4385ba9ab | remoteproc: renesas: Add Renesas R-Car Gen5 remote processor driver |
+| 7ad9d8a24cf | 1b11abddda8 | watchdog: Add Renesas R-Car Gen5 window watchdog driver |
+| 20b124d1bc6 | 229cdbcd8d2 | arm64: renesas: Add Cortex-M33 build option to R-Car Gen5 |
+| 70434636c3d | 088e39d0916 | Merge branch 'master' of u-boot-sh (empty merge, preserved with --allow-empty) |
+
+### Status
+
+- **Pre-check:** The "maybe already applied" merge `fff2df4255d` was a different merge (not the same content); none of the 6 individual commits were present in `ci/master`, so the full series was cherry-picked.
+- **Deltas:** All cherry-picks produced identical stats to originals (only hash and "cherry picked from" line differ).
+- **Conflicts:** None — all cherry-picks applied cleanly.
+- **Fix-ups:** None required.
+- **Build result:** OK — sandbox builds cleanly after each cherry-pick and at the end (no warnings or errors).
+
+The branch `cherry-d0abd8b4c51` is ready for pushing.
+
+---
+
