@@ -80774,3 +80774,49 @@ Force-push succeeded. Summary:
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-7c3945a2317
+
+Commits:
+- 7c3945a2317 configs: r8a78000_ironhide: Drop duplicate CONFIG_SCMI_FIRMWARE
+- f7f2864e19f configs: phycore_am62ax_r5_ethboot: Drop duplicate CONFIG_SPL_MMC
+- e6112ab2d72 configs: phycore_am62x_r5_ethboot: Drop duplicate CONFIG entries
+- 5006121b44a binman: Generate preload header and sign data only once
+- 9ff82a771c4 binman: collection: Set build_done on referenced entries
+- b20d69e5f57 tools: binman: Test signing an encrypted FIT with a preload header
+- ae8987f4e69 Merge patch series "binman: Fix preload signing with encrypted FIT"
+
+### Conversation log
+Build successful. Continuing with next commit.
+
+All 7 commits are present. Now run final build verification.
+
+## Cherry-pick Summary
+
+All 7 commits successfully cherry-picked from `us/master` onto branch `cherry-7c3945a2317` (based on `ci/master`).
+
+### Final commit log:
+```
+3fcf70bfd2e Merge patch series "binman: Fix preload signing with encrypted FIT"
+f3e2b545be0 tools: binman: Test signing an encrypted FIT with a preload header
+ad9a2f47f6f binman: collection: Set build_done on referenced entries
+1e8a547097b binman: Generate preload header and sign data only once
+8c229fb6261 configs: phycore_am62x_r5_ethboot: Drop duplicate CONFIG entries
+dc01afea511 configs: phycore_am62ax_r5_ethboot: Drop duplicate CONFIG_SPL_MMC
+da0d7e3274a configs: r8a78000_ironhide: Drop duplicate CONFIG_SCMI_FIRMWARE
+```
+
+### Build result:
+- **OK** — sandbox build completed successfully (1 board built, no warnings or errors) after each cherry-pick and after the final commit.
+
+### Delta verification:
+All 6 regular commits had identical file changes and line counts to their originals (no concerning deltas).
+
+### Fix-ups:
+- The merge commit `ae8987f4e69` was empty after cherry-pick (as expected for a merge with no diff against the parent). It was committed using `--allow-empty` and amended to include the `(cherry picked from commit ...)` trailer to track history. The original commit message body was preserved.
+
+The branch `cherry-7c3945a2317` is ready for pushing.
+
+---
+
