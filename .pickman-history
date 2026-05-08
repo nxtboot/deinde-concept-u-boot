@@ -80490,3 +80490,21 @@ Branch `cherry-92a04aea6df` is left ready for pushing (not merged anywhere).
 
 ---
 
+### Review handling: 2026-05-07 (v2)
+
+Branch: cherry-92a04aea6df-v2 (force-pushed to remote `cherry-92a04aea6df`)
+
+Review comment addressed: previous pipeline-fix bot's own report on attempt 1, which diagnosed three failing jobs (`efi-x86_64-uboot-iso`, `efi-x86_64-uboot-iso-install`, `efi-aarch64`) as lab/infrastructure issues — labgrid `Lab timeout: Marking connection bad`, `OSError: [Errno 5] Input/output error` on the serial fd, and a `console_base.Timeout` while waiting for `Ubuntu 25.04 qarm ttyAMA0` after 34 tests had already passed.
+
+### Action
+
+Re-confirmed the diagnosis is still correct:
+- The 16 cherry-picked commits touch `m68k`/`stmark2`/`mcf5441x` (not built for x86 or aarch64), `.mailmap`, `board/toradex/...env`, and four small generic fixes (`bloblist`/`fdt`/`memsize`/`fat`).
+- None modifies x86-EFI, aarch64-EFI, labgrid, the test-py harness, or distro/bls boot paths.
+
+Sandbox build verified: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+No code changes applied. Force-pushing the v2 branch (with this history note) so GitLab triggers a fresh pipeline run; the transient lab failures are expected to clear on re-run.
+
+---
+
