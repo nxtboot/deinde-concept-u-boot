@@ -81044,3 +81044,49 @@ The branch is left checked out and ready for pushing.
 
 ---
 
+### Review: 2026-05-08
+
+Branch: cherry-28980318032
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match exactly. Now let me run the build to verify.
+
+Build passed. Now create the v2 branch and push.
+
+Push successful. Let me provide the final report.
+
+## Summary
+
+**Rebase of MR !1084 (cherry-28980318032) onto ci/master: SUCCESS**
+
+### Actions taken
+1. Checked out `cherry-28980318032`
+2. Rebased onto `ci/master` (was 21 commits behind) using `git rebase --keep-empty ci/master`
+3. Resolved one conflict in `.pickman-history` — both branches had added entries under the same date heading (`## 2026-05-08: us/master`); merged by keeping both entries with a `---` separator
+4. Verified all 7 commit deltas are byte-identical to pre-rebase state
+5. Merge commit `1c0319489cf` (was `62535b79a8c`) preserved as empty via `--keep-empty`
+6. Build passed: `buildman -L --board sandbox -w -o /tmp/pickman` (1 board, 0:00:12)
+7. Created local branch `cherry-28980318032-v2`
+8. Force-pushed to `ci/cherry-28980318032`
+
+### New commit hashes (post-rebase)
+| # | New | Old | Title |
+|---|---|---|---|
+| 1 | `73987d217a0` | `4b0847f6359` | efi_loader: initialize variables in efi_dp_from_http() |
+| 2 | `21c96484701` | `fba14e9c4e6` | cmd: eficonfig: adjust struct eficonfig_entry, field key |
+| 3 | `6cf642f36de` | `979c8c5c017` | lmb: allocation flags macro documentation |
+| 4 | `1c0a3875d26` | `0948a0ec6e8` | efi_dt_fixup: use fdtdec_get_bool |
+| 5 | `297679c9323` | `3281c08fd0f` | efi_selftest_memory: check for duplicates first |
+| 6 | `0d716c1ec97` | `cf9bae9412c` | efi_mem_sort: use list_for_each_entry_safe instead |
+| 7 | `1c0319489cf` | `62535b79a8c` | Merge tag 'efi-2026-07-rc2-2' (empty merge, preserved) |
+| — | `e6509c5a9a2` | `fde7a7d1ad0` | pickman: Record cherry-pick of 7 commits from us/master |
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (21 commits ahead of previous base). One conflict resolved in `.pickman-history` — a parallel cherry-pick MR (cherry-e86d1c0b883) had added an entry under the same date heading; merged both entries with a separator, no functional impact. All 7 commit deltas are byte-identical to pre-rebase state (same files, same line counts). Empty merge commit preserved via `--keep-empty`. Sandbox build passes. Local branch saved as `cherry-28980318032-v2`.
+
+---
+
