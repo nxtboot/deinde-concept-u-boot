@@ -80429,3 +80429,82 @@ Build OK. Now push to the remote.
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-92a04aea6df
+
+Commits:
+- 92a04aea6df board: toradex: Quote variables in `test` cmd expression
+- c7a6d4fdd7d .mailmap: Update my email address
+- 7dd93524eac fdt: check fdt_pack() return value in fdtdec_apply_bloblist_dtos()
+- 0fd32094c04 bloblist: fix pointer comparison in bloblist_apply_blobs()
+- 2c733e6c855 common: memsize: fix occasionally failing alias probing
+- 988c9833709 m68k: dts: mcf5441x: add mmc device for mcf5441x
+- 81b7e4da508 m68k: dts: stmark2: enable esdhc
+- a38b3fca74f board: stmark2: add sd boot command
+- 73b428c585a board: stmark2: remove old garbage
+- cc4c0cbc29d mmc: Kconfig: allows m68k to use esdhc imx driver
+- 28fc1cbab3b configs: stmark2: add support for mmc
+- b17db4fadcc configs: stmark2: add bdinfo command
+- 07d824e5bbc m68k: mcf5441x: create stub to use imx drivers
+- 44684aabc29 m68k: set proper u-boot image size for initial boot
+- ba1209d7a75 fat: initialize ret in disk_rw()
+- 57460fde4ba Merge branch 'master' of git://git.denx.de/u-boot-coldfire
+
+### Conversation log
+Both potentially-already-applied commits are actually different commits. Let me proceed with the full cherry-pick sequence.
+
+The first cherry-pick has conflicts. Let me check the conflict details and see if it's already applied.
+
+The aquila-am69 files were deleted in ci/master. Since these files no longer exist, I'll remove the conflicts by accepting the deletion.
+
+Build OK. Continue with the next cherry-pick.
+
+All 16 commits are present. Now let me run the final build verification.
+
+## Cherry-pick Summary
+
+All 16 commits successfully cherry-picked onto branch `cherry-92a04aea6df` (based on `ci/master`).
+
+### Final Build Status
+**OK** — `buildman -L --board sandbox` completed successfully (1 board built, no warnings or errors).
+
+### Pre-flight Verification
+Both "maybe already applied" commits were verified as **distinct** from the suggested existing hashes:
+- `c7a6d4fdd7d` (Simon Glass mailmap) ≠ `c5f18a0b695` (Fabio Estevam, 2016, NXP email change)
+- `57460fde4ba` (2026, stmark2/mcf5441x merge) ≠ `197aa22e650` (2023, watchdog merge)
+
+So both were cherry-picked normally.
+
+### Fix-ups Made
+1. **`92a04aea6df` (toradex Quote variables)** — Conflict: `board/toradex/aquila-am69/aquila-am69.env` and `configs/aquila-am69_a72_defconfig` were deleted in `ci/master`. Resolved by `git rm` (accepted the deletion). Final delta: 18 files / 20 insertions / 20 deletions vs. original 20 files / 24 / 24 (~17% smaller, acceptable). Note added to commit message.
+
+2. **`ba1209d7a75` (fat: initialize ret)** — Content conflict in `fs/fat/fat.c`: HEAD had modernised types (`u32`/`u8`) while the original used `__u32`/`__u8`. Kept the modern types and applied just the `int ret = 0;` initialisation. Note added to commit message.
+
+3. **`57460fde4ba` (merge commit)** — Cherry-pick produced an empty commit (its diff vs. parent was already represented by the preceding individual cherry-picks). Committed with `--allow-empty` to preserve sequence and re-added the `(cherry picked from commit ...)` annotation.
+
+### No concerning deltas
+All other 13 commits applied cleanly with matching file/line counts.
+
+Branch `cherry-92a04aea6df` is left ready for pushing (not merged anywhere).
+
+---
+
+### Review handling: 2026-05-07 (v2)
+
+Branch: cherry-92a04aea6df-v2 (force-pushed to remote `cherry-92a04aea6df`)
+
+Review comment addressed: previous pipeline-fix bot's own report on attempt 1, which diagnosed three failing jobs (`efi-x86_64-uboot-iso`, `efi-x86_64-uboot-iso-install`, `efi-aarch64`) as lab/infrastructure issues — labgrid `Lab timeout: Marking connection bad`, `OSError: [Errno 5] Input/output error` on the serial fd, and a `console_base.Timeout` while waiting for `Ubuntu 25.04 qarm ttyAMA0` after 34 tests had already passed.
+
+### Action
+
+Re-confirmed the diagnosis is still correct:
+- The 16 cherry-picked commits touch `m68k`/`stmark2`/`mcf5441x` (not built for x86 or aarch64), `.mailmap`, `board/toradex/...env`, and four small generic fixes (`bloblist`/`fdt`/`memsize`/`fat`).
+- None modifies x86-EFI, aarch64-EFI, labgrid, the test-py harness, or distro/bls boot paths.
+
+Sandbox build verified: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+No code changes applied. Force-pushing the v2 branch (with this history note) so GitLab triggers a fresh pipeline run; the transient lab failures are expected to clear on re-run.
+
+---
+
