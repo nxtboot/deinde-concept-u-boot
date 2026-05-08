@@ -80949,3 +80949,36 @@ The branch `cherry-e86d1c0b883` is ready for pushing. It is 19 commits ahead of 
 
 ---
 
+## 2026-05-08: us/master
+
+Branch: cherry-de79075f0f6
+
+Commits:
+- de79075f0f6 mips: mtmips: align MT7621 image blobs to 8-byte boundary
+- e08877916e2 Merge tag 'mips-fixes-for-v2026.07' of https://source.denx.de/u-boot/custodians/u-boot-mips
+
+### Conversation log
+All cherry-picks completed successfully. Here's the final status:
+
+## Summary
+
+**Branch:** `cherry-de79075f0f6` (based on `ci/master`)
+
+**Commits cherry-picked (2):**
+1. `156da6627af` - mips: mtmips: align MT7621 image blobs to 8-byte boundary (from `de79075f0f6`)
+2. `3c67ff77b0a` - Merge tag 'mips-fixes-for-v2026.07' (from `e08877916e2`, empty merge commit preserved with `--allow-empty`)
+
+**Delta verification:**
+- First commit: identical stats to original (1 file changed, 4 insertions, 4 deletions in `arch/mips/dts/mt7621-u-boot.dtsi`)
+- Merge commit: empty as expected (changes already included via the underlying commit)
+
+**Build result:** OK — sandbox build passed cleanly after each cherry-pick (1 total built, no warnings or errors).
+
+**Fix-ups:** None required. The merge commit was committed via `git commit --allow-empty --no-edit` after `cherry-pick -m 1 --allow-empty` reported an empty result — this preserves the merge commit message and `(cherry picked from commit ...)` reference for tracking history.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
+
+---
+
