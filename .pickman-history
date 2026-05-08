@@ -80725,3 +80725,52 @@ All other 9 commits applied cleanly with stats matching the originals (1 file ch
 
 ---
 
+### Review: 2026-05-07
+
+Branch: cherry-2c34e32b9b6
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded. Now let me verify deltas for each rebased commit match the originals:
+
+All deltas match. Now run the build:
+
+Build passed. Now create the v2 branch and push:
+
+Force-push succeeded. Summary:
+
+## Rebase Complete — MR !1080
+
+**Branch:** `cherry-2c34e32b9b6` rebased onto `ci/master` (`6884a41832b`)
+**Local backup:** `cherry-2c34e32b9b6-v2`
+**Remote push:** force-pushed to `ci/cherry-2c34e32b9b6` → MR pipeline triggered
+
+**Conflict resolved:** One trivial `.pickman-history` conflict — both branches added entries under the same `## 2026-05-07: us/master` heading. Resolved by keeping both records side-by-side (HEAD's `cherry-d0abd8b4c51` record first, then a `---` separator, then a fresh date heading for the `cherry-2c34e32b9b6` record).
+
+**Per-commit delta verification:** All 12 commits replay with **identical** `git show --stat` output to their pre-rebase counterparts:
+
+| Old → New | Subject |
+|---|---|
+| 953ccded863 → 3a0819d58ee | configs: apalis-imx8: Enable EFI |
+| 2c511ea62c3 → aa492cf10f5 | configs: aquila-am69 [FAILED] (still empty, as before) |
+| d53c043b395 → 8b0d2e77b4c | configs: colibri-imx8x: Enable EFI |
+| 2994d07458e → 6eac6ac8703 | configs: toradex-smarc-imx8mp |
+| 5ad015844ee → 44e8739e018 | configs: toradex-smarc-imx95 |
+| 6a85384586f → c421dc281d4 | configs: verdin-am62 |
+| 52118aea96f → 9f94a853d63 | configs: verdin-am62p |
+| e33122c0d2a → 8c00a406caf | configs: verdin-imx8mm |
+| 1855f8c6028 → b72dc348650 | configs: verdin-imx8mp |
+| faacbe03029 → f4b85c60b28 | configs: verdin-imx95 |
+| 17e61665f30 → a53ec410be4 | Merge patch series (empty merge preserved) |
+| 33fb5c9d49d → 3170e2fdb6f | pickman: Record cherry-pick |
+
+**Build result:** OK — sandbox built cleanly via `buildman -L --board sandbox -w -o /tmp/pickman` (1 board, 11s, no warnings/errors).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (6884a41832b). One trivial conflict in `.pickman-history` (both branches added entries under the same date heading) — resolved by keeping both records side-by-side. All 12 commits replay with identical per-commit deltas; the empty `[FAILED]` aquila-am69 commit and the empty toradex merge commit are preserved. Sandbox build passes. Force-pushed to update the MR.
+
+---
+
