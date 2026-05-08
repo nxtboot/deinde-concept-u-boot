@@ -80889,3 +80889,63 @@ Branch is left ready for pushing.
 
 ---
 
+## 2026-05-08: us/master
+
+Branch: cherry-e86d1c0b883
+
+Commits:
+- e86d1c0b883 net: phy: dp83867: default to 2ns delay if unspecified in device-tree
+- d6694018ead net: nfs: fix buffer overflow in nfs_readlink_reply()
+- 4877a07ed3c net: lwip/wget: missing linefeed in diagnostic output
+- e093a4ecbe0 net: lwip/wget: don't print content size twice
+- 94625af0119 net: lwip/wget: don't print progress bar when silent
+- 845c55dde82 net: cpsw: Fix error message
+- 63f6f88bb0d net: cpsw: Remove compat string argument
+- a1bc52f4894 net: cpsw: Use driver data for phy_sel
+- 5bb7ae8921e net: cpsw: Support new cpsw-switch DT bindings
+- 9eca7fd0d39 phy: add common PHY properties support
+- c008ffdf61c net: phy: airoha: air_en8811: use standard rx-polarity/tx-polarity properties
+- 615c5367170 test: dm: add PHY common props unit tests and sandbox DT nodes
+- 52309be1d56 net: phy: adin: add support for the ADIN1200 phy
+- 9e23095298d net: macb: include arch/clk.h only when necessary
+- 361bb8f827b net: macb: use SA1 for MAC filtering on GEM
+- d7fe1f4333a net: macb: do not set user_io when it does not exist
+- 9717831e293 net: macb: add gigabit implementation for fixed-link
+- 5245bdc98b9 net: phy: mscc: add support for the VSC8572
+- 980f8a45896 Merge tag 'net-20260506' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+Now I need to add the PHY common props test nodes. Let me find the right location:
+
+Now let me stage the dts file and continue the cherry-pick:
+
+Identical. Continuing:
+
+All 19 commits present. Now run the build:
+
+Build succeeded. Let me do final verification:
+
+## Cherry-Pick Summary
+
+All 19 commits successfully cherry-picked to branch `cherry-e86d1c0b883`.
+
+### Build Result
+**OK** — Sandbox build completed successfully (1 board built, no warnings/errors, 0:00:11 duration).
+
+### Fix-ups Applied
+Two fix-ups were needed, both for `arch/sandbox/dts/test.dts` due to a pre-existing `#include <dt-bindings/virtio.h>` line in ci/master:
+
+1. **`abc5d9d095c` (test: dm: add PHY common props unit tests)** — Conflict resolved by adding `#include <dt-bindings/phy/phy.h>` alongside the existing virtio include. A fix-up note was appended to the commit message.
+
+2. **`327426c187a` (Merge tag 'net-20260506')** — Merge cherry-pick became empty (constituent commits already applied). Took ours for the same dts conflict, committed with `--allow-empty`, and added a fix-up note to the commit message preserving the merge history.
+
+### Commit Deltas
+All non-merge commits showed identical file lists and line counts to the originals. No concerning deltas detected.
+
+### Concerning Deltas
+None.
+
+The branch `cherry-e86d1c0b883` is ready for pushing. It is 19 commits ahead of `ci/master`.
+
+---
+
