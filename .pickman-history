@@ -80982,3 +80982,163 @@ Branch is ready for pushing.
 
 ---
 
+Branch: cherry-28980318032
+
+Commits:
+- 28980318032 efi_loader: initialize variables in efi_dp_from_http()
+- 7d48344aff1 cmd: eficonfig: adjust struct eficonfig_entry, field key
+- a2f27310085 lmb: allocation flags macro documentation
+- 3ad3243f8a0 efi_dt_fixup: use fdtdec_get_bool
+- 025c4cbd422 efi_selftest_memory: check for duplicates first
+- b1c28ad5faf efi_mem_sort: use list_for_each_entry_safe instead
+- 8399b039b03 Merge tag 'efi-2026-07-rc2-2' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+The commits are not already applied. Let me investigate the conflict.
+
+The file has been moved to `lib/efi/device_path.c`. The cherry-pick failed because it's trying to apply to the old location. Let me apply manually to the new location.
+
+Same line counts (4 changes), different file path (file moved). Now let me build-test, then continue with the next commits.
+
+Build succeeded. Now the next commits:
+
+Identical delta. Continue:
+
+The data structure was refactored from `efi_mem_list` to `mem_node`. Let me adapt the patch:
+
+Good. Now let me verify the build before committing:
+
+I need to add a fix-up note since I had to adapt to the new struct layout:
+
+Delta is reasonable (44 vs 47 lines, ~6% difference). Now the merge commit:
+
+The merge only brings in the 6 commits we've already cherry-picked. Let me do this as an empty commit to preserve the merge message:
+
+All 7 commits are present. Final build:
+
+## Final Status
+
+**Build result:** OK (sandbox build passed)
+
+**All 7 commits successfully cherry-picked to branch `cherry-28980318032`:**
+
+1. `4b0847f6359` efi_loader: initialize variables in efi_dp_from_http()
+2. `fba14e9c4e6` cmd: eficonfig: adjust struct eficonfig_entry, field key
+3. `979c8c5c017` lmb: allocation flags macro documentation
+4. `0948a0ec6e8` efi_dt_fixup: use fdtdec_get_bool
+5. `3281c08fd0f` efi_selftest_memory: check for duplicates first
+6. `cf9bae9412c` efi_mem_sort: use list_for_each_entry_safe instead
+7. `62535b79a8c` Merge tag 'efi-2026-07-rc2-2' (empty merge commit, preserved)
+
+**Fix-ups made:**
+
+- **Commit 1 (`28980318032`)**: The original commit modified `lib/efi_loader/efi_device_path.c`, but in our branch the file has been refactored and the function `efi_dp_from_http()` was moved to `lib/efi/device_path.c`. The cherry-pick failed with conflicts; aborted and applied the same 2-line change manually to the new file location. Note added: `[sjg: applied to new lib/efi/device_path.c location]`. Same line count (4 changes).
+
+- **Commit 6 (`b1c28ad5faf`)**: The `efi_mem_sort()` function had been refactored: the data structure changed from `struct efi_mem_list` (with nested `desc` field) to `struct mem_node` (flat structure with `base`, `type`, `attribute` directly). Adapted the patch to use the new struct/field names. Note added: `[sjg: adapted to refactored mem_node struct]`. Delta: 44 vs 47 lines (~6% smaller, well within tolerance).
+
+- **Commit 7 (merge `8399b039b03`)**: All 6 individual commits from the merged branch were already cherry-picked, so the merge would re-apply already-present changes with conflicts. Used `--strategy=ours` to produce an empty commit, preserving the merge commit message for history tracking.
+
+**Concerning deltas:** None. All deltas were within tolerance and explained by upstream refactoring.
+
+The branch is left checked out and ready for pushing.
+
+---
+
+### Review: 2026-05-08
+
+Branch: cherry-28980318032
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match exactly. Now let me run the build to verify.
+
+Build passed. Now create the v2 branch and push.
+
+Push successful. Let me provide the final report.
+
+## Summary
+
+**Rebase of MR !1084 (cherry-28980318032) onto ci/master: SUCCESS**
+
+### Actions taken
+1. Checked out `cherry-28980318032`
+2. Rebased onto `ci/master` (was 21 commits behind) using `git rebase --keep-empty ci/master`
+3. Resolved one conflict in `.pickman-history` — both branches had added entries under the same date heading (`## 2026-05-08: us/master`); merged by keeping both entries with a `---` separator
+4. Verified all 7 commit deltas are byte-identical to pre-rebase state
+5. Merge commit `1c0319489cf` (was `62535b79a8c`) preserved as empty via `--keep-empty`
+6. Build passed: `buildman -L --board sandbox -w -o /tmp/pickman` (1 board, 0:00:12)
+7. Created local branch `cherry-28980318032-v2`
+8. Force-pushed to `ci/cherry-28980318032`
+
+### New commit hashes (post-rebase)
+| # | New | Old | Title |
+|---|---|---|---|
+| 1 | `73987d217a0` | `4b0847f6359` | efi_loader: initialize variables in efi_dp_from_http() |
+| 2 | `21c96484701` | `fba14e9c4e6` | cmd: eficonfig: adjust struct eficonfig_entry, field key |
+| 3 | `6cf642f36de` | `979c8c5c017` | lmb: allocation flags macro documentation |
+| 4 | `1c0a3875d26` | `0948a0ec6e8` | efi_dt_fixup: use fdtdec_get_bool |
+| 5 | `297679c9323` | `3281c08fd0f` | efi_selftest_memory: check for duplicates first |
+| 6 | `0d716c1ec97` | `cf9bae9412c` | efi_mem_sort: use list_for_each_entry_safe instead |
+| 7 | `1c0319489cf` | `62535b79a8c` | Merge tag 'efi-2026-07-rc2-2' (empty merge, preserved) |
+| — | `e6509c5a9a2` | `fde7a7d1ad0` | pickman: Record cherry-pick of 7 commits from us/master |
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (21 commits ahead of previous base). One conflict resolved in `.pickman-history` — a parallel cherry-pick MR (cherry-e86d1c0b883) had added an entry under the same date heading; merged both entries with a separator, no functional impact. All 7 commit deltas are byte-identical to pre-rebase state (same files, same line counts). Empty merge commit preserved via `--keep-empty`. Sandbox build passes. Local branch saved as `cherry-28980318032-v2`.
+
+---
+
+### Review: 2026-05-08
+
+Branch: cherry-28980318032
+
+Comments addressed:
+
+
+### Conversation log
+I need to resolve this by keeping both entries with a separator.
+
+The remaining matches are inside backticks within historical log content, not actual conflict markers. Now let me continue the rebase.
+
+Now let me verify the deltas match the pre-rebase versions.
+
+All commit deltas are byte-identical except for the pickman-history file commit which lost 2 lines due to merging with the parallel entry (expected). Now let me build:
+
+Build passed. Now create the local branch and push.
+
+## Summary
+
+**Rebase of MR !1084 (cherry-28980318032) onto ci/master: SUCCESS**
+
+### Actions taken
+
+1. Checked out `cherry-28980318032`
+2. Saved pre-rebase deltas for all 9 commits for verification
+3. Rebased onto `ci/master` (4 commits behind) using `git rebase --keep-empty ci/master`
+4. Resolved one conflict in `.pickman-history` — the parallel cherry-pick (`cherry-de79075f0f6`, also dated `2026-05-08: us/master`) had landed on `ci/master` and its entry was under the same date heading. Kept both entries with a `---` separator between them, no functional code impact
+5. Verified all 7 functional commits + the empty merge commit have byte-identical deltas to pre-rebase state. The `pickman: Record cherry-pick of 7 commits` commit is 62 vs 64 lines (2-line difference from merging with the existing date heading and separator — expected)
+6. Build passed: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0:00:12, no warnings/errors
+7. Created local branch `cherry-28980318032-v3` (v2 already existed from a prior rebase)
+8. Force-pushed to `ci/cherry-28980318032`
+
+### New commit hashes (post-rebase)
+| # | New | Old | Title |
+|---|---|---|---|
+| 1 | `e9682c13edf` | `73987d217a0` | efi_loader: initialize variables in efi_dp_from_http() |
+| 2 | `63b1d3b333a` | `21c96484701` | cmd: eficonfig: adjust struct eficonfig_entry, field key |
+| 3 | `8b6f6bd9512` | `6cf642f36de` | lmb: allocation flags macro documentation |
+| 4 | `c816c774ae3` | `1c0a3875d26` | efi_dt_fixup: use fdtdec_get_bool |
+| 5 | `e98d396ec4f` | `297679c9323` | efi_selftest_memory: check for duplicates first |
+| 6 | `600dd035fc9` | `0d716c1ec97` | efi_mem_sort: use list_for_each_entry_safe instead |
+| 7 | `26ce70b0fff` | `1c0319489cf` | Merge tag 'efi-2026-07-rc2-2' (empty merge, preserved) |
+| — | `14a3d37c2eb` | `e6509c5a9a2` | pickman: Record cherry-pick of 7 commits from us/master |
+| — | `4be01691821` | `149846719f8` | pickman: Record review handling for cherry-28980318032 |
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (4 commits ahead of previous base). One conflict resolved in `.pickman-history` — a parallel cherry-pick MR (`cherry-de79075f0f6`) had also added an entry under the same `## 2026-05-08: us/master` date heading; merged both entries with a `---` separator, no functional impact. All 7 functional commit deltas (including the empty merge commit) are byte-identical to pre-rebase state. Sandbox build passes. Local branch saved as `cherry-28980318032-v3`.
+
+---
+
