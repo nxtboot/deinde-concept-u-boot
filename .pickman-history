@@ -80672,3 +80672,56 @@ The branch `cherry-d0abd8b4c51` is ready for pushing.
 
 ---
 
+## 2026-05-07: us/master
+
+Branch: cherry-2c34e32b9b6
+
+Commits:
+- 2c34e32b9b6 configs: apalis-imx8: Enable EFI
+- 6912d619091 configs: aquila-am69: Enable EFI related options
+- 398fca82ae3 configs: colibri-imx8x: Enable EFI
+- 1bd90ebe2ce configs: toradex-smarc-imx8mp: Enable EFI related options
+- 1dda05fe997 configs: toradex-smarc-imx95: Enable EFI related options
+- 3a304e7347a configs: verdin-am62: Enable EFI related options
+- 1327724ffdb configs: verdin-am62p: Enable EFI related options
+- 9f5c862ecca configs: verdin-imx8mm: Enable EFI related options
+- d52f67197bb configs: verdin-imx8mp: Enable EFI related options
+- a97668cd8bb configs: verdin-imx95: Enable EFI related options
+- d5f178c9a0d Merge patch series "configs: toradex: Enable EFI"
+
+### Conversation log
+Build passed. Continuing with the next commits.
+
+All 11 commits are present. Now let's run the final build test.
+
+Build passed successfully.
+
+## Final Status Report
+
+**Build result:** OK — sandbox built cleanly with no warnings or errors.
+
+**All 11 commits present** on branch `cherry-2c34e32b9b6`:
+
+| # | Hash | Status | Subject |
+|---|------|--------|---------|
+| 1 | 953ccded863 | ✓ clean | configs: apalis-imx8: Enable EFI |
+| 2 | 2c511ea62c3 | **[FAILED]** empty | configs: aquila-am69: Enable EFI related options |
+| 3 | d53c043b395 | ✓ clean | configs: colibri-imx8x: Enable EFI |
+| 4 | 2994d07458e | ✓ clean | configs: toradex-smarc-imx8mp |
+| 5 | 5ad015844ee | ✓ clean | configs: toradex-smarc-imx95 |
+| 6 | 6a85384586f | ✓ clean | configs: verdin-am62 |
+| 7 | 52118aea96f | ✓ clean | configs: verdin-am62p |
+| 8 | e33122c0d2a | ✓ clean | configs: verdin-imx8mm |
+| 9 | 1855f8c6028 | ✓ clean | configs: verdin-imx8mp |
+| 10 | faacbe03029 | ✓ clean | configs: verdin-imx95 |
+| 11 | 17e61665f30 | empty merge | Merge patch series "configs: toradex: Enable EFI" |
+
+**Fix-ups / concerns:**
+
+- **Commit 2 (aquila-am69)** — The target file `configs/aquila-am69_a72_defconfig` does not exist in `ci/master` (the `aquila-am69` board was never landed on this tree; commit `3f0528882c0` that adds it is not in `ci/master`). Cherry-pick produced a `modify/delete` conflict. Recorded as an empty `[FAILED]` commit to preserve sequence, with a note in the message body explaining why.
+- **Commit 11 (merge commit)** — Same conflict surfaced (the merge re-touches the missing aquila defconfig). Resolved by `git rm`-ing the absent file; the resulting cherry-pick was empty, so committed with `--allow-empty` and a note in the message body that the aquila sub-commit was dropped.
+
+All other 9 commits applied cleanly with stats matching the originals (1 file changed, ~2 insertions/1 deletion each). Branch is left checked out at `cherry-2c34e32b9b6` ready for pushing; not merged anywhere.
+
+---
+
