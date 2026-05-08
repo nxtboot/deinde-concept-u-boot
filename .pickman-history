@@ -80820,3 +80820,72 @@ The branch `cherry-7c3945a2317` is ready for pushing.
 
 ---
 
+## 2026-05-08: us/master
+
+Branch: cherry-34127dff316
+
+Commits:
+- 34127dff316 powerpc: fix dead default for SYS_L3_SIZE
+- 33ff22c0b16 arm: layerscape: Check zero size memory bank before lmb_add
+- 5a0343350a1 arm: dts: fsl-ls1088a-qds: Fix missed -u-boot.dtsi
+- 8e33f7ac909 arm: dts: fsl-ls1088a: Set dpmac nodes default to disabled
+- 5fadfd623af arm: dts: fsl-ls1088a: Enable SD device
+- d47f02d9ca0 arm: dts: fsl-ls1088a: Enable USB nodes
+- 8c60833124c arm: dts: layerscape: Fix DT build warning in SPI nodes
+- aedaa8250b1 arm: dts: layerscape: Fix SPI flash compatible string issue
+- d360217d4a3 arm: gpio: include integer type definitions for gpio.h
+- 024c3e86eaa board: ten64: add fdt fixup to hide usb hub topology
+- 3b5f6b62b05 board: ten64: remove USB hub references from internal FDT when needed
+- 327ac9cc802 configs: ten64: enable OF_BOARD_FIXUP
+- 6cdd17aed50 configs: ten64: enable USB_ONBOARD_HUB (USB5744) option
+- 9bcbb5f2684 configs: ten64: switch to OF_UPSTREAM
+- e7e0cd82b76 arm: dts: remove local copy of Ten64 board DTS
+- dea09737234 configs: ten64: add USB start to preboot
+- ffdce9d3fbd Merge tag 'fsl-qoriq-for-2026.07-rc2' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+All 17 commits are present. Now run final build test.
+
+## Cherry-Pick Report
+
+**Branch:** `cherry-34127dff316` (based on `ci/master`)
+
+### Summary
+All 17 commits were successfully cherry-picked from `us/master`. All builds passed cleanly throughout the process.
+
+### Commits Applied (in order)
+1. `b119715b930` powerpc: fix dead default for SYS_L3_SIZE
+2. `4afd0ba956f` arm: layerscape: Check zero size memory bank before lmb_add
+3. `438a36fbadf` arm: dts: fsl-ls1088a-qds: Fix missed -u-boot.dtsi
+4. `5697861011d` arm: dts: fsl-ls1088a: Set dpmac nodes default to disabled
+5. `2c11b67ed19` arm: dts: fsl-ls1088a: Enable SD device
+6. `84762226b8c` arm: dts: fsl-ls1088a: Enable USB nodes
+7. `c87425ab446` arm: dts: layerscape: Fix DT build warning in SPI nodes
+8. `ab085d37a7c` arm: dts: layerscape: Fix SPI flash compatible string issue
+9. `579ca621faa` arm: gpio: include integer type definitions for gpio.h
+10. `d9d6df3a778` board: ten64: add fdt fixup to hide usb hub topology
+11. `ef68b2ac189` board: ten64: remove USB hub references from internal FDT when needed
+12. `b57a9d52c83` configs: ten64: enable OF_BOARD_FIXUP
+13. `b7fba6d36dd` configs: ten64: enable USB_ONBOARD_HUB (USB5744) option
+14. `b351cf2cbbd` configs: ten64: switch to OF_UPSTREAM
+15. `0b672069ea1` arm: dts: remove local copy of Ten64 board DTS
+16. `e04242d6a38` configs: ten64: add USB start to preboot
+17. `4bfe4ec99da` Merge tag 'fsl-qoriq-for-2026.07-rc2' (empty merge)
+
+### Build Results
+- **Final build:** OK (sandbox built successfully, no warnings/errors)
+- All intermediate builds during cherry-picking passed cleanly
+
+### Fix-ups Made
+None — all cherry-picks applied cleanly. Two had auto-merges (commits 2 and 17) but no manual conflict resolution was required.
+
+### Concerning Deltas
+None — all delta comparisons matched the originals exactly (same files, same line counts).
+
+### Notes
+- The merge commit (`ffdce9d3fbd`) became empty as expected since all of its content was already cherry-picked individually. It was preserved with `--allow-empty` to maintain history.
+
+Branch is left ready for pushing.
+
+---
+
