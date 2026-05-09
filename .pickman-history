@@ -81286,3 +81286,47 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-09 (attempt 1)
+
+Branch: cherry-301bad079b1
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- coral (sjg-lab)
+
+### Conversation log
+Let me confirm both failures are unrelated to the at91 cherry-pick by checking what the change actually touches and validating builds.
+
+## Report
+
+**Branch created**: `cherry-301bad079b1-fix1` (identical to `cherry-301bad079b1` — no code changes made).
+
+### What this MR contains
+Only two commits on top of `ci/master`:
+1. `7282e2ffc3c` — `arm: at91: Drop unnecessary BOARD_EARLY_INIT_F usage` — touches only `arch/arm/mach-at91/`, `board/atmel/*`, `board/ronetix/pm926*`, and two `pm926*_defconfig` files.
+2. `60cd904c41f` — empty merge of `u-boot-at91-fixes-2026.07-a`.
+
+No file outside the at91 subtree (or `.pickman-history`) is modified.
+
+### Job 512475: efi-x86_64-uboot-iso-install — infrastructure failure
+```
+qemu-system-x86_64: -device virtio-blk-pci,drive=installdisk,addr=0x4: Failed to get "write" lock
+Is another process using the image [/tmp/ubuntu-uboot-install-target.img]?
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+A concurrent QEMU process held the write lock on the shared install-target disk image. The job itself classifies this as a "Lab failure". It is an environmental/infrastructure issue, not caused by this MR (and would not be reproducible by code changes — especially not by an at91-only patch).
+
+### Job 512452: coral — unrelated pre-existing test failure
+```
+test/py/tests/test_dm.py:20: in test_dm_compat
+    assert not bad_drivers
+E   AssertionError: assert not {'lic'}
+```
+`test_dm_compat` checks that every driver shown by `dm tree` also appears in `dm compat` on a chromebook_coral device. The MR does not touch any code that runs on x86/coral (no x86 sources, no driver-model code, no test code, no `dm` command code). The `dm tree` printing format last changed in `2d76e724b41` (already in `ci/master`, before our base `fa6dc081e10`). The failing 'lic' token is the `line[26:].split()[0]` extraction from a row whose driver column is misaligned on coral (likely a pre-existing alignment/seq-formatting issue on that hardware) — independent of anything in this branch.
+
+### Conclusion
+Both failures are infrastructure / pre-existing test issues, not regressions introduced by the at91 cherry-pick. **No code changes made.** Branch `cherry-301bad079b1-fix1` is left at the same commit as `cherry-301bad079b1`. Recommend retrying the pipeline (or kicking the lab) rather than amending commits.
+
+---
+
