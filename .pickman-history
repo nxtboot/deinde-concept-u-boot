@@ -81330,3 +81330,21 @@ Both failures are infrastructure / pre-existing test issues, not regressions int
 
 ---
 
+
+### Pipeline fix: 2026-05-09 (attempt 2)
+
+Branch: cherry-301bad079b1
+
+Re-triggered review of the same pipeline failures from attempt 1
+(efi-x86_64-uboot-iso-install, coral). Re-confirmed analysis: branch
+touches only at91 sources (arch/arm/mach-at91, board/atmel/*,
+board/ronetix/pm926*, two pm926*_defconfig files); cannot regress
+x86 EFI install or coral chromebook tests.
+
+Sandbox build re-verified: OK.
+
+No code changes. Local branch `cherry-301bad079b1-v2` created on top
+of fix1 to record this second attempt's history. Force-pushed to
+remote `cherry-301bad079b1` to retrigger pipeline.
+
+---
