@@ -81249,3 +81249,40 @@ The local v2 branch SHA (`75f4ea264af`) matches the remote SHA exactly. A force-
 
 ---
 
+Branch: cherry-301bad079b1
+
+Commits:
+- 301bad079b1 arm: at91: Drop unnecessary BOARD_EARLY_INIT_F usage
+- 22a285380e3 Merge tag 'u-boot-at91-fixes-2026.07-a' of https://source.denx.de/u-boot/custodians/u-boot-at91
+
+### Conversation log
+Stats match exactly. Now build test.
+
+Build passed. Now cherry-pick the merge commit.
+
+Merge commit applied empty as expected. Now verify branch and final build.
+
+All cherry-picks completed successfully.
+
+## Final Status Report
+
+**Branch**: `cherry-301bad079b1` (based on `ci/master`)
+
+**Commits cherry-picked** (2/2):
+1. `7282e2ffc3c` - arm: at91: Drop unnecessary BOARD_EARLY_INIT_F usage
+   - Original: `301bad079b1`
+   - Stats: 27 files changed, 2 insertions(+), 171 deletions(-) — **identical to original**
+2. `60cd904c41f` - Merge tag 'u-boot-at91-fixes-2026.07-a' (empty merge commit)
+   - Original: `22a285380e3`
+   - Empty commit preserved with `--allow-empty` (the merged content was already in the first commit)
+
+**Build result**: OK — sandbox build passed both after the first cherry-pick and after all cherry-picks.
+
+**Fix-ups**: None. No conflicts, no manual interventions needed.
+
+**Concerning deltas**: None. First commit's stats match the original exactly. Merge commit was empty as expected (its content is the at91 fixes already applied in commit 1).
+
+The branch is ready for pushing.
+
+---
+
