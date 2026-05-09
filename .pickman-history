@@ -81142,3 +81142,70 @@ Build passed. Now create the local branch and push.
 
 ---
 
+## 2026-05-09: us/master
+
+Branch: cherry-26b17dbdb0f
+
+Commits:
+- 26b17dbdb0f Makefile: remove block from conv=block, sync in SPL alignment dd
+- 0a31d3128ee lib: fdtdec: validate bloblist FDT before consuming libfdt size
+- 55b152e6f02 boot: image-fit.c: check target, not source, for 8-byte alignment when loading FDT
+- 18806dae0e6 virtio: fix boot device hunting in qemu with virtio
+- 28eed2103cc test: fit: Use shared make_fname from fit_util
+- ebe2af6cd8a usb: gadget: Correct dependencies for USB_RENESAS_USBHS
+- 93f96c7d8da reset: Correct dependencies for RESET_RZG2L_USBPHY_CTRL
+- 50404101022 usb: Correct dependencies around USB_EMUL
+- cc8195b13b1 usb: dwc3: Fix crash on fastboot exit due to incorrect memory free
+- 0dcb892fea5 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+The merge commit 0dcb892fea5 is already applied as 734e21e3b81 (with pickman wrapping). Let me now cherry-pick each commit in order.
+
+Stats match. Let me continue with the next commit.
+
+Let me look at the original commit and the current state:
+
+The same code structure exists, just in a different function. Let me apply the change manually:
+
+Let me try using sed instead:
+
+Let me look at the current file state to understand the context better:
+
+Let me apply the changes manually using sed:
+
+Now let me commit this as a manually-applied cherry-pick:
+
+Now the merge commit. Since it's already verified as already applied (as 734e21e3b81), I'll skip cherry-picking it but create an empty commit to preserve sequence:
+
+All 10 commits are now present. Let me also amend the merge commit's message to add a note about the empty cherry-pick:
+
+Now let me run the build:
+
+Build passed. Let me verify the cherry-picked commits' deltas are sensible:
+
+All 10 commits are in place. Final summary:
+
+## Cherry-pick Summary
+
+Branch `cherry-26b17dbdb0f` based on `ci/master`. All 10 commits applied successfully.
+
+**Build result:** ✅ Sandbox build passed (1/1 boards built, no warnings or errors)
+
+**Commits applied:**
+1. `2e4f37f53ea` - Makefile: remove block from conv=block (clean)
+2. `fb5056f5139` - lib: fdtdec validate bloblist FDT (clean auto-merge)
+3. `bb75315870a` - image-fit.c: 8-byte alignment fix (**manually applied** — code moved to `decomp_image()` in our tree; same one-line change)
+4. `ac4d8cc8647` - virtio: fix boot device hunting (clean auto-merge)
+5. `7769ea4f1db` - test: fit: use shared make_fname (**manually applied** — local tree extracted filename vars to local variables, so the dict-based replacements didn't apply directly; instead removed the `make_fname` method and replaced all 7 `self.make_fname(...)` call sites with `fit_util.make_fname(...)`)
+6. `c15bfc86980` - usb: gadget: USB_RENESAS_USBHS deps (clean)
+7. `a01a52df13f` - reset: RESET_RZG2L_USBPHY_CTRL deps (clean)
+8. `e83a4ab3a14` - usb: USB_EMUL deps (clean)
+9. `715b9a95c17` - usb: dwc3 fastboot crash fix (clean)
+10. `b7b97c8b270` - Merge branch 'master' of u-boot-usb (empty merge commit; original was already in ci/master as `734e21e3b81` via pickman's prior pass — preserved with `--allow-empty -C` to retain history)
+
+**Fix-up notes added** to commits 3 and 5 documenting why manual application was needed.
+
+**No concerning deltas** — all commits matched their originals in line counts and files modified.
+
+---
+
