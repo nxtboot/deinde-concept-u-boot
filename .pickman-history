@@ -81209,3 +81209,43 @@ Branch `cherry-26b17dbdb0f` based on `ci/master`. All 10 commits applied success
 
 ---
 
+### Review: 2026-05-09
+
+Branch: cherry-26b17dbdb0f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, efi-x86_64-uboot-iso, ro...
+
+### Conversation log
+## Report: No code changes needed — duplicate of attempt 1
+
+### Situation
+The "review comment" for this MR is the bot's own report from the prior pipeline-fix attempt 1 (comment 44351, posted at 2026-05-09T19:26:52Z). There are **no new, unresolved review comments** from a human reviewer.
+
+### Current pipeline state
+Pipeline 7851 (the latest pipeline for `cherry-26b17dbdb0f`) is **still running** — no failed jobs yet. The 11 jobs currently in `running` state are all sandbox build/test stages and `Check make check`/`qcheck`. No new failure data exists to act on.
+
+### Branch state
+- Local `cherry-26b17dbdb0f` is at `75f4ea264af`
+- Remote `ci/cherry-26b17dbdb0f` is at `75f4ea264af`
+- Previous fix branch `cherry-26b17dbdb0f-fix1` was also identical (no code changes — concluded infrastructure issues)
+- New branch `cherry-26b17dbdb0f-v2` created, also at `75f4ea264af` (identical)
+
+### Build verification
+- `buildman -L --board sandbox -w -o /tmp/pickman` — **passed** (1/1 built, no warnings)
+
+### Why no force-push
+The local v2 branch SHA (`75f4ea264af`) matches the remote SHA exactly. A force-push would either be a no-op or — if interpreted as a branch update — trigger an unnecessary duplicate pipeline while pipeline 7851 is still running. The previous fix1 attempt already concluded these jobs (`rockpro64`, `efi-x86_64-uboot-iso`, `efi-x86_64-uboot-iso-install`) failed due to lab/infrastructure issues outside the cherry-picked commits' surface area.
+
+### Suggested MR reply
+
+> Pipeline fix (attempt 2): no code changes — same conclusion as attempt 1.
+>
+> The "review comment" being addressed is my own prior report, not new reviewer feedback. The current pipeline (#7851) on the unchanged branch is still running with no failed jobs yet visible. Sandbox build verified clean locally.
+>
+> The previously-failing jobs (`rockpro64`, `efi-x86_64-uboot-iso`, `efi-x86_64-uboot-iso-install`) were determined in attempt 1 to be lab/infrastructure issues (zero-size `atf-5` from lab-side binman, lab connection timeout, kernel rootfs UUID mismatch) — none of which the 10 cherry-picked commits can cause. Awaiting pipeline 7851 completion to confirm.
+>
+> Branch `cherry-26b17dbdb0f-v2` left at `75f4ea264af` (same SHA as remote); no force-push performed to avoid disrupting the in-flight pipeline.
+
+---
+
