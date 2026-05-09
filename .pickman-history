@@ -81348,3 +81348,45 @@ of fix1 to record this second attempt's history. Force-pushed to
 remote `cherry-301bad079b1` to retrigger pipeline.
 
 ---
+### Review: 2026-05-09
+
+Branch: cherry-301bad079b1
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, coral.
+
+Let me confirm b...
+
+### Conversation log
+Build passes. Now let me check the pipeline state and verify nothing has changed since attempt 1.
+
+The build passes. Since this is the same review comment (a re-trigger of the same pipeline analysis) and the branch only contains at91-specific changes which cannot regress x86 EFI install or coral chromebook tests, no code changes are warranted. Let me create the v2 branch with an updated history entry.
+
+Build OK. Now push to update the MR.
+
+Push successful. The MR pipeline will be retriggered automatically.
+
+## Report
+
+**Branch updated**: `cherry-301bad079b1-v2` (force-pushed to remote `cherry-301bad079b1`).
+
+### What changed
+Only one new commit on top of attempt-1's branch:
+- `c2cd165e1c1` — `pickman: Record pipeline fix attempt 2 for cherry-301bad079b1` (history-only, no source changes).
+
+### Analysis (re-confirmed from attempt 1)
+The review comment is the same pipeline-failure check as attempt 1, with no new failure data. The previous analysis still holds:
+
+- **Job: efi-x86_64-uboot-iso-install** — qemu-system-x86_64 hit a write-lock conflict on the shared `/tmp/ubuntu-uboot-install-target.img` file (concurrent QEMU process). Lab classifies this as a "Lab failure" — environmental, not caused by code.
+- **Job: coral** — `test_dm_compat` AssertionError on `'lic'` token. The MR doesn't touch x86, driver-model, dm command code, or test code; the failing `line[26:].split()[0]` parse looks like a pre-existing column-alignment issue on the coral hardware in `dm tree` output (format last changed in `2d76e724b41`, already in `ci/master` before our base).
+
+This MR's two functional commits touch only `arch/arm/mach-at91/`, `board/atmel/*`, `board/ronetix/pm926*`, and two `pm926*_defconfig` files — physically incapable of regressing x86 EFI install or coral chromebook tests.
+
+**Build**: sandbox build re-verified OK with buildman.
+
+### Suggested MR reply
+
+> Pipeline fix attempt 2: re-confirmed both failing jobs are unrelated to this MR. The branch touches only at91 sources (`arch/arm/mach-at91/`, `board/atmel/*`, `board/ronetix/pm926*`, two `pm926*_defconfig` files) — it cannot regress x86 EFI-install or coral chromebook tests. The `efi-x86_64-uboot-iso-install` failure is a "Lab failure" (concurrent QEMU holding the write lock on the shared install-target image); the `coral` failure is a pre-existing `test_dm_compat` parse issue on `dm tree` output (format last changed in `2d76e724b41`, already in `ci/master` pre-base). No code changes; sandbox build still passes. Local branch saved as `cherry-301bad079b1-v2`. Recommending another pipeline retry rather than further amendments.
+
+---
+
