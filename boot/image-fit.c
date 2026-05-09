@@ -1978,7 +1978,7 @@ int decomp_image(const void *fit, int noffset, const char *prop_name,
 		}
 		size = load_end - load;
 	} else if (load_op != FIT_LOAD_IGNORED && image_type == IH_TYPE_FLATDT &&
-		   ((uintptr_t)buf & 7)) {
+		   (load & 7)) {
 		loadbuf = aligned_alloc(8, size);
 		load = map_to_sysmem(loadbuf);
 		memcpy(loadbuf, buf, size);

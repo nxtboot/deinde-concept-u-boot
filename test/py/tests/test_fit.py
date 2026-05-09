@@ -146,18 +146,6 @@ class TestFitImage:
         with utils.preserve_bootstage(ubman):
             yield
 
-    def make_fname(self, ubman, leaf):
-        """Make a temporary filename
-
-        Args:
-            ubman (ConsoleBase): U-Boot fixture
-            leaf (str): Leaf name of file to create (within temporary directory)
-
-        Return:
-            str: Temporary filename
-        """
-        return os.path.join(ubman.config.build_dir, leaf)
-
     def filesize(self, fname):
         """Get the size of a file
 
@@ -187,7 +175,7 @@ class TestFitImage:
         Returns:
             str: Filename of ramdisk created
         """
-        fname = self.make_fname(ubman, filename)
+        fname = fit_util.make_fname(ubman, filename)
         data = ''
         for i in range(100):
             data += f'{text} {i} was seldom used in the middle ages\n'
@@ -300,12 +288,12 @@ class TestFitImage:
         ramdisk = self.make_ramdisk(ubman, 'test-ramdisk.bin', 'ramdisk')
         loadables1 = fit_util.make_kernel(ubman, 'test-loadables1.bin', 'lenrek')
         loadables2 = self.make_ramdisk(ubman, 'test-loadables2.bin', 'ksidmar')
-        kernel_out = self.make_fname(ubman, 'kernel-out.bin')
-        fdt = self.make_fname(ubman, 'u-boot.dtb')
-        fdt_out = self.make_fname(ubman, 'fdt-out.dtb')
-        ramdisk_out = self.make_fname(ubman, 'ramdisk-out.bin')
-        loadables1_out = self.make_fname(ubman, 'loadables1-out.bin')
-        loadables2_out = self.make_fname(ubman, 'loadables2-out.bin')
+        kernel_out = fit_util.make_fname(ubman, 'kernel-out.bin')
+        fdt = fit_util.make_fname(ubman, 'u-boot.dtb')
+        fdt_out = fit_util.make_fname(ubman, 'fdt-out.dtb')
+        ramdisk_out = fit_util.make_fname(ubman, 'ramdisk-out.bin')
+        loadables1_out = fit_util.make_fname(ubman, 'loadables1-out.bin')
+        loadables2_out = fit_util.make_fname(ubman, 'loadables2-out.bin')
 
         # Set up basic parameters with default values
         params = {
