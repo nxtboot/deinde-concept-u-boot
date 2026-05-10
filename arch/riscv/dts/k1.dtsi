@@ -5,7 +5,6 @@
  */
 
 #include <dt-bindings/clock/spacemit,k1-syscon.h>
-#include <dt-bindings/reset/spacemit-k1-reset.h>
 
 /dts-v1/;
 / {
