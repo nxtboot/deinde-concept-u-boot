@@ -13,6 +13,7 @@
 #include <dm/lists.h>
 #include <regmap.h>
 #include <linux/clk-provider.h>
+#include <soc/spacemit/k1-reset.h>
 #include <soc/spacemit/k1-syscon.h>
 
 #include "clk_common.h"
@@ -1710,6 +1711,26 @@ U_BOOT_DRIVER(k1_pll_clk) = {
 	.flags		= DM_FLAG_PRE_RELOC,
 };
 
+static int k1_mpmu_clk_bind(struct udevice *dev)
+{
+	return spacemit_k1_reset_bind(dev, SPACEMIT_K1_RESET_MPMU);
+}
+
+static int k1_apbc_clk_bind(struct udevice *dev)
+{
+	return spacemit_k1_reset_bind(dev, SPACEMIT_K1_RESET_APBC);
+}
+
+static int k1_apmu_clk_bind(struct udevice *dev)
+{
+	return spacemit_k1_reset_bind(dev, SPACEMIT_K1_RESET_APMU);
+}
+
+static int k1_apbc2_clk_bind(struct udevice *dev)
+{
+	return spacemit_k1_reset_bind(dev, SPACEMIT_K1_RESET_APBC2);
+}
+
 static const struct udevice_id k1_mpmu_clk_match[] = {
 	{ .compatible = "spacemit,k1-syscon-mpmu",
 	  .data = (ulong)&k1_ccu_mpmu_data },
@@ -1722,6 +1743,7 @@ U_BOOT_DRIVER(k1_mpmu_clk) = {
 	.name		= "k1_mpmu_clk",
 	.id		= UCLASS_CLK,
 	.of_match	= k1_mpmu_clk_match,
+	.bind		= k1_mpmu_clk_bind,
 	.probe		= k1_clk_probe,
 	.ops		= &k1_mpmu_clk_ops,
 	.flags		= DM_FLAG_PRE_RELOC,
@@ -1739,6 +1761,7 @@ U_BOOT_DRIVER(k1_apbc_clk) = {
 	.name		= "k1_apbc_clk",
 	.id		= UCLASS_CLK,
 	.of_match	= k1_apbc_clk_match,
+	.bind		= k1_apbc_clk_bind,
 	.probe		= k1_apbc_clk_probe,
 	.ops		= &k1_apbc_clk_ops,
 	.flags		= DM_FLAG_PRE_RELOC,
@@ -1756,6 +1779,7 @@ U_BOOT_DRIVER(k1_apmu_clk) = {
 	.name		= "k1_apmu_clk",
 	.id		= UCLASS_CLK,
 	.of_match	= k1_apmu_clk_match,
+	.bind		= k1_apmu_clk_bind,
 	.probe		= k1_clk_probe,
 	.ops		= &k1_apmu_clk_ops,
 	.flags		= DM_FLAG_PRE_RELOC,
@@ -1794,5 +1818,6 @@ U_BOOT_DRIVER(k1_apbc2_clk) = {
 	.name		= "k1_apbc2_clk",
 	.id		= UCLASS_CLK,
 	.of_match	= k1_apbc2_clk_match,
+	.bind		= k1_apbc2_clk_bind,
 	.flags		= DM_FLAG_PRE_RELOC,
 };
