@@ -45,6 +45,17 @@ extern int strncmp(const char *,const char *,__kernel_size_t);
 #endif
 int strcasecmp(const char *s1, const char *s2);
 int strncasecmp(const char *s1, const char *s2, __kernel_size_t len);
+
+/**
+ * strlower() - Lower-case an ASCII string in place
+ * @s: The string to convert
+ *
+ * Walks @s and replaces each character with its lower-case equivalent.
+ * Returns @s so the call can be chained, e.g. ``foo(strlower(buf))``.
+ *
+ * Return: @s.
+ */
+char *strlower(char *s);
 #ifndef __HAVE_ARCH_STRCHR
 extern char * strchr(const char *,int);
 #endif
