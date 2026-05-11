@@ -128,6 +128,9 @@ int riscv_cpu_setup(void)
 {
 	int __maybe_unused ret;
 
+	if (!CONFIG_IS_ENABLED(CPU))
+		return 0;
+
 	/* Enable FPU */
 	if (supports_extension('d') || supports_extension('f')) {
 		csr_set(MODE_PREFIX(status), MSTATUS_FS);
