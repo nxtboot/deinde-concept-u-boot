@@ -81390,3 +81390,47 @@ This MR's two functional commits touch only `arch/arm/mach-at91/`, `board/atmel/
 
 ---
 
+## 2026-05-11: us/master
+
+Branch: cherry-3d09ec64eba
+
+Commits:
+- 3d09ec64eba acpi: fix initial RSDT and XSDT size
+- 49fc812eb43 patman: fix use in worktree
+- 4dc8f10edf9 binman: Flesh out the p11-kit bintool docstring
+- 40c94fbf62b binman: Flesh out the pkcs11-tool bintool docstring
+- 44f9ccfdad4 binman: Flesh out the softhsm2-util bintool docstring
+- 08bcf962c5f binman: Use bintool wrappers for PKCS#11 tools in tests
+- 07316f1fe7a Merge tag 'dm-pull-11may26b' of git://git.denx.de/u-boot-dm
+
+### Conversation log
+Delta matches. Let's run the build test.
+
+Now the merge commit:
+
+All 7 commits present. Final build test:
+
+## Final Status Report
+
+**All 7 commits successfully cherry-picked onto branch `cherry-3d09ec64eba` (based on `ci/master`):**
+
+| New hash | Original | Subject |
+|----------|----------|---------|
+| `7717c458240` | `3d09ec64eba` | acpi: fix initial RSDT and XSDT size |
+| `a2402fb32d5` | `49fc812eb43` | patman: fix use in worktree |
+| `73190d2b975` | `4dc8f10edf9` | binman: Flesh out the p11-kit bintool docstring |
+| `e049d176d63` | `40c94fbf62b` | binman: Flesh out the pkcs11-tool bintool docstring |
+| `3ba168b9f40` | `44f9ccfdad4` | binman: Flesh out the softhsm2-util bintool docstring |
+| `6712381d03a` | `08bcf962c5f` | binman: Use bintool wrappers for PKCS#11 tools in tests |
+| `f56256122a0` | `07316f1fe7a` | Merge tag 'dm-pull-11may26b' (empty merge commit) |
+
+**Build result:** OK — final `buildman` sandbox build completed cleanly (1 total built, no warnings/errors) after every cherry-pick and at the end.
+
+**Deltas:** Every non-merge cherry-pick produced identical file lists and line counts to the original commit. No concerning deltas.
+
+**Fix-ups:** None needed. Auto-merge resolved minor context overlaps automatically (lib/acpi/base.c, test/dm/acpi.c, tools/patman/cser_helper.py, tools/patman/cseries.py, tools/binman/ftest.py). The merge commit `07316f1fe7a` produced an empty diff (all content already applied via the individual picks) and was preserved with `--allow-empty` to retain the merge history message.
+
+Branch left ready for pushing; not merged anywhere.
+
+---
+
