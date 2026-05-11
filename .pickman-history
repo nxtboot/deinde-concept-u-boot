@@ -81434,3 +81434,40 @@ Branch left ready for pushing; not merged anywhere.
 
 ---
 
+## 2026-05-11: us/master
+
+Branch: cherry-5732bd0f457
+
+Commits:
+- 5732bd0f457 Prepare v2026.07-rc2
+
+### Conversation log
+The conflict is in the Makefile because ci/master is at v2026.04 while the commit assumes a v2026.07-rc1 baseline. I'll resolve by applying the commit's intended state (v2026.07-rc2):
+
+Now I need to amend the commit message with a note about the fix-up:
+
+Now let me verify the delta against the original:
+
+Delta is reasonable (4 vs 3 line changes, same files). Now let me build test:
+
+Build passed. Final verification:
+
+All steps complete. Final status:
+
+**Cherry-pick Summary**
+- Branch: `cherry-5732bd0f457` (based on `ci/master`)
+- Commits picked: 1/1
+  - `5732bd0f457` → `31940b2ea51` "Prepare v2026.07-rc2"
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups made:**
+- Makefile conflict resolved: the original commit only bumps `EXTRAVERSION` from `-rc1` to `-rc2` (assuming `PATCHLEVEL=07`), but `ci/master` is on `PATCHLEVEL=04` with empty `EXTRAVERSION`. I resolved by adopting the commit's intended version: `PATCHLEVEL=07`, `EXTRAVERSION=-rc2`. Note added to commit message.
+- `doc/develop/release_cycle.rst` applied cleanly.
+
+**Concerning deltas:** None significant. Cherry-pick shows 4 line changes vs original 3 (the extra change is the necessary `PATCHLEVEL` bump from 04→07 introduced by the conflict resolution). Same two files modified.
+
+Branch left ready for pushing; no merges performed.
+
+---
+
