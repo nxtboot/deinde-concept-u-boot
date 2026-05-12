@@ -81806,3 +81806,57 @@ Diff vs `ci/master`: exactly 8 lines of real change across `Makefile` (PATCHLEVE
 
 ---
 
+### Review: 2026-05-11
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report: Retry-limit notification — no actionable code change
+
+### Analysis of the "review comment"
+
+The only comment on this MR is:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is **not a human review request**. It is the pipeline-fix automation itself signalling that it has exhausted its three retry attempts (attempts 1, 2 and 3, all logged in this MR's description) and is now handing the MR off for **human inspection**. There is no specific change requested.
+
+### Why no code change is appropriate
+
+The three previous attempts diagnosed the failed jobs as follows (all `sjg-lab` stage hardware tests, all explicitly tagged "Lab failure" / "Lab timeout" / "Marking connection bad" by the runner itself):
+
+| Attempt | Failed job(s) | Root cause |
+|---|---|---|
+| 1 | `play` | BeaglePlay `pexpect.TIMEOUT` in labgrid `_await_prompt()` after flash |
+| 2 | `play`, `efi-aarch64` | Same BeaglePlay timeout; readelf I/O race on unrelated `efi-arm_app64` |
+| 3 | `play`, `colibrimx8`, `efi-aarch64` | Same BeaglePlay timeout; 3-minute lab-stage timeout mid-build; pty `OSError EIO` |
+
+The branch contains **exactly one functional commit** (`31940b2ea51 Prepare v2026.07-rc2`) touching only:
+- `Makefile`: `PATCHLEVEL` `04` → `07`, `EXTRAVERSION` → `-rc2`
+- `doc/develop/release_cycle.rst`: release-date prose
+
+A version-string bump and a doc date edit cannot:
+- Prevent a BeaglePlay from reaching its U-Boot serial prompt after flashing
+- Exhaust a 3-minute lab-stage build timeout on Colibri-iMX8X
+- Drop a QEMU/pty controlling tty (EIO) during the EFI-distro test
+
+### Actions taken
+
+- **None.** Verified branch state is unchanged from the cherry-pick (only `Makefile` + `release_cycle.rst` deltas vs `ci/master`).
+- Did **not** run buildman (no source changes to verify; local sandbox build was already verified clean in each of the three prior attempts).
+- Did **not** create `cherry-5732bd0f457-v2`.
+- Did **not** force-push to the remote.
+
+Creating a `-v2` and force-pushing an identical tree would just retrigger the same flaky hardware-lab tests and consume more pipeline budget without changing the outcome.
+
+### Suggested reply to post on the MR
+
+> The retry-limit notification is not actionable. All three prior pipeline-fix attempts diagnosed the same `sjg-lab` failure modes (BeaglePlay post-flash serial-prompt timeout on `play`; lab-stage timeout on `colibrimx8`; pty EIO on `efi-aarch64`) — each explicitly tagged "Lab failure" / "Lab timeout" / "Marking connection bad" by the runner. The MR's only functional change is `Makefile` PATCHLEVEL/EXTRAVERSION strings (`04` → `07`, → `-rc2`) plus a release-date doc edit; none of those failure modes can be caused by such a change.
+>
+> **Manual intervention requested:** please either (a) re-run the three lab jobs once the affected lab nodes are healthy, or (b) merge with the failing `sjg-lab` jobs treated as known infrastructure flakes — they are not gating signals for this commit. No `-v2` branch was created and no force-push was performed; an identical force-push would only retrigger the same flaky tests.
+
+---
+
