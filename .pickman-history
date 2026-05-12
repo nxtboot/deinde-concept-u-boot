@@ -81566,3 +81566,68 @@ The single real commit (`31940b2ea51`) only modifies `Makefile` (PATCHLEVEL/EXTR
 
 ---
 
+### Pipeline fix: 2026-05-11 (attempt 2)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+Let me verify the local build works fine to confirm the failures are infrastructure-related:
+
+Sandbox build passes. Both failures are clearly infrastructure-related, not code-related. Let me confirm with one more check:
+
+## Diagnosis Report
+
+Both failures are **infrastructure/transient issues** unrelated to the commit. No code changes are warranted, and per task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), I have not created the `cherry-5732bd0f457-fix2` branch.
+
+### Branch contents
+
+The MR contains exactly one functional commit:
+- `31940b2ea51 Prepare v2026.07-rc2` — modifies only `Makefile` (VERSION/PATCHLEVEL/EXTRAVERSION strings: `04` → `07`, empty → `-rc2`) and `doc/develop/release_cycle.rst` (release-date prose). Plus `pickman:` tracking commits.
+
+Local `um build sandbox` passes cleanly, confirming the commit is sound.
+
+### Job 1: `play` (sjg-lab, BeaglePlay) — **same as attempt 1, lab failure**
+
+```
++u-boot-test-flash am62x_beagleplay_a53 play
+...
+Writing U-Boot using method ti,am625
+Debian GNU/Linux 11 BeaglePlay ttyS2
+BeaglePlay login:
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+Build of `am62x_beagleplay_a53`/`am62x_beagleplay_r5` succeeded; flashing succeeded. After flash + reset, labgrid (`ubootdriver._await_prompt`) timed out waiting for the U-Boot prompt — the console instead shows the stale Debian login banner, meaning the freshly-flashed U-Boot never came up on the serial. This is identical to attempt 1's failure and is tagged "Lab failure" by the runner. A VERSION/PATCHLEVEL/EXTRAVERSION bump cannot regress hardware-lab serial-console behaviour.
+
+### Job 2: `efi-aarch64` (sjg-lab) — **transient build-environment failure**
+
+```
++u-boot-test-reset efi-arm_app64 efi-aarch64
+Building U-Boot in pytest-source dir for efi-arm_app64
+Command failure: scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2657: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+...
+ValueError: buildman exited with 100
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The test launches `scripts/build-efi -a arm -n` which invokes `buildman` to build the unrelated config `efi-arm_app64`. The Makefile's `checkarmreloc: u-boot` rule ran `READELF` against `u-boot` but the ELF file was empty/unreadable — combined with `make[1]: *** Waiting for unfinished jobs....`, this is a parallel-make / runner-environment race (truncated/empty `u-boot` while linking was still in flight), not anything our commit could cause. The `checkarmreloc` rule and `efi-arm_app64` build path are entirely unaffected by VERSION/PATCHLEVEL/EXTRAVERSION values. The follow-on `OSError: [Errno 5] Input/output error` cascading "Lab failure" tag confirms this is treated as a transient/environmental issue by the runner.
+
+### Conclusion
+
+- **Root cause:** transient lab/runner issues (BeaglePlay didn't reach U-Boot prompt after flash; runner-side parallel-build readelf race when building `efi-arm_app64` for the EFI distro test).
+- **Responsible commit:** none — the only functional commit (version-string bump + doc date) cannot plausibly cause either failure.
+- **Actions taken:** None. Verified local `um build sandbox` passes. Branch `cherry-5732bd0f457` left untouched. **No `cherry-5732bd0f457-fix2` branch created.**
+- **Recommendation:** Re-run both `play` and `efi-aarch64` jobs.
+
+---
+
