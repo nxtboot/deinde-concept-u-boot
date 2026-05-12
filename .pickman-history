@@ -81860,3 +81860,41 @@ Creating a `-v2` and force-pushing an identical tree would just retrigger the sa
 
 ---
 
+### Review: 2026-05-12
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+
+
+### Conversation log
+Good, those are all in prose. Conflict resolved.
+
+Delta is identical to before rebase (4 ins, 4 del across same 2 files). Now build test:
+
+Build passed. Now create -v2 branch and push:
+
+Rebase, build, and push complete. Here's a summary:
+
+## Summary
+
+### Rebase
+- Started on `cherry-5732bd0f457` (9 commits ahead of `ci/master`)
+- `git rebase --keep-empty ci/master` produced one conflict on `.pickman-history` (the `pickman` tracking log) when replaying `4b1cc318b84 pickman: Record cherry-pick of 1 commits from us/master`
+- Resolved the conflict by keeping **both** history sections (the prior `cherry-3d09ec64eba` log entry from `ci/master` and the new `cherry-5732bd0f457` entry from this branch) — this is a purely additive log file, both records belong
+- Rebase completed; remaining 7 `pickman:` tracking commits applied cleanly
+
+### Verification
+- `git show --stat 0da36b2bdbb` (rebased "Prepare v2026.07-rc2"): unchanged — 2 files, 4 ins/4 del (`Makefile`, `doc/develop/release_cycle.rst`). Identical to pre-rebase delta
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **OK** — 1 built, no warnings/errors
+
+### Branches
+- Local backup: `cherry-5732bd0f457-v2` created
+- Force-pushed `cherry-5732bd0f457` → `ci` (MR !1091)
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (now at v2026.04 with `Merge branch 'cherry-3d09ec64eba'` as tip). One trivial conflict in `.pickman-history` (additive log file) was resolved by keeping both history sections. The functional commit (`Prepare v2026.07-rc2`) is unchanged: same two files (`Makefile`, `doc/develop/release_cycle.rst`), same 4-line delta. Local `buildman` sandbox build passes. Local branch saved as `cherry-5732bd0f457-v2`; force-pushed to refresh the MR.
+
+---
+
