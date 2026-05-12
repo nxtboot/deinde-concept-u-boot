@@ -103,6 +103,7 @@ size_t strcspn(const char *s, const char *reject);
 
 extern char * strdup(const char *);
 extern char * strndup(const char *, size_t);
+
 extern const char *strdup_const(const char *s);
 extern void kfree_const(const void *x);
 
