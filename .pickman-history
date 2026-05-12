@@ -81676,3 +81676,79 @@ A version-string bump (`Makefile`: PATCHLEVEL `04` → `07`, EXTRAVERSION `→ -
 
 ---
 
+### Pipeline fix: 2026-05-11 (attempt 3)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- colibrimx8 (sjg-lab)
+
+### Conversation log
+All three failures are happening in `sjg-lab` stage hardware tests. Let me verify the code is sound with a quick sandbox build before concluding:
+
+## Diagnosis Report (attempt 3)
+
+All three failures are **infrastructure/lab-side transient issues** unrelated to the commit. Per task instructions, I have made no code changes and have **not** created `cherry-5732bd0f457-fix3`.
+
+### Branch contents
+
+The MR has exactly one functional commit on top of `ci/master`:
+
+- `31940b2ea51 Prepare v2026.07-rc2` — modifies only `Makefile` (PATCHLEVEL `04` → `07`, EXTRAVERSION → `-rc2`) and `doc/develop/release_cycle.rst` (release-date prose, ~4 lines).
+
+Local `um build sandbox` passes cleanly (no warnings/errors), confirming the commit is sound.
+
+### Job-by-job diagnosis
+
+**1. `play` (BeaglePlay, am62x_beagleplay_a53)** — `sjg-lab`
+```
+Writing U-Boot using method ti,am625
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Identical to attempts 1 & 2. The board accepted the flash; labgrid's `ubootdriver._await_prompt()` then timed out at 20 s waiting for the U-Boot console prompt. Runner explicitly tags it **"Lab failure"** (hardware/serial issue, not test failure).
+
+**2. `colibrimx8` (Colibri-iMX8X)** — `sjg-lab` (new for this attempt)
+```
+Building U-Boot in pytest-source dir for colibri-imx8x
+Lab timeout: Marking connection bad - no other tests will run
+====================== 1 deselected in 193.11s (0:03:13) =======================
+```
+The test framework hit a 3-minute lab-side **timeout** mid-build (still inside the "Building U-Boot in pytest-source dir" step). The runner tags it **"Lab timeout: Marking connection bad"** — a runner/lab-stage time budget exceeded, not a U-Boot failure.
+
+**3. `efi-aarch64` (efi-arm_app64)** — `sjg-lab` (new failure mode for this attempt)
+```
++u-boot-test-reset efi-arm_app64 efi-aarch64
+...
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+FAILED test/py/tests/test_distro.py::test_distro_arm_app_efi - OSError: [Errno 5] Input/output error
+```
+After QEMU/u-boot-test-reset, the spawn-driver got `Errno 5 (EIO)` reading from the serial/pty fd while waiting for the boot prompt. EIO on a controlling tty means the other side disappeared (QEMU/process died, pty closed) — a runner-environment fault, not anything the Makefile version-string change can produce.
+
+### Why the commit cannot be at fault
+
+The only functional change is **two strings in Makefile** (`PATCHLEVEL`, `EXTRAVERSION`) and **two prose lines in a .rst file**. These cannot:
+- prevent BeaglePlay U-Boot from reaching its serial prompt,
+- exhaust a 3-minute lab-stage timeout while building colibri-imx8x,
+- nor cause `EIO` reading from a pty during EFI distro test reset.
+
+All three runners are in the `sjg-lab` stage and all three failures bear the runner's "Lab failure"/"Lab timeout"/"Marking connection bad" markers, indicating infrastructure faults (lab nodes were unhealthy at the time the pipeline ran).
+
+### Actions taken
+
+- **None.** Sandbox build verified locally; no source files needed modification.
+- Did **not** run buildman (no changes to verify).
+- Did **not** create branch `cherry-5732bd0f457-fix3`.
+- Did **not** push.
+
+### Recommendation
+
+Re-run `play`, `colibrimx8`, and `efi-aarch64`. If they keep failing across consecutive pipelines on different MRs, the lab nodes (BeaglePlay serial, Colibri-iMX8X stage, EFI/QEMU runner) need operator attention — not a code fix on this MR.
+
+---
+
