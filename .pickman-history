@@ -81471,3 +81471,46 @@ Branch left ready for pushing; no merges performed.
 
 ---
 
+### Pipeline fix: 2026-05-11 (attempt 1)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+I've diagnosed the failure. Let me verify my understanding before concluding.
+
+## Diagnosis
+
+This is an **infrastructure/transient lab failure**, not a code issue. I am making no changes and not creating the `cherry-5732bd0f457-fix1` branch.
+
+### Root cause
+
+The job is `play` in the `sjg-lab` stage — a hardware-lab test that flashes the BeaglePlay board, then waits for U-Boot's login prompt over serial. The failure:
+
+```
++u-boot-test-flash am62x_beagleplay_a53 play
+...
+Writing U-Boot using method ti,am625
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The board accepted the flash, but did not produce a login prompt within 20 s. The failure is internal to labgrid/the hardware setup (`ubootdriver.on_activate()` → `_await_prompt()` → TIMEOUT). The job runner itself even tags the result as **"Lab failure"**, which is the convention for transient hardware issues (bad serial, dead power, stuck console, etc.).
+
+### Why the commit cannot be at fault
+
+The branch contains only one real change on top of `ci/master`:
+
+- `31940b2ea51 Prepare v2026.07-rc2` — touches just `Makefile` (VERSION/PATCHLEVEL/EXTRAVERSION strings) and `doc/develop/release_cycle.rst` (release-date prose).
+
+A version-string bump and a doc tweak cannot cause `am62x_beagleplay_a53` to fail to reach a login prompt. The build itself completed (`Building U-Boot in pytest-source dir … Bootstrapping U-Boot from dirs …`), and only the post-flash serial wait timed out — strong evidence of a lab-side problem, not a regression introduced by this MR.
+
+### Recommendation
+
+Re-run the `play` job. No code change is warranted. Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have left the branch untouched and have not created `cherry-5732bd0f457-fix1`.
+
+---
+
