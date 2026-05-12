@@ -81434,3 +81434,467 @@ Branch left ready for pushing; not merged anywhere.
 
 ---
 
+## 2026-05-11: us/master
+
+Branch: cherry-5732bd0f457
+
+Commits:
+- 5732bd0f457 Prepare v2026.07-rc2
+
+### Conversation log
+The conflict is in the Makefile because ci/master is at v2026.04 while the commit assumes a v2026.07-rc1 baseline. I'll resolve by applying the commit's intended state (v2026.07-rc2):
+
+Now I need to amend the commit message with a note about the fix-up:
+
+Now let me verify the delta against the original:
+
+Delta is reasonable (4 vs 3 line changes, same files). Now let me build test:
+
+Build passed. Final verification:
+
+All steps complete. Final status:
+
+**Cherry-pick Summary**
+- Branch: `cherry-5732bd0f457` (based on `ci/master`)
+- Commits picked: 1/1
+  - `5732bd0f457` → `31940b2ea51` "Prepare v2026.07-rc2"
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups made:**
+- Makefile conflict resolved: the original commit only bumps `EXTRAVERSION` from `-rc1` to `-rc2` (assuming `PATCHLEVEL=07`), but `ci/master` is on `PATCHLEVEL=04` with empty `EXTRAVERSION`. I resolved by adopting the commit's intended version: `PATCHLEVEL=07`, `EXTRAVERSION=-rc2`. Note added to commit message.
+- `doc/develop/release_cycle.rst` applied cleanly.
+
+**Concerning deltas:** None significant. Cherry-pick shows 4 line changes vs original 3 (the extra change is the necessary `PATCHLEVEL` bump from 04→07 introduced by the conflict resolution). Same two files modified.
+
+Branch left ready for pushing; no merges performed.
+
+---
+
+### Pipeline fix: 2026-05-11 (attempt 1)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+I've diagnosed the failure. Let me verify my understanding before concluding.
+
+## Diagnosis
+
+This is an **infrastructure/transient lab failure**, not a code issue. I am making no changes and not creating the `cherry-5732bd0f457-fix1` branch.
+
+### Root cause
+
+The job is `play` in the `sjg-lab` stage — a hardware-lab test that flashes the BeaglePlay board, then waits for U-Boot's login prompt over serial. The failure:
+
+```
++u-boot-test-flash am62x_beagleplay_a53 play
+...
+Writing U-Boot using method ti,am625
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The board accepted the flash, but did not produce a login prompt within 20 s. The failure is internal to labgrid/the hardware setup (`ubootdriver.on_activate()` → `_await_prompt()` → TIMEOUT). The job runner itself even tags the result as **"Lab failure"**, which is the convention for transient hardware issues (bad serial, dead power, stuck console, etc.).
+
+### Why the commit cannot be at fault
+
+The branch contains only one real change on top of `ci/master`:
+
+- `31940b2ea51 Prepare v2026.07-rc2` — touches just `Makefile` (VERSION/PATCHLEVEL/EXTRAVERSION strings) and `doc/develop/release_cycle.rst` (release-date prose).
+
+A version-string bump and a doc tweak cannot cause `am62x_beagleplay_a53` to fail to reach a login prompt. The build itself completed (`Building U-Boot in pytest-source dir … Bootstrapping U-Boot from dirs …`), and only the post-flash serial wait timed out — strong evidence of a lab-side problem, not a regression introduced by this MR.
+
+### Recommendation
+
+Re-run the `play` job. No code change is warranted. Per the task instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have left the branch untouched and have not created `cherry-5732bd0f457-fix1`.
+
+---
+
+### Review: 2026-05-11
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) play.
+
+I've diagnosed the failure. Let me verify my un...
+
+### Conversation log
+Let me examine the review comment context and branch state more carefully.
+
+I've examined the branch and the "review comment" carefully. This comment is non-actionable, and I will not be making any changes or creating a `-v2` branch. Here is my report:
+
+## Report
+
+### Analysis of the review comment
+
+The "review comment" left by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is **the bot's own status report from Pipeline fix attempt 1** — not a human review request. It explicitly states:
+
+> This is an **infrastructure/transient lab failure**, not a code issue. I am making no changes…
+> 
+> ### Recommendation
+> Re-run the `play` job. No code change is warranted.
+
+The comment diagnoses the failed `play` job (BeaglePlay board on `am62x_beagleplay_a53` failed to reach a login prompt within 20 s after flashing — `pexpect.exceptions.TIMEOUT` inside labgrid's `_await_prompt()`, tagged "Lab failure: Marking connection bad"). It correctly concludes that a version-string bump (Makefile) and a release-date doc tweak cannot regress hardware-lab serial-console behaviour, so no code change is appropriate.
+
+### Branch state
+
+The branch `cherry-5732bd0f457` is unchanged since the cherry-pick:
+
+```
+a13af3bb8fc pickman: Record pipeline fix for cherry-5732bd0f457
+4b1cc318b84 pickman: Record cherry-pick of 1 commits from us/master
+31940b2ea51 Prepare v2026.07-rc2
+```
+
+The single real commit (`31940b2ea51`) only modifies `Makefile` (PATCHLEVEL/EXTRAVERSION) and `doc/develop/release_cycle.rst`.
+
+### Actions taken
+
+- **None.** No source files needed modification.
+- Did **not** build (no changes to verify).
+- Did **not** create `cherry-5732bd0f457-v2`.
+- Did **not** force-push.
+
+### Suggested reply to post on the MR
+
+> The only "review comment" on this MR is the bot's own Pipeline-fix-attempt-1 status, which explicitly recommends re-running the `play` job and states that no code change is warranted (the failure was a transient lab-side serial-console timeout on the BeaglePlay, unrelated to a Makefile version bump and a release-date doc edit). There is nothing actionable to address — please simply re-run the `play` job. No `-v2` branch has been created.
+
+---
+
+### Pipeline fix: 2026-05-11 (attempt 2)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+Let me verify the local build works fine to confirm the failures are infrastructure-related:
+
+Sandbox build passes. Both failures are clearly infrastructure-related, not code-related. Let me confirm with one more check:
+
+## Diagnosis Report
+
+Both failures are **infrastructure/transient issues** unrelated to the commit. No code changes are warranted, and per task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), I have not created the `cherry-5732bd0f457-fix2` branch.
+
+### Branch contents
+
+The MR contains exactly one functional commit:
+- `31940b2ea51 Prepare v2026.07-rc2` — modifies only `Makefile` (VERSION/PATCHLEVEL/EXTRAVERSION strings: `04` → `07`, empty → `-rc2`) and `doc/develop/release_cycle.rst` (release-date prose). Plus `pickman:` tracking commits.
+
+Local `um build sandbox` passes cleanly, confirming the commit is sound.
+
+### Job 1: `play` (sjg-lab, BeaglePlay) — **same as attempt 1, lab failure**
+
+```
++u-boot-test-flash am62x_beagleplay_a53 play
+...
+Writing U-Boot using method ti,am625
+Debian GNU/Linux 11 BeaglePlay ttyS2
+BeaglePlay login:
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+Build of `am62x_beagleplay_a53`/`am62x_beagleplay_r5` succeeded; flashing succeeded. After flash + reset, labgrid (`ubootdriver._await_prompt`) timed out waiting for the U-Boot prompt — the console instead shows the stale Debian login banner, meaning the freshly-flashed U-Boot never came up on the serial. This is identical to attempt 1's failure and is tagged "Lab failure" by the runner. A VERSION/PATCHLEVEL/EXTRAVERSION bump cannot regress hardware-lab serial-console behaviour.
+
+### Job 2: `efi-aarch64` (sjg-lab) — **transient build-environment failure**
+
+```
++u-boot-test-reset efi-arm_app64 efi-aarch64
+Building U-Boot in pytest-source dir for efi-arm_app64
+Command failure: scripts/build-efi -a arm -n --build-dir .../build/efi-aarch64
+readelf: Error: u-boot: Failed to read file's magic number
+make[1]: *** [Makefile:2657: checkarmreloc] Error 1
+make[1]: *** Waiting for unfinished jobs....
+...
+ValueError: buildman exited with 100
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The test launches `scripts/build-efi -a arm -n` which invokes `buildman` to build the unrelated config `efi-arm_app64`. The Makefile's `checkarmreloc: u-boot` rule ran `READELF` against `u-boot` but the ELF file was empty/unreadable — combined with `make[1]: *** Waiting for unfinished jobs....`, this is a parallel-make / runner-environment race (truncated/empty `u-boot` while linking was still in flight), not anything our commit could cause. The `checkarmreloc` rule and `efi-arm_app64` build path are entirely unaffected by VERSION/PATCHLEVEL/EXTRAVERSION values. The follow-on `OSError: [Errno 5] Input/output error` cascading "Lab failure" tag confirms this is treated as a transient/environmental issue by the runner.
+
+### Conclusion
+
+- **Root cause:** transient lab/runner issues (BeaglePlay didn't reach U-Boot prompt after flash; runner-side parallel-build readelf race when building `efi-arm_app64` for the EFI distro test).
+- **Responsible commit:** none — the only functional commit (version-string bump + doc date) cannot plausibly cause either failure.
+- **Actions taken:** None. Verified local `um build sandbox` passes. Branch `cherry-5732bd0f457` left untouched. **No `cherry-5732bd0f457-fix2` branch created.**
+- **Recommendation:** Re-run both `play` and `efi-aarch64` jobs.
+
+---
+
+### Review: 2026-05-11
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, play.
+
+Let me verify the local build work...
+
+### Conversation log
+I've examined the branch and the "review comment" carefully. There is nothing actionable to address.
+
+## Report
+
+### Analysis of the "review comment"
+
+The only review comment on this MR is from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`, and it is **the bot's own status report from Pipeline fix attempt 2** — not a human review request. That status report itself explicitly concluded:
+
+> Both failures are **infrastructure/transient issues** unrelated to the commit. No code changes are warranted, and per task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), I have not created the `cherry-5732bd0f457-fix2` branch.
+>
+> **Recommendation:** Re-run both `play` and `efi-aarch64` jobs.
+
+It diagnosed:
+- `play` (BeaglePlay, `am62x_beagleplay_a53`): labgrid `_await_prompt()` 20 s timeout after flash, tagged "Lab failure" by the runner — identical to attempt 1.
+- `efi-aarch64` (`efi-arm_app64` via `scripts/build-efi`): `readelf: Error: u-boot: Failed to read file's magic number` during `checkarmreloc`, alongside `make[1]: *** Waiting for unfinished jobs....` — a runner-side parallel-build/I-O race, also tagged "Lab failure".
+
+A version-string bump (`Makefile`: PATCHLEVEL `04` → `07`, EXTRAVERSION `→ -rc2`) and a release-date doc tweak (`doc/develop/release_cycle.rst`) cannot plausibly cause a hardware-lab serial timeout or a `checkarmreloc` readelf failure on an unrelated `efi-arm_app64` build.
+
+### Branch state
+
+`cherry-5732bd0f457` is unchanged. The single functional commit is `31940b2ea51 Prepare v2026.07-rc2`, touching only `Makefile` and `doc/develop/release_cycle.rst`. Diff vs `ci/master` shows just 8 lines of real change (plus `.pickman-history` tracking).
+
+### Actions taken
+
+- **None.** No source files needed modification.
+- Did **not** run buildman (no changes to verify; sandbox build was already verified in both prior attempts).
+- Did **not** create `cherry-5732bd0f457-v2`.
+- Did **not** force-push.
+
+### Suggested reply to post on the MR
+
+> There is no actionable review feedback. The only "review comment" on this MR is the bot's own Pipeline-fix-attempt-2 status, which itself concludes that both failures (`play` and `efi-aarch64`) are infrastructure/transient lab/runner issues — a BeaglePlay serial-console post-flash timeout and a `checkarmreloc` readelf I/O race on an unrelated `efi-arm_app64` build, both tagged "Lab failure" by the runner. Neither failure mode can be caused by a Makefile version bump and a release-date doc edit. Please simply re-run the `play` and `efi-aarch64` jobs. No `-v2` branch has been created, and no force-push was performed.
+
+---
+
+### Pipeline fix: 2026-05-11 (attempt 3)
+
+Branch: cherry-5732bd0f457
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- colibrimx8 (sjg-lab)
+
+### Conversation log
+All three failures are happening in `sjg-lab` stage hardware tests. Let me verify the code is sound with a quick sandbox build before concluding:
+
+## Diagnosis Report (attempt 3)
+
+All three failures are **infrastructure/lab-side transient issues** unrelated to the commit. Per task instructions, I have made no code changes and have **not** created `cherry-5732bd0f457-fix3`.
+
+### Branch contents
+
+The MR has exactly one functional commit on top of `ci/master`:
+
+- `31940b2ea51 Prepare v2026.07-rc2` — modifies only `Makefile` (PATCHLEVEL `04` → `07`, EXTRAVERSION → `-rc2`) and `doc/develop/release_cycle.rst` (release-date prose, ~4 lines).
+
+Local `um build sandbox` passes cleanly (no warnings/errors), confirming the commit is sound.
+
+### Job-by-job diagnosis
+
+**1. `play` (BeaglePlay, am62x_beagleplay_a53)** — `sjg-lab`
+```
+Writing U-Boot using method ti,am625
+...
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Identical to attempts 1 & 2. The board accepted the flash; labgrid's `ubootdriver._await_prompt()` then timed out at 20 s waiting for the U-Boot console prompt. Runner explicitly tags it **"Lab failure"** (hardware/serial issue, not test failure).
+
+**2. `colibrimx8` (Colibri-iMX8X)** — `sjg-lab` (new for this attempt)
+```
+Building U-Boot in pytest-source dir for colibri-imx8x
+Lab timeout: Marking connection bad - no other tests will run
+====================== 1 deselected in 193.11s (0:03:13) =======================
+```
+The test framework hit a 3-minute lab-side **timeout** mid-build (still inside the "Building U-Boot in pytest-source dir" step). The runner tags it **"Lab timeout: Marking connection bad"** — a runner/lab-stage time budget exceeded, not a U-Boot failure.
+
+**3. `efi-aarch64` (efi-arm_app64)** — `sjg-lab` (new failure mode for this attempt)
+```
++u-boot-test-reset efi-arm_app64 efi-aarch64
+...
+test/py/spawn.py:170: in receive
+    c = os.read(self.fd, num_bytes).decode(errors='replace')
+E   OSError: [Errno 5] Input/output error
+FAILED test/py/tests/test_distro.py::test_distro_arm_app_efi - OSError: [Errno 5] Input/output error
+```
+After QEMU/u-boot-test-reset, the spawn-driver got `Errno 5 (EIO)` reading from the serial/pty fd while waiting for the boot prompt. EIO on a controlling tty means the other side disappeared (QEMU/process died, pty closed) — a runner-environment fault, not anything the Makefile version-string change can produce.
+
+### Why the commit cannot be at fault
+
+The only functional change is **two strings in Makefile** (`PATCHLEVEL`, `EXTRAVERSION`) and **two prose lines in a .rst file**. These cannot:
+- prevent BeaglePlay U-Boot from reaching its serial prompt,
+- exhaust a 3-minute lab-stage timeout while building colibri-imx8x,
+- nor cause `EIO` reading from a pty during EFI distro test reset.
+
+All three runners are in the `sjg-lab` stage and all three failures bear the runner's "Lab failure"/"Lab timeout"/"Marking connection bad" markers, indicating infrastructure faults (lab nodes were unhealthy at the time the pipeline ran).
+
+### Actions taken
+
+- **None.** Sandbox build verified locally; no source files needed modification.
+- Did **not** run buildman (no changes to verify).
+- Did **not** create branch `cherry-5732bd0f457-fix3`.
+- Did **not** push.
+
+### Recommendation
+
+Re-run `play`, `colibrimx8`, and `efi-aarch64`. If they keep failing across consecutive pipelines on different MRs, the lab nodes (BeaglePlay serial, Colibri-iMX8X stage, EFI/QEMU runner) need operator attention — not a code fix on this MR.
+
+---
+
+### Review: 2026-05-11
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-aarch64, play, colibrimx8.
+
+All three failures are...
+
+### Conversation log
+## Report: No actionable review feedback
+
+### Analysis of the "review comment"
+
+The only comment on this MR is from `project_1_bot_2541d37e7146e9c25808a380e05ebef0`, and it is **the bot's own diagnostic status from Pipeline fix attempt 3** — not a human review request. That status report itself explicitly concluded:
+
+> All three failures are **infrastructure/lab-side transient issues** unrelated to the commit. Per task instructions, I have made no code changes and have **not** created `cherry-5732bd0f457-fix3`.
+>
+> **Recommendation:** Re-run `play`, `colibrimx8`, and `efi-aarch64`.
+
+It diagnosed three `sjg-lab` stage failures:
+- **`play`** (BeaglePlay `am62x_beagleplay_a53`): `pexpect.TIMEOUT` in labgrid `_await_prompt()` after flash → "Lab failure: Marking connection bad" — identical to attempts 1 & 2.
+- **`colibrimx8`** (Colibri-iMX8X): 3-minute "Lab timeout: Marking connection bad" mid-build.
+- **`efi-aarch64`** (`efi-arm_app64`): `OSError: [Errno 5] Input/output error` on the test pty — controlling tty dropped (QEMU/process disappeared).
+
+All three carry the runner's "Lab failure / Lab timeout / Marking connection bad" markers — explicit infrastructure-fault tagging.
+
+### Branch state (unchanged from cherry-pick)
+
+```
+9e4cd4e694c pickman: Record pipeline fix for cherry-5732bd0f457
+121069ee85a pickman: Record review handling for cherry-5732bd0f457
+04dbf1857ad pickman: Record pipeline fix for cherry-5732bd0f457
+a33af0ab9b7 pickman: Record review handling for cherry-5732bd0f457
+a13af3bb8fc pickman: Record pipeline fix for cherry-5732bd0f457
+4b1cc318b84 pickman: Record cherry-pick of 1 commits from us/master
+31940b2ea51 Prepare v2026.07-rc2
+```
+
+Diff vs `ci/master`: exactly 8 lines of real change across `Makefile` (PATCHLEVEL `04`→`07`, EXTRAVERSION→`-rc2`) and `doc/develop/release_cycle.rst` (release-date prose). A version-string bump plus a doc tweak cannot cause a BeaglePlay serial timeout, a Colibri-iMX8X build-stage timeout, or an EIO on an EFI-distro QEMU pty.
+
+### Actions taken
+
+- **None.** No source files needed modification.
+- Did **not** run buildman (no changes to verify; sandbox build was already confirmed clean across the prior three attempts and the commit is unchanged since).
+- Did **not** create `cherry-5732bd0f457-v2`.
+- Did **not** force-push.
+
+### Suggested reply to post on the MR
+
+> There is no actionable review feedback. The only comment on this MR is the bot's own Pipeline-fix-attempt-3 status, which itself concludes that all three failures (`play`, `colibrimx8`, `efi-aarch64`) are infrastructure/lab-side transient issues — a BeaglePlay post-flash serial-prompt timeout, a Colibri-iMX8X 3-minute lab-stage timeout, and an EIO on the EFI/QEMU pty — each tagged "Lab failure"/"Lab timeout"/"Marking connection bad" by the runner. None of these failure modes can be caused by a Makefile PATCHLEVEL/EXTRAVERSION bump plus a release-date doc edit. Please re-run the three jobs (or have the lab nodes checked if they keep flaking across pipelines). No `-v2` branch was created, and no force-push was performed.
+
+---
+
+### Review: 2026-05-11
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report: Retry-limit notification — no actionable code change
+
+### Analysis of the "review comment"
+
+The only comment on this MR is:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is **not a human review request**. It is the pipeline-fix automation itself signalling that it has exhausted its three retry attempts (attempts 1, 2 and 3, all logged in this MR's description) and is now handing the MR off for **human inspection**. There is no specific change requested.
+
+### Why no code change is appropriate
+
+The three previous attempts diagnosed the failed jobs as follows (all `sjg-lab` stage hardware tests, all explicitly tagged "Lab failure" / "Lab timeout" / "Marking connection bad" by the runner itself):
+
+| Attempt | Failed job(s) | Root cause |
+|---|---|---|
+| 1 | `play` | BeaglePlay `pexpect.TIMEOUT` in labgrid `_await_prompt()` after flash |
+| 2 | `play`, `efi-aarch64` | Same BeaglePlay timeout; readelf I/O race on unrelated `efi-arm_app64` |
+| 3 | `play`, `colibrimx8`, `efi-aarch64` | Same BeaglePlay timeout; 3-minute lab-stage timeout mid-build; pty `OSError EIO` |
+
+The branch contains **exactly one functional commit** (`31940b2ea51 Prepare v2026.07-rc2`) touching only:
+- `Makefile`: `PATCHLEVEL` `04` → `07`, `EXTRAVERSION` → `-rc2`
+- `doc/develop/release_cycle.rst`: release-date prose
+
+A version-string bump and a doc date edit cannot:
+- Prevent a BeaglePlay from reaching its U-Boot serial prompt after flashing
+- Exhaust a 3-minute lab-stage build timeout on Colibri-iMX8X
+- Drop a QEMU/pty controlling tty (EIO) during the EFI-distro test
+
+### Actions taken
+
+- **None.** Verified branch state is unchanged from the cherry-pick (only `Makefile` + `release_cycle.rst` deltas vs `ci/master`).
+- Did **not** run buildman (no source changes to verify; local sandbox build was already verified clean in each of the three prior attempts).
+- Did **not** create `cherry-5732bd0f457-v2`.
+- Did **not** force-push to the remote.
+
+Creating a `-v2` and force-pushing an identical tree would just retrigger the same flaky hardware-lab tests and consume more pipeline budget without changing the outcome.
+
+### Suggested reply to post on the MR
+
+> The retry-limit notification is not actionable. All three prior pipeline-fix attempts diagnosed the same `sjg-lab` failure modes (BeaglePlay post-flash serial-prompt timeout on `play`; lab-stage timeout on `colibrimx8`; pty EIO on `efi-aarch64`) — each explicitly tagged "Lab failure" / "Lab timeout" / "Marking connection bad" by the runner. The MR's only functional change is `Makefile` PATCHLEVEL/EXTRAVERSION strings (`04` → `07`, → `-rc2`) plus a release-date doc edit; none of those failure modes can be caused by such a change.
+>
+> **Manual intervention requested:** please either (a) re-run the three lab jobs once the affected lab nodes are healthy, or (b) merge with the failing `sjg-lab` jobs treated as known infrastructure flakes — they are not gating signals for this commit. No `-v2` branch was created and no force-push was performed; an identical force-push would only retrigger the same flaky tests.
+
+---
+
+### Review: 2026-05-12
+
+Branch: cherry-5732bd0f457
+
+Comments addressed:
+
+
+### Conversation log
+Good, those are all in prose. Conflict resolved.
+
+Delta is identical to before rebase (4 ins, 4 del across same 2 files). Now build test:
+
+Build passed. Now create -v2 branch and push:
+
+Rebase, build, and push complete. Here's a summary:
+
+## Summary
+
+### Rebase
+- Started on `cherry-5732bd0f457` (9 commits ahead of `ci/master`)
+- `git rebase --keep-empty ci/master` produced one conflict on `.pickman-history` (the `pickman` tracking log) when replaying `4b1cc318b84 pickman: Record cherry-pick of 1 commits from us/master`
+- Resolved the conflict by keeping **both** history sections (the prior `cherry-3d09ec64eba` log entry from `ci/master` and the new `cherry-5732bd0f457` entry from this branch) — this is a purely additive log file, both records belong
+- Rebase completed; remaining 7 `pickman:` tracking commits applied cleanly
+
+### Verification
+- `git show --stat 0da36b2bdbb` (rebased "Prepare v2026.07-rc2"): unchanged — 2 files, 4 ins/4 del (`Makefile`, `doc/develop/release_cycle.rst`). Identical to pre-rebase delta
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **OK** — 1 built, no warnings/errors
+
+### Branches
+- Local backup: `cherry-5732bd0f457-v2` created
+- Force-pushed `cherry-5732bd0f457` → `ci` (MR !1091)
+
+### Suggested MR reply
+
+> Rebased onto current `ci/master` (now at v2026.04 with `Merge branch 'cherry-3d09ec64eba'` as tip). One trivial conflict in `.pickman-history` (additive log file) was resolved by keeping both history sections. The functional commit (`Prepare v2026.07-rc2`) is unchanged: same two files (`Makefile`, `doc/develop/release_cycle.rst`), same 4-line delta. Local `buildman` sandbox build passes. Local branch saved as `cherry-5732bd0f457-v2`; force-pushed to refresh the MR.
+
+---
+
