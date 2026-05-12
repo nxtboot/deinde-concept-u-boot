@@ -10,6 +10,7 @@
 #define __GETOPT_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <linux/kconfig.h>
 
 /**
@@ -146,6 +147,30 @@ static inline int getopt(struct getopt_state *gs, const char *optstring)
 static inline int getopt_silent(struct getopt_state *gs, const char *optstring)
 {
 	return __getopt(gs, optstring, true);
+}
+
+/**
+ * getopt_pop() - Take the next remaining positional argument
+ * @gs: State, after getopt() has returned -1
+ *
+ * Returns the first permuted non-option (``gs->argv[gs->index]``),
+ * advances the index, and decrements ``gs->nonopts``. Returns NULL
+ * when no positional arguments remain.
+ *
+ * Useful for consuming positionals one at a time after parsing::
+ *
+ *     algo = getopt_pop(&gs);
+ *     return hash_command(algo, ..., gs.nonopts, &gs.argv[gs.index]);
+ */
+static inline char *getopt_pop(struct getopt_state *gs)
+{
+	if (gs->index >= gs->argc)
+		return NULL;
+#ifdef CONFIG_GETOPT_PERMUTE
+	if (gs->nonopts > 0)
+		gs->nonopts--;
+#endif
+	return gs->argv[gs->index++];
 }
 
 #endif /* __GETOPT_H */
