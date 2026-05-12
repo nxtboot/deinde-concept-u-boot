@@ -18,9 +18,9 @@ static int do_test_getopt(struct unit_test_state *uts, int line,
 {
 	int opt;
 
-	getopt_init_state(gs);
+	getopt_init_state(gs, args, argv);
 	for (int i = 0; i < expected_count; i++) {
-		opt = getopt_silent(gs, args, argv, optstring);
+		opt = getopt_silent(gs, optstring);
 		if (expected[i] != opt) {
 			/*
 			 * Fudge the line number so we can tell which test
@@ -34,7 +34,7 @@ static int do_test_getopt(struct unit_test_state *uts, int line,
 		}
 	}
 
-	opt = getopt_silent(gs, args, argv, optstring);
+	opt = getopt_silent(gs, optstring);
 	if (opt != -1) {
 		ut_failf(uts, __FILE__, line, __func__,
 			 "getopt() != -1",
@@ -56,6 +56,7 @@ static int do_test_getopt(struct unit_test_state *uts, int line,
 static int lib_test_getopt(struct unit_test_state *uts)
 {
 	struct getopt_state gs;
+	char *plus_argv[] = { "program", "foo", "-a", 0 };
 
 	/* Happy path */
 	test_getopt("ab:c",
@@ -116,6 +117,53 @@ static int lib_test_getopt(struct unit_test_state *uts)
 	ut_asserteq(3, gs.index);
 	ut_assertnonnull(gs.arg);
 	ut_asserteq_str("foo", gs.arg);
+
+#ifdef CONFIG_GETOPT_PERMUTE
+	/*
+	 * Reordered (permuted) arguments: options interleaved with
+	 * non-options should be picked up in the order they appear, with
+	 * non-options moved to the end of @argv.
+	 */
+	test_getopt("ab",
+		    ((char *[]){ "program", "foo", "-a", "bar", "-b", 0 }),
+		    ((int []){ 'a', 'b' }));
+	ut_asserteq(3, gs.index);
+	ut_asserteq(2, gs.nonopts);
+	ut_asserteq_str("foo", gs.argv[3]);
+	ut_asserteq_str("bar", gs.argv[4]);
+
+	/*
+	 * A required argument with only a parked non-option to its right
+	 * must report ':' rather than consume the non-option
+	 */
+	test_getopt("a:",
+		    ((char *[]){ "program", "foo", "-a", 0 }),
+		    ((int []){ ':' }));
+	ut_asserteq('a', gs.opt);
+
+	/*
+	 * Required argument supplied after a leading non-option: the
+	 * non-option is permuted out of the way and the argument is
+	 * picked up correctly
+	 */
+	test_getopt("a:b",
+		    ((char *[]){ "program", "foo", "-a", "x", "-b", 0 }),
+		    ((int []){ 'a', 'b' }));
+	ut_asserteq(4, gs.index);
+	ut_asserteq(1, gs.nonopts);
+	ut_asserteq_str("foo", gs.argv[4]);
+
+	/* '+' prefix disables permutation: stop at the first non-option */
+	getopt_init_state(&gs, ARRAY_SIZE(plus_argv) - 1, plus_argv);
+	ut_asserteq(-1, getopt_silent(&gs, "+a"));
+	ut_asserteq(1, gs.index);
+	ut_asserteq(0, gs.nonopts);
+#else
+	/* POSIX-only mode: getopt() always stops at the first non-option */
+	getopt_init_state(&gs, ARRAY_SIZE(plus_argv) - 1, plus_argv);
+	ut_asserteq(-1, getopt_silent(&gs, "a"));
+	ut_asserteq(1, gs.index);
+#endif
 
 	return 0;
 }

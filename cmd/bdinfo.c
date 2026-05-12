@@ -172,8 +172,8 @@ int do_bdinfo(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (!CONFIG_IS_ENABLED(GETOPT) || argc == 1)
 		return bdinfo_print_all(bd);
 
-	getopt_init_state(&gs);
-	while ((opt = getopt(&gs, argc, argv, "aem")) > 0) {
+	getopt_init_state(&gs, argc, argv);
+	while ((opt = getopt(&gs, "aem")) > 0) {
 		switch (opt) {
 		case 'a':
 			return bdinfo_print_all(bd);
