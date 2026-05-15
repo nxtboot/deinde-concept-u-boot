@@ -82010,3 +82010,36 @@ Both failures are transient/infrastructure (lab connectivity for bpi, tty I/O gl
 
 ---
 
+## 2026-05-15: us/master
+
+Branch: cherry-d5ea30b233e
+
+Commits:
+- d5ea30b233e tools: fwumdata: Fix use-after-free in parse_config()
+- 1a0fac05c31 Merge tag 'ab-master-12052026' of https://source.denx.de/u-boot/custodians/u-boot-tpm
+
+### Conversation log
+Build passes. Now cherry-pick the merge commit.
+
+The merge commit is empty as expected since the underlying fix is already applied. Now run the final build test.
+
+All cherry-picks complete successfully.
+
+## Final Status Report
+
+**Build result:** OK (sandbox build passed cleanly, no warnings or errors)
+
+**Cherry-picks completed:**
+1. `1f4d44057f6` - tools: fwumdata: Fix use-after-free in parse_config() (from `d5ea30b233e`)
+   - Delta matches exactly: 1 file changed, 1 insertion(+)
+2. `faeff069e1f` - Merge tag 'ab-master-12052026' of u-boot-tpm (from `1a0fac05c31`)
+   - Empty merge commit (expected — the underlying UAF fix from the merge is the same single commit as #1, already applied); preserved via `--allow-empty` to maintain history tracking
+
+**Fix-ups made:** None
+
+**Concerning deltas:** None. The non-merge commit delta matches the original exactly. The merge commit is empty as expected because the only content of the merge was the fwumdata fix which was already cherry-picked in step 1.
+
+The branch `cherry-d5ea30b233e` is ready for pushing.
+
+---
+
