@@ -256,6 +256,47 @@ static void fit_image_print_data(struct fit_print_ctx *ctx, int noffset,
 }
 
 /**
+ * fit_image_print_dm_verity() - prints out the dm-verity node details
+ * @ctx: pointer to FIT print context
+ * @noffset: offset of the dm-verity node
+ *
+ * Prints the hash algorithm, root digest and salt from a dm-verity
+ * subnode, if present.
+ */
+static __maybe_unused void fit_image_print_dm_verity(struct fit_print_ctx *ctx,
+						     int noffset)
+{
+#if defined(USE_HOSTCC) || CONFIG_IS_ENABLED(FIT_VERITY)
+	const void *fit = ctx->fit;
+	const char *algo;
+	const uint8_t *bin;
+	int len, i;
+
+	algo = fdt_getprop(fit, noffset, FIT_VERITY_ALGO_PROP, NULL);
+	if (algo) {
+		emit_type(ctx, "Verity", "algo");
+		printf("%s\n", algo);
+	}
+
+	bin = fdt_getprop(fit, noffset, FIT_VERITY_DIGEST_PROP, &len);
+	if (bin && len > 0) {
+		emit_type(ctx, "Verity", "hash");
+		for (i = 0; i < len; i++)
+			printf("%02x", bin[i]);
+		printf("\n");
+	}
+
+	bin = fdt_getprop(fit, noffset, FIT_VERITY_SALT_PROP, &len);
+	if (bin && len > 0) {
+		emit_type(ctx, "Verity", "salt");
+		for (i = 0; i < len; i++)
+			printf("%02x", bin[i]);
+		printf("\n");
+	}
+#endif
+}
+
+/**
  * fit_image_print_verification_data() - prints out the hash/signature details
  * @ctx: pointer to FIT print context
  * @noffset: offset of the hash or signature node
@@ -281,6 +322,10 @@ static void fit_image_print_verification_data(struct fit_print_ctx *ctx,
 		fit_image_print_data(ctx, noffset, "Hash");
 	else if (!strncmp(name, FIT_SIG_NODENAME, strlen(FIT_SIG_NODENAME)))
 		fit_image_print_data(ctx, noffset, "Sign");
+#if defined(USE_HOSTCC) || CONFIG_IS_ENABLED(FIT_VERITY)
+	else if (!strcmp(name, FIT_VERITY_NODENAME))
+		fit_image_print_dm_verity(ctx, noffset);
+#endif
 }
 
 /**
