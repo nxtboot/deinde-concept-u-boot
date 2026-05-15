@@ -24,6 +24,82 @@
 
 static struct legacy_img_hdr header;
 
+static int fit_estimate_hash_sig_size(struct imgtool *itl, const char *fname)
+{
+	bool signing = IMAGE_ENABLE_SIGN &&
+		(itl->keydir || itl->keyfile || itl->engine_id);
+	struct stat sbuf;
+	void *fdt;
+	int fd;
+	int estimate = 0;
+	int depth, noffset;
+	const char *name;
+
+	fd = mmap_fdt(itl->cmdname, fname, 0, &fdt, &sbuf, false, true);
+	if (fd < 0)
+		return -EIO;
+
+	/*
+	 * Walk the FIT image, looking for nodes named hash*,
+	 * signature*, and dm-verity. Since the interesting nodes are
+	 * subnodes of an image or configuration node, we are only
+	 * interested in those at depth exactly 3.
+	 *
+	 * The estimate for a hash node is based on a sha512 digest
+	 * being 64 bytes, with another 64 bytes added to account for
+	 * fdt structure overhead (the tags and the name of the
+	 * "value" property).
+	 *
+	 * The estimate for a signature node is based on an rsa4096
+	 * signature being 512 bytes, with another 512 bytes to
+	 * account for fdt overhead and the various other properties
+	 * (hashed-nodes etc.) that will also be filled in.
+	 *
+	 * For a dm-verity node the small metadata properties (digest,
+	 * salt, two u32s and a temp-file path) are written into the
+	 * FDT by fit_image_process_verity().
+	 *
+	 * One could try to be more precise in the estimates by
+	 * looking at the "algo" property and, in the case of
+	 * configuration signatures, the sign-images property. Also,
+	 * when signing an already created FIT image, the hash nodes
+	 * already have properly sized value properties, so one could
+	 * also take pre-existence of "value" properties in hash nodes
+	 * into account. But this rather simple approach should work
+	 * well enough in practice.
+	 */
+	for (depth = 0, noffset = fdt_next_node(fdt, 0, &depth);
+	     noffset >= 0 && depth > 0;
+	     noffset = fdt_next_node(fdt, noffset, &depth)) {
+		if (depth != 3)
+			continue;
+
+		name = fdt_get_name(fdt, noffset, NULL);
+		if (!strncmp(name, FIT_HASH_NODENAME, strlen(FIT_HASH_NODENAME)))
+			estimate += 128;
+
+		if (signing && !strncmp(name, FIT_SIG_NODENAME, strlen(FIT_SIG_NODENAME)))
+			estimate += 1024;
+
+		if (!strcmp(name, FIT_VERITY_NODENAME)) {
+			if (!itl->external_data) {
+				fprintf(stderr,
+					"%s: dm-verity requires external data (-E)\n",
+					itl->cmdname);
+				munmap(fdt, sbuf.st_size);
+				close(fd);
+				return -EINVAL;
+			}
+			estimate += 256;
+		}
+	}
+
+	munmap(fdt, sbuf.st_size);
+	close(fd);
+
+	return estimate;
+}
+
 static int fit_add_file_data(struct imgtool *itl, size_t size_inc,
 			     const char *tmpfile)
 {
@@ -373,6 +449,41 @@ static int fit_write_images(struct imgtool *itl, char *fdt)
 }
 
 /**
+ * fit_copy_image_data() - copy image data, using cached verity expansion
+ * @fdt:		FIT blob
+ * @node:		image node offset
+ * @buf:		destination buffer
+ * @buf_ptr:	write offset within @buf
+ * @data:		embedded image data (used when no dm-verity expansion exists)
+ * @lenp:		in/out: on entry, length of @data; on exit, bytes written
+ *
+ * When fit_image_process_verity() has run, the expanded image data
+ * (original + hash tree) is cached in memory. Look it up by image name
+ * and copy from the cached buffer rather than the embedded ``data``
+ * property; fall back to @data otherwise.
+ *
+ * Return: 0 on success
+ */
+static int fit_copy_image_data(void *fdt, int node, void *buf,
+			       int buf_ptr, const void *data, int *lenp)
+{
+	const char *image_name = fdt_get_name(fdt, node, NULL);
+	const void *vdata;
+	size_t vsize;
+
+	if (image_name &&
+	    !fit_verity_get_expanded(image_name, &vdata, &vsize)) {
+		memcpy(buf + buf_ptr, vdata, vsize);
+		*lenp = vsize;
+		return 0;
+	}
+
+	memcpy(buf + buf_ptr, data, *lenp);
+
+	return 0;
+}
+
+/**
  * fit_write_configs() - Write out a list of configurations to the FIT
  *
  * If there are device tree files, we include a configuration for each, which
@@ -545,6 +656,8 @@ static int fit_extract_data(struct imgtool *itl, const char *fname)
 	int node;
 	int align_size = 0;
 	int len = 0;
+	int verity_extra = 0;
+	int orig_len;
 
 	fd = mmap_fdt(itl->cmdname, fname, 0, &fdt, &sbuf, false, false);
 	if (fd < 0)
@@ -579,10 +692,33 @@ static int fit_extract_data(struct imgtool *itl, const char *fname)
 	}
 
 	/*
+	 * When dm-verity is active the external data for an image is
+	 * larger than the embedded data property (original + hash tree).
+	 * Walk images once more and consult the in-memory cache for the
+	 * actual expanded size.
+	 */
+	fdt_for_each_subnode(node, fdt, images) {
+		const char *image_name;
+		const void *vdata;
+		size_t vsize;
+
+		orig_len = 0;
+		if (fdt_subnode_offset(fdt, node, FIT_VERITY_NODENAME) < 0)
+			continue;
+		image_name = fdt_get_name(fdt, node, NULL);
+		if (!image_name ||
+		    fit_verity_get_expanded(image_name, &vdata, &vsize))
+			continue;
+		fdt_getprop(fdt, node, FIT_DATA_PROP, &orig_len);
+		if ((int)vsize > orig_len)
+			verity_extra += (int)vsize - orig_len;
+	}
+
+	/*
 	 * Allocate space to hold the image data we will extract,
 	 * extral space allocate for image alignment to prevent overflow.
 	 */
-	buf = calloc(1, fit_size + align_size);
+	buf = calloc(1, fit_size + align_size + verity_extra);
 	if (!buf) {
 		ret = -ENOMEM;
 		goto err_munmap;
@@ -613,7 +749,10 @@ static int fit_extract_data(struct imgtool *itl, const char *fname)
 		data = fdt_getprop(fdt, node, FIT_DATA_PROP, &len);
 		if (!data)
 			continue;
-		memcpy(buf + buf_ptr, data, len);
+
+		ret = fit_copy_image_data(fdt, node, buf, buf_ptr, data, &len);
+		if (ret)
+			goto err_munmap;
 		debug("Extracting data size %x\n", len);
 
 		ret = fdt_delprop(fdt, node, FIT_DATA_PROP);
@@ -953,8 +1092,10 @@ static int fit_handle_file(struct imgtool *itl)
 	rename(tmpfile, bakfile);
 
 	/*
-	 * Set hashes for images in the blob. Unfortunately we may need more
-	 * space in either FDT, so keep trying until we succeed.
+	 * Set hashes for images in the blob and compute signatures.
+	 * We do an attempt at estimating the expected extra size, but
+	 * just in case that is not sufficient, keep trying adding 1K,
+	 * with a reasonable upper bound of 64K total, until we succeed.
 	 *
 	 * Note: this is pretty inefficient for signing, since we must
 	 * calculate the signature every time. It would be better to calculate
@@ -962,7 +1103,10 @@ static int fit_handle_file(struct imgtool *itl)
 	 * would be considerably more complex to implement. Generally a few
 	 * steps of this loop is enough to sign with several keys.
 	 */
-	for (size_inc = 0; size_inc < 64 * 1024; size_inc += 1024) {
+	size_inc = fit_estimate_hash_sig_size(itl, bakfile);
+	if (size_inc < 0)
+		goto err_system;
+	do {
 		if (copyfile(bakfile, tmpfile) < 0) {
 			printf("Can't copy %s to %s\n", bakfile, tmpfile);
 			ret = -EIO;
@@ -971,7 +1115,8 @@ static int fit_handle_file(struct imgtool *itl)
 		ret = fit_add_file_data(itl, size_inc, tmpfile);
 		if (!ret || ret != -ENOSPC)
 			break;
-	}
+		size_inc += 1024;
+	} while (size_inc < 64 * 1024);
 
 	if (ret) {
 		fprintf(stderr, "%s Can't add hashes to FIT blob: %d\n",
