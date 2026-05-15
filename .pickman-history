@@ -81898,3 +81898,72 @@ Rebase, build, and push complete. Here's a summary:
 
 ---
 
+## 2026-05-15: us/master
+
+Branch: cherry-467dc9a44b7
+
+Commits:
+- 467dc9a44b7 configs: stm32mp13: add SPI-NAND UBI boot support
+- 2a55938b42b lib: uuid: add partition type GUID for extended bootloader
+- 27a928553a1 test: dm: part: add test for part_get_info_by_uuid
+- a392450189d test: cmd: add unit tests for part command
+- 703f8c313dd cmd: part: support lookup by UUID
+- 2dc71c48bf1 test: cmd: part: add UUID lookup tests
+- 97cdde6dfad fwu: add helper to get image GUID by type and bank index
+- 63fc73ff31c test: dm: fwu_mdata: add test for fwu_mdata_get_image_guid
+- 4300f9f4c5d board: st: stm32mp25: support dynamic A/B bank bootup
+- 43ba37376b9 arm/mach-stm32: Remove remaining non-existent STM32_RESET
+- 612256838ac reset: stm32: Fix compilation error
+- a1a47eee676 arm: apple: Add Apple M3 (t8122) support
+- 36d4c653580 virtio: fix return value check
+- 944427c3da6 Merge tag 'u-boot-stm32-20260512' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+Build passed. Continuing to the next commit.
+
+Now let me amend the commit message to note the fix-up:
+
+Deltas match. Build test:
+
+Now the merge commit:
+
+All 14 commits are present. Now run the final build:
+
+All cherry-picks completed successfully. Final status:
+
+## Summary
+
+**Branch:** `cherry-467dc9a44b7` (based on `ci/master`)
+
+**Build:** ✅ OK (clean build, no warnings or errors)
+
+**All 14 commits present:**
+1. `5f093fc8baa` configs: stm32mp13: add SPI-NAND UBI boot support
+2. `44fd92b63c2` lib: uuid: add partition type GUID for extended bootloader **(fix-up)**
+3. `ec3107b1550` test: dm: part: add test for part_get_info_by_uuid
+4. `f93e8bc6b37` test: cmd: add unit tests for part command **(fix-up)**
+5. `1e7990c7455` cmd: part: support lookup by UUID
+6. `61dff842631` test: cmd: part: add UUID lookup tests
+7. `78b31044418` fwu: add helper to get image GUID by type and bank index
+8. `790358cb4a7` test: dm: fwu_mdata: add test for fwu_mdata_get_image_guid
+9. `7cbaee86194` board: st: stm32mp25: support dynamic A/B bank bootup
+10. `0bf6ee7617e` arm/mach-stm32: Remove remaining non-existent STM32_RESET
+11. `24fd2e05b41` reset: stm32: Fix compilation error
+12. `f8f81a2022a` arm: apple: Add Apple M3 (t8122) support
+13. `0d13ba4f5a6` virtio: fix return value check
+14. `bba595569ba` Merge tag 'u-boot-stm32-20260512' **(fix-up, empty)**
+
+**Fix-ups made:**
+
+- **`lib: uuid: add partition type GUID for extended bootloader`** — HEAD's `list_guid[]` uses a 2-field `{string, guid}` structure inside a `#ifdef CONFIG_PARTITION_TYPE_GUID` block, while the upstream commit assumed a 3-field `{string, longname, guid}` structure with `CONFIG_IS_ENABLED(EFI_PARTITION)`. Adapted by adding only the `{"xbootldr", PARTITION_XBOOTLDR}` entry to the existing 2-field list.
+
+- **`test: cmd: add unit tests for part command`** — `test/cmd/Makefile` conflict because HEAD already had `obj-$(CONFIG_CMD_PART_FIND) += part_find.o` at the same insertion point. Kept both entries.
+
+- **`Merge tag 'u-boot-stm32-20260512'`** — Conflicts in `lib/uuid.c` and `test/cmd/Makefile` (same as above, re-applied by the merge). Resolved by keeping HEAD; resulting empty commit preserved with `--allow-empty` to maintain merge history.
+
+**Concerning deltas:** None — every stats comparison matched the upstream commit exactly.
+
+Branch is ready for pushing.
+
+---
+
