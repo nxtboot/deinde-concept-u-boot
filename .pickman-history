@@ -82043,3 +82043,34 @@ The branch `cherry-d5ea30b233e` is ready for pushing.
 
 ---
 
+## 2026-05-16: us/master
+
+Branch: cherry-5f82b15958e
+
+Commits:
+- 5f82b15958e i2c: designware_i2c: Staticize driver ops
+- 0c464b6cc3e i2c: Remove legacy CONFIG_SYS_I2C_SOFT
+- f020dfd9bf8 Merge tag 'i2c-updates-for-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-i2c
+
+### Conversation log
+All 3 commits cherry-picked successfully onto branch `cherry-5f82b15958e`.
+
+## Final Status
+
+**Build result: OK** — sandbox builds cleanly with no warnings/errors.
+
+**Commits on branch:**
+- `80d465eb3a2` i2c: designware_i2c: Staticize driver ops (1 file, 1+/1-)
+- `4ec1dc2de42` i2c: Remove legacy CONFIG_SYS_I2C_SOFT (6 files, 539-)
+- `b62c8fbba6f` Merge tag 'i2c-updates-for-2026.07-rc3' (empty merge, preserved with --allow-empty)
+
+**Delta check:** Both non-merge commits matched their originals exactly (same files, same line counts).
+
+**Fix-ups:** None required. The second commit had a trivial auto-merge in README and the merge commit was preserved as empty per the instructions.
+
+**Concerning deltas:** None.
+
+Branch `cherry-5f82b15958e` is ready for pushing.
+
+---
+
