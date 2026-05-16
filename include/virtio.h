@@ -27,6 +27,8 @@
 #include <linux/bug.h>
 #include <linux/typecheck.h>
 
+#define VIRTIO_VENDOR_QEMU	0x554d4551
+
 #define VIRTIO_NET_DRV_NAME		"virtio-net"
 #define VIRTIO_BLK_DRV_NAME		"virtio-blk"
 #define VIRTIO_CONSOLE_DRV_NAME		"virtio-serial"
