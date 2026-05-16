@@ -80,6 +80,7 @@ static const struct {
 	{"swap",	PARTITION_LINUX_SWAP_GUID},
 	{"lvm",		PARTITION_LINUX_LVM_GUID},
 	{"u-boot-env",	PARTITION_U_BOOT_ENVIRONMENT},
+	{"xbootldr",	PARTITION_XBOOTLDR},
 	{"cros-kern",	PARTITION_CROS_KERNEL},
 	{"cros-root",	PARTITION_CROS_ROOT},
 	{"cros-fw",	PARTITION_CROS_FIRMWARE},
