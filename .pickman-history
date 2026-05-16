@@ -82074,3 +82074,71 @@ Branch `cherry-5f82b15958e` is ready for pushing.
 
 ---
 
+## 2026-05-16: us/master
+
+Branch: cherry-03d70a9220f
+
+Commits:
+- 03d70a9220f arm: dts: k3-am69-aquila: fix combined boot firmware image build
+- 674f35a8847 powerpc: fix call to cpu_init_r
+- 09bc47cc337 caam: don't write memory at 0 on PPC
+- cae1cfe2ca0 spi: fsl_espi: fix read transactions
+- 5a39262a4aa boards: remove dead fman code
+- 6af1851cb63 boards/nxp: remove board_eth_init()
+- e742f676e52 boards/nxp: remove empty fdt_fixup_board_enet()
+- 4839ba90456 p2041rdb: use the upstream device tree
+- 656dc03812c p2041rdb: support SDcard boot
+- f0e57510cf3 p2041rdb: update README and fix typos
+- b8124202d7a p2041rdb: remove NAND defconfig
+- 9a621ea6355 p2041rdb: convert README to rst
+- 408cab5f9d9 board: nxp: Fix OOB read in ft_board_setup
+- 12cf77821de board: ten64: Fix OOB read in ft_board_setup
+- 7252890625d board: nxp: lx2160a: without QIXIS, MC-ENET, PCI, LTC3882
+- 43257fa9e39 board: nxp: common: support CONFIG_FSL_USE_PCA9547_MUX
+- 8bd84cca34e firmware: scmi: sandbox: Staticize and constify driver ops
+- f3af40cff99 Merge tag 'fsl-qoriq-for-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+The first cherry-pick has a conflict. Let me check if these commits are already applied in ci/master before aborting.
+
+The file was deleted because the earlier commit it depends on was marked [FAILED] in ci/master. I'll need to create an empty commit for this dependency-broken commit. Let me proceed.
+
+Now let me run a build test for the first cherry-pick, then continue with the rest.
+
+Good, first build passes. Now cherry-pick the next commit.
+
+Match. Continue.
+
+The conflict is because the file was modified in our HEAD (probably by an earlier cherry-pick). The original intent was to delete this file, so let's just delete it.
+
+I need to add a fix-up note about the conflict resolution. Let me amend the commit message.
+
+Now the final merge commit:
+
+All 18 commits are present. Now run the final build test.
+
+## Summary
+
+All 18 commits processed on branch `cherry-03d70a9220f` (based on `ci/master`).
+
+### Build Result
+**OK** — Final sandbox build passed cleanly (no warnings/errors).
+
+### Fix-ups / Concerning Commits
+
+1. **03d70a9220f** `arm: dts: k3-am69-aquila: fix combined boot firmware image build` — **[FAILED]** (empty commit).
+   - Reason: This is a fix to the file `arch/arm/dts/k3-am69-aquila-dev-u-boot.dtsi`, which is supposed to be created by `f62d4535cf17` ("add combined boot firmware image"). That dependency was marked `[FAILED]` in ci/master, so the file does not exist. A modify/delete conflict resulted; the commit was preserved as empty with `[FAILED]` suffix.
+
+2. **b8124202d7a** `p2041rdb: remove NAND defconfig` — **Fix-up applied**.
+   - Modify/delete conflict on `configs/P2041RDB_NAND_defconfig` (modified in HEAD by an earlier commit in the series, deleted in this one). Resolved by deleting the file as the original commit intended. Amended commit message with a fix-up note.
+
+3. **f3af40cff99** `Merge tag 'fsl-qoriq-for-2026.07-rc3'` — Empty merge commit (all content already cherry-picked from individual commits). Committed with `--allow-empty` to preserve history.
+
+### Delta Verification
+All non-failed cherry-picks had identical file lists and line counts to their originals.
+
+### Branch State
+`cherry-03d70a9220f` is ready for pushing (17 commits ahead of `ci/master`). Not merged anywhere.
+
+---
+
