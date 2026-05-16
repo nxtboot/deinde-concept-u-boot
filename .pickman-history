@@ -82142,3 +82142,49 @@ All non-failed cherry-picks had identical file lists and line counts to their or
 
 ---
 
+### Pipeline fix: 2026-05-16 (attempt 2)
+
+Branch: cherry-03d70a9220f
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+## Report: Infrastructure failure — no code fix applied
+
+### Diagnosis
+The `play` job failure is again a **lab / infrastructure timeout**, not a code regression introduced by this MR.
+
+**Failure signature in job 516498:**
+```
+Bootstrapping U-Boot from dirs .../build/play and .../build/play_extra
+Writing U-Boot using method ti,am625
+...
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+Labgrid timed out waiting for the U-Boot login prompt on the BeaglePlay (`am62x_beagleplay_a53`) target and classified the result as `Lab failure` — its conventional signature for "infrastructure problem, not test failure". This is the same lab the previous attempt 1 also tripped over (SD card / serial console flakiness on the same target).
+
+### Why this is not the MR's fault
+Audited every commit in `ci/master..HEAD` (18 commits) against any path that could affect the BeaglePlay boot flow:
+
+- `git log ci/master..HEAD -- arch/arm/ common/spl/ drivers/mmc/ configs/am62x_ board/ti/` → **only** `c6a669afb80 board: nxp: lx2160a: without QIXIS, MC-ENET, PCI, LTC3882` (NXP Layerscape ARM64, unrelated to TI K3).
+- `git log ci/master..HEAD -- arch/arm/mach-k3/ arch/arm/dts/k3-am62 configs/am62x_beagleplay 'drivers/mmc/*'` → **empty**.
+- The series content is 17 NXP/PowerPC/Layerscape commits plus the merge; one ARM K3 commit (`c199416178e`) is empty and marked `[FAILED]`.
+
+### Action taken
+- No code changes (per task instructions for infrastructure failures).
+- `um build sandbox` re-verified clean.
+- Created local branch **`cherry-03d70a9220f-fix2`** at `19507f9c199` (identical to `cherry-03d70a9220f`) for the caller's tooling.
+
+### Recommendation
+Retry the `play` job. The failure is consistent with serial-console / SD-card flakiness on the BeaglePlay lab board (also seen in attempt 1) and cannot be addressed by source changes in this MR.
+
+The previous work is already complete — branch `cherry-03d70a9220f-fix2` was created at the head of `cherry-03d70a9220f` (no code change applied, as the failure is a lab infrastructure timeout, not a code regression). The background fetch task that triggered this notification has finished cleanly; no further action needed.
+
+---
+
