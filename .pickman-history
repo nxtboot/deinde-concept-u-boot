@@ -82223,3 +82223,42 @@ The `play` job failure on `am62x_beagleplay_a53` is a **lab/infrastructure timeo
 
 ---
 
+## 2026-05-16: us/master
+
+Branch: cherry-215496fec59
+
+Commits:
+- 215496fec59 smbios: Do not fall back on devicetree without valid mapping
+
+### Conversation log
+Delta matches exactly (1 file, 1 insertion, 1 deletion). Now let me run the build test.
+
+Build passed. Let me verify the final state.
+
+## Cherry-Pick Report
+
+**Status: SUCCESS**
+
+### Branch
+- Created: `cherry-215496fec59` from `ci/master`
+
+### Cherry-picked commits (1 of 1)
+| Original | New | Subject |
+|----------|-----|---------|
+| `215496fec59` | `29e631ab73e` | smbios: Do not fall back on devicetree without valid mapping |
+
+### Delta Verification
+- Original: 1 file changed, 1 insertion(+), 1 deletion(-)
+- Cherry-picked: 1 file changed, 1 insertion(+), 1 deletion(-)
+- **Identical** — no concerning delta
+
+### Build Result
+- `buildman -L --board sandbox -w -o /tmp/pickman` → **OK** (1 built, no warnings/errors)
+
+### Fix-ups
+- None required; clean cherry-pick with no conflicts.
+
+The branch `cherry-215496fec59` is ready for pushing.
+
+---
+
