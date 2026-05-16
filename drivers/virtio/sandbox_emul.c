@@ -13,6 +13,7 @@
 #include <dm.h>
 #include <malloc.h>
 #include <virtio.h>
+#include <virtio_mmio.h>
 #include <asm/io.h>
 #include <dt-bindings/virtio.h>
 #include <asm/state.h>
@@ -257,12 +258,14 @@ static int sandbox_emul_of_to_plat(struct udevice *dev)
 	struct udevice *emul_dev = dev_get_parent(dev);
 	struct virtio_emul_ops *ops = virtio_emul_get_ops(emul_dev);
 	struct sandbox_emul_priv *priv = dev_get_priv(dev);
+	struct virtio_mmio_plat *plat = dev_get_plat(dev);
 	int ret;
 
 	/* set up the MMIO base so that virtio_mmio_probe() can find it */
 	priv->mmio.base = memalign(SZ_4K, MMIO_SIZE);
 	if (!priv->mmio.base)
 		return -ENOMEM;
+	plat->base = (phys_addr_t)(uintptr_t)priv->mmio.base;
 
 	ret = sandbox_mmio_add(priv->mmio.base, MMIO_SIZE, h_read, h_write,
 			       dev);
@@ -305,6 +308,7 @@ U_BOOT_DRIVER(virtio_emul) = {
 	.ops	= &virtio_mmio_ops,
 	.of_to_plat	= sandbox_emul_of_to_plat,
 	.priv_auto	= sizeof(struct sandbox_emul_priv),
+	.plat_auto	= sizeof(struct virtio_mmio_plat),
 };
 
 UCLASS_DRIVER(virtio_emul) = {
