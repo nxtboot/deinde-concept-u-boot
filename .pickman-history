@@ -82074,3 +82074,152 @@ Branch `cherry-5f82b15958e` is ready for pushing.
 
 ---
 
+## 2026-05-16: us/master
+
+Branch: cherry-03d70a9220f
+
+Commits:
+- 03d70a9220f arm: dts: k3-am69-aquila: fix combined boot firmware image build
+- 674f35a8847 powerpc: fix call to cpu_init_r
+- 09bc47cc337 caam: don't write memory at 0 on PPC
+- cae1cfe2ca0 spi: fsl_espi: fix read transactions
+- 5a39262a4aa boards: remove dead fman code
+- 6af1851cb63 boards/nxp: remove board_eth_init()
+- e742f676e52 boards/nxp: remove empty fdt_fixup_board_enet()
+- 4839ba90456 p2041rdb: use the upstream device tree
+- 656dc03812c p2041rdb: support SDcard boot
+- f0e57510cf3 p2041rdb: update README and fix typos
+- b8124202d7a p2041rdb: remove NAND defconfig
+- 9a621ea6355 p2041rdb: convert README to rst
+- 408cab5f9d9 board: nxp: Fix OOB read in ft_board_setup
+- 12cf77821de board: ten64: Fix OOB read in ft_board_setup
+- 7252890625d board: nxp: lx2160a: without QIXIS, MC-ENET, PCI, LTC3882
+- 43257fa9e39 board: nxp: common: support CONFIG_FSL_USE_PCA9547_MUX
+- 8bd84cca34e firmware: scmi: sandbox: Staticize and constify driver ops
+- f3af40cff99 Merge tag 'fsl-qoriq-for-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+The first cherry-pick has a conflict. Let me check if these commits are already applied in ci/master before aborting.
+
+The file was deleted because the earlier commit it depends on was marked [FAILED] in ci/master. I'll need to create an empty commit for this dependency-broken commit. Let me proceed.
+
+Now let me run a build test for the first cherry-pick, then continue with the rest.
+
+Good, first build passes. Now cherry-pick the next commit.
+
+Match. Continue.
+
+The conflict is because the file was modified in our HEAD (probably by an earlier cherry-pick). The original intent was to delete this file, so let's just delete it.
+
+I need to add a fix-up note about the conflict resolution. Let me amend the commit message.
+
+Now the final merge commit:
+
+All 18 commits are present. Now run the final build test.
+
+## Summary
+
+All 18 commits processed on branch `cherry-03d70a9220f` (based on `ci/master`).
+
+### Build Result
+**OK** — Final sandbox build passed cleanly (no warnings/errors).
+
+### Fix-ups / Concerning Commits
+
+1. **03d70a9220f** `arm: dts: k3-am69-aquila: fix combined boot firmware image build` — **[FAILED]** (empty commit).
+   - Reason: This is a fix to the file `arch/arm/dts/k3-am69-aquila-dev-u-boot.dtsi`, which is supposed to be created by `f62d4535cf17` ("add combined boot firmware image"). That dependency was marked `[FAILED]` in ci/master, so the file does not exist. A modify/delete conflict resulted; the commit was preserved as empty with `[FAILED]` suffix.
+
+2. **b8124202d7a** `p2041rdb: remove NAND defconfig` — **Fix-up applied**.
+   - Modify/delete conflict on `configs/P2041RDB_NAND_defconfig` (modified in HEAD by an earlier commit in the series, deleted in this one). Resolved by deleting the file as the original commit intended. Amended commit message with a fix-up note.
+
+3. **f3af40cff99** `Merge tag 'fsl-qoriq-for-2026.07-rc3'` — Empty merge commit (all content already cherry-picked from individual commits). Committed with `--allow-empty` to preserve history.
+
+### Delta Verification
+All non-failed cherry-picks had identical file lists and line counts to their originals.
+
+### Branch State
+`cherry-03d70a9220f` is ready for pushing (17 commits ahead of `ci/master`). Not merged anywhere.
+
+---
+
+### Pipeline fix: 2026-05-16 (attempt 2)
+
+Branch: cherry-03d70a9220f
+
+Failed jobs:
+- play (sjg-lab)
+
+### Conversation log
+## Report: Infrastructure failure — no code fix applied
+
+### Diagnosis
+The `play` job failure is again a **lab / infrastructure timeout**, not a code regression introduced by this MR.
+
+**Failure signature in job 516498:**
+```
+Bootstrapping U-Boot from dirs .../build/play and .../build/play_extra
+Writing U-Boot using method ti,am625
+...
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+Labgrid timed out waiting for the U-Boot login prompt on the BeaglePlay (`am62x_beagleplay_a53`) target and classified the result as `Lab failure` — its conventional signature for "infrastructure problem, not test failure". This is the same lab the previous attempt 1 also tripped over (SD card / serial console flakiness on the same target).
+
+### Why this is not the MR's fault
+Audited every commit in `ci/master..HEAD` (18 commits) against any path that could affect the BeaglePlay boot flow:
+
+- `git log ci/master..HEAD -- arch/arm/ common/spl/ drivers/mmc/ configs/am62x_ board/ti/` → **only** `c6a669afb80 board: nxp: lx2160a: without QIXIS, MC-ENET, PCI, LTC3882` (NXP Layerscape ARM64, unrelated to TI K3).
+- `git log ci/master..HEAD -- arch/arm/mach-k3/ arch/arm/dts/k3-am62 configs/am62x_beagleplay 'drivers/mmc/*'` → **empty**.
+- The series content is 17 NXP/PowerPC/Layerscape commits plus the merge; one ARM K3 commit (`c199416178e`) is empty and marked `[FAILED]`.
+
+### Action taken
+- No code changes (per task instructions for infrastructure failures).
+- `um build sandbox` re-verified clean.
+- Created local branch **`cherry-03d70a9220f-fix2`** at `19507f9c199` (identical to `cherry-03d70a9220f`) for the caller's tooling.
+
+### Recommendation
+Retry the `play` job. The failure is consistent with serial-console / SD-card flakiness on the BeaglePlay lab board (also seen in attempt 1) and cannot be addressed by source changes in this MR.
+
+The previous work is already complete — branch `cherry-03d70a9220f-fix2` was created at the head of `cherry-03d70a9220f` (no code change applied, as the failure is a lab infrastructure timeout, not a code regression). The background fetch task that triggered this notification has finished cleanly; no further action needed.
+
+---
+
+### Review: 2026-05-16
+
+Branch: cherry-03d70a9220f
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) play.
+
+## Report: Infrastructure failure — no code fix...
+
+### Conversation log
+The push succeeded — the remote was updated with a new pickman-record commit (`19507f9c199..e72abd14e61`), which will trigger a fresh MR pipeline run.
+
+## Summary
+
+### Diagnosis (unchanged from attempt 2)
+The `play` job failure on `am62x_beagleplay_a53` is a **lab/infrastructure timeout**, not a code regression:
+- Labgrid timed out waiting for U-Boot login prompt and classified result as `Lab failure: Marking connection bad`
+- Same lab/board that tripped attempt 1 (`Partition 1 invalid on device 1` / `spl_load_image_fat` error reading `tispl.bin`)
+
+### Re-verification
+- `git log ci/master..HEAD -- arch/arm/mach-k3/ arch/arm/dts/k3-am62 configs/am62x_beagleplay 'drivers/mmc/*' common/spl/` → **empty**
+- `git log ci/master..HEAD -- arch/arm/` → only `c6a669afb80 board: nxp: lx2160a:` (NXP Layerscape, unrelated to TI K3)
+- `um build sandbox` → **OK** (clean, no warnings/errors)
+
+### Action taken
+- No code changes (infrastructure failure — none appropriate)
+- Created local branch **`cherry-03d70a9220f-v3`** at `e72abd14e61`
+- Force-pushed `cherry-03d70a9220f` → `ci` (advanced from `19507f9c199` to `e72abd14e61` via the pickman-record commit), which will trigger a fresh MR pipeline run
+
+### Reply to post to MR
+
+> Re-audited the branch (attempt 3) — still no commit touches `arch/arm/mach-k3`, `arch/arm/dts/k3-am62*`, `configs/am62x_beagleplay`, `common/spl/`, or `drivers/mmc/`. The only ARM change in the series remains the unrelated `lx2160a` (NXP Layerscape) commit. Both prior `play` failures bear infrastructure signatures: attempt 1 was `Partition 1 invalid on device 1` / `spl_load_image_fat: error reading image tispl.bin` (SD card on lab board); attempt 2 was a labgrid 20s timeout waiting for the login prompt, with labgrid's own `Lab failure: Marking connection bad` classifier. Sandbox build re-verified clean. No code change is appropriate; please retry the `play` job once more, or if it keeps failing on this lab board, treat it as a known-flaky target for this series.
+
+---
+
