@@ -82332,3 +82332,37 @@ Force push the v2 branch (no code changes vs. v1) to retrigger the pipeline. Re-
 
 ---
 
+## 2026-05-18: us/master
+
+Branch: cherry-0646ee0ed86
+
+Commits:
+- 0646ee0ed86 fs: ubifs: remove dead code
+- 78319e074d0 Merge tag 'ubi-updates-for-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-ubi
+
+### Conversation log
+Delta matches exactly. Now let's build test.
+
+Build passed. Now the merge commit.
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-0646ee0ed86` (based on `ci/master`)
+
+**Cherry-picks completed:**
+1. `3f2c2a6649a` - fs: ubifs: remove dead code (from `0646ee0ed86`)
+   - Delta: 1 file, 3 deletions - **exact match** with original
+2. `8b98f10ba26` - Merge tag 'ubi-updates-for-2026.07-rc3' (from `78319e074d0`)
+   - Empty merge commit, preserved with `--allow-empty`
+
+**Build result:** OK - sandbox build passed cleanly after both cherry-picks (1 total built, 0:00:10)
+
+**Fix-ups:** None required - all cherry-picks applied cleanly
+
+**Concerning deltas:** None - first commit applied identically, merge commit was correctly empty (as expected since the single non-merge commit it brings in was already cherry-picked separately)
+
+The branch is ready for pushing.
+
+---
