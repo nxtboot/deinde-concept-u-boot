@@ -313,7 +313,6 @@ static int bdinfo_test_help(struct unit_test_state *uts)
 		ut_assertok(bdinfo_test_all(uts));
 	} else {
 		ut_asserteq(1, run_commandf("bdinfo -h"));
-		ut_assert_nextlinen("bdinfo: invalid option -- h");
 		ut_assert_nextlinen("bdinfo - print Board Info structure");
 		ut_assert_nextline_empty();
 		ut_assert_nextlinen("Usage:");

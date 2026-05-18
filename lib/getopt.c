@@ -39,7 +39,7 @@ void getopt_init_state(struct getopt_state *gs, int argc, char *const argv[])
 	gs->arg_index = 1;
 }
 
-int __getopt(struct getopt_state *gs, const char *optstring, bool silent)
+int getopt(struct getopt_state *gs, const char *optstring)
 {
 	char curopt;	/* current option character */
 	const char *curoptp;	/* pointer to the current option in optstring */
@@ -117,8 +117,6 @@ int __getopt(struct getopt_state *gs, const char *optstring, bool silent)
 	curoptp = strchr(optstring, curopt);
 
 	if (!curoptp) {
-		if (!silent)
-			printf("%s: invalid option -- %c\n", argv[0], curopt);
 		gs->opt = curopt;
 		gs->arg_index++;
 		return '?';
@@ -173,8 +171,6 @@ int __getopt(struct getopt_state *gs, const char *optstring, bool silent)
 	gs->arg_index = 1;
 
 	if (gs->index + NONOPTS(gs) >= argc || argv[gs->index][0] == '-') {
-		if (!silent)
-			printf("option requires an argument -- %c\n", curopt);
 		gs->opt = curopt;
 		return ':';
 	}

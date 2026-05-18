@@ -25,8 +25,8 @@ struct getopt_state {
 	char *argv[CONFIG_SYS_MAXARGS + 1];
 #else
 	/**
-	 * @argv: Borrowed pointer to the caller's argv. In POSIX mode
-	 * getopt() never reorders, so no writable copy is needed.
+	 * @argv: Borrowed pointer to the caller's argv. In POSIX mode getopt()
+	 * never reorders, so no writable copy is needed.
 	 */
 	char *const *argv;
 #endif
@@ -71,8 +71,6 @@ struct getopt_state {
 void getopt_init_state(struct getopt_state *gs, int argc,
 		       char *const argv[]);
 
-int __getopt(struct getopt_state *gs, const char *optstring, bool silent);
-
 /**
  * getopt() - Parse short command-line options
  * @gs: Internal state and out-of-band return arguments. This must be
@@ -98,6 +96,10 @@ int __getopt(struct getopt_state *gs, const char *optstring, bool silent);
  * them at @gs.argv[gs.index..argc-1]. If @optstring begins with ``+``,
  * getopt() instead stops at the first non-option (POSIX ``getopt``
  * behaviour). An ``--`` argument terminates option scanning in either mode.
+ *
+ * getopt() does not print any error messages; the caller is expected to
+ * detect '?' and ':' and report via its own usage string (typically
+ * CMD_RET_USAGE).
  *
  * An example invocation of getopt() might look like::
  *
@@ -132,21 +134,22 @@ int __getopt(struct getopt_state *gs, const char *optstring, bool silent);
  * @gs.index is always set to the index of the next unparsed argument in
  * @gs.argv.
  */
-static inline int getopt(struct getopt_state *gs, const char *optstring)
-{
-	return __getopt(gs, optstring, false);
-}
+int getopt(struct getopt_state *gs, const char *optstring);
 
 /**
- * getopt_silent() - Parse short command-line options silently
- * @gs: State
- * @optstring: Option specification
+ * getopt_silent() - Compatibility alias for getopt()
+ * @gs: getopt state
+ * @optstring: option specification, as for getopt()
  *
- * Same as getopt(), except no error messages are printed.
+ * getopt() no longer prints error messages, so this is identical to
+ * getopt(). Kept for callers (notably the unit tests) that named it
+ * explicitly.
+ *
+ * Return: same as getopt()
  */
 static inline int getopt_silent(struct getopt_state *gs, const char *optstring)
 {
-	return __getopt(gs, optstring, true);
+	return getopt(gs, optstring);
 }
 
 /**
