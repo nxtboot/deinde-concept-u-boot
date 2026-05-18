@@ -82299,3 +82299,36 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-18 (attempt 2 / v2)
+
+Branch: cherry-7bb8c707b1c
+
+Failed jobs reported by bot (same as attempt 1):
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- pine64 (sjg-lab)
+
+### Analysis
+
+The branch only modifies `configs/an7581_evb_defconfig` (Airoha AN7581 board). None of the failing jobs build or test that board. All five failures match the infrastructure pattern identified in attempt 1:
+
+| Job | Error | Type |
+|---|---|---|
+| efi-x86_64-uboot-iso-install | `OSError: [Errno 5] Input/output error` while reading serial | Lab I/O error |
+| efi-aarch64 | `test_distro_arm_app_efi` Timeout waiting for "Ubuntu 25.04 qarm ttyAMA0" | Distro boot timeout |
+| efi-x86_64-uboot-iso | `Lab timeout: Marking connection bad - no other tests will run` | Lab connection died before any test ran |
+| qemu-x86_64 | `test_efi_selftest_text_input_ex` Timeout | Test flake / timing |
+| pine64 | `bootmeth_efi` arrived as `b��tmeth_efi` (Unicode replacement chars) | Serial byte corruption |
+
+### Action
+
+Force push the v2 branch (no code changes vs. v1) to retrigger the pipeline. Re-running the lab jobs is the correct remedy for transient I/O / timeout / serial-corruption failures.
+
+### Build Result
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → OK (no code changes since attempt 1; build re-verified).
+
+---
+
