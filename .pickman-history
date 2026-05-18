@@ -82262,3 +82262,40 @@ The branch `cherry-215496fec59` is ready for pushing.
 
 ---
 
+## 2026-05-18: us/master
+
+Branch: cherry-7bb8c707b1c
+
+Commits:
+- 7bb8c707b1c configs: airoha: an7581: enable position independent code
+- 0fcbe38192a configs: airoha: an7581: disable ENV_IS_IN_MTD to avoid boot panic
+- 97049710312 Merge patch series "configs: airoha: an7581: defconfig fixes & improvements"
+
+### Conversation log
+Delta matches. Now let me run a build test and then cherry-pick the next commit.
+
+Delta matches exactly. Build test then continue with the merge commit.
+
+All three commits are in place. Now the final build test.
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-7bb8c707b1c` (based on `ci/master`)
+
+**Cherry-picks applied (in order):**
+1. `1dce72bbfa0` — configs: airoha: an7581: enable position independent code (from `7bb8c707b1c`)
+2. `f895be6564b` — configs: airoha: an7581: disable ENV_IS_IN_MTD to avoid boot panic (from `0fcbe38192a`)
+3. `c55c7c5bf6f` — Merge patch series "configs: airoha: an7581: defconfig fixes & improvements" (from `97049710312`, empty merge commit preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox built cleanly after each cherry-pick and after the full series.
+
+**Deltas:** Both non-merge commits had identical file changes (1 file, 1 insertion) compared to the originals — no concerning deltas.
+
+**Fix-ups:** None required. All cherry-picks applied without manual conflict resolution. The merge commit was empty (as expected, since the merge brought in only the two patches above which were already applied individually) and preserved with `--allow-empty`.
+
+The branch is ready for pushing.
+
+---
+
