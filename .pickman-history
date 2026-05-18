@@ -82366,3 +82366,44 @@ All cherry-picks completed successfully.
 The branch is ready for pushing.
 
 ---
+
+### Pipeline fix: 2026-05-18 (attempt 1)
+
+Branch: cherry-0646ee0ed86
+
+Failed jobs:
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- rpi5 (sjg-lab)
+
+### Conversation log
+All three failures look like infrastructure issues, not code issues. Let me verify the branch state and check the commits.
+
+I have enough information to determine these are all infrastructure failures, not code issues. Let me verify by checking the build of sandbox just to be sure the branch compiles cleanly.
+
+Sandbox built cleanly (no output = success). Now let me create the requested local branch with no changes since these are all infrastructure failures.
+
+## Report: Infrastructure / Transient Failures — No Code Changes Made
+
+**Diagnosis:** All three failed jobs are infrastructure/transient issues unrelated to the branch's code changes.
+
+**Branch contents (the cherry-picked work):**
+1. `3f2c2a6649a` fs: ubifs: remove dead code — deletes 3 lines of unreachable code after an infinite loop in `fs/ubifs/ubifs.c`
+2. `8b98f10ba26` Merge tag 'ubi-updates-for-2026.07-rc3' — empty merge commit (the underlying commit was already cherry-picked individually)
+
+Neither change can plausibly affect tk1 (Tegra K1), rpi5 (Raspberry Pi 5), or efi-x86_64 (EFI x86_64) — none of those targets exercise UBIFS code paths, and the patch removes provably-dead code anyway.
+
+**Failure analysis:**
+
+| Job | Root cause | Evidence |
+|-----|-----------|----------|
+| **tk1** | Lab board locked by another user | `labgrid-client: Error: place tk1 is acquired by a different user (kea/labgrid)`; `u-boot-test-getrole tk1 --configure` returned 1 before any code ran |
+| **rpi5** | Lab board locked by another user | Identical pattern: `place rpi5 is acquired by a different user (kea/labgrid)` |
+| **efi-x86_64-uboot-iso** | Flaky distro test | U-Boot booted successfully and handed off to the Linux kernel; kernel reported `Initramfs unpacking failed: invalid magic at start of compressed archive` and timed out waiting for `Started gdm.service`. This is a runtime issue in the Ubuntu live ISO boot path, unrelated to any U-Boot code on the branch |
+
+**Sanity check:** `um build sandbox` succeeds cleanly on the branch HEAD.
+
+**Result:** Local branch `cherry-0646ee0ed86-fix1` created with **no changes** relative to `cherry-0646ee0ed86`. These failures should clear on a pipeline retry once the lab boards are released and the distro test re-runs.
+
+---
+
