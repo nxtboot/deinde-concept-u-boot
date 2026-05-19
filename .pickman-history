@@ -82262,3 +82262,73 @@ The branch `cherry-215496fec59` is ready for pushing.
 
 ---
 
+## 2026-05-18: us/master
+
+Branch: cherry-7bb8c707b1c
+
+Commits:
+- 7bb8c707b1c configs: airoha: an7581: enable position independent code
+- 0fcbe38192a configs: airoha: an7581: disable ENV_IS_IN_MTD to avoid boot panic
+- 97049710312 Merge patch series "configs: airoha: an7581: defconfig fixes & improvements"
+
+### Conversation log
+Delta matches. Now let me run a build test and then cherry-pick the next commit.
+
+Delta matches exactly. Build test then continue with the merge commit.
+
+All three commits are in place. Now the final build test.
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-7bb8c707b1c` (based on `ci/master`)
+
+**Cherry-picks applied (in order):**
+1. `1dce72bbfa0` — configs: airoha: an7581: enable position independent code (from `7bb8c707b1c`)
+2. `f895be6564b` — configs: airoha: an7581: disable ENV_IS_IN_MTD to avoid boot panic (from `0fcbe38192a`)
+3. `c55c7c5bf6f` — Merge patch series "configs: airoha: an7581: defconfig fixes & improvements" (from `97049710312`, empty merge commit preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox built cleanly after each cherry-pick and after the full series.
+
+**Deltas:** Both non-merge commits had identical file changes (1 file, 1 insertion) compared to the originals — no concerning deltas.
+
+**Fix-ups:** None required. All cherry-picks applied without manual conflict resolution. The merge commit was empty (as expected, since the merge brought in only the two patches above which were already applied individually) and preserved with `--allow-empty`.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-05-18 (attempt 2 / v2)
+
+Branch: cherry-7bb8c707b1c
+
+Failed jobs reported by bot (same as attempt 1):
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- pine64 (sjg-lab)
+
+### Analysis
+
+The branch only modifies `configs/an7581_evb_defconfig` (Airoha AN7581 board). None of the failing jobs build or test that board. All five failures match the infrastructure pattern identified in attempt 1:
+
+| Job | Error | Type |
+|---|---|---|
+| efi-x86_64-uboot-iso-install | `OSError: [Errno 5] Input/output error` while reading serial | Lab I/O error |
+| efi-aarch64 | `test_distro_arm_app_efi` Timeout waiting for "Ubuntu 25.04 qarm ttyAMA0" | Distro boot timeout |
+| efi-x86_64-uboot-iso | `Lab timeout: Marking connection bad - no other tests will run` | Lab connection died before any test ran |
+| qemu-x86_64 | `test_efi_selftest_text_input_ex` Timeout | Test flake / timing |
+| pine64 | `bootmeth_efi` arrived as `b��tmeth_efi` (Unicode replacement chars) | Serial byte corruption |
+
+### Action
+
+Force push the v2 branch (no code changes vs. v1) to retrigger the pipeline. Re-running the lab jobs is the correct remedy for transient I/O / timeout / serial-corruption failures.
+
+### Build Result
+
+`buildman -L --board sandbox -w -o /tmp/pickman` → OK (no code changes since attempt 1; build re-verified).
+
+---
+
