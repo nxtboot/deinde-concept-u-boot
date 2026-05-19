@@ -82332,3 +82332,116 @@ Force push the v2 branch (no code changes vs. v1) to retrigger the pipeline. Re-
 
 ---
 
+## 2026-05-18: us/master
+
+Branch: cherry-0646ee0ed86
+
+Commits:
+- 0646ee0ed86 fs: ubifs: remove dead code
+- 78319e074d0 Merge tag 'ubi-updates-for-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-ubi
+
+### Conversation log
+Delta matches exactly. Now let's build test.
+
+Build passed. Now the merge commit.
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Branch:** `cherry-0646ee0ed86` (based on `ci/master`)
+
+**Cherry-picks completed:**
+1. `3f2c2a6649a` - fs: ubifs: remove dead code (from `0646ee0ed86`)
+   - Delta: 1 file, 3 deletions - **exact match** with original
+2. `8b98f10ba26` - Merge tag 'ubi-updates-for-2026.07-rc3' (from `78319e074d0`)
+   - Empty merge commit, preserved with `--allow-empty`
+
+**Build result:** OK - sandbox build passed cleanly after both cherry-picks (1 total built, 0:00:10)
+
+**Fix-ups:** None required - all cherry-picks applied cleanly
+
+**Concerning deltas:** None - first commit applied identically, merge commit was correctly empty (as expected since the single non-merge commit it brings in was already cherry-picked separately)
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-05-18 (attempt 1)
+
+Branch: cherry-0646ee0ed86
+
+Failed jobs:
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- rpi5 (sjg-lab)
+
+### Conversation log
+All three failures look like infrastructure issues, not code issues. Let me verify the branch state and check the commits.
+
+I have enough information to determine these are all infrastructure failures, not code issues. Let me verify by checking the build of sandbox just to be sure the branch compiles cleanly.
+
+Sandbox built cleanly (no output = success). Now let me create the requested local branch with no changes since these are all infrastructure failures.
+
+## Report: Infrastructure / Transient Failures — No Code Changes Made
+
+**Diagnosis:** All three failed jobs are infrastructure/transient issues unrelated to the branch's code changes.
+
+**Branch contents (the cherry-picked work):**
+1. `3f2c2a6649a` fs: ubifs: remove dead code — deletes 3 lines of unreachable code after an infinite loop in `fs/ubifs/ubifs.c`
+2. `8b98f10ba26` Merge tag 'ubi-updates-for-2026.07-rc3' — empty merge commit (the underlying commit was already cherry-picked individually)
+
+Neither change can plausibly affect tk1 (Tegra K1), rpi5 (Raspberry Pi 5), or efi-x86_64 (EFI x86_64) — none of those targets exercise UBIFS code paths, and the patch removes provably-dead code anyway.
+
+**Failure analysis:**
+
+| Job | Root cause | Evidence |
+|-----|-----------|----------|
+| **tk1** | Lab board locked by another user | `labgrid-client: Error: place tk1 is acquired by a different user (kea/labgrid)`; `u-boot-test-getrole tk1 --configure` returned 1 before any code ran |
+| **rpi5** | Lab board locked by another user | Identical pattern: `place rpi5 is acquired by a different user (kea/labgrid)` |
+| **efi-x86_64-uboot-iso** | Flaky distro test | U-Boot booted successfully and handed off to the Linux kernel; kernel reported `Initramfs unpacking failed: invalid magic at start of compressed archive` and timed out waiting for `Started gdm.service`. This is a runtime issue in the Ubuntu live ISO boot path, unrelated to any U-Boot code on the branch |
+
+**Sanity check:** `um build sandbox` succeeds cleanly on the branch HEAD.
+
+**Result:** Local branch `cherry-0646ee0ed86-fix1` created with **no changes** relative to `cherry-0646ee0ed86`. These failures should clear on a pipeline retry once the lab boards are released and the distro test re-runs.
+
+---
+
+
+### Review: 2026-05-18
+
+Branch: cherry-0646ee0ed86
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) tk1, efi-x86_64-uboot-iso, rpi5.
+
+### Conversation log
+The "review comment" is the previous pipeline-fix-attempt-1 bot's own report. It correctly identified all three failures as infrastructure issues:
+- tk1 / rpi5: lab boards locked by another user (kea/labgrid)
+- efi-x86_64-uboot-iso: flaky Ubuntu live-ISO distro test (initramfs unpacking failure inside the kernel boot, well after U-Boot handed off)
+
+None of these jobs build or exercise UBIFS code; the MR only removes 3 lines of provably-dead code after an infinite loop in `fs/ubifs/ubifs.c`. There is no plausible code change that could affect those jobs.
+
+Build verified: `buildman -L --board sandbox -w -o /tmp/pickman` → OK (1 built, 0:00:12, no warnings).
+
+The previous fix1 branch was not pushed to the remote, so v2 includes the fix1 history record plus this review-handling record. Force-pushing v2 to `ci/cherry-0646ee0ed86` retriggers the GitLab pipeline so the locked lab boards (now hopefully released) and the flaky distro test get a fresh run.
+
+## Report
+
+**MR:** !1099
+**Branch:** `cherry-0646ee0ed86` (local v2 branch: `cherry-0646ee0ed86-v2`)
+
+### Comment addressed
+Previous bot comment reporting infrastructure failures (tk1, rpi5, efi-x86_64-uboot-iso). The comment was the prior attempt's own finding that no code change is required — re-confirmed here.
+
+### Action taken
+- Created `cherry-0646ee0ed86-v2` based on `cherry-0646ee0ed86-fix1` (so the v1 fix1 history record is preserved on the wire this time)
+- Added this `.pickman-history` review-handling entry
+- Build re-verified: sandbox OK
+- Force-pushed to `ci/cherry-0646ee0ed86` to retrigger the pipeline
+
+### Suggested MR reply
+
+> Review v2: the previous attempt-1 analysis stands — `tk1`, `rpi5`, and `efi-x86_64-uboot-iso` all failed for infrastructure reasons (lab boards locked by another user; flaky Ubuntu live-ISO initramfs unpack) and none of those jobs touch UBIFS. The MR removes 3 lines of dead code after an infinite loop and cannot affect them. Force-pushed v2 to retrigger the pipeline; sandbox build re-verified clean. No source change.
+
+---
