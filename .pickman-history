@@ -82363,8 +82363,6 @@ All cherry-picks completed successfully.
 
 **Concerning deltas:** None - first commit applied identically, merge commit was correctly empty (as expected since the single non-merge commit it brings in was already cherry-picked separately)
 
-The branch is ready for pushing.
-
 ---
 
 ### Pipeline fix: 2026-05-18 (attempt 1)
@@ -82443,5 +82441,62 @@ Previous bot comment reporting infrastructure failures (tk1, rpi5, efi-x86_64-ub
 ### Suggested MR reply
 
 > Review v2: the previous attempt-1 analysis stands — `tk1`, `rpi5`, and `efi-x86_64-uboot-iso` all failed for infrastructure reasons (lab boards locked by another user; flaky Ubuntu live-ISO initramfs unpack) and none of those jobs touch UBIFS. The MR removes 3 lines of dead code after an infinite loop and cannot affect them. Force-pushed v2 to retrigger the pipeline; sandbox build re-verified clean. No source change.
+
+---
+
+## 2026-05-19: us/master
+
+Branch: cherry-d0d1c4a4f5d
+
+Commits:
+- d0d1c4a4f5d efi_loader: fix AllocatePages overlap status
+- 1076feb8a3f cmd: boot: fix edl being shown when not supported
+- fe725640ece doc: usage: cmd: reset: fix typo
+- e49c84f7bb7 doc: usage: cmd: reset: specify when the -edl option is available
+- ec95a60d9dc efi_loader: fix hii keyboard layout pointer computation
+- 5824ed13bcd efi_selftest: test hii keyboard layouts more
+- 38dbe637c9d Merge tag 'efi-2026-07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Stats match perfectly. Now let me build test, then continue.
+
+Build passes. Now cherry-pick the next commit.
+
+Stats match. Build test:
+
+All 7 commits present. Final build verification:
+
+## Summary
+
+All 7 cherry-picks completed successfully on branch `cherry-d0d1c4a4f5d` (based on `ci/master`).
+
+### Final state
+```
+f8f60589ccd Merge tag 'efi-2026-07-rc3' (empty merge, preserves history)
+102244be101 efi_selftest: test hii keyboard layouts more
+7a3e6018ae0 efi_loader: fix hii keyboard layout pointer computation
+12fb930f75b doc: usage: cmd: reset: specify when the -edl option is available
+743692eae5e doc: usage: cmd: reset: fix typo
+231fc2d2a47 cmd: boot: fix edl being shown when not supported
+27064368b0d efi_loader: fix AllocatePages overlap status
+```
+
+### Build result
+**OK** — sandbox build passes cleanly after each cherry-pick and at the end.
+
+### Fix-ups applied
+1. **`efi_loader: fix AllocatePages overlap status`** — kept the modern `lmb_free_flags()` call already in ci/master and dropped the obsolete `unmap_sysmem()` line, while adding the new `EFI_ALLOCATE_ADDRESS → EFI_NOT_FOUND` branch from the upstream commit.
+2. **`cmd: boot: fix edl being shown when not supported`** — extended the new `#if IS_ENABLED(CONFIG_SYSRESET_CMD_RESET_ARGS)` gate to also cover the `-h` and `-u` options that ci/master had added, since the commit log explicitly states "any option but `-w` will only be handled when CONFIG_SYSRESET_CMD_RESET_ARGS=y".
+3. **`doc: usage: cmd: reset: specify when the -edl option is available`** — merged the new synopsis style and `CONFIG_SYSRESET_CMD_RESET_ARGS=y` note with the existing `-h`/`-u` synopsis and descriptions already in ci/master.
+4. **Merge commit `38dbe637c9d`** — produced an empty commit (changes already applied via the 6 individual cherry-picks). Preserved with merge subject and `(cherry picked from commit …)` reference.
+
+### Commits with concerning deltas
+None. All non-merge commits matched the upstream stats either exactly or with the small, explainable variance noted in fix-up #3 (11 vs 8 insertions in `reset.rst`, due to keeping the existing `-h`/`-u` content alongside the new content).
+
+The branch is ready for pushing.
+
+### Rebase: 2026-05-19
+
+Branch rebased onto latest ci/master (which had picked up the cherry-0646ee0ed86 merge plus its pipeline-fix and review-handling pickman records). The only conflict was in `.pickman-history`, resolved by keeping both timelines in chronological order. All 7 source commits replayed cleanly with unchanged stats; sandbox build re-verified OK.
 
 ---
