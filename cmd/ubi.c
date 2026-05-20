@@ -505,7 +505,7 @@ int ubi_volume_write(const char *volume, const void *buf, loff_t offset,
 	return ret;
 }
 
-int ubi_volume_read(const char *volume, char *buf, loff_t offset, size_t size)
+int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size)
 {
 	int err, lnum, off, len, tbuf_size;
 	void *tbuf;
@@ -877,7 +877,7 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		}
 
 		if (argc == 3) {
-			return ubi_volume_read(argv[3], (char *)addr, 0, size);
+			return ubi_volume_read(argv[3], (void *)addr, 0, size);
 		}
 	}
 
