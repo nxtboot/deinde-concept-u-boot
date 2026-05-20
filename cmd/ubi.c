@@ -213,7 +213,7 @@ bad:
 	return err;
 }
 
-static int ubi_create_vol(const char *volume, int64_t size, int dynamic,
+static int ubi_create_vol(const char *volume, int64_t size, bool dynamic,
 			  int vol_id, bool skipcheck)
 {
 	struct ubi_mkvol_req req;
@@ -765,7 +765,7 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	}
 
 	if (strncmp(argv[1], "create", 6) == 0) {
-		int dynamic = 1;	/* default: dynamic volume */
+		bool dynamic = true;	/* default: dynamic volume */
 		int id = UBI_VOL_NUM_AUTO;
 
 		/* Use maximum available size */
@@ -786,7 +786,7 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		/* E.g., create volume size type */
 		if (argc == 5) {
 			if (strncmp(argv[4], "s", 1) == 0)
-				dynamic = 0;
+				dynamic = false;
 			else if (strncmp(argv[4], "d", 1) != 0) {
 				printf("Incorrect type\n");
 				return 1;
