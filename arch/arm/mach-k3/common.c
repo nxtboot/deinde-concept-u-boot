@@ -274,7 +274,6 @@ void enable_caches(void)
 		debug("%s: Failed to setup dram banks\n", __func__);
 
 	mmu_setup();
-	mmu_enable();
 
 	if (CONFIG_K3_ATF_LOAD_ADDR >= CFG_SYS_SDRAM_BASE) {
 		ret = fdt_fixup_reserved(fdt, "tfa", CONFIG_K3_ATF_LOAD_ADDR,
@@ -300,6 +299,7 @@ void enable_caches(void)
 			       __func__, ret);
 	}
 
+	mmu_enable();
 	icache_enable();
 	dcache_enable();
 }
