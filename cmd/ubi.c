@@ -213,8 +213,8 @@ bad:
 	return err;
 }
 
-static int ubi_create_vol(const char *volume, int64_t size, bool dynamic,
-			  int vol_id, bool skipcheck)
+int ubi_create_vol(const char *volume, int64_t size, bool dynamic, int vol_id,
+		   bool skipcheck)
 {
 	struct ubi_mkvol_req req;
 	int err;
@@ -246,7 +246,7 @@ static int ubi_create_vol(const char *volume, int64_t size, bool dynamic,
 	return ubi_create_volume(ubi, &req);
 }
 
-static struct ubi_volume *ubi_find_volume(const char *volume)
+struct ubi_volume *ubi_find_volume(const char *volume)
 {
 	struct ubi_volume *vol;
 	int i;
@@ -270,7 +270,7 @@ static struct ubi_volume *ubi_require_volume(const char *volume)
 	return vol;
 }
 
-static int ubi_remove_vol(struct ubi_volume *vol)
+static int __ubi_remove_vol(struct ubi_volume *vol)
 {
 	int err, reserved_pebs, i;
 
@@ -313,6 +313,17 @@ static int ubi_remove_vol(struct ubi_volume *vol)
 out_err:
 	ubi_err(ubi, "cannot remove volume %s, error %d", vol->name, err);
 	return err;
+}
+
+int ubi_remove_vol(const char *volume)
+{
+	struct ubi_volume *vol;
+
+	vol = ubi_require_volume(volume);
+	if (!vol)
+		return -ENODEV;
+
+	return __ubi_remove_vol(vol);
 }
 
 static int ubi_rename_vol(const char *oldname, const char *newname)
@@ -632,7 +643,7 @@ static int ubi_set_skip_check(const char *volume, bool skip_check)
 	return ubi_change_vtbl_record(ubi, vol->vol_id, &vtbl_rec);
 }
 
-static int ubi_detach(void)
+int ubi_detach(void)
 {
 #ifdef CONFIG_CMD_UBIFS
 	/*
@@ -828,7 +839,7 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 			vol_id = vol->vol_id;
 
-			ret = ubi_remove_vol(vol);
+			ret = __ubi_remove_vol(vol);
 			if (ret)
 				return CMD_RET_FAILURE;
 
