@@ -991,7 +991,7 @@ void ubifs_close(void)
 }
 
 /* Compat wrappers for common/cmd_ubifs.c */
-int ubifs_load(char *filename, unsigned long addr, u32 size)
+int ubifs_load(const char *filename, unsigned long addr, u32 size)
 {
 	loff_t actread;
 	int err;

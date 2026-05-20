@@ -53,7 +53,7 @@ int ubi_volume_write(const char *volume, const void *buf, loff_t offset,
 int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size);
 
 extern struct ubi_device *ubi_devices[];
-int cmd_ubifs_mount(char *vol_name);
+int cmd_ubifs_mount(const char *vol_name);
 int cmd_ubifs_umount(void);
 
 #if IS_ENABLED(CONFIG_UBI_BLOCK)
