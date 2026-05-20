@@ -241,8 +241,7 @@ static int ubi_create_vol(const char *volume, int64_t size, bool dynamic,
 		printf("verify_mkvol_req failed %d\n", err);
 		return err;
 	}
-	printf("Creating %s volume %s of size %lld\n",
-		dynamic ? "dynamic" : "static", volume, size);
+
 	/* Call real ubi create volume */
 	return ubi_create_volume(ubi, &req);
 }
@@ -258,20 +257,22 @@ static struct ubi_volume *ubi_find_volume(const char *volume)
 			return vol;
 	}
 
-	printf("Volume %s not found!\n", volume);
 	return NULL;
 }
 
-static int ubi_remove_vol(const char *volume)
+static struct ubi_volume *ubi_require_volume(const char *volume)
+{
+	struct ubi_volume *vol = ubi_find_volume(volume);
+
+	if (!vol)
+		printf("Volume %s not found!\n", volume);
+
+	return vol;
+}
+
+static int ubi_remove_vol(struct ubi_volume *vol)
 {
 	int err, reserved_pebs, i;
-	struct ubi_volume *vol;
-
-	vol = ubi_find_volume(volume);
-	if (vol == NULL)
-		return -ENODEV;
-
-	printf("Remove UBI volume %s (id %d)\n", vol->name, vol->vol_id);
 
 	if (ubi->ro_mode) {
 		printf("It's read-only mode\n");
@@ -310,7 +311,7 @@ static int ubi_remove_vol(const char *volume)
 
 	return 0;
 out_err:
-	ubi_err(ubi, "cannot remove volume %s, error %d", volume, err);
+	ubi_err(ubi, "cannot remove volume %s, error %d", vol->name, err);
 	return err;
 }
 
@@ -321,18 +322,14 @@ static int ubi_rename_vol(const char *oldname, const char *newname)
 	struct ubi_volume_desc desc;
 	struct list_head list;
 
-	vol = ubi_find_volume(oldname);
-	if (!vol) {
-		printf("%s: volume %s doesn't exist\n", __func__, oldname);
+	vol = ubi_require_volume(oldname);
+	if (!vol)
 		return -ENODEV;
-	}
 
 	if (!ubi_check(newname)) {
 		printf("%s: volume %s already exist\n", __func__, newname);
 		return -EINVAL;
 	}
-
-	printf("Rename UBI volume %s to %s\n", oldname, newname);
 
 	if (ubi->ro_mode) {
 		printf("%s: ubi device is in read-only mode\n", __func__);
@@ -358,7 +355,7 @@ static int ubi_volume_continue_write(const char *volume, const void *buf,
 	int err;
 	struct ubi_volume *vol;
 
-	vol = ubi_find_volume(volume);
+	vol = ubi_require_volume(volume);
 	if (vol == NULL)
 		return -ENODEV;
 
@@ -400,7 +397,7 @@ int ubi_volume_begin_write(const char *volume, const void *buf, size_t size,
 	int rsvd_bytes;
 	struct ubi_volume *vol;
 
-	vol = ubi_find_volume(volume);
+	vol = ubi_require_volume(volume);
 	if (vol == NULL)
 		return -ENODEV;
 
@@ -432,7 +429,7 @@ static int ubi_volume_offset_write(const char *volume, const void *buf,
 	loff_t off = offset;
 	void *tbuf;
 
-	vol = ubi_find_volume(volume);
+	vol = ubi_require_volume(volume);
 	if (!vol)
 		return -ENODEV;
 
@@ -503,18 +500,14 @@ int ubi_volume_write(const char *volume, const void *buf, loff_t offset,
 	return ret;
 }
 
-int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size)
+static int __ubi_volume_read(struct ubi_volume *vol, void *buf, loff_t offset,
+			     size_t size)
 {
 	int err, lnum, off, len, tbuf_size;
 	void *tbuf;
 	unsigned long long tmp;
-	struct ubi_volume *vol;
 	loff_t offp = offset;
 	size_t len_read;
-
-	vol = ubi_find_volume(volume);
-	if (vol == NULL)
-		return -ENODEV;
 
 	if (vol->updating) {
 		printf("updating");
@@ -527,12 +520,8 @@ int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size)
 	if (offp == vol->used_bytes)
 		return 0;
 
-	if (size == 0) {
-		printf("No size specified -> Using max size (%lld)\n", vol->used_bytes);
+	if (size == 0)
 		size = vol->used_bytes;
-	}
-
-	printf("Read %zu bytes from volume %s to %p\n", size, volume, buf);
 
 	if (vol->corrupted)
 		printf("read from corrupted volume %d", vol->vol_id);
@@ -586,6 +575,17 @@ int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size)
 	return err;
 }
 
+int ubi_volume_read(const char *volume, void *buf, loff_t offset, size_t size)
+{
+	struct ubi_volume *vol;
+
+	vol = ubi_require_volume(volume);
+	if (!vol)
+		return -ENODEV;
+
+	return __ubi_volume_read(vol, buf, offset, size);
+}
+
 static int ubi_dev_scan(const struct mtd_info *info,
 			const char *vid_header_offset)
 {
@@ -616,12 +616,9 @@ static int ubi_set_skip_check(const char *volume, bool skip_check)
 	struct ubi_vtbl_record vtbl_rec;
 	struct ubi_volume *vol;
 
-	vol = ubi_find_volume(volume);
+	vol = ubi_require_volume(volume);
 	if (!vol)
 		return -ENODEV;
-
-	printf("%sing skip_check on volume %s\n",
-	       skip_check ? "Sett" : "Clear", volume);
 
 	vtbl_rec = ubi->vtbl[vol->vol_id];
 	if (skip_check) {
@@ -695,6 +692,7 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	int64_t size;
 	ulong addr = 0;
 	bool skipcheck = false;
+	struct ubi_volume *vol;
 	int ret;
 
 	if (argc < 2)
@@ -801,27 +799,59 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		/* Use maximum available size */
 		if (!size) {
 			size = (int64_t)ubi->avail_pebs * ubi->leb_size;
-			printf("No size specified -> Using max size (%lld)\n", size);
+			if (size)
+				printf("No size specified -> Using max size (%lld)\n",
+				       size);
 		}
 		/* E.g., create volume */
 		if (argc == 3) {
 			ret = ubi_create_vol(argv[2], size, dynamic, id,
 					     skipcheck);
-			return ret ? CMD_RET_FAILURE : 0;
+			if (ret)
+				return CMD_RET_FAILURE;
+
+			printf("Created %s volume %s of size %lld\n",
+			       dynamic ? "dynamic" : "static", argv[2], size);
+
+			return 0;
 		}
 	}
 
 	if (strncmp(argv[1], "remove", 6) == 0) {
 		/* E.g., remove volume */
 		if (argc == 3) {
-			ret = ubi_remove_vol(argv[2]);
-			return ret ? CMD_RET_FAILURE : 0;
+			int vol_id;
+
+			vol = ubi_require_volume(argv[2]);
+			if (!vol)
+				return CMD_RET_FAILURE;
+
+			vol_id = vol->vol_id;
+
+			ret = ubi_remove_vol(vol);
+			if (ret)
+				return CMD_RET_FAILURE;
+
+			printf("Removed UBI volume %s (id %d)\n", argv[2],
+			       vol_id);
+
+			return 0;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_CMD_UBI_RENAME) && !strncmp(argv[1], "rename", 6)) {
+		if (argc < 4) {
+			printf("Please see usage\n");
+			return CMD_RET_USAGE;
+		}
+
 		ret = ubi_rename_vol(argv[2], argv[3]);
-		return ret ? CMD_RET_FAILURE : 0;
+		if (ret)
+			return CMD_RET_FAILURE;
+
+		printf("UBI volume %s renamed to %s\n", argv[2], argv[3]);
+
+		return 0;
 	}
 
 	if (strncmp(argv[1], "skipcheck", 9) == 0) {
@@ -829,7 +859,13 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		if (argc == 4) {
 			skipcheck = strncmp(argv[3], "on", 2) == 0;
 			ret = ubi_set_skip_check(argv[2], skipcheck);
-			return ret ? CMD_RET_FAILURE : 0;
+			if (ret)
+				return CMD_RET_FAILURE;
+
+			printf("%s skip_check on volume %s\n",
+			       skipcheck ? "Set" : "Cleared", argv[2]);
+
+			return 0;
 		}
 	}
 
@@ -880,8 +916,24 @@ static int do_ubi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		}
 
 		if (argc == 3) {
-			ret = ubi_volume_read(argv[3], (void *)addr, 0, size);
-			return ret ? CMD_RET_FAILURE : 0;
+			vol = ubi_require_volume(argv[3]);
+			if (!vol)
+				return CMD_RET_FAILURE;
+
+			if (!size) {
+				printf("No size specified -> Using max size (%lld)\n",
+				       vol->used_bytes);
+				size = vol->used_bytes;
+			}
+
+			ret = __ubi_volume_read(vol, (void *)addr, 0, size);
+			if (ret)
+				return CMD_RET_FAILURE;
+
+			printf("%lld bytes read from volume %s to 0x%lx\n",
+			       size, argv[3], addr);
+
+			return 0;
 		}
 	}
 
