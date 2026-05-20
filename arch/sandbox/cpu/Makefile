@@ -5,14 +5,13 @@
 # (C) Copyright 2000-2003
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
-obj-y	:= cache.o cpu.o mem.o state.o os.o tty.o initjmp.o
+obj-y	:= start.o cache.o cpu.o mem.o state.o os.o tty.o initjmp.o
 ifdef CONFIG_FUZZ
 obj-y	+= fuzz.o
 else
 obj-y	+= main.o
 endif
-extra-y	:= start.o
-extra-$(CONFIG_SANDBOX_SDL)    += sdl.o
+obj-$(CONFIG_SANDBOX_SDL)    += sdl.o
 obj-$(CONFIG_XPL_BUILD)	+= spl.o
 obj-$(CONFIG_ETH_SANDBOX_RAW)	+= eth-raw-os.o
 obj-$(CONFIG_BACKTRACE)	+= backtrace.o
