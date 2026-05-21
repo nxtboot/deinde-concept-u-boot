@@ -82542,3 +82542,45 @@ The branch `cherry-49f8b8de4e6` is ready for pushing.
 
 ---
 
+### Review: 2026-05-21
+
+Branch: cherry-49f8b8de4e6
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix
+  (attempt 1) bot re-report listing 31 failed sjg-lab jobs (play, vbe,
+  tk1, rpi5, rock5b, rock3a, rockpro64, colibrimx8, vf2, rpi, nyan-big,
+  pcduino3, snow, rpi0, rpi4, pine64, kevin, bbb, rpi3z, coral, ff3399,
+  bob, rpi2, bpi, opi_pc2, minnowmax, jerry, link, pcduino3_nano,
+  opi_pc, rpi3).
+
+### Conversation log
+
+Re-checked the diagnosis from attempt 1. It still holds: all 31
+failures are the same pytest `INTERNALERROR` inside `conftest.py` —
+`u-boot-test-getrole` returning exit code 2 with no output (29 boards)
+or returning a config without the 'board' key (link, jerry). This is
+lab infrastructure, not U-Boot code.
+
+The MR diff vs `ci/master` is unchanged:
+- MAINTAINERS (+1 line)
+- drivers/nvme/nvme-uclass.c (+1/-1)
+- drivers/nvme/nvme.c (+5/-2)
+- drivers/nvme/nvme_apple.c (+3)
+- .pickman-history (bookkeeping)
+
+None of these files are reachable from `test/py/conftest.py` or the
+lab's `u-boot-test-getrole` helper. The failure happens at
+`pytest_configure` startup, before any U-Boot binary is built or run.
+
+Local `buildman -L --board sandbox` passes cleanly (1 built, no
+warnings/errors).
+
+Since no code change is warranted, adding a history-only commit so the
+head SHA changes and GitLab re-triggers the pipeline. If the lab
+helper has been restored the jobs should now pass; if they fail with
+the same `u-boot-test-getrole` error they remain outside this MR's
+scope.
+
+---
+
