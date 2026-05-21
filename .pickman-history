@@ -82500,3 +82500,45 @@ The branch is ready for pushing.
 Branch rebased onto latest ci/master (which had picked up the cherry-0646ee0ed86 merge plus its pipeline-fix and review-handling pickman records). The only conflict was in `.pickman-history`, resolved by keeping both timelines in chronological order. All 7 source commits replayed cleanly with unchanged stats; sandbox build re-verified OK.
 
 ---
+## 2026-05-21: us/master
+
+Branch: cherry-49f8b8de4e6
+
+Commits:
+- 49f8b8de4e6 MAINTAINERS: Add myself to the list of NVMe maintainers
+- d6eb327828a nvme: fix command ID wraparound handling
+- 63f0f19803e nvme: apple: Check memalign return value
+- 4e91d9ff332 nvme: Staticize and constify driver ops
+- 4f510505988 nvme: Fix PRP list pointer arithmetic for chained transfers
+- 46b29a7d128 Merge tag 'u-boot-nvme-fixes-20260521' of https://source.denx.de/u-boot/custodians/u-boot-ufs
+
+### Conversation log
+All 6 commits present. Now let me run the final build:
+
+## Cherry-pick Summary
+
+All 6 commits cherry-picked successfully onto branch `cherry-49f8b8de4e6` (based on `ci/master`).
+
+**Final commit log:**
+```
+1a7e75db0dc Merge tag 'u-boot-nvme-fixes-20260521' of https://source.denx.de/u-boot/custodians/u-boot-ufs
+0a35c5e28e9 nvme: Fix PRP list pointer arithmetic for chained transfers
+3e1a598fe96 nvme: Staticize and constify driver ops
+79bfb0fd257 nvme: apple: Check memalign return value
+147d7c8722b nvme: fix command ID wraparound handling
+66d96c52cc2 MAINTAINERS: Add myself to the list of NVMe maintainers
+```
+
+**Build result:** OK — final buildman run completed successfully (1 built, no warnings/errors).
+
+**Commit deltas:** All non-merge commits matched their originals exactly (same files, same line counts).
+
+**Fix-ups made:**
+- The merge commit `46b29a7d128` cherry-picked as empty (expected for `-m 1` after the parent commits were already applied). It was committed with `--allow-empty` and then amended to add the `(cherry picked from commit 46b29a7d128047f6e42369b018752947beb1f751)` trailer that `git cherry-pick -x` would normally provide.
+
+**Concerning deltas:** None.
+
+The branch `cherry-49f8b8de4e6` is ready for pushing.
+
+---
+
