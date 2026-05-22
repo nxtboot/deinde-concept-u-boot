@@ -82625,3 +82625,63 @@ via `buildman -L --board sandbox -w -o /tmp/pickman`.
 
 ---
 
+## 2026-05-22: us/master
+
+Branch: cherry-d77f8443c7c
+
+Commits:
+- d77f8443c7c arm64: dts: renesas: Switch to upstream DT on Renesas R-Car X5H R8A78000
+- 9692469b184 arm64: dts: renesas: Use SCP_CLOCK_ID_CLK_S0D6_PERE_MAIN on R-Car X5H
+- 3e24519d6f7 arm64: renesas: Select HSCIF for DEBUG UART on R-Car Gen5 R8A78000 X5H
+- 24039ffefbc clk: renesas: Add Renesas R-Car R8A78000 X5H CPG clock driver
+- 567a4cdd14e arm64: renesas: Select R-Car Gen5 R8A78000 X5H CPG clock driver
+- 53297db1267 power: domain: Add Renesas R-Car R8A78000 X5H MDLC power domain and reset driver
+- 2d0ec0891b9 arm64: renesas: Select R-Car Gen5 R8A78000 X5H MDLC power domain and reset driver
+- 3681df4f349 arm64: dts: renesas: Switch to remap drivers on R-Car Gen5 R8A78000 X5H
+- 5fa536f6983 arm64: dts: renesas: Update reset IDs on R-Car Gen5 R8A78000 X5H
+- 3bcee350f09 arm: renesas: Generate u-boot-elf.scif for R-Car Gen5 RSIP
+- 3b2ce3743c1 arm: renesas: Generate u-boot-elf.shdr for R-Car Gen5 RSIP
+- 9d47a5a4d56 arm: renesas: Add Renesas R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 987c93fc68a Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+Stats match. Let me run the build test.
+
+Build passes. Continuing with the next commits.
+
+All 13 commits are present. Let me run the final build.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-d77f8443c7c` (based on `ci/master`)
+
+**Build result:** OK — `buildman -L --board sandbox` completed successfully (1/1 built, no warnings/errors)
+
+**All 13 commits successfully cherry-picked in order:**
+
+| # | New Hash | Original | Subject |
+|---|----------|----------|---------|
+| 1 | 80e4f5e5537 | d77f8443c7c | Switch to upstream DT on Renesas R-Car X5H R8A78000 |
+| 2 | 1ca49103fa2 | 9692469b184 | Use SCP_CLOCK_ID_CLK_S0D6_PERE_MAIN on R-Car X5H |
+| 3 | 48ccdc288c8 | 3e24519d6f7 | Select HSCIF for DEBUG UART on R-Car Gen5 |
+| 4 | f000ad011f0 | 24039ffefbc | Add R8A78000 X5H CPG clock driver |
+| 5 | f72405c68f3 | 567a4cdd14e | Select R-Car Gen5 R8A78000 X5H CPG clock driver |
+| 6 | 54a7f2e8e56 | 53297db1267 | Add R8A78000 X5H MDLC power domain and reset driver |
+| 7 | 21f18ef76ad | 2d0ec0891b9 | Select R-Car Gen5 R8A78000 X5H MDLC power domain |
+| 8 | 5781f3da75c | 3681df4f349 | Switch to remap drivers on R-Car Gen5 |
+| 9 | dd6e0899b5a | 5fa536f6983 | Update reset IDs on R-Car Gen5 |
+| 10 | 82851a49b67 | 3bcee350f09 | Generate u-boot-elf.scif for R-Car Gen5 RSIP |
+| 11 | c02d225f9e6 | 3b2ce3743c1 | Generate u-boot-elf.shdr for R-Car Gen5 RSIP |
+| 12 | 825afe28924 | 9d47a5a4d56 | Add R8A78000 X5H Cortex-M33 RSIP port |
+| 13 | a5599484c2c | 987c93fc68a | Merge branch 'master' of u-boot-sh (empty merge) |
+
+**Fix-ups / Notes:**
+- The merge commit (987c93fc68a) cherry-picked as empty (all its content was already present from the individual commits above). Committed with `--allow-empty` to preserve the commit sequence as per instructions. No commit message modification was needed.
+- All non-merge cherry-picks applied cleanly; a few showed "Auto-merging" on `arch/arm/dts/Makefile` and `Makefile` but resolved automatically with no conflicts.
+
+**Concerning deltas:** None — all stat lines matched between original and cherry-picked commits.
+
+The branch is ready for pushing.
+
+---
+
