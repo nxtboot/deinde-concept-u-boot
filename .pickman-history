@@ -82614,5 +82614,14 @@ All cherry-picks completed successfully. Final status:
 
 The branch is ready for pushing.
 
+### Rebase: 2026-05-22
+
+Branch rebased onto latest ci/master (which had picked up the
+cherry-49f8b8de4e6 NVMe merge plus its review-handling pickman
+record). The only conflict was in `.pickman-history`, resolved by
+keeping both timelines in chronological order. All 3 source commits
+replayed cleanly with unchanged stats; sandbox build re-verified OK
+via `buildman -L --board sandbox -w -o /tmp/pickman`.
+
 ---
 
