@@ -82683,5 +82683,70 @@ All 13 commits are present. Let me run the final build.
 
 The branch is ready for pushing.
 
+### Pipeline fix: 2026-05-22 (attempt 2)
+
+Branch: cherry-d77f8443c7c-v2
+
+Pipeline 7958 failures (re-checked after attempt 1 made no code changes):
+- build all 32bit ARM platforms (world_build)
+- rockpro64 (sjg-lab)
+- Check make qcheck (test.py)
+
+**Root cause for "build all 32bit ARM platforms" — actually caused by this MR:**
+
+The new r8a78000_ironhide_cm33 board (added in commit 825afe28924
+"arm: renesas: Add Renesas R-Car R8A78000 X5H Cortex-M33 RSIP port")
+fails the world build with:
+
+  u-boot.map shows a binary size of -406913023
+    but u-boot-nodtb.bin shows 460328
+  make[1]: *** [Makefile:1623: binary_size_check] Error 1
+
+Reproduced locally with `um build r8a78000_ironhide_cm33`. The
+previous attempt's diagnosis ("unrelated 32-bit ARM linker quirk")
+was wrong — this is the new aarch32 (Cortex-M33) target introduced
+by these cherry-picks.
+
+Looking at u-boot.map for the failing build:
+
+  0x18410000  __image_copy_start = ADDR (.text)
+  0x18480628  _image_binary_end = .
+  0x00000001  ASSERT (((_image_binary_end % 0x8) == 0x0), ...)
+
+The Makefile's `binary_size_check` rule uses awk patterns
+`/_image_copy_start/` and `/_image_binary_end/` which match
+substrings. The new u-boot-rsip.lds is the first main u-boot.lds
+(not SPL) to have an ASSERT referencing `_image_binary_end`. The
+ASSERT line ends up in the map with value 0x1 (its return value),
+overwriting the real `_image_binary_end = 0x18480628` capture, so
+`end - start = 1 - 0x18410000 = -406913023`.
+
+**Fix:** Dropped the redundant `ASSERT(_image_binary_end % 8 == 0, ...)`
+from `arch/arm/mach-renesas/u-boot-rsip.lds`. The alignment it
+guards is already guaranteed by `. = ALIGN(8)` at the close of the
+`.rel.dyn` section (the section itself is `ALIGN(8)` aligned, and
+the explicit internal align makes the section end 8-aligned, which
+is where `_image_binary_end = .` is captured). No other main
+u-boot.lds in tree references `_image_binary_end` from an ASSERT.
+
+Verified locally:
+- `um build r8a78000_ironhide_cm33` — OK (no binary_size_check error,
+  map shows `_image_binary_end = 0x18480638`, matching the 460344-byte
+  u-boot-nodtb.bin)
+- `buildman -L --board sandbox -w -o /tmp/pickman` — OK (1/1 built)
+
+**Other two failures remain infrastructure/flake** (as diagnosed in
+attempt 1):
+- `rockpro64`: SPL FIT tee-1 hash mismatch + labgrid pexpect TIMEOUT
+  — lab TEE blob versus binman; no rk3399/TEE code in these
+  cherry-picks. Re-running the lab job should pick up either a
+  refreshed blob or, if not, fail in the same way as on master.
+- `Check make qcheck`: `dm_test_acpi_fpdt` checksum flake (1/256
+  chance), confirmed in 7958 log. Known flaky test; passes locally
+  on re-run.
+
+The lds fix is the only code change. Force-pushing v2 to
+`cherry-d77f8443c7c` retriggers the pipeline.
+
 ---
 
