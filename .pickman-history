@@ -82748,5 +82748,44 @@ attempt 1):
 The lds fix is the only code change. Force-pushing v2 to
 `cherry-d77f8443c7c` retriggers the pipeline.
 
+## 2026-05-25: us/master
+
+Branch: cherry-7e11adf0548
+
+Commits:
+- 7e11adf0548 am57xx: restore bootm_size for ARMv7 HighMem constraint
+- b53128d5283 arm: armv8: mmu: move mmu enablement out of mmu_setup
+- 37e6b640ef6 mach-k3: enable mmu after reserved memory is unmapped
+- e875c10c6f6 Merge patch series "Fix speculative access to firewalled regions on AM62 SoCs"
+
+### Conversation log
+Delta matches exactly. Now build test:
+
+Build OK. Now cherry-pick the second commit:
+
+Delta matches. Build test:
+
+Delta matches. Build test:
+
+All 4 commits are present. Final build:
+
+## Final Status Report
+
+**Branch:** `cherry-7e11adf0548` (based on `ci/master`)
+
+**Cherry-picks completed successfully:**
+1. `34f7432da24` — am57xx: restore bootm_size for ARMv7 HighMem constraint (1 file, +1 line) — matches original exactly
+2. `ea5c99a1170` — arm: armv8: mmu: move mmu enablement out of mmu_setup (3 files, +10/-1) — matches original exactly
+3. `7294718aaed` — mach-k3: enable mmu after reserved memory is unmapped (1 file, +1/-1) — matches original exactly
+4. `a0f75ba827d` — Merge patch series "Fix speculative access to firewalled regions on AM62 SoCs" — empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK — all sandbox builds passed after each cherry-pick and the final build.
+
+**Fix-ups:** None required. Auto-merge resolved cleanly for commits #2 and #3 in `arch/arm/mach-k3/common.c`.
+
+**Concerning deltas:** None. All deltas match the original commits exactly.
+
+The branch is ready for pushing.
+
 ---
 
