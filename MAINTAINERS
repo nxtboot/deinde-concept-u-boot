@@ -1351,6 +1351,11 @@ T:	git https://concept.u-boot.org/u-boot/u-boot.git
 F:	drivers/input
 F:	include/mouse.h
 
+JEDEC JC-42.4 / TSE2004av TEMPERATURE SENSOR
+M:	Vincent Jardin <vjardin@free.fr>
+S:	Maintained
+F:	drivers/thermal/jc42.c
+
 KWBIMAGE / KWBOOT TOOLS
 M:	Pali Rohár <pali@kernel.org>
 M:	Marek Behún <kabel@kernel.org>
