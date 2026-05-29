@@ -299,6 +299,7 @@ void enable_caches(void)
 			       __func__, ret);
 	}
 
+	mmu_enable();
 	icache_enable();
 	dcache_enable();
 }

@@ -82748,5 +82748,104 @@ attempt 1):
 The lds fix is the only code change. Force-pushing v2 to
 `cherry-d77f8443c7c` retriggers the pipeline.
 
+## 2026-05-25: us/master
+
+Branch: cherry-7e11adf0548
+
+Commits:
+- 7e11adf0548 am57xx: restore bootm_size for ARMv7 HighMem constraint
+- b53128d5283 arm: armv8: mmu: move mmu enablement out of mmu_setup
+- 37e6b640ef6 mach-k3: enable mmu after reserved memory is unmapped
+- e875c10c6f6 Merge patch series "Fix speculative access to firewalled regions on AM62 SoCs"
+
+### Conversation log
+Delta matches exactly. Now build test:
+
+Build OK. Now cherry-pick the second commit:
+
+Delta matches. Build test:
+
+Delta matches. Build test:
+
+All 4 commits are present. Final build:
+
+## Final Status Report
+
+**Branch:** `cherry-7e11adf0548` (based on `ci/master`)
+
+**Cherry-picks completed successfully:**
+1. `34f7432da24` — am57xx: restore bootm_size for ARMv7 HighMem constraint (1 file, +1 line) — matches original exactly
+2. `ea5c99a1170` — arm: armv8: mmu: move mmu enablement out of mmu_setup (3 files, +10/-1) — matches original exactly
+3. `7294718aaed` — mach-k3: enable mmu after reserved memory is unmapped (1 file, +1/-1) — matches original exactly
+4. `a0f75ba827d` — Merge patch series "Fix speculative access to firewalled regions on AM62 SoCs" — empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK — all sandbox builds passed after each cherry-pick and the final build.
+
+**Fix-ups:** None required. Auto-merge resolved cleanly for commits #2 and #3 in `arch/arm/mach-k3/common.c`.
+
+**Concerning deltas:** None. All deltas match the original commits exactly.
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-05-25
+
+Branch: cherry-7e11adf0548
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64.
+
+Both builds pass locally cleanly. The fa...
+
+### Conversation log
+Now let me verify the build still passes:
+
+Build passes. Now let me also verify the efi-arm_app64 build still works, which is the target that's been failing:
+
+ELF is well-formed and only has `R_AARCH64_RELATIVE` relocations (exactly what `checkarmreloc` requires). Now create the -v3 branch:
+
+The remote is already up-to-date since no code change was needed. Here is the summary report:
+
+## Report
+
+**Branch:** `cherry-7e11adf0548-v3` (created, identical to `cherry-7e11adf0548` since no code change is needed)
+
+**Action taken:** None — the review comment is the previous pipeline-fix bot's own report from attempt 2, determining that the `efi-aarch64` failure was a `readelf: Unable to read in 72 bytes of symbols` infrastructure flake during `checkarmreloc`. That determination remains correct on re-examination.
+
+### Re-verification
+
+Files touched by this MR (unchanged since last analysis):
+- `board/ti/am57xx/am57xx.env` (+1 line) — AM57xx/ARMv7 only, not built for `efi-arm_app64`
+- `arch/arm/cpu/armv8/cache_v8.c`, `arch/arm/include/asm/armv8/mmu.h` — ARMv8 MMU refactor that the upstream commit explicitly flags as *"no functional changes are intended"*
+- `arch/arm/mach-k3/common.c` (+1 line) — K3-only ordering change, not built for `efi-arm_app64`
+- Empty merge commit
+
+Local verification on this branch:
+- `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, 0 errors, 0 warnings
+- `buildman -L --board efi-arm_app64 -w -o /tmp/pickman` → 1/1 built, 0 errors, 0 warnings (the same target that flaked in CI)
+- `aarch64-linux-gnu-readelf -h /tmp/pickman/u-boot` → ELF header is well-formed, AArch64, DYN
+- `aarch64-linux-gnu-readelf -r -W /tmp/pickman/u-boot | awk '{print $3}' | grep '^R_' | sort -u` → `R_AARCH64_RELATIVE` only (exactly what `checkarmreloc` requires)
+
+**Push result:** `./tools/pickman/pickman push-branch cherry-7e11adf0548 -r ci -f` → `Everything up-to-date`. No new pipeline triggered because the tree is unchanged.
+
+### Suggested reply to post on the MR
+
+> Re-confirmed (third pass): the failure pattern across the three attempts on this MR is diagnostic of CI infrastructure flake, not of any regression introduced by these cherry-picks.
+>
+> Three completely unrelated failure modes have hit the same MR:
+> - attempt 1 efi-aarch64: `OSError: [Errno 5]` (EIO) on the pty inside `restart_uboot()` after 34 tests passed
+> - attempt 1 rockpro64: SPL `Card did not respond to voltage select! : -110`, `Lab failure: Marking connection bad`
+> - attempt 1 vf2: BootROM `dwmci_s: Response Timeout`
+> - attempt 2 efi-aarch64: `readelf: Error: Unable to read in 72 bytes of symbols` during `checkarmreloc` at build time
+>
+> The MR's only ARMv8 code change is the `mmu_setup`/`mmu_enable` split, whose upstream commit message states *"no functional changes are intended"*; `dcache_enable()` now calls `mmu_setup(); mmu_enable();` which is identical to the prior single call. The K3 reordering is `mach-k3`-gated and does not run on `efi-arm_app64`, rk3399, or VisionFive2. None of the touched files can corrupt an ELF symbol table or hang an MMC card.
+>
+> Local verification on this branch:
+> - sandbox and efi-arm_app64 both build cleanly (0 errors, 0 warnings)
+> - the resulting `u-boot` ELF is well-formed; relocation set is `R_AARCH64_RELATIVE` only (what `checkarmreloc` requires)
+>
+> No code change made. Please retry the failed job(s).
+
 ---
 
