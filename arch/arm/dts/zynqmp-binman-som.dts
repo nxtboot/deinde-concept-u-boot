@@ -125,8 +125,8 @@
 						os = "u-boot";
 						arch = "arm64";
 						compression = "none";
-						load = /bits/ 64 <CONFIG_TEXT_BASE>;
-						entry = /bits/ 64 <CONFIG_TEXT_BASE>;
+						load = /bits/ 64 <CONFIG_PPL_TEXT_BASE>;
+						entry = /bits/ 64 <CONFIG_PPL_TEXT_BASE>;
 						hash {
 							algo = "md5";
 						};
