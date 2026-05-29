@@ -2,4 +2,4 @@
 #
 # Copyright (c) 2019, Softathome
 
-obj-$(CONFIG_$(PHASE_)FIT_CIPHER) += aes-decrypt.o
+obj-$(CONFIG_FIT_CIPHER) += aes-decrypt.o

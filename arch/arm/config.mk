@@ -44,7 +44,7 @@ endif
 PLATFORM_RELFLAGS	+= $(LLVM_RELFLAGS)
 
 # Choose between ARM/Thumb instruction sets
-ifeq ($(CONFIG_$(PHASE_)SYS_THUMB_BUILD),y)
+ifeq ($(CONFIG_SYS_THUMB_BUILD),y)
 AFLAGS_IMPLICIT_IT	:= $(call as-option,-Wa$(comma)-mimplicit-it=always)
 PF_CPPFLAGS_ARM		:= $(AFLAGS_IMPLICIT_IT) \
 			$(call cc-option, -mthumb -mthumb-interwork,\
@@ -57,7 +57,7 @@ PF_CPPFLAGS_ARM := $(call cc-option,-marm,) \
 endif
 
 # Only test once
-ifeq ($(CONFIG_$(PHASE_)SYS_THUMB_BUILD),y)
+ifeq ($(CONFIG_SYS_THUMB_BUILD),y)
 archprepare: checkthumb checkgcc10
 
 checkthumb:
@@ -128,7 +128,7 @@ endif
 #
 # http://sourceware.org/bugzilla/show_bug.cgi?id=12532
 #
-ifeq ($(CONFIG_$(PHASE_)SYS_THUMB_BUILD),y)
+ifeq ($(CONFIG_SYS_THUMB_BUILD),y)
 ifeq ($(GAS_BUG_12532),)
 export GAS_BUG_12532:=$(shell if [ $(call binutils-version) -lt 0222 ] ; \
 	then echo y; else echo n; fi)

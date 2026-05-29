@@ -3,7 +3,7 @@
 # (C) Copyright 2018
 # Mario Six, Guntermann & Drunck GmbH, mario.six@gdsys.cc
 
-obj-$(CONFIG_$(PHASE_)UT_COMPRESSION) += compression.o
+obj-$(CONFIG_UT_COMPRESSION) += compression.o
 
 ifeq ($(CONFIG_XPL_BUILD),)
 obj-y += abuf.o
@@ -24,7 +24,7 @@ obj-$(CONFIG_SANDBOX) += membuf.o
 obj-$(CONFIG_HAVE_INITJMP) += initjmp.o
 obj-$(CONFIG_CONSOLE_RECORD) += test_print.o
 obj-$(CONFIG_SSCANF) += sscanf.o
-obj-$(CONFIG_$(PHASE_)STRTO) += str.o
+obj-$(CONFIG_STRTO) += str.o
 obj-y += string.o
 obj-y += strlcat.o
 obj-$(CONFIG_ERRNO_STR) += test_errno_str.o
@@ -39,7 +39,7 @@ obj-$(CONFIG_CRC8) += test_crc8.o
 obj-$(CONFIG_REGEX) += slre.o
 obj-$(CONFIG_UT_LIB_CRYPT) += test_crypt.o
 obj-$(CONFIG_UT_TIME) += time.o
-obj-$(CONFIG_$(PHASE_)UT_UNICODE) += unicode.o
+obj-$(CONFIG_UT_UNICODE) += unicode.o
 obj-$(CONFIG_UTHREAD) += uthread.o
 obj-$(CONFIG_LIB_UUID) += uuid.o
 obj-$(CONFIG_CHID) += chid.o

@@ -2,6 +2,6 @@
 #
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
-obj-$(CONFIG_$(PHASE_)DEBUG_DEV) += debug-uclass.o
-obj-$(CONFIG_$(PHASE_)DEBUG_EM100) += em100.o
-obj-$(CONFIG_$(PHASE_)DEBUG_SANDBOX) += debug_sandbox.o
+obj-$(CONFIG_DEBUG_DEV) += debug-uclass.o
+obj-$(CONFIG_DEBUG_EM100) += em100.o
+obj-$(CONFIG_DEBUG_SANDBOX) += debug_sandbox.o

@@ -7,9 +7,9 @@ lib-$(CONFIG_USE_PRIVATE_LIBGCC) += ashldi3.o ashrdi3.o lshrdi3.o \
 				    lib1funcs.o uldivmod.o div0.o \
 				    div64.o muldi3.o
 
-obj-$(CONFIG_$(PHASE_)LIB_BOOTI) += image.o
-obj-$(CONFIG_$(PHASE_)LIB_BOOTZ) += zimage.o
-obj-$(CONFIG_$(PHASE_)LIB_BOOTM) += bootm.o
+obj-$(CONFIG_LIB_BOOTI) += image.o
+obj-$(CONFIG_LIB_BOOTZ) += zimage.o
+obj-$(CONFIG_LIB_BOOTM) += bootm.o
 
 ifndef CONFIG_EFI_APP
 ifdef CONFIG_CPU_V7M_V8M
@@ -42,18 +42,18 @@ obj-$(CONFIG_CPU_V7M_V8M) += cmd_boot.o
 obj-$(CONFIG_OF_LIBFDT) += bootm-fdt.o
 obj-$(CONFIG_CMD_BOOTM) += bootm.o
 else
-obj-$(CONFIG_$(PHASE_)FRAMEWORK) += spl.o
+obj-$(CONFIG_FRAMEWORK) += spl.o
 obj-$(CONFIG_OF_LIBFDT) += bootm-fdt.o
 endif
 ifdef CONFIG_ARM64
-obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMSET) += memset-arm64.o
-obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMCPY) += memcpy-arm64.o
+obj-$(CONFIG_USE_ARCH_MEMSET) += memset-arm64.o
+obj-$(CONFIG_USE_ARCH_MEMCPY) += memcpy-arm64.o
 else
-obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMSET) += memset.o
-obj-$(CONFIG_$(PHASE_)USE_ARCH_MEMCPY) += memcpy.o
+obj-$(CONFIG_USE_ARCH_MEMSET) += memset.o
+obj-$(CONFIG_USE_ARCH_MEMCPY) += memcpy.o
 endif
-obj-$(CONFIG_$(PHASE_)SYS_L2_PL310) += cache-pl310.o
-obj-$(CONFIG_$(PHASE_)SEMIHOSTING) += semihosting.o
+obj-$(CONFIG_SYS_L2_PL310) += cache-pl310.o
+obj-$(CONFIG_SEMIHOSTING) += semihosting.o
 
 ifneq ($(filter y,$(CONFIG_SAVE_PREV_BL_INITRAMFS_START_ADDR) $(CONFIG_SAVE_PREV_BL_FDT_ADDR)),)
 obj-y += save_prev_bl_data.o
@@ -78,7 +78,7 @@ obj-y	+= interrupts_64.o
 else
 obj-y	+= interrupts.o
 endif
-ifndef CONFIG_$(PHASE_)SYSRESET
+ifndef CONFIG_SYSRESET
 obj-y	+= reset.o
 endif
 
@@ -100,7 +100,7 @@ endif
 
 # some files can only build in ARM or THUMB2, not THUMB1
 
-ifdef CONFIG_$(PHASE_)SYS_THUMB_BUILD
+ifdef CONFIG_SYS_THUMB_BUILD
 asflags-$(CONFIG_HAS_THUMB2) += -DCONFIG_THUMB2_KERNEL
 ifndef CONFIG_HAS_THUMB2
 

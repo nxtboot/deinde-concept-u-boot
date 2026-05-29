@@ -3,7 +3,7 @@
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
 ifdef CONFIG_XPL_BUILD
-obj-$(CONFIG_$(PHASE_)X86_16BIT_INIT) += car.o
+obj-$(CONFIG_X86_16BIT_INIT) += car.o
 obj-y += cpu.o
 else
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o

@@ -14,4 +14,4 @@ ifneq ($(CONFIG_SPL_BUILD),y)
 obj-y += imx_bootaux.o misc.o
 endif
 
-obj-$(CONFIG_$(PHASE_)IMX_QB) += qb.o
+obj-$(CONFIG_IMX_QB) += qb.o

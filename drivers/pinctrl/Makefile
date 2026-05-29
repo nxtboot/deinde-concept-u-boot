@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0+
 
 obj-y					+= pinctrl-uclass.o
-obj-$(CONFIG_$(PHASE_)PINCTRL_GENERIC)	+= pinctrl-generic.o
+obj-$(CONFIG_PINCTRL_GENERIC)	+= pinctrl-generic.o
 
 obj-y					+= broadcom/
 obj-y					+= nxp/
@@ -28,18 +28,18 @@ obj-$(CONFIG_PINCTRL_MTK)		+= mediatek/
 obj-$(CONFIG_PINCTRL_PIC32)		+= pinctrl_pic32.o
 obj-$(CONFIG_PINCTRL_QCOM)		+= qcom/
 obj-$(CONFIG_PINCTRL_QE)		+= pinctrl-qe-io.o
-obj-$(CONFIG_$(PHASE_)PINCTRL_ROCKCHIP)	+= rockchip/
+obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= rockchip/
 obj-$(CONFIG_PINCTRL_SANDBOX)		+= pinctrl-sandbox.o
 obj-$(CONFIG_PINCTRL_SCMI)		+= pinctrl-scmi.o
 obj-$(CONFIG_PINCTRL_SINGLE)		+= pinctrl-single.o
-obj-$(CONFIG_$(PHASE_)PINCTRL_SPACEMIT_K1) += spacemit/
+obj-$(CONFIG_PINCTRL_SPACEMIT_K1) += spacemit/
 obj-$(CONFIG_PINCTRL_STARFIVE)		+= starfive/
 obj-$(CONFIG_PINCTRL_STI)		+= pinctrl-sti.o
 obj-$(CONFIG_PINCTRL_STM32)		+= pinctrl_stm32.o
-obj-$(CONFIG_$(PHASE_)PINCTRL_STMFX)	+= pinctrl-stmfx.o
+obj-$(CONFIG_PINCTRL_STMFX)	+= pinctrl-stmfx.o
 obj-$(CONFIG_PINCTRL_SUNXI)		+= sunxi/
-obj-$(CONFIG_$(PHASE_)PINCTRL_SX150X)	+= pinctrl-sx150x.o
-obj-$(CONFIG_$(PHASE_)PINCTRL_TEGRA)	+= tegra/
+obj-$(CONFIG_PINCTRL_SX150X)	+= pinctrl-sx150x.o
+obj-$(CONFIG_PINCTRL_TEGRA)	+= tegra/
 obj-$(CONFIG_PINCTRL_TH1520)		+= pinctrl-th1520.o
 obj-$(CONFIG_PINCTRL_UNIPHIER)		+= uniphier/
-obj-$(CONFIG_$(PHASE_)PINCTRL_ZYNQMP)	+= pinctrl-zynqmp.o
+obj-$(CONFIG_PINCTRL_ZYNQMP)	+= pinctrl-zynqmp.o

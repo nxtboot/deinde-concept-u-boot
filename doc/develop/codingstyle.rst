@@ -284,7 +284,7 @@ PHASE\_ macro helps us in this situation thusly:
 
 .. code-block:: make
 
-        obj-$(CONFIG_$(PHASE_)SOMETHING) += something.o
+        obj-$(CONFIG_SOMETHING) += something.o
 
 At the end of any non-trivial #if or #ifdef block (more than a few lines),
 place a comment after the #endif on the same line, noting the conditional

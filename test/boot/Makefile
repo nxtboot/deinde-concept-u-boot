@@ -7,7 +7,7 @@ obj-$(CONFIG_BOOTSTD) += bootdev.o bootstd_common.o bootflow.o bootmeth.o
 obj-$(CONFIG_BOOTMETH_BLS) += bls_parse.o
 obj-$(CONFIG_CMDLINE) += pxe.o
 obj-$(CONFIG_FIT) += image.o
-obj-$(CONFIG_$(PHASE_)FIT_PRINT) += fit_print.o
+obj-$(CONFIG_FIT_PRINT) += fit_print.o
 obj-$(CONFIG_BLK_LUKS) += luks.o
 
 ifdef CONFIG_VIDEO_SANDBOX_SDL
@@ -19,12 +19,12 @@ obj-$(CONFIG_UT_BOOTCTL) += bootctl/
 endif
 
 ifdef CONFIG_SANDBOX
-obj-$(CONFIG_$(PHASE_)CMDLINE) += bootm.o
+obj-$(CONFIG_CMDLINE) += bootm.o
 ifdef CONFIG_UT_DM
-obj-$(CONFIG_$(PHASE_)OF_LIBFDT) += image_fdt.o
+obj-$(CONFIG_OF_LIBFDT) += image_fdt.o
 endif
 endif
-obj-$(CONFIG_$(PHASE_)FIT_VERITY) += fit_verity.o
+obj-$(CONFIG_FIT_VERITY) += fit_verity.o
 obj-$(CONFIG_MEASURED_BOOT) += measurement.o
 
 ifdef CONFIG_OF_LIVE

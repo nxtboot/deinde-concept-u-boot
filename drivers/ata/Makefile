@@ -5,14 +5,14 @@
 
 obj-$(CONFIG_DWC_AHCI) += dwc_ahci.o
 obj-$(CONFIG_AHCI) += ahci-uclass.o
-obj-$(CONFIG_$(PHASE_)AHCI_PCI) += ahci-pci.o
+obj-$(CONFIG_AHCI_PCI) += ahci-pci.o
 obj-$(CONFIG_SCSI_AHCI) += ahci.o
 obj-$(CONFIG_DWC_AHSATA) += dwc_ahsata.o
 obj-$(CONFIG_FSL_SATA) += fsl_sata.o
 obj-$(CONFIG_LIBATA) += libata.o
-obj-$(CONFIG_$(PHASE_)SATA) += sata.o
+obj-$(CONFIG_SATA) += sata.o
 ifdef CONFIG_SATA
-obj-$(CONFIG_$(PHASE_)BOOTSTD) += sata_bootdev.o
+obj-$(CONFIG_BOOTSTD) += sata_bootdev.o
 endif
 obj-$(CONFIG_SATA_CEVA) += sata_ceva.o
 obj-$(CONFIG_SATA_MV) += sata_mv.o

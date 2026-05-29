@@ -8,10 +8,10 @@ extra-y	:= start.o
 endif
 
 obj-y	+= cpu.o
-ifndef CONFIG_$(PHASE_)TIMER
+ifndef CONFIG_TIMER
 obj-$(CONFIG_SYS_ARCH_TIMER) += generic_timer.o
 endif
-ifndef CONFIG_$(PHASE_)SYS_DCACHE_OFF
+ifndef CONFIG_SYS_DCACHE_OFF
 obj-y	+= cache_v8.o
 obj-y	+= cache.o
 endif
@@ -35,7 +35,7 @@ obj-$(CONFIG_ACPI_PARKING_PROTOCOL) += acpi_park_v8.o
 else
 obj-$(CONFIG_ARCH_SUNXI) += fel_utils.o
 endif
-obj-$(CONFIG_$(PHASE_)ARMV8_SEC_FIRMWARE_SUPPORT) += sec_firmware.o sec_firmware_asm.o
+obj-$(CONFIG_ARMV8_SEC_FIRMWARE_SUPPORT) += sec_firmware.o sec_firmware_asm.o
 
 ifdef CONFIG_XPL_BUILD
 obj-$(CONFIG_SPL_RECOVER_DATA_SECTION) += spl_data.o

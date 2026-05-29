@@ -4,12 +4,12 @@
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 # Copyright (c) 2012, NVIDIA CORPORATION.  All rights reserved.
 
-obj-$(CONFIG_$(PHASE_)FS_LEGACY) += fs_legacy.o fs_internal.o
+obj-$(CONFIG_FS_LEGACY) += fs_legacy.o fs_internal.o
 obj-$(CONFIG_FS_LINUX) += linux_fs.o
-obj-$(CONFIG_$(PHASE_)FS) += fs-uclass.o
-obj-$(CONFIG_$(PHASE_)DIR) += dir-uclass.o
-obj-$(CONFIG_$(PHASE_)FILE) += file-uclass.o
-obj-$(CONFIG_$(PHASE_)VFS) += fs_mount.o mount-uclass.o vfs.o vfs_dir.o
+obj-$(CONFIG_FS) += fs-uclass.o
+obj-$(CONFIG_DIR) += dir-uclass.o
+obj-$(CONFIG_FILE) += file-uclass.o
+obj-$(CONFIG_VFS) += fs_mount.o mount-uclass.o vfs.o vfs_dir.o
 
 ifdef CONFIG_XPL_BUILD
 obj-$(CONFIG_SPL_FS_FAT) += fat/

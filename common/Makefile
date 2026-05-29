@@ -20,7 +20,7 @@ obj-y += version.o
 # # boards
 obj-y += board_f.o
 obj-y += board_r.o
-ifdef CONFIG_$(PHASE_)SYS_THUMB_BUILD
+ifdef CONFIG_SYS_THUMB_BUILD
 CFLAGS_REMOVE_board_f.o := $(LTO_CFLAGS)
 CFLAGS_REMOVE_board_r.o := $(LTO_CFLAGS)
 endif
@@ -52,8 +52,8 @@ obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
 
 endif # !CONFIG_XPL_BUILD
 
-obj-$(CONFIG_$(PHASE_)BOOTSTAGE) += bootstage.o
-obj-$(CONFIG_$(PHASE_)BLOBLIST) += bloblist.o
+obj-$(CONFIG_BOOTSTAGE) += bootstage.o
+obj-$(CONFIG_BLOBLIST) += bloblist.o
 
 ifdef CONFIG_XPL_BUILD
 ifdef CONFIG_SPL_DFU
@@ -73,7 +73,7 @@ obj-$(CONFIG_DDR_SPD) += ddr_spd.o
 obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
 obj-$(CONFIG_HWCONFIG) += hwconfig.o
 obj-$(CONFIG_BOUNCE_BUFFER) += bouncebuf.o
-obj-$(CONFIG_$(PHASE_)SERIAL) += console.o
+obj-$(CONFIG_SERIAL) += console.o
 
 obj-$(CONFIG_CROS_EC) += cros_ec.o
 ifdef CONFIG_SYS_MALLOC_LEGACY
@@ -81,12 +81,12 @@ obj-y += dlmalloc_old.o
 else
 obj-y += dlmalloc.o
 endif
-obj-$(CONFIG_$(PHASE_)SYS_MALLOC_F) += malloc_simple.o
+obj-$(CONFIG_SYS_MALLOC_F) += malloc_simple.o
 
-obj-$(CONFIG_$(PHASE_)CYCLIC) += cyclic.o
-obj-$(CONFIG_$(PHASE_)EVENT) += event.o
+obj-$(CONFIG_CYCLIC) += cyclic.o
+obj-$(CONFIG_EVENT) += event.o
 
-obj-$(CONFIG_$(PHASE_)HASH) += hash.o
+obj-$(CONFIG_HASH) += hash.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-y += memsize.o
 obj-y += stdio.o
@@ -100,14 +100,14 @@ obj-$(CONFIG_FSL_DDR_INTERACTIVE) += cli_getch.o cli_simple.o cli_readline.o
 obj-$(CONFIG_STM32MP1_DDR_INTERACTIVE) += cli_getch.o cli_simple.o cli_readline.o
 obj-$(CONFIG_DFU_OVER_USB) += dfu.o
 obj-y += command.o
-obj-$(CONFIG_$(PHASE_)LOG) += log.o
-obj-$(CONFIG_$(PHASE_)LOG_CONSOLE) += log_console.o
+obj-$(CONFIG_LOG) += log.o
+obj-$(CONFIG_LOG_CONSOLE) += log_console.o
 obj-$(CONFIG_LOG_FILE) += log_file.o
-obj-$(CONFIG_$(PHASE_)LOG_SYSLOG) += log_syslog.o
+obj-$(CONFIG_LOG_SYSLOG) += log_syslog.o
 obj-y += s_record.o
 obj-$(CONFIG_CMD_LOADB) += xyzModem.o
-obj-$(CONFIG_$(PHASE_)YMODEM_SUPPORT) += xyzModem.o
+obj-$(CONFIG_YMODEM_SUPPORT) += xyzModem.o
 
-obj-$(CONFIG_$(PHASE_)AVB_VERIFY) += avb_verify.o
-obj-$(CONFIG_$(PHASE_)STACKPROTECTOR) += stackprot.o
+obj-$(CONFIG_AVB_VERIFY) += avb_verify.o
+obj-$(CONFIG_STACKPROTECTOR) += stackprot.o
 obj-$(CONFIG_SCP03) += scp03.o

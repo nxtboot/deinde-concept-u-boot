@@ -3,14 +3,14 @@
 # (C) Copyright 2000-2007
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
-obj-$(CONFIG_$(PHASE_)MISC) += misc-uclass.o
-obj-$(CONFIG_$(PHASE_)NVMEM) += nvmem.o
+obj-$(CONFIG_MISC) += misc-uclass.o
+obj-$(CONFIG_NVMEM) += nvmem.o
 obj-$(CONFIG_TKEY) += tkey-uclass.o
 obj-$(CONFIG_TKEY) += signer-1.0.0.o
 
-obj-$(CONFIG_$(PHASE_)CROS_EC) += cros_ec.o
-obj-$(CONFIG_$(PHASE_)CROS_EC_SANDBOX) += cros_ec_sandbox.o
-obj-$(CONFIG_$(PHASE_)CROS_EC_LPC) += cros_ec_lpc.o
+obj-$(CONFIG_CROS_EC) += cros_ec.o
+obj-$(CONFIG_CROS_EC_SANDBOX) += cros_ec_sandbox.o
+obj-$(CONFIG_CROS_EC_LPC) += cros_ec_lpc.o
 
 ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_SANDBOX) += sandbox_adder.o
@@ -24,7 +24,7 @@ obj-$(CONFIG_TKEY) += tkey_sandbox.o
 endif
 endif
 
-ifdef CONFIG_$(PHASE_)DM_I2C
+ifdef CONFIG_DM_I2C
 ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_SANDBOX) += i2c_eeprom_emul.o
 obj-$(CONFIG_USB_HUB_USB251XB) += usb251xb.o
@@ -42,31 +42,31 @@ obj-$(CONFIG_FSL_DEVICE_DISABLE) += fsl_devdis.o
 obj-$(CONFIG_FSL_IFC) += fsl_ifc.o
 obj-$(CONFIG_FSL_IIM) += fsl_iim.o
 obj-$(CONFIG_FSL_SEC_MON) += fsl_sec_mon.o
-obj-$(CONFIG_$(PHASE_)FS_LOADER) += fs_loader.o
+obj-$(CONFIG_FS_LOADER) += fs_loader.o
 obj-$(CONFIG_GATEWORKS_SC) += gsc.o
 obj-$(CONFIG_GDSYS_IOEP) += gdsys_ioep.o
 obj-$(CONFIG_GDSYS_RXAUI_CTRL) += gdsys_rxaui_ctrl.o
 obj-$(CONFIG_GDSYS_SOC) += gdsys_soc.o
 obj-$(CONFIG_IRQ) += irq-uclass.o
 obj-$(CONFIG_SANDBOX) += irq_sandbox.o irq_sandbox_test.o
-obj-$(CONFIG_$(PHASE_)I2C_EEPROM) += i2c_eeprom.o
+obj-$(CONFIG_I2C_EEPROM) += i2c_eeprom.o
 obj-$(CONFIG_IHS_FPGA) += ihs_fpga.o
 obj-$(CONFIG_IMX8) += imx8/
 obj-$(CONFIG_IMX_ELE) += imx_ele/
 obj-$(CONFIG_K3_FUSE) += k3_fuse.o
 obj-$(CONFIG_MPC83XX_SERDES) += mpc83xx_serdes.o
-obj-$(CONFIG_$(PHASE_)LS2_SFP) += ls2_sfp.o
-obj-$(CONFIG_$(PHASE_)MXC_OCOTP) += mxc_ocotp.o
+obj-$(CONFIG_LS2_SFP) += ls2_sfp.o
+obj-$(CONFIG_MXC_OCOTP) += mxc_ocotp.o
 obj-$(CONFIG_MXS_OCOTP) += mxs_ocotp.o
 obj-$(CONFIG_NPCM_OTP) += npcm_otp.o
 obj-$(CONFIG_NPCM_HOST) += npcm_host_intf.o
 obj-$(CONFIG_NUVOTON_NCT6102D) += nuvoton_nct6102d.o
 obj-$(CONFIG_P2SB) += p2sb-uclass.o
-obj-$(CONFIG_$(PHASE_)PWRSEQ) += pwrseq-uclass.o
+obj-$(CONFIG_PWRSEQ) += pwrseq-uclass.o
 obj-$(CONFIG_QCOM_GENI) += qcom_geni.o
-obj-$(CONFIG_$(PHASE_)ROCKCHIP_EFUSE) += rockchip-efuse.o
-obj-$(CONFIG_$(PHASE_)ROCKCHIP_OTP) += rockchip-otp.o
-obj-$(CONFIG_$(PHASE_)ROCKCHIP_IODOMAIN) += rockchip-io-domain.o
+obj-$(CONFIG_ROCKCHIP_EFUSE) += rockchip-efuse.o
+obj-$(CONFIG_ROCKCHIP_OTP) += rockchip-otp.o
+obj-$(CONFIG_ROCKCHIP_IODOMAIN) += rockchip-io-domain.o
 obj-$(CONFIG_SANDBOX) += syscon_sandbox.o misc_sandbox.o
 obj-$(CONFIG_SIFIVE_OTP) += sifive-otp.o
 obj-$(CONFIG_SMSC_LPC47M) += smsc_lpc47m.o
@@ -77,7 +77,7 @@ obj-$(CONFIG_SYS_DPAA_QBMAN) += fsl_portals.o
 obj-$(CONFIG_TEGRA186_BPMP) += tegra186_bpmp.o
 obj-$(CONFIG_TEGRA_CAR) += tegra_car.o
 obj-$(CONFIG_TEST_DRV) += test_drv.o
-obj-$(CONFIG_$(PHASE_)TURRIS_OMNIA_MCU) += turris_omnia_mcu.o
+obj-$(CONFIG_TURRIS_OMNIA_MCU) += turris_omnia_mcu.o
 obj-$(CONFIG_TWL4030_LED) += twl4030_led.o
 obj-$(CONFIG_VEXPRESS_CONFIG) += vexpress_config.o
 obj-$(CONFIG_WINBOND_W83627) += winbond_w83627.o

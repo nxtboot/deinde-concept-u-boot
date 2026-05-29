@@ -7,7 +7,7 @@ ifdef CONFIG_MOUSE
 obj-$(CONFIG_EXPO) += riscos_arrow.o
 endif
 
-ifdef CONFIG_$(PHASE_)GENERATE_ACPI_TABLE
+ifdef CONFIG_GENERATE_ACPI_TABLE
 obj-y += bgrt.o
 endif
 
