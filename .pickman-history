@@ -83146,6 +83146,38 @@ All 5 commits cherry-picked successfully without conflicts:
 
 **Fix-ups:** None required. The merge commit was committed empty with `--allow-empty` (as instructed for merge commits).
 
+---
+
+## 2026-05-29: us/master
+
+Branch: cherry-30b77f6aa14
+
+Commits:
+- 30b77f6aa14 CI: Sage: Drop rpi_arm64 lwIP variants
+
+### Conversation log
+Stats match exactly (8 insertions, 22 deletions, same file). Now let me run the build test.
+
+Build passed. Let me verify the final state.
+
+## Cherry-Pick Status Report
+
+**Branch:** `cherry-30b77f6aa14` (based on `ci/master`)
+
+### Cherry-Pick Results
+- **30b77f6aa14** → `6edf1d8a658`: "CI: Sage: Drop rpi_arm64 lwIP variants"
+  - Delta match: Identical (1 file, 8 insertions, 22 deletions in `.gitlab-ci-sage-lab.yml`)
+  - No conflicts (clean auto-merge)
+
+### Build Result
+- **OK** — sandbox build completed in 13s with no warnings or errors
+
+### Fix-ups
+- None required
+
+### Concerning Deltas
+- None — cherry-pick stats exactly match the original commit
+
 The branch is ready for pushing.
 
 ---
@@ -83165,3 +83197,17 @@ Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
 
 ---
 
+### Rebase: 2026-05-29
+
+Branch: cherry-30b77f6aa14 rebased onto latest ci/master.
+
+ci/master moved forward by one merge (`00b55dcf9b3 Merge branch 'cherry-812aca57914' into 'master'`) which itself added a `.pickman-history` record for cherry-812aca57914 (and a Rebase record for that branch). That collided with this branch's own `.pickman-history` record append.
+
+Conflict resolution:
+- `.pickman-history` — both sides appended new sections under the `## 2026-05-29: us/master` header. Kept both: the cherry-812aca57914 record (now part of master) first, followed by a fresh `## 2026-05-29: us/master` header and the cherry-30b77f6aa14 record.
+
+Delta check: the single non-merge commit produced an identical file-and-line stat compared to its pre-rebase version.
+
+Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
+
+---
