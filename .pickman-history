@@ -82897,3 +82897,64 @@ Branch is ready for pushing. Not merged anywhere.
 
 ---
 
+## 2026-05-29: us/master
+
+Branch: cherry-a2089348012
+
+Commits:
+- a2089348012 Makefile: binman: Search board directory before srctree
+- 76d62273bc8 Prepare v2026.07-rc3
+- 560d8f32703 board: st: stm32mp15: support dynamic A/B bank bootup
+- 4369c6a0503 board: st: factorize STM32MP FWU multi-bank support
+- 70456905ec5 configs: stm32mp15: Increase SYS_MALLOC_F_LEN
+- 5b2e264a773 configs: stm32mp15: enable WDT_ARM_SMC driver
+- a3a09d28d52 configs: stm32mp13: activate watchdog
+- d6ddbbb0008 ARM: dts: stm32: enable SMC watchdog for STM32MP15 SCMI config
+- 0c035ff60c1 stm32mp2: update part number for STM32MP251/3
+- 987907ae4bc Merge tag 'u-boot-stm32-20260526' of https://source.denx.de/u-boot/custodians/u-boot-stm
+
+### Conversation log
+Build OK. Continuing with the next commit.
+
+I'll resolve the Makefile conflict by keeping the ci/master version (v2026.04) since this version-bump commit applies to a different branch:
+
+Now amend with a fix-up note:
+
+Identical. Now build test:
+
+Let me amend the merge commit to add the cherry-pick marker:
+
+All 10 commits present. Final build verification:
+
+## Cherry-Pick Summary
+
+All 10 commits successfully cherry-picked onto branch `cherry-a2089348012` based on `ci/master`.
+
+### Build Result
+**OK** — `buildman -L --board sandbox` completed with no warnings or errors on the final tree, and after every individual cherry-pick.
+
+### Fix-ups
+- **76d62273bc8 (Prepare v2026.07-rc3)** — Conflict in `Makefile`. The original commit bumped `EXTRAVERSION` from `-rc2` to `-rc3` on a `PATCHLEVEL=07` tree, but `ci/master` is on `PATCHLEVEL=04` with no EXTRAVERSION. Resolved by keeping the ci/master Makefile version untouched (only the `doc/develop/release_cycle.rst` change was applied). Added a fix-up note to the commit message: `[sjg: Skip Makefile version bump; ci/master is on v2026.04]`.
+- **987907ae4bc (Merge tag stm32)** — Cherry-pick reported the merge was empty (all changes already in via the preceding commits). Created an empty commit preserving the merge message and added the `(cherry picked from commit ...)` marker manually.
+
+### Concerning Deltas
+None — every non-conflict commit produced an identical file-and-line stat compared to the original.
+
+### Final log (top of branch)
+```
+ff8723a3cdf Merge tag 'u-boot-stm32-20260526' ...
+3a4c49651c3 stm32mp2: update part number for STM32MP251/3
+a8f914154f0 ARM: dts: stm32: enable SMC watchdog for STM32MP15 SCMI config
+56ee4d3e267 configs: stm32mp13: activate watchdog
+9f9cc1f92da configs: stm32mp15: enable WDT_ARM_SMC driver
+3f6762a50fd configs: stm32mp15: Increase SYS_MALLOC_F_LEN
+06df9073a94 board: st: factorize STM32MP FWU multi-bank support
+b69fbc2f3b3 board: st: stm32mp15: support dynamic A/B bank bootup
+3754ca007b7 Prepare v2026.07-rc3
+33a040cfc6b Makefile: binman: Search board directory before srctree
+```
+
+Branch `cherry-a2089348012` is left ready for pushing.
+
+---
+
