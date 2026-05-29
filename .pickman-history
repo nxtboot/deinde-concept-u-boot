@@ -83107,3 +83107,61 @@ Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
 
 ---
 
+## 2026-05-29: us/master
+
+Branch: cherry-812aca57914
+
+Commits:
+- 812aca57914 video: arm: rpi: Add brcm,bcm2712-hdmi0 compatible
+- 17ceb774a18 rpi_arm64: Enable MBEDTLS/LWIP/WGET and WGET_HTTPS
+- 29c7796a718 mmc: bcm2835_sdhci: Parse generic MMC device tree properties
+- 8de24e226d7 mmc: bcmstb: Fix non-removable check in bcm2712 init
+- 2f87266d56e Merge tag 'rpi-2026.07-rc3' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+
+### Conversation log
+Build OK. Continuing with next commit.
+
+Now the merge commit:
+
+All 5 commits present. Final build verification:
+
+## Final Status Report
+
+**Branch:** `cherry-812aca57914` (based on `ci/master`)
+
+**Cherry-pick Summary:**
+All 5 commits cherry-picked successfully without conflicts:
+
+| Original Hash | New Hash | Subject |
+|---|---|---|
+| 812aca57914 | a84e2818dd9 | video: arm: rpi: Add brcm,bcm2712-hdmi0 compatible |
+| 17ceb774a18 | b531c99b1a6 | rpi_arm64: Enable MBEDTLS/LWIP/WGET and WGET_HTTPS |
+| 29c7796a718 | 4d0a22e1187 | mmc: bcm2835_sdhci: Parse generic MMC device tree properties |
+| 8de24e226d7 | ec0a1aab0c2 | mmc: bcmstb: Fix non-removable check in bcm2712 init |
+| 2f87266d56e | bdedaaf7ad6 | Merge tag 'rpi-2026.07-rc3' ... (empty merge, preserved) |
+
+**Build Result:** ✅ OK — sandbox builds cleanly after each cherry-pick and after the final commit. No warnings or errors.
+
+**Deltas:** All non-merge commits matched their originals exactly (same files, same insertion/deletion counts).
+
+**Fix-ups:** None required. The merge commit was committed empty with `--allow-empty` (as instructed for merge commits).
+
+The branch is ready for pushing.
+
+---
+
+### Rebase: 2026-05-29
+
+Branch: cherry-812aca57914 rebased onto latest ci/master.
+
+ci/master moved forward by one merge (`46acd8afd4f Merge branch 'cherry-a2089348012' into 'master'`) which itself added a `.pickman-history` record for cherry-a2089348012 (and a Rebase record for that branch). That collided with this branch's own `.pickman-history` record append.
+
+Conflict resolution:
+- `.pickman-history` — both sides appended new sections under the `## 2026-05-29: us/master` header. Kept both: the cherry-a2089348012 record (now part of master) first, followed by a fresh `## 2026-05-29: us/master` header and the cherry-812aca57914 record.
+
+Delta check: every non-merge commit produced an identical file-and-line stat compared to its pre-rebase version. The empty merge commit `bdedaaf7ad6` was preserved with `--keep-empty` (new hash `e0e5c5254be`).
+
+Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
+
+---
+
