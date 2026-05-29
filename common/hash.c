@@ -332,7 +332,8 @@ static struct hash_algo hash_algo[] = {
 		HASH_MBEDTLS_TYPE(MBEDTLS_MD_SHA512)
 	},
 #endif
-#if CONFIG_IS_ENABLED(SM3)
+/* SM3 is not built for the host tools, so do not reference it there */
+#if CONFIG_IS_ENABLED(SM3) && !defined(USE_HOSTCC)
 	{
 		.name		= "sm3_256",
 		.digest_size	= SM3_DIGEST_SIZE,
@@ -343,7 +344,8 @@ static struct hash_algo hash_algo[] = {
 		.hash_finish	= hash_finish_sm3,
 	},
 #endif
-#if CONFIG_IS_ENABLED(SM3)
+/* SM3 is not built for the host tools, so do not reference it there */
+#if CONFIG_IS_ENABLED(SM3) && !defined(USE_HOSTCC)
 	{
 		.name		= "sm3_256",
 		.digest_size	= SM3_DIGEST_SIZE,
