@@ -83042,3 +83042,68 @@ pipeline re-run. Expect both jobs to pass on retry once the lab/runner
 state is healthy.
 
 ---
+### Review: 2026-05-29
+
+Branch: cherry-a2089348012
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, efi-aarch64.
+
+Let me run...
+
+### Conversation log
+I'll re-verify the build and address this comment. Based on the prior analysis (recorded in the local-only commit `2536ad4f994`), the previous attempt diagnosed the failures as infrastructure issues. Let me re-verify the build is still clean and trigger a pipeline retry by pushing a v2.
+
+Sandbox build passed silently (no errors). Let me verify the affected aarch64/x86 EFI boards too as a sanity check before treating this as a re-retry.
+
+All three builds are clean (sandbox, efi-arm_app64, efi-x86_app64). Code is healthy — these CI failures are infrastructure. Let me record this second attempt in pickman-history and create the -v2 branch with the new commit, which will be force-pushed to trigger a fresh pipeline.
+
+I'll amend the existing local-only `2536ad4f994` pickman record commit (it was never pushed) so the branch has a single clean record commit.
+
+Push succeeded. Let me confirm the final state.
+
+## Report
+
+**Review comment addressed:** Bot re-reported failures in `efi-x86_64-uboot-iso-install` and `efi-aarch64`.
+
+### What was done
+1. Re-verified the code is healthy on this branch by building locally:
+   - `buildman -L --board sandbox` — clean
+   - `buildman -L --board efi-arm_app64` — clean (4s)
+   - `buildman -L --board efi-x86_app64` — clean (3s)
+2. Confirmed the cherry-pick scope on this branch (Makefile binman ordering, doc release-cycle update, STM32MP15/MP13/MP2 board/config series) touches no code path that could plausibly cause either CI failure.
+3. Appended an "attempt 2" record to `.pickman-history` and amended the local-only `2536ad4f994` pickman record commit (no code change).
+4. Created local branch `cherry-a2089348012-v2` at the same tip.
+5. Force-pushed to `ci/cherry-a2089348012` via `./tools/pickman/pickman push-branch cherry-a2089348012 -r ci -f` (249747090cf → fd8de9da98c) to trigger a fresh pipeline.
+
+### Diagnosis (unchanged from attempt 1)
+Both failures remain infrastructure/transient:
+- **efi-aarch64**: `checkarmreloc` read an empty u-boot ELF after 8s; runner self-reported "Lab failure: Marking connection bad". Local build works.
+- **efi-x86_64-uboot-iso-install**: Ubuntu installer kernel panic on missing root UUID `eb38f37f-...`, hit the 10-minute step timeout. None of the cherry-picks touch USB/partition/distro-boot paths.
+
+### Suggested MR reply
+
+> Rebuilt locally on the latest tip: sandbox, efi-arm_app64, and efi-x86_app64 all build clean. The cherry-picks here (binman Makefile ordering, STM32MP15/MP13/MP2 board+config series, doc release-cycle) don't touch checkarmreloc, EFI loader, USB storage, or distro-boot, so neither failure is reproducible from this code:
+>
+> - **efi-aarch64**: `checkarmreloc` saw an empty/missing `u-boot` ELF after 8s and the runner reported `Lab failure: Marking connection bad`. Looks like a dirty workspace or runner race.
+> - **efi-x86_64-uboot-iso-install**: Ubuntu installer kernel panic on missing root `UUID=eb38f37f-c0fc-4ba8-b327-2a1d3a52d987`, then the 10-minute step timeout.
+>
+> Force-pushed v2 (same tree, updated `.pickman-history` record only) to retry the pipeline.
+
+---
+
+### Rebase: 2026-05-29
+
+Branch: cherry-a2089348012 rebased onto latest ci/master.
+
+ci/master moved forward by one merge (`a1370d240ee Merge branch 'cherry-9793931f36d' into 'master'`) which itself contained the xilinx-for-v2026.07-rc3 series. The merge also added a `.pickman-history` record for cherry-9793931f36d, which collided with our local record block for cherry-a2089348012.
+
+Conflict resolution:
+- `.pickman-history` — both sides appended a new section under the `## 2026-05-29: us/master` header. Kept both: the cherry-9793931f36d record (now part of master) first, followed by a fresh `## 2026-05-29: us/master` header and the cherry-a2089348012 record.
+
+Delta check: every non-merge commit produced an identical file-and-line stat compared to its pre-rebase version. The empty merge commit `ff8723a3cdf` was preserved with `--keep-empty` (new hash 2d620e69f09).
+
+Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
+
+---
+
