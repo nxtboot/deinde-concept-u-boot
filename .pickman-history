@@ -82958,3 +82958,87 @@ Branch `cherry-a2089348012` is left ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-05-29 (attempt 1)
+
+Branch: cherry-a2089348012
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+Let me run quick sanity builds to confirm whether this is a code or infrastructure issue:
+
+Good — sandbox build succeeded. Now let me verify the diff scope and try to reproduce the aarch64 build issue:
+
+Both affected boards build cleanly locally. Now I have enough evidence to determine these are infrastructure failures, not code defects.
+
+## Diagnosis
+
+**Branch state**: Currently on `cherry-a2089348012` (10 cherry-picks: Makefile binman ordering + STM32MP15/MP13/MP2 series + version-bump doc).
+
+**File scope of all cherry-picks**:
+```
+.pickman-history, Makefile (binman -I order), doc/develop/release_cycle.rst,
+arch/arm/dts/stm32mp15-scmi-u-boot.dtsi,
+arch/arm/mach-stm32mp/include/mach/sys_proto.h,
+board/st/common/{Makefile,stm32mp_fwu.c},
+board/st/stm32mp1/stm32mp1.c, board/st/stm32mp2/stm32mp2.c,
+configs/stm32mp1{3,5}_defconfig,
+include/configs/stm32mp15_st_common.h
+```
+
+Nothing touches aarch64 EFI, x86_64 EFI, USB storage, EFI distro boot, the loader, `checkarmreloc`, or buildman.
+
+### Job 520979 (efi-aarch64) — infrastructure
+- Error: `readelf: Error: u-boot: Failed to read file's magic number` → `make[1]: *** [Makefile:2660: checkarmreloc] Error 1` → `buildman exited with 100` after only **8 seconds**.
+- The runner itself classified it: `Lab failure: Marking connection bad - no other tests will run`.
+- Local `buildman --board efi-arm_app64` finishes cleanly in 4 s on the same tree, so the source compiles fine. The CI-side failure looks like a stale/empty `build/efi-aarch64/u-boot` ELF picked up by `checkarmreloc` before the link finished (runner race / dirty workspace) rather than a code defect.
+
+### Job 520980 (efi-x86_64-uboot-iso-install) — infrastructure
+- The build is fine; what fails is an Ubuntu installer-ISO boot test. The kernel panics with `VFS: Unable to mount root fs on unknown-block(0,0)` because `UUID=eb38f37f-c0fc-4ba8-b327-2a1d3a52d987` is not present on the runner. The log also shows `Session terminated, killing shell ...killed.` mid-boot and the GitLab message: `step_script could not run to completion because the timeout was exceeded ... 10m0s`.
+- Local `buildman --board efi-x86_app64` builds cleanly. No cherry-picked commit touches USB storage, partition/UUID resolution, or the EFI distro-boot flow that would change which root device the installer kernel finds.
+
+### Conclusion
+Both failures are infrastructure/transient (lab runner state for efi-aarch64; missing/changed installer media + 10-minute timeout for efi-x86_64-uboot-iso-install). Neither is reproducible from the code on this branch.
+
+**Action taken**: Per the brief ("If the failure is an infrastructure or transient issue, report this without making changes"), I did **not** amend any commit and did **not** create `cherry-a2089348012-fix1`. The branch is left as-is at `249747090cf`. Recommended next step is to retry both jobs.
+
+---
+
+
+### Pipeline fix: 2026-05-29 (attempt 2)
+
+Branch: cherry-a2089348012
+
+Failed jobs (re-reported):
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+
+### Diagnosis
+
+Same failures as attempt 1, re-reported by the bot. Re-verified that this
+branch's code is healthy:
+
+- `buildman -L --board sandbox` — clean
+- `buildman -L --board efi-arm_app64` — clean (4s)
+- `buildman -L --board efi-x86_app64` — clean (3s)
+
+The cherry-pick set on this branch (Makefile binman ordering, doc release-
+cycle update, STM32MP15/MP13/MP2 board/config series) does not touch any
+code path that could cause either failure:
+
+- efi-aarch64: failed in `checkarmreloc` with `readelf: Failed to read
+  file's magic number` after 8s, and the runner self-classified as
+  "Lab failure: Marking connection bad - no other tests will run".
+- efi-x86_64-uboot-iso-install: Ubuntu installer kernel panic on a
+  missing root UUID, hit 10-minute step timeout. None of our cherry-
+  picks touch USB storage, partition resolution or EFI distro-boot.
+
+### Action
+
+No code changes. Pushing as cherry-a2089348012-v2 to force a clean
+pipeline re-run. Expect both jobs to pass on retry once the lab/runner
+state is healthy.
+
+---
