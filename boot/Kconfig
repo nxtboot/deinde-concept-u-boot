@@ -688,6 +688,8 @@ config BOOTMETH_CROS
 	select EFI_PARTITION
 	select PARTITION_TYPE_GUID
 	select PARTITION_UUIDS
+	select SPL_PARTITION_TYPE_GUID if SPL && SPL_EFI_PARTITION
+	select SPL_PARTITION_UUIDS if SPL && SPL_EFI_PARTITION
 	help
 	  Enables support for booting Chromium OS using bootdevs. This uses the
 	  kernel A slot and obtains the kernel command line from the parameters
