@@ -74,7 +74,7 @@ start32:
 #ifdef CONFIG_XPL_BUILD
 	ldr	r0, =CONFIG_SPL_TEXT_BASE
 #else
-	ldr	r0, =CONFIG_TEXT_BASE
+	ldr	r0, =CONFIG_PPL_TEXT_BASE
 #endif
 	str	r0, [r1]			// store start address in RVBAR
 	dsb	sy

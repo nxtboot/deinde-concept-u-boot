@@ -51,7 +51,7 @@ u-boot-x86-16bit.lds: $(srctree)/arch/x86/cpu/u-boot-16bit.lds prepare FORCE
 	$(call if_changed_dep,cpp_lds)
 
 LDFLAGS_u-boot-x86-16bit.elf := -m elf_i386 -static -nostdlib \
-	--defsym=_start=$(CONFIG_TEXT_BASE)
+	--defsym=_start=$(CONFIG_PPL_TEXT_BASE)
 
 u-boot-x86-16bit.elf: arch/x86/cpu/start16.o arch/x86/cpu/resetvec.o \
 		u-boot-x86-16bit.lds FORCE

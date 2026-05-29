@@ -51,7 +51,7 @@ int sandbox_spl_load_fit(char *fname, int maxlen, struct spl_image_info *image);
  *
  * This must sit above everything the FIT's own images are loaded to, since
  * loading an image would otherwise overwrite the FIT still being read from.
- * The U-Boot image goes to CONFIG_TEXT_BASE (400000) and is several MB, so
+ * The U-Boot image goes to CONFIG_PPL_TEXT_BASE (400000) and is several MB, so
  * CONFIG_SYS_LOAD_ADDR (0 for sandbox_spl) will not do. It must also stay
  * clear of the nvmxip devices at 8000000. See the memory map in
  * doc/arch/sandbox/sandbox.rst

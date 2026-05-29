@@ -268,7 +268,7 @@ ulong spl_fit_images_get_entry(void *blob, int node)
 void __noreturn spl_invoke_atf(struct spl_image_info *spl_image)
 {
 	ulong  bl32_entry = 0;
-	ulong  bl33_entry = CONFIG_TEXT_BASE;
+	ulong  bl33_entry = CONFIG_PPL_TEXT_BASE;
 	void *blob = spl_image->fdt_addr;
 	ulong platform_param = (ulong)blob;
 	int node;

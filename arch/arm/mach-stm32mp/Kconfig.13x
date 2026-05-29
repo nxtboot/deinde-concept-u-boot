@@ -30,7 +30,7 @@ config TARGET_DH_STM32MP13X
 
 endchoice
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0xC0000000 if TFABOOT
 	default 0xC0100000 if !TFABOOT
 

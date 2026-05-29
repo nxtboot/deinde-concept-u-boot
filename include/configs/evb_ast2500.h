@@ -11,7 +11,7 @@
 
 #include <configs/aspeed-common.h>
 
-#define CFG_SYS_UBOOT_BASE		CONFIG_TEXT_BASE
+#define CFG_SYS_UBOOT_BASE		CONFIG_PPL_TEXT_BASE
 
 /* Misc */
 #define CFG_EXTRA_ENV_SETTINGS \

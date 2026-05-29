@@ -54,7 +54,7 @@
  */
 
 #define CFG_SYS_NAND_U_BOOT_SIZE	(1 * 1024 * 1024)
-#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_PPL_TEXT_BASE
 
 /*
  * Environment variable

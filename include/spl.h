@@ -462,7 +462,7 @@ ulong spl_get_image_size(void);
  * spl_get_image_text_base() - get the text base of the next phase
  *
  * This returns the address that the next stage is linked to run at, i.e.
- * CONFIG_SPL_TEXT_BASE or CONFIG_TEXT_BASE
+ * CONFIG_SPL_TEXT_BASE or CONFIG_PPL_TEXT_BASE
  *
  * Return: text-base address
  */
@@ -673,7 +673,7 @@ unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc,
  *
  * This sets up the given spl_image which the standard values obtained from
  * config options: CONFIG_SYS_MONITOR_LEN, CONFIG_SYS_UBOOT_START,
- * CONFIG_TEXT_BASE.
+ * CONFIG_PPL_TEXT_BASE.
  *
  * @spl_image: Image description to set up
  */

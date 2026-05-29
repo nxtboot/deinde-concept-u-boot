@@ -5,7 +5,7 @@ config TARGET_COREPRIMEVELTE
 	select LINUX_KERNEL_IMAGE_HEADER
 
 config LNX_KRNL_IMG_TEXT_OFFSET_BASE
-	default TEXT_BASE
+	default PPL_TEXT_BASE
 
 source "board/samsung/coreprimevelte/Kconfig"
 

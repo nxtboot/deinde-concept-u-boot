@@ -103,7 +103,7 @@ static void jump_to_uboot(ulong cs32, ulong addr, ulong info)
 
 	((func_t)addr)(0, 0, info);
 #else
-	cpu_call32(cs32, CONFIG_TEXT_BASE, info);
+	cpu_call32(cs32, CONFIG_PPL_TEXT_BASE, info);
 #endif
 }
 
@@ -161,8 +161,8 @@ static int get_codeseg32(void)
 		if ((desc & GDT_PRESENT) && (desc & GDT_NOTSYS) &&
 		    !(desc & GDT_LONG) && (desc & GDT_4KB) &&
 		    (desc & GDT_32BIT) && (desc & GDT_CODE) &&
-		    CONFIG_TEXT_BASE > base &&
-		    CONFIG_TEXT_BASE + CONFIG_SYS_MONITOR_LEN < limit
+		    CONFIG_PPL_TEXT_BASE > base &&
+		    CONFIG_PPL_TEXT_BASE + CONFIG_SYS_MONITOR_LEN < limit
 		) {
 			cs32 = i;
 			break;
@@ -213,7 +213,7 @@ efi_status_t arch_efi_main_init(struct efi_priv *priv,
 		return EFI_UNSUPPORTED;
 	priv->x86_cs32 = cs32;
 
-	priv->jump_addr = CONFIG_TEXT_BASE;
+	priv->jump_addr = CONFIG_PPL_TEXT_BASE;
 
 	return 0;
 }

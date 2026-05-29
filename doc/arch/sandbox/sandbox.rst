@@ -846,7 +846,7 @@ Addr       Config                     Usage
   100000   TCG Event log              TCG Event Log
   180000   CONFIG_SYS_FDT_LOAD_ADDR   Device tree
   200000   CONFIG_TRACE_EARLY_ADDR    Early trace buffer (if enabled). Also used
-  400000   CONFIG_TEXT_BASE           Load buffer for U-Boot (sandbox_spl only)
+  400000   CONFIG_PPL_TEXT_BASE           Load buffer for U-Boot (sandbox_spl only)
  4000000   SANDBOX_SPL_FIT_ADDR       FIT read by the "full" FIT-loader test
                                       (sandbox_spl only)
  8000000                              nvmxip devices (see test.dts)

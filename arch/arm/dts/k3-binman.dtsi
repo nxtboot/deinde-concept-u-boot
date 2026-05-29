@@ -403,7 +403,7 @@
 					os = "u-boot";
 					arch = "arm";
 					compression = "none";
-					load = <CONFIG_TEXT_BASE>;
+					load = <CONFIG_PPL_TEXT_BASE>;
 					ti-secure {
 						content = <&u_boot_nodtb>;
 						keyfile = "custMpk.pem";
@@ -430,7 +430,7 @@
 					os = "u-boot";
 					arch = "arm";
 					compression = "none";
-					load = <CONFIG_TEXT_BASE>;
+					load = <CONFIG_PPL_TEXT_BASE>;
 					blob {
 						filename = "u-boot-nodtb.bin";
 					};

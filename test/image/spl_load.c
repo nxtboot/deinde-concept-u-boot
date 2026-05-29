@@ -246,8 +246,8 @@ size_t create_image(void *dst, enum spl_test_image type,
 	bool external = false;
 
 	info->os = IH_OS_U_BOOT;
-	info->load_addr = CONFIG_TEXT_BASE;
-	info->entry_point = CONFIG_TEXT_BASE + 0x100;
+	info->load_addr = CONFIG_PPL_TEXT_BASE;
+	info->entry_point = CONFIG_PPL_TEXT_BASE + 0x100;
 	info->flags = 0;
 
 	switch (type) {

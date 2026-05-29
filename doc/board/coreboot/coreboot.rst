@@ -26,7 +26,7 @@ this capability yet. The command is as follows::
    $ ./build/util/cbfstool/cbfstool build/coreboot.rom add-flat-binary \
      -f u-boot-dtb.bin -n fallback/payload -c lzma -l 0x1110000 -e 0x1110000
 
-Make sure 0x1110000 matches CONFIG_TEXT_BASE, which is the symbol address
+Make sure 0x1110000 matches CONFIG_PPL_TEXT_BASE, which is the symbol address
 of _x86boot_start (in arch/x86/cpu/start.S).
 
 If you want to use ELF as the coreboot payload, change U-Boot configuration to
@@ -93,7 +93,7 @@ select CONFIG_X86_RUN_64BIT_NO_SPL together with CONFIG_X86_32BIT_ENTRY to
 get a single 64-bit U-Boot which starts with 32-bit code of its own: it
 loads a GDT, builds identity-mapped page tables and enters long mode before
 running board_init_f(). The payload is then just u-boot.bin, entered at
-CONFIG_TEXT_BASE::
+CONFIG_PPL_TEXT_BASE::
 
    cbfstool coreboot.rom add-flat-binary -f u-boot.bin \
       -n fallback/payload -c lzma -l 0x1110000 -e 0x1110000
@@ -160,7 +160,7 @@ Memory map
     10000000  Memory reserved by coreboot for mapping PCI devices
               (typical size 2151000, includes framebuffer)
      1920000  CONFIG_SYS_CAR_ADDR, fake Cache-as-RAM memory, used during startup
-     1110000  CONFIG_TEXT_BASE (start address of U-Boot code, before reloc)
+     1110000  CONFIG_PPL_TEXT_BASE (start address of U-Boot code, before reloc)
       110000  CONFIG_BLOBLIST_ADDR (before being relocated)
       100000  CONFIG_PRE_CON_BUF_ADDR
        f0000  ACPI tables set up by U-Boot

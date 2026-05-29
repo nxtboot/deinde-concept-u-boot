@@ -183,7 +183,7 @@ void board_init_f(ulong dummy)
 	 */
 	if (CONFIG_IS_ENABLED(DEEP_SLEEP)) {
 		if (is_warm_boot()) {
-			second_uboot = (void (*)(void))CONFIG_TEXT_BASE;
+			second_uboot = (void (*)(void))CONFIG_PPL_TEXT_BASE;
 			second_uboot();
 		}
 	}

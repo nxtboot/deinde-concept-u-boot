@@ -148,7 +148,7 @@ ENTRY(_main)
 	adr	r0, _main
 	ldr	r1, _start_ofs
 	add	r0, r1
-	ldr	r1, =CONFIG_TEXT_BASE
+	ldr	r1, =CONFIG_PPL_TEXT_BASE
 	sub	r1, r0
 	add	lr, r1
 #if defined(CONFIG_ENV_RELOC_GD_ENV_ADDR)

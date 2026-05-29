@@ -62,8 +62,8 @@
 				os = "u-boot";
 				arch = FIT_ARCH;
 				compression = FIT_UBOOT_COMP;
-				load = <CONFIG_TEXT_BASE>;
-				entry = <CONFIG_TEXT_BASE>;
+				load = <CONFIG_PPL_TEXT_BASE>;
+				entry = <CONFIG_PPL_TEXT_BASE>;
 				phase = "u-boot";
 				u-boot-nodtb {
 					compress = FIT_UBOOT_COMP;

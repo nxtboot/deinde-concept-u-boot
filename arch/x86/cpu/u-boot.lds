@@ -11,7 +11,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = CONFIG_TEXT_BASE;	/* Location of bootcode in flash */
+	. = CONFIG_PPL_TEXT_BASE;	/* Location of bootcode in flash */
 	__text_start = .;
 
 	.text.start : { *(.text.start); }

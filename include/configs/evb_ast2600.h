@@ -8,7 +8,7 @@
 
 #include <configs/aspeed-common.h>
 
-#define CFG_SYS_UBOOT_BASE		CONFIG_TEXT_BASE
+#define CFG_SYS_UBOOT_BASE		CONFIG_PPL_TEXT_BASE
 
 /* Misc */
 #define STR_HELPER(s)	#s

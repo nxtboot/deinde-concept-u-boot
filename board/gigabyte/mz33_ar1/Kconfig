@@ -23,7 +23,7 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 # PSP will not start it larger than 1MB or anywhere else. Without SPL this
 # image is U-Boot; with SPL it is SPL (CONFIG_SPL_TEXT_BASE) and U-Boot proper
 # stays in the flash for SPL to copy
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x07150000
 
 # Cache the whole of the flash window, so that SPL copies U-Boot proper
@@ -34,7 +34,7 @@ config XIP_ROM_SIZE
 # With SPL, the flash image, whose first 16MB is mapped below 4GB
 config TURIN_IMAGE_ADDR
 	default 0xff000000 if SPL
-	default TEXT_BASE
+	default PPL_TEXT_BASE
 
 config RESET_SEG_START
 	default 0x07240000

@@ -423,7 +423,7 @@ static int upl_test_info_norun(struct unit_test_state *uts)
 
 	img = alist_get(&upl->image, 1, struct upl_image);
 	ut_asserteq_str("firmware-1", fdt_get_name(fit, img->offset, NULL));
-	ut_asserteq(CONFIG_TEXT_BASE, img->load);
+	ut_asserteq(CONFIG_PPL_TEXT_BASE, img->load);
 
 	return 0;
 }

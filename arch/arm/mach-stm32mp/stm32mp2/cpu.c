@@ -78,7 +78,7 @@ void enable_caches(void)
 
 	/* Parse mem_map and find DDR entry */
 	while (mem->size) {
-		if (mem->phys == CONFIG_TEXT_BASE) {
+		if (mem->phys == CONFIG_PPL_TEXT_BASE) {
 			/* update DDR entry with real DDR size */
 			mem->size = gd->ram_size;
 			break;

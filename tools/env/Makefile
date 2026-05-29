@@ -13,7 +13,7 @@ HOST_EXTRACFLAGS  = -I$(srctree)/tools \
 		$(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
 		-idirafter $(srctree)/tools/env \
 		-DUSE_HOSTCC \
-		-DTEXT_BASE=$(TEXT_BASE)
+		-DTEXT_BASE=$(PPL_TEXT_BASE)
 
 ifeq ($(MTD_VERSION),old)
 HOST_EXTRACFLAGS += -DMTD_OLD

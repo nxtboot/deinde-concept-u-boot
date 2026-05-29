@@ -15,7 +15,7 @@
 
 /* Physical Memory Map */
 
-/* CONFIG_TEXT_BASE needs to align with where ATF loads bl33.bin */
+/* CONFIG_PPL_TEXT_BASE needs to align with where ATF loads bl33.bin */
 
 #define PHYS_SDRAM_1			0x00000000
 

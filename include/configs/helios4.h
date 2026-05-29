@@ -13,7 +13,7 @@
  */
 
 /*
- * TEXT_BASE needs to be below 16MiB, since this area is scrubbed
+ * PPL_TEXT_BASE needs to be below 16MiB, since this area is scrubbed
  * for DDR ECC byte filling in the SPL before loading the main
  * U-Boot into it.
  */

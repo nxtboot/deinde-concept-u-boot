@@ -124,7 +124,7 @@
 /* General parts of the framework, required. */
 
 #ifdef CONFIG_MTD_RAW_NAND
-#define CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
 #endif
 #endif /* !CONFIG_NOR_BOOT */
 

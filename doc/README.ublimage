@@ -53,7 +53,7 @@ Configuration command line syntax:
 				MODE	safe
 
 	ENTRY			Entry point address for the user
-				bootloader (absolute address) = TEXT_BASE
+				bootloader (absolute address) = PPL_TEXT_BASE
 				nand_spl loader.
 				Example:
 				ENTRY	0x00000020
@@ -78,12 +78,12 @@ Structure of the u-boot.ubl binary:
 
 compile steps:
 
-1) nand_spl code compile, with pad_to = (TEXT_BASE +
+1) nand_spl code compile, with pad_to = (PPL_TEXT_BASE +
    (CONFIG_SYS_NROF_PAGES_NAND_SPL * pagesize))
    Example: cam_enc_4xx pad_to = 0x20 + (6 * 0x800) = 0x3020 = 12320
    -> u-boot-spl-16k.bin
 
-   !! TEXT_BASE = 0x20, as the RBL starts at 0x20
+   !! PPL_TEXT_BASE = 0x20, as the RBL starts at 0x20
 
 2) compile u-boot.bin ("normal" u-boot)
    -> u-boot.bin

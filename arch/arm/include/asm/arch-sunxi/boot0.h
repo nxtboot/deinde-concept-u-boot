@@ -46,7 +46,7 @@
 	.word	0xe5900024	// ldr     r0, [r0, #36] ; SRAM_VER_REG
 	.word	0xe21000ff	// ands    r0, r0, #255    ; 0xff
 	.word	0x159f102c	// ldrne   r1, [pc, #44] ; RVBAR_ALTERNATIVE
-	.word	0xe59f002c	// ldr     r0, [pc, #44] ; CONFIG_*TEXT_BASE
+	.word	0xe59f002c	// ldr     r0, [pc, #44] ; CONFIG_*PPL_TEXT_BASE
 	.word	0xe5810000	// str     r0, [r1]
 	.word	0xf57ff04f	// dsb     sy
 	.word	0xf57ff06f	// isb     sy
@@ -63,7 +63,7 @@
 #ifdef CONFIG_XPL_BUILD
 	.word	CONFIG_SPL_TEXT_BASE
 #else
-	.word   CONFIG_TEXT_BASE
+	.word   CONFIG_PPL_TEXT_BASE
 #endif
 #else
 /* normal execution */

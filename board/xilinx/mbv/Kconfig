@@ -9,7 +9,7 @@ config SYS_VENDOR
 config SYS_CPU
 	default "generic"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x81200000
 
 config SPL_TEXT_BASE

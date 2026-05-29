@@ -9,7 +9,7 @@ config SYS_VENDOR
 config SYS_SOC
 	default "efi"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x00200000
 
 config BOARD_SPECIFIC_OPTIONS # dummy

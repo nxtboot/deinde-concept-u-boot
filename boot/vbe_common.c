@@ -175,7 +175,7 @@ int vbe_read_fit(struct udevice *blk, ulong area_offset, ulong area_size,
 	 * external data, so this is quite small, perhaps a few KB.
 	 */
 	if (IS_ENABLED(CONFIG_SANDBOX)) {
-		addr = IF_ENABLED_INT(CONFIG_SANDBOX, CONFIG_VAL(TEXT_BASE));
+		addr = IF_ENABLED_INT(CONFIG_SANDBOX, CONFIG_PPL_TEXT_BASE);
 		buf = map_sysmem(addr, size);
 	} else {
 		buf = malloc(aligned_size);

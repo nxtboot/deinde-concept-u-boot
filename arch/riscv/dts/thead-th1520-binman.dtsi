@@ -51,7 +51,7 @@
 				os = "U-boot";
 				arch = "riscv";
 				compression = "none";
-				load = /bits/ 64 <CONFIG_TEXT_BASE>;
+				load = /bits/ 64 <CONFIG_PPL_TEXT_BASE>;
 
 				uboot_nodtb_blob: u-boot-nodtb {
 				};

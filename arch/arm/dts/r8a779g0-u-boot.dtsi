@@ -45,9 +45,9 @@
 							type = "standalone";
 							/*
 							 * This is in DRAM. We cannot
-							 * use TEXT_BASE here because
+							 * use PPL_TEXT_BASE here because
 							 * this system uses PIE build
-							 * and TEXT_BASE=0x0 .
+							 * and PPL_TEXT_BASE=0x0 .
 							 */
 							entry = <0x44100000>;
 							load = <0x44100000>;

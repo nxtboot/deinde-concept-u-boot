@@ -49,7 +49,7 @@ static int do_ele_info(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
 	struct ele_get_info_data *info;
 
 	/* ELE can't access full DDR */
-	info = (struct ele_get_info_data *)(CONFIG_TEXT_BASE + SZ_2M -
+	info = (struct ele_get_info_data *)(CONFIG_PPL_TEXT_BASE + SZ_2M -
 		sizeof(struct ele_get_info_data));
 	flush_dcache_range((ulong)info, (ulong)info + sizeof(struct ele_get_info_data));
 

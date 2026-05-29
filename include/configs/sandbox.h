@@ -19,6 +19,6 @@
 					115200}
 
 /* Unused but necessary to build */
-#define CFG_SYS_UBOOT_BASE	CONFIG_TEXT_BASE
+#define CFG_SYS_UBOOT_BASE	CONFIG_PPL_TEXT_BASE
 
 #endif
