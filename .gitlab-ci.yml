@@ -1068,6 +1068,12 @@ rock5b:
     ROLE: rock5b
   <<: *sjg_lab_dfn
 
+# FriendlyElec NanoPi M5 with 3G, UFS (RK3576, booted from RAM using maskrom)
+nanopi-m5:
+  variables:
+    ROLE: nanopi-m5
+  <<: *sjg_lab_dfn
+
 rpi5:
   variables:
     ROLE: rpi5
