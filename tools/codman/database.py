@@ -177,6 +177,31 @@ class CodmanDatabase:
         self.conn.commit()
         return cur.lastrowid
 
+    def delete_board(self, target):
+        """Remove all stored data for a board, if it is present.
+
+        Used to replace a board's results when it is re-scanned, without
+        disturbing the other boards in the database. The shared 'files'
+        lookup table is left alone (its rows are reused across boards; any
+        that become unreferenced are harmless).
+
+        Args:
+            target (str): Board target name
+        """
+        row = self.conn.execute(
+            'SELECT board_id FROM boards WHERE target = ?',
+            (target,)).fetchone()
+        if not row:
+            return
+        board_id = row['board_id']
+        self.conn.execute(
+            'DELETE FROM active_ranges WHERE board_id = ?', (board_id,))
+        self.conn.execute(
+            'DELETE FROM board_files WHERE board_id = ?', (board_id,))
+        self.conn.execute(
+            'DELETE FROM boards WHERE board_id = ?', (board_id,))
+        self.conn.commit()
+
     def has_board(self, target):
         """Check if a board is already in the database.
 
@@ -453,9 +478,11 @@ class CodmanDatabase:
         ).fetchall()
         info['arch_counts'] = {row['arch']: row['cnt'] for row in rows}
 
-        # Scan info
+        # Scan info, without overwriting the computed statistics above (a
+        # stale scan_info 'board_count' from the last scan must not mask the
+        # real total now that the database accumulates boards across runs)
         for row in self.conn.execute('SELECT key, value FROM scan_info'):
-            info[row['key']] = row['value']
+            info.setdefault(row['key'], row['value'])
 
         return info
 

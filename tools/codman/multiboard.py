@@ -183,10 +183,9 @@ def _init_scan_db(srcdir, args):
 
     db_path = get_db_path(srcdir)
 
-    # Without --resume, start with a fresh database
-    if not args.resume and os.path.exists(db_path):
-        os.remove(db_path)
-
+    # The database is kept across runs: each board replaces its own rows as it
+    # is re-scanned (see _store_board_result), so scanning some boards leaves
+    # the others untouched rather than wiping the whole database.
     db = database.CodmanDatabase(db_path)
     db.create_tables()
 
@@ -217,6 +216,11 @@ def _store_board_result(db, brd, status, results, srcdir):
         results (dict): Analysis results (None for failed boards)
         srcdir (str): Source directory root
     """
+    # Replace any existing data for this board (e.g. from a previous scan).
+    # Done here, as the new result is stored, so an interrupted scan never
+    # loses a board it has not got round to re-scanning yet.
+    db.delete_board(brd.target)
+
     defconfig = f'{brd.target}_defconfig'
     if status != 'ok':
         db.add_board(brd.target, brd.arch, brd.cpu, brd.soc,

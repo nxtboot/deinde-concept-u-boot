@@ -286,6 +286,26 @@ class TestCodmanDatabase(unittest.TestCase):
         ranges = [(r['start_line'], r['end_line']) for r in rows]
         self.assertEqual(ranges, [(1, 5), (9, 10)])
 
+    def test_delete_board(self):
+        """delete_board removes a board's data but leaves others intact"""
+        self._add_test_data()
+
+        self.db.delete_board('board_a')
+
+        # board_a and all its rows are gone
+        self.assertNotIn('board_a', self.db.get_completed_targets())
+        self.assertEqual(self.db.query_files_for_board('board_a'), [])
+        self.assertEqual(
+            self.db.query_boards_for_file('drivers/video.c'), [])
+
+        # board_b is untouched
+        self.assertIn('board_b', self.db.get_completed_targets())
+        self.assertEqual(len(self.db.query_files_for_board('board_b')), 1)
+
+        # deleting an absent board is a no-op
+        self.db.delete_board('board_a')
+        self.db.delete_board('never_existed')
+
 
 if __name__ == '__main__':
     unittest.main(argv=['test_database.py'], verbosity=2)
