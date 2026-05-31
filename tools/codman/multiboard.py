@@ -101,7 +101,7 @@ def _get_git_hash(srcdir):
 def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
                     use_lsp, unifdef_cmd, include_headers,
                     analysis_jobs, filter_pattern, clean_after,
-                    isolate=False):
+                    isolate=False, make_jobs=1):
     """Build, analyse, and return results for a single board.
 
     Does not touch the database — results are returned for the caller
@@ -121,6 +121,7 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
         filter_pattern (str): File filter pattern
         clean_after (bool): Delete build dir after analysis
         isolate (bool): Isolate buildman in its own session
+        make_jobs (int): Number of make -j jobs for the build
 
     Returns:
         tuple: (brd, status, results_or_None) where status is 'ok',
@@ -130,7 +131,7 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
 
     if not codman.build_board(brd.target, build_dir, srcdir, adjust_cfg,
                               use_dwarf, fatal_on_error=False,
-                              make_jobs=1, isolate=isolate):
+                              make_jobs=make_jobs, isolate=isolate):
         return (brd, 'build_failed', None)
 
     # Find used sources
@@ -258,16 +259,17 @@ def _kill_children():
 
 def _scan_sequential(selected, srcdir, build_base, adjust_cfg, use_dwarf,
                      use_lsp, unifdef_cmd, include_headers, filter_pattern,
-                     clean_after, db, scan_start):
+                     clean_after, db, scan_start, make_jobs):
     """Scan boards sequentially without threading.
 
-    Useful for debugging since all work happens in the main process.
+    Useful for debugging since all work happens in the main process. Only one
+    board builds at a time, so the build uses make_jobs (typically every core).
 
     Returns:
         tuple: (ok_count, fail_count)
     """
     terminal.tprint(
-        f'Scanning {len(selected)} boards (sequential)...')
+        f'Scanning {len(selected)} boards (sequential, -j{make_jobs})...')
     ok_count = 0
     fail_count = 0
 
@@ -288,7 +290,8 @@ def _scan_sequential(selected, srcdir, build_base, adjust_cfg, use_dwarf,
             brd, status, results = _scan_one_board(
                 brd, srcdir, build_base, adjust_cfg, use_dwarf,
                 use_lsp, unifdef_cmd, include_headers,
-                None, filter_pattern, clean_after)
+                make_jobs, filter_pattern, clean_after,
+                make_jobs=make_jobs)
 
             _store_board_result(db, brd, status, results, srcdir)
 
@@ -305,21 +308,26 @@ def _scan_sequential(selected, srcdir, build_base, adjust_cfg, use_dwarf,
 
 def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
                    use_lsp, unifdef_cmd, include_headers, filter_pattern,
-                   clean_after, db, scan_start, workers):
+                   clean_after, db, scan_start, workers, make_jobs):
     """Scan boards in parallel using a thread pool.
 
-    Each worker builds with -j1 and analyses one board. Results are
-    returned to the main thread for database storage.
+    Each worker builds and analyses one board with make_jobs jobs, chosen so
+    that workers * make_jobs fills the CPU. Results are returned to the main
+    thread for database storage.
 
     Returns:
         tuple: (ok_count, fail_count)
     """
     terminal.tprint(
-        f'Scanning {len(selected)} boards ({workers} workers)...')
+        f'Scanning {len(selected)} boards ({workers} workers, '
+        f'-j{make_jobs} each)...')
     ok_count = 0
     fail_count = 0
     done_count = 0
     count_lock = threading.Lock()
+    # Analyse each board single-process: the unifdef/DWARF analysers fork a
+    # multiprocessing.Pool, which is unsafe from these worker threads, and the
+    # boards already run concurrently. Only the build (a subprocess) is scaled.
     analysis_jobs = 1
 
     # Install a signal handler that kills all children and exits
@@ -343,13 +351,21 @@ def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
                 _scan_one_board, brd, srcdir, build_base,
                 adjust_cfg, use_dwarf, use_lsp, unifdef_cmd,
                 include_headers, analysis_jobs,
-                filter_pattern, clean_after, isolate=True)
+                filter_pattern, clean_after, isolate=True,
+                make_jobs=make_jobs)
             future_map[fut] = brd
 
         for fut in futures.as_completed(future_map):
             try:
                 brd, status, results = fut.result()
-            except Exception:
+            except Exception as e:
+                # Don't drop a board silently; record it as failed
+                brd = future_map[fut]
+                tout.warning(f'{brd.target}: scan worker failed: {e}')
+                _store_board_result(db, brd, 'build_failed', None, srcdir)
+                with count_lock:
+                    done_count += 1
+                    fail_count += 1
                 continue
 
             _store_board_result(db, brd, status, results, srcdir)
@@ -377,9 +393,10 @@ def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
 def do_scan(args):
     """Build and analyse multiple boards, storing results in a database.
 
-    Boards are processed in parallel using a thread pool. Each worker
-    builds with -j1 and analyses one board, returning results to the
-    main thread for database storage.
+    Boards are processed in parallel using a thread pool, with the cores
+    split between the workers so the machine stays busy. Each worker builds
+    and analyses one board, returning results to the main thread for database
+    storage.
 
     Args:
         args (Namespace): Parsed command-line arguments
@@ -415,23 +432,28 @@ def do_scan(args):
     ok_count = 0
     fail_count = 0
 
+    cpu_count = multiprocessing.cpu_count()
     if sequential:
+        # Only one board builds at a time, so let it use every core
         ok_count, fail_count = _scan_sequential(
             selected, srcdir, args.build_base, adjust_cfg, use_dwarf,
             use_lsp, unifdef_cmd, include_headers, filter_pattern,
-            clean_after, db, scan_start)
+            clean_after, db, scan_start, cpu_count)
     else:
-        # Each build uses -j1; parallelism comes from multiple workers.
-        # Default to half the CPU count (capped at 16) since each worker
-        # spawns several processes (buildman, make, cc1, analysis).
-        cpu_count = multiprocessing.cpu_count()
+        # Run several boards at once and split the cores between them. There
+        # is no point having more workers than boards, and each worker then
+        # builds with enough make jobs to fill its share of the CPU, so the
+        # machine stays busy whether there is one board or hundreds. Default
+        # to half the CPU count of workers (capped at 16), since each one also
+        # spawns buildman, make and the analysis processes.
         workers = getattr(args, 'workers', None) or min(cpu_count // 2, 16)
-        workers = max(workers, 1)
+        workers = max(1, min(workers, len(selected)))
+        make_jobs = max(1, cpu_count // workers)
 
         ok_count, fail_count = _scan_parallel(
             selected, srcdir, args.build_base, adjust_cfg, use_dwarf,
             use_lsp, unifdef_cmd, include_headers, filter_pattern,
-            clean_after, db, scan_start, workers)
+            clean_after, db, scan_start, workers, make_jobs)
 
     # Finalise
     total_time = time.time() - scan_start
