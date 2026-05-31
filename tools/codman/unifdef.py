@@ -415,11 +415,14 @@ class UnifdefAnalyser(Analyser):
                 )
                 total_source_lines += total_lines
 
-        # Report any errors
+        # Warn about any files unifdef could not process, but carry on. A
+        # single unparsable file should not abort a whole multi-board scan;
+        # such files are simply left without line-level data.
         if errors:
             for error in errors:
-                tout.error(error)
-            tout.fatal(f'unifdef failed on {len(errors)} file(s)')
+                tout.warning(error)
+            tout.warning(f'unifdef failed on {len(errors)} file(s); '
+                         'left unanalysed')
 
         kloc = total_source_lines // 1000
         tout.info(f'Analysed {len(file_results)} files ({kloc} kLOC, ' +
