@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import subprocess
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 from u_boot_pylib import tout
 from analyser import Analyser, FileResult
@@ -118,11 +119,15 @@ class DwarfAnalyser(Analyser):
         self.build_dir = build_dir
         self.used_sources = used_sources
 
-    def extract_lines(self, jobs=None):
+    def extract_lines(self, jobs=None, use_threads=False):
         """Extract used line numbers from DWARF debug info in object files.
 
         Args:
             jobs (int): Number of parallel jobs (None = use all CPUs)
+            use_threads (bool): Parallelise with threads rather than a process
+                pool. Required when called from another thread (the scan
+                worker threads); the work is dominated by the readelf
+                subprocess, so threads parallelise it well.
 
         Returns:
             dict: Mapping of source file paths to sets of line numbers that
@@ -138,10 +143,13 @@ class DwarfAnalyser(Analyser):
         args_list = [(obj_path, self.build_dir, self.srcdir)
                      for obj_path in obj_files]
 
-        # Process in parallel (sequential when jobs=1 for thread safety)
+        # Process in parallel (sequential when jobs=1 for easy debugging)
         num_jobs = jobs if jobs else multiprocessing.cpu_count()
         if num_jobs <= 1:
             results = [worker(args) for args in args_list]
+        elif use_threads:
+            with ThreadPoolExecutor(max_workers=num_jobs) as pool:
+                results = list(pool.map(worker, args_list))
         else:
             with multiprocessing.Pool(num_jobs) as pool:
                 results = pool.map(worker, args_list)
@@ -164,17 +172,19 @@ class DwarfAnalyser(Analyser):
 
         return source_lines
 
-    def process(self, jobs=None):
+    def process(self, jobs=None, use_threads=False):
         """Perform line-level analysis using DWARF debug info.
 
         Args:
             jobs (int): Number of parallel jobs (None = use all CPUs)
+            use_threads (bool): Parallelise with threads rather than processes
+                (safe to call from a thread)
 
         Returns:
             dict: Mapping of source file paths to FileResult named tuples
         """
         tout.progress('Extracting DWARF line information...')
-        dwarf_line_map = self.extract_lines(jobs)
+        dwarf_line_map = self.extract_lines(jobs, use_threads)
 
         file_results = {}
         for source_file in self.used_sources:

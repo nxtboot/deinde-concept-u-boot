@@ -264,11 +264,13 @@ class LspAnalyser(Analyser):  # pylint: disable=too-few-public-methods
 
         return inactive
 
-    def process(self, jobs=None):
+    def process(self, jobs=None, use_threads=False):
         """Perform line-level analysis using clangd LSP.
 
         Args:
             jobs (int): Number of parallel jobs (None = use all CPUs)
+            use_threads (bool): Accepted for a uniform analyser interface; the
+                LSP analyser already uses threads internally
 
         Returns:
             dict: Mapping of source file paths to FileResult named tuples

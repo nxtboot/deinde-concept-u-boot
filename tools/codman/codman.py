@@ -644,7 +644,7 @@ def parse_args(argv=None):
 
 
 def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
-                use_lsp, keep_temps=False):
+                use_lsp, keep_temps=False, use_threads=False):
     """Perform line-level analysis if requested.
 
     Args:
@@ -656,6 +656,8 @@ def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
         jobs (int): Number of parallel jobs
         use_lsp (bool): Use LSP (clangd) instead of DWARF
         keep_temps (bool): If True, keep temporary files for debugging
+        use_threads (bool): Parallelise analysis with threads rather than a
+            process pool, for safe use from the scan worker threads
 
     Returns:
         tuple: (analysis_results, analysis_method) where analysis_method is
@@ -673,7 +675,7 @@ def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
     else:
         analyser = dwarf.DwarfAnalyser(build_dir, srcdir, used, keep_temps)
         method = 'dwarf'
-    return analyser.process(jobs), method
+    return analyser.process(jobs, use_threads), method
 
 
 def do_output(args, all_srcs, used, skipped, results, srcdir, analysis_method):

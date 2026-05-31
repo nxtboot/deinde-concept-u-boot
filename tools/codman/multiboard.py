@@ -101,7 +101,7 @@ def _get_git_hash(srcdir):
 def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
                     use_lsp, unifdef_cmd, include_headers,
                     analysis_jobs, filter_pattern, clean_after,
-                    isolate=False, make_jobs=1):
+                    isolate=False, make_jobs=1, use_threads=False):
     """Build, analyse, and return results for a single board.
 
     Does not touch the database — results are returned for the caller
@@ -122,6 +122,8 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
         clean_after (bool): Delete build dir after analysis
         isolate (bool): Isolate buildman in its own session
         make_jobs (int): Number of make -j jobs for the build
+        use_threads (bool): Run the line-level analysis with threads rather
+            than a process pool (required when called from a worker thread)
 
     Returns:
         tuple: (brd, status, results_or_None) where status is 'ok',
@@ -148,7 +150,7 @@ def _scan_one_board(brd, srcdir, build_base, adjust_cfg, use_dwarf,
         unifdef_path = unifdef_cmd
     results, _method = codman.do_analysis(
         used, build_dir, srcdir, unifdef_path,
-        include_headers, analysis_jobs, use_lsp)
+        include_headers, analysis_jobs, use_lsp, use_threads=use_threads)
 
     if results is None:
         return (brd, 'analysis_failed', None)
@@ -325,10 +327,10 @@ def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
     fail_count = 0
     done_count = 0
     count_lock = threading.Lock()
-    # Analyse each board single-process: the unifdef/DWARF analysers fork a
-    # multiprocessing.Pool, which is unsafe from these worker threads, and the
-    # boards already run concurrently. Only the build (a subprocess) is scaled.
-    analysis_jobs = 1
+    # Analyse with the same job count as the build, using threads
+    # (use_threads=True below) so the analysers parallelise without forking a
+    # process pool from these worker threads.
+    analysis_jobs = make_jobs
 
     # Install a signal handler that kills all children and exits
     # immediately. This avoids the problem of as_completed() blocking
@@ -352,7 +354,7 @@ def _scan_parallel(selected, srcdir, build_base, adjust_cfg, use_dwarf,
                 adjust_cfg, use_dwarf, use_lsp, unifdef_cmd,
                 include_headers, analysis_jobs,
                 filter_pattern, clean_after, isolate=True,
-                make_jobs=make_jobs)
+                make_jobs=make_jobs, use_threads=True)
             future_map[fut] = brd
 
         for fut in futures.as_completed(future_map):

@@ -14,11 +14,17 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from buildman import kconfiglib
 from u_boot_pylib import tout
 from analyser import Analyser, FileResult
+
+# kconfiglib reads and writes global os.environ while parsing, so only one
+# thread may parse Kconfig at a time (scan worker threads run concurrently)
+_KCONFIG_LOCK = threading.Lock()
 
 
 def load_config(config_file, srcdir='.'):
@@ -65,17 +71,36 @@ def load_config(config_file, srcdir='.'):
         return config, None
 
     try:
-        # Set environment variables needed by kconfiglib
-        old_srctree = os.environ.get('srctree')
-        old_ubootversion = os.environ.get('UBOOTVERSION')
-        old_objdir = os.environ.get('KCONFIG_OBJDIR')
+        # Serialise the whole set-parse-restore: kconfiglib reads global
+        # os.environ, so a concurrent thread restoring (deleting) srctree
+        # mid-parse makes '$(srctree)' expand to nothing and the parse fail
+        with _KCONFIG_LOCK:
+            # Set environment variables needed by kconfiglib
+            old_srctree = os.environ.get('srctree')
+            old_ubootversion = os.environ.get('UBOOTVERSION')
+            old_objdir = os.environ.get('KCONFIG_OBJDIR')
 
-        os.environ['srctree'] = srcdir
-        os.environ['UBOOTVERSION'] = 'dummy'
-        os.environ['KCONFIG_OBJDIR'] = ''
+            os.environ['srctree'] = srcdir
+            os.environ['UBOOTVERSION'] = 'dummy'
+            os.environ['KCONFIG_OBJDIR'] = ''
 
-        # Load Kconfig
-        kconf = kconfiglib.Kconfig(warn=False)
+            try:
+                # Load Kconfig
+                kconf = kconfiglib.Kconfig(warn=False)
+            finally:
+                # Restore environment
+                if old_srctree is not None:
+                    os.environ['srctree'] = old_srctree
+                elif 'srctree' in os.environ:
+                    del os.environ['srctree']
+                if old_ubootversion is not None:
+                    os.environ['UBOOTVERSION'] = old_ubootversion
+                elif 'UBOOTVERSION' in os.environ:
+                    del os.environ['UBOOTVERSION']
+                if old_objdir is not None:
+                    os.environ['KCONFIG_OBJDIR'] = old_objdir
+                elif 'KCONFIG_OBJDIR' in os.environ:
+                    del os.environ['KCONFIG_OBJDIR']
 
         # Add all defined symbols that aren't already in config as None
         # kconfiglib provides names without CONFIG_ prefix
@@ -84,20 +109,6 @@ def load_config(config_file, srcdir='.'):
             if config_name not in config:
                 # Symbol is defined in Kconfig but not in .config
                 config[config_name] = None
-
-        # Restore environment
-        if old_srctree is not None:
-            os.environ['srctree'] = old_srctree
-        elif 'srctree' in os.environ:
-            del os.environ['srctree']
-        if old_ubootversion is not None:
-            os.environ['UBOOTVERSION'] = old_ubootversion
-        elif 'UBOOTVERSION' in os.environ:
-            del os.environ['UBOOTVERSION']
-        if old_objdir is not None:
-            os.environ['KCONFIG_OBJDIR'] = old_objdir
-        elif 'KCONFIG_OBJDIR' in os.environ:
-            del os.environ['KCONFIG_OBJDIR']
 
         tout.progress(f'Loaded {len(kconf.syms)} Kconfig symbols')
     except (OSError, IOError, ValueError, ImportError) as e:
@@ -326,11 +337,14 @@ class UnifdefAnalyser(Analyser):
             except OSError:
                 pass
 
-    def process(self, jobs=None):
+    def process(self, jobs=None, use_threads=False):
         """Perform line-level analysis on used source files.
 
         Args:
             jobs (int): Number of parallel jobs (None = use all CPUs)
+            use_threads (bool): Parallelise with threads rather than a process
+                pool. Required when called from another thread (the scan
+                worker threads), where forking a process pool is unsafe.
 
         Returns:
             Dictionary mapping source files to analysis results, or None on
@@ -390,11 +404,18 @@ class UnifdefAnalyser(Analyser):
         tout.progress(f'Running unifdef on {len(source_list)} files...')
         start_time = time.time()
 
-        # If jobs=1, run directly without multiprocessing for easier debugging
-        if jobs == 1:
+        # If jobs=1, run directly without a pool for easier debugging. Use a
+        # thread pool when called from another thread (the scan workers),
+        # since forking a process pool from a thread is unsafe; the work is
+        # dominated by the unifdef subprocess, so threads parallelise it well.
+        num_jobs = jobs if jobs else multiprocessing.cpu_count()
+        if num_jobs <= 1:
             results = [worker(args) for args in worker_args]
+        elif use_threads:
+            with ThreadPoolExecutor(max_workers=num_jobs) as pool:
+                results = list(pool.map(worker, worker_args))
         else:
-            with multiprocessing.Pool(processes=jobs) as pool:
+            with multiprocessing.Pool(processes=num_jobs) as pool:
                 results = list(pool.imap(worker, worker_args, chunksize=10))
         elapsed_time = time.time() - start_time
 
