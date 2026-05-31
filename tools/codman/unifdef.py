@@ -189,8 +189,18 @@ def worker(args):
         # -n: add #line directives for tracking original line numbers
         # -E: error on unterminated conditionals
         # -f: use defs file
+        cmd = [unifdef_path, '-n', '-E', '-f', defs_file]
+
+        # Assembly files are not C, so process them as plain text (-t) and do
+        # not parse C comments or character literals. Without this an
+        # apostrophe in an '@' comment (e.g. "save R0's value") is read as an
+        # unterminated char literal and unifdef aborts with an error.
+        if source_file.endswith(('.S', '.s')):
+            cmd.append('-t')
+        cmd.append(source_file)
+
         result = subprocess.run(
-            [unifdef_path, '-n', '-E', '-f', defs_file, source_file],
+            cmd,
             capture_output=True,
             text=True,
             encoding='utf-8',
