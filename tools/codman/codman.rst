@@ -36,8 +36,8 @@ Basic usage, from within the U-Boot source tree::
 
 Codman operations does out-of-tree builds, meaning that the object files end up
 in a separate directory for each board. Use ``--build-base`` to set that. The
-default is ``/tmp/b`` meaning that a sandbox build would end up in
-``/tmp/b/sandbox``, for eaxmple.
+default is ``/tmp/cod`` meaning that a sandbox build would end up in
+``/tmp/cod/sandbox``, for example.
 
 Relationship to LSPs
 ====================
@@ -110,7 +110,7 @@ Building:
 
 * ``-b, --board <board>`` - Board to build and analyse (default: sandbox, uses buildman)
 * ``-B, --build-dir <dir>`` - Use existing build directory instead of building
-* ``--build-base <dir>`` - Base directory for builds (default: /tmp/b)
+* ``--build-base <dir>`` - Base directory for builds (default: /tmp/cod)
 * ``-n, --no-build`` - Skip building, use existing build directory
 * ``-a, --adjust <config>`` - Adjust CONFIG options (see section above)
 
@@ -526,6 +526,151 @@ The DWARF analyser:
 As with unifdef, this uses multiprocessing for parallel analysis of object
 files. It achieves similar performance.
 
+
+Multi-board scanning and queries
+================================
+
+The commands above analyse a single board. Codman can also scan many boards
+at once and store the results in a database, so you can ask cross-board
+questions such as "which boards compile this file?" or "which boards still
+build this function?".
+
+Scanning (``scan``)
+-------------------
+
+The ``scan`` command builds and analyses a set of boards, writing the results
+to a SQLite database (``codman.db``) in the source-tree root. Boards are
+selected using buildman board specifiers, so an architecture, an SoC or a
+wildcard all work::
+
+    codman scan sandbox
+    codman scan arm
+    codman scan 'qemu*'
+
+With no specifier, all boards are scanned. Each board is built with buildman
+and analysed with the same methods as the single-board commands.
+
+Scanning is done in parallel, with one worker per board::
+
+    codman scan -W 8 arm        # use 8 workers
+
+Per-board make jobs are scaled down to match the worker count, so the machine
+is not oversubscribed. Use ``-1``/``--sequential`` to process boards one at a
+time in the main process, which is easier to debug since there is no thread or
+multiprocessing interaction::
+
+    codman scan -1 sandbox
+
+Other scan options:
+
+* ``--resume`` - Continue a previous scan, skipping boards already in the
+  database. Without this, the database is recreated from scratch
+* ``--max-boards N`` - Stop after N boards, useful for testing
+* ``--exclude <spec>`` - Exclude boards matching a specifier (repeatable)
+* ``--clean-after`` - Delete each board's build directory once analysed, to
+  save disk space
+
+Press Ctrl-C at any time to stop a scan cleanly; the boards scanned so far are
+kept in the database and ``--resume`` continues from there.
+
+Querying (``query``)
+--------------------
+
+Once a scan has populated the database, the ``query`` command answers
+cross-board questions:
+
+* ``query file <path>`` - Which boards compile a file (wildcards allowed)
+* ``query line <file:line>`` - Which boards have a particular line active
+* ``query board <target> [pattern]`` - Which files a board compiles
+* ``query unique <target>`` - Code that only this board compiles
+* ``query function <name> [file]`` - Which boards build a function
+* ``query info`` - Database statistics
+
+The examples below come from a scan of the sandbox boards
+(``codman scan sandbox``, which selects all nine sandbox variants).
+
+Use ``query info`` to see what is in the database::
+
+    $ codman query info
+    ==================================================
+    DATABASE INFO
+    ==================================================
+      Boards (OK):            9
+      Boards (failed):        0
+      Files:               1594
+      Board-file rows:     9606
+      Active ranges:      31287
+      Database size:       2.4 MB
+
+      Architecture breakdown:
+        sandbox                  9
+
+``query file`` shows which boards compile a file, and how much of it each one
+uses. Here only three of the nine boards build ``cmd/cat.c``::
+
+    $ codman query file cmd/cat.c
+    3 boards compile cmd/cat.c:
+      Board                                    Arch          Active   Total      %
+      ------------------------------------------------------------------------
+      sandbox                                  sandbox           71     135  52.6%
+      sandbox64                                sandbox           77     135  57.0%
+      sandbox64_lwip                           sandbox           77     135  57.0%
+
+The path may contain wildcards. Combine that with ``--format count`` to get a
+single number - for example the total number of active lines compiled from
+``cmd/`` across all the scanned boards::
+
+    $ codman query --format count file 'cmd/*'
+    986
+
+``query board`` lists the files a board compiles, optionally filtered by a
+pattern::
+
+    $ codman query board sandbox 'drivers/video/*'
+    sandbox: 21 files, 7116 active lines of 7236 total (98.3%)
+      File                                                Active   Total      %
+      ----------------------------------------------------------------------
+      drivers/video/backlight-uclass.c                        35      35 100.0%
+      drivers/video/bmp.c                                    105     141  74.5%
+      drivers/video/console_normal.c                         156     160  97.5%
+      drivers/video/console_truetype.c                      1302    1319  98.7%
+      ...
+
+``query unique`` finds code that only one board compiles. The lwIP variant,
+for instance, is the only one that pulls in the ``cmd/lwip`` commands::
+
+    $ codman query unique sandbox64_lwip
+    sandbox64_lwip: 48988 unique lines in 92 ranges:
+      File                                                         Lines
+      -----------------------------------------------------------------
+      cmd/lwip/dhcp.c                                           1-9 (  9)
+      cmd/lwip/ping.c                                         1-183 (183)
+      cmd/lwip/sntp.c                                         1-133 (133)
+      ...
+
+``query function`` reports which boards build a particular function, along
+with where it is defined::
+
+    $ codman query function do_bootm
+    7 boards build do_bootm() (cmd/bootm.c:135-174):
+      Board                                    Arch
+      ----------------------------------------------------
+      sandbox                                  sandbox
+      sandbox64                                sandbox
+      sandbox_flattree                         sandbox
+      ...
+
+``query line`` answers the same question for a single source line::
+
+    $ codman query line common/main.c:42
+    9 boards have common/main.c:42 active
+
+All queries accept ``--arch <arch>`` to restrict the results to one
+architecture (useful once the database holds boards from several
+architectures) and ``--format table|csv|count`` to choose the output style.
+
+Line-level data is stored as run-length-encoded active ranges, which keeps the
+database compact even across thousands of boards.
 
 See Also
 ========
