@@ -33,6 +33,7 @@ from u_boot_pylib import terminal, tools, tout
 # Import analysis modules
 import dwarf
 import lsp
+import multiboard
 import output
 import unifdef
 # pylint: enable=wrong-import-position
@@ -49,7 +50,10 @@ RE_SOURCE = re.compile(r'^source_[^ ]*\.o := (?P<file_path>[^ ]*\.[cS])')
 EXCLUDE_DIRS = ['.git', 'Documentation', 'doc', 'scripts', 'tools']
 
 # Default base directory for builds
-BUILD_BASE = '/tmp/b'
+BUILD_BASE = '/tmp/cod'
+
+# Database filename, stored in the source tree root
+DB_NAME = 'codman.db'
 
 
 def cmdfiles_in_dir(directory):
@@ -281,11 +285,15 @@ def find_used_sources(build_dir, srcdir, jobs=None):
         jobs = multiprocessing.cpu_count()
 
     used_sources = set()
-    with multiprocessing.Pool(processes=jobs) as pool:
-        # Process cmdfiles in parallel
-        for sources in pool.imap_unordered(_process_cmdfile, worker_args,
-                                           chunksize=100):
-            used_sources.update(sources)
+    if jobs <= 1:
+        # Sequential - safe to call from worker threads
+        for args in worker_args:
+            used_sources.update(_process_cmdfile(args))
+    else:
+        with multiprocessing.Pool(processes=jobs) as pool:
+            for sources in pool.imap_unordered(_process_cmdfile, worker_args,
+                                               chunksize=100):
+                used_sources.update(sources)
 
     tout.info(f'Found {len(used_sources)} used source files')
 
@@ -368,7 +376,8 @@ def do_build(args):
     return srcdir, build_dir
 
 
-def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
+def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False,
+                fatal_on_error=True, make_jobs=None, isolate=False):
     """Build a board using buildman.
 
     Args:
@@ -377,9 +386,14 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
         srcdir (str): U-Boot source directory
         adjust_cfg (list): List of CONFIG adjustments
         use_dwarf (bool): Enable CC_OPTIMIZE_FOR_DEBUG to prevent inlining
+        fatal_on_error (bool): If True (default), call tout.fatal() on
+            failure (which exits). If False, return False on failure.
+        make_jobs (int): Number of make -j jobs (None = buildman default)
+        isolate (bool): Run in a new session with captured output, so
+            Ctrl-C and output from parallel builds do not interfere.
 
     Returns:
-        True on success (note: failures call tout.fatal() which exits)
+        True on success, False on failure (only when fatal_on_error=False)
     """
     tout.info(f"Building board '{board}' with buildman...")
     tout.info(f'Build directory: {build_dir}')
@@ -399,8 +413,12 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
     # Run buildman to build the board
     # -L: disable LTO, -w: enable warnings, -o: output directory,
     # -m: mrproper (clean), -I: show errors/warnings only (incremental)
-    cmd = ['buildman', '--board', board, '-L', '-w', '-m', '-I', '-o',
+    cmd = ['buildman', '--boards', board, '-L', '-w', '-m', '-I', '-o',
            build_dir]
+
+    # Limit per-board make parallelism when running multiple boards
+    if make_jobs:
+        cmd.extend(['-j', str(make_jobs)])
 
     # Add CONFIG adjustments if specified
     if adjust_cfg:
@@ -409,16 +427,26 @@ def build_board(board, build_dir, srcdir, adjust_cfg=None, use_dwarf=False):
 
     try:
         result = subprocess.run(cmd, cwd=srcdir, check=False,
-                              capture_output=False, text=True)
-        if result.returncode != 0:
-            tout.fatal(f'buildman exited with code {result.returncode}')
+                              capture_output=isolate, text=True,
+                              start_new_session=isolate)
+        # 101 = missing external blobs; the build is still usable
+        if result.returncode not in (0, 101):
+            if fatal_on_error:
+                tout.fatal(f'buildman exited with code {result.returncode}')
+            tout.error(f'buildman exited with code {result.returncode}')
+            return False
         return True
     except FileNotFoundError:
-        tout.fatal('buildman not found. Please ensure buildman is in '
-                   'your PATH.')
+        if fatal_on_error:
+            tout.fatal('buildman not found. Please ensure buildman is in '
+                       'your PATH.')
+        tout.error('buildman not found')
+        return False
     except OSError as e:
-        tout.fatal(f'Error running buildman: {e}')
-    return None
+        if fatal_on_error:
+            tout.fatal(f'Error running buildman: {e}')
+        tout.error(f'Error running buildman: {e}')
+        return False
 
 
 def parse_args(argv=None):
@@ -519,6 +547,78 @@ def parse_args(argv=None):
     copy.add_argument('dest_dir', metavar='DIR',
                       help='Destination directory')
 
+    # scan command - multi-board build + analyse + store
+    scan = subparsers.add_parser(
+        'scan',
+        help='Build and analyse multiple boards, store results in database')
+    scan.add_argument('board_specs', nargs='*', metavar='SPEC',
+                      help='Buildman board specifiers '
+                           '(e.g., arm sandbox "qemu*"). '
+                           'If empty, all boards are scanned.')
+    scan.add_argument('--resume', action='store_true',
+                      help='Skip boards already in the database')
+    scan.add_argument('--max-boards', type=int, metavar='N',
+                      help='Limit to first N matching boards (for testing)')
+    scan.add_argument('--exclude', type=str, action='append',
+                      help='Board specifiers to exclude')
+    scan.add_argument('-W', '--workers', type=int, metavar='N',
+                      help='Number of boards to build in parallel '
+                           '(default: half CPU count, max 16)')
+    scan.add_argument('-1', '--sequential', action='store_true',
+                      help='Process boards sequentially without threading '
+                           '(useful for debugging)')
+    scan.add_argument('--clean-after', action='store_true',
+                      help='Delete build directory after analysing each board')
+
+    # query command - database queries
+    query = subparsers.add_parser(
+        'query',
+        help='Query the multi-board analysis database')
+    query.add_argument('--format', choices=['table', 'csv', 'count'],
+                       default='table',
+                       help='Output format (default: table)')
+    query.add_argument('--arch', type=str,
+                       help='Filter results by architecture')
+
+    query_sub = query.add_subparsers(dest='query_cmd',
+                                     help='Query type')
+
+    # query file - which boards compile a file
+    qf = query_sub.add_parser(
+        'file', help='Which boards compile a given file')
+    qf.add_argument('path', help='File path (supports wildcards)')
+
+    # query line - which boards have a line active
+    ql = query_sub.add_parser(
+        'line', help='Which boards have a specific line active')
+    ql.add_argument('location',
+                    help='File path and line number '
+                         '(e.g., common/main.c:42)')
+
+    # query board - what files a board compiles
+    qb = query_sub.add_parser(
+        'board', help='What files a given board compiles')
+    qb.add_argument('target', help='Board target name')
+    qb.add_argument('file_pattern', nargs='?',
+                    help='Optional file pattern filter')
+
+    # query unique - code unique to a board
+    qu = query_sub.add_parser(
+        'unique',
+        help='Find code unique to a board (not compiled by any other)')
+    qu.add_argument('target', help='Board target name')
+
+    # query function - which boards build a function
+    qfn = query_sub.add_parser(
+        'function',
+        help='Which boards build a given function')
+    qfn.add_argument('name', help='Function name to search for')
+    qfn.add_argument('path', nargs='?',
+                     help='Optional file path to restrict search')
+
+    # query info - database statistics
+    query_sub.add_parser('info', help='Show database statistics')
+
     args = parser.parse_args(argv)
 
     # Default command is stats
@@ -544,7 +644,7 @@ def parse_args(argv=None):
 
 
 def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
-                use_lsp, keep_temps=False):
+                use_lsp, keep_temps=False, use_threads=False):
     """Perform line-level analysis if requested.
 
     Args:
@@ -556,6 +656,8 @@ def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
         jobs (int): Number of parallel jobs
         use_lsp (bool): Use LSP (clangd) instead of DWARF
         keep_temps (bool): If True, keep temporary files for debugging
+        use_threads (bool): Parallelise analysis with threads rather than a
+            process pool, for safe use from the scan worker threads
 
     Returns:
         tuple: (analysis_results, analysis_method) where analysis_method is
@@ -573,7 +675,7 @@ def do_analysis(used, build_dir, srcdir, unifdef_path, include_headers, jobs,
     else:
         analyser = dwarf.DwarfAnalyser(build_dir, srcdir, used, keep_temps)
         method = 'dwarf'
-    return analyser.process(jobs), method
+    return analyser.process(jobs, use_threads), method
 
 
 def do_output(args, all_srcs, used, skipped, results, srcdir, analysis_method):
@@ -667,6 +769,12 @@ def main(argv=None):
         tout.init(tout.DEBUG)
     elif args.verbose:
         tout.init(tout.INFO)
+
+    # Dispatch scan and query commands separately
+    if args.cmd == 'scan':
+        return multiboard.do_scan(args)
+    if args.cmd == 'query':
+        return multiboard.do_query(args)
 
     srcdir, build_dir = do_build(args)
     all_srcs, used, skipped = select_sources(srcdir, build_dir, args.filter,
