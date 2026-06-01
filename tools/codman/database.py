@@ -12,6 +12,8 @@ import os
 import sqlite3
 import time
 
+from u_boot_pylib import dwarf_lines
+
 
 # Current schema version
 SCHEMA_VERSION = 1
@@ -511,31 +513,6 @@ def line_status_to_ranges(line_status):
         list of tuple: (start_line, end_line) pairs for active ranges,
             both inclusive
     """
-    if not line_status:
-        return []
-
-    ranges = []
-    start = None
-    end = None
-
-    prev = None
-    for line_num in sorted(line_status):
-        if line_status[line_num] == 'active':
-            if start is None:
-                start = line_num
-            elif prev is not None and line_num > prev + 1:
-                # Gap in line numbers — close the current range
-                ranges.append((start, end))
-                start = line_num
-            end = line_num
-        else:
-            if start is not None:
-                ranges.append((start, end))
-                start = None
-                end = None
-        prev = line_num
-
-    if start is not None:
-        ranges.append((start, end))
-
-    return ranges
+    active = [num for num, status in line_status.items()
+              if status == 'active']
+    return dwarf_lines.lines_to_ranges(active)

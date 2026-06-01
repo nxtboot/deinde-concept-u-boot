@@ -9,94 +9,10 @@ were compiled by extracting line information from DWARF debug data in
 object files.
 """
 
-import multiprocessing
 import os
-import subprocess
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 
-from u_boot_pylib import tout
+from u_boot_pylib import dwarf_lines, tout
 from analyser import Analyser, FileResult
-
-
-def worker(args):
-    """Extract line numbers from DWARF debug info in an object file.
-
-    Uses readelf --debug-dump=decodedline to get the line table, then parses
-    section headers and line entries to determine which source lines were
-    compiled into the object.
-
-    Args:
-        args (tuple): Tuple of (obj_path, build_dir, srcdir)
-
-    Returns:
-        tuple: (source_lines_dict, error_msg) where source_lines_dict is a
-            mapping of source file paths to sets of line numbers, and
-            error_msg is None on success or an error string on failure
-    """
-    obj_path, build_dir, srcdir = args
-    source_lines = defaultdict(set)
-
-    # Get the directory of the .o file relative to build_dir
-    rel_to_build = os.path.relpath(obj_path, build_dir)
-    obj_dir = os.path.dirname(rel_to_build)
-
-    # Use readelf to extract decoded line information
-    try:
-        result = subprocess.run(
-            ['readelf', '--debug-dump=decodedline', obj_path],
-            capture_output=True, text=True, check=False,
-            encoding='utf-8', errors='ignore')
-        if result.returncode != 0:
-            error_msg = (f'readelf failed on {obj_path} with return code '
-                        f'{result.returncode}\nstderr: {result.stderr}')
-            return (source_lines, error_msg)
-
-        # Parse the output
-        # Format is: Section header with full path, then data lines
-        current_file = None
-        for line in result.stdout.splitlines():
-            # Skip header lines and empty lines
-            if not line or line.startswith('Contents of') or \
-               line.startswith('File name') or line.strip() == '' or \
-               line.startswith(' '):
-                continue
-
-            # Look for section headers with full path (e.g., '/path/to/file.c:')
-            if line.endswith(':'):
-                header_path = line.rstrip(':')
-                # Try to resolve the path
-                if os.path.isabs(header_path):
-                    # Absolute path in DWARF
-                    abs_path = os.path.realpath(header_path)
-                else:
-                    # Relative path - try relative to srcdir and obj_dir
-                    abs_path = os.path.realpath(
-                        os.path.join(srcdir, obj_dir, header_path))
-                    if not os.path.exists(abs_path):
-                        abs_path = os.path.realpath(
-                            os.path.join(srcdir, header_path))
-
-                if os.path.exists(abs_path):
-                    current_file = abs_path
-                continue
-
-            # Parse data lines - use current_file from section header
-            if current_file:
-                parts = line.split()
-                if len(parts) >= 2:
-                    try:
-                        line_num = int(parts[1])
-                        # Skip special line numbers (like '-')
-                        if line_num > 0:
-                            source_lines[current_file].add(line_num)
-                    except (ValueError, IndexError):
-                        continue
-    except (OSError, subprocess.SubprocessError) as e:
-        error_msg = f'Failed to execute readelf on {obj_path}: {e}'
-        return (source_lines, error_msg)
-
-    return (source_lines, None)
 
 
 # pylint: disable=too-few-public-methods
@@ -133,43 +49,12 @@ class DwarfAnalyser(Analyser):
             dict: Mapping of source file paths to sets of line numbers that
                 generated code
         """
-        # Find all .o files
-        obj_files = self.find_object_files(self.build_dir)
-
-        if not obj_files:
-            return defaultdict(set)
-
-        # Prepare arguments for parallel processing
-        args_list = [(obj_path, self.build_dir, self.srcdir)
-                     for obj_path in obj_files]
-
-        # Process in parallel (sequential when jobs=1 for easy debugging)
-        num_jobs = jobs if jobs else multiprocessing.cpu_count()
-        if num_jobs <= 1:
-            results = [worker(args) for args in args_list]
-        elif use_threads:
-            with ThreadPoolExecutor(max_workers=num_jobs) as pool:
-                results = list(pool.map(worker, args_list))
-        else:
-            with multiprocessing.Pool(num_jobs) as pool:
-                results = pool.map(worker, args_list)
-
-        # Merge results from all workers and check for errors
-        source_lines = defaultdict(set)
-        errors = []
-        for result_dict, error_msg in results:
-            if error_msg:
-                errors.append(error_msg)
-            else:
-                for source_file, lines in result_dict.items():
-                    source_lines[source_file].update(lines)
-
-        # Report any errors
+        source_lines, errors = dwarf_lines.extract_lines(
+            self.build_dir, self.srcdir, jobs, use_threads=use_threads)
         if errors:
             for error in errors:
                 tout.error(error)
             tout.fatal(f'readelf failed on {len(errors)} object file(s)')
-
         return source_lines
 
     def process(self, jobs=None, use_threads=False):

@@ -8,8 +8,9 @@ This module provides base classes and data structures for analyzing which lines
 in source files are active vs inactive.
 """
 
-import os
 from collections import namedtuple
+
+from u_boot_pylib import dwarf_lines
 
 # Named tuple for file analysis results
 # Fields:
@@ -52,12 +53,7 @@ class Analyser:  # pylint: disable=too-few-public-methods
         Returns:
             list: List of absolute paths to .o files
         """
-        obj_files = []
-        for root, _, files in os.walk(build_dir):
-            for fname in files:
-                if fname.endswith('.o'):
-                    obj_files.append(os.path.join(root, fname))
-        return obj_files
+        return dwarf_lines.find_object_files(build_dir)
 
     @staticmethod
     def count_lines(file_path):
@@ -69,8 +65,4 @@ class Analyser:  # pylint: disable=too-few-public-methods
         Returns:
             int: Number of lines in the file, or 0 on error
         """
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                return len(f.readlines())
-        except IOError:
-            return 0
+        return dwarf_lines.count_lines(file_path)
