@@ -622,6 +622,7 @@ static bool lmb_can_reserve_region(phys_addr_t base, phys_size_t size,
 void lmb_add_memory(void)
 {
 	int i;
+	phys_addr_t bank_end;
 	phys_size_t size;
 	u64 ram_top = gd->ram_top;
 	struct bd_info *bd = gd->bd;
@@ -636,8 +637,25 @@ void lmb_add_memory(void)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		size = bd->bi_dram[i].size;
 
-		if (size)
+		if (size) {
 			lmb_add(bd->bi_dram[i].start, size);
+			if (!IS_ENABLED(CONFIG_LMB_LIMIT_DMA_BELOW_4G))
+				continue;
+
+			bank_end = bd->bi_dram[i].start + size;
+
+			/*
+			 * Reserve memory above ram_top as
+			 * no-overwrite so that it cannot be
+			 * allocated
+			 */
+			if (bd->bi_dram[i].start >= ram_top)
+				lmb_reserve(bd->bi_dram[i].start, size,
+					    LMB_NOOVERWRITE);
+			else if (bank_end > ram_top)
+				lmb_reserve(ram_top, bank_end - ram_top,
+					    LMB_NOOVERWRITE);
+		}
 	}
 }
 
