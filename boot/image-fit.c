@@ -1742,7 +1742,8 @@ static int select_from_config(const void *fit, struct bootm_headers *images,
 	 */
 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_NO_UNIT_NAME);
 	ret = -ENXIO;
-	if (IS_ENABLED(CONFIG_FIT_BEST_MATCH) && !fit_uname_config)
+	if (IS_ENABLED(CONFIG_FIT_BEST_MATCH) && !fit_uname_config &&
+	    gd_fdt_blob())
 		ret = fit_conf_find_compat(fit, gd_fdt_blob());
 	if (ret < 0 && ret != -EINVAL)
 		ret = fit_conf_get_node(fit, fit_uname_config);
@@ -1786,6 +1787,7 @@ static int select_from_config(const void *fit, struct bootm_headers *images,
 		 */
 		if (fdt_getprop(fit, cfg_noffset, FIT_LOAD_ONLY_PROP, NULL))
 			return -ENOPKG;
+		return noffset;
 	}
 
 	*fit_unamep = fit_get_name(fit, noffset);
