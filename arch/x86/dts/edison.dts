@@ -171,9 +171,8 @@
 	u-boot-edison {
 		filename = "u-boot-edison.img";
 
-		/* This is the OSIP */
-		blob {
-			filename = "edison-osip.dat";
+		/* OSIP ($OS$) header pointing at the U-Boot image below */
+		intel-osip {
 		};
 
 		u-boot {

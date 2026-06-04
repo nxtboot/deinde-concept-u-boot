@@ -2047,6 +2047,31 @@ class TestFunctional(unittest.TestCase):
         data = self._DoReadFile('entry/fill_empty.dts')
         self.assertEqual(tools.get_bytes(0, 16), data)
 
+    def testIntelOsip(self):
+        """Test that binman can generate an Intel OSIP header"""
+        data = self._DoReadFile('entry/intel_osip.dts')
+        self.assertEqual(0x200, len(data))
+
+        # '$OS$' signature and the self-cancelling header checksum
+        self.assertEqual(b'$OS$', data[:4])
+        checksum = 0
+        for byte in data[:0x38]:
+            checksum ^= byte
+        self.assertEqual(0, checksum)
+
+        # The OSII descriptor picks up the devicetree properties
+        lba, load, entry, blocks = struct.unpack_from('<IIII', data, 0x24)
+        self.assertEqual(0x1000, lba)
+        self.assertEqual(0x02200000, load)
+        self.assertEqual(0x02201000, entry)
+        self.assertEqual(0x4000, blocks)
+        self.assertEqual(0x07, data[0x34])
+
+        # GPT-protective MBR partition entry and the legacy boot signature
+        self.assertEqual(0xee, data[0x1c2])
+        self.assertEqual(1, struct.unpack_from('<I', data, 0x1c6)[0])
+        self.assertEqual(b'\x55\xaa', data[0x1fe:0x200])
+
     def testTextMissing(self):
         """Test for a text entry type where there is no text"""
         with self.assertRaises(ValueError) as e:
