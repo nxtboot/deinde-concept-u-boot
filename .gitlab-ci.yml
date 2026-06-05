@@ -1128,6 +1128,12 @@ efi-aarch64:
     TEST_PY_TEST_SPEC: "and not sleep"
   <<: *sjg_lab_dfn
 
+# Intel Edison (Merrifield/Tangier); U-Boot sent over DFU into eMMC u-boot0
+edison:
+  variables:
+    ROLE: edison
+  <<: *sjg_lab_dfn
+
 trigger_snap_builds:
   stage: release
   variables:
