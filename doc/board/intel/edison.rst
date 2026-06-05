@@ -4,48 +4,75 @@
 Edison
 ======
 
-Build Instructions for U-Boot as main bootloader
-------------------------------------------------
+Building U-Boot
+---------------
 
-Simple you can build U-Boot and obtain u-boot.bin::
+Build U-Boot for the Edison::
 
    $ make edison_defconfig
-   $ make all
+   $ make
 
-Updating U-Boot on Edison
--------------------------
+This produces ``u-boot.bin`` (the raw U-Boot binary) and ``u-boot-edison.img``
+(the full image, with the OSIP header that the mask ROM expects, used by the
+xFSTK recovery flow below).
 
-By default Intel Edison boards are shipped with preinstalled heavily
-patched U-Boot v2014.04. Though it supports DFU which we may be able to
-use.
+.. note::
 
-1. Prepare u-boot.bin as described in chapter above. You still need one
-   more step (if and only if you have original U-Boot), i.e. run the
-   following command::
+   The mask ROM loads the OS image to 0x01100000 but jumps to 0x01101000, so
+   U-Boot must sit 4KB into the loaded data. binman pads ``u-boot-edison.img``
+   with 4KB of zeroes ahead of U-Boot to provide this gap. The bare
+   ``u-boot.bin`` does not contain the padding, so when flashing it directly
+   over DFU you must prepend the 4KB yourself (see below).
 
-     $ truncate -s %4096 u-boot.bin
+There are two ways to get U-Boot onto the board:
 
-2. Run your board and interrupt booting to U-Boot console. In the console
-   call::
+- over DFU, when the board already runs a working U-Boot -- this is the normal
+  case and needs nothing but ``dfu-util``;
+- with the xFSTK downloader, when the board has no usable firmware and has to
+  be recovered through the mask ROM.
 
-     => run do_force_flash_os
+Updating U-Boot over DFU
+------------------------
 
-3. Wait for few seconds, it will prepare environment variable and runs
-   DFU. Run DFU command from the host system::
+Once a working U-Boot is present, updating it is just a DFU transfer into the
+``u-boot0`` eMMC partition; the board boots the new U-Boot on the next reset.
 
-     $ dfu-util -v -d 8087:0a99 --alt u-boot0 -D u-boot.bin
+1. Prepend the 4KB alignment gap to ``u-boot.bin``::
 
-4. Return to U-Boot console and following hint. i.e. push Ctrl+C, and
-   reset the board::
+     $ { head -c 4096 /dev/zero; cat u-boot.bin; } > u-boot-edison-dfu.bin
+
+2. Reset the board, interrupt autoboot to reach the U-Boot prompt and start
+   DFU::
+
+     => run do_dfu_alt_info_mmc
+     => dfu 0 mmc 0
+
+   U-Boot also opens this window automatically for a few seconds during boot
+   (see ``dfu_to_sec`` and ``do_probe_dfu`` in the environment), so a host can
+   flash without stopping at the prompt.
+
+3. From the host, write the image to the ``u-boot0`` partition::
+
+     $ dfu-util -d 8087:0a99 --alt u-boot0 -D u-boot-edison-dfu.bin
+
+4. Stop DFU on the board (Ctrl+C) and reset::
 
      => reset
 
-Updating U-Boot using xFSTK
----------------------------
+Recovering a board with xFSTK
+-----------------------------
 
-You can also update U-Boot using the xfstk-dldr-solo tool if you can build it.
-One way to do that is to follow the `xFSTK`_ instructions. In short, after you
-install all necessary dependencies and clone repository, it will look like this:
+Use this when the board has no usable U-Boot -- a blank or bricked board, or to
+install U-Boot for the first time. It reflashes both the Intel firmware (IFWI)
+and U-Boot through the mask ROM, so it needs the Edison recovery image (the DNX
+and IFWI blobs) in addition to ``u-boot-edison.img``.
+
+A board with no valid firmware drops into the mask ROM's DnX download mode (USB
+ID 8086:e005) automatically on power-up; no recovery straps are needed for that.
+The FM/RM straps only force an otherwise-healthy board into recovery.
+
+You need the ``xfstk-dldr-solo`` tool. If your distribution does not package it,
+build it from the `xFSTK`_ sources:
 
 .. code-block:: sh
 
@@ -55,12 +82,12 @@ install all necessary dependencies and clone repository, it will look like this:
   git checkout v$BUILD_VERSION
   ...
 
-Once you have built it, you can copy xfstk-dldr-solo to /usr/local/bin and
-libboost_program_options.so.1.54.0 to /usr/lib/i386-linux-gnu/ and with luck
-it will work. You might find this `drive`_ helpful.
+Copy ``xfstk-dldr-solo`` to ``/usr/local/bin`` and
+``libboost_program_options.so.1.54.0`` to ``/usr/lib/i386-linux-gnu/``. You
+might find this `drive`_ helpful for the recovery image and the libraries.
 
-If it does, then you can download and unpack the Edison recovery image,
-install dfu-util, reset your board and flash U-Boot like this:
+Download and unpack the Edison recovery image, then, with the board powered
+off, run:
 
 .. code-block:: sh
 
@@ -70,101 +97,25 @@ install dfu-util, reset your board and flash U-Boot like this:
       --fwimage recover/edison_ifwi-dbg-00.bin \
       --osdnx recover/edison_dnx_osr.bin
 
-This should show the following
+and power-cycle the board within about 10 seconds. To check that the board is
+in download mode, look for the mask ROM:
 
 .. code-block:: none
 
-  XFSTK Downloader Solo 1.8.5
-  Copyright (c) 2015 Intel Corporation
-  Build date and time: Aug 15 2020 15:07:13
-
-  .Intel SoC Device Detection Found
-  Parsing Commandline....
-  Registering Status Callback....
-  .Initiating Download Process....
-  .......(lots of dots)........XFSTK-STATUS--Reconnecting to device - Attempt #1
-  .......(even more dots)......................
-
-You have about 10 seconds after resetting the board to type the above command.
-If you want to check if the board is ready, type:
-
-.. code-block:: none
-
-  lsusb | grep -E "8087|8086"
+  $ lsusb | grep -E "8087|8086"
   Bus 001 Device 004: ID 8086:e005 Intel Corp.
 
-If you see a device with the same ID as above, the board is waiting for your
-command.
+The tool flashes the firmware and U-Boot and the board resets. Within a few
+seconds U-Boot starts, and once the DFU alt list appears (USB ID 8087:0a99) the
+board is ready for the DFU updates described above.
 
-After about 5 seconds you should see some console output from the board:
+.. note::
 
-.. code-block:: none
+   To run ``dfu-util`` and ``xfstk-dldr-solo`` without ``sudo``, add udev rules
+   granting access to the Edison USB IDs, for example::
 
-  ******************************
-  PSH KERNEL VERSION: b0182b2b
-  		WR: 20104000
-  ******************************
-
-  SCU IPC: 0x800000d0  0xfffce92c
-
-  PSH miaHOB version: TNG.B0.VVBD.0000000c
-
-  microkernel built 11:24:08 Feb  5 2015
-
-  ******* PSH loader *******
-  PCM page cache size = 192 KB
-  Cache Constraint = 0 Pages
-  Arming IPC driver ..
-  Adding page store pool ..
-  PagestoreAddr(IMR Start Address) = 0x04899000
-  pageStoreSize(IMR Size)          = 0x00080000
-
-  *** Ready to receive application ***
-
-After another 10 seconds the xFSTK tool completes and the board resets. About
-10 seconds after that should see the above message again and then within a few
-seconds U-Boot should start on your board:
-
-.. code-block:: none
-
-  U-Boot 2020.10-rc3 (Sep 03 2020 - 18:44:28 -0600)
-
-  CPU:   Genuine Intel(R) CPU   4000  @  500MHz
-  DRAM:  980.6 MiB
-  WDT:   Started with servicing (60s timeout)
-  MMC:   mmc@ff3fc000: 0, mmc@ff3fa000: 1
-  Loading Environment from MMC... OK
-  In:    serial
-  Out:   serial
-  Err:   serial
-  Saving Environment to MMC... Writing to redundant MMC(0)... OK
-  Saving Environment to MMC... Writing to MMC(0)... OK
-  Net:   No ethernet found.
-  Hit any key to stop autoboot:  0
-  Target:blank
-  Partitioning using GPT
-  Writing GPT: success!
-  Saving Environment to MMC... Writing to redundant MMC(0)... OK
-  Flashing already done...
-  5442816 bytes read in 238 ms (21.8 MiB/s)
-  Valid Boot Flag
-  Setup Size = 0x00003c00
-  Magic signature found
-  Using boot protocol version 2.0c
-  Linux kernel version 3.10.17-poky-edison+ (ferry@kalamata) #1 SMP PREEMPT Mon Jan 11 14:54:18 CET 2016
-  Building boot_params at 0x00090000
-  Loading bzImage at address 100000 (5427456 bytes)
-  Magic signature found
-  Kernel command line: "rootwait ..."
-  Magic signature found
-
-  Starting kernel ...
-
-  ...
-
-  Poky (Yocto Project Reference Distro) 1.7.2 edison ttyMFD2
-
-  edison login:
+     SUBSYSTEM=="usb", ATTR{idVendor}=="8086", ATTR{idProduct}=="e005", MODE="0666"
+     SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0a99", MODE="0666"
 
 .. _xFSTK: https://github.com/edison-fw/xFSTK
 .. _drive: https://drive.google.com/drive/u/0/folders/1URPHrOk9-UBsh8hjv-7WwC0W6Fy61uAJ
