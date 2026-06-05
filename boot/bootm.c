@@ -323,8 +323,8 @@ static int bootm_pre_load(const char *addr_str)
 /**
  * resolve_os_comp_buf() - Figure out where to decompress OS to
  *
- * Assume that the kernel compression is at most a factor of 4 since
- * zstd almost achieves that.
+ * Allow up to 8x compression: this comfortably covers what zstd and xz
+ * achieve on real kernels, with headroom for well-compressed payloads.
  * Use an alignment of 2MB since this might help arm64
  *
  * @bmi: Bootm info
@@ -347,12 +347,12 @@ static int resolve_os_comp_buf(struct bootm_info *bmi)
 				return -EINVAL;
 			}
 
-			if (bmi->os_size > SZ_1G / 4) {
+			if (bmi->os_size > SZ_1G / 8) {
 				printf("Kernel size might exceed 1G limit\n");
 				return -E2BIG;
 			}
 
-			bmi->kern_comp_size = bmi->os_size * 4;
+			bmi->kern_comp_size = ALIGN(bmi->os_size * 8, SZ_1M);
 		}
 
 		addr = lmb_alloc(bmi->kern_comp_size, SZ_2M);
@@ -792,6 +792,8 @@ static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 	if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp) {
 		int ret;
 
+		if (!bmi->os_size)
+			bmi->os_size = image_len;
 		ret = resolve_os_comp_buf(bmi);
 		if (ret)
 			return log_msg_ret("fbo", ret);
