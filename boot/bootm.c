@@ -807,13 +807,19 @@ static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 
 	load_buf = map_sysmem(load, 0);
 	image_buf = map_sysmem(os.image_start, image_len);
-	decomp_len = bmi->ignore_bootm_len ? image_len * 10 : bootm_len();
+	if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp)
+		decomp_len = bmi->kern_comp_size;
+	else
+		decomp_len = bmi->ignore_bootm_len ? image_len * 10 : bootm_len();
 	err = image_decomp(os.comp, load, os.image_start, os.type,
 			   load_buf, image_buf, image_len, decomp_len,
 			   &load_end);
 	if (err) {
 		err = handle_decomp_error(os.comp, load_end - load, decomp_len,
 					  err);
+		if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp)
+			printf("Note: noload decompression buffer is %#lx bytes (not CONFIG_SYS_BOOTM_LEN)\n",
+			       decomp_len);
 		bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 		return err;
 	}
