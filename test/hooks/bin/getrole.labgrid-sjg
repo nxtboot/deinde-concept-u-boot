@@ -30,5 +30,5 @@
 #
 
 exec labgrid-client -r "${target}" ${vars} -a query -n \
-	UBootProviderDriver:board,board_extra,source_dir,build_dir,build_dir_extra${config_arg} \
+	UBootProviderDriver:board,board_extra,source_dir,build_dir,build_dir_extra,prepare_timeout${config_arg} \
 	2>/dev/null
