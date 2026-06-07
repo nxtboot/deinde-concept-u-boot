@@ -83793,3 +83793,103 @@ Comments addressed:
 
 ---
 
+### Pipeline fix: 2026-06-07 (attempt 3)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+## Report
+
+**Result:** No code change required — all failures are infrastructure issues. **No `cherry-37c6f531daf-fix3` branch was created** (nothing to commit), matching the disposition of attempts 1 and 2.
+
+### Root cause: two distinct infrastructure failures, neither from this MR
+
+**1. All 37 sjg-lab / sjg-lab-slow jobs** (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64):
+
+Identical signature to attempts 1 and 2. Every job ran on the same runner — `ellesmere-lab VKe9dm-Af`, system `s_1ddb537fdd93` — within a ~15-second window (13:12:40 – 13:13:22 UTC on 2026-06-07) and aborted at pytest setup time with:
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+(`efi-aarch64` carries `Error 1` because its `--configure` shells out to `scripts/build-efi`, which then returns `buildman exited with 255` with no diagnostic. Same proximate cause.)
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree. It exits non-zero with empty stdout/stderr before any U-Boot source is compiled or any test runs.
+
+**2. `Check make check` (526440) and `Check make qcheck` (526442)** — these are **new** failures not seen in attempts 1/2:
+
+Both jobs report `Tests passed!` ("Ran 602 tests… OK", "Ran 62 tests… OK", "Ran 54 tests… OK") and only then fail during artifact upload:
+
+```
+WARNING: Uploading artifacts as "archive" to coordinator... 504 Gateway Time-out
+WARNING: Uploading artifacts as "archive" to coordinator... 502 Bad Gateway
+FATAL: invalid argument
+ERROR: Job failed: exit code 1
+```
+
+This is a GitLab coordinator / artifact-store outage, not a U-Boot problem — the test suite itself succeeded.
+
+### Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch i.MX8MM / i.MX8MN / i.MX8MX95 device trees, `drivers/cpu/imx8_cpu.c`, binman's `imx8mimage` etype + ftest, `configs/kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the failing lab targets are i.MX8MM/MN/MX95 boards, and none use the imx8mimage etype. The lab harness binary `u-boot-test-getrole` and GitLab's artifact coordinator are both outside the U-Boot tree, so the cherry-picks cannot affect them. The make check/qcheck jobs' test suites passed — only the upload failed.
+
+### Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), **no code edits**, **no `cherry-37c6f531daf-fix3` branch**, **no buildman run** (no code changed; the previous attempt's `buildman -L --board sandbox` result of 1/1 built with no warnings/errors still represents the state of this branch).
+
+### Suggested reply for the MR
+
+> Pipeline attempt 3 fails the same way as attempts 1 and 2 plus a new GitLab artifact-upload outage:
+>
+> - All 37 lab jobs ran on `ellesmere-lab VKe9dm-Af` in a ~15s window (13:12:40 – 13:13:22 UTC) and aborted with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source was built. `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree.
+> - `Check make check` and `Check make qcheck` both **passed** their test suites (`Tests passed!`, `OK`) and only failed in `upload_artifacts_on_success` with GitLab returning 502 Bad Gateway / 504 Gateway Time-out — a coordinator/storage outage, not a code issue.
+>
+> None of the 8 cherry-picked commits touch lab infrastructure, the GitLab artifact store, or any of the failing boards' files (they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`). Re-pushing an unchanged branch would only retrigger the same failures.
+>
+> Please re-run the pipeline once the `ellesmere-lab` harness and the GitLab artifact uploader are healthy. No code change is appropriate.
+
+---
+
