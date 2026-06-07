@@ -21,9 +21,12 @@
 
 [ -n "${do_configure}" ] && config_arg=",config_file"
 
-# The following spurious output is present with Python 3.12 on Ubuntu 24.04 so
-# use a redirection to drop it:
+# labgrid-client writes spurious output to stderr with Python 3.12 on Ubuntu
+# 24.04, which would corrupt the parsed stdout, so keep it off stdout. Send it
+# to the file named by U_BOOT_GETROLE_STDERR (conftest sets this so it can
+# report the error if the query fails), or drop it when run standalone.
 
+# Example spurious output:
 # Error in sys.excepthook:
 #
 # Original exception was:
@@ -31,4 +34,4 @@
 
 exec labgrid-client -r "${target}" ${vars} -a query -n \
 	UBootProviderDriver:board,board_extra,source_dir,build_dir,build_dir_extra,prepare_timeout${config_arg} \
-	2>/dev/null
+	2>"${U_BOOT_GETROLE_STDERR:-/dev/null}"
