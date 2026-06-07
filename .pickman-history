@@ -83482,3 +83482,47 @@ The branch is ready for pushing.
 
 ---
 
+### Review: 2026-06-07
+
+Branch: cherry-29c40bb2a13
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded cleanly. Let me verify and compare deltas.
+
+All deltas are identical (only hashes differ, as expected). Let me verify the merge commit and run the build.
+
+Build passes. Now create the v2 branch and push.
+
+Successfully rebased and pushed.
+
+## Summary
+
+**Rebase result:** Clean — `git rebase --keep-empty ci/master` completed with no conflicts on all 8 commits (7 cherry-picks + 1 pickman record).
+
+**Delta verification:** All 8 commits show identical stats to their pre-rebase counterparts (only hashes differ). The merge commit `90d10c25dce` correctly remained empty.
+
+**Build result:** OK — sandbox build passes (1/1 boards built).
+
+**Push:** Force-pushed to `cherry-29c40bb2a13` on `ci` remote, updating MR !1117. Local branch `cherry-29c40bb2a13-v2` created for tracking.
+
+**New commit hashes:**
+| New | Subject |
+|---|---|
+| a80601758fc | nvme: fix dcache invalidation range in identify command |
+| 9a95a658a52 | nvme: avoid deleting uncreated queues |
+| 69d8addf71b | nvme: free prp_pool on nvme_init() failure paths |
+| 393bccef8ed | drivers: nvme: Log I/O timeouts |
+| 6bf40429dad | lmb: Optionally limit available memory to 4 GiB |
+| b01e02fb663 | arch: arm: force 4K page alignment in linker |
+| 90d10c25dce | Merge tag 'u-boot-nvme-fixes-20260604' (empty, preserved) |
+| 0fa65bb3e28 | pickman: Record cherry-pick of 7 commits from us/master |
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. No conflicts; all 8 commits applied cleanly with identical deltas to the pre-rebase versions. The empty merge commit was preserved with `--keep-empty`. Sandbox build passes.
+
+---
+
