@@ -83568,5 +83568,84 @@ Successfully rebased and pushed.
 
 > Rebased onto latest `ci/master`. No conflicts; all 8 commits applied cleanly with identical deltas to the pre-rebase versions. The empty merge commit was preserved with `--keep-empty`. Sandbox build passes.
 
+### Pipeline fix: 2026-06-07 (attempt 1)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All 37 failing jobs share the same root cause, and it is an infrastructure/lab failure — not a code issue introduced by this MR.
+
+## Root cause analysis
+
+Every job (rpi3, edison, kevin, efi-aarch64, qemu-x86_64, minnowmax, etc.) fails within ~1 second of starting `test/py/test.py`, all on the same runner `ellesmere-lab`, within a 35-second window (10:33:57 — 10:34:32):
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin` (added to PATH at the top of the job script); it is not part of the U-Boot tree. It exits 2 (1 for `efi-aarch64`, which then carries a `buildman exited with 255` from `scripts/build-efi`) with empty stdout and stderr — i.e. the lab harness aborts before any U-Boot build or test can run. The `efi-aarch64` variant simply produces a slightly fuller traceback because its `--configure` step shells out to `scripts/build-efi`, which also returns failure with no diagnostic.
+
+## Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch:
+
+| File | Boards affected |
+|---|---|
+| `arch/arm/dts/imx8mm-u-boot.dtsi`, `imx8mn-u-boot.dtsi` | i.MX8MM/MN |
+| `board/toradex/verdin-imx95/*` | verdin-imx95 |
+| `configs/kontron-sl-mx6ul_defconfig` | kontron-sl-mx6ul |
+| `drivers/cpu/imx8_cpu.c` | i.MX8 |
+| `tools/binman/etype/imx8mimage.py`, `tools/binman/ftest.py` | binman tests |
+| `tools/imx8image.c` | i.MX8 image tool |
+
+None of the failing lab targets (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) are i.MX8MM/MN/MX95 boards nor do they use binman's `imx8mimage` etype. The `u-boot-test-getrole --configure` failure is also platform-independent — it fails identically across 37 unrelated boards, before any U-Boot source is compiled.
+
+## Decision
+
+Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), **no code change is required**. The lab harness (`u-boot-test-getrole`) was broken when this pipeline ran. The MR should be re-run on the lab once the harness is healthy.
+
+No branch `cherry-37c6f531daf-fix1` was created since there is nothing to commit.
+
 ---
 
