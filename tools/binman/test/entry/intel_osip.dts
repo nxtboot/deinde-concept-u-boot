@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	binman {
+		intel-osip {
+			intel,load-address = <0x02200000>;
+			intel,entry-point = <0x02201000>;
+			intel,lba = <0x1000>;
+			intel,size-blocks = <0x4000>;
+			intel,attribute = <0x07>;
+		};
+	};
+};

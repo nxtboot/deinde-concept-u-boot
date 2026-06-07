@@ -36,11 +36,13 @@ TIMEOUT_CMD_MS = 10000              # Command-echo timeout
 # Linux PTY buffer size (N_TTY_BUF_SIZE), so there's no benefit to larger.
 RECV_BUF_SIZE = 4096
 
-# Timeout for board preparation in lab mode. This needs to be enough to build
-# U-Boot, write it to the board and then boot the board. Since this process is
-# under the control of another program (e.g. Labgrid), it will failure sooner
-# if something goes way. So use a very long timeout here to cover all possible
-# situations.
+# Default timeout for board preparation in lab mode. This needs to be enough to
+# build U-Boot, write it to the board and then boot the board. Since this
+# process is under the control of another program (e.g. Labgrid), it will fail
+# sooner if something goes wrong. So use a very long timeout here to cover all
+# possible situations. A board that can need slow recovery (e.g. an Edison
+# reflashed over its BootROM with xfstk) can raise this for itself via the
+# 'prepare_timeout' role setting, picked up by ubconfig.prepare_timeout.
 TIMEOUT_PREPARE_MS = 3 * 60 * 1000
 
 # Named pattern used by this module:
@@ -308,6 +310,19 @@ class ConsoleBase():
             self.log.end_section('Stopping U-Boot')
         self.logstream.close()
 
+    def _prepare_timeout_ms(self):
+        """Return the lab-mode board-preparation timeout in milliseconds
+
+        A board that can need slow recovery may override the default
+        (TIMEOUT_PREPARE_MS) by providing a 'prepare_timeout' in seconds via
+        its lab role, surfaced as ubconfig.prepare_timeout.
+
+        Returns:
+            int: Timeout in milliseconds
+        """
+        secs = getattr(self.config, 'prepare_timeout', None)
+        return secs * 1000 if secs else TIMEOUT_PREPARE_MS
+
     def set_lab_mode(self):
         """Select lab mode
 
@@ -315,7 +330,7 @@ class ConsoleBase():
         ready for use. We don't need to look for signon messages.
         """
         self.log.info('test.py: Lab mode is active')
-        self.timeout = TIMEOUT_PREPARE_MS
+        self.timeout = self._prepare_timeout_ms()
         self.lab_mode = True
 
     def _wait_for_boot_prompt(self, loop_num=1, lab_marker_expected=True):
@@ -335,7 +350,7 @@ class ConsoleBase():
             self.log.info('Waiting for U-Boot to be ready')
 
             if self.lab_mode:
-                self.timeout = TIMEOUT_PREPARE_MS
+                self.timeout = self._prepare_timeout_ms()
             if not self.lab_mode:
                 self._wait_for_banner(loop_num)
                 self.u_boot_version_string = self.after

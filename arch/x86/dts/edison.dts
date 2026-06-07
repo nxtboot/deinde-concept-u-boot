@@ -171,13 +171,21 @@
 	u-boot-edison {
 		filename = "u-boot-edison.img";
 
-		/* This is the OSIP */
-		blob {
-			filename = "edison-osip.dat";
+		/* OSIP ($OS$) header pointing at the U-Boot image below */
+		intel-osip {
+		};
+
+		/*
+		 * The OSII loads the image to 0x01100000 but enters it at
+		 * 0x01101000, so U-Boot must sit 0x1000 (4KB) into the loaded
+		 * data. Pad with zeroes ahead of U-Boot to provide that gap.
+		 */
+		fill {
+			size = <0x1000>;
+			fill-byte = [00];
 		};
 
 		u-boot {
-			offset = <0x200>;
 		};
 
 		u-boot-env {
