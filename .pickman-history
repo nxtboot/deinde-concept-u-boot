@@ -83434,3 +83434,51 @@ None of these touches `lib/efi*`, `boot/bootmeth_efi*`, `cmd/efi*`, `test/py/tes
 
 ---
 
+## 2026-06-07: us/master
+
+Branch: cherry-29c40bb2a13
+
+Commits:
+- 29c40bb2a13 nvme: fix dcache invalidation range in identify command
+- 61280341e92 nvme: avoid deleting uncreated queues
+- 11e056e3207 nvme: free prp_pool on nvme_init() failure paths
+- 389363d2875 drivers: nvme: Log I/O timeouts
+- af4aad1f0a0 lmb: Optionally limit available memory to 4 GiB on limited systems
+- 31c2bb0cd18 arch: arm: force 4K page alignment in linker
+- 74007f24a3a Merge tag 'u-boot-nvme-fixes-20260604' of https://source.denx.de/u-boot/custodians/u-boot-ufs
+
+### Conversation log
+Delta is identical. Now build test:
+
+Build passed. Continue with the next commit:
+
+Merge commit cherry-picked as empty (as expected since we already applied the underlying changes). Now do final verification:
+
+All 7 commits present. Run final build:
+
+## Final Status Report
+
+**Branch:** `cherry-29c40bb2a13` (based on `ci/master`)
+
+**Build result:** OK — sandbox build passes (1/1 boards built, no warnings or errors)
+
+**Cherry-pick summary (all 7 commits applied):**
+
+| Original | New | Subject | Delta |
+|----------|-----|---------|-------|
+| 29c40bb2a13 | ac51d7ff7cc | nvme: fix dcache invalidation range in identify command | identical |
+| 61280341e92 | 7247b3c7edd | nvme: avoid deleting uncreated queues | identical |
+| 11e056e3207 | ee83b607d38 | nvme: free prp_pool on nvme_init() failure paths | identical |
+| 389363d2875 | bc742aa84d9 | drivers: nvme: Log I/O timeouts | identical |
+| af4aad1f0a0 | b4cf1e66d26 | lmb: Optionally limit available memory to 4 GiB | identical (auto-merge in lib/Kconfig, lib/lmb.c — no manual fix-up) |
+| 31c2bb0cd18 | 0503dbacb71 | arch: arm: force 4K page alignment in linker | identical (auto-merge in arch/arm/config.mk — no manual fix-up) |
+| 74007f24a3a | 68e8c96dade | Merge tag 'u-boot-nvme-fixes-20260604' | empty (expected — underlying commits already applied), preserved with --allow-empty |
+
+**Fix-ups:** None required. Two cherry-picks (af4aad1f0a0, 31c2bb0cd18) triggered automatic merge resolution, but produced identical file/line counts to the originals, so no manual edits or commit-message notes were needed.
+
+**Concerning deltas:** None. All non-merge commits produced identical stats to their originals. The merge commit was empty as expected (its constituent NVMe fixes had already been individually cherry-picked).
+
+The branch is ready for pushing.
+
+---
+
