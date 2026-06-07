@@ -83684,3 +83684,81 @@ I will not create a `-v2` branch or force push, because there is nothing actiona
 
 ---
 
+### Pipeline fix: 2026-06-07 (attempt 2)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+This is identical to attempt 1: an infrastructure failure on `ellesmere-lab`. Let me sample a few more logs to confirm the pattern is uniform across all 37 jobs.
+
+All 37 jobs share an identical infrastructure failure — no code change is appropriate.
+
+## Diagnosis
+
+Every one of the 37 failing jobs (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) ran on the same runner — `ellesmere-lab VKe9dm-Af` — within a ~50-second window (11:32:04 – 11:33:04 UTC) and all failed within seconds of starting `test/py/test.py` with the identical traceback:
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+(`efi-aarch64` reports `Error 1` instead of `Error 2` because its `--configure` step shells out to `scripts/build-efi`, which then reports `buildman exited with 255: ` with no diagnostic. The proximate cause is still the same harness failure.)
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin` (added to PATH at the top of the job script). It is not in the U-Boot tree. It exits non-zero with empty stdout/stderr, before any U-Boot source is compiled or any test runs.
+
+## Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch i.MX8MM / i.MX8MN / i.MX8MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `configs/kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the 37 failing lab targets are i.MX8MM/MN/MX95 boards, and the `u-boot-test-getrole --configure` failure is platform-independent — it fails identically on rpi3 and on qemu-x86_64 and on every board in between, with no U-Boot binary even being built first.
+
+This is the **exact same failure mode** as attempt 1, just on a fresh pipeline run. The `ellesmere-lab` harness is still broken.
+
+## Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), **no code change is required and no fix branch `cherry-37c6f531daf-fix2` was created**. There is nothing to commit. The MR should be re-run on the lab once `u-boot-test-getrole` on `ellesmere-lab` is healthy.
+
+**Suggested reply to post on the MR:**
+
+> Pipeline attempt 2 fails identically to attempt 1: all 37 jobs ran on `ellesmere-lab` runner `VKe9dm-Af` in a ~50-second window and aborted with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source was built. `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree; the harness is still broken. None of the 8 cherry-picked commits touch lab infrastructure or any of the failing boards' files (they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`). Please re-run once the lab harness on `ellesmere-lab` is healthy.
+
+---
+
