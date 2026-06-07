@@ -25,6 +25,7 @@ import re
 from _pytest.runner import runtestprotocol
 import subprocess
 import sys
+import tempfile
 from console_base import BootFail, Timeout, Unexpected, handle_exception
 import time
 
@@ -189,11 +190,28 @@ def get_details(config):
         # Make sure the script sees that it is being run from pytest
         env['U_BOOT_SOURCE_DIR'] = source_dir
 
+        # The hook drops the underlying labgrid-client stderr (it carries
+        # spurious output that would corrupt the parsed stdout). Give it a
+        # file to send that stderr to instead, so a failure can be reported
+        # rather than swallowed.
+        err_fd, err_path = tempfile.mkstemp(prefix='getrole-', suffix='.err')
+        os.close(err_fd)
+        atexit.register(lambda p=err_path: os.path.exists(p) and os.unlink(p))
+        env['U_BOOT_GETROLE_STDERR'] = err_path
+
         proc = subprocess.run(cmd, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, encoding='utf-8',
                               env=env)
         if proc.returncode:
-            raise ValueError(f"Error {proc.returncode} running {cmd}: '{proc.stderr} '{proc.stdout}'")
+            hook_stderr = ''
+            try:
+                with open(err_path, encoding='utf-8') as f:
+                    hook_stderr = f.read()
+            except OSError:
+                pass
+            raise ValueError(
+                f"Error {proc.returncode} running {cmd}:\n"
+                f"{proc.stdout}{hook_stderr}")
         # For debugging
         # print('conftest: lab:', proc.stdout)
         vals = {}
