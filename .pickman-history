@@ -83478,6 +83478,50 @@ All 7 commits present. Run final build:
 
 **Concerning deltas:** None. All non-merge commits produced identical stats to their originals. The merge commit was empty as expected (its constituent NVMe fixes had already been individually cherry-picked).
 
+---
+
+## 2026-06-07: us/master
+
+Branch: cherry-37c6f531daf
+
+Commits:
+- 37c6f531daf board: toradex: verdin-imx95: fix ram size check calculated addresses
+- 8377214282d imx: kontron-sl-mx6ul: Enable CONFIG_DM_MDIO to fix boot abort
+- cdb9e79056d cpu: imx8_cpu: Fix CPU segment information print
+- 822a98588d1 binman: imx8mimage: Handle nxp,boot-from = "fspi"
+- c3680dcf9a7 arm64: dts: imx8mm: Generate FSPI header using binman imx8mimage
+- b9fc16e72dd arm64: dts: imx8mn: Generate FSPI header using binman imx8mimage
+- 0fba623e4fd tools: imx8image: Fix FSPI alignment to 4 kiB
+- 75daa277941 Merge tag 'u-boot-imx-master-20260604' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+
+### Conversation log
+All 8 commits are present. Now run the final build verification.
+
+Build passed. Update todos and report.
+
+## Cherry-pick Summary
+
+All 8 commits successfully cherry-picked to branch `cherry-37c6f531daf` based on `ci/master`:
+
+| # | New Hash | Subject |
+|---|---|---|
+| 1 | 58999b40cad | board: toradex: verdin-imx95: fix ram size check calculated addresses |
+| 2 | 86770430987 | imx: kontron-sl-mx6ul: Enable CONFIG_DM_MDIO to fix boot abort |
+| 3 | ea4e52ca4bd | cpu: imx8_cpu: Fix CPU segment information print |
+| 4 | b7bffc349f2 | binman: imx8mimage: Handle nxp,boot-from = "fspi" |
+| 5 | 6e104e22d12 | arm64: dts: imx8mm: Generate FSPI header using binman imx8mimage |
+| 6 | 7d18ec300ee | arm64: dts: imx8mn: Generate FSPI header using binman imx8mimage |
+| 7 | e64bea7f16e | tools: imx8image: Fix FSPI alignment to 4 kiB |
+| 8 | 79d677995a7 | Merge tag 'u-boot-imx-master-20260604' (empty, merge commit preserved) |
+
+**Build result:** OK — `buildman -L --board sandbox` completed successfully (1/1 built, no warnings/errors).
+
+**Deltas:** All 7 regular cherry-picks had identical file/line counts to their originals. Several had trivial auto-merges (drivers/cpu/imx8_cpu.c, tools/binman/ftest.py, arch/arm/dts/imx8mm-u-boot.dtsi, tools/imx8image.c) but produced matching diffs.
+
+**Fix-ups:** None. The merge commit (75daa277941) was applied with `--allow-empty` as expected since all its content was already brought in by the preceding 7 cherry-picks.
+
+**Concerning deltas:** None.
+
 The branch is ready for pushing.
 
 ---
