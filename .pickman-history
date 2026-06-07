@@ -83320,6 +83320,69 @@ So the source on the branch is fine; the build that "failed" in CI succeeds loca
 ### Action taken
 
 Per the instructions for infrastructure/transient failures, **no commits were amended, no fixup added, and no `cherry-b20ce94bb9d-fix1` branch was created**. The branch is left at its existing tip (`021f62f8dde`). Recommend recommitting / re-running the pipeline.
+---
+## 2026-06-06: us/master
+
+Branch: cherry-b353d523a86
+
+Commits:
+- b353d523a86 tests: fs_helper: check path validity during cleanup
+- 81d60060831 Makefile: fix extra dash in KBUILD_CFLAGS
+- 5188b96cdb7 .gitignore: exclude logo generated file
+- 919af6e49b1 net: ti: icssg: Fix portname buffer overflow
+- a38bf2121a3 net: sntp: Check packet length in sntp_handler
+- 4ba29d70941 net: dhcpv6: Prevent buffer overflow during BOOTFILE_URL parsing
+- 2b612de8952 net: dhcpv6: Prevent out-of-bounds reads while parsing options
+- f4478872388 net: bootp: Prevent out-of-bounds read in dhcp_message_type
+- fac46e5aa7c boot: pxe_utils: Fix potential initrd_filesize buffer overflow
+- a4c8728f225 Merge tag 'net-20260603' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+Delta matches perfectly. Let me run the build test, then proceed to next cherry-pick.
+
+The `--theirs` checkout took the entire file from the cherry-pick which includes way too many changes. Let me reset and try again.
+
+Good, Makefile is correct. Let me fix the .gitignore using a different approach.
+
+I should amend the commit message to note the fix-up.
+
+Delta matches. Let me run the build and continue.
+
+The code has been heavily refactored locally; the buffer being fixed no longer exists. Let me clean up and create an empty commit.
+
+All 10 commits are present. Let me run the final build test.
+
+Build passes. Here's the final status report:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-b353d523a86` (based on `ci/master`)
+**Build result:** OK (sandbox builds cleanly with no warnings/errors)
+
+### All 10 commits present:
+
+1. `d18a630dab3` — tests: fs_helper: check path validity during cleanup — clean
+2. `016bc0718de` — Makefile: fix extra dash in KBUILD_CFLAGS — **[FAILED]** empty commit
+3. `24671518e45` — .gitignore: exclude logo generated file — fix-up applied (conflict resolved)
+4. `3561d226b0e` — net: ti: icssg: Fix portname buffer overflow — clean
+5. `d61b20705db` — net: sntp: Check packet length in sntp_handler — clean
+6. `0a094033ac6` — net: dhcpv6: Prevent buffer overflow during BOOTFILE_URL parsing — clean
+7. `55df5219131` — net: dhcpv6: Prevent out-of-bounds reads while parsing options — clean
+8. `243b50d02d5` — net: bootp: Prevent out-of-bounds read in dhcp_message_type — clean
+9. `c9f7894a38d` — boot: pxe_utils: Fix potential initrd_filesize buffer overflow — **[FAILED]** empty commit
+10. `5a7e52c365f` — Merge tag 'net-20260603' — empty merge commit (kept by `--allow-empty`)
+
+### Fix-ups made:
+- **Commit 3 (.gitignore)**: Resolved trivial conflict where local branch had an extra entry `/test/fdt_overlay/test-fdt-overlay-stacked.dtbo.S`. Renamed `u_boot_logo.S` → `u_boot_logo.bmp.S` as intended. Note appended to commit message.
+
+### Commits marked [FAILED]:
+- **Commit 2 (Makefile extra dash)**: The fix targets a `CONFIG_CC_OPTIMIZE_FOR_DEBUG` block introduced by parent commit `56ae3c2a44fc`, which is not on `ci/master`. The bug being fixed does not exist here.
+- **Commit 9 (pxe_utils initrd_filesize)**: `boot/pxe_utils.c` has been heavily refactored locally — the `initrd_filesize[10]` buffer no longer exists in `label_boot()` (initrd formatting was moved into `pxe_setup_label()` using a different buffer).
+
+### Concerning deltas: 
+None — all successfully-applied cherry-picks matched their originals exactly.
+
+Branch is ready for pushing; nothing was merged back.
 
 ---
 
