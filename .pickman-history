@@ -83925,3 +83925,37 @@ Comments addressed:
 
 ---
 
+### Review: 2026-06-07
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match. Now build:
+
+Build passes. Now create v2 branch and push:
+
+## Report
+
+**Rebase:** Successfully rebased `cherry-37c6f531daf` onto `ci/master` (HEAD `c4bb5c06700`). Only 2 commits were ahead on `ci/master` (`072a724dbe6 test/py: Report u-boot-test-getrole errors on failure` and `c4bb5c06700 Merge branch 'ci-fixa'`).
+
+**Conflicts:** None — clean rebase of all 15 commits (8 cherry-picks + merge + 6 pickman record-keeping).
+
+**Delta verification:** All 15 rebased commits have identical `git show --stat` summaries to their pre-rebase counterparts.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built successfully (no warnings/errors).
+
+**Push:** Force-pushed to remote `cherry-37c6f531daf` (`443aa94fd9a → f086965e975`). Local branch `cherry-37c6f531daf-v2` created for tracking.
+
+**Notable:** The `ci-fixa` merge brought in `test/py: Report u-boot-test-getrole errors on failure` — this is directly relevant to the lab-harness infrastructure failures this MR has been hitting across 3 pipeline attempts. The new commit should produce diagnostic output if `u-boot-test-getrole` fails again, which may help unblock this MR.
+
+### Suggested reply for the MR
+
+> Rebased onto latest `ci/master` (`c4bb5c06700`) which now includes `072a724dbe6 test/py: Report u-boot-test-getrole errors on failure`. Clean rebase, no conflicts, all 15 commits keep identical file/line deltas to their pre-rebase versions. `buildman -L --board sandbox` passes (1/1, no warnings).
+>
+> Notably, the new `test/py` commit on `ci/master` should surface the underlying `u-boot-test-getrole` diagnostic from the previous 3 pipeline failures, which were all infrastructure issues on `ellesmere-lab` rather than anything in the cherry-picked code. Re-running the pipeline now should either pass or give us actionable detail.
+
+---
+
