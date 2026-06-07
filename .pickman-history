@@ -83211,3 +83211,58 @@ Delta check: the single non-merge commit produced an identical file-and-line sta
 Build: `buildman -L --board sandbox -w -o /tmp/pickman` — clean.
 
 ---
+## 2026-06-06: us/master
+
+Branch: cherry-b20ce94bb9d
+
+Commits:
+- b20ce94bb9d ARM: bcm283x: Add bcm2712 PCIe memory window
+- b24c620e5e1 pci: brcmstb: Fix PCIe bus numbers
+- d0b2a1cb3f3 pci: brcmstb: Support different variants using a cfg struct
+- 64ae1351b52 reset: Add RPi5 brcmstb reset facilities
+- af4f915fd6d reset: Add RPi5 rescal reset facilities
+- b6f853f1cc5 pci: brcmstb: Get and use bridge and rescal reset properties
+- df883ec51b5 pci: brcmstb: Fix iBAR size calculation
+- 585d6cfd9b6 pci: brcmstb: rework iBAR handling
+- de9ea19cf77 pci: brcmstb: Adapt to AXI bridge
+- 4065ee552b8 Merge tag 'rpi-2026.07-rc4' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+
+### Conversation log
+Build OK. Continuing with the next cherry-picks.
+
+Now the merge commit:
+
+The merge cherry-pick is empty (all content already in via individual commits). The instructions say to always include merge commits even if empty. Let me commit it as empty.
+
+All 10 commits are present. Now final build:
+
+## Cherry-pick complete
+
+**Branch:** `cherry-b20ce94bb9d` (based on `ci/master`)
+
+**Final log (last 10 commits + 2 prior):**
+```
+7f1c8eab351 Merge tag 'rpi-2026.07-rc4' of https://source.denx.de/u-boot/custodians/u-boot-raspberrypi
+71827573ee9 pci: brcmstb: Adapt to AXI bridge
+73e7364740a pci: brcmstb: rework iBAR handling
+bb70718fc30 pci: brcmstb: Fix iBAR size calculation
+ed1e063f337 pci: brcmstb: Get and use bridge and rescal reset properties
+fc0167ca655 reset: Add RPi5 rescal reset facilities
+573accc4937 reset: Add RPi5 brcmstb reset facilities
+47d52c37878 pci: brcmstb: Support different variants using a cfg struct
+8275b0580c9 pci: brcmstb: Fix PCIe bus numbers
+a53d2f7efd7 ARM: bcm283x: Add bcm2712 PCIe memory window
+```
+
+**Build result:** OK (sandbox built cleanly with no warnings or errors)
+
+**Cherry-pick deltas:** All 9 non-merge commits had identical stat output (file list and line counts) compared to the originals — no concerning deltas.
+
+**Fix-ups:** None required. The 9 individual commits applied cleanly (some with auto-merge in `arch/arm/mach-bcm283x/init.c`, `configs/rpi_arm64_defconfig`). The merge commit `4065ee552b8` resolved to an empty commit (its content was already fully present via the individual commits), and was preserved as an empty commit with the original merge subject as required.
+
+**Notes:**
+- Merge commit `7f1c8eab351` is empty (`--allow-empty`) — preserved per instructions to keep history tracking.
+- The branch is ready for pushing.
+
+---
+
