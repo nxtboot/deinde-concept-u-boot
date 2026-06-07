@@ -83386,3 +83386,51 @@ Branch is ready for pushing; nothing was merged back.
 
 ---
 
+### Review: 2026-06-06
+
+Branch: cherry-b353d523a86
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64.
+
+The failure is in `test_distro_arm_app_e...
+
+### Conversation log
+The cherry-pick scope confirms: nothing here touches EFI boot, distro bootmeth, aarch64-app, or `test_distro.py`. The previous analysis is still valid. Let me verify the build and push a v3 to retrigger CI.
+
+## Report
+
+### What was done
+
+This is a third "pipeline fix" attempt for the same MR where the previous bot's report from attempt 2 is the "review comment" being addressed. The reported failure (`efi-aarch64` / `test_distro_arm_app_efi`) is the same kind of environmental Ubuntu-guest-kernel-boot-timeout that attempts 1 and 2 already diagnosed as unrelated. No code changes warranted, no code changes made.
+
+### Verification
+
+**Cherry-pick scope (unchanged from prior attempts):**
+```
+ .gitignore                    |  2 +-
+ Makefile                      |  2 +-
+ drivers/net/ti/icssg_prueth.c |  5 ++--
+ net/bootp.c                   |  8 ++++----
+ net/dhcpv6.c                  | 32 ++++++++++++++++++++++++++++++++
+ net/sntp.c                    |  3 +++
+ test/py/tests/fs_helper.py    |  2 +-
+```
+
+None of these touches `lib/efi*`, `boot/bootmeth_efi*`, `cmd/efi*`, `test/py/tests/test_distro.py`, distro bootcmd, or arm-app aarch64 startup. The failing test boots an Ubuntu 25.04 live image from local media via EFI; the network code we touched isn't on its boot path.
+
+**Build:** `um build sandbox` — clean (no output = success).
+
+**Push:** `./tools/pickman/pickman push-branch cherry-b353d523a86 -r ci -f` → `Everything up-to-date`. Local `cherry-b353d523a86` and `cherry-b353d523a86-v3` are identical to the remote (no code changes to push).
+
+### Branch state
+
+- `cherry-b353d523a86-v3` created, identical to `cherry-b353d523a86`.
+- Remote `cherry-b353d523a86` already matches local; nothing pushed.
+
+### Suggested MR reply
+
+> Re-confirming attempts 1 & 2: `efi-aarch64` (`test_distro_arm_app_efi` timeout waiting for `Ubuntu 25.04 qarm ttyAMA0`) is the Ubuntu guest kernel failing to reach userspace after EFI handoff inside QEMU. This is environmental — the cherry-picks on this branch only modify `net/bootp.c`, `net/dhcpv6.c`, `net/sntp.c`, `drivers/net/ti/icssg_prueth.c`, `test/py/tests/fs_helper.py`, `.gitignore`, and a one-line `Makefile` change, none of which are on the EFI / distro / aarch64-app boot path. Sandbox build is clean. Please simply retry the pipeline — there is no code fix to apply here.
+
+---
+
