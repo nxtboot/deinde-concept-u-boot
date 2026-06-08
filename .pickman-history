@@ -83959,3 +83959,42 @@ Build passes. Now create v2 branch and push:
 
 ---
 
+### Review: 2026-06-08
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+
+
+### Conversation log
+Rebase complete. Now verify deltas and build.
+
+Stats on the 8 substantive code commits are all identical. The 2-line difference on the two pickman-history commits is expected from conflict-marker resolution (each had 2 fewer lines after removing duplicate `===`/`>>>` markers and adjusting blank-line spacing). Now build:
+
+Build passes (1/1, no warnings/errors). Now create v2 branch and push:
+
+Push succeeded — MR !1118 updated (`f086965e975 → 46b5be2a36f`).
+
+## Report
+
+**Rebase:** Rebased `cherry-37c6f531daf` onto latest `ci/master` (`eb2386d8ec4`). 16 commits replayed (8 cherry-picks + 8 pickman record-keeping).
+
+**Conflicts:** Two conflicts in `.pickman-history`, both because the file had been independently appended on both branches with new dated sections:
+
+1. Commit `1cebabeaf70` (pickman: Record cherry-pick of 8 commits) — HEAD had the `cherry-29c40bb2a13` cherry-pick log under `## 2026-06-07: us/master`, theirs had the `cherry-37c6f531daf` log under the same header. Resolved by keeping both entries.
+2. Commit `452e428e945` (pickman: Record pipeline fix attempt 1) — HEAD had the `cherry-29c40bb2a13` review/rebase summary, theirs had the `cherry-37c6f531daf` pipeline-fix attempt-1 analysis. Resolved by keeping both.
+
+All other pickman commits applied cleanly.
+
+**Delta verification:** All 8 substantive code commits (verdin-imx95, kontron-sl-mx6ul, imx8_cpu, binman imx8mimage, imx8mm/mn DTS, imx8image, plus the empty merge) have identical file/line stats to their pre-rebase counterparts. The two pickman commits that had conflicts show 2-line differences (44 vs 46, 79 vs 81) — purely from removing the duplicated conflict-marker lines during resolution, not from any content change.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, no warnings/errors.
+
+**Push:** Force-pushed to `cherry-37c6f531daf` on `ci` (`f086965e975 → 46b5be2a36f`). Local tracking branch `cherry-37c6f531daf-v3` created (v2 already existed from a previous rebase).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`eb2386d8ec4`). Conflicts were only in `.pickman-history` (two append-style conflicts where the file had been extended independently on both branches with new dated sections); resolved by keeping both entries. All 8 code-bearing commits have identical file/line deltas to their pre-rebase versions. `buildman -L --board sandbox` passes (1/1, no warnings/errors).
+
+---
+
