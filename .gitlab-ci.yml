@@ -1134,6 +1134,12 @@ edison:
     ROLE: edison
   <<: *sjg_lab_dfn
 
+# Digilent Zybo (Zynq-7010); U-Boot written to the SD card via SD-Wire
+zybo:
+  variables:
+    ROLE: zybo
+  <<: *sjg_lab_dfn
+
 trigger_snap_builds:
   stage: release
   variables:
