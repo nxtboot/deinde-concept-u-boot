@@ -84150,3 +84150,48 @@ The branch is already current with `ci/master` — no rebase or force-push is pe
 
 ---
 
+### Review: 2026-06-08
+
+Branch: cherry-3dd149ba17c
+
+Comments addressed:
+
+
+### Conversation log
+The remote `ci/cherry-3dd149ba17c` has drifted significantly (it now contains content from a different MR — `cherry-37c6f531daf`'s commits). The local branch is correct and up-to-date with ci/master. I need to force-push to restore the MR's source branch to the correct content.
+
+Force-push succeeded. The remote MR source branch now correctly points at the cherry-3dd149ba17c content (tip `a4ebd470ce3`), replacing the drifted `062461a090c` state.
+
+## Report
+
+**Action taken:** Force-pushed correct branch content to remote `ci/cherry-3dd149ba17c` to update MR !1121.
+
+### Findings
+
+- Local branch `cherry-3dd149ba17c` is already directly on top of current `ci/master` (`eb2386d8ec4`): `git rebase --keep-empty ci/master` reports "up to date".
+- Sandbox build via `buildman -L --board sandbox -w -o /tmp/pickman` passes (1 board built, no warnings/errors).
+- **However:** the remote `ci/cherry-3dd149ba17c` had drifted — it pointed at `062461a090c` ("pickman: Record review handling for cherry-37c6f531daf"), containing 1253 insertions / 2648 deletions of completely unrelated work from a *different* MR's branch (buildman/codman/dwarf changes, intel_osip removal, etc.). This explains why GitLab reported the MR as behind target: the source ref had been overwritten with someone else's content.
+
+### Actions
+
+1. Verified `git rebase --keep-empty ci/master` is a no-op (already current).
+2. Verified sandbox build is clean.
+3. Created local branch `cherry-3dd149ba17c-v2` from `cherry-3dd149ba17c`.
+4. Force-pushed via `./tools/pickman/pickman push-branch cherry-3dd149ba17c -r ci -f`. Remote moved `062461a090c → a4ebd470ce3` (forced update).
+
+### Branch commits now on remote (top to bottom)
+1. `a4ebd470ce3` — pickman: Record review handling for cherry-3dd149ba17c
+2. `1ae1ec424d0` — pickman: Record review handling for cherry-3dd149ba17c
+3. `fb7cf197a2e` — pickman: Record review handling for cherry-3dd149ba17c
+4. `6a67a89436f` — pickman: Record cherry-pick of 3 commits from us/master
+5. `fb3c631d1a4` — Prepare v2026.07-rc4
+6. `ddc7efa60f8` — smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag
+7. `c180b487f5e` — lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP
+8. `eb2386d8ec4` — Merge branch 'cherry-29c40bb2a13' into 'master' (tip of ci/master)
+
+### Suggested reply to post on the MR
+
+> The remote branch had drifted to unrelated commits from another MR (`062461a090c`, the cherry-37c6f531daf series). Local `cherry-3dd149ba17c` was already correctly stacked on the current `ci/master` tip `eb2386d8ec4` — `git rebase --keep-empty ci/master` is a no-op. Force-pushed the correct content back (`062461a090c → a4ebd470ce3`); sandbox build passes via `buildman`. The MR should now reflect the intended three commits (LMB rename, SMBIOS Type 3 fix, v2026.07-rc4 bump) on top of current master. Please retry the pipeline.
+
+---
+
