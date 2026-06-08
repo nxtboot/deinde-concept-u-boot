@@ -84113,3 +84113,40 @@ No `-v2` local branch was created and no force-push was performed because there 
 
 ---
 
+### Review: 2026-06-08
+
+Branch: cherry-3dd149ba17c
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already current with `ci/master` — no rebase or force-push is performed.
+
+## Report
+
+**Action taken:** None — no rebase work to do, no push made.
+
+**Verification:**
+
+- `git fetch ci master` — fetched latest target branch tip.
+- `git merge-base cherry-3dd149ba17c ci/master` → `eb2386d8ec4`, which is exactly the current tip of `ci/master`. The branch is already directly stacked on top of the latest `ci/master`.
+- `git rebase --keep-empty ci/master` reports: *"Current branch cherry-3dd149ba17c is up to date."*
+- `buildman -L --board sandbox -w -o /tmp/pickman`: ✅ 1 board built, no warnings/errors.
+
+**Branch commits (unchanged, on top of `ci/master` tip `eb2386d8ec4`):**
+1. `c180b487f5e` — lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP
+2. `ddc7efa60f8` — smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag
+3. `fb3c631d1a4` — Prepare v2026.07-rc4
+4. `6a67a89436f` — pickman: Record cherry-pick (tracking)
+5. `fb7cf197a2e` — pickman: Record review handling (tracking)
+6. `1ae1ec424d0` — pickman: Record review handling (tracking)
+
+**Why no `-v2` branch and no force-push:** The branch content is byte-for-byte identical to what is already on the remote `ci/cherry-3dd149ba17c`. Creating a `-v2` and force-pushing the same tree would only trigger another pipeline run without any actual code change, which is the same situation diagnosed by the previous review response. If the MR UI still shows "behind target branch", that is a GitLab indexing/state lag — the underlying git history is current.
+
+**Suggested reply to post on the MR:**
+
+> Re-checked against current `ci/master`: merge-base = `eb2386d8ec4` = tip of `ci/master`. `git rebase --keep-empty ci/master` confirms the branch is up to date — no rebase needed. Sandbox build passes via `buildman`. If the MR still shows "behind target branch", please retry the pipeline; the local branch has nothing new to push.
+
+---
+
