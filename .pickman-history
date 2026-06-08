@@ -84075,3 +84075,41 @@ There is no actionable code fix for either failure from within U-Boot source. Th
 
 ---
 
+### Review: 2026-06-08
+
+Branch: cherry-3dd149ba17c
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already up to date with ci/master — no rebase is needed. Let me verify the build still passes.
+
+Build passes. Since no rebase work was required (branch already on top of current ci/master), no new branch needs to be created and no force-push is needed.
+
+## Report
+
+**Action taken:** None — no rebase needed and no push made.
+
+**Findings:**
+
+- Branch `cherry-3dd149ba17c` was checked out and `git fetch ci master` was run to pick up the latest target branch.
+- `git merge-base cherry-3dd149ba17c ci/master` resolves to `eb2386d8ec4`, which is *exactly* the current tip of `ci/master`. The branch is already directly stacked on top of the latest `ci/master`.
+- `git rebase --keep-empty ci/master` reported: *"Current branch cherry-3dd149ba17c is up to date."*
+- Sandbox build verified clean via `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings/errors.
+
+**Branch commits (unchanged):**
+1. `c180b487f5e` — lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP
+2. `ddc7efa60f8` — smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag
+3. `fb3c631d1a4` — Prepare v2026.07-rc4
+4. `6a67a89436f` — pickman: Record cherry-pick (tracking)
+5. `fb7cf197a2e` — pickman: Record review handling (tracking)
+
+No `-v2` local branch was created and no force-push was performed because there is no change to publish: the branch is already current with `ci/master`. Force-pushing the same content would only trigger a new pipeline without any code change.
+
+**Suggested reply to post on the MR:**
+
+> Re-checked the branch against current `ci/master`: the merge-base is already `eb2386d8ec4`, which is the tip of `ci/master`. `git rebase --keep-empty ci/master` reports the branch is up to date — no rebase is needed. Sandbox build still passes cleanly via `buildman`. If the MR is showing "behind target" in the UI, it is likely a transient indexing lag rather than an actual divergence; please retry the pipeline rather than expecting a forced update from this end.
+
+---
+
