@@ -84036,3 +84036,42 @@ The branch is ready for pushing.
 
 ---
 
+### Review: 2026-06-08
+
+Branch: cherry-3dd149ba17c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play.
+
+Both failures are infrastructure / lab ...
+
+### Conversation log
+I've reviewed the situation. The "review comment" to address is the previous pipeline-fix-attempt-1 bot's own diagnostic comment, which concluded the edison and play job failures were lab infrastructure issues — not code defects — and recommended no code changes.
+
+Let me verify the current branch state matches the previous analysis and confirm nothing has changed that would warrant a different conclusion.
+
+## Report
+
+**Action taken:** None — no code changes warranted, no branch pushed.
+
+**Analysis confirmed:**
+
+The "review comment" to address is the previous pipeline-fix bot's own diagnostic post, which concluded the `edison` and `play` job failures were lab/hardware infrastructure issues unrelated to the cherry-picked commits. I re-verified this on branch `cherry-3dd149ba17c`:
+
+The three commits in this MR touch only:
+- `Makefile` + `doc/develop/release_cycle.rst` — version bump to 2026.07-rc4
+- `lib/Kconfig` + `lib/lmb.c` — rename of `LMB_LIMIT_DMA_BELOW_4G` → `LMB_LIMIT_DMA_BELOW_RAM_TOP`
+- `lib/smbios.c` — one-line sysinfo ID fix for Type 3 enclosure asset tag
+
+None of these files affect:
+- The Edison (Intel Atom) xfstk BootROM USB download path that failed at the "Intel SoC Device Detection" stage — the BootROM never even saw the board over USB across 21 detection attempts, so nothing from this MR could be the cause.
+- The am62x_beagleplay boot/console initialisation — U-Boot was flashed but labgrid timed out waiting for the login prompt; the harness itself labelled it "Lab failure".
+
+There is no actionable code fix for either failure from within U-Boot source. The previous diagnosis stands, and creating a `-v2` branch with no real change would just churn the pipeline.
+
+**Suggested reply to post on the MR:**
+
+> Re-checked the branch after the pipeline-fix-attempt-1 diagnosis. Confirmed: the three commits in this series (LMB rename, SMBIOS Type 3 asset-tag ID fix, version bump to 2026.07-rc4) touch only `Makefile`, `doc/develop/release_cycle.rst`, `lib/Kconfig`, `lib/lmb.c`, and `lib/smbios.c`. None of these affect the Edison xfstk USB BootROM path or the am62x_beagleplay boot/console — the failed jobs were lab/hardware infrastructure issues (USB device not detected on Edison, labgrid serial-console timeout on BeaglePlay), both flagged by the lab harness itself as "Lab failure / Marking connection bad". No code fix is appropriate; please retry the lab. If `edison` and `play` fail again with the same symptoms, the hardware/cabling/power needs attention rather than the patches.
+
+---
+
