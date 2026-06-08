@@ -83998,3 +83998,41 @@ All other pickman commits applied cleanly.
 
 ---
 
+## 2026-06-08: us/master
+
+Branch: cherry-3dd149ba17c
+
+Commits:
+- 3dd149ba17c lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP
+- 6d7171bcfe2 smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag
+- 1296a428c67 Prepare v2026.07-rc4
+
+### Conversation log
+Deltas match exactly. Building...
+
+The conflict is in Makefile version: ci/master is at 2026.04 (no extra), while the commit wants to set 2026.07-rc4. I'll resolve by taking the incoming version (the commit's intent).
+
+Now I'll amend with a note about the fix-up:
+
+All 3 cherry-picks complete. Final status report:
+
+## Summary
+
+**Branch:** `cherry-3dd149ba17c` (based on `ci/master`)
+
+**Cherry-picked commits:**
+1. `c180b487f5e` — lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP — clean, delta matches original
+2. `ddc7efa60f8` — smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag — clean, delta matches original
+3. `fb3c631d1a4` — Prepare v2026.07-rc4 — **conflict resolved** in Makefile
+
+**Build result:** ✅ OK — sandbox builds successfully after each cherry-pick and at the end (1 board built, no warnings/errors).
+
+**Fix-ups made:**
+- `Prepare v2026.07-rc4`: Makefile conflict where ci/master was at `PATCHLEVEL = 04, EXTRAVERSION =` and the incoming commit only bumped `-rc3` → `-rc4` (expecting `PATCHLEVEL = 07`). Resolved by also updating `PATCHLEVEL` from 04 to 07 so the resulting version is the intended `2026.07-rc4`. Commit message amended with a one-line note documenting the conflict resolution.
+
+**Concerning deltas:** Only the Makefile fix-up commit (`fb3c631d1a4`) shows a slightly larger Makefile delta (2 lines vs 1) — fully explained by the documented conflict resolution. The `release_cycle.rst` change is identical to the original. No other concerns.
+
+The branch is ready for pushing.
+
+---
+
