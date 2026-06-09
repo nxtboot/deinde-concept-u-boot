@@ -145,19 +145,19 @@ config TPL_LDSCRIPT
 	default "arch/arm/mach-rockchip/u-boot-tpl-v8.lds"
 
 config TPL_STACK
-        default 0xff8eff00
+	default 0xff8eff00
 
 config TPL_TEXT_BASE
-        default 0xff8c2000
+	default 0xff8c2000
 
 config VPL_LDSCRIPT
 	default "arch/arm/mach-rockchip/u-boot-vpl-v8.lds"
 
 config VPL_STACK
-        default 0xff8eff00
+	default 0xff8eff00
 
 config VPL_TEXT_BASE
-        default 0xff8c2000
+	default 0xff8c2000
 
 if BOOTCOUNT_LIMIT
 
