@@ -84195,3 +84195,50 @@ Force-push succeeded. The remote MR source branch now correctly points at the ch
 
 ---
 
+### Review: 2026-06-11
+
+Branch: cherry-3dd149ba17c
+
+Comments addressed:
+
+
+### Conversation log
+Clean rebase, no conflicts. Now compare deltas:
+
+All 8 commits rebased with identical deltas, now on top of `babfeeaca70`. Building:
+
+Build passes. Creating the `-v2` local branch and force-pushing to update the MR:
+
+Force-push succeeded: `a4ebd470ce3 → df63d8ea934`. The rebase is complete.
+
+## Report
+
+**Action taken:** Rebased `cherry-3dd149ba17c` onto the latest `ci/master` and force-pushed to update MR !1121.
+
+### Details
+
+- `ci/master` had advanced from `eb2386d8ec4` to `babfeeaca70` (Zybo merge: sjg-lab CI job + zynq device-tree alignment), leaving the MR behind the target.
+- `git rebase --keep-empty ci/master` completed **cleanly with no conflicts** — all 8 commits replayed.
+- **Delta verification:** compared `git show --stat` output for every commit before and after the rebase — byte-for-byte identical (verified with diff: "DELTAS IDENTICAL").
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — ✅ 1 board built, no warnings/errors.
+- Created local branch `cherry-3dd149ba17c-v2`.
+- Force-pushed via `./tools/pickman/pickman push-branch cherry-3dd149ba17c -r ci -f`: remote moved `a4ebd470ce3 → df63d8ea934`. GitLab will trigger a new MR pipeline automatically.
+
+### Branch commits after rebase (top to bottom)
+
+1. `df63d8ea934` — pickman: Record review handling (tracking)
+2. `452893ebfd8` — pickman: Record review handling (tracking)
+3. `80b03f465c3` — pickman: Record review handling (tracking)
+4. `259ddb03be5` — pickman: Record review handling (tracking)
+5. `b23055de6eb` — pickman: Record cherry-pick of 3 commits from us/master
+6. `495da210060` — Prepare v2026.07-rc4
+7. `b1ad13a53b6` — smbios: Fix wrong sysinfo ID for Type 3 enclosure asset tag
+8. `f4272698a02` — lmb: Rename LMB_LIMIT_DMA_BELOW_4G to LMB_LIMIT_DMA_BELOW_RAM_TOP
+9. `babfeeaca70` — Merge branch 'zybo' into 'master' (tip of ci/master)
+
+### Suggested reply to post on the MR
+
+> Rebased onto the current `ci/master` tip `babfeeaca70` using `git rebase --keep-empty ci/master`. The rebase was clean with no conflicts, and every commit's delta is identical before and after (verified with 'git show --stat'). Sandbox build passes via buildman with no warnings or errors. Force-pushed `a4ebd470ce3 → df63d8ea934`; a fresh pipeline should now run against the updated base.
+
+---
+
