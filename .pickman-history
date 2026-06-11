@@ -83478,6 +83478,50 @@ All 7 commits present. Run final build:
 
 **Concerning deltas:** None. All non-merge commits produced identical stats to their originals. The merge commit was empty as expected (its constituent NVMe fixes had already been individually cherry-picked).
 
+---
+
+## 2026-06-07: us/master
+
+Branch: cherry-37c6f531daf
+
+Commits:
+- 37c6f531daf board: toradex: verdin-imx95: fix ram size check calculated addresses
+- 8377214282d imx: kontron-sl-mx6ul: Enable CONFIG_DM_MDIO to fix boot abort
+- cdb9e79056d cpu: imx8_cpu: Fix CPU segment information print
+- 822a98588d1 binman: imx8mimage: Handle nxp,boot-from = "fspi"
+- c3680dcf9a7 arm64: dts: imx8mm: Generate FSPI header using binman imx8mimage
+- b9fc16e72dd arm64: dts: imx8mn: Generate FSPI header using binman imx8mimage
+- 0fba623e4fd tools: imx8image: Fix FSPI alignment to 4 kiB
+- 75daa277941 Merge tag 'u-boot-imx-master-20260604' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx
+
+### Conversation log
+All 8 commits are present. Now run the final build verification.
+
+Build passed. Update todos and report.
+
+## Cherry-pick Summary
+
+All 8 commits successfully cherry-picked to branch `cherry-37c6f531daf` based on `ci/master`:
+
+| # | New Hash | Subject |
+|---|---|---|
+| 1 | 58999b40cad | board: toradex: verdin-imx95: fix ram size check calculated addresses |
+| 2 | 86770430987 | imx: kontron-sl-mx6ul: Enable CONFIG_DM_MDIO to fix boot abort |
+| 3 | ea4e52ca4bd | cpu: imx8_cpu: Fix CPU segment information print |
+| 4 | b7bffc349f2 | binman: imx8mimage: Handle nxp,boot-from = "fspi" |
+| 5 | 6e104e22d12 | arm64: dts: imx8mm: Generate FSPI header using binman imx8mimage |
+| 6 | 7d18ec300ee | arm64: dts: imx8mn: Generate FSPI header using binman imx8mimage |
+| 7 | e64bea7f16e | tools: imx8image: Fix FSPI alignment to 4 kiB |
+| 8 | 79d677995a7 | Merge tag 'u-boot-imx-master-20260604' (empty, merge commit preserved) |
+
+**Build result:** OK — `buildman -L --board sandbox` completed successfully (1/1 built, no warnings/errors).
+
+**Deltas:** All 7 regular cherry-picks had identical file/line counts to their originals. Several had trivial auto-merges (drivers/cpu/imx8_cpu.c, tools/binman/ftest.py, arch/arm/dts/imx8mm-u-boot.dtsi, tools/imx8image.c) but produced matching diffs.
+
+**Fix-ups:** None. The merge commit (75daa277941) was applied with `--allow-empty` as expected since all its content was already brought in by the preceding 7 cherry-picks.
+
+**Concerning deltas:** None.
+
 The branch is ready for pushing.
 
 ---
@@ -83523,6 +83567,434 @@ Successfully rebased and pushed.
 **Suggested MR reply:**
 
 > Rebased onto latest `ci/master`. No conflicts; all 8 commits applied cleanly with identical deltas to the pre-rebase versions. The empty merge commit was preserved with `--keep-empty`. Sandbox build passes.
+
+### Pipeline fix: 2026-06-07 (attempt 1)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All 37 failing jobs share the same root cause, and it is an infrastructure/lab failure — not a code issue introduced by this MR.
+
+## Root cause analysis
+
+Every job (rpi3, edison, kevin, efi-aarch64, qemu-x86_64, minnowmax, etc.) fails within ~1 second of starting `test/py/test.py`, all on the same runner `ellesmere-lab`, within a 35-second window (10:33:57 — 10:34:32):
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin` (added to PATH at the top of the job script); it is not part of the U-Boot tree. It exits 2 (1 for `efi-aarch64`, which then carries a `buildman exited with 255` from `scripts/build-efi`) with empty stdout and stderr — i.e. the lab harness aborts before any U-Boot build or test can run. The `efi-aarch64` variant simply produces a slightly fuller traceback because its `--configure` step shells out to `scripts/build-efi`, which also returns failure with no diagnostic.
+
+## Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch:
+
+| File | Boards affected |
+|---|---|
+| `arch/arm/dts/imx8mm-u-boot.dtsi`, `imx8mn-u-boot.dtsi` | i.MX8MM/MN |
+| `board/toradex/verdin-imx95/*` | verdin-imx95 |
+| `configs/kontron-sl-mx6ul_defconfig` | kontron-sl-mx6ul |
+| `drivers/cpu/imx8_cpu.c` | i.MX8 |
+| `tools/binman/etype/imx8mimage.py`, `tools/binman/ftest.py` | binman tests |
+| `tools/imx8image.c` | i.MX8 image tool |
+
+None of the failing lab targets (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) are i.MX8MM/MN/MX95 boards nor do they use binman's `imx8mimage` etype. The `u-boot-test-getrole --configure` failure is also platform-independent — it fails identically across 37 unrelated boards, before any U-Boot source is compiled.
+
+## Decision
+
+Per the instructions ("If the failure is an infrastructure or transient issue ... report this without making changes"), **no code change is required**. The lab harness (`u-boot-test-getrole`) was broken when this pipeline ran. The MR should be re-run on the lab once the harness is healthy.
+
+No branch `cherry-37c6f531daf-fix1` was created since there is nothing to commit.
+
+---
+
+### Review: 2026-06-07
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, efi-aarch64, pla...
+
+### Conversation log
+Looking at the "review comment" carefully, I can see that it is actually a verbatim copy of my own previous pipeline-fix-attempt-1 analysis (the bot has echoed it back as a review comment). The comment's content is the conclusion that **no code change was required because the failure was infrastructure (lab harness `u-boot-test-getrole` on `ellesmere-lab`)**.
+
+Let me verify nothing has changed in the codebase or in the pipeline situation since then.
+
+I will not create a `-v2` branch or force push, because there is nothing actionable in the comment — it is itself a recap of the prior infrastructure-failure analysis, and it explicitly concludes "no code change is required." Pushing an identical branch would not change anything.
+
+## Report
+
+**Comment analyzed:** The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is a verbatim copy of pipeline fix attempt 1's own analysis. It documents an infrastructure failure on the `ellesmere-lab` runner where `u-boot-test-getrole --configure` exits with code 2 within ~1 second across all 37 jobs (10:33:57 – 10:34:32 window), before any U-Boot source is built or tested.
+
+**Actionability:** None. The comment's own conclusion is "no code change is required." There is no review feedback requesting a change.
+
+**Verification:**
+- Branch `cherry-37c6f531daf` is unchanged since attempt 1 (HEAD: `3f73b07ea45`).
+- The 8 cherry-picked commits only touch i.MX8MM/MN/MX95-specific files and binman's `imx8mimage` etype. None of the 37 failing lab targets (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) are affected by these files.
+- `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree, so the cherry-picks could not affect it.
+
+**Action taken:** None. No code edits, no new branch, no push. Skipping `buildman` since no code changed; the previous attempt's build (1/1 built, no warnings/errors) still represents the state of this branch.
+
+**Suggested reply to post on the MR:**
+
+> Acknowledged — this comment restates the pipeline fix attempt 1 analysis and reaches the same conclusion: the failure is in the lab harness (`u-boot-test-getrole --configure` exiting 2 on `ellesmere-lab` within ~1s, across 37 unrelated boards, before any U-Boot source is built). None of the 8 cherry-picked commits touch lab infrastructure or any of the failing boards' files — they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, and `tools/imx8image.c`.
+>
+> No code change is appropriate. Please re-run the pipeline once the lab harness on `ellesmere-lab` is healthy.
+
+---
+
+### Pipeline fix: 2026-06-07 (attempt 2)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+This is identical to attempt 1: an infrastructure failure on `ellesmere-lab`. Let me sample a few more logs to confirm the pattern is uniform across all 37 jobs.
+
+All 37 jobs share an identical infrastructure failure — no code change is appropriate.
+
+## Diagnosis
+
+Every one of the 37 failing jobs (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) ran on the same runner — `ellesmere-lab VKe9dm-Af` — within a ~50-second window (11:32:04 – 11:33:04 UTC) and all failed within seconds of starting `test/py/test.py` with the identical traceback:
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+(`efi-aarch64` reports `Error 1` instead of `Error 2` because its `--configure` step shells out to `scripts/build-efi`, which then reports `buildman exited with 255: ` with no diagnostic. The proximate cause is still the same harness failure.)
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin` (added to PATH at the top of the job script). It is not in the U-Boot tree. It exits non-zero with empty stdout/stderr, before any U-Boot source is compiled or any test runs.
+
+## Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch i.MX8MM / i.MX8MN / i.MX8MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `configs/kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the 37 failing lab targets are i.MX8MM/MN/MX95 boards, and the `u-boot-test-getrole --configure` failure is platform-independent — it fails identically on rpi3 and on qemu-x86_64 and on every board in between, with no U-Boot binary even being built first.
+
+This is the **exact same failure mode** as attempt 1, just on a fresh pipeline run. The `ellesmere-lab` harness is still broken.
+
+## Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), **no code change is required and no fix branch `cherry-37c6f531daf-fix2` was created**. There is nothing to commit. The MR should be re-run on the lab once `u-boot-test-getrole` on `ellesmere-lab` is healthy.
+
+**Suggested reply to post on the MR:**
+
+> Pipeline attempt 2 fails identically to attempt 1: all 37 jobs ran on `ellesmere-lab` runner `VKe9dm-Af` in a ~50-second window and aborted with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source was built. `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree; the harness is still broken. None of the 8 cherry-picked commits touch lab infrastructure or any of the failing boards' files (they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`). Please re-run once the lab harness on `ellesmere-lab` is healthy.
+
+---
+
+### Review: 2026-06-07
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, efi-aarch64, pla...
+
+### Conversation log
+## Report
+
+**Comment analyzed:** The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is, once again, a verbatim copy of my own previous analysis — this time of pipeline fix attempt 2. It documents the same infrastructure failure on the `ellesmere-lab` runner (`VKe9dm-Af`), where `u-boot-test-getrole --configure` exits non-zero across all 37 jobs within a ~50-second window, before any U-Boot source is compiled. Its own conclusion is "no code change is appropriate."
+
+**Actionability:** None. The comment is itself a recap of the previous attempt's infrastructure diagnosis. There is no review feedback in it that requests a code change.
+
+**Verification:**
+- Branch `cherry-37c6f531daf` is unchanged since attempt 2 (HEAD: `b71f21c93d0`, with prior tip `3f73b07ea45` matching the documented state).
+- The 8 cherry-picked commits only touch i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the 37 failing lab targets (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) are affected by these files.
+- `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree, so the cherry-picks cannot affect it.
+
+**Action taken:** None. No code edits, no new `-v3` branch, no push. Skipping `buildman` since no code changed; the previous attempt's build (1/1 built, no warnings/errors) still represents the state of this branch. Force-pushing an identical branch would only re-trigger the same lab failure.
+
+**Suggested reply to post on the MR:**
+
+> Pipeline attempt 2's failure is identical to attempt 1 and the comment above is itself a restatement of that analysis. All 37 jobs ran on `ellesmere-lab` runner `VKe9dm-Af` and aborted within ~50 seconds with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source was built. `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree.
+>
+> None of the 8 cherry-picked commits touch lab infrastructure or any of the failing boards' files — they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. Re-pushing an unchanged branch would only retrigger the same harness failure.
+>
+> Please re-run the pipeline once the lab harness on `ellesmere-lab` is healthy. No code change is appropriate.
+
+---
+
+### Pipeline fix: 2026-06-07 (attempt 3)
+
+Branch: cherry-37c6f531daf
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rpi5 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+## Report
+
+**Result:** No code change required — all failures are infrastructure issues. **No `cherry-37c6f531daf-fix3` branch was created** (nothing to commit), matching the disposition of attempts 1 and 2.
+
+### Root cause: two distinct infrastructure failures, neither from this MR
+
+**1. All 37 sjg-lab / sjg-lab-slow jobs** (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64):
+
+Identical signature to attempts 1 and 2. Every job ran on the same runner — `ellesmere-lab VKe9dm-Af`, system `s_1ddb537fdd93` — within a ~15-second window (13:12:40 – 13:13:22 UTC on 2026-06-07) and aborted at pytest setup time with:
+
+```
+File "test/py/conftest.py", line 196, in get_details
+  raise ValueError(f"Error {proc.returncode} running {cmd}: ...")
+ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''
+```
+
+(`efi-aarch64` carries `Error 1` because its `--configure` shells out to `scripts/build-efi`, which then returns `buildman exited with 255` with no diagnostic. Same proximate cause.)
+
+`u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree. It exits non-zero with empty stdout/stderr before any U-Boot source is compiled or any test runs.
+
+**2. `Check make check` (526440) and `Check make qcheck` (526442)** — these are **new** failures not seen in attempts 1/2:
+
+Both jobs report `Tests passed!` ("Ran 602 tests… OK", "Ran 62 tests… OK", "Ran 54 tests… OK") and only then fail during artifact upload:
+
+```
+WARNING: Uploading artifacts as "archive" to coordinator... 504 Gateway Time-out
+WARNING: Uploading artifacts as "archive" to coordinator... 502 Bad Gateway
+FATAL: invalid argument
+ERROR: Job failed: exit code 1
+```
+
+This is a GitLab coordinator / artifact-store outage, not a U-Boot problem — the test suite itself succeeded.
+
+### Why this is not from the cherry-picks
+
+The 8 cherry-picked commits only touch i.MX8MM / i.MX8MN / i.MX8MX95 device trees, `drivers/cpu/imx8_cpu.c`, binman's `imx8mimage` etype + ftest, `configs/kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the failing lab targets are i.MX8MM/MN/MX95 boards, and none use the imx8mimage etype. The lab harness binary `u-boot-test-getrole` and GitLab's artifact coordinator are both outside the U-Boot tree, so the cherry-picks cannot affect them. The make check/qcheck jobs' test suites passed — only the upload failed.
+
+### Action taken
+
+Per the instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), **no code edits**, **no `cherry-37c6f531daf-fix3` branch**, **no buildman run** (no code changed; the previous attempt's `buildman -L --board sandbox` result of 1/1 built with no warnings/errors still represents the state of this branch).
+
+### Suggested reply for the MR
+
+> Pipeline attempt 3 fails the same way as attempts 1 and 2 plus a new GitLab artifact-upload outage:
+>
+> - All 37 lab jobs ran on `ellesmere-lab VKe9dm-Af` in a ~15s window (13:12:40 – 13:13:22 UTC) and aborted with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source was built. `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree.
+> - `Check make check` and `Check make qcheck` both **passed** their test suites (`Tests passed!`, `OK`) and only failed in `upload_artifacts_on_success` with GitLab returning 502 Bad Gateway / 504 Gateway Time-out — a coordinator/storage outage, not a code issue.
+>
+> None of the 8 cherry-picked commits touch lab infrastructure, the GitLab artifact store, or any of the failing boards' files (they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`). Re-pushing an unchanged branch would only retrigger the same failures.
+>
+> Please re-run the pipeline once the `ellesmere-lab` harness and the GitLab artifact uploader are healthy. No code change is appropriate.
+
+---
+
+### Review: 2026-06-07
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, efi-aarch64, pla...
+
+### Conversation log
+## Report
+
+**Comment analyzed:** The review comment from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` is, for the third time in succession, a verbatim copy of my own previous analysis — this time of pipeline fix attempt 3. It documents two infrastructure failures (the `ellesmere-lab` runner's `u-boot-test-getrole --configure` exiting non-zero across all 37 lab jobs, and `Check make check` / `Check make qcheck` passing their test suites but failing at artifact upload with GitLab 502/504 errors) and its own conclusion is "no code change required."
+
+**Actionability:** None. The comment is itself a recap of the previous attempt's diagnosis and explicitly concludes no code change is appropriate. There is no review feedback in it requesting a code modification.
+
+**Verification:**
+- Branch `cherry-37c6f531daf` is unchanged in its 8 cherry-picked commits. HEAD is `179bad75580` (a pickman record-keeping commit), with the cherry-picked content ending at `79d677995a7` (the merge commit) and `a795a6b1def` (the pickman record of the original cherry-pick).
+- The 8 cherry-picked commits only touch i.MX8MM/MN/MX95 device trees, `drivers/cpu/imx8_cpu.c`, binman's `imx8mimage` etype + ftest, `configs/kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`. None of the 37 failing lab targets (rpi*, bbb, kevin, bob, jerry, edison, link, minnowmax, nyan-big, snow, tk1, rock*, rockpro64, pine64, ff3399, coral, pcduino3*, opi_pc*, bpi, play, vbe, vf2, colibrimx8, nanopi-m5, efi-*, qemu-x86_64) are affected by these files.
+- `u-boot-test-getrole` is the lab-management binary in `~/bin`, not part of the U-Boot tree.
+- The GitLab artifact coordinator (502/504 on `Check make check` / `Check make qcheck`) is outside the repository entirely.
+
+**Action taken:** None. No code edits, no new `-v4` branch, no `buildman` run (no code changed; the previous attempt's `buildman -L --board sandbox` result of 1/1 built with no warnings/errors still represents the state of this branch), no force push. Re-pushing an identical branch would only re-trigger the same lab harness and artifact-upload failures.
+
+**Suggested reply to post on the MR:**
+
+> This comment restates pipeline fix attempt 3's own analysis. Nothing has changed: all 37 lab jobs still fail on `ellesmere-lab VKe9dm-Af` with `ValueError: Error 2 running ['u-boot-test-getrole', '<role>', '--configure']: 'None ''` before any U-Boot source is built, and `Check make check` / `Check make qcheck` still pass their test suites (`Tests passed!`, `OK`) and only fail in `upload_artifacts_on_success` with GitLab returning 502/504.
+>
+> Both failure modes are outside the U-Boot tree — `u-boot-test-getrole` is in `~/bin` and the artifact coordinator is GitLab's. None of the 8 cherry-picked commits touch lab infrastructure or any of the failing boards' files (they only affect i.MX8MM/MN/MX95 device trees, the `imx8_cpu` driver, binman's `imx8mimage` etype, `kontron-sl-mx6ul_defconfig`, and `tools/imx8image.c`). Re-pushing an unchanged branch would only retrigger the same infrastructure failures.
+>
+> Please re-run the pipeline once the `ellesmere-lab` harness and GitLab's artifact uploader are healthy. No code change is appropriate.
+
+---
+
+### Review: 2026-06-07
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match. Now build:
+
+Build passes. Now create v2 branch and push:
+
+## Report
+
+**Rebase:** Successfully rebased `cherry-37c6f531daf` onto `ci/master` (HEAD `c4bb5c06700`). Only 2 commits were ahead on `ci/master` (`072a724dbe6 test/py: Report u-boot-test-getrole errors on failure` and `c4bb5c06700 Merge branch 'ci-fixa'`).
+
+**Conflicts:** None — clean rebase of all 15 commits (8 cherry-picks + merge + 6 pickman record-keeping).
+
+**Delta verification:** All 15 rebased commits have identical `git show --stat` summaries to their pre-rebase counterparts.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built successfully (no warnings/errors).
+
+**Push:** Force-pushed to remote `cherry-37c6f531daf` (`443aa94fd9a → f086965e975`). Local branch `cherry-37c6f531daf-v2` created for tracking.
+
+**Notable:** The `ci-fixa` merge brought in `test/py: Report u-boot-test-getrole errors on failure` — this is directly relevant to the lab-harness infrastructure failures this MR has been hitting across 3 pipeline attempts. The new commit should produce diagnostic output if `u-boot-test-getrole` fails again, which may help unblock this MR.
+
+### Suggested reply for the MR
+
+> Rebased onto latest `ci/master` (`c4bb5c06700`) which now includes `072a724dbe6 test/py: Report u-boot-test-getrole errors on failure`. Clean rebase, no conflicts, all 15 commits keep identical file/line deltas to their pre-rebase versions. `buildman -L --board sandbox` passes (1/1, no warnings).
+>
+> Notably, the new `test/py` commit on `ci/master` should surface the underlying `u-boot-test-getrole` diagnostic from the previous 3 pipeline failures, which were all infrastructure issues on `ellesmere-lab` rather than anything in the cherry-picked code. Re-running the pipeline now should either pass or give us actionable detail.
+
+---
+
+### Review: 2026-06-08
+
+Branch: cherry-37c6f531daf
+
+Comments addressed:
+
+
+### Conversation log
+Rebase complete. Now verify deltas and build.
+
+Stats on the 8 substantive code commits are all identical. The 2-line difference on the two pickman-history commits is expected from conflict-marker resolution (each had 2 fewer lines after removing duplicate `===`/`>>>` markers and adjusting blank-line spacing). Now build:
+
+Build passes (1/1, no warnings/errors). Now create v2 branch and push:
+
+Push succeeded — MR !1118 updated (`f086965e975 → 46b5be2a36f`).
+
+## Report
+
+**Rebase:** Rebased `cherry-37c6f531daf` onto latest `ci/master` (`eb2386d8ec4`). 16 commits replayed (8 cherry-picks + 8 pickman record-keeping).
+
+**Conflicts:** Two conflicts in `.pickman-history`, both because the file had been independently appended on both branches with new dated sections:
+
+1. Commit `1cebabeaf70` (pickman: Record cherry-pick of 8 commits) — HEAD had the `cherry-29c40bb2a13` cherry-pick log under `## 2026-06-07: us/master`, theirs had the `cherry-37c6f531daf` log under the same header. Resolved by keeping both entries.
+2. Commit `452e428e945` (pickman: Record pipeline fix attempt 1) — HEAD had the `cherry-29c40bb2a13` review/rebase summary, theirs had the `cherry-37c6f531daf` pipeline-fix attempt-1 analysis. Resolved by keeping both.
+
+All other pickman commits applied cleanly.
+
+**Delta verification:** All 8 substantive code commits (verdin-imx95, kontron-sl-mx6ul, imx8_cpu, binman imx8mimage, imx8mm/mn DTS, imx8image, plus the empty merge) have identical file/line stats to their pre-rebase counterparts. The two pickman commits that had conflicts show 2-line differences (44 vs 46, 79 vs 81) — purely from removing the duplicated conflict-marker lines during resolution, not from any content change.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, no warnings/errors.
+
+**Push:** Force-pushed to `cherry-37c6f531daf` on `ci` (`f086965e975 → 46b5be2a36f`). Local tracking branch `cherry-37c6f531daf-v3` created (v2 already existed from a previous rebase).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`eb2386d8ec4`). Conflicts were only in `.pickman-history` (two append-style conflicts where the file had been extended independently on both branches with new dated sections); resolved by keeping both entries. All 8 code-bearing commits have identical file/line deltas to their pre-rebase versions. `buildman -L --board sandbox` passes (1/1, no warnings/errors).
 
 ---
 
