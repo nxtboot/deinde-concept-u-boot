@@ -84277,3 +84277,51 @@ The branch `cherry-a05adbb9b30` is left checked out and ready for pushing; it ha
 
 ---
 
+## 2026-06-11: us/master
+
+Branch: cherry-e126a99992a
+
+Commits:
+- e126a99992a arm: dts: k3-j7200: ddr: Update to v0.12.0 of DDR config tool
+- 9627d70840a arm: dts: k3-j721s2: ddr: Update to v0.12.0 of DDR config tool
+- 16868179598 arm: dts: k3-am68: ddr: Update to v0.12.0 of DDR config tool
+- c70fd4e5a29 arm: dts: k3-j784s4: ddr: Update to v0.12.0 of DDR config tool
+- fe22382b645 arm: dts: k3-am69: ddr: Update to v0.12.0 of DDR config tool
+- 54fb646ca42 arm: dts: k3-j742s2: ddr: Update to v0.12.0 of DDR config tool
+- 11dc7c06089 doc: ti: k3: Add section for DDR configuration
+- cf81e36fa0c Merge patch series "ti: j7: Update to v0.12.0 of DDR config tool"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+The merge commit is empty as expected; committing it to preserve the message:
+
+All 8 commits are present. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete: branch `cherry-e126a99992a`
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and on the final verification (no warnings or errors).
+
+**Commits applied (8/8):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| c174c65aba4 | e126a99992a | arm: dts: k3-j7200: ddr: Update to v0.12.0 of DDR config tool |
+| b25b1136d0f | 9627d70840a | arm: dts: k3-j721s2: ddr: Update to v0.12.0 of DDR config tool |
+| 9a4644245ae | 16868179598 | arm: dts: k3-am68: ddr: Update to v0.12.0 of DDR config tool |
+| 84bb0859cd9 | c70fd4e5a29 | arm: dts: k3-j784s4: ddr: Update to v0.12.0 of DDR config tool |
+| f44e607e8ff | fe22382b645 | arm: dts: k3-am69: ddr: Update to v0.12.0 of DDR config tool |
+| de4160b28ce | 54fb646ca42 | arm: dts: k3-j742s2: ddr: Update to v0.12.0 of DDR config tool |
+| 3d618c7bd2e | 11dc7c06089 | doc: ti: k3: Add section for DDR configuration |
+| 4c0acffd4e7 | cf81e36fa0c | Merge patch series "ti: j7: Update to v0.12.0 of DDR config tool" (empty, preserved with --allow-empty) |
+
+**Fix-ups:** None — no conflicts required manual resolution. Two commits needed only automatic merging (j7200 dts and k3.rst), which git handled cleanly.
+
+**Delta check:** Every cherry-picked commit's diffstat matched the original exactly (same files, same insertion/deletion counts). No concerning deltas.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
