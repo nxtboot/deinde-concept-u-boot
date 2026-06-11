@@ -84242,3 +84242,38 @@ Force-push succeeded: `a4ebd470ce3 → df63d8ea934`. The rebase is complete.
 
 ---
 
+## 2026-06-11: us/master
+
+Branch: cherry-a05adbb9b30
+
+Commits:
+- a05adbb9b30 mailbox: mpfs-mbox: fix MMIO mapping calculation
+- 1173e02c988 mailbox: mpfs-mbox: fix Driver Model private data handling
+- 763435d0e31 mailbox: mpfs-mbox: fix driver bug and cleanup
+- 6c128738240 mailbox: mpfs-mbox: support new syscon based devicetree configuration
+- 1a8b7ad50ae Merge patch series "mailbox: mpfs-mbox: fixes and syscon support"
+
+### Conversation log
+All 5 commits cherry-picked successfully onto `cherry-a05adbb9b30` (based on ci/master).
+
+## Final status
+
+**Commits** (verified with `git log --oneline -n 7`):
+| New hash | Original | Subject |
+|---|---|---|
+| dc820ab2ca5 | a05adbb9b30 | mailbox: mpfs-mbox: fix MMIO mapping calculation |
+| 1649b72d0fa | 1173e02c988 | mailbox: mpfs-mbox: fix Driver Model private data handling |
+| 4b825cb2f1f | 763435d0e31 | mailbox: mpfs-mbox: fix driver bug and cleanup |
+| 6d26df2ace9 | 6c128738240 | mailbox: mpfs-mbox: support new syscon based devicetree configuration |
+| 1b84506e2d2 | 1a8b7ad50ae | Merge patch series "mailbox: mpfs-mbox: fixes and syscon support" |
+
+**Build result**: ok — sandbox built cleanly after every commit and at the end (no warnings or errors).
+
+**Deltas**: All four regular commits matched their originals exactly (same files, same line counts). The merge commit was picked with `-m 1` and became empty as expected; it was committed with `--allow-empty` and retains the full series description plus the "(cherry picked from commit 1a8b7ad...)" line.
+
+**Fix-ups**: None needed — no conflicts, no manual changes.
+
+The branch `cherry-a05adbb9b30` is left checked out and ready for pushing; it has not been merged anywhere.
+
+---
+
