@@ -84325,3 +84325,36 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-06-11 (attempt 1)
+
+Branch: cherry-e126a99992a
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+
+### Conversation log
+## Report: infrastructure/transient failure — no fix needed
+
+**Diagnosis:**
+
+The branch `cherry-e126a99992a` contains only TI K3 DDR device-tree updates and documentation:
+- `arch/arm/dts/k3-*` (j7200, j721s2, am68, j784s4, am69, j742s2 DDR config dtsi files)
+- `doc/board/ti/k3.rst`
+- `.pickman-history`
+
+The three failed jobs are all QEMU EFI lab tests on boards (`efi-x86_app64`, `efi-arm_app64`) that do **not** build any K3 device trees, so there is no code-path overlap whatsoever with the changes in this MR.
+
+**Failure modes (all classic lab flakes on the `ellesmere-lab` runner, within minutes of each other):**
+
+1. **efi-x86_64-uboot-iso** (528715): `Lab timeout: Marking connection bad` while bootstrapping QEMU via the qemu-efi-iso method — the test never even started; the lab connection timed out at ~3 minutes during flash/write.
+2. **efi-x86_64-uboot-iso-install** (528722): U-Boot booted fine (`lab ready in 3.0s`), the `boot` command was issued, then the console died with `OSError: [Errno 5] Input/output error` — the QEMU/console process went away mid-test.
+3. **efi-aarch64** (528719): 34 tests passed, then `test_distro_arm_app_efi` hit the same `OSError: [Errno 5] Input/output error` during `restart_uboot()` — again the console/QEMU side dropped.
+
+All three are runner-side console/QEMU failures (Errno 5 on `os.read()` of the console fd, plus one lab timeout), not build or code regressions. The DDR dtsi changes cannot influence these QEMU EFI roles.
+
+**Action taken:** None — per instructions, no changes are made for infrastructure/transient failures, so no `cherry-e126a99992a-fix1` branch was created. The branch is unchanged and the recommended action is simply to retry the failed jobs.
+
+---
+
