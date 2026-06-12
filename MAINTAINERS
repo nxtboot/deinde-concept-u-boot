@@ -215,6 +215,7 @@ R:	Aspeed BMC SW team <BMC-SW@aspeedtech.com>
 R:	Joel Stanley <joel@jms.id.au>
 S:	Maintained
 F:	arch/arm/dts/ast*
+F:	arch/riscv/include/asm/arch-ast2700/
 F:	drivers/i2c/ast_i2c.[ch]
 F:	drivers/net/ftgmac100.[ch]
 F:	drivers/watchdog/ast_wdt.c
