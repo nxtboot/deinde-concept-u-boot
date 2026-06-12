@@ -219,6 +219,7 @@ F:	drivers/net/ftgmac100.[ch]
 F:	drivers/watchdog/ast_wdt.c
 N:	aspeed
 N:	ast2500
+N:	ast2700
 
 ARM AXIADO AX3005 SCM3005
 M:	Siu Ming Tong <smtong@axiado.com>
