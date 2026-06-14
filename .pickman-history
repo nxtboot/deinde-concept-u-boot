@@ -84564,3 +84564,62 @@ Verified the only changed files: `doc/sphinx/requirements.txt`, `drivers/usb/hos
 
 ---
 
+### Pipeline fix: 2026-06-13 (attempt 3)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- bob (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+Both failures on this third pipeline attempt are infrastructure/lab issues, not code defects.
+
+## Diagnosis
+
+### Job: `rpi3` (529671) — Lab resource conflict (3rd time)
+```
+labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass.
+To work simultaneously, sglass can execute labgrid-client -p rpi3 allow ellesmere/gitlab-runner
+```
+Failed at `pytest_configure` → `u-boot-test-getrole rpi3 --configure`. The labgrid `rpi3` place is held by another concurrent session (the user `sglass`). **Identical** to attempt 1 (#529181) and attempt 2 (#529426). Nothing was built, nothing tested, no U-Boot code path involved.
+
+### Job: `bob` (529680) — Lab serial/boot timeout
+The harness ran `u-boot-test-flash chromebook_bob bob` → bootstrapped U-Boot from build dirs → wrote via `rockchip-em100`, then:
+```
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(...)
+pexpect.exceptions.TIMEOUT: Timeout of 30 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No U-Boot output reached labgrid within 30 s of em100 flashing. This is a `_await_prompt()` lab-driver timeout — board didn't power up, em100 didn't latch, serial dropped, or 30 s is just too short for bob to reach the prompt. The build itself succeeded (binaries were produced and written via em100).
+
+## Branch code involvement: none
+
+The five cherry-picked commits on `cherry-969a1dde3a0` touch only:
+- `doc/sphinx/requirements.txt` (urllib3 doc bump)
+- `tools/dtoc/test_fdt.py` (help-text escape)
+- `lib/efi_loader/efi_image_loader.c` (PE-COFF reloc validation)
+- `drivers/usb/host/usb-uclass.c` (typo fix)
+- efi merge (empty)
+
+None of these touch:
+- Rockchip / chromebook_bob / em100 / coreboot path (bob failure)
+- BCM2837 / rpi3 boot path (rpi3 failure)
+- labgrid configuration
+
+## Result
+
+**No code changes made; no `cherry-969a1dde3a0-fix3` branch created** (per the "report rather than modify" instruction for infrastructure failures).
+
+| Job | Root cause | Category |
+|---|---|---|
+| rpi3 (529671) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — same as attempts 1 & 2 | Lab resource conflict |
+| bob (529680) | `pexpect TIMEOUT` after 30 s waiting for U-Boot login prompt post-em100 flash; never reached any test | Lab serial/boot timeout |
+
+**Recommendation:** Retry the pipeline once the `rpi3` labgrid place is released (or run `labgrid-client -p rpi3 allow ellesmere/gitlab-runner`), and investigate why `chromebook_bob` didn't produce serial output within 30 s of the em100 write (power/serial/em100-latch issue, or bump the prompt timeout). The `rpi3` failure has now repeated across three consecutive pipeline runs with the same root cause, which strongly suggests a persistent lab-side issue rather than a transient flake.
+
+Branch left on `cherry-969a1dde3a0` (no `-fix3` branch was created since there is nothing to fix).
+
+---
+
