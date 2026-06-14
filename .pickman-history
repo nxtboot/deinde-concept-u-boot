@@ -84681,3 +84681,46 @@ The persistent pattern — most notably `rpi3` failing the *same way* across thr
 
 ---
 
+## 2026-06-14: us/master
+
+Branch: cherry-5e6f370c1e3
+
+Commits:
+- 5e6f370c1e3 regulator: qcom-rpmh-regulator: fix regulator mode mismatch
+- 1ab49f6a91e CI: Sage: Pin to labgrid 25.0.1
+- 8a4c199aa4b gpio: qcom_spmi_gpio: move PM8998 GPIO from legacy pmic driver
+- 688890d15cc board: qualcomm: phone: fix 'Dump bootargs'
+- 146963054be board: dragonboard410c: fix chainloaded.config
+- a50e32bae6a configs: qcs615/qcs9100: Enable watchdog autostart
+- c2019e01d06 dts: lemans-evk-u-boot: add override dtsi
+- 757a95c7faa arm: dts: ipq5424-rdp466: add chosen node for serial console
+- a30fd0895d1 Merge branch 'qcom-main' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+All 9 commits cherry-picked successfully onto branch `cherry-5e6f370c1e3`.
+
+## Final Status
+
+**Build result:** OK (all builds passed, no warnings/errors)
+
+**Cherry-pick summary:**
+| # | New Hash | Original | Subject |
+|---|----------|----------|---------|
+| 1 | 655faa9824f | 5e6f370c1e3 | regulator: qcom-rpmh-regulator: fix regulator mode mismatch |
+| 2 | 12891577b89 | 1ab49f6a91e | CI: Sage: Pin to labgrid 25.0.1 |
+| 3 | 05c5c937b0d | 8a4c199aa4b | gpio: qcom_spmi_gpio: move PM8998 GPIO from legacy pmic driver |
+| 4 | 793ec5d87ff | 688890d15cc | board: qualcomm: phone: fix 'Dump bootargs' |
+| 5 | c6bdf4c72c5 | 146963054be | board: dragonboard410c: fix chainloaded.config |
+| 6 | f417934e9d8 | a50e32bae6a | configs: qcs615/qcs9100: Enable watchdog autostart |
+| 7 | 9a6087072d4 | c2019e01d06 | dts: lemans-evk-u-boot: add override dtsi |
+| 8 | de8a34f81d2 | 757a95c7faa | arm: dts: ipq5424-rdp466: add chosen node for serial console |
+| 9 | d2e14c68ad3 | a30fd0895d1 | Merge branch 'qcom-main' (empty merge, preserved with --allow-empty) |
+
+**Fix-ups:** None needed. The merge commit (#9) became empty (all changes from the merge were already applied via individual cherry-picks 1-8), and was preserved as an empty commit per instructions.
+
+**Concerning deltas:** None. All deltas matched the originals exactly (same files, same line counts).
+
+Branch left ready for pushing.
+
+---
+
