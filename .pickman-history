@@ -84512,3 +84512,55 @@ I am **not** making code changes, **not** creating `cherry-969a1dde3a0-v2`, and 
 
 ---
 
+### Pipeline fix: 2026-06-13 (attempt 2)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- play (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/lab issues unrelated to the branch's code changes. The branch only modifies 4 files (urllib3 docs, usb typo, efi_loader PE-COFF, dtoc test) — none touch BCM2837/rpi3 boot path or BeagleBoard AM62x/SDHCI/initramfs.
+
+## Diagnosis
+
+### Job: `rpi3` (529426) — Lab resource conflict
+```
+labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass.
+To work simultaneously, sglass can execute labgrid-client -p rpi3 allow ellesmere/gitlab-runner
+```
+The job failed at `pytest_configure` / `u-boot-test-getrole rpi3 --configure` because the labgrid place was held by another concurrent session. **Identical** to attempt 1's rpi3 failure (529181). Nothing was built or tested. No U-Boot code involvement.
+
+### Job: `play` (529459) — Lab test rootfs/initramfs broken
+U-Boot built and ran fine: BeaglePlay booted through SoC init, MMC, extlinux config selection, kernel handoff. The kernel started and reached the initramfs, which then exploded:
+```
+trap: EXIT: bad trap
+mount: No such file or directory
+mount: invalid option --
+run-init: opening console: No such file or directory
+Target filesystem doesn't have requested /sbin/init.
+No init found. Try passing init= bootarg.
+(initramfs) Lab failure: Timeout executing 'dm drivers': Marking connection bad
+```
+This is the lab's test rootfs image being broken (run-init can't find init, mount fails) — followed by the test harness timing out waiting for a U-Boot prompt that will never appear because the kernel is stuck in a non-functional initramfs. None of the five branch commits touch:
+- AM62x/k3 board code
+- SDHCI/MMC drivers  
+- Kernel boot or extlinux handoff
+- The lab's rootfs image
+
+Verified the only changed files: `doc/sphinx/requirements.txt`, `drivers/usb/host/usb-uclass.c`, `lib/efi_loader/efi_image_loader.c`, `tools/dtoc/test_fdt.py`.
+
+## Result
+
+**No code changes made; no `cherry-969a1dde3a0-fix2` branch created** (per the "report rather than modify" instruction for infrastructure failures).
+
+| Job | Root cause | Category |
+|---|---|---|
+| rpi3 (529426) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — same as attempt 1 (529181) | Lab resource conflict |
+| play (529459) | Kernel booted, initramfs broken (`No init found`, `mount: No such file or directory`), then lab harness timed out waiting for `dm drivers` prompt | Lab rootfs/test-harness defect |
+
+**Recommendation:** Retry the pipeline once the rpi3 labgrid place is released and the play lab's initramfs/rootfs is fixed. The repeated rpi3 failure across attempts suggests the user holding the place needs to either release it or run `labgrid-client -p rpi3 allow ellesmere/gitlab-runner`.
+
+---
+
