@@ -84277,3 +84277,118 @@ The branch `cherry-a05adbb9b30` is left checked out and ready for pushing; it ha
 
 ---
 
+## 2026-06-11: us/master
+
+Branch: cherry-e126a99992a
+
+Commits:
+- e126a99992a arm: dts: k3-j7200: ddr: Update to v0.12.0 of DDR config tool
+- 9627d70840a arm: dts: k3-j721s2: ddr: Update to v0.12.0 of DDR config tool
+- 16868179598 arm: dts: k3-am68: ddr: Update to v0.12.0 of DDR config tool
+- c70fd4e5a29 arm: dts: k3-j784s4: ddr: Update to v0.12.0 of DDR config tool
+- fe22382b645 arm: dts: k3-am69: ddr: Update to v0.12.0 of DDR config tool
+- 54fb646ca42 arm: dts: k3-j742s2: ddr: Update to v0.12.0 of DDR config tool
+- 11dc7c06089 doc: ti: k3: Add section for DDR configuration
+- cf81e36fa0c Merge patch series "ti: j7: Update to v0.12.0 of DDR config tool"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+The merge commit is empty as expected; committing it to preserve the message:
+
+All 8 commits are present. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete: branch `cherry-e126a99992a`
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and on the final verification (no warnings or errors).
+
+**Commits applied (8/8):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| c174c65aba4 | e126a99992a | arm: dts: k3-j7200: ddr: Update to v0.12.0 of DDR config tool |
+| b25b1136d0f | 9627d70840a | arm: dts: k3-j721s2: ddr: Update to v0.12.0 of DDR config tool |
+| 9a4644245ae | 16868179598 | arm: dts: k3-am68: ddr: Update to v0.12.0 of DDR config tool |
+| 84bb0859cd9 | c70fd4e5a29 | arm: dts: k3-j784s4: ddr: Update to v0.12.0 of DDR config tool |
+| f44e607e8ff | fe22382b645 | arm: dts: k3-am69: ddr: Update to v0.12.0 of DDR config tool |
+| de4160b28ce | 54fb646ca42 | arm: dts: k3-j742s2: ddr: Update to v0.12.0 of DDR config tool |
+| 3d618c7bd2e | 11dc7c06089 | doc: ti: k3: Add section for DDR configuration |
+| 4c0acffd4e7 | cf81e36fa0c | Merge patch series "ti: j7: Update to v0.12.0 of DDR config tool" (empty, preserved with --allow-empty) |
+
+**Fix-ups:** None — no conflicts required manual resolution. Two commits needed only automatic merging (j7200 dts and k3.rst), which git handled cleanly.
+
+**Delta check:** Every cherry-picked commit's diffstat matched the original exactly (same files, same insertion/deletion counts). No concerning deltas.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-06-11 (attempt 1)
+
+Branch: cherry-e126a99992a
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-aarch64 (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+
+### Conversation log
+## Report: infrastructure/transient failure — no fix needed
+
+**Diagnosis:**
+
+The branch `cherry-e126a99992a` contains only TI K3 DDR device-tree updates and documentation:
+- `arch/arm/dts/k3-*` (j7200, j721s2, am68, j784s4, am69, j742s2 DDR config dtsi files)
+- `doc/board/ti/k3.rst`
+- `.pickman-history`
+
+The three failed jobs are all QEMU EFI lab tests on boards (`efi-x86_app64`, `efi-arm_app64`) that do **not** build any K3 device trees, so there is no code-path overlap whatsoever with the changes in this MR.
+
+**Failure modes (all classic lab flakes on the `ellesmere-lab` runner, within minutes of each other):**
+
+1. **efi-x86_64-uboot-iso** (528715): `Lab timeout: Marking connection bad` while bootstrapping QEMU via the qemu-efi-iso method — the test never even started; the lab connection timed out at ~3 minutes during flash/write.
+2. **efi-x86_64-uboot-iso-install** (528722): U-Boot booted fine (`lab ready in 3.0s`), the `boot` command was issued, then the console died with `OSError: [Errno 5] Input/output error` — the QEMU/console process went away mid-test.
+3. **efi-aarch64** (528719): 34 tests passed, then `test_distro_arm_app_efi` hit the same `OSError: [Errno 5] Input/output error` during `restart_uboot()` — again the console/QEMU side dropped.
+
+All three are runner-side console/QEMU failures (Errno 5 on `os.read()` of the console fd, plus one lab timeout), not build or code regressions. The DDR dtsi changes cannot influence these QEMU EFI roles.
+
+**Action taken:** None — per instructions, no changes are made for infrastructure/transient failures, so no `cherry-e126a99992a-fix1` branch was created. The branch is unchanged and the recommended action is simply to retry the failed jobs.
+
+---
+
+### Review: 2026-06-11
+
+Branch: cherry-e126a99992a
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, efi-aarch64, efi-x86_64-...
+
+### Conversation log
+The branch is checked out. Now let me assess the single review comment.
+
+## Analysis of the review comment
+
+The one comment (from `project_1_bot_...`) is not a reviewer request — it is the bot's own **pipeline-fix report from attempt 1**, posted back onto the MR. Its content is the diagnosis already recorded in the MR description: the three failed jobs (efi-x86_64-uboot-iso-install, efi-aarch64, efi-x86_64-uboot-iso) are runner-side QEMU/console flakes on `ellesmere-lab` (Errno 5 console I/O errors and one lab timeout), with no code-path overlap with this MR's TI K3 DDR dtsi/doc changes.
+
+The comment explicitly concludes: **"Action taken: None ... the recommended action is simply to retry the failed jobs."**
+
+There is therefore no actionable code change requested.
+
+## Actions taken
+
+- Checked out `cherry-e126a99992a` and verified its state: all 8 cherry-picked commits are intact (top code commit `4c0acffd4e7`, plus the two pickman bookkeeping commits). The branch matches what was reported in the MR description.
+- **No code changes made** — the comment requests none.
+- **No `-v2` branch created and no force push** — pushing an identical branch would only churn the MR and re-trigger a full pipeline without any change to test. The sandbox build was already verified clean in the previous session and the tree is untouched since.
+
+## Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report from attempt 1, not a change request. It concludes that the three failed EFI jobs (efi-x86_64-uboot-iso, efi-x86_64-uboot-iso-install, efi-aarch64) are transient lab/runner failures on ellesmere-lab with no relation to the K3 DDR device-tree changes in this MR. No code change is needed; the branch is unchanged. Please retry the failed jobs in the pipeline UI — they should pass on a healthy runner.
+
+## Notes
+
+- If a re-run of the pipeline is still wanted via a push, that can be done with `./tools/pickman/pickman push-branch cherry-e126a99992a -r ci -f`, but I have deliberately not done so since there is nothing new to test; retrying just the three failed jobs is cheaper and targets the actual problem.
+
+---
+
