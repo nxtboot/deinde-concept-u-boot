@@ -84389,6 +84389,46 @@ There is therefore no actionable code change requested.
 ## Notes
 
 - If a re-run of the pipeline is still wanted via a push, that can be done with `./tools/pickman/pickman push-branch cherry-e126a99992a -r ci -f`, but I have deliberately not done so since there is nothing new to test; retrying just the three failed jobs is cheaper and targets the actual problem.
+---
+
+## 2026-06-13: us/master
+
+Branch: cherry-969a1dde3a0
+
+Commits:
+- 969a1dde3a0 doc: Update urllib3 version for building
+- badf7502827 dtoc: test: add missing escape in help text
+- bc82aa5b414 efi_loader: validate PE-COFF relocation data
+- 5a1818d54c8 usb: typos 'requird', 'current'
+- 3f79f777617 Merge tag 'efi-2026-07-rc5' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Now let me first check if 969a1dde3a0 is already applied as 89a29927aec:
+
+The 89a29927aec is NOT the same commit - it's a pickman record commit. Let me search for the urllib3 update in ci/master:
+
+These are different commits - the original goes 2.6.3→2.7.0, the found one is 2.6.0→2.6.3. Proceeding with cherry-pick:
+
+All 5 commits are present. Now run the build:
+
+All cherry-picks completed successfully. Branch `cherry-969a1dde3a0` ready for pushing.
+
+## Final Status
+
+**Build result:** OK (1 board built successfully, no warnings/errors)
+
+**Commits cherry-picked (in order):**
+1. `e381acabcc5` doc: Update urllib3 version for building (from 969a1dde3a0) — verified NOT a duplicate of 89a29927aec (which was a pickman record commit, not the urllib3 update; the urllib3 update at e4910ffb964 is also different — 2.6.0→2.6.3 vs 2.6.3→2.7.0)
+2. `d05d16710ff` dtoc: test: add missing escape in help text (from badf7502827)
+3. `4bfa20adf14` efi_loader: validate PE-COFF relocation data (from bc82aa5b414) — **fix-up applied**
+4. `69d1357daf2` usb: typos 'requird', 'current' (from 5a1818d54c8)
+5. `5b2f0f3f08e` Merge tag 'efi-2026-07-rc5' ... (from 3f79f777617) — empty merge, preserved
+
+**Fix-ups made:**
+- `4bfa20adf14`: Resolved conflict in `lib/efi_loader/efi_image_loader.c` by keeping local `map_to_sysmem(efi_reloc)` instead of `(uintptr_t)efi_reloc` for the `efi_free_pages()` call, while accepting the new `virt_size` argument added to `efi_loader_relocate()`. Note appended to commit message.
+- Same conflict re-appeared in the merge commit (3f79f777617) — resolved the same way, leaving the merge commit empty (preserved with `--allow-empty`).
+
+**Deltas:** All non-merge commits have identical file/line stats vs the originals.
 
 ---
 
