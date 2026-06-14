@@ -84432,3 +84432,45 @@ All cherry-picks completed successfully. Branch `cherry-969a1dde3a0` ready for p
 
 ---
 
+### Pipeline fix: 2026-06-13 (attempt 1)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- coral (sjg-lab)
+- rpi3 (sjg-lab)
+- Run pylint (test_suites)
+
+### Conversation log
+All four failures are infrastructure/transient issues, not caused by code in the branch:
+
+**1. Run pylint (529106)** — `pip install` failed with `json.decoder.JSONDecodeError: Invalid control character at: line 1 column 6265132` while parsing the PyPI package index response. This is a transient PyPI/network failure during dependency installation — nothing was even built or linted.
+
+**2. efi-x86_64-uboot-iso (529211)** — Test session failed with `_pytest.outcomes.Exit: Lab timeout: Marking connection bad - no other tests will run`. Lab connection timeout, no U-Boot output reached. Infrastructure issue.
+
+**3. coral (529192)** — U-Boot booted partway ("U-Boot Concept TPL ... U-Boot Concept SPL ... SDRAM training (21 seconds)..."), then labgrid hit `pexpect.exceptions.TIMEOUT: Timeout of 40 seconds exceeded during waiting for login`. The 21-second SDRAM training plus normal boot time exceeded the 40s prompt-wait — this is a lab timing/flake, the board did start booting normally with the built U-Boot.
+
+**4. rpi3 (529181)** — Test never started: `labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass`. Lab resource conflict — the rpi3 place was held by another concurrent session.
+
+None of these failures involve a compilation error, a test assertion, or any behaviour exercised by the five commits on the branch (doc urllib3 bump, dtoc help-text escape, efi_loader PE-COFF reloc validation, usb typo fixes, and the efi merge). Since the task instructions say to report rather than modify in this case, I have made no changes.
+
+Branch state:
+
+## Summary
+
+**Result:** No code changes made. All four failed jobs are infrastructure/transient failures, not code defects introduced by this branch's commits.
+
+| Job | Root cause | Category |
+|---|---|---|
+| Run pylint (529106) | `pip install` got malformed JSON from PyPI index (`JSONDecodeError` at char 6265131) before any U-Boot code was touched | Transient network/PyPI |
+| efi-x86_64-uboot-iso (529211) | `_pytest.outcomes.Exit: Lab timeout: Marking connection bad` before any test ran | Lab infra |
+| coral (529192) | U-Boot booted (TPL → SPL → SDRAM training), labgrid hit `pexpect TIMEOUT` after 40s waiting for login while SDRAM training alone takes 21s | Lab timing flake (board did boot) |
+| rpi3 (529181) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — test never started | Lab resource conflict |
+
+None of the five commits on `cherry-969a1dde3a0` (urllib3 doc bump, dtoc help-text escape, efi_loader PE-COFF reloc validation, usb typo fixes, efi merge) is implicated. Per the instructions, infrastructure/transient failures are reported without code changes, so the `cherry-969a1dde3a0-fix1` branch was not created.
+
+Recommendation: retry the pipeline.
+
+---
+
