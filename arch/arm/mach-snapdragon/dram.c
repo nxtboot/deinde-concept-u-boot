@@ -74,15 +74,15 @@ static int ddr_bank_cmp(const void *v1, const void *v2)
 }
 
 /* This has to be done post-relocation since gd->bd isn't preserved */
-static void qcom_configure_bi_dram(void)
+static void qcom_configure_dram(void)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
-		gd->bd->bi_dram[i].start = prevbl_ddr_banks[i].start;
-		gd->bd->bi_dram[i].size = prevbl_ddr_banks[i].size;
+		gd->dram[i].start = prevbl_ddr_banks[i].start;
+		gd->dram[i].size = prevbl_ddr_banks[i].size;
 		debug("Bank[%d]: start = %#011llx, size = %#011llx\n",
-		      i, gd->bd->bi_dram[i].start, gd->bd->bi_dram[i].size);
+		      i, gd->dram[i].start, gd->dram[i].size);
 		if (!prevbl_ddr_banks[i].size)
 			break;
 	}
@@ -90,7 +90,7 @@ static void qcom_configure_bi_dram(void)
 
 int dram_init_banksize(void)
 {
-	qcom_configure_bi_dram();
+	qcom_configure_dram();
 
 	return 0;
 }
