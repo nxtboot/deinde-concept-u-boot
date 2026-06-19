@@ -84951,3 +84951,39 @@ This is the same lab-timeout symptom flagged in attempt 1 — the rpi3 board/lab
 
 ---
 
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rpi3.
+
+## Diagnosis
+
+The rpi3 job (sjg-lab) failed wit...
+
+### Conversation log
+I've reviewed the situation. The "review comment" being addressed is the bot's pipeline-fix report from attempt 2 — same single failing job (rpi3), same lab-timeout root cause. This is now the third pass over the identical diagnosis.
+
+## Analysis
+
+**Branch state**: Unchanged from attempt 2. All 13 cherry-picked commits are strictly Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). No files touched on this branch can affect a Raspberry Pi 3 (BCM2837).
+
+**Failure mode**: rpi3 (sjg-lab) — `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` in labgrid `UBootDriver.on_activate()`. The board never reached a U-Boot login prompt — pure lab/hardware issue.
+
+**Sanity check**: `git log ci/master..HEAD -- '*rpi*' '*bcm283*' '*broadcom*'` returns nothing. The branch cannot have caused an rpi3 boot timeout.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-v2` branch created. Nothing pushed.** Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure. The rpi3 endpoint in sjg-lab needs to recover before the job will pass.
+
+## Suggested MR reply
+
+> Same diagnosis as attempt 2: rpi3 is failing with a labgrid login timeout (`pexpect TIMEOUT … waiting for login` in `UBootDriver.on_activate()`), which is a sjg-lab hardware/serial issue — the board never reached a U-Boot prompt, so no test ever ran.
+>
+> All 13 commits on this branch are Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588). `git log ci/master..HEAD -- '*rpi*' '*bcm283*' '*broadcom*'` is empty — nothing here can affect a BCM2837 board coming up in the lab.
+>
+> Please retry once the rpi3 lab endpoint is healthy. No code change is warranted.
+
+---
+
