@@ -84775,3 +84775,86 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-06-19 (attempt 1)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- efi-x86_app32 test.py (test.py)
+- xilinx_zynq_virt test.py (test.py)
+- xilinx_mbv64_smode test.py (test.py)
+- xilinx_mbv32_smode test.py (test.py)
+- xilinx_mbv64 test.py (test.py)
+- xilinx_mbv32 test.py (test.py)
+- xilinx_versal_virt test.py (test.py)
+- r2dplus_i82557c test.py (test.py)
+- coreboot test.py (test.py)
+- sifive_unleashed_spi-nor test.py (test.py)
+- r2dplus_tulip test.py (test.py)
+- qemu-x86_64 test.py (test.py)
+- qemu-riscv64_spl test.py (test.py)
+- r2dplus_pcnet test.py (test.py)
+- r2dplus_rtl8139 test.py (test.py)
+- qemu-x86_64_nospl test.py (test.py)
+- qemu-x86 test.py (test.py)
+- qemu-ppce500 test.py (test.py)
+- qemu-riscv64_smode_acpi test.py (test.py)
+- qemu-riscv64 test.py (test.py)
+- qemu_maltael test.py (test.py)
+- qemu_malta64el test.py (test.py)
+- efi-x86_app64 test.py (test.py)
+- efi-riscv_app64 test.py (test.py)
+- qemu-riscv64_smode test.py (test.py)
+- qemu_malta test.py (test.py)
+- qemu-riscv32 test.py (test.py)
+- qemu_m68k_virt test.py (test.py)
+- qemu_m68k test.py (test.py)
+- qemu-riscv32_spl test.py (test.py)
+- qemu_arm_sbsa test.py (test.py)
+- qemu_malta64 test.py (test.py)
+- evb-ast2500 test.py (test.py)
+- qemu_arm64 spl_test.py (test.py)
+- integratorcp_cm926ejs test.py (test.py)
+- qemu_arm64_tfa_fw_handoff test.py (test.py)
+- sandbox trace_test.py (test.py)
+- qemu_arm spl_test.py (test.py)
+- qemu_arm64_lwip test.py (test.py)
+- qemu-xtensa-dc233c test.py (test.py)
+- xtfpga test.py (test.py)
+- vexpress_ca9x4 test.py (test.py)
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-x86_64-uboot-iso (sjg-lab)
+- coral (sjg-lab)
+- rpi3 (sjg-lab)
+- Check make tcheck (test.py)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+All 49 failing jobs are infrastructure issues unrelated to the cherry-picked commits.
+
+## Diagnosis
+
+**Branch contents**: All 13 cherry-picked commits are Rockchip-specific (rk3128, rk3229, rk3528, rk3576, rk3588 — clocks, board ports, UFS SPL boot, reset driver, MAINTAINERS). None touch the test infrastructure, sandbox, QEMU, x86, RISC-V, MIPS, m68k, Xtensa, ARM-vexpress, or lab-driver code.
+
+**Failure pattern**:
+
+1. **45 of 49 jobs** failed at `get_sources` with:
+   ```
+   fatal: unable to access 'https://concept.deinde.dev/u-boot/u-boot.git/':
+   TLS connect error: error:0A000458:SSL routines::tlsv1 unrecognized name
+   ```
+   The runner couldn't even clone the repo, so no build or test ran. Pure infrastructure/TLS-SNI issue on the GitLab server.
+
+2. **rpi3, coral** (sjg-lab): `pexpect TIMEOUT … waiting for login`. The board (or its labgrid endpoint) failed to come up — a lab/hardware timeout, not a code failure. Neither board is a Rockchip target and no commit on this branch touches them.
+
+3. **efi-x86_64-uboot-iso, efi-x86_64-uboot-iso-install**: lab timeout / `OSError: [Errno 5] Input/output error` on the serial pty during `test_distro_ubuntu_iso_install`. Lab-side serial/I-O issue; the cherry-picked Rockchip patches are unrelated to x86 EFI ISO boot.
+
+## Conclusion
+
+These are transient infrastructure failures (TLS handshake/SNI misconfiguration on the GitLab host, plus unrelated lab timeouts). The Rockchip changes in this MR cannot have caused any of them — they don't touch the affected boards or code paths, and most jobs never even fetched the source.
+
+**No code changes made. No `cherry-a9c1f2af717-fix1` branch created.** Recommendation: retry the pipeline once the GitLab TLS/SNI issue is resolved.
+
+---
+
