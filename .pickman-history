@@ -84724,3 +84724,54 @@ Branch left ready for pushing.
 
 ---
 
+## 2026-06-19: us/master
+
+Branch: cherry-a9c1f2af717
+
+Commits:
+- a9c1f2af717 clk: rockchip: rk3528: Add CLK_REF_USB3OTG support
+- c97c7d5caad clk: rockchip: rk3576: Add CLK_REF_USB3OTGx support
+- 3d294c01858 rockchip: rk3588-rock-5b: Remove USB-C controller from u-boot.dtsi
+- 82a5b5f7ca4 board: rockchip: Add FriendlyElec NanoPi R76S
+- 1165c206c2f reset: rockchip: make device resets available in SPL
+- 9941ec2c5cf rockchip: spl: Add support for booting from UFS
+- b00307e3c04 rockchip: rk3576-rock-4d: Enable UFS support
+- f7deed714cd rockchip: rk3576-nanopi-m5: Enable UFS support
+- 3336e85b6a3 rockchip: Switch rk3128 boards to upstream devicetree
+- 924f87b995f rockchip: Switch rk3229 boards to upstream devicetree
+- 957941943bd rockchip: clk: clk_rk3576: Add support for RK3576 GMAC 25MHz clock output
+- 22fa81fd8cc rockchip: MAINTAINERS: upstream devicetree update
+- 3cdce049f90 Merge tag 'u-boot-rockchip-20260610' of https://source.denx.de/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+All 13 commits are present. Now running the final build.
+
+## Final Status Report
+
+**Branch**: `cherry-a9c1f2af717` (based on `ci/master`)
+
+**All 13 commits successfully cherry-picked**:
+1. `65f597565f4` - clk: rockchip: rk3528: Add CLK_REF_USB3OTG support
+2. `788409569b6` - clk: rockchip: rk3576: Add CLK_REF_USB3OTGx support
+3. `501af00357c` - rockchip: rk3588-rock-5b: Remove USB-C controller from u-boot.dtsi
+4. `f8374a86779` - board: rockchip: Add FriendlyElec NanoPi R76S (auto-merged doc rst)
+5. `2d5eca95ae2` - reset: rockchip: make device resets available in SPL
+6. `6f2ee9a4f29` - rockchip: spl: Add support for booting from UFS
+7. `ae1db9369e1` - rockchip: rk3576-rock-4d: Enable UFS support (auto-merged defconfig)
+8. `00ca063c5e3` - rockchip: rk3576-nanopi-m5: Enable UFS support (auto-merged defconfig)
+9. `fa7f6c8f051` - rockchip: Switch rk3128 boards to upstream devicetree (auto-merged Makefile, Kconfig)
+10. `b99db85ab94` - rockchip: Switch rk3229 boards to upstream devicetree (auto-merged Makefile, Kconfig, defconfig)
+11. `d87e555bb82` - rockchip: clk: clk_rk3576: Add support for RK3576 GMAC 25MHz clock output
+12. `5095f06717b` - rockchip: MAINTAINERS: upstream devicetree update (auto-merged MAINTAINERS)
+13. `87d9133e859` - Merge tag 'u-boot-rockchip-20260610' (empty merge, committed with --allow-empty)
+
+**Build result**: OK - sandbox built successfully (1 board, 0 errors, 0 warnings)
+
+**Delta checks**: All commits show identical file lists and line counts compared to originals. No concerning deltas.
+
+**Fix-ups**: None required. All cherry-picks applied cleanly with only trivial auto-merges. No commit messages were amended.
+
+The branch is ready for pushing.
+
+---
+
