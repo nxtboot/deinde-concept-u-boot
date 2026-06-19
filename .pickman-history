@@ -84907,3 +84907,47 @@ These are infrastructure failures on the GitLab host and the lab; the Rockchip c
 
 ---
 
+### Pipeline fix: 2026-06-19 (attempt 2)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+The rpi3 job (sjg-lab) failed with a lab/hardware timeout — not a code issue:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The labgrid `_await_prompt` timed out waiting for the board to print a U-Boot login prompt. This is the labgrid `UBootDriver.on_activate()` path, hit during strategy transition — i.e., the lab couldn't even bring the rpi3 to a U-Boot prompt before any test ran.
+
+### Why this is not caused by the branch
+
+All 13 cherry-picked commits on `cherry-a9c1f2af717` are strictly Rockchip-only:
+
+- `clk: rockchip: rk3528` / `rk3576` (USB3OTG ref clock)
+- `rockchip: rk3588-rock-5b` (u-boot.dtsi)
+- `board: rockchip: NanoPi R76S`
+- `reset: rockchip` (SPL gate driver)
+- `rockchip: spl` (UFS SPL boot)
+- `rockchip: rk3576-rock-4d` / `nanopi-m5` (UFS defconfigs)
+- `rockchip: rk3128` / `rk3229` (upstream DT switch)
+- `rockchip: clk_rk3576` (GMAC 25 MHz)
+- `rockchip: MAINTAINERS`
+- Merge tag commit
+
+`git log ci/master..87d9133e859 -- '*rpi*' '*bcm283*' '*broadcom*'` returns nothing. The diff stat confirms only `drivers/reset/{Kconfig,Makefile}` (Rockchip SPL gate only), Rockchip clock headers, Rockchip DTs, and Rockchip board files are touched. Nothing on this branch can affect a Raspberry Pi 3 (BCM2837) coming up in the sjg-lab.
+
+This is the same lab-timeout symptom flagged in attempt 1 — the rpi3 board/labgrid endpoint is intermittently failing to reach a login prompt.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-fix2` branch created.** The failure is an infrastructure/lab issue (rpi3 board or its labgrid serial/power path not coming up within the 20s login timeout). Recommend retrying the job once the rpi3 lab endpoint is healthy.
+
+---
+
