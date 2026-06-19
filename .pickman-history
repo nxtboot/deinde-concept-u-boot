@@ -84987,3 +84987,44 @@ I've reviewed the situation. The "review comment" being addressed is the bot's p
 
 ---
 
+### Pipeline fix: 2026-06-19 (attempt 3)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+**Failure mode (rpi3, sjg-lab)**: `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` in `labgrid/driver/ubootdriver.py:_await_prompt()`. The board never reached a U-Boot prompt during strategy transition — labgrid marked the connection bad and aborted before any test ran. This is a lab/hardware timeout, not a code failure.
+
+This is the **identical symptom** flagged in attempts 1 and 2.
+
+## Why this is not caused by the branch
+
+All 13 cherry-picked commits on `cherry-a9c1f2af717` are strictly Rockchip-only:
+
+- `clk: rockchip: rk3528 / rk3576` (USB3OTG ref clock)
+- `rockchip: rk3588-rock-5b` (u-boot.dtsi)
+- `board: rockchip: NanoPi R76S`
+- `reset: rockchip` (SPL gate)
+- `rockchip: spl` (UFS SPL boot)
+- `rockchip: rk3576-rock-4d / nanopi-m5` (UFS defconfigs)
+- `rockchip: rk3128 / rk3229` (upstream DT switch)
+- `rockchip: clk_rk3576` (GMAC 25 MHz)
+- `rockchip: MAINTAINERS`
+- merge tag commit
+
+Verified: `git log ci/master..HEAD --name-only | grep -iE 'rpi|bcm283|broadcom'` returns **nothing**. There is no file on this branch that can affect a Raspberry Pi 3 (BCM2837) coming up at the labgrid serial prompt.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-fix3` branch created. Nothing pushed.**
+
+Per the task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), this is a recurring sjg-lab rpi3 boot/serial timeout. Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure. The rpi3 endpoint in sjg-lab needs to recover (or the 20s `_await_prompt` budget extended) before the job will pass.
+
+**Recommendation**: retry the rpi3 job once the lab endpoint is healthy.
+
+---
+
