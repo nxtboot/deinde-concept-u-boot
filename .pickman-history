@@ -84389,6 +84389,295 @@ There is therefore no actionable code change requested.
 ## Notes
 
 - If a re-run of the pipeline is still wanted via a push, that can be done with `./tools/pickman/pickman push-branch cherry-e126a99992a -r ci -f`, but I have deliberately not done so since there is nothing new to test; retrying just the three failed jobs is cheaper and targets the actual problem.
+---
+
+## 2026-06-13: us/master
+
+Branch: cherry-969a1dde3a0
+
+Commits:
+- 969a1dde3a0 doc: Update urllib3 version for building
+- badf7502827 dtoc: test: add missing escape in help text
+- bc82aa5b414 efi_loader: validate PE-COFF relocation data
+- 5a1818d54c8 usb: typos 'requird', 'current'
+- 3f79f777617 Merge tag 'efi-2026-07-rc5' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Now let me first check if 969a1dde3a0 is already applied as 89a29927aec:
+
+The 89a29927aec is NOT the same commit - it's a pickman record commit. Let me search for the urllib3 update in ci/master:
+
+These are different commits - the original goes 2.6.3→2.7.0, the found one is 2.6.0→2.6.3. Proceeding with cherry-pick:
+
+All 5 commits are present. Now run the build:
+
+All cherry-picks completed successfully. Branch `cherry-969a1dde3a0` ready for pushing.
+
+## Final Status
+
+**Build result:** OK (1 board built successfully, no warnings/errors)
+
+**Commits cherry-picked (in order):**
+1. `e381acabcc5` doc: Update urllib3 version for building (from 969a1dde3a0) — verified NOT a duplicate of 89a29927aec (which was a pickman record commit, not the urllib3 update; the urllib3 update at e4910ffb964 is also different — 2.6.0→2.6.3 vs 2.6.3→2.7.0)
+2. `d05d16710ff` dtoc: test: add missing escape in help text (from badf7502827)
+3. `4bfa20adf14` efi_loader: validate PE-COFF relocation data (from bc82aa5b414) — **fix-up applied**
+4. `69d1357daf2` usb: typos 'requird', 'current' (from 5a1818d54c8)
+5. `5b2f0f3f08e` Merge tag 'efi-2026-07-rc5' ... (from 3f79f777617) — empty merge, preserved
+
+**Fix-ups made:**
+- `4bfa20adf14`: Resolved conflict in `lib/efi_loader/efi_image_loader.c` by keeping local `map_to_sysmem(efi_reloc)` instead of `(uintptr_t)efi_reloc` for the `efi_free_pages()` call, while accepting the new `virt_size` argument added to `efi_loader_relocate()`. Note appended to commit message.
+- Same conflict re-appeared in the merge commit (3f79f777617) — resolved the same way, leaving the merge commit empty (preserved with `--allow-empty`).
+
+**Deltas:** All non-merge commits have identical file/line stats vs the originals.
+
+---
+
+### Pipeline fix: 2026-06-13 (attempt 1)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- efi-x86_64-uboot-iso (sjg-lab)
+- coral (sjg-lab)
+- rpi3 (sjg-lab)
+- Run pylint (test_suites)
+
+### Conversation log
+All four failures are infrastructure/transient issues, not caused by code in the branch:
+
+**1. Run pylint (529106)** — `pip install` failed with `json.decoder.JSONDecodeError: Invalid control character at: line 1 column 6265132` while parsing the PyPI package index response. This is a transient PyPI/network failure during dependency installation — nothing was even built or linted.
+
+**2. efi-x86_64-uboot-iso (529211)** — Test session failed with `_pytest.outcomes.Exit: Lab timeout: Marking connection bad - no other tests will run`. Lab connection timeout, no U-Boot output reached. Infrastructure issue.
+
+**3. coral (529192)** — U-Boot booted partway ("U-Boot Concept TPL ... U-Boot Concept SPL ... SDRAM training (21 seconds)..."), then labgrid hit `pexpect.exceptions.TIMEOUT: Timeout of 40 seconds exceeded during waiting for login`. The 21-second SDRAM training plus normal boot time exceeded the 40s prompt-wait — this is a lab timing/flake, the board did start booting normally with the built U-Boot.
+
+**4. rpi3 (529181)** — Test never started: `labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass`. Lab resource conflict — the rpi3 place was held by another concurrent session.
+
+None of these failures involve a compilation error, a test assertion, or any behaviour exercised by the five commits on the branch (doc urllib3 bump, dtoc help-text escape, efi_loader PE-COFF reloc validation, usb typo fixes, and the efi merge). Since the task instructions say to report rather than modify in this case, I have made no changes.
+
+Branch state:
+
+## Summary
+
+**Result:** No code changes made. All four failed jobs are infrastructure/transient failures, not code defects introduced by this branch's commits.
+
+| Job | Root cause | Category |
+|---|---|---|
+| Run pylint (529106) | `pip install` got malformed JSON from PyPI index (`JSONDecodeError` at char 6265131) before any U-Boot code was touched | Transient network/PyPI |
+| efi-x86_64-uboot-iso (529211) | `_pytest.outcomes.Exit: Lab timeout: Marking connection bad` before any test ran | Lab infra |
+| coral (529192) | U-Boot booted (TPL → SPL → SDRAM training), labgrid hit `pexpect TIMEOUT` after 40s waiting for login while SDRAM training alone takes 21s | Lab timing flake (board did boot) |
+| rpi3 (529181) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — test never started | Lab resource conflict |
+
+None of the five commits on `cherry-969a1dde3a0` (urllib3 doc bump, dtoc help-text escape, efi_loader PE-COFF reloc validation, usb typo fixes, efi merge) is implicated. Per the instructions, infrastructure/transient failures are reported without code changes, so the `cherry-969a1dde3a0-fix1` branch was not created.
+
+Recommendation: retry the pipeline.
+
+---
+
+### Review: 2026-06-13
+
+Branch: cherry-969a1dde3a0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso, coral, rpi3, Run pylint.
+
+All fo...
+
+### Conversation log
+Looking at this task carefully:
+
+The single review comment to address is from `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — which is **the bot's own previous pipeline-fix-attempt-1 summary report** that was posted to the MR. It explicitly concludes "No code changes made. All four failed jobs are infrastructure/transient failures, not code defects introduced by this branch's commits."
+
+There is **no actionable feedback** in this comment — it is a self-status report from the previous round. The commit log confirms the prior state is intact:
+
+- `f4437ac2765 pickman: Record pipeline fix for cherry-969a1dde3a0` (the no-op record from attempt 1)
+- `c6110ed95d3 pickman: Record cherry-pick of 5 commits from us/master`
+- 5 cherry-picked commits underneath
+
+Since the comment contains no request, question, or actionable item — only a recap of the previous decision that all four failures (Run pylint, efi-x86_64-uboot-iso, coral, rpi3) were infrastructure flakes — there is nothing to change in the code.
+
+I am **not** making code changes, **not** creating `cherry-969a1dde3a0-v2`, and **not** force-pushing, because:
+1. No code-related feedback was given.
+2. The cited failures are all infrastructure (PyPI JSON decode error, lab connection timeout, lab login timeout after a 21s SDRAM-training boot, and a lab-resource-acquisition conflict held by another session).
+3. Forcing an empty/no-op push would only churn the MR without addressing anything.
+
+## Suggested reply to post on the MR
+
+> Acknowledged — this comment is the previous pipeline-fix-attempt-1 status report. There is no new actionable feedback in it: all four failures (`Run pylint` #529106, `efi-x86_64-uboot-iso` #529211, `coral` #529192, `rpi3` #529181) were infrastructure/transient issues (PyPI index `JSONDecodeError`, lab connection timeout, lab login-prompt timeout after the documented 21s SDRAM-training boot, and a `labgrid-client` place-acquisition conflict), none of which touch the five commits on this branch (urllib3 doc bump, dtoc help-text escape, efi_loader PE-COFF reloc validation, usb typo fixes, efi merge). No code change is warranted. Recommendation remains: retry the pipeline.
+
+## What was done
+- Checked out `cherry-969a1dde3a0` and verified the branch state matches the prior attempt-1 record.
+- Determined the review comment requires no code change.
+- No new local branch created, no force push performed.
+
+---
+
+### Pipeline fix: 2026-06-13 (attempt 2)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- play (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/lab issues unrelated to the branch's code changes. The branch only modifies 4 files (urllib3 docs, usb typo, efi_loader PE-COFF, dtoc test) — none touch BCM2837/rpi3 boot path or BeagleBoard AM62x/SDHCI/initramfs.
+
+## Diagnosis
+
+### Job: `rpi3` (529426) — Lab resource conflict
+```
+labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass.
+To work simultaneously, sglass can execute labgrid-client -p rpi3 allow ellesmere/gitlab-runner
+```
+The job failed at `pytest_configure` / `u-boot-test-getrole rpi3 --configure` because the labgrid place was held by another concurrent session. **Identical** to attempt 1's rpi3 failure (529181). Nothing was built or tested. No U-Boot code involvement.
+
+### Job: `play` (529459) — Lab test rootfs/initramfs broken
+U-Boot built and ran fine: BeaglePlay booted through SoC init, MMC, extlinux config selection, kernel handoff. The kernel started and reached the initramfs, which then exploded:
+```
+trap: EXIT: bad trap
+mount: No such file or directory
+mount: invalid option --
+run-init: opening console: No such file or directory
+Target filesystem doesn't have requested /sbin/init.
+No init found. Try passing init= bootarg.
+(initramfs) Lab failure: Timeout executing 'dm drivers': Marking connection bad
+```
+This is the lab's test rootfs image being broken (run-init can't find init, mount fails) — followed by the test harness timing out waiting for a U-Boot prompt that will never appear because the kernel is stuck in a non-functional initramfs. None of the five branch commits touch:
+- AM62x/k3 board code
+- SDHCI/MMC drivers  
+- Kernel boot or extlinux handoff
+- The lab's rootfs image
+
+Verified the only changed files: `doc/sphinx/requirements.txt`, `drivers/usb/host/usb-uclass.c`, `lib/efi_loader/efi_image_loader.c`, `tools/dtoc/test_fdt.py`.
+
+## Result
+
+**No code changes made; no `cherry-969a1dde3a0-fix2` branch created** (per the "report rather than modify" instruction for infrastructure failures).
+
+| Job | Root cause | Category |
+|---|---|---|
+| rpi3 (529426) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — same as attempt 1 (529181) | Lab resource conflict |
+| play (529459) | Kernel booted, initramfs broken (`No init found`, `mount: No such file or directory`), then lab harness timed out waiting for `dm drivers` prompt | Lab rootfs/test-harness defect |
+
+**Recommendation:** Retry the pipeline once the rpi3 labgrid place is released and the play lab's initramfs/rootfs is fixed. The repeated rpi3 failure across attempts suggests the user holding the place needs to either release it or run `labgrid-client -p rpi3 allow ellesmere/gitlab-runner`.
+
+---
+
+### Pipeline fix: 2026-06-13 (attempt 3)
+
+Branch: cherry-969a1dde3a0
+
+Failed jobs:
+- bob (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+Both failures on this third pipeline attempt are infrastructure/lab issues, not code defects.
+
+## Diagnosis
+
+### Job: `rpi3` (529671) — Lab resource conflict (3rd time)
+```
+labgrid-client: Error: place rpi3 is not acquired by your user, acquired by sglass.
+To work simultaneously, sglass can execute labgrid-client -p rpi3 allow ellesmere/gitlab-runner
+```
+Failed at `pytest_configure` → `u-boot-test-getrole rpi3 --configure`. The labgrid `rpi3` place is held by another concurrent session (the user `sglass`). **Identical** to attempt 1 (#529181) and attempt 2 (#529426). Nothing was built, nothing tested, no U-Boot code path involved.
+
+### Job: `bob` (529680) — Lab serial/boot timeout
+The harness ran `u-boot-test-flash chromebook_bob bob` → bootstrapped U-Boot from build dirs → wrote via `rockchip-em100`, then:
+```
+File ".../labgrid/driver/ubootdriver.py", line 205, in _await_prompt
+    raise TIMEOUT(...)
+pexpect.exceptions.TIMEOUT: Timeout of 30 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+No U-Boot output reached labgrid within 30 s of em100 flashing. This is a `_await_prompt()` lab-driver timeout — board didn't power up, em100 didn't latch, serial dropped, or 30 s is just too short for bob to reach the prompt. The build itself succeeded (binaries were produced and written via em100).
+
+## Branch code involvement: none
+
+The five cherry-picked commits on `cherry-969a1dde3a0` touch only:
+- `doc/sphinx/requirements.txt` (urllib3 doc bump)
+- `tools/dtoc/test_fdt.py` (help-text escape)
+- `lib/efi_loader/efi_image_loader.c` (PE-COFF reloc validation)
+- `drivers/usb/host/usb-uclass.c` (typo fix)
+- efi merge (empty)
+
+None of these touch:
+- Rockchip / chromebook_bob / em100 / coreboot path (bob failure)
+- BCM2837 / rpi3 boot path (rpi3 failure)
+- labgrid configuration
+
+## Result
+
+**No code changes made; no `cherry-969a1dde3a0-fix3` branch created** (per the "report rather than modify" instruction for infrastructure failures).
+
+| Job | Root cause | Category |
+|---|---|---|
+| rpi3 (529671) | `labgrid-client: place rpi3 is not acquired by your user, acquired by sglass` — same as attempts 1 & 2 | Lab resource conflict |
+| bob (529680) | `pexpect TIMEOUT` after 30 s waiting for U-Boot login prompt post-em100 flash; never reached any test | Lab serial/boot timeout |
+
+**Recommendation:** Retry the pipeline once the `rpi3` labgrid place is released (or run `labgrid-client -p rpi3 allow ellesmere/gitlab-runner`), and investigate why `chromebook_bob` didn't produce serial output within 30 s of the em100 write (power/serial/em100-latch issue, or bump the prompt timeout). The `rpi3` failure has now repeated across three consecutive pipeline runs with the same root cause, which strongly suggests a persistent lab-side issue rather than a transient flake.
+
+Branch left on `cherry-969a1dde3a0` (no `-fix3` branch was created since there is nothing to fix).
+
+---
+
+### Review: 2026-06-14
+
+Branch: cherry-969a1dde3a0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Analysis
+
+The single review comment to address is:
+
+> **Pipeline fix: reached retry limit (3 attempts). Manual intervention required.**
+
+This is the automated retry system's **terminal status** — it has given up after 3 attempts and explicitly escalated to manual intervention. It is not an actionable code-change request; it is a stop signal.
+
+Across the three prior attempts, the failures were:
+
+| Attempt | Jobs | Root cause |
+|---|---|---|
+| 1 | Run pylint, efi-x86_64-uboot-iso, coral, rpi3 | PyPI `JSONDecodeError` during pip install; lab connection timeout; lab login timeout after 21s SDRAM training; rpi3 labgrid place held by another `sglass` session |
+| 2 | play, rpi3 | BeaglePlay lab rootfs/initramfs broken (`No init found`); rpi3 labgrid place still held |
+| 3 | bob, rpi3 | `chromebook_bob` 30s `_await_prompt` timeout post-em100 flash; rpi3 labgrid place still held (3rd run) |
+
+The five cherry-picked commits on this branch touch only `doc/sphinx/requirements.txt`, `tools/dtoc/test_fdt.py`, `lib/efi_loader/efi_image_loader.c`, `drivers/usb/host/usb-uclass.c`, and an empty efi merge. None of these touch any code path implicated by any of the cited failures.
+
+The persistent pattern — most notably `rpi3` failing the *same way* across three runs because the place is held by user `sglass` — is a lab-side state problem that no code change on this branch can fix.
+
+## What was done
+
+- Checked out `cherry-969a1dde3a0`; verified intact (5 cherry-picked commits + 5 pickman record commits on top, ending at `4fce566c536`).
+- Re-read the cumulative attempt-1/2/3 diagnoses to confirm no overlap with the branch's touched files.
+- Determined the comment is a "manual intervention required" escalation, not actionable feedback.
+- **Did not** modify any source files.
+- **Did not** create `cherry-969a1dde3a0-v2`.
+- **Did not** run a build (nothing to verify).
+- **Did not** force-push (a no-op push would just re-trigger the same flaky lab jobs and likely produce attempt-4 of the same escalation).
+
+## Suggested reply to post on the MR
+
+> Acknowledged — the retry limit has been reached, and the branch genuinely needs human attention rather than another automated push.
+>
+> Summary of the three attempts' failure modes, none of which involve this branch's four touched files (`doc/sphinx/requirements.txt`, `tools/dtoc/test_fdt.py`, `lib/efi_loader/efi_image_loader.c`, `drivers/usb/host/usb-uclass.c`):
+>
+> 1. **Attempt 1** — Run pylint (PyPI index `JSONDecodeError`), efi-x86_64-uboot-iso (lab connection timeout), coral (40s prompt-wait shorter than 21s SDRAM training + boot), rpi3 (labgrid place held by `sglass`).
+> 2. **Attempt 2** — play (lab's test initramfs broken: `run-init: opening console: No such file or directory`, `Target filesystem doesn't have requested /sbin/init`), rpi3 (same place-holder conflict).
+> 3. **Attempt 3** — bob (30s `_await_prompt()` timeout after `u-boot-test-flash chromebook_bob` em100 write — no serial reached labgrid), rpi3 (same place-holder conflict, 3rd consecutive run).
+>
+> **Required manual actions before retrying:**
+> - Release the `rpi3` labgrid place currently held by user `sglass`, or grant access with `labgrid-client -p rpi3 allow ellesmere/gitlab-runner`. This has now blocked three consecutive runs identically.
+> - Repair the lab's test rootfs/initramfs used for the BeaglePlay (`play`) target — the on-disk image has no `/sbin/init` and the kernel-side `run-init` cannot open a console.
+> - Investigate the `chromebook_bob` cold-boot path: either the board didn't power up cleanly after em100 latching, or the 30s `_await_prompt` window is too short for cold-boot via em100; consider raising the labgrid driver's prompt timeout for em100-flashed boards.
+> - Likely worth re-running `pylint` once PyPI is healthy; the original `JSONDecodeError` was transient.
+>
+> No code change is warranted on this branch; no `-v2` pushed. Once the lab-side issues above are addressed, a plain pipeline retry should be sufficient.
 
 ---
 
