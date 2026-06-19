@@ -84858,3 +84858,52 @@ These are transient infrastructure failures (TLS handshake/SNI misconfiguration 
 
 ---
 
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_app32 test.py, xilinx_zynq_virt test.py, xilin...
+
+### Conversation log
+I've reviewed the situation. The "review comment" being addressed is the bot's same pipeline-fix report from attempt 1 — same 49 failing jobs, same root cause. Nothing has changed since the prior diagnosis.
+
+## Analysis
+
+**Branch state**: 13 cherry-picked commits, all strictly Rockchip-specific. File-by-file confirmation:
+
+- `arch/arm/dts/rk3128*`, `rk3229*`, `rk3576*`, `rk3588-rock-5b*`
+- `arch/arm/mach-rockchip/{rk3576,spl-boot-order,Kconfig}`
+- `drivers/clk/rockchip/{clk_rk3528,clk_rk3576}.c`
+- `drivers/reset/{Kconfig,Makefile}` (adds Rockchip SPL gate only)
+- `configs/{evb-rk3128,evb-rk3229,nanopi-m5-rk3576,nanopi-r76s-rk3576,rock-4d-rk3576}_defconfig`
+- `include/dt-bindings/clock/rk31[02]8-cru.h`
+- `board/rockchip/.../MAINTAINERS`, `doc/board/rockchip/rockchip.rst`
+
+**Failing jobs** target sandbox, QEMU (arm/arm64/x86/riscv/mips/m68k/ppc/xtensa), vexpress, integrator, xilinx, sifive, coreboot, r2dplus, ast2500, rpi3, coral, efi-x86_64-iso — zero overlap with any file touched in this MR.
+
+**Failure modes** (unchanged from attempt 1):
+1. 45 jobs: `get_sources` TLS-SNI failure against `concept.deinde.dev` — runner never cloned the repo.
+2. rpi3, coral: lab `pexpect TIMEOUT` waiting for login (sjg-lab hardware/labgrid).
+3. efi-x86_64-uboot-iso[-install]: lab serial pty `[Errno 5] I/O error`.
+
+These are infrastructure failures on the GitLab host and the lab; the Rockchip changes cannot have caused them.
+
+## Action taken
+
+**No code changes.** No `-v2` branch created; nothing to push. The previous attempt reached the identical conclusion, and re-pushing an unchanged branch would only re-trigger the same infrastructure failures.
+
+## Suggested MR reply
+
+> Same diagnosis as attempt 1 — all 49 failures are infrastructure, not code:
+>
+> - **45/49** failed at `get_sources` with a TLS-SNI handshake error against `https://concept.deinde.dev/u-boot/u-boot.git/` (`tlsv1 unrecognized name`). The runner never cloned the repo, so no build or test executed.
+> - **rpi3, coral** (sjg-lab): `pexpect TIMEOUT` waiting for login — lab/hardware timeout, not a code failure.
+> - **efi-x86_64-uboot-iso[-install]**: `OSError: [Errno 5] Input/output error` on the serial pty — lab-side I/O issue.
+>
+> All 13 commits on this branch are Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). They don't touch sandbox, QEMU, x86, RISC-V, MIPS, m68k, Xtensa, vexpress, integrator, xilinx, sifive, coreboot, r2dplus, ast2500, rpi3, coral, or x86 EFI ISO code paths.
+>
+> Please retry the pipeline once the GitLab TLS/SNI configuration on `concept.deinde.dev` is fixed and the lab boards (rpi3/coral/x86-iso) recover. No code change is warranted here.
+
+---
+
