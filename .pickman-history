@@ -85028,3 +85028,37 @@ Per the task instructions ("If the failure is an infrastructure or transient iss
 
 ---
 
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Looking at this task, the review comment is explicit: **"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."**
+
+This is a meta-instruction from the bot itself, not an actionable code review comment. It is telling me that automated retries have been exhausted and that a human needs to step in. Let me verify the branch state and then report.
+
+Branch state is unchanged from the prior three attempts. The 13 Rockchip-only commits are intact.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-v2` branch created. Nothing pushed.**
+
+The review comment is the bot's own retry-limit signal: `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.` There is no actionable code feedback in this comment — it is explicitly handing the issue off to a human.
+
+All three prior automated attempts reached the same conclusion: the lone failing job (rpi3) is a recurring sjg-lab hardware/serial timeout (`pexpect TIMEOUT … waiting for login` in `labgrid/driver/ubootdriver.py:_await_prompt()`). The branch is strictly Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588) and touches no `rpi`, `bcm283*`, or `broadcom` file. A BCM2837 board failing to reach a U-Boot prompt in the lab cannot be caused by anything on this branch.
+
+Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure and consume another CI cycle for no benefit.
+
+## Suggested MR reply
+
+> The automated pipeline-fix retry limit has been reached. All three prior attempts diagnosed the same root cause: **rpi3 (sjg-lab) lab-timeout** — `pexpect TIMEOUT … waiting for login` in `UBootDriver._await_prompt()`. The board never reaches a U-Boot prompt, so no test ever runs.
+>
+> This branch contains 13 strictly Rockchip-only commits (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). `git log ci/master..HEAD --name-only | grep -iE 'rpi|bcm283|broadcom'` is empty — nothing here can cause a Raspberry Pi 3 boot timeout.
+>
+> **Manual intervention requested**: please either (a) retry the rpi3 job once the sjg-lab endpoint is healthy, (b) extend the 20 s `_await_prompt` budget if the board is genuinely slow to print the prompt, or (c) mark the rpi3 lab job as a known-flaky/non-blocking check for this MR. No code change on this branch is warranted.
+
+---
+
