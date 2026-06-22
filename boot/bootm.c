@@ -569,7 +569,7 @@ static int bootm_find_os(struct bootm_info *bmi)
 
 		ret = fit_image_get_entry(images.fit_hdr_os,
 					  images.fit_noffset_os, &images.ep);
-		if (ret) {
+		if (ret && images.os.type != IH_TYPE_KERNEL_NOLOAD) {
 			puts("Can't get entry point property!\n");
 			return 1;
 		}
