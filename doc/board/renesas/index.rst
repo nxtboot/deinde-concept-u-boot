@@ -19,4 +19,5 @@ Renesas
    rcar-gen3-install-hf
    rcar-gen3-install-sf
    rcar-gen4-sparrow-hawk
+   rcar-gen5-ironhide
    rzn1

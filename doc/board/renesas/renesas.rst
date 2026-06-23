@@ -199,13 +199,13 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - r8a779h0_grayhawk_defconfig
 
    * - R-Car Gen5
-     - Ironhide (Cortex-A720AE application core)
+     - :doc:`Ironhide (Cortex-A720AE application core) <rcar-gen5-ironhide>`
      - R8A78000 (X5H)
      - :doc:`arm64 <build-env-aarch64>`
      - r8a78000_ironhide_defconfig
 
    * -
-     - Ironhide (Cortex-M33 RSIP boot core)
+     - :doc:`Ironhide (Cortex-M33 RSIP boot core) <rcar-gen5-ironhide>`
      - R8A78000 (X5H)
      - :doc:`arm64 <build-env-aarch64>`
      - r8a78000_ironhide_cm33_defconfig
