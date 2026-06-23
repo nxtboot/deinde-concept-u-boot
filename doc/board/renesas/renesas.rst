@@ -27,241 +27,241 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
    * - R2D
      - R2D-PLUS
      - SH7751
-     - sh
+     - :doc:`sh <build-env-sh>`
      - r2dplus_defconfig
 
    * - RZ/A1
      - GR-PEACH
      - R7S72100 (RZ/A1H)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - grpeach_defconfig
 
    * - R-Car Gen2
      - Lager
      - R8A7790 (H2)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - lager_defconfig
 
    * -
      - Stout
      - R8A7790 (H2)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - stout_defconfig
 
    * -
      - Koelsch
      - R8A7791 (M2-W)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - koelsch_defconfig
 
    * -
      - Porter
      - R8A7791 (M2-W)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - porter_defconfig
 
    * -
      - Blanche
      - R8A7792 (V2H)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - blanche_defconfig
 
    * -
      - Gose
      - R8A7793 (M2-N)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - gose_defconfig
 
    * -
      - Alt
      - R8A7794 (E2)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - alt_defconfig
 
    * -
      - Silk
      - R8A7794 (E2)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - silk_defconfig
 
    * - R-Car Gen3
-     - Salvator-X(S)
+     - :doc:`Salvator-X(S) <rcar-gen3-salvator-x>`
      - R8A77951 (H3)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_salvator-x_defconfig
 
    * -
      - ULCB
      - R8A77951 (H3)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
 
    * -
-     - Salvator-X(S)
+     - :doc:`Salvator-X(S) <rcar-gen3-salvator-x>`
      - R8A77960 (M3-W)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_salvator-x_defconfig
 
    * -
      - ULCB
      - R8A77960 (M3-W)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
 
    * -
-     - Salvator-X(S)
+     - :doc:`Salvator-X(S) <rcar-gen3-salvator-x>`
      - R8A77965 (M3-N)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_salvator-x_defconfig
 
    * -
      - ULCB
      - R8A77965 (M3-N)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
 
    * -
      - Geist
      - R8A779MD (M3Le)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779md_geist_defconfig
 
    * -
      - Eagle
      - R8A77970 (V3M)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77970_eagle_defconfig
 
    * -
      - V3MSK
      - R8A77970 (V3M)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77970_v3msk_defconfig
 
    * -
      - Condor
      - R8A77980 (V3H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77980_condor_defconfig
 
    * -
      - V3HSK
      - R8A77980 (V3H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77980_v3hsk_defconfig
 
    * -
      - Ebisu
      - R8A77990 (E3)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77990_ebisu_defconfig
 
    * -
      - Draak
      - R8A77995 (D3)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a77995_draak_defconfig
 
    * - R-Car Gen4
      - Falcon
      - R8A779A0 (V3U)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779a0_falcon_defconfig
 
    * -
      - Spider
      - R8A779F0 (S4)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779f0_spider_defconfig
 
    * -
      - S4SK
      - R8A779F4 (S4)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779f4_s4sk_defconfig
 
    * -
      - White Hawk
      - R8A779G0 (V4H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779g0_whitehawk_defconfig
 
    * -
      - Sparrow Hawk
      - R8A779G3 (V4H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779g3_sparrowhawk_defconfig
 
    * -
      - Gray Hawk
      - R8A779H0 (V4M)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a779h0_grayhawk_defconfig
 
    * - R-Car Gen5
      - Ironhide (Cortex-A720AE application core)
      - R8A78000 (X5H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a78000_ironhide_defconfig
 
    * -
      - Ironhide (Cortex-M33 RSIP boot core)
      - R8A78000 (X5H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - r8a78000_ironhide_cm33_defconfig
 
    * - RZ/G2 Family
      - Beacon EmbeddedWorks RZ/G2M SoM
      - R8A774A1 (RZ/G2M)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rzg2_beacon_defconfig
 
    * -
      - HopeRun HiHope RZ/G2M
      - R8A774A1 (RZ/G2M)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - hihope_rzg2_defconfig
 
    * -
      - Beacon EmbeddedWorks RZ/G2N SoM
      - R8A774B1 (RZ/G2N)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rzg2_beacon_defconfig
 
    * -
      - HopeRun HiHope RZ/G2N
      - R8A774B1 (RZ/G2N)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - hihope_rzg2_defconfig
 
    * -
      - Silicon Linux RZ/G2E evaluation kit (EK874)
      - R8A774C0 (RZ/G2E)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - silinux_ek874_defconfig
 
    * -
      - Beacon EmbeddedWorks RZ/G2H SoM
      - R8A774E1 (RZ/G2H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - rzg2_beacon_defconfig
 
    * -
      - HopeRun HiHope RZ/G2H
      - R8A774E1 (RZ/G2H)
-     - arm64
+     - :doc:`arm64 <build-env-aarch64>`
      - hihope_rzg2_defconfig
 
    * - :doc:`RZ/N1 Family <rzn1>`
      - Schneider RZ/N1D board
      - R9A06G032 (RZ/N1D)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - rzn1_snarc_defconfig
 
    * -
      - Schneider RZ/N1S board
      - R9A06G033 (RZ/N1S)
-     - arm
+     - :doc:`arm <build-env-aarch32>`
      - rzn1_snarc_defconfig
 
 Build
