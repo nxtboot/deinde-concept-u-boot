@@ -91,7 +91,7 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - rcar3_salvator-x_defconfig
 
    * -
-     - ULCB
+     - :doc:`ULCB <rcar-gen3-ulcb>`
      - R8A77951 (H3)
      - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
@@ -103,7 +103,7 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - rcar3_salvator-x_defconfig
 
    * -
-     - ULCB
+     - :doc:`ULCB <rcar-gen3-ulcb>`
      - R8A77960 (M3-W)
      - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
@@ -115,7 +115,7 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - rcar3_salvator-x_defconfig
 
    * -
-     - ULCB
+     - :doc:`ULCB <rcar-gen3-ulcb>`
      - R8A77965 (M3-N)
      - :doc:`arm64 <build-env-aarch64>`
      - rcar3_ulcb_defconfig
