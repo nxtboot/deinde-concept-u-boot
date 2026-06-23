@@ -151,7 +151,7 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - r8a77980_v3hsk_defconfig
 
    * -
-     - Ebisu
+     - :doc:`Ebisu <rcar-gen3-ebisu>`
      - R8A77990 (E3)
      - :doc:`arm64 <build-env-aarch64>`
      - r8a77990_ebisu_defconfig

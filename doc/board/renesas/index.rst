@@ -13,6 +13,7 @@ Renesas
    rcar-gen3-salvator-x
    rcar-gen3-ulcb
    rcar-gen3-geist
+   rcar-gen3-ebisu
    rcar-gen3-install
    rcar-gen3-install-hf
    rcar-gen3-install-sf
