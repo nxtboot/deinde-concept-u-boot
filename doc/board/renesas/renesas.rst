@@ -264,11 +264,18 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - :doc:`arm <build-env-aarch32>`
      - rzn1_snarc_defconfig
 
-Build
------
+Generic build procedure
+-----------------------
 
-Locate the appropriate defconfig in the table above. Then apply standard build
-procedure::
+This procedure applies only unless the ``Board`` column in
+the table above does not contain a link to board specific
+details.
+
+Locate the appropriate defconfig in the table above.
+Follow toolchain setup procedure in ``Architecture`` column.
+Finally, apply standard build procedure:
+
+.. code-block:: console
 
     make <board_defconfig>
     make
