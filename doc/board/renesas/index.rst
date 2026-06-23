@@ -10,4 +10,7 @@ Renesas
    build-env-sh
    build-env-aarch32
    build-env-aarch64
+   rcar-gen3-salvator-x
+   rcar-gen3-install
+   rcar-gen3-install-hf
    rzn1
