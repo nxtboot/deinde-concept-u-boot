@@ -187,7 +187,7 @@ Renesas is a SoC solutions provider for automotive and industrial applications.
      - r8a779g0_whitehawk_defconfig
 
    * -
-     - Sparrow Hawk
+     - :doc:`Sparrow Hawk <rcar-gen4-sparrow-hawk>`
      - R8A779G3 (V4H)
      - :doc:`arm64 <build-env-aarch64>`
      - r8a779g3_sparrowhawk_defconfig
