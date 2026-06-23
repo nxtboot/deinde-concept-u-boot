@@ -10,6 +10,8 @@ This document describes how to build and flash U-Boot for the RZ/N1.
 
 U-Boot
 ^^^^^^
+Please follow :doc:`Renesas 32-bit ARM SoC build environment setup <build-env-aarch32>`
+to correctly set up the build environment before attempting to build U-Boot.
 
 Clone the U-Boot repository and build it as follows:
 
