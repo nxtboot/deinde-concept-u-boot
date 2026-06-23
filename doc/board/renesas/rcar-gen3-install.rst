@@ -13,6 +13,10 @@ Installation into the HyperFlash can be performed from U-Boot, please
 refer to :doc:`Renesas R-Car Gen3 U-Boot HyperFlash installation <rcar-gen3-install-hf>`
 for details.
 
+Installation into the SPI NOR can be performed from U-Boot, please
+refer to :doc:`Renesas R-Car Gen3 U-Boot SPI NOR installation <rcar-gen3-install-sf>`
+for details.
+
 .. note::
 
     The maximum u-boot.bin size for this target is 1 MiB or 0x100000 Bytes
