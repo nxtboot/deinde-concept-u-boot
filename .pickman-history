@@ -84724,3 +84724,341 @@ Branch left ready for pushing.
 
 ---
 
+## 2026-06-19: us/master
+
+Branch: cherry-a9c1f2af717
+
+Commits:
+- a9c1f2af717 clk: rockchip: rk3528: Add CLK_REF_USB3OTG support
+- c97c7d5caad clk: rockchip: rk3576: Add CLK_REF_USB3OTGx support
+- 3d294c01858 rockchip: rk3588-rock-5b: Remove USB-C controller from u-boot.dtsi
+- 82a5b5f7ca4 board: rockchip: Add FriendlyElec NanoPi R76S
+- 1165c206c2f reset: rockchip: make device resets available in SPL
+- 9941ec2c5cf rockchip: spl: Add support for booting from UFS
+- b00307e3c04 rockchip: rk3576-rock-4d: Enable UFS support
+- f7deed714cd rockchip: rk3576-nanopi-m5: Enable UFS support
+- 3336e85b6a3 rockchip: Switch rk3128 boards to upstream devicetree
+- 924f87b995f rockchip: Switch rk3229 boards to upstream devicetree
+- 957941943bd rockchip: clk: clk_rk3576: Add support for RK3576 GMAC 25MHz clock output
+- 22fa81fd8cc rockchip: MAINTAINERS: upstream devicetree update
+- 3cdce049f90 Merge tag 'u-boot-rockchip-20260610' of https://source.denx.de/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+All 13 commits are present. Now running the final build.
+
+## Final Status Report
+
+**Branch**: `cherry-a9c1f2af717` (based on `ci/master`)
+
+**All 13 commits successfully cherry-picked**:
+1. `65f597565f4` - clk: rockchip: rk3528: Add CLK_REF_USB3OTG support
+2. `788409569b6` - clk: rockchip: rk3576: Add CLK_REF_USB3OTGx support
+3. `501af00357c` - rockchip: rk3588-rock-5b: Remove USB-C controller from u-boot.dtsi
+4. `f8374a86779` - board: rockchip: Add FriendlyElec NanoPi R76S (auto-merged doc rst)
+5. `2d5eca95ae2` - reset: rockchip: make device resets available in SPL
+6. `6f2ee9a4f29` - rockchip: spl: Add support for booting from UFS
+7. `ae1db9369e1` - rockchip: rk3576-rock-4d: Enable UFS support (auto-merged defconfig)
+8. `00ca063c5e3` - rockchip: rk3576-nanopi-m5: Enable UFS support (auto-merged defconfig)
+9. `fa7f6c8f051` - rockchip: Switch rk3128 boards to upstream devicetree (auto-merged Makefile, Kconfig)
+10. `b99db85ab94` - rockchip: Switch rk3229 boards to upstream devicetree (auto-merged Makefile, Kconfig, defconfig)
+11. `d87e555bb82` - rockchip: clk: clk_rk3576: Add support for RK3576 GMAC 25MHz clock output
+12. `5095f06717b` - rockchip: MAINTAINERS: upstream devicetree update (auto-merged MAINTAINERS)
+13. `87d9133e859` - Merge tag 'u-boot-rockchip-20260610' (empty merge, committed with --allow-empty)
+
+**Build result**: OK - sandbox built successfully (1 board, 0 errors, 0 warnings)
+
+**Delta checks**: All commits show identical file lists and line counts compared to originals. No concerning deltas.
+
+**Fix-ups**: None required. All cherry-picks applied cleanly with only trivial auto-merges. No commit messages were amended.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-06-19 (attempt 1)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- efi-x86_app32 test.py (test.py)
+- xilinx_zynq_virt test.py (test.py)
+- xilinx_mbv64_smode test.py (test.py)
+- xilinx_mbv32_smode test.py (test.py)
+- xilinx_mbv64 test.py (test.py)
+- xilinx_mbv32 test.py (test.py)
+- xilinx_versal_virt test.py (test.py)
+- r2dplus_i82557c test.py (test.py)
+- coreboot test.py (test.py)
+- sifive_unleashed_spi-nor test.py (test.py)
+- r2dplus_tulip test.py (test.py)
+- qemu-x86_64 test.py (test.py)
+- qemu-riscv64_spl test.py (test.py)
+- r2dplus_pcnet test.py (test.py)
+- r2dplus_rtl8139 test.py (test.py)
+- qemu-x86_64_nospl test.py (test.py)
+- qemu-x86 test.py (test.py)
+- qemu-ppce500 test.py (test.py)
+- qemu-riscv64_smode_acpi test.py (test.py)
+- qemu-riscv64 test.py (test.py)
+- qemu_maltael test.py (test.py)
+- qemu_malta64el test.py (test.py)
+- efi-x86_app64 test.py (test.py)
+- efi-riscv_app64 test.py (test.py)
+- qemu-riscv64_smode test.py (test.py)
+- qemu_malta test.py (test.py)
+- qemu-riscv32 test.py (test.py)
+- qemu_m68k_virt test.py (test.py)
+- qemu_m68k test.py (test.py)
+- qemu-riscv32_spl test.py (test.py)
+- qemu_arm_sbsa test.py (test.py)
+- qemu_malta64 test.py (test.py)
+- evb-ast2500 test.py (test.py)
+- qemu_arm64 spl_test.py (test.py)
+- integratorcp_cm926ejs test.py (test.py)
+- qemu_arm64_tfa_fw_handoff test.py (test.py)
+- sandbox trace_test.py (test.py)
+- qemu_arm spl_test.py (test.py)
+- qemu_arm64_lwip test.py (test.py)
+- qemu-xtensa-dc233c test.py (test.py)
+- xtfpga test.py (test.py)
+- vexpress_ca9x4 test.py (test.py)
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- efi-x86_64-uboot-iso (sjg-lab)
+- coral (sjg-lab)
+- rpi3 (sjg-lab)
+- Check make tcheck (test.py)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+All 49 failing jobs are infrastructure issues unrelated to the cherry-picked commits.
+
+## Diagnosis
+
+**Branch contents**: All 13 cherry-picked commits are Rockchip-specific (rk3128, rk3229, rk3528, rk3576, rk3588 — clocks, board ports, UFS SPL boot, reset driver, MAINTAINERS). None touch the test infrastructure, sandbox, QEMU, x86, RISC-V, MIPS, m68k, Xtensa, ARM-vexpress, or lab-driver code.
+
+**Failure pattern**:
+
+1. **45 of 49 jobs** failed at `get_sources` with:
+   ```
+   fatal: unable to access 'https://concept.deinde.dev/u-boot/u-boot.git/':
+   TLS connect error: error:0A000458:SSL routines::tlsv1 unrecognized name
+   ```
+   The runner couldn't even clone the repo, so no build or test ran. Pure infrastructure/TLS-SNI issue on the GitLab server.
+
+2. **rpi3, coral** (sjg-lab): `pexpect TIMEOUT … waiting for login`. The board (or its labgrid endpoint) failed to come up — a lab/hardware timeout, not a code failure. Neither board is a Rockchip target and no commit on this branch touches them.
+
+3. **efi-x86_64-uboot-iso, efi-x86_64-uboot-iso-install**: lab timeout / `OSError: [Errno 5] Input/output error` on the serial pty during `test_distro_ubuntu_iso_install`. Lab-side serial/I-O issue; the cherry-picked Rockchip patches are unrelated to x86 EFI ISO boot.
+
+## Conclusion
+
+These are transient infrastructure failures (TLS handshake/SNI misconfiguration on the GitLab host, plus unrelated lab timeouts). The Rockchip changes in this MR cannot have caused any of them — they don't touch the affected boards or code paths, and most jobs never even fetched the source.
+
+**No code changes made. No `cherry-a9c1f2af717-fix1` branch created.** Recommendation: retry the pipeline once the GitLab TLS/SNI issue is resolved.
+
+---
+
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_app32 test.py, xilinx_zynq_virt test.py, xilin...
+
+### Conversation log
+I've reviewed the situation. The "review comment" being addressed is the bot's same pipeline-fix report from attempt 1 — same 49 failing jobs, same root cause. Nothing has changed since the prior diagnosis.
+
+## Analysis
+
+**Branch state**: 13 cherry-picked commits, all strictly Rockchip-specific. File-by-file confirmation:
+
+- `arch/arm/dts/rk3128*`, `rk3229*`, `rk3576*`, `rk3588-rock-5b*`
+- `arch/arm/mach-rockchip/{rk3576,spl-boot-order,Kconfig}`
+- `drivers/clk/rockchip/{clk_rk3528,clk_rk3576}.c`
+- `drivers/reset/{Kconfig,Makefile}` (adds Rockchip SPL gate only)
+- `configs/{evb-rk3128,evb-rk3229,nanopi-m5-rk3576,nanopi-r76s-rk3576,rock-4d-rk3576}_defconfig`
+- `include/dt-bindings/clock/rk31[02]8-cru.h`
+- `board/rockchip/.../MAINTAINERS`, `doc/board/rockchip/rockchip.rst`
+
+**Failing jobs** target sandbox, QEMU (arm/arm64/x86/riscv/mips/m68k/ppc/xtensa), vexpress, integrator, xilinx, sifive, coreboot, r2dplus, ast2500, rpi3, coral, efi-x86_64-iso — zero overlap with any file touched in this MR.
+
+**Failure modes** (unchanged from attempt 1):
+1. 45 jobs: `get_sources` TLS-SNI failure against `concept.deinde.dev` — runner never cloned the repo.
+2. rpi3, coral: lab `pexpect TIMEOUT` waiting for login (sjg-lab hardware/labgrid).
+3. efi-x86_64-uboot-iso[-install]: lab serial pty `[Errno 5] I/O error`.
+
+These are infrastructure failures on the GitLab host and the lab; the Rockchip changes cannot have caused them.
+
+## Action taken
+
+**No code changes.** No `-v2` branch created; nothing to push. The previous attempt reached the identical conclusion, and re-pushing an unchanged branch would only re-trigger the same infrastructure failures.
+
+## Suggested MR reply
+
+> Same diagnosis as attempt 1 — all 49 failures are infrastructure, not code:
+>
+> - **45/49** failed at `get_sources` with a TLS-SNI handshake error against `https://concept.deinde.dev/u-boot/u-boot.git/` (`tlsv1 unrecognized name`). The runner never cloned the repo, so no build or test executed.
+> - **rpi3, coral** (sjg-lab): `pexpect TIMEOUT` waiting for login — lab/hardware timeout, not a code failure.
+> - **efi-x86_64-uboot-iso[-install]**: `OSError: [Errno 5] Input/output error` on the serial pty — lab-side I/O issue.
+>
+> All 13 commits on this branch are Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). They don't touch sandbox, QEMU, x86, RISC-V, MIPS, m68k, Xtensa, vexpress, integrator, xilinx, sifive, coreboot, r2dplus, ast2500, rpi3, coral, or x86 EFI ISO code paths.
+>
+> Please retry the pipeline once the GitLab TLS/SNI configuration on `concept.deinde.dev` is fixed and the lab boards (rpi3/coral/x86-iso) recover. No code change is warranted here.
+
+---
+
+### Pipeline fix: 2026-06-19 (attempt 2)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+The rpi3 job (sjg-lab) failed with a lab/hardware timeout — not a code issue:
+
+```
+pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The labgrid `_await_prompt` timed out waiting for the board to print a U-Boot login prompt. This is the labgrid `UBootDriver.on_activate()` path, hit during strategy transition — i.e., the lab couldn't even bring the rpi3 to a U-Boot prompt before any test ran.
+
+### Why this is not caused by the branch
+
+All 13 cherry-picked commits on `cherry-a9c1f2af717` are strictly Rockchip-only:
+
+- `clk: rockchip: rk3528` / `rk3576` (USB3OTG ref clock)
+- `rockchip: rk3588-rock-5b` (u-boot.dtsi)
+- `board: rockchip: NanoPi R76S`
+- `reset: rockchip` (SPL gate driver)
+- `rockchip: spl` (UFS SPL boot)
+- `rockchip: rk3576-rock-4d` / `nanopi-m5` (UFS defconfigs)
+- `rockchip: rk3128` / `rk3229` (upstream DT switch)
+- `rockchip: clk_rk3576` (GMAC 25 MHz)
+- `rockchip: MAINTAINERS`
+- Merge tag commit
+
+`git log ci/master..87d9133e859 -- '*rpi*' '*bcm283*' '*broadcom*'` returns nothing. The diff stat confirms only `drivers/reset/{Kconfig,Makefile}` (Rockchip SPL gate only), Rockchip clock headers, Rockchip DTs, and Rockchip board files are touched. Nothing on this branch can affect a Raspberry Pi 3 (BCM2837) coming up in the sjg-lab.
+
+This is the same lab-timeout symptom flagged in attempt 1 — the rpi3 board/labgrid endpoint is intermittently failing to reach a login prompt.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-fix2` branch created.** The failure is an infrastructure/lab issue (rpi3 board or its labgrid serial/power path not coming up within the 20s login timeout). Recommend retrying the job once the rpi3 lab endpoint is healthy.
+
+---
+
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rpi3.
+
+## Diagnosis
+
+The rpi3 job (sjg-lab) failed wit...
+
+### Conversation log
+I've reviewed the situation. The "review comment" being addressed is the bot's pipeline-fix report from attempt 2 — same single failing job (rpi3), same lab-timeout root cause. This is now the third pass over the identical diagnosis.
+
+## Analysis
+
+**Branch state**: Unchanged from attempt 2. All 13 cherry-picked commits are strictly Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). No files touched on this branch can affect a Raspberry Pi 3 (BCM2837).
+
+**Failure mode**: rpi3 (sjg-lab) — `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` in labgrid `UBootDriver.on_activate()`. The board never reached a U-Boot login prompt — pure lab/hardware issue.
+
+**Sanity check**: `git log ci/master..HEAD -- '*rpi*' '*bcm283*' '*broadcom*'` returns nothing. The branch cannot have caused an rpi3 boot timeout.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-v2` branch created. Nothing pushed.** Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure. The rpi3 endpoint in sjg-lab needs to recover before the job will pass.
+
+## Suggested MR reply
+
+> Same diagnosis as attempt 2: rpi3 is failing with a labgrid login timeout (`pexpect TIMEOUT … waiting for login` in `UBootDriver.on_activate()`), which is a sjg-lab hardware/serial issue — the board never reached a U-Boot prompt, so no test ever ran.
+>
+> All 13 commits on this branch are Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588). `git log ci/master..HEAD -- '*rpi*' '*bcm283*' '*broadcom*'` is empty — nothing here can affect a BCM2837 board coming up in the lab.
+>
+> Please retry once the rpi3 lab endpoint is healthy. No code change is warranted.
+
+---
+
+### Pipeline fix: 2026-06-19 (attempt 3)
+
+Branch: cherry-a9c1f2af717
+
+Failed jobs:
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Diagnosis
+
+**Failure mode (rpi3, sjg-lab)**: `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` in `labgrid/driver/ubootdriver.py:_await_prompt()`. The board never reached a U-Boot prompt during strategy transition — labgrid marked the connection bad and aborted before any test ran. This is a lab/hardware timeout, not a code failure.
+
+This is the **identical symptom** flagged in attempts 1 and 2.
+
+## Why this is not caused by the branch
+
+All 13 cherry-picked commits on `cherry-a9c1f2af717` are strictly Rockchip-only:
+
+- `clk: rockchip: rk3528 / rk3576` (USB3OTG ref clock)
+- `rockchip: rk3588-rock-5b` (u-boot.dtsi)
+- `board: rockchip: NanoPi R76S`
+- `reset: rockchip` (SPL gate)
+- `rockchip: spl` (UFS SPL boot)
+- `rockchip: rk3576-rock-4d / nanopi-m5` (UFS defconfigs)
+- `rockchip: rk3128 / rk3229` (upstream DT switch)
+- `rockchip: clk_rk3576` (GMAC 25 MHz)
+- `rockchip: MAINTAINERS`
+- merge tag commit
+
+Verified: `git log ci/master..HEAD --name-only | grep -iE 'rpi|bcm283|broadcom'` returns **nothing**. There is no file on this branch that can affect a Raspberry Pi 3 (BCM2837) coming up at the labgrid serial prompt.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-fix3` branch created. Nothing pushed.**
+
+Per the task instructions ("If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes"), this is a recurring sjg-lab rpi3 boot/serial timeout. Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure. The rpi3 endpoint in sjg-lab needs to recover (or the 20s `_await_prompt` budget extended) before the job will pass.
+
+**Recommendation**: retry the rpi3 job once the lab endpoint is healthy.
+
+---
+
+### Review: 2026-06-19
+
+Branch: cherry-a9c1f2af717
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Looking at this task, the review comment is explicit: **"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."**
+
+This is a meta-instruction from the bot itself, not an actionable code review comment. It is telling me that automated retries have been exhausted and that a human needs to step in. Let me verify the branch state and then report.
+
+Branch state is unchanged from the prior three attempts. The 13 Rockchip-only commits are intact.
+
+## Action taken
+
+**No code changes. No `cherry-a9c1f2af717-v2` branch created. Nothing pushed.**
+
+The review comment is the bot's own retry-limit signal: `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.` There is no actionable code feedback in this comment — it is explicitly handing the issue off to a human.
+
+All three prior automated attempts reached the same conclusion: the lone failing job (rpi3) is a recurring sjg-lab hardware/serial timeout (`pexpect TIMEOUT … waiting for login` in `labgrid/driver/ubootdriver.py:_await_prompt()`). The branch is strictly Rockchip-only (rk3128/rk3229/rk3528/rk3576/rk3588) and touches no `rpi`, `bcm283*`, or `broadcom` file. A BCM2837 board failing to reach a U-Boot prompt in the lab cannot be caused by anything on this branch.
+
+Re-pushing an unchanged branch would only re-trigger the same intermittent lab failure and consume another CI cycle for no benefit.
+
+## Suggested MR reply
+
+> The automated pipeline-fix retry limit has been reached. All three prior attempts diagnosed the same root cause: **rpi3 (sjg-lab) lab-timeout** — `pexpect TIMEOUT … waiting for login` in `UBootDriver._await_prompt()`. The board never reaches a U-Boot prompt, so no test ever runs.
+>
+> This branch contains 13 strictly Rockchip-only commits (rk3128/rk3229/rk3528/rk3576/rk3588 — clocks, DTs, board ports, UFS SPL boot, reset gate, MAINTAINERS). `git log ci/master..HEAD --name-only | grep -iE 'rpi|bcm283|broadcom'` is empty — nothing here can cause a Raspberry Pi 3 boot timeout.
+>
+> **Manual intervention requested**: please either (a) retry the rpi3 job once the sjg-lab endpoint is healthy, (b) extend the 20 s `_await_prompt` budget if the board is genuinely slow to print the prompt, or (c) mark the rpi3 lab job as a known-flaky/non-blocking check for this MR. No code change on this branch is warranted.
+
+---
+
