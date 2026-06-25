@@ -85161,3 +85161,54 @@ v2 so the MR pipeline can re-run against fresh lab runners.
 
 ---
 
+### Review: 2026-06-25
+
+Branch: cherry-895d3c67cd5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, bob, rpi3.
+
+The branch only touches `arch...
+
+### Conversation log
+## Report
+
+**Branch:** `cherry-895d3c67cd5` (local v2 also at `cherry-895d3c67cd5-v2`)
+**MR:** !1128
+**Remote update:** `333144f8cc0..b903292c86b` (fast-forward push)
+
+### What was done
+
+1. **Reviewed the comment.** The only "review comment" on the MR was from
+   `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the project bot
+   re-posting the prior pipeline-fix attempt 1 diagnosis verbatim. There was
+   no actionable feedback in it; the comment IS the diagnosis I already
+   provided.
+2. **Re-verified the diagnosis.** The branch still only touches
+   `arch/arm/cpu/arm926ejs/mxs/Makefile` and `.pickman-history`. None of the
+   failing jobs (efi-aarch64 / bob / rpi3) share a code path with the
+   ARM926EJS mxs Makefile. All three failures are classic sjg-lab
+   infrastructure symptoms (Errno 5 I/O on the QEMU host; login-prompt
+   timeouts on rk3399 / BCM2837).
+3. **Build check:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1
+   built, no warnings or errors.
+4. **Recorded the review handling** in `.pickman-history` as a new entry
+   under the existing cherry-895d3c67cd5 section, committed as `pickman:
+   Record review handling for cherry-895d3c67cd5` (`b903292c86b`).
+5. **Created `cherry-895d3c67cd5-v2`** at the new tip.
+6. **Pushed** with `./tools/pickman/pickman push-branch cherry-895d3c67cd5 -r ci -f`.
+
+### Suggested MR reply
+
+> The only comment on the MR is the project bot re-posting the prior
+> pipeline-fix-attempt-1 diagnosis. That diagnosis stands: the branch only
+> changes `arch/arm/cpu/arm926ejs/mxs/Makefile` (ARM926EJS / i.MX23/28) and
+> `.pickman-history`, which cannot affect efi-aarch64 (aarch64 EFI app),
+> bob (rk3399), or rpi3 (BCM2837). The failures occurred in the
+> test-runner/serial-attach phase with the lab's usual symptoms
+> (`OSError: [Errno 5] Input/output error` and login-prompt timeouts).
+> No code change required. Pushed v2 so a fresh pipeline runs against
+> the lab runners.
+
+---
+
