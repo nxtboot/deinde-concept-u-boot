@@ -85093,3 +85093,39 @@ All 5 commits successfully cherry-picked onto branch `cherry-d043e977104` (based
 
 ---
 
+## 2026-06-25: us/master
+
+Branch: cherry-895d3c67cd5
+
+Commits:
+- 895d3c67cd5 x86: edison: Avoid passing FORCE to the align command
+- 3ac35afdd2c arm: mxs: Avoid passing FORCE to commands
+- badd97fe24d Merge patch series "Repair boards broken by the 6.1 kbuild bump"
+
+### Conversation log
+Good, mxs commit applied cleanly with identical stats. Now the merge commit:
+
+Now run the build test:
+
+Build passes. Final summary:
+
+## Summary
+
+**Branch created:** `cherry-895d3c67cd5` (based on `ci/master`)
+
+**Commits on branch:**
+- `8374a51` - x86: edison: Avoid passing FORCE to the align command **[FAILED]** (empty)
+- `700f2b4` - arm: mxs: Avoid passing FORCE to commands (clean cherry-pick)
+- `569a700` - Merge patch series "Repair boards broken by the 6.1 kbuild bump" (resolved, empty effectively)
+
+**Build result:** OK — sandbox built successfully, no warnings/errors
+
+**Fix-ups / concerning deltas:**
+1. **edison commit (895d3c67cd5) is obsolete.** The original commit patched the `cmd_mkalign_eds` rule in `board/intel/edison/config.mk` (changing `$^` → `$<`). However, ci/master already contains commit `7c477d88086` ("x86: edison: Align U-Boot via binman to fix the boot"), which removed the entire `mkalign_eds` hack and replaced it with binman-based padding. The code being patched no longer exists. An empty commit was created with `[FAILED]` in the subject and a note explaining the situation.
+2. **Merge commit conflict resolved by keeping current `board/intel/edison/config.mk`** (same reason as above). Added a one-line fix-up note to the merge commit message. The merge ended up effectively empty for the edison file; the mxs portion was already brought in by the prior cherry-pick.
+3. **mxs commit (3ac35afdd2c) applied cleanly** — identical stats to the original (1 file, +7/-7).
+
+The branch is ready for pushing; no merges back to other branches were performed.
+
+---
+
