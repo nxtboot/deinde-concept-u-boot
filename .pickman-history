@@ -85275,3 +85275,40 @@ There is nothing actionable here:
 
 ---
 
+### Review: 2026-06-25
+
+Branch: cherry-1bd1d033377
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already up-to-date with `ci/master` — no rebase needed. Let me verify the build still passes.
+
+## Rebase Report — MR !1129 (`cherry-1bd1d033377`)
+
+### Result: No-op rebase (branch already current with `ci/master`)
+
+**State:**
+- `ci/master` tip: `e6117f3a366`
+- Local branch tip: `3fd389d46db`
+- Merge base: `e6117f3a366` — the cherry-pick commits sit directly on top of the current `ci/master`
+
+`git rebase --keep-empty ci/master` reported: *"Current branch cherry-1bd1d033377 is up to date."* No conflicts, no commit rewriting, no delta to inspect.
+
+### Build verification
+`buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 warnings/errors (7s).
+
+### Push
+The remote `cherry-1bd1d033377` had drifted to an unrelated state (`23454baa5fe`, a completely different commit chain unrelated to this MR's cherry-picks). Force-pushed the correct local branch via `./tools/pickman/pickman push-branch cherry-1bd1d033377 -r ci -f`:
+```
++ 23454baa5fe...3fd389d46db HEAD -> cherry-1bd1d033377 (forced update)
+```
+Local `-v2` branch created at the same SHA for tracking.
+
+### Suggested MR reply
+
+> Rebased onto `ci/master` — the branch was already current (merge base equals the `ci/master` tip `e6117f3a366`), so no commits were rewritten and no conflicts arose. Sandbox build (`buildman -L --board sandbox`) passes cleanly. The six cherry-picks (`553f79f4018` fastboot → `47422bdf7c4` merge tag) are unchanged. Force-pushed to refresh the MR and trigger a new pipeline.
+
+---
+
