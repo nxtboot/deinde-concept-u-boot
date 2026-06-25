@@ -85062,3 +85062,34 @@ Re-pushing an unchanged branch would only re-trigger the same intermittent lab f
 
 ---
 
+## 2026-06-23: us/master
+
+Branch: cherry-d043e977104
+
+Commits:
+- d043e977104 arm: renesas: Build u-boot-elf.shdr for R-Car X5H Cortex-M33 RSIP port
+- 79d6bd525ce arm: renesas: Make R-Car Gen5 u-boot-elf.shdr compatible with SDK flash_writer
+- a298f3066ef arm64: renesas: Fold mach_cpu_init into board_init_f on R-Car S4/V4H/V4M SPL
+- cc5d760ace8 arm64: renesas: Initialize GIC600 fully on R-Car S4/V4H/V4M
+- 1e80ee41441 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 5 commits successfully cherry-picked onto branch `cherry-d043e977104` (based on ci/master).
+
+**Status: SUCCESS**
+
+**Commits applied:**
+1. `ae557b8f80a` - arm: renesas: Build u-boot-elf.shdr for R-Car X5H Cortex-M33 RSIP port
+2. `29e6254d12c` - arm: renesas: Make R-Car Gen5 u-boot-elf.shdr compatible with SDK flash_writer
+3. `dc487c7e631` - arm64: renesas: Fold mach_cpu_init into board_init_f on R-Car S4/V4H/V4M SPL
+4. `7f6ff55b14d` - arm64: renesas: Initialize GIC600 fully on R-Car S4/V4H/V4M
+5. `52eeca1451a` - Merge branch 'master' of u-boot-sh (empty, preserved with --allow-empty)
+
+**Deltas:** All non-merge commits had identical file changes and line counts vs. originals (no concerning deltas).
+
+**Fix-ups:** None required. The merge commit became empty after cherry-pick (expected, since all child commits were already applied individually) — committed with `--allow-empty` to preserve history.
+
+**Build result:** OK — sandbox build passed cleanly after each cherry-pick and at the end.
+
+---
+
