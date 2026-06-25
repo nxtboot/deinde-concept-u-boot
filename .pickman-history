@@ -85129,3 +85129,35 @@ The branch is ready for pushing; no merges back to other branches were performed
 
 ---
 
+### Review: 2026-06-25
+
+Branch: cherry-895d3c67cd5
+
+Comments addressed:
+- `project_1_bot_2541d37e7146e9c25808a380e05ebef0`: re-posted the prior
+  pipeline-fix attempt 1 diagnosis (efi-aarch64 / bob / rpi3 failures
+  identified as sjg-lab infrastructure issues, not code-related). No
+  actionable feedback.
+
+### Conversation log
+The only "review comment" on the MR is the bot's own re-post of the
+pipeline-fix attempt 1 report. That report's diagnosis still stands:
+
+- Branch only changes `arch/arm/cpu/arm926ejs/mxs/Makefile` (ARM926EJS /
+  i.MX23/28) and `.pickman-history`.
+- None of efi-aarch64 (aarch64 EFI app), bob (rk3399), or rpi3
+  (BCM2837) share a code path with mxs.
+- All three failures occurred in the test-runner / serial-attach phase
+  with classic lab-infrastructure symptoms (Errno 5 I/O on the QEMU
+  host, login-prompt timeouts on the lab boards).
+
+No code change is required. The build still passes:
+`buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no
+warnings or errors.
+
+### Action taken
+Added this review-handling record to `.pickman-history` and pushed as
+v2 so the MR pipeline can re-run against fresh lab runners.
+
+---
+
