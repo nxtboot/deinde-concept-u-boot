@@ -48,6 +48,7 @@ Eugen Hristev <ehristev@kernel.org> <eugen.hristev@linaro.org>
 Eugen Hristev <ehristev@kernel.org> <eugen.hristev@collabora.com>
 Fabio Estevam <fabio.estevam@nxp.com>
 Greg Malysa <malysagreg@gmail.com> <greg.malysa@timesys.com>
+Gregory CLEMENT <gregory.clement@bootlin.com> <gregory.clement@free-electrons.com>
 Harini Katakam <harini.katakam@amd.com> <harini.katakam@xilinx.com>
 Harsha <harsha.harsha@amd.com> <harsha.harsha@xilinx.com>
 Heiko Stuebner <heiko.stuebner@cherry.de> <heiko.stuebner@theobroma-systems.com>
@@ -95,6 +96,7 @@ Michal Simek <michal.simek@amd.com> <Monstr@seznam.cz>
 Michal Simek <michal.simek@amd.com> <michal.simek@xilinx.com>
 Michal Simek <michal.simek@amd.com> <monstr@monstr.eu>
 Michal Simek <michal.simek@amd.com> <root@monstr.eu>
+Miquel Raynal <miquel.raynal@bootlin.com> <miquel.raynal@free-electrons.com>
 Mirza <Taimoor_Mirza@mentor.com>
 Mounika Grace Akula <mounika.akula@amd.com> <mounika.grace.akula@xilinx.com>
 Mubin Usman Sayyed <mubin.sayyed@amd.com> <mubin.usman.sayyed@xilinx.com>
@@ -149,6 +151,7 @@ Sughosh Ganu <sughosh.ganu@arm.com> <sughosh.ganu@linaro.org>
 No generic patch CC mail please <noreply@example.com> <swarren@wwwdotorg.org>
 No generic patch CC mail please <noreply@example.com> <swarren@nvidia.com>
 Sumit Garg <sumit.garg@kernel.org> <sumit.garg@linaro.org>
+Thomas Petazzoni <thomas.petazzoni@bootlin.com> <thomas.petazzoni@free-electrons.com>
 Tom Rini <trini@konsulko.com> <trini@ti.com>
 Tomas Thoresen <tomas.thoresen@amd.com> <tomast@xilinx.com>
 TsiChung Liew <Tsi-Chung.Liew@freescale.com>
