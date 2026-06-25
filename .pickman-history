@@ -85209,6 +85209,44 @@ The branch only touches `arch...
 > (`OSError: [Errno 5] Input/output error` and login-prompt timeouts).
 > No code change required. Pushed v2 so a fresh pipeline runs against
 > the lab runners.
+---
+
+## 2026-06-25: us/master
+
+Branch: cherry-1bd1d033377
+
+Commits:
+- 1bd1d033377 fastboot: Fix blk_dwrite error checking
+- e41e97e6e60 android_ab: fix slot selection
+- 033eb908d0a usb: gadget: atmel: use calloc() to allocate endpoint list
+- 8b154abd31e lmb: Add the Rockchip architecture as requiring DMA below 4G
+- 79f3e2f8be9 Makefile: let 'make clean' remove files created by DEVICE_TREE_DEBUG
+- 932e3f6c6a5 Merge tag 'u-boot-dfu-20260616' of https://source.denx.de/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+## Cherry-pick Summary
+
+All 6 commits successfully cherry-picked onto branch `cherry-1bd1d033377` (based on `ci/master`):
+
+```
+47422bdf7c4 Merge tag 'u-boot-dfu-20260616' ... (empty merge, preserved)
+490d7e6ad78 Makefile: let 'make clean' remove files created by DEVICE_TREE_DEBUG
+fec99ccccc6 lmb: Add the Rockchip architecture as requiring DMA below 4G
+80bb81e3643 usb: gadget: atmel: use calloc() to allocate endpoint list
+85ddfcf48a2 android_ab: fix slot selection
+553f79f4018 fastboot: Fix blk_dwrite error checking
+```
+
+**Build result**: OK — sandbox build passed cleanly after each cherry-pick and at the end (no warnings/errors).
+
+**Conflicts/fix-ups**: None requiring manual resolution.
+- `8b154abd31e` (lmb): auto-merged `lib/Kconfig` — stat matches original (1 file, 1+/1-)
+- `79f3e2f8be9` (Makefile clean): auto-merged `.gitignore` + `Makefile` — stat matches original (2 files, 4+)
+- `932e3f6c6a5` (merge tag): cherry-picked with `-m 1 --allow-empty`; resulted in an empty commit (all referenced changes already present), preserved with `git commit --allow-empty --no-edit`
+
+**Concerning deltas**: None — every per-commit stat matched the originals.
+
+Branch is left at `cherry-1bd1d033377` ready for pushing.
 
 ---
 
