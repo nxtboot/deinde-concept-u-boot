@@ -58,6 +58,9 @@ static const struct compressed_disk_image img = EFI_ST_DISK_IMG;
 /* Decompressed disk image */
 static u8 *image;
 
+/* Handles buffer */
+static efi_handle_t *handles;
+
 /*
  * Reset service of the block IO protocol.
  *
@@ -276,6 +279,15 @@ static int teardown(void)
 			return EFI_ST_FAILURE;
 		}
 	}
+
+	if (handles) {
+		r = boottime->free_pool(handles);
+		if (r != EFI_SUCCESS) {
+			efi_st_error("Failed to free handles\n");
+			return EFI_ST_FAILURE;
+		}
+	}
+
 	return r;
 }
 
@@ -303,7 +315,6 @@ static int execute(void)
 {
 	efi_status_t ret;
 	efi_uintn_t no_handles, i, len;
-	efi_handle_t *handles;
 	efi_handle_t handle_partition = NULL;
 	struct efi_device_path *dp_partition;
 	struct efi_block_io *block_io_protocol;
@@ -372,6 +383,7 @@ static int execute(void)
 		break;
 	}
 	ret = boottime->free_pool(handles);
+	handles = NULL;	/* Avoid double free on teardown(). */
 	if (ret != EFI_SUCCESS) {
 		efi_st_error("Failed to free pool memory\n");
 		return EFI_ST_FAILURE;
