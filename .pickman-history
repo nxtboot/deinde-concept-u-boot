@@ -85413,3 +85413,48 @@ All 7 failures were infrastructure issues:
 
 ---
 
+## 2026-06-27: us/master
+
+Branch: cherry-a1d74f409fd
+
+Commits:
+- a1d74f409fd doc: board: renesas: Document Renesas RZ/N1D and RZ/N1S as arm
+- 3b2190935b3 doc: board: renesas: Document Renesas Geist board support
+- 89b45e46ca2 doc: board: renesas: Document Renesas Gray Hawk board support
+- 861be585cc1 doc: board: renesas: Document Renesas Ironhide board support
+- 5150a861876 efi_selftest: fix guid comparison
+- eb6f420836b bootdev: fix typos
+- 1f5c8eac2f2 efi_loader: fix memory leak in efi_var_collect
+- 41c6b83c777 lib/efi_loader: fix block io revision
+- 60ff3d95099 efi_selftest: fix use-after-free
+- ad90d1ec8b4 doc: android: fastboot: Document halt behaviour
+- d57ea0d9edf Merge tag 'efi-2026-07-rc6' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+All 11 commits present. Final build test:
+
+All 11 commits cherry-picked successfully onto branch `cherry-a1d74f409fd`.
+
+**Final Status:**
+
+- **Build result:** OK (sandbox built cleanly, no warnings/errors)
+- **Commits applied (11/11):**
+  1. `3daf84e6a6e` — doc: renesas RZ/N1D and RZ/N1S as arm
+  2. `b2cdf8ce80c` — doc: renesas Geist
+  3. `59ed703bc25` — doc: renesas Gray Hawk
+  4. `838099bdb94` — doc: renesas Ironhide
+  5. `217f15346fa` — efi_selftest: fix guid comparison
+  6. `70448fb2d15` — bootdev: fix typos
+  7. `74e74b0f61c` — efi_loader: fix memory leak in efi_var_collect
+  8. `e6bf4f3457a` — lib/efi_loader: fix block io revision
+  9. `d2a2a202a16` — efi_selftest: fix use-after-free
+  10. `879a44c816f` — doc: android: fastboot: halt behaviour
+  11. `b5f338f9966` — Merge tag 'efi-2026-07-rc6' (empty merge, preserved with `--allow-empty`)
+- **Fix-ups:** Merge commit required `--allow-empty` (resolved as empty after upstream content already integrated); cherry-pick reference was added via amend to preserve `(cherry picked from commit ...)` line.
+- **Concerning deltas:** None — all stat outputs matched originals exactly.
+- **Auto-merges:** Clean three-way merges occurred on `include/bootdev.h`, `lib/efi_loader/efi_var_common.c`, and `lib/efi_loader/efi_disk.c`, none required conflict resolution.
+
+Branch `cherry-a1d74f409fd` is ready for pushing.
+
+---
+
