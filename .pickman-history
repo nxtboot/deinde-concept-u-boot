@@ -85312,3 +85312,34 @@ Local `-v2` branch created at the same SHA for tracking.
 
 ---
 
+## 2026-06-27: us/master
+
+Branch: cherry-93e5ca92610
+
+Commits:
+- 93e5ca92610 ram: renesas: rtvram: Add support for Renesas R-Car Gen5
+- a06d8334e5f ram: renesas: dbsc5: Add Renesas R-Car Gen5 DBSC5 driver
+- 28f675023da arm: dts: renesas: Enable DBSC5 on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- a7830e87555 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 4 commits cherry-picked successfully onto branch `cherry-93e5ca92610`.
+
+## Final Status
+
+**Build result:** OK (sandbox builds successfully)
+
+**Commits applied (all deltas match originals exactly):**
+1. `e5f124bd583` — ram: renesas: rtvram: Add support for Renesas R-Car Gen5 (1 file, +34/-10)
+2. `f00d0b8db2b` — ram: renesas: dbsc5: Add Renesas R-Car Gen5 DBSC5 driver (15 files, +10518/-14)
+3. `42c7eb6386c` — arm: dts: renesas: Enable DBSC5 on R-Car R8A78000 X5H Cortex-M33 RSIP port (5 files, +108/-2)
+4. `de939df5bf5` — Merge branch 'master' of u-boot-sh (empty merge commit, preserved with --allow-empty)
+
+**Fix-ups:** None — all cherry-picks applied cleanly. The merge commit became empty (its content was already brought in by the three preceding commits) and was preserved as an empty commit per instructions.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
+
+---
+
