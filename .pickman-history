@@ -85339,6 +85339,37 @@ All 4 commits cherry-picked successfully onto branch `cherry-93e5ca92610`.
 
 **Concerning deltas:** None.
 
+---
+
+## 2026-06-27: us/master
+
+Branch: cherry-fae363f2cff
+
+Commits:
+- fae363f2cff configs: phycore_am62x_a53_defconfig: Enable fastboot
+- 78d5f8cb500 usb: tcpm: fix inverted poll condition in tcpm_pd_transmit()
+- 922cf29dd80 Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+Stats match. Now the build test:
+
+All cherry-picks complete and verified.
+
+## Final Status
+
+**Branch:** `cherry-fae363f2cff` (based on `ci/master`)
+
+**Commits cherry-picked (in order):**
+1. `175fb44c65f` - configs: phycore_am62x_a53_defconfig: Enable fastboot (1 file, 3+/1-)
+2. `005f25c5b39` - usb: tcpm: fix inverted poll condition in tcpm_pd_transmit() (1 file, 1+/1-)
+3. `ef0902f082c` - Merge branch 'master' of git://source.denx.de/u-boot-usb (empty merge, preserved with `--allow-empty`)
+
+**Build result:** OK - sandbox builds cleanly with no warnings or errors.
+
+**Deltas:** All file/line counts match the originals exactly. No concerning deltas.
+
+**Fix-ups:** None required. The first non-merge commit auto-merged a single file (configs/phycore_am62x_a53_defconfig) cleanly. The merge commit became empty as expected (its content was already included via the second cherry-pick) and was preserved with `--allow-empty` per instructions.
+
 Branch is ready for pushing.
 
 ---
