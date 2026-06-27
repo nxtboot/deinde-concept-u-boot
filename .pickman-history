@@ -85093,3 +85093,122 @@ All 5 commits successfully cherry-picked onto branch `cherry-d043e977104` (based
 
 ---
 
+## 2026-06-25: us/master
+
+Branch: cherry-895d3c67cd5
+
+Commits:
+- 895d3c67cd5 x86: edison: Avoid passing FORCE to the align command
+- 3ac35afdd2c arm: mxs: Avoid passing FORCE to commands
+- badd97fe24d Merge patch series "Repair boards broken by the 6.1 kbuild bump"
+
+### Conversation log
+Good, mxs commit applied cleanly with identical stats. Now the merge commit:
+
+Now run the build test:
+
+Build passes. Final summary:
+
+## Summary
+
+**Branch created:** `cherry-895d3c67cd5` (based on `ci/master`)
+
+**Commits on branch:**
+- `8374a51` - x86: edison: Avoid passing FORCE to the align command **[FAILED]** (empty)
+- `700f2b4` - arm: mxs: Avoid passing FORCE to commands (clean cherry-pick)
+- `569a700` - Merge patch series "Repair boards broken by the 6.1 kbuild bump" (resolved, empty effectively)
+
+**Build result:** OK — sandbox built successfully, no warnings/errors
+
+**Fix-ups / concerning deltas:**
+1. **edison commit (895d3c67cd5) is obsolete.** The original commit patched the `cmd_mkalign_eds` rule in `board/intel/edison/config.mk` (changing `$^` → `$<`). However, ci/master already contains commit `7c477d88086` ("x86: edison: Align U-Boot via binman to fix the boot"), which removed the entire `mkalign_eds` hack and replaced it with binman-based padding. The code being patched no longer exists. An empty commit was created with `[FAILED]` in the subject and a note explaining the situation.
+2. **Merge commit conflict resolved by keeping current `board/intel/edison/config.mk`** (same reason as above). Added a one-line fix-up note to the merge commit message. The merge ended up effectively empty for the edison file; the mxs portion was already brought in by the prior cherry-pick.
+3. **mxs commit (3ac35afdd2c) applied cleanly** — identical stats to the original (1 file, +7/-7).
+
+The branch is ready for pushing; no merges back to other branches were performed.
+
+---
+
+### Review: 2026-06-25
+
+Branch: cherry-895d3c67cd5
+
+Comments addressed:
+- `project_1_bot_2541d37e7146e9c25808a380e05ebef0`: re-posted the prior
+  pipeline-fix attempt 1 diagnosis (efi-aarch64 / bob / rpi3 failures
+  identified as sjg-lab infrastructure issues, not code-related). No
+  actionable feedback.
+
+### Conversation log
+The only "review comment" on the MR is the bot's own re-post of the
+pipeline-fix attempt 1 report. That report's diagnosis still stands:
+
+- Branch only changes `arch/arm/cpu/arm926ejs/mxs/Makefile` (ARM926EJS /
+  i.MX23/28) and `.pickman-history`.
+- None of efi-aarch64 (aarch64 EFI app), bob (rk3399), or rpi3
+  (BCM2837) share a code path with mxs.
+- All three failures occurred in the test-runner / serial-attach phase
+  with classic lab-infrastructure symptoms (Errno 5 I/O on the QEMU
+  host, login-prompt timeouts on the lab boards).
+
+No code change is required. The build still passes:
+`buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no
+warnings or errors.
+
+### Action taken
+Added this review-handling record to `.pickman-history` and pushed as
+v2 so the MR pipeline can re-run against fresh lab runners.
+
+---
+
+### Review: 2026-06-25
+
+Branch: cherry-895d3c67cd5
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, bob, rpi3.
+
+The branch only touches `arch...
+
+### Conversation log
+## Report
+
+**Branch:** `cherry-895d3c67cd5` (local v2 also at `cherry-895d3c67cd5-v2`)
+**MR:** !1128
+**Remote update:** `333144f8cc0..b903292c86b` (fast-forward push)
+
+### What was done
+
+1. **Reviewed the comment.** The only "review comment" on the MR was from
+   `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the project bot
+   re-posting the prior pipeline-fix attempt 1 diagnosis verbatim. There was
+   no actionable feedback in it; the comment IS the diagnosis I already
+   provided.
+2. **Re-verified the diagnosis.** The branch still only touches
+   `arch/arm/cpu/arm926ejs/mxs/Makefile` and `.pickman-history`. None of the
+   failing jobs (efi-aarch64 / bob / rpi3) share a code path with the
+   ARM926EJS mxs Makefile. All three failures are classic sjg-lab
+   infrastructure symptoms (Errno 5 I/O on the QEMU host; login-prompt
+   timeouts on rk3399 / BCM2837).
+3. **Build check:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1
+   built, no warnings or errors.
+4. **Recorded the review handling** in `.pickman-history` as a new entry
+   under the existing cherry-895d3c67cd5 section, committed as `pickman:
+   Record review handling for cherry-895d3c67cd5` (`b903292c86b`).
+5. **Created `cherry-895d3c67cd5-v2`** at the new tip.
+6. **Pushed** with `./tools/pickman/pickman push-branch cherry-895d3c67cd5 -r ci -f`.
+
+### Suggested MR reply
+
+> The only comment on the MR is the project bot re-posting the prior
+> pipeline-fix-attempt-1 diagnosis. That diagnosis stands: the branch only
+> changes `arch/arm/cpu/arm926ejs/mxs/Makefile` (ARM926EJS / i.MX23/28) and
+> `.pickman-history`, which cannot affect efi-aarch64 (aarch64 EFI app),
+> bob (rk3399), or rpi3 (BCM2837). The failures occurred in the
+> test-runner/serial-attach phase with the lab's usual symptoms
+> (`OSError: [Errno 5] Input/output error` and login-prompt timeouts).
+> No code change required. Pushed v2 so a fresh pipeline runs against
+> the lab runners.
+
+---
+
