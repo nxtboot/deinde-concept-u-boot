@@ -85209,6 +85209,106 @@ The branch only touches `arch...
 > (`OSError: [Errno 5] Input/output error` and login-prompt timeouts).
 > No code change required. Pushed v2 so a fresh pipeline runs against
 > the lab runners.
+---
+
+## 2026-06-25: us/master
+
+Branch: cherry-1bd1d033377
+
+Commits:
+- 1bd1d033377 fastboot: Fix blk_dwrite error checking
+- e41e97e6e60 android_ab: fix slot selection
+- 033eb908d0a usb: gadget: atmel: use calloc() to allocate endpoint list
+- 8b154abd31e lmb: Add the Rockchip architecture as requiring DMA below 4G
+- 79f3e2f8be9 Makefile: let 'make clean' remove files created by DEVICE_TREE_DEBUG
+- 932e3f6c6a5 Merge tag 'u-boot-dfu-20260616' of https://source.denx.de/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+## Cherry-pick Summary
+
+All 6 commits successfully cherry-picked onto branch `cherry-1bd1d033377` (based on `ci/master`):
+
+```
+47422bdf7c4 Merge tag 'u-boot-dfu-20260616' ... (empty merge, preserved)
+490d7e6ad78 Makefile: let 'make clean' remove files created by DEVICE_TREE_DEBUG
+fec99ccccc6 lmb: Add the Rockchip architecture as requiring DMA below 4G
+80bb81e3643 usb: gadget: atmel: use calloc() to allocate endpoint list
+85ddfcf48a2 android_ab: fix slot selection
+553f79f4018 fastboot: Fix blk_dwrite error checking
+```
+
+**Build result**: OK — sandbox build passed cleanly after each cherry-pick and at the end (no warnings/errors).
+
+**Conflicts/fix-ups**: None requiring manual resolution.
+- `8b154abd31e` (lmb): auto-merged `lib/Kconfig` — stat matches original (1 file, 1+/1-)
+- `79f3e2f8be9` (Makefile clean): auto-merged `.gitignore` + `Makefile` — stat matches original (2 files, 4+)
+- `932e3f6c6a5` (merge tag): cherry-picked with `-m 1 --allow-empty`; resulted in an empty commit (all referenced changes already present), preserved with `git commit --allow-empty --no-edit`
+
+**Concerning deltas**: None — every per-commit stat matched the originals.
+
+Branch is left at `cherry-1bd1d033377` ready for pushing.
+
+---
+
+### Review: 2026-06-25
+
+Branch: cherry-1bd1d033377
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) kevin, coral, bob, rpi3.
+
+All four failures are infras...
+
+### Conversation log
+The "review comment" to address is the bot's own status report from the previous pipeline-fix attempt. Its conclusion was explicitly **"No changes are needed"** because all four failing jobs (kevin, coral, bob, rpi3) were infrastructure/lab failures (TLS handshake error, SDRAM training hang, serial-login timeouts), none of which point at code on this branch.
+
+There is nothing actionable here:
+- The comment is not from a human reviewer — it's the previous bot iteration's self-report
+- Its diagnosis explicitly states no code changes are required
+- The 6 cherry-picked commits touch fastboot, android_ab, atmel UDC, lmb Kconfig, Makefile/.gitignore, and an empty merge — none can plausibly cause TLS handshake errors or board-bringup hangs
+
+**Action taken: none.** No code changes, no `-v2` branch, no force-push. The previous diagnosis stands.
+
+**Suggested MR reply:**
+
+> The flagged comment is the previous pipeline-fix attempt's own status report, whose stated conclusion was "no changes needed" — all four failing jobs (kevin, coral, bob, rpi3) were infrastructure/lab failures (TLS handshake error in `get_sources`, SDRAM training hang on coral, serial-login timeouts on bob/rpi3 with "Lab failure: Marking connection bad"). None of these failure modes can be caused by the six cherry-picked commits (fastboot, android_ab, atmel UDC, lmb Kconfig, top-level Makefile/.gitignore, empty merge). Recommend re-running the pipeline; no branch update is warranted.
+
+---
+
+### Review: 2026-06-25
+
+Branch: cherry-1bd1d033377
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already up-to-date with `ci/master` — no rebase needed. Let me verify the build still passes.
+
+## Rebase Report — MR !1129 (`cherry-1bd1d033377`)
+
+### Result: No-op rebase (branch already current with `ci/master`)
+
+**State:**
+- `ci/master` tip: `e6117f3a366`
+- Local branch tip: `3fd389d46db`
+- Merge base: `e6117f3a366` — the cherry-pick commits sit directly on top of the current `ci/master`
+
+`git rebase --keep-empty ci/master` reported: *"Current branch cherry-1bd1d033377 is up to date."* No conflicts, no commit rewriting, no delta to inspect.
+
+### Build verification
+`buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 warnings/errors (7s).
+
+### Push
+The remote `cherry-1bd1d033377` had drifted to an unrelated state (`23454baa5fe`, a completely different commit chain unrelated to this MR's cherry-picks). Force-pushed the correct local branch via `./tools/pickman/pickman push-branch cherry-1bd1d033377 -r ci -f`:
+```
++ 23454baa5fe...3fd389d46db HEAD -> cherry-1bd1d033377 (forced update)
+```
+Local `-v2` branch created at the same SHA for tracking.
+
+### Suggested MR reply
+
+> Rebased onto `ci/master` — the branch was already current (merge base equals the `ci/master` tip `e6117f3a366`), so no commits were rewritten and no conflicts arose. Sandbox build (`buildman -L --board sandbox`) passes cleanly. The six cherry-picks (`553f79f4018` fastboot → `47422bdf7c4` merge tag) are unchanged. Force-pushed to refresh the MR and trigger a new pipeline.
 
 ---
 
