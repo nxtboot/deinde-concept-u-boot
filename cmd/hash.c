@@ -41,7 +41,7 @@ static int do_hash(struct cmd_tbl *cmdtp, int flag, int argc,
 	argv++;
 	for (s = *argv; *s; s++)
 		*s = tolower(*s);
-	return hash_command(*argv, flags, cmdtp, flag, argc - 1, argv + 1);
+	return hash_command(*argv, flags, argc - 1, argv + 1);
 }
 
 U_BOOT_CMD(

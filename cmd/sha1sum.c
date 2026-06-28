@@ -31,7 +31,7 @@ int do_sha1sum(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	}
 #endif
 
-	return hash_command("sha1", flags, cmdtp, flag, ac, av);
+	return hash_command("sha1", flags, ac, av);
 }
 
 #ifdef CONFIG_SHA1SUM_VERIFY

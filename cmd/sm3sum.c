@@ -28,7 +28,7 @@ static int do_sm3sum(struct cmd_tbl *cmdtp, int flag, int argc,
 		ac--;
 	}
 
-	return hash_command("sm3_256", flags, cmdtp, flag, ac, av);
+	return hash_command("sm3_256", flags, ac, av);
 }
 
 #if IS_ENABLED(CONFIG_SM3SUM_VERIFY)
