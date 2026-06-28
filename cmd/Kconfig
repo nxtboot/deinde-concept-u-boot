@@ -2898,6 +2898,7 @@ config CMD_BLOB
 
 config CMD_HASH
 	bool "Support 'hash' command"
+	select GETOPT
 	select HASH
 	help
 	  This provides a way to hash data in memory using various supported
