@@ -785,8 +785,7 @@ sep_err:
  *		the environment at address 'addr'. Without arguments, the whole
  *		environment gets imported.
  */
-static int do_env_import(struct cmd_tbl *cmdtp, int flag,
-			 int argc, char *const argv[])
+static int do_env_import(struct getopt_state *gs)
 {
 	ulong	addr;
 	char	*cmd, *ptr;
@@ -797,40 +796,42 @@ static int do_env_import(struct cmd_tbl *cmdtp, int flag,
 	int	crlf_is_lf = 0;
 	int	wl = 0;
 	size_t	size;
+	int	argc;
+	char	*const *argv;
+	int	opt;
 
-	cmd = *argv;
+	cmd = gs->argv[0];
 
-	while (--argc > 0 && **++argv == '-') {
-		char *arg = *argv;
-		while (*++arg) {
-			switch (*arg) {
-			case 'b':		/* raw binary format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				break;
-			case 'c':		/* external checksum format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				chk = 1;
-				break;
-			case 't':		/* text format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\n';
-				break;
-			case 'r':		/* handle CRLF like LF */
-				crlf_is_lf = 1;
-				break;
-			case 'd':
-				del = 1;
-				break;
-			default:
-				return CMD_RET_USAGE;
-			}
+	while ((opt = getopt(gs, "+bcdrt")) > 0) {
+		switch (opt) {
+		case 'b':		/* raw binary format */
+			sep = '\0';
+			fmt++;
+			break;
+		case 'c':		/* external checksum format */
+			sep = '\0';
+			chk = 1;
+			fmt++;
+			break;
+		case 't':		/* text format */
+			sep = '\n';
+			fmt++;
+			break;
+		case 'r':		/* handle CRLF like LF */
+			crlf_is_lf = 1;
+			break;
+		case 'd':
+			del = 1;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
 	}
+	if (fmt > 1)
+		goto sep_err;
+
+	argc = gs->argc - gs->index;
+	argv = &gs->argv[gs->index];
 
 	if (argc < 1)
 		return CMD_RET_USAGE;
@@ -1104,7 +1105,7 @@ static struct cmd_tbl cmd_env_sub[] = {
 	U_BOOT_CMD_MKENT(grep, CONFIG_SYS_MAXARGS, 1, do_env_grep, "", ""),
 #endif
 #if defined(CONFIG_CMD_IMPORTENV)
-	U_BOOT_CMD_MKENT(import, 5, 0, do_env_import, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(import, 5, 0, do_env_import, "", ""),
 #endif
 #if defined(CONFIG_CMD_NVEDIT_INDIRECT)
 	U_BOOT_CMD_MKENT(indirect, 3, 0, do_env_indirect, "", ""),

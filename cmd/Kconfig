@@ -769,6 +769,7 @@ config CMD_EXPORTENV
 config CMD_IMPORTENV
 	bool "env import"
 	default y
+	select GETOPT
 	help
 	  Import environments.
 
