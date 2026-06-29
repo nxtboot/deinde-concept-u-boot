@@ -85642,3 +85642,56 @@ All cherry-picks completed successfully.
 
 ---
 
+### Pipeline fix: 2026-06-29 (attempt 2)
+
+Branch: cherry-fcda974e360
+
+Failed jobs:
+- build all PowerPC platforms (world_build)
+- bob (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All three failures are clearly infrastructure/transient — same pattern as attempt 1. Let me verify the MR doesn't touch any of the affected code paths, then create the fix branch.
+
+All three failures are infrastructure issues unrelated to any file touched by this MR. Creating the fix2 branch.
+
+Quick sandbox sanity check to confirm the branch builds:
+
+Sandbox builds cleanly via buildman. The earlier `um build sandbox` error was a stale local environment quirk (a rust example linker script pointing at a different worktree path) — unrelated to this MR and not triggered by the CI build.
+
+## Report
+
+### Diagnosis: all 3 failures are infrastructure/transient — no code change made
+
+The MR (12 commits) only touches:
+- `arch/arm/mach-aspeed/ast2600/u-boot-spl.lds`
+- `arch/arm/mach-mediatek/{Kconfig, mt7988/init.c, mt8188/init.c, mt8189/init.c, mt8195/init.c, mt8512/init.c, tzcfg.c}`
+- `arch/arm/dts/.../mt6359.dtsi`, `board/mediatek/mt7987/MAINTAINERS`, `board/mediatek/mt7988/MAINTAINERS`
+- `include/configs/mt7987.h`, `include/configs/mt7988.h`
+- `drivers/mmc/Kconfig`, `drivers/net/mtk_eth/Kconfig`
+- `.pickman-history`
+
+None of these touch PowerPC code, the BCM2837 rpi3 path, or the RK3399 chromebook_bob path.
+
+### Per-job analysis
+
+1. **`build all PowerPC platforms` (536867)** — `OSError: [Errno 24] Too many open files` on the `ruru-single` Docker runner. Buildman dies at startup before it can fork compiler processes — the runner host is out of fds. Identical class to the same job's attempt-1 failure on the `moa` runner.
+
+2. **`bob` (536836)** — `pexpect.exceptions.TIMEOUT: Timeout of 30 seconds exceeded during waiting for login` on `chromebook_bob` (RK3399). The labgrid ubootdriver couldn't see a U-Boot prompt after flashing via `rockchip-em100`. Board/lab state issue — none of the MR's code goes anywhere near RK3399.
+
+3. **`rpi3` (536827)** — `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login` on `rpi_3_32b`. Same lab pexpect-timeout pattern after flashing — board didn't come up. No code in this MR touches BCM2837 / rpi3.
+
+### Action
+
+- No commit was responsible — these are runner-host and lab-board issues, not code regressions.
+- Per the task instructions for transient/infrastructure failures, no code change was made.
+- Sandbox build verified clean via `buildman -L --board sandbox` (1 built, 0 failed, 5s).
+- Created local branch `cherry-fcda974e360-fix2` pointing at the same commit as `cherry-fcda974e360` so the caller has a target to push and re-run CI against.
+
+### Recommendation
+
+Re-run the pipeline. If `build all PowerPC platforms` recurs with fd exhaustion on `ruru-single` (and previously on `moa`), the shared CI runner hosts likely need their `nofile` ulimit raised, or another tenant on those hosts is leaking file descriptors. The bob/rpi3 lab timeouts should retry green if the boards have since recovered.
+
+---
+
