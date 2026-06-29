@@ -2,7 +2,7 @@
 /*
  * dts file for Xilinx ZynqMP VM-P-M1369-00
  *
- * Copyright (C) 2024, Advanced Micro Devices, Inc.
+ * Copyright (C) 2024-2026, Advanced Micro Devices, Inc.
  *
  * Michal Simek <michal.simek@amd.com>
  */
@@ -409,7 +409,7 @@
 	};
 
 	/* connected via J425 connector
-	 ucd90320: power-sequencer@73 { // u16
+	ucd90320: power-sequencer@73 { // u16
 		compatible = "ti,ucd90320";
 		reg = <0x73>;
 	};*/
