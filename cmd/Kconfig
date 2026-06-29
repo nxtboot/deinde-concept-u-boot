@@ -790,6 +790,7 @@ config CMD_EDITENV_EXPO
 
 config CMD_GREPENV
 	bool "search env"
+	select GETOPT
 	help
 	  Allow for searching environment variables
 

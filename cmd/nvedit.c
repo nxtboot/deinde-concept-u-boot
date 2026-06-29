@@ -130,49 +130,46 @@ static int do_env_print(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 #ifdef CONFIG_CMD_GREPENV
-static int do_env_grep(struct cmd_tbl *cmdtp, int flag,
-		       int argc, char *const argv[])
+static int do_env_grep(struct getopt_state *gs)
 {
+	const char *optstring = IS_ENABLED(CONFIG_REGEX) ? "+envb" : "+nvb";
 	char *res = NULL;
 	int len, grep_how, grep_what;
-
-	if (argc < 2)
-		return CMD_RET_USAGE;
+	int argc;
+	char *const *argv;
+	int opt;
 
 	grep_how  = H_MATCH_SUBSTR;	/* default: substring search	*/
 	grep_what = H_MATCH_BOTH;	/* default: grep names and values */
 
-	while (--argc > 0 && **++argv == '-') {
-		char *arg = *argv;
-		while (*++arg) {
-			switch (*arg) {
-#ifdef CONFIG_REGEX
-			case 'e':		/* use regex matching */
+	while ((opt = getopt(gs, optstring)) > 0) {
+		switch (opt) {
+		case 'e':		/* use regex matching */
+			if (IS_ENABLED(CONFIG_REGEX))
 				grep_how  = H_MATCH_REGEX;
-				break;
-#endif
-			case 'n':		/* grep for name */
-				grep_what = H_MATCH_KEY;
-				break;
-			case 'v':		/* grep for value */
-				grep_what = H_MATCH_DATA;
-				break;
-			case 'b':		/* grep for both */
-				grep_what = H_MATCH_BOTH;
-				break;
-			case '-':
-				goto DONE;
-			default:
-				return CMD_RET_USAGE;
-			}
+			break;
+		case 'n':		/* grep for name */
+			grep_what = H_MATCH_KEY;
+			break;
+		case 'v':		/* grep for value */
+			grep_what = H_MATCH_DATA;
+			break;
+		case 'b':		/* grep for both */
+			grep_what = H_MATCH_BOTH;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
 	}
 
-DONE:
-	len = hexport_r(&env_htab, '\n',
-			flag | grep_what | grep_how,
-			&res, 0, argc, argv);
+	argc = gs->argc - gs->index;
+	argv = &gs->argv[gs->index];
 
+	if (argc < 1)
+		return CMD_RET_USAGE;
+
+	len = hexport_r(&env_htab, '\n', grep_what | grep_how, &res, 0,
+			argc, argv);
 	if (len > 0) {
 		puts(res);
 		free(res);
@@ -1102,7 +1099,7 @@ static struct cmd_tbl cmd_env_sub[] = {
 	U_BOOT_CMD_MKENT_GETOPT(export, 4, 0, do_env_export, "", ""),
 #endif
 #if defined(CONFIG_CMD_GREPENV)
-	U_BOOT_CMD_MKENT(grep, CONFIG_SYS_MAXARGS, 1, do_env_grep, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(grep, CONFIG_SYS_MAXARGS, 0, do_env_grep, "", ""),
 #endif
 #if defined(CONFIG_CMD_IMPORTENV)
 	U_BOOT_CMD_MKENT_GETOPT(import, 5, 0, do_env_import, "", ""),
@@ -1268,7 +1265,7 @@ U_BOOT_CMD_COMPLETE(
 );
 
 #ifdef CONFIG_CMD_GREPENV
-U_BOOT_CMD_COMPLETE(
+U_BOOT_CMD_GETOPT_COMPLETE(
 	grepenv, CONFIG_SYS_MAXARGS, 0,  do_env_grep,
 	"search environment variables",
 #ifdef CONFIG_REGEX
