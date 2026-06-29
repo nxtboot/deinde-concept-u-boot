@@ -762,6 +762,7 @@ config CMD_ASKENV
 config CMD_EXPORTENV
 	bool "env export"
 	default y
+	select GETOPT
 	help
 	  Export environments.
 
