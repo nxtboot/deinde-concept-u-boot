@@ -330,10 +330,10 @@ config DTB_RESELECT
 	depends on !COMPILE_TEST
 	depends on MULTI_DTB_FIT
 	help
-	  It is possible during initial boot you may need to use a generic
-	  dtb until you can fully determine the board your running on. This
-	  config allows boards to implement a function at a later point
-	  during boot to switch to the "correct" dtb.
+	  It is possible during initial boot you may need to use a generic dtb
+	  until you can fully determine the board you are running on. This
+	  config allows boards to implement a function at a later point during
+	  boot to switch to the "correct" dtb.
 
 config MULTI_DTB_FIT
 	bool "Support embedding several DTBs in a FIT image for u-boot"
