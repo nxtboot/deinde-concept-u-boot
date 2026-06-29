@@ -85595,3 +85595,50 @@ The branch `cherry-f072620dc9f` is ready for pushing.
 
 ---
 
+## 2026-06-29: us/master
+
+Branch: cherry-fcda974e360
+
+Commits:
+- fcda974e360 arm: aspeed: Fix AST2600 SPL external DTB alignment
+- 7aedd1f7fb5 arm64: dts: mediatek: mt6359: give regulators unique names
+- ae73cc6df72 mmc: mtk-sd: select LMB_LIMIT_DMA_BELOW_RAM_TOP
+- 2d9a9f1cad9 net: mtk_eth: select LMB_LIMIT_DMA_BELOW_RAM_TOP
+- c074950b489 arm: mediatek: mt7987: fix gd->bd->bi_dram[0].size
+- 3b7adad0b52 arm: mediatek: mt7988: fix gd->bd->bi_dram[0].size
+- 6f274732f79 arm: mediatek: mt8188: fix gd->bd->bi_dram[0].size
+- 58c7145d687 arm: mediatek: mt8189: fix gd->bd->bi_dram[0].size
+- ec457f7cfde arm: mediatek: mt8195: fix gd->bd->bi_dram[0].size
+- b4fa246a156 arm: mediatek: mt8512: fix gd->bd->bi_dram[0].size
+- 77a48fa2721 Merge tag 'mediatek-for-master-2026-06-24' of https://source.denx.de/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+All 11 commits are present. Final build test:
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Build result:** OK (sandbox builds cleanly)
+
+**Branch:** `cherry-fcda974e360` (based on ci/master)
+
+**Commits applied (11 total):**
+1. `bafff59ff40` - arm: aspeed: Fix AST2600 SPL external DTB alignment
+2. `953644857ba` - arm64: dts: mediatek: mt6359: give regulators unique names
+3. `bf2fd61bfa5` - mmc: mtk-sd: select LMB_LIMIT_DMA_BELOW_RAM_TOP
+4. `5e044f77832` - net: mtk_eth: select LMB_LIMIT_DMA_BELOW_RAM_TOP
+5. `26a90c6cc2b` - arm: mediatek: mt7987: fix gd->bd->bi_dram[0].size
+6. `cb9a8b3cbb7` - arm: mediatek: mt7988: fix gd->bd->bi_dram[0].size
+7. `d9f0884d2a0` - arm: mediatek: mt8188: fix gd->bd->bi_dram[0].size
+8. `1712ab7f67b` - arm: mediatek: mt8189: fix gd->bd->bi_dram[0].size
+9. `95a6a8bb7c8` - arm: mediatek: mt8195: fix gd->bd->bi_dram[0].size
+10. `237ec78f3e5` - arm: mediatek: mt8512: fix gd->bd->bi_dram[0].size
+11. `edc1a8e3156` - Merge tag 'mediatek-for-master-2026-06-24' (empty, preserved with --allow-empty)
+
+**Fix-ups:** None — all cherry-picks applied cleanly with only routine auto-merges. Deltas matched the originals (file lists and line counts identical).
+
+**Concerning deltas:** None. The branch is ready for pushing.
+
+---
+
