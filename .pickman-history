@@ -85413,3 +85413,118 @@ All 7 failures were infrastructure issues:
 
 ---
 
+## 2026-06-27: us/master
+
+Branch: cherry-a1d74f409fd
+
+Commits:
+- a1d74f409fd doc: board: renesas: Document Renesas RZ/N1D and RZ/N1S as arm
+- 3b2190935b3 doc: board: renesas: Document Renesas Geist board support
+- 89b45e46ca2 doc: board: renesas: Document Renesas Gray Hawk board support
+- 861be585cc1 doc: board: renesas: Document Renesas Ironhide board support
+- 5150a861876 efi_selftest: fix guid comparison
+- eb6f420836b bootdev: fix typos
+- 1f5c8eac2f2 efi_loader: fix memory leak in efi_var_collect
+- 41c6b83c777 lib/efi_loader: fix block io revision
+- 60ff3d95099 efi_selftest: fix use-after-free
+- ad90d1ec8b4 doc: android: fastboot: Document halt behaviour
+- d57ea0d9edf Merge tag 'efi-2026-07-rc6' of https://source.denx.de/u-boot/custodians/u-boot-efi
+
+### Conversation log
+All 11 commits present. Final build test:
+
+All 11 commits cherry-picked successfully onto branch `cherry-a1d74f409fd`.
+
+**Final Status:**
+
+- **Build result:** OK (sandbox built cleanly, no warnings/errors)
+- **Commits applied (11/11):**
+  1. `3daf84e6a6e` — doc: renesas RZ/N1D and RZ/N1S as arm
+  2. `b2cdf8ce80c` — doc: renesas Geist
+  3. `59ed703bc25` — doc: renesas Gray Hawk
+  4. `838099bdb94` — doc: renesas Ironhide
+  5. `217f15346fa` — efi_selftest: fix guid comparison
+  6. `70448fb2d15` — bootdev: fix typos
+  7. `74e74b0f61c` — efi_loader: fix memory leak in efi_var_collect
+  8. `e6bf4f3457a` — lib/efi_loader: fix block io revision
+  9. `d2a2a202a16` — efi_selftest: fix use-after-free
+  10. `879a44c816f` — doc: android: fastboot: halt behaviour
+  11. `b5f338f9966` — Merge tag 'efi-2026-07-rc6' (empty merge, preserved with `--allow-empty`)
+- **Fix-ups:** Merge commit required `--allow-empty` (resolved as empty after upstream content already integrated); cherry-pick reference was added via amend to preserve `(cherry picked from commit ...)` line.
+- **Concerning deltas:** None — all stat outputs matched originals exactly.
+- **Auto-merges:** Clean three-way merges occurred on `include/bootdev.h`, `lib/efi_loader/efi_var_common.c`, and `lib/efi_loader/efi_disk.c`, none required conflict resolution.
+
+Branch `cherry-a1d74f409fd` is ready for pushing.
+
+### Pipeline fix: 2026-06-27 (attempt 1)
+
+Failed jobs:
+- efi-aarch64 (sjg-lab)
+- coral (sjg-lab)
+- rpi3 (sjg-lab)
+- Run pylint (test_suites)
+
+### Conversation log
+All four failures appear to be infrastructure-related, not code issues. Let me verify with a quick sandbox build.
+
+The rust example build error exists in the parent commit too, confirming it's unrelated to this branch — just a local environment quirk.
+
+## Analysis Summary
+
+All four pipeline failures are infrastructure/transient issues, NOT caused by the changes in this branch.
+
+**What this branch actually changes** (since `d7ffa011f5a`):
+- `doc/board/renesas/renesas.rst` (4 doc-only commits)
+- `doc/android/fastboot.rst` (doc only)
+- `lib/efi_selftest/efi_selftest_memory.c` (use-after-free fix)
+- `lib/efi_selftest/efi_selftest_loaded_image.c` (GUID compare fix)
+- `lib/efi_loader/efi_disk.c` (block-io revision)
+- `lib/efi_loader/efi_var_common.c` (memory leak)
+- `include/bootdev.h` (typo fix)
+- `.pickman-history` (record)
+
+None of these touch `tools/dtoc/`, `scripts/build-efi`, ARM EFI build paths, or anything that would influence rpi3/coral lab boot.
+
+**Per-job diagnosis:**
+
+1. **Run pylint (#534004)**: Root cause is the pre-pylint buildman step crashing with `OSError: [Errno 24] Too many open files` on the runner. Because `tools-only` failed to build, `pylibfdt` was never generated, so pylint then reports `E0611: No name 'QUIET_NOTFOUND' in module 'libfdt'` on `tools/dtoc/fdt.py:14`. The pylint error is a downstream symptom of the runner file-descriptor exhaustion. → infrastructure (runner ulimit).
+
+2. **efi-aarch64 (#534113)**: Inside the lab job `scripts/build-efi` fails with `readelf: Error: u-boot: Failed to read file's magic number` from `checkarmreloc`, then test runner declares `Lab failure: Marking connection bad`. The branch does not modify any EFI ARM build glue or `checkarmreloc`. → lab/build-environment failure.
+
+3. **coral (#534090)**: `pexpect.exceptions.TIMEOUT: Timeout of 40 seconds exceeded during waiting for login`, classed as `Lab failure`. Hardware lab board failed to respond. → infrastructure.
+
+4. **rpi3 (#534079)**: `pexpect.exceptions.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login`, classed as `Lab failure`. → infrastructure.
+
+**Verification:** Comparing against the pre-branch parent (`d7ffa011f5a`) the local sandbox build hits the same unrelated `examples/rust` link error — i.e. the parent and the branch behave identically locally, and the diff between them is purely the small EFI fixes and documentation updates listed above. There is no code on this branch that could plausibly trigger any of the four CI failures.
+
+**Action taken:** None. No commit is responsible; nothing to amend or add. No `cherry-a1d74f409fd-fix1` branch was created because there is no code fix to leave on it. Recommend the caller retry the pipeline (or rerun just the four failed lab/pylint jobs) — they should pass on a healthy runner.
+
+---
+
+### Review: 2026-06-29
+
+Branch: cherry-a1d74f409fd
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, coral, rpi3, Run pylint.
+
+All four failur...
+
+### Conversation log
+Done. Summary:
+
+**Rebase:** Successfully rebased `cherry-a1d74f409fd` from `d7ffa011f5a` onto `ci/master` (`f2c931678f8`). All 13 commits replayed cleanly; only conflicts were in `.pickman-history` (purely append-only history-log overlaps from a recently-merged `cherry-fae363f2cff` review entry on `ci/master`). Resolved by keeping both records.
+
+**Per-commit delta check:** Compared `git show --stat` for each rebased commit vs its original — all stats match exactly (e.g., the 4 doc commits, EFI fixes, and merge commit are identical).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built cleanly.
+
+**Review comment:** The single review comment is the bot's own pipeline-fix report. The pipeline-fix commit (`ec8e1291fad`) already captures the analysis: all four failures (efi-aarch64, coral, rpi3, Run pylint) are infrastructure/transient — runner FD exhaustion, lab serial timeouts, and a readelf build-env failure. The branch only touches doc files plus small EFI/bootdev fixes; none touch the build glue or boards affected. No code change warranted.
+
+**Push:** Force-pushed to `ci/cherry-a1d74f409fd` (`90424f4b92f → ec8e1291fad`). Local `cherry-a1d74f409fd-v2` created.
+
+**Suggested MR reply:**
+> Rebased onto current `ci/master`. The only conflicts were append-only ones in `.pickman-history`; no source-code conflicts. Sandbox build still passes locally. The four failing jobs from attempt 1 (efi-aarch64, coral, rpi3, Run pylint) were all infrastructure/transient (runner FD exhaustion, lab serial timeouts, readelf build-env failure) — none correlated with the doc-only + small EFI/bootdev changes on this branch. Requesting pipeline retry on the v2 push.
+
+---
+
