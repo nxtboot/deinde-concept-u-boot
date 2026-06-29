@@ -85501,3 +85501,30 @@ None of these touch `tools/dtoc/`, `scripts/build-efi`, ARM EFI build paths, or 
 
 ---
 
+### Review: 2026-06-29
+
+Branch: cherry-a1d74f409fd
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, coral, rpi3, Run pylint.
+
+All four failur...
+
+### Conversation log
+Done. Summary:
+
+**Rebase:** Successfully rebased `cherry-a1d74f409fd` from `d7ffa011f5a` onto `ci/master` (`f2c931678f8`). All 13 commits replayed cleanly; only conflicts were in `.pickman-history` (purely append-only history-log overlaps from a recently-merged `cherry-fae363f2cff` review entry on `ci/master`). Resolved by keeping both records.
+
+**Per-commit delta check:** Compared `git show --stat` for each rebased commit vs its original — all stats match exactly (e.g., the 4 doc commits, EFI fixes, and merge commit are identical).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built cleanly.
+
+**Review comment:** The single review comment is the bot's own pipeline-fix report. The pipeline-fix commit (`ec8e1291fad`) already captures the analysis: all four failures (efi-aarch64, coral, rpi3, Run pylint) are infrastructure/transient — runner FD exhaustion, lab serial timeouts, and a readelf build-env failure. The branch only touches doc files plus small EFI/bootdev fixes; none touch the build glue or boards affected. No code change warranted.
+
+**Push:** Force-pushed to `ci/cherry-a1d74f409fd` (`90424f4b92f → ec8e1291fad`). Local `cherry-a1d74f409fd-v2` created.
+
+**Suggested MR reply:**
+> Rebased onto current `ci/master`. The only conflicts were append-only ones in `.pickman-history`; no source-code conflicts. Sandbox build still passes locally. The four failing jobs from attempt 1 (efi-aarch64, coral, rpi3, Run pylint) were all infrastructure/transient (runner FD exhaustion, lab serial timeouts, readelf build-env failure) — none correlated with the doc-only + small EFI/bootdev changes on this branch. Requesting pipeline retry on the v2 push.
+
+---
+
