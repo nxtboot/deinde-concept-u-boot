@@ -16,6 +16,7 @@
 # Proper Name <proper@email.xx> Commit Name <commit@email.xx>
 
 AKASHI Takahiro <akashi.tkhro@gmail.com> <takahiro.akashi@linaro.org>
+Abbarapu Venkatesh Yadav <venkyada@qti.qualcomm.com> Venkatesh Yadav Abbarapu <venkatesh.abbarapu@amd.com>
 Alexander Graf <agraf@csgraf.de> <agraf@suse.de>
 Allen Martin <amartin@nvidia.com>
 Amanda Baze <amanda.baze@amd.com> <nicole.baze@xilinx.com>
@@ -156,7 +157,7 @@ Tom Rini <trini@konsulko.com> <trini@ti.com>
 Tomas Thoresen <tomas.thoresen@amd.com> <tomast@xilinx.com>
 TsiChung Liew <Tsi-Chung.Liew@freescale.com>
 Varalaxmi Bingi <varalaxmi.bingi@amd.com> <varalaxmi.bingi@xilinx.com>
-Abbarapu Venkatesh Yadav <venkyada@qti.qualcomm.com>
+Venkatesh Yadav Abbarapu <venkatesh.abbarapu@amd.com> <venkatesh.abbarapu@xilinx.com>
 Vikhyat Goyal <vikhyat.goyal@amd.com> <vikhyat.goyal@xilinx.com>
 Vishal Patel <vishal.patel@amd.com> <vishal.patel@xilinx.com>
 Wolfgang Denk <wd@denx.de> <wd@atlas.denx.de>
