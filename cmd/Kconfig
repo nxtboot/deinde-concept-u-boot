@@ -1274,6 +1274,7 @@ config CMD_DM
 config CMD_FASTBOOT
 	bool "fastboot - Android fastboot support"
 	depends on FASTBOOT
+	select GETOPT
 	help
 	  This enables the command "fastboot" which enables the Android
 	  fastboot mode for the platform. Fastboot is a protocol for
