@@ -85528,3 +85528,31 @@ Done. Summary:
 
 ---
 
+## 2026-06-29: us/master
+
+Branch: cherry-66141390421
+
+Commits:
+- 66141390421 serial: sh: Fix dev_read_addr error check
+- cfaf1354601 Merge branch 'master' of https://source.denx.de/u-boot/custodians/u-boot-sh
+
+### Conversation log
+Identical. Now build test, then cherry-pick the merge commit.
+
+All cherry-picks complete successfully.
+
+**Final Status:**
+
+- **Branch**: `cherry-66141390421` (based on `ci/master`)
+- **Commits applied** (2/2):
+  1. `74bb53eb869` - serial: sh: Fix dev_read_addr error check (clean cherry-pick, identical to original: 1 file, 1+/1-)
+  2. `826a7174632` - Merge branch 'master' of .../u-boot-sh (empty merge commit, preserved with `--allow-empty`)
+- **Build result**: OK (1 board built, no warnings/errors)
+- **Fix-ups**: 
+  - The merge commit cherry-pick required `git commit --allow-empty -C cfaf1354601` to complete since the merge content was already present. Amended to add the `(cherry picked from commit ...)` reference for tracking.
+- **Concerning deltas**: None. The regular commit matched the original exactly.
+
+Branch is ready for pushing.
+
+---
+
