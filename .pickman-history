@@ -85553,6 +85553,45 @@ All cherry-picks complete successfully.
 - **Concerning deltas**: None. The regular commit matched the original exactly.
 
 Branch is ready for pushing.
+Branch: cherry-f072620dc9f
+
+Commits:
+- f072620dc9f Prepare v2026.07-rc5
+- 5aa2066aca2 net: airoha_eth: fix mt7531 mdio related initialization bug
+- b1aec609bb5 net: clear IP defragmentation state after returning a complete packet
+- 8382c2ad528 test: net: add IP defragmentation duplicate-fragment regression test
+- 747720eb736 net: lwip: wget: fix error handling in wget_do_request()
+- 91911aa0c76 net: lwip: wget: return errno codes from wget_do_request()
+- 9f7906a58cf net: lwip: introduce net_lwip_eth_stop() function
+- 91d5e0ee3e8 net: cdp: reject CDP TLVs with a length below the 4-byte header
+- 4edbb6fb600 Merge tag 'net-20260623' of https://source.denx.de/u-boot/custodians/u-boot-net
+
+### Conversation log
+All 9 commits present. Final build test:
+
+## Summary
+
+Successfully cherry-picked all 9 commits from us/master onto a new branch `cherry-f072620dc9f` based on `ci/master`.
+
+**Build result:** OK (sandbox built successfully with no warnings/errors)
+
+**Cherry-picks completed:**
+1. `fa4fb2436ec` Prepare v2026.07-rc5 *(fix-up applied)*
+2. `39704ed0e41` net: airoha_eth: fix mt7531 mdio related initialization bug
+3. `372e0076176` net: clear IP defragmentation state after returning a complete packet
+4. `5458956db5f` test: net: add IP defragmentation duplicate-fragment regression test
+5. `1977a1caa50` net: lwip: wget: fix error handling in wget_do_request()
+6. `10fec8f1543` net: lwip: wget: return errno codes from wget_do_request()
+7. `812543d861b` net: lwip: introduce net_lwip_eth_stop() function
+8. `40d270085e7` net: cdp: reject CDP TLVs with a length below the 4-byte header
+9. `78301906a41` Merge tag 'net-20260623' of https://source.denx.de/u-boot/custodians/u-boot-net *(empty merge commit, preserved as required)*
+
+**Fix-ups made:**
+- **Commit 1 (Prepare v2026.07-rc5):** Conflicted on `Makefile` because ci/master maintains its own downstream version (PATCHLEVEL=04, EXTRAVERSION dropped per the local `5e4095914fb` commit). Dropped the Makefile changes and kept only the `doc/develop/release_cycle.rst` doc update — matching the pattern used for the prior `Prepare v2026.07-rc4` cherry-pick. Added the note "Drop the Makefile version changes as requested in review." to the commit message.
+
+**Concerning deltas:** None. All other cherry-picks applied with identical file lists and line counts to the originals.
+
+The branch `cherry-f072620dc9f` is ready for pushing.
 
 ---
 
