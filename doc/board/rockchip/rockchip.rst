@@ -255,7 +255,7 @@ To build rk3288 boards:
 
 .. code-block:: bash
 
-        make evb-rk3288-mk808_defconfig
+        make evb-rk3288-rk808_defconfig
         make CROSS_COMPILE=arm-linux-gnueabihf-
 
 To build rk3308 boards:
