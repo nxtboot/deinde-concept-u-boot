@@ -154,6 +154,7 @@ F:	include/configs/apple.h
 
 ARM
 M:	Tom Rini <trini@konsulko.com>
+M:	Ilias Apalodimas <ilias.apalodimas@linaro.org>
 S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-arm.git
 F:	arch/arm/
