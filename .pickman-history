@@ -85754,3 +85754,39 @@ Branch is ready for pushing.
 
 ---
 
+### Review: 2026-06-30
+
+Branch: cherry-f519a74a32b
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match exactly. Now run the build.
+
+Build clean. Create v2 branch and push.
+
+Push successful. Rebase complete.
+
+## Report
+
+**MR !1137** — branch `cherry-f519a74a32b` rebased onto latest `ci/master` (`2a05b2dd448`).
+
+**What was done:**
+1. Checked out `cherry-f519a74a32b` (3 commits ahead of old base: 2 cherry-picks + 1 pickman record)
+2. Ran `git rebase --keep-empty ci/master`
+3. Resolved one conflict in `.pickman-history` (the pickman record commit) — kept both the `cherry-fcda974e360` section already merged into ci/master and the new `cherry-f519a74a32b` section, removing only the conflict markers
+4. Verified rebased commit deltas match originals exactly:
+   - `a2aae1c5bb6` (usb: onboard-hub SL6341): `common/usb_onboard_hub.c | 14 +++++++++++++-`, 13/1 — identical
+   - `fde718b15c6` (Merge u-boot-usb): empty merge preserved, cherry-pick annotation intact — identical
+5. Sandbox build clean (`buildman -L --board sandbox`: 1 built, 0 failed, 5s)
+6. Created local `cherry-f519a74a32b-v2`
+7. Force-pushed via `pickman push-branch cherry-f519a74a32b -r ci -f` — refspec updated `2658a7f14f5 → 2b91638c7b6`
+
+**Concerning deltas:** None.
+
+**Suggested MR reply:**
+> Rebased onto latest `ci/master` (`2a05b2dd448`). One trivial conflict in `.pickman-history` (the pickman record vs. concurrently merged log sections) — resolved by keeping both. Cherry-pick deltas unchanged (1 file, 13/-1 for the SL6341 commit; the merge commit stays empty). Sandbox builds clean.
+
+---
+
