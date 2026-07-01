@@ -13,7 +13,9 @@
 #include <linker_lists.h>
 #include <limits.h>
 
+#include <linux/bitops.h>
 #include <linux/compiler_attributes.h>
+#include <linux/types.h>
 
 #ifndef NULL
 #define NULL	0
@@ -36,6 +38,7 @@
 struct cmd_tbl {
 	char		*name;		/* Command Name			*/
 	short		maxargs;	/* maximum number of arguments	*/
+	u8		cmd_flags;	/* CMDF_... flags		*/
 					/*
 					 * Same as ->cmd() except the command
 					 * tells us if it can be repeated.
@@ -65,6 +68,15 @@ struct cmd_tbl {
  * maxargs is a short, so this is the largest value it can hold.
  */
 #define CMD_MAXARGS	SHRT_MAX
+
+/* Values for cmd_tbl->cmd_flags */
+enum {
+	/*
+	 * ->cmd holds a function with the getopt_state signature
+	 * (int (*)(struct getopt_state *)) instead of the classic one
+	 */
+	CMDF_GETOPT	= BIT(0),
+};
 
 /**
  * cmd_arg_get() - Get a particular argument
@@ -115,6 +127,20 @@ int complete_subcmdv(struct cmd_tbl *cmdtp, int count, int argc,
 		     char *cmdv[]);
 
 int cmd_usage(const struct cmd_tbl *cmdtp);
+
+/**
+ * cmd_invoke() - Call a command's implementation function
+ * @cmdtp: Command to call
+ * @flag: Command flags (CMD_FLAG_...)
+ * @argc: Number of arguments
+ * @argv: Argument list
+ *
+ * This calls @cmdtp->cmd, handling both the classic command signature
+ * and the &struct getopt_state signature (CMDF_GETOPT).
+ *
+ * Return: result of the command (0 if OK, else CMD_RET_...)
+ */
+int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 
 /* Dummy ->cmd and ->cmd_rep wrappers. */
 int cmd_always_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -417,19 +443,42 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 #if CONFIG_IS_ENABLED(CMDLINE)
 #define U_BOOT_CMDREP_MKENT_COMPLETE(_name, _maxargs, _cmd_rep,		\
 				     _usage, _help, _comp)		\
-		{ #_name, _maxargs, _cmd_rep, cmd_discard_repeatable,	\
+		{ #_name, _maxargs, 0, _cmd_rep, cmd_discard_repeatable,	\
 		  _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 				_usage, _help, _comp)			\
-		{ #_name, _maxargs,					\
+		{ #_name, _maxargs, 0,					\
 		 _rep ? cmd_always_repeatable : cmd_never_repeatable,	\
 		 _cmd, _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+		{ #_name, _maxargs, CMDF_GETOPT,			\
+		 _rep ? cmd_always_repeatable : cmd_never_repeatable,	\
+		 (int (*)(struct cmd_tbl *, int, int,			\
+			  char *const []))(_cmd),			\
+		 _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _rep, _cmd,		\
+				_usage, _help)				\
+	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, NULL)
 
 #define U_BOOT_CMD_COMPLETE(_name, _maxargs, _rep, _cmd, _usage, _help, _comp) \
 	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
 		U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
 						_usage, _help, _comp)
+
+#define U_BOOT_CMD_GETOPT(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+	U_BOOT_CMD_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
+				   _usage, _help, NULL)
+
+#define U_BOOT_CMD_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep,	\
+						 _cmd, _usage, _help, _comp)
 
 #define U_BOOT_CMDREP_COMPLETE(_name, _maxargs, _cmd_rep, _usage,	\
 			       _help, _comp)				\
@@ -457,19 +506,46 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		return 0;						\
 	}
 
+#define _CMD_REMOVE_GETOPT(_name, _cmd)					\
+	int __remove_ ## _name(void)					\
+	{								\
+		if (0)							\
+			_cmd(NULL);					\
+		return 0;						\
+	}
+
 #define U_BOOT_CMDREP_MKENT_COMPLETE(_name, _maxargs, _cmd_rep,		\
 				     _usage, _help, _comp)		\
-		{ #_name, _maxargs, 0 ? _cmd_rep : NULL, NULL, _usage,	\
+		{ #_name, _maxargs, 0, 0 ? _cmd_rep : NULL, NULL, _usage, \
 			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
 				  _help, _comp)				\
-		{ #_name, _maxargs, NULL, 0 ? _cmd : NULL, _usage,	\
+		{ #_name, _maxargs, 0, NULL, 0 ? _cmd : NULL, _usage,	\
 			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+		{ #_name, _maxargs, CMDF_GETOPT, NULL,			\
+		 0 ? (int (*)(struct cmd_tbl *, int, int,		\
+			      char *const []))(_cmd) : NULL, _usage,	\
+			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _rep, _cmd,		\
+				_usage, _help)				\
+	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, NULL)
 
 #define U_BOOT_CMD_COMPLETE(_name, _maxargs, _rep, _cmd, _usage, _help,	\
 			    _comp)				\
 	_CMD_REMOVE(sub_ ## _name, _cmd)
+
+#define U_BOOT_CMD_GETOPT(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
+
+#define U_BOOT_CMD_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
 #define U_BOOT_CMDREP_COMPLETE(_name, _maxargs, _cmd_rep, _usage,	\
 			       _help, _comp)				\

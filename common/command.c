@@ -13,6 +13,7 @@
 #include <command.h>
 #include <console.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <log.h>
 #include <mapmem.h>
@@ -542,12 +543,27 @@ void fixup_cmdtable(struct cmd_tbl *cmdtp, int size)
 	}
 }
 
+int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	if (CONFIG_IS_ENABLED(GETOPT) && (cmdtp->cmd_flags & CMDF_GETOPT)) {
+		int (*func)(struct getopt_state *gs);
+		struct getopt_state gs;
+
+		func = (int (*)(struct getopt_state *))cmdtp->cmd;
+		getopt_init_state(&gs, argc, argv);
+
+		return func(&gs);
+	}
+
+	return cmdtp->cmd(cmdtp, flag, argc, argv);
+}
+
 int cmd_always_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
 			  char *const argv[], int *repeatable)
 {
 	*repeatable = 1;
 
-	return cmdtp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cmdtp, flag, argc, argv);
 }
 
 int cmd_never_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -555,7 +571,7 @@ int cmd_never_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
 {
 	*repeatable = 0;
 
-	return cmdtp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cmdtp, flag, argc, argv);
 }
 
 int cmd_discard_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
