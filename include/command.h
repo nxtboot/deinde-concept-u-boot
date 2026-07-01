@@ -11,6 +11,7 @@
 #define __COMMAND_H
 
 #include <linker_lists.h>
+#include <limits.h>
 
 #include <linux/compiler_attributes.h>
 
@@ -34,7 +35,7 @@
 
 struct cmd_tbl {
 	char		*name;		/* Command Name			*/
-	int		maxargs;	/* maximum number of arguments	*/
+	short		maxargs;	/* maximum number of arguments	*/
 					/*
 					 * Same as ->cmd() except the command
 					 * tells us if it can be repeated.
@@ -58,6 +59,12 @@ struct cmd_tbl {
 				    char last_char, int maxv, char *cmdv[]);
 #endif
 };
+
+/*
+ * Use this as a command's maxargs when it accepts any number of arguments.
+ * maxargs is a short, so this is the largest value it can hold.
+ */
+#define CMD_MAXARGS	SHRT_MAX
 
 /**
  * cmd_arg_get() - Get a particular argument
