@@ -268,7 +268,7 @@ U_BOOT_CMD(
  * This does not use the U_BOOT_CMD macro as [ can't be used in symbol names
  */
 ll_entry_declare(struct cmd_tbl, lbracket, cmd) = {
-	"[",	CONFIG_SYS_MAXARGS, 0, cmd_always_repeatable, do_test,
+	"[",	CONFIG_SYS_MAXARGS, CMDF_REPEATABLE, do_test,
 	"alias for 'test'",
 #ifdef CONFIG_SYS_LONGHELP
 	" <test expression> ]"

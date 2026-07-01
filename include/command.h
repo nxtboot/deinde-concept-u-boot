@@ -39,16 +39,6 @@ struct cmd_tbl {
 	char		*name;		/* Command Name			*/
 	short		maxargs;	/* maximum number of arguments	*/
 	u8		cmd_flags;	/* CMDF_... flags		*/
-					/*
-					 * Same as ->cmd() except the command
-					 * tells us if it can be repeated.
-					 * Replaces the old ->repeatable field
-					 * which was not able to make
-					 * repeatable property different for
-					 * the main command and sub-commands.
-					 */
-	int		(*cmd_rep)(struct cmd_tbl *cmd, int flags, int argc,
-				   char *const argv[], int *repeatable);
 					/* Implementation function	*/
 	int		(*cmd)(struct cmd_tbl *cmd, int flags, int argc,
 			       char *const argv[]);
@@ -76,7 +66,23 @@ enum {
 	 * (int (*)(struct getopt_state *)) instead of the classic one
 	 */
 	CMDF_GETOPT	= BIT(0),
+	/* the command may be repeated by pressing Enter at an empty prompt */
+	CMDF_REPEATABLE	= BIT(1),
+	/*
+	 * ->cmd holds a sub-command dispatcher with the extended signature
+	 * (..., int *repeatable), so it can report the repeatable property of
+	 * the sub-command it dispatched to. cmd_call() calls it accordingly.
+	 */
+	CMDF_SUBCMD_REP	= BIT(2),
 };
+
+/*
+ * Type of a sub-command dispatcher (a CMDF_SUBCMD_REP command's ->cmd). It has
+ * the classic command arguments plus a @repeatable output which it sets from
+ * the sub-command it dispatches to.
+ */
+typedef int (*cmd_rep_func_t)(struct cmd_tbl *cmdtp, int flag, int argc,
+			      char *const argv[], int *repeatable);
 
 /**
  * cmd_arg_get() - Get a particular argument
@@ -142,17 +148,9 @@ int cmd_usage(const struct cmd_tbl *cmdtp);
  */
 int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 
-/* Dummy ->cmd and ->cmd_rep wrappers. */
-int cmd_always_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[], int *repeatable);
-int cmd_never_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			 char *const argv[], int *repeatable);
-int cmd_discard_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[]);
-
 static inline bool cmd_is_repeatable(struct cmd_tbl *cmdtp)
 {
-	return cmdtp->cmd_rep == cmd_always_repeatable;
+	return cmdtp->cmd_flags & CMDF_REPEATABLE;
 }
 
 #ifdef CONFIG_AUTO_COMPLETE
@@ -416,8 +414,9 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		    !cmd_is_repeatable(subcmd))				\
 			return CMD_RET_SUCCESS;				\
 									\
-		return subcmd->cmd_rep(subcmd, flag, argc - 1,		\
-				       argv + 1, repeatable);		\
+		*repeatable &= cmd_is_repeatable(subcmd);		\
+									\
+		return cmd_invoke(subcmd, flag, argc - 1, argv + 1);	\
 	}
 
 #ifdef CONFIG_AUTO_COMPLETE
@@ -441,21 +440,17 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	U_BOOT_SUBCMDS_COMPLETE(_cmdname)
 
 #if CONFIG_IS_ENABLED(CMDLINE)
-#define U_BOOT_CMDREP_MKENT_COMPLETE(_name, _maxargs, _cmd_rep,		\
-				     _usage, _help, _comp)		\
-		{ #_name, _maxargs, 0, _cmd_rep, cmd_discard_repeatable,	\
-		  _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+/* Encode the _rep argument as the CMDF_REPEATABLE flag bit */
+#define _CMD_REP_FLAG(_rep)	((_rep) ? CMDF_REPEATABLE : 0)
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 				_usage, _help, _comp)			\
-		{ #_name, _maxargs, 0,					\
-		 _rep ? cmd_always_repeatable : cmd_never_repeatable,	\
+		{ #_name, _maxargs, _CMD_REP_FLAG(_rep),		\
 		 _cmd, _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
 #define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
 					 _usage, _help, _comp)		\
-		{ #_name, _maxargs, CMDF_GETOPT,			\
-		 _rep ? cmd_always_repeatable : cmd_never_repeatable,	\
+		{ #_name, _maxargs, CMDF_GETOPT | _CMD_REP_FLAG(_rep),	\
 		 (int (*)(struct cmd_tbl *, int, int,			\
 			  char *const []))(_cmd),			\
 		 _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
@@ -480,11 +475,18 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep,	\
 						 _cmd, _usage, _help, _comp)
 
-#define U_BOOT_CMDREP_COMPLETE(_name, _maxargs, _cmd_rep, _usage,	\
-			       _help, _comp)				\
-	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
-		U_BOOT_CMDREP_MKENT_COMPLETE(_name, _maxargs, _cmd_rep,	\
-					     _usage, _help, _comp)
+/*
+ * Declare a top-level command whose ->cmd is a sub-command dispatcher with
+ * the extended (..., int *repeatable) signature (see CMDF_SUBCMD_REP). The
+ * dispatcher is stored in ->cmd and tagged so cmd_call() invokes it with the
+ * repeatable pointer.
+ */
+#define U_BOOT_SUBCMD_DECL(_name, _maxargs, _do_cmd, _usage, _help, _comp) \
+	ll_entry_declare(struct cmd_tbl, _name, cmd) = {		\
+		#_name, _maxargs, CMDF_SUBCMD_REP | CMDF_REPEATABLE,	\
+		(int (*)(struct cmd_tbl *, int, int,			\
+			 char *const []))(_do_cmd),			\
+		_usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
 #else
 #define U_BOOT_SUBCMD_START(name)	static struct cmd_tbl name[] = {};
@@ -498,14 +500,6 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		return 0;						\
 	}
 
-#define _CMD_REMOVE_REP(_name, _cmd)					\
-	int __remove_ ## _name(void)					\
-	{								\
-		if (0)							\
-			_cmd(NULL, 0, 0, NULL, NULL);			\
-		return 0;						\
-	}
-
 #define _CMD_REMOVE_GETOPT(_name, _cmd)					\
 	int __remove_ ## _name(void)					\
 	{								\
@@ -514,19 +508,14 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		return 0;						\
 	}
 
-#define U_BOOT_CMDREP_MKENT_COMPLETE(_name, _maxargs, _cmd_rep,		\
-				     _usage, _help, _comp)		\
-		{ #_name, _maxargs, 0, 0 ? _cmd_rep : NULL, NULL, _usage, \
-			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
-
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
 				  _help, _comp)				\
-		{ #_name, _maxargs, 0, NULL, 0 ? _cmd : NULL, _usage,	\
+		{ #_name, _maxargs, 0, 0 ? _cmd : NULL, _usage,		\
 			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
 #define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
 					 _usage, _help, _comp)		\
-		{ #_name, _maxargs, CMDF_GETOPT, NULL,			\
+		{ #_name, _maxargs, CMDF_GETOPT,			\
 		 0 ? (int (*)(struct cmd_tbl *, int, int,		\
 			      char *const []))(_cmd) : NULL, _usage,	\
 			_CMD_HELP(_help) _CMD_COMPLETE(_comp) }
@@ -547,9 +536,16 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 				   _help, _comp)			\
 	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
-#define U_BOOT_CMDREP_COMPLETE(_name, _maxargs, _cmd_rep, _usage,	\
-			       _help, _comp)				\
-	_CMD_REMOVE_REP(sub_ ## _name, _cmd_rep)
+#define _CMD_REMOVE_REP(_name, _cmd)					\
+	int __remove_ ## _name(void)					\
+	{								\
+		if (0)							\
+			_cmd(NULL, 0, 0, NULL, NULL);			\
+		return 0;						\
+	}
+
+#define U_BOOT_SUBCMD_DECL(_name, _maxargs, _do_cmd, _usage, _help, _comp) \
+	_CMD_REMOVE_REP(sub_ ## _name, _do_cmd)
 
 #endif /* CONFIG_CMDLINE */
 
@@ -571,7 +567,7 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 
 #define U_BOOT_CMD_WITH_SUBCMDS(_name, _usage, _help, ...)		\
 	U_BOOT_SUBCMDS(_name, __VA_ARGS__)				\
-	U_BOOT_CMDREP_COMPLETE(_name, CONFIG_SYS_MAXARGS, do_##_name,	\
-			       _usage, _help, complete_##_name)
+	U_BOOT_SUBCMD_DECL(_name, CONFIG_SYS_MAXARGS, do_##_name,	\
+			   _usage, _help, complete_##_name)
 
 #endif	/* __COMMAND_H */

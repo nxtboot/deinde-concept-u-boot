@@ -28,7 +28,7 @@ U_BOOT_CMD(
  * nor can we rely on the CONFIG_SYS_LONGHELP helper macro
  */
 ll_entry_declare(struct cmd_tbl, question_mark, cmd) = {
-	"?",	CONFIG_SYS_MAXARGS, 0, cmd_always_repeatable,	do_help,
+	"?",	CONFIG_SYS_MAXARGS, CMDF_REPEATABLE,	do_help,
 	"alias for 'help'",
 #ifdef  CONFIG_SYS_LONGHELP
 	""

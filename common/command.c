@@ -508,11 +508,6 @@ void fixup_cmdtable(struct cmd_tbl *cmdtp, int size)
 	for (i = 0; i < size; i++) {
 		ulong addr;
 
-		addr = (ulong)(cmdtp->cmd_rep) + gd->reloc_off;
-		cmdtp->cmd_rep =
-			(int (*)(struct cmd_tbl *, int, int,
-				 char * const [], int *))addr;
-
 		addr = (ulong)(cmdtp->cmd) + gd->reloc_off;
 #ifdef DEBUG_COMMANDS
 		printf("Command \"%s\": 0x%08lx => 0x%08lx\n",
@@ -558,30 +553,6 @@ int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return cmdtp->cmd(cmdtp, flag, argc, argv);
 }
 
-int cmd_always_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[], int *repeatable)
-{
-	*repeatable = 1;
-
-	return cmd_invoke(cmdtp, flag, argc, argv);
-}
-
-int cmd_never_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			 char *const argv[], int *repeatable)
-{
-	*repeatable = 0;
-
-	return cmd_invoke(cmdtp, flag, argc, argv);
-}
-
-int cmd_discard_repeatable(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[])
-{
-	int repeatable;
-
-	return cmdtp->cmd_rep(cmdtp, flag, argc, argv, &repeatable);
-}
-
 /**
  * Call a command function. This should be the only route in U-Boot to call
  * a command, so that we can track whether we are waiting for input or
@@ -599,7 +570,20 @@ static int cmd_call(struct cmd_tbl *cmdtp, int flag, int argc,
 {
 	int result;
 
-	result = cmdtp->cmd_rep(cmdtp, flag, argc, argv, repeatable);
+	*repeatable = !!(cmdtp->cmd_flags & CMDF_REPEATABLE);
+
+	if (cmdtp->cmd_flags & CMDF_SUBCMD_REP) {
+		/*
+		 * A sub-command dispatcher refines *repeatable for the
+		 * sub-command it picks, so call it with the extended signature.
+		 */
+		cmd_rep_func_t func = (cmd_rep_func_t)cmdtp->cmd;
+
+		result = func(cmdtp, flag, argc, argv, repeatable);
+	} else {
+		result = cmd_invoke(cmdtp, flag, argc, argv);
+	}
+
 	if (result)
 		debug("Command failed, result=%d\n", result);
 	return result;

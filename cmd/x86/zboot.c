@@ -167,7 +167,7 @@ int do_zboot_parent(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
-U_BOOT_CMDREP_COMPLETE(
+U_BOOT_SUBCMD_DECL(
 	zboot, 8, do_zboot_parent, "Boot bzImage",
 	"[addr] [size] [initrd addr] [initrd size] [setup] [cmdline]\n"
 	"      addr -        The optional starting address of the bzimage.\n"
