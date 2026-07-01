@@ -2003,6 +2003,7 @@ config CMD_CAT
 config CMD_ECHO
 	bool "echo"
 	default y
+	select GETOPT
 	help
 	  Echo args to console
 
