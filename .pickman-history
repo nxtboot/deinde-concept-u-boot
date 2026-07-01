@@ -85720,6 +85720,73 @@ The "review comment" is again a self-report from the prior attempt. It diagnoses
 
 ### Suggested reply to post on the MR
 > Pipeline fix (attempt 3): re-confirming the prior diagnosis. The 3 failing jobs from attempt 2 were all infrastructure/transient: `build all PowerPC platforms` died with fd exhaustion on the `ruru-single` runner (same class as attempt-1's `moa` failure), and `bob` (RK3399) and `rpi3` (BCM2837) both hit lab pexpect timeouts on board paths this MR does not touch. Sandbox build still passes locally. No code change required — please re-run the pipeline. If the PowerPC fd-exhaustion recurs on shared CI runner hosts, that host's `nofile` ulimit likely needs raising or another tenant is leaking file descriptors.
+---
+
+## 2026-06-30: us/master
+
+Branch: cherry-f519a74a32b
+
+Commits:
+- f519a74a32b usb: onboard-hub: Add support for Corechips SL6341 USB 2.0/3.0 hub controller
+- 6902fb4c17f Merge branch 'master' of git://source.denx.de/u-boot-usb
+
+### Conversation log
+Match exactly. Now build test, then second commit.
+
+All cherry-picks completed successfully. Final status:
+
+**Branch:** `cherry-f519a74a32b` (based on `ci/master`)
+
+**Commits applied:**
+1. `bb1c2665f12` - usb: onboard-hub: Add support for Corechips SL6341 USB 2.0/3.0 hub controller
+   - Delta matches original exactly (1 file, 13 insertions, 1 deletion)
+2. `2658a7f14f5` - Merge branch 'master' of git://source.denx.de/u-boot-usb
+   - Empty merge commit preserved via `--allow-empty`
+   - Amended to include `(cherry picked from commit 6902fb4c17f...)` annotation
+
+**Build result:** OK — sandbox builds cleanly (no warnings/errors)
+
+**Fix-ups:** None required. The merge commit cherry-pick reported as "empty" (since the single contained change was already applied on the previous commit), so it was committed with `--allow-empty` and the cherry-pick annotation added manually.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
+
+---
+
+### Review: 2026-06-30
+
+Branch: cherry-f519a74a32b
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match exactly. Now run the build.
+
+Build clean. Create v2 branch and push.
+
+Push successful. Rebase complete.
+
+## Report
+
+**MR !1137** — branch `cherry-f519a74a32b` rebased onto latest `ci/master` (`2a05b2dd448`).
+
+**What was done:**
+1. Checked out `cherry-f519a74a32b` (3 commits ahead of old base: 2 cherry-picks + 1 pickman record)
+2. Ran `git rebase --keep-empty ci/master`
+3. Resolved one conflict in `.pickman-history` (the pickman record commit) — kept both the `cherry-fcda974e360` section already merged into ci/master and the new `cherry-f519a74a32b` section, removing only the conflict markers
+4. Verified rebased commit deltas match originals exactly:
+   - `a2aae1c5bb6` (usb: onboard-hub SL6341): `common/usb_onboard_hub.c | 14 +++++++++++++-`, 13/1 — identical
+   - `fde718b15c6` (Merge u-boot-usb): empty merge preserved, cherry-pick annotation intact — identical
+5. Sandbox build clean (`buildman -L --board sandbox`: 1 built, 0 failed, 5s)
+6. Created local `cherry-f519a74a32b-v2`
+7. Force-pushed via `pickman push-branch cherry-f519a74a32b -r ci -f` — refspec updated `2658a7f14f5 → 2b91638c7b6`
+
+**Concerning deltas:** None.
+
+**Suggested MR reply:**
+> Rebased onto latest `ci/master` (`2a05b2dd448`). One trivial conflict in `.pickman-history` (the pickman record vs. concurrently merged log sections) — resolved by keeping both. Cherry-pick deltas unchanged (1 file, 13/-1 for the SL6341 commit; the merge commit stays empty). Sandbox builds clean.
 
 ---
 
