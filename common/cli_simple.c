@@ -133,7 +133,7 @@ int cli_simple_process_macros(const char *input, char *output, int max_size)
 	return ret;
 }
 
-#ifdef CONFIG_CMDLINE
+#ifdef CONFIG_CLI_SIMPLE_PARSE
 int cli_simple_parse_line(char *line, char *argv[])
 {
 	int nargs = 0;
@@ -170,7 +170,9 @@ int cli_simple_parse_line(char *line, char *argv[])
 	debug_parser("%s: nargs=%d\n", __func__, nargs);
 	return nargs;
 }
+#endif
 
+#ifdef CONFIG_CMDLINE
  /*
  * WARNING:
  *

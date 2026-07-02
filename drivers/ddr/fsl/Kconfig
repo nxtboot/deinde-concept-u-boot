@@ -33,6 +33,7 @@ config FSL_DDR_BIST
 
 config FSL_DDR_INTERACTIVE
 	bool
+	select CLI_SIMPLE_PARSE
 
 config FSL_DDR_SYNC_REFRESH
 	bool
