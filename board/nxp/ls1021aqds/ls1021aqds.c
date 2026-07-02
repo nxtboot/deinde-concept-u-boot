@@ -184,7 +184,7 @@ int board_early_init_f(void)
 #ifdef CONFIG_XPL_BUILD
 void board_init_f(ulong dummy)
 {
-#ifdef CONFIG_NAND_BOOT
+#ifdef CONFIG_PPL_NAND_BOOT
 	struct ccsr_gur __iomem *gur = (void *)CFG_SYS_FSL_GUTS_ADDR;
 	u32 porsr1, pinctl;
 

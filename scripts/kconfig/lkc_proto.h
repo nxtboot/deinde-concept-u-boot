@@ -7,7 +7,23 @@ int conf_read(const char *name);
 int conf_read_simple(const char *name, int);
 int conf_write_defconfig(const char *name);
 int conf_write(const char *name);
-int conf_write_autoconf(void);
+
+/**
+ * conf_write_autoconf() - Write out the autoconf files
+ *
+ * @support_spl: Support generation of files for additional secondary
+ *	program-loader builds, as used by U-Boot
+ *
+ * Writes out:
+ *    auto.conf which contains CONFIG definitions for inclusion by make
+ *    autoconf.h which contains CONFIG definitions for inclusion by C code
+ *
+ * if @support_spl then separate files are also created for SPL builds (spl,
+ * tpl, vpl, tools), with symbols like SPL_FOO being written to the SPL file
+ * as just FOO
+ */
+int conf_write_autoconf(bool support_spl);
+
 bool conf_get_changed(void);
 void conf_set_changed_callback(void (*fn)(void));
 void conf_set_message_callback(void (*fn)(const char *s));

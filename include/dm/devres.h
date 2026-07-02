@@ -207,7 +207,7 @@ void devm_kfree(struct udevice *dev, void *ptr);
 /* Get basic stats on allocations */
 void devres_get_stats(const struct udevice *dev, struct devres_stats *stats);
 
-#elif IS_ENABLED(CONFIG_DEVRES) && defined(CONFIG_XPL_BUILD)
+#else
 /* Allow these to be dummy functions in xPL builds. */
 
 static inline void *devres_alloc(dr_release_t release, size_t size, gfp_t gfp)

@@ -36,7 +36,7 @@ phys_addr_t socfpga_clkmgr_base __section(".data");
 phys_addr_t socfpga_rstmgr_base __section(".data");
 phys_addr_t socfpga_sysmgr_base __section(".data");
 
-#ifdef CONFIG_SYS_L2_PL310
+#ifdef CONFIG_PPL_SYS_L2_PL310
 static const struct pl310_regs *const pl310 =
 	(struct pl310_regs *)CFG_SYS_PL310_BASE;
 #endif
@@ -80,7 +80,7 @@ void enable_caches(void)
 #endif
 }
 
-#ifdef CONFIG_SYS_L2_PL310
+#ifdef CONFIG_PPL_SYS_L2_PL310
 void v7_outer_cache_enable(void)
 {
 	struct udevice *dev;

@@ -236,47 +236,68 @@ static int str_ends_with(const char *s, int slen, const char *sub)
 	return !memcmp(s + slen - sublen, sub, sublen);
 }
 
-static void parse_config_file(const char *p)
+static const char *parse_config_line(const char *p, const char **endp)
 {
 	const char *q, *r;
-	const char *start = p;
 
-	while ((p = strstr(p, "CONFIG_"))) {
-		if (p > start && (isalnum(p[-1]) || p[-1] == '_')) {
-			p += 7;
-			continue;
-		}
-		p += 7;
+	p = strstr(p, "CONFIG_");
+	if (!p) {
+		*endp = NULL;
+		return NULL;
+	}
+	if ((isalnum(p[-1]) || p[-1] == '_')) {
+		*endp = p + 7;
+		return NULL;
+	}
+	p += 7;
+	q = p;
+	while (isalnum(*q) || *q == '_')
+		q++;
+	if (str_ends_with(p, q - p, "_MODULE"))
+		r = q - 7;
+	else
+		r = q;
+	/*
+	 * U-Boot also handles
+	 *   CONFIG_IS_ENABLED(...)
+	 *   CONFIG_VAL(...)
+	 */
+	if ((q - p == 10 && !memcmp(p, "IS_ENABLED(", 11)) ||
+	    (q - p == 3 && !memcmp(p, "VAL(", 4))) {
+		p = q + 1;
 		q = p;
 		while (isalnum(*q) || *q == '_')
 			q++;
-		if (str_ends_with(p, q - p, "_MODULE"))
-			r = q - 7;
-		else
-			r = q;
-		/*
-		 * U-Boot also handles
-		 *   CONFIG_IS_ENABLED(...)
-		 *   CONFIG_VAL(...)
-		 */
-		if ((q - p == 10 && !memcmp(p, "IS_ENABLED(", 11)) ||
-		    (q - p == 3 && !memcmp(p, "VAL(", 4))) {
-			p = q + 1;
-			q = p;
-			while (isalnum(*q) || *q == '_')
-				q++;
-			r = q;
-			if (r > p && tmp_buf[0]) {
-				memcpy(tmp_buf + 4, p, r - p);
-				r = tmp_buf + 4 + (r - p);
-				p = tmp_buf;
-			}
+		r = q;
+		if (r > p && tmp_buf[0]) {
+			memcpy(tmp_buf + 4, p, r - p);
+			r = tmp_buf + 4 + (r - p);
+			p = tmp_buf;
 		}
-		/* end U-Boot hack */
+	}
+	/* end U-Boot hack */
+	*endp = r;
 
-		if (r > p)
-			use_config(p, r - p);
-		p = q;
+	if (r > p)
+		return p;
+
+	return NULL;
+}
+
+static void parse_config_file(const char *base)
+{
+	const char *p;
+
+	if (!*base)
+		return;
+	p = base + 1;
+	while (p) {
+		const char *out, *end;
+
+		out = parse_config_line(p, &end);
+		if (out)
+			use_config(out, end - out);
+		p = end;
 	}
 }
 
@@ -404,11 +425,84 @@ static void parse_dep_file(char *m, const char *target)
 	xprintf("$(deps_%s):\n", target);
 }
 
+#define CHECKP(expect, got)	\
+	if (expect != got) { \
+		fprintf(stderr, "Test failed at line %d: expect %ld, got %ld\n", \
+			__LINE__, expect - buf, got - buf); \
+		return 1; \
+	}
+
+#define CHECK(expect, got)	\
+	if (expect != got) { \
+		fprintf(stderr, "Test failed at line %d: expect %p, got %p\n", \
+			__LINE__, expect, got); \
+		return 1; \
+	}
+
+static int run_tests(void)
+{
+	const char *out, *end;
+	char buf_s[40], *buf = buf_s + 1;
+
+	/* make sure the previous char doesn't look like part of the CONFIG */
+	buf_s[0] = ' ';
+
+	strcpy(buf, "");
+	out = parse_config_line(buf, &end);
+	CHECK(NULL, out);
+	CHECK(NULL, end);
+
+	strcpy(buf, "nothing");
+	out = parse_config_line(buf, &end);
+	CHECK(NULL, out);
+	CHECK(NULL, end);
+
+	strcpy(buf, "CONFIG_OPTION_MORE");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 7, out);
+	CHECKP(buf + 18, end);
+
+	strcpy(buf, "some CONFIG_OPTION_MORE");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 12, out);
+	CHECKP(buf + 23, end);
+
+	strcpy(buf, "some CONFIG_OPTION_MORE here");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 12, out);
+	CHECKP(buf + 23, end);
+
+	strcpy(buf, "CONFIG_OPTION_MODULE");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 7, out);
+	CHECKP(buf + 13, end);
+
+	strcpy(buf, "CONFIG_IS_ENABLED(FRED)");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 18, out);
+	CHECKP(buf + 22, end);
+
+	strcpy(buf, "CONFIG_VAL(MARY)");
+	out = parse_config_line(buf, &end);
+	CHECKP(buf + 11, out);
+	CHECKP(buf + 15, end);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	const char *depfile, *target, *cmdline;
 	void *buf;
 
+	if (argc == 2 && !strcmp("-t", argv[1])) {
+		if (run_tests()) {
+			fprintf(stderr, "Tests failed\n");
+			return 1;
+		}
+		printf("Tests passed\n");
+		return 0;
+	}
 	if (argc != 4)
 		usage();
 

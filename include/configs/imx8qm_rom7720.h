@@ -27,7 +27,7 @@
 	"m4boot_0=run loadm4image_0; dcache flush; bootaux ${loadaddr} 0\0" \
 	"m4boot_1=run loadm4image_1; dcache flush; bootaux ${loadaddr} 1\0" \
 
-#ifdef CONFIG_NAND_BOOT
+#ifdef CONFIG_PPL_NAND_BOOT
 #define MFG_NAND_PARTITION "mtdparts=gpmi-nand:128m(boot),32m(kernel),16m(dtb),8m(misc),-(rootfs) "
 #else
 #define MFG_NAND_PARTITION ""

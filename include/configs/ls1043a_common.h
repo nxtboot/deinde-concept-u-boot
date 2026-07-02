@@ -42,7 +42,7 @@
 #define CFG_SYS_NS16550_CLK          (get_serial_clock())
 
 /* NAND SPL */
-#ifdef CONFIG_NAND_BOOT
+#ifdef CONFIG_PPL_NAND_BOOT
 #define CFG_SYS_NAND_U_BOOT_DST	CONFIG_TEXT_BASE
 #define CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
 #endif

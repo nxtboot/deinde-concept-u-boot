@@ -65,8 +65,10 @@ static int mv_sdhci_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-	/* Configure SDHCI MBUS mbus bridge windows */
-	sdhci_mvebu_mbus_config(host->ioaddr);
+	if (IS_ENABLED(CONFIG_ARCH_MVEBU)) {
+		/* Configure SDHCI MBUS mbus bridge windows */
+		sdhci_mvebu_mbus_config(host->ioaddr);
+	}
 
 	upriv->mmc = host->mmc;
 

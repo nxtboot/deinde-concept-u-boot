@@ -130,7 +130,7 @@ int wdt_start(struct udevice *dev, u64 timeout_ms, ulong flags)
 		char str[16];
 
 		memset(str, 0, 16);
-		if (IS_ENABLED(CONFIG_WATCHDOG)) {
+		if (CONFIG_IS_ENABLED(WATCHDOG)) {
 			if (priv->running)
 				cyclic_unregister(&priv->cyclic);
 
@@ -144,7 +144,7 @@ int wdt_start(struct udevice *dev, u64 timeout_ms, ulong flags)
 
 		priv->running = true;
 		printf("WDT:   Started %s with%s servicing %s (%ds timeout)\n",
-		       dev->name, IS_ENABLED(CONFIG_WATCHDOG) ? "" : "out",
+		       dev->name, CONFIG_IS_ENABLED(WATCHDOG) ? "" : "out",
 		       str, (u32)lldiv(timeout_ms, 1000));
 	}
 
@@ -163,7 +163,7 @@ int wdt_stop(struct udevice *dev)
 	if (ret == 0) {
 		struct wdt_priv *priv = dev_get_uclass_priv(dev);
 
-		if (IS_ENABLED(CONFIG_WATCHDOG) && priv->running)
+		if (CONFIG_IS_ENABLED(WATCHDOG) && priv->running)
 			cyclic_unregister(&priv->cyclic);
 
 		priv->running = false;
@@ -266,7 +266,7 @@ static int wdt_pre_remove(struct udevice *dev)
 {
 	struct wdt_priv *priv = dev_get_uclass_priv(dev);
 
-	if (IS_ENABLED(CONFIG_WATCHDOG) && priv->running)
+	if (CONFIG_IS_ENABLED(WATCHDOG) && priv->running)
 		cyclic_unregister(&priv->cyclic);
 
 	return 0;

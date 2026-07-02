@@ -78,7 +78,7 @@ struct ns16550_plat {
 	int clock;
 	u32 fcr;
 	int flags;
-#if defined(CONFIG_PCI) && defined(CONFIG_SPL)
+#if defined(CONFIG_PPL_PCI) && defined(CONFIG_SPL)
 	int bdf;
 #endif
 	bool skip_init;

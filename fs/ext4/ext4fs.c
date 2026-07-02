@@ -412,7 +412,7 @@ int ext4fs_uuid(char *uuid_str)
 	if (ext4fs_root == NULL)
 		return -1;
 
-#ifdef CONFIG_LIB_UUID
+#if CONFIG_IS_ENABLED(LIB_UUID)
 	uuid_bin_to_str((unsigned char *)ext4fs_root->sblock.unique_id,
 			uuid_str, UUID_STR_FORMAT_STD);
 

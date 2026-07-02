@@ -410,11 +410,18 @@ config FSP_VERSION1
 config FSP_VERSION2
 	bool "FSP version 2.x"
 	select DM_EVENT
+	select SPL_FSP_VERSION2
 	help
 	  This covers versions 2.0 and 2.1. See here for details:
 	  https://github.com/IntelFsp/fsp/wiki
 
 endchoice
+
+config SPL_FSP_VERSION2
+	bool   # FSP version 2.x (SPL)
+	help
+	  This covers versions 2.0 and 2.1. See here for details:
+	  https://github.com/IntelFsp/fsp/wiki
 
 config FSP_FILE
 	string "Firmware Support Package binary filename"

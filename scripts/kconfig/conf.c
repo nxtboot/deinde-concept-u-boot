@@ -490,8 +490,12 @@ int main(int ac, char **av)
 	const char *name, *defconfig_file = NULL /* gcc uninit */;
 	struct stat tmpstat;
 	int no_conf_write = 0;
+	bool support_spl;
 
 	tty_stdio = isatty(0) && isatty(1);
+
+	/* Special handling of SPL phases for U-Boot */
+	support_spl = getenv("KCONFIG_SPL");
 
 	while ((opt = getopt_long(ac, av, "s", long_opts, NULL)) != -1) {
 		if (opt == 's') {
@@ -692,7 +696,7 @@ int main(int ac, char **av)
 			fprintf(stderr, "\n*** Error during writing of the configuration.\n\n");
 			exit(1);
 		}
-		if (conf_write_autoconf()) {
+		if (conf_write_autoconf(support_spl)) {
 			fprintf(stderr, "\n*** Error during update of the configuration.\n\n");
 			return 1;
 		}

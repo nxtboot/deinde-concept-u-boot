@@ -384,7 +384,7 @@ void __udelay(unsigned long usec)
 	stop = now + (u64)usec * get_tbclk_mhz();
 
 	while ((int64_t)(stop - get_ticks()) > 0)
-#if defined(CONFIG_ARCH_QEMU_X86) && defined(CONFIG_SMP)
+#if defined(CONFIG_ARCH_QEMU_X86) && defined(CONFIG_PPL_SMP)
 		/*
 		 * Add a 'pause' instruction on qemu target,
 		 * to give other VCPUs a chance to run.

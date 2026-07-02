@@ -14,7 +14,7 @@
 
 /* Default environment */
 #define CFG_RAMDISK_ADDR	0x4000000
-#if defined(CONFIG_GENERATE_ACPI_TABLE) || defined(CONFIG_EFI_STUB)
+#if defined(CONFIG_PPL_GENERATE_ACPI_TABLE) || defined(CONFIG_EFI_STUB)
 #define CFG_OTHBOOTARGS	"othbootargs=\0"
 #else
 #define CFG_OTHBOOTARGS	"othbootargs=acpi=off\0"

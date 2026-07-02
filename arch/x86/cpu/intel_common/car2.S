@@ -443,6 +443,6 @@ ucode_base:	/* Declared in microcode.h */
 .globl ucode_size
 ucode_size:	/* Declared in microcode.h */
 	.long	0			/* microcode size */
-	.long	CONFIG_SYS_MONITOR_BASE	/* code region base */
-	.long	CONFIG_SYS_MONITOR_LEN	/* code region size */
+	.long	CONFIG_PPL_SYS_MONITOR_BASE	/* code region base */
+	.long	CONFIG_PPL_SYS_MONITOR_LEN	/* code region size */
 #endif

@@ -350,7 +350,7 @@
 	BOOT_TARGET_DEVICES_references_VIRTIO_without_CONFIG_CMD_VIRTIO
 #endif
 
-#if defined(CONFIG_CMD_DHCP)
+#if defined(CONFIG_PPL_CMD_DHCP)
 #if defined(CONFIG_EFI_LOADER)
 /* http://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xml */
 #if defined(CONFIG_ARM64) || defined(__aarch64__)
@@ -427,7 +427,7 @@
 	BOOT_TARGET_DEVICES_references_DHCP_without_CONFIG_CMD_DHCP
 #endif
 
-#if defined(CONFIG_CMD_DHCP) && defined(CONFIG_CMD_PXE)
+#if defined(CONFIG_PPL_CMD_DHCP) && defined(CONFIG_PPL_CMD_PXE)
 #define BOOTENV_DEV_PXE(devtypeu, devtypel, instance) \
 	"bootcmd_pxe=" \
 		BOOTENV_RUN_NET_USB_START \

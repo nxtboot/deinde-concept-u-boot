@@ -77,7 +77,7 @@ struct disk_partition {
 #if CONFIG_IS_ENABLED(PARTITION_UUIDS)
 	char	uuid[UUID_STR_LEN + 1];	/* filesystem UUID as string, if exists	*/
 #endif
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 	char	type_guid[UUID_STR_LEN + 1];	/* type GUID as string, if exists	*/
 #endif
 #ifdef CONFIG_DOS_PARTITION
@@ -120,7 +120,7 @@ extern char *__invalid_use_of_disk_partition_type_guid;
  * disk_partition_type_guid() - get partition type GUID
  *
  * By using this function to get the partition type GUID we can use
- * 'if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))' instead of
+ * 'if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))' instead of
  * '#ifdef CONFIG_PARTITION_TYPE_GUID'.
  *
  * @info:	partition information
@@ -129,7 +129,7 @@ extern char *__invalid_use_of_disk_partition_type_guid;
 static inline const
 char *disk_partition_type_guid(const struct disk_partition *info)
 {
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 	return info->type_guid;
 #else
 	return __invalid_use_of_disk_partition_type_guid;
@@ -140,7 +140,7 @@ char *disk_partition_type_guid(const struct disk_partition *info)
  * disk_partition_set_type_guid() - set partition type GUID
  *
  * By using this function to set the partition type GUID we can use
- * 'if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))' instead of
+ * 'if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))' instead of
  * '#ifdef CONFIG_PARTITION_TYPE_GUID'.
  *
  * @info:	partition information
@@ -149,14 +149,14 @@ char *disk_partition_type_guid(const struct disk_partition *info)
 static inline void disk_partition_set_type_guid(struct disk_partition *info,
 						const char *val)
 {
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 	strlcpy(info->type_guid, val, UUID_STR_LEN + 1);
 #endif
 }
 
 static inline void disk_partition_clr_type_guid(struct disk_partition *info)
 {
-#ifdef CONFIG_PARTITION_TYPE_GUID
+#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
 	*info->type_guid = '\0';
 #endif
 }

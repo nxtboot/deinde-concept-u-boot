@@ -158,6 +158,34 @@ struct symbol {
 /* Set symbol to y if allnoconfig; used for symbols that hide others */
 #define SYMBOL_ALLNOCONFIG_Y 0x200000
 
+/*
+ * U-Boot: Marks an SPL symbol, i.e. one that starts with one of the strings in
+ * spl_name[]
+ */
+#define SYMBOL_SPL		0x400000
+
+/*
+ * U-Boot: Marks a non-SPL symbol that also has an SPL version. This flag is
+ * added to symbols like FOO if there is also an SPL_FOO (or TPL_FOO, etc.)
+ */
+#define SYMBOL_HAS_SPL		0x800000
+
+/*
+ * U-Boot: Marks a symbol with no SPL version. These symbols cannot be computed
+ * by looking at the Kconfig, so there is a conf_nospl file which holds s list.
+ *
+ * Generally, options which have no SPL_ prefix (e.g. CONFIG_FOO) apply to all
+ * SPL build phases. This allows things like ARCH_ARM to propagate to all builds
+ * without the hassle of generating a separate SPL version fo each phase. But in
+ * some cases this is not wanted.
+ *
+ * This file lists options which don't have an SPL equivalent, but still should
+ * not be enabled in SPL builds. It is necessary since kconfig cannot tell (just
+ * by looking at the Kconfig description) whether it applies to Proper builds
+ * only, or to all builds.
+ */
+#define SYMBOL_NO_SPL		0x1000000
+
 #define SYMBOL_MAXLENGTH	256
 #define SYMBOL_HASHSIZE		9973
 

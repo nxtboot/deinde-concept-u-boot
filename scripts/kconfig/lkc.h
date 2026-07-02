@@ -71,6 +71,15 @@ void sym_add_change_count(int count);
 bool conf_set_all_new_symbols(enum conf_def_mode mode);
 void set_all_choice_values(struct symbol *csym);
 
+/**
+ * conf_mark_symbols() - Mark symbols with U-Boot flags
+ *
+ * Symbols which don't have an SPL symbol are marked with SYMBOL_PROPER_ONLY and
+ * those with only SPL symbols are marked withSYMBOL_SPL_ONLY, so we know to
+ * avoid writing them to the wrong autoconf.h files.
+ */
+int conf_mark_symbols(void);
+
 /* confdata.c and expr.c */
 static inline void xfwrite(const void *str, size_t len, size_t count, FILE *out)
 {
