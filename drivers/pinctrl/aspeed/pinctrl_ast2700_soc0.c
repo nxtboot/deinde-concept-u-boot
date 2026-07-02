@@ -18,6 +18,24 @@
 #define SCU404			0x404
 #define SCU408			0x408
 #define SCU410			0x410
+/* One IO control register per ball, GPIO18A0..GPIO18B3 */
+#define SCU480			0x480
+
+/* Indexes into ast2700_soc0_pins[], in GPIO18A0..GPIO18B3 order */
+enum {
+	AC14,
+	AE15,
+	AD14,
+	AE14,
+	AF14,
+	AB13,
+	AB14,
+	AF15,
+	AF13,
+	AC13,
+	AD13,
+	AE13,
+};
 
 #define USB_PORTA_ROUTE	BIT(9)
 #define USB_PORTB_ROUTE	BIT(10)
@@ -62,38 +80,72 @@ struct ast2700_soc0_pinctrl_priv {
 	void __iomem *base;
 };
 
-static const char * const ast2700_soc0_groups[] = {
-	"EMMCG1",
-	"EMMCG4",
-	"EMMCG8",
-	"EMMCWPN",
-	"EMMCCDN",
-	"VGADDC",
-	"VB1",
-	"VB0",
-	"TSPRSTN",
-	"UFSCLKI",
-	"USB3A",
-	"USB3AAP",
-	"USB3ABP",
-	"USB3B",
-	"USB3BAP",
-	"USB3BBP",
-	"USB2A",
-	"USB2AAP",
-	"USB2ABP",
-	"USB2ADAP",
-	"USB2AH",
-	"USB2AHAP",
-	"USB2B",
-	"USB2BBP",
-	"USB2BAP",
-	"USB2BDBP",
-	"USB2BH",
-	"USB2BHBP",
-	"JTAG0",
-	"PCIERC0PERST",
-	"PCIERC1PERST",
+struct ast2700_soc0_group {
+	const char *name;
+	const u8 *pins;
+	unsigned int npins;
+};
+
+static const u8 ast2700_soc0_emmcg1_pins[] = { AC14, AE15, AD14 };
+static const u8 ast2700_soc0_emmcg4_pins[] = {
+	AC14, AE15, AD14, AE14, AF14, AB13,
+};
+
+static const u8 ast2700_soc0_emmcg8_pins[] = {
+	AC14, AE15, AD14, AE14, AF14, AB13, AF13, AC13, AD13, AE13,
+};
+
+static const u8 ast2700_soc0_emmcwpn_pins[] = { AF15 };
+static const u8 ast2700_soc0_emmccdn_pins[] = { AB14 };
+static const u8 ast2700_soc0_vgaddc_pins[] = { AD13, AE13 };
+static const u8 ast2700_soc0_vb1_pins[] = { AC14, AE15, AD14, AE14 };
+static const u8 ast2700_soc0_vb0_pins[] = { AF15, AB14, AF13, AC13 };
+static const u8 ast2700_soc0_tsprstn_pins[] = { AF13 };
+static const u8 ast2700_soc0_ufsclki_pins[] = { AC13 };
+
+#define AST2700_SOC0_GROUP(_name, _pins)				\
+	{								\
+		.name = _name,						\
+		.pins = _pins,						\
+		.npins = ARRAY_SIZE(_pins),				\
+	}
+
+/*
+ * The USB, JTAG and PCIe RC groups control internal routing only; they
+ * have no package balls, hence no group pins to configure.
+ */
+static const struct ast2700_soc0_group ast2700_soc0_groups[] = {
+	AST2700_SOC0_GROUP("EMMCG1", ast2700_soc0_emmcg1_pins),
+	AST2700_SOC0_GROUP("EMMCG4", ast2700_soc0_emmcg4_pins),
+	AST2700_SOC0_GROUP("EMMCG8", ast2700_soc0_emmcg8_pins),
+	AST2700_SOC0_GROUP("EMMCWPN", ast2700_soc0_emmcwpn_pins),
+	AST2700_SOC0_GROUP("EMMCCDN", ast2700_soc0_emmccdn_pins),
+	AST2700_SOC0_GROUP("VGADDC", ast2700_soc0_vgaddc_pins),
+	AST2700_SOC0_GROUP("VB1", ast2700_soc0_vb1_pins),
+	AST2700_SOC0_GROUP("VB0", ast2700_soc0_vb0_pins),
+	AST2700_SOC0_GROUP("TSPRSTN", ast2700_soc0_tsprstn_pins),
+	AST2700_SOC0_GROUP("UFSCLKI", ast2700_soc0_ufsclki_pins),
+	{ "USB3A" },
+	{ "USB3AAP" },
+	{ "USB3ABP" },
+	{ "USB3B" },
+	{ "USB3BAP" },
+	{ "USB3BBP" },
+	{ "USB2A" },
+	{ "USB2AAP" },
+	{ "USB2ABP" },
+	{ "USB2ADAP" },
+	{ "USB2AH" },
+	{ "USB2AHAP" },
+	{ "USB2B" },
+	{ "USB2BBP" },
+	{ "USB2BAP" },
+	{ "USB2BDBP" },
+	{ "USB2BH" },
+	{ "USB2BHBP" },
+	{ "JTAG0" },
+	{ "PCIERC0PERST" },
+	{ "PCIERC1PERST" },
 };
 
 static const char * const ast2700_soc0_functions[] = {
@@ -354,7 +406,7 @@ static int ast2700_soc0_pinctrl_get_groups_count(struct udevice *dev)
 static const char *ast2700_soc0_pinctrl_get_group_name(struct udevice *dev,
 						       unsigned int selector)
 {
-	return ast2700_soc0_groups[selector];
+	return ast2700_soc0_groups[selector].name;
 }
 
 static int ast2700_soc0_pinctrl_get_functions_count(struct udevice *dev)
@@ -383,7 +435,7 @@ static int ast2700_soc0_pinctrl_group_set(struct udevice *dev,
 		return -EINVAL;
 
 	function = ast2700_soc0_functions[func_selector];
-	group = ast2700_soc0_groups[group_selector];
+	group = ast2700_soc0_groups[group_selector].name;
 
 	for (i = 0; i < ARRAY_SIZE(ast2700_soc0_pinmuxes); i++) {
 		pinmux = &ast2700_soc0_pinmuxes[i];
@@ -458,6 +510,87 @@ static int ast2700_soc0_pinctrl_get_pin_muxing(struct udevice *dev,
 	return 0;
 }
 
+/* Drive strength in mA selectable by the IO control register [3:0] */
+static const u8 ast2700_soc0_drv_ma[] = {
+	3, 6, 8, 11, 16, 18, 20, 23, 30, 32, 33, 35, 37, 38, 39, 41,
+};
+
+static const struct pinconf_param ast2700_soc0_pinconf_params[] = {
+	{ "bias-disable", PIN_CONFIG_BIAS_DISABLE, 0 },
+	{ "bias-pull-down", PIN_CONFIG_BIAS_PULL_DOWN, 0 },
+	{ "bias-pull-up", PIN_CONFIG_BIAS_PULL_UP, 0 },
+	{ "drive-strength", PIN_CONFIG_DRIVE_STRENGTH, 0 },
+};
+
+static int ast2700_soc0_pinctrl_pinconf_set(struct udevice *dev,
+					    unsigned int selector,
+					    unsigned int param,
+					    unsigned int arg)
+{
+	struct ast2700_soc0_pinctrl_priv *priv = dev_get_priv(dev);
+	u32 mask, val, i;
+
+	if (selector >= ARRAY_SIZE(ast2700_soc0_pins))
+		return -EINVAL;
+
+	switch (param) {
+	case PIN_CONFIG_BIAS_DISABLE:
+		mask = BIT(5);
+		val = 0;
+		break;
+	case PIN_CONFIG_BIAS_PULL_DOWN:
+		mask = GENMASK(5, 4);
+		val = 2 << 4;
+		break;
+	case PIN_CONFIG_BIAS_PULL_UP:
+		mask = GENMASK(5, 4);
+		val = 3 << 4;
+		break;
+	case PIN_CONFIG_DRIVE_STRENGTH:
+		for (i = 0; i < ARRAY_SIZE(ast2700_soc0_drv_ma); i++) {
+			if (ast2700_soc0_drv_ma[i] == arg)
+				break;
+		}
+		if (i == ARRAY_SIZE(ast2700_soc0_drv_ma))
+			return -EINVAL;
+		mask = GENMASK(3, 0);
+		val = i;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+
+	clrsetbits_le32(priv->base + SCU480 + selector * 4, mask, val);
+
+	return 0;
+}
+
+static int ast2700_soc0_pinctrl_pinconf_group_set(struct udevice *dev,
+						  unsigned int selector,
+						  unsigned int param,
+						  unsigned int arg)
+{
+	const struct ast2700_soc0_group *group;
+	u32 i;
+	int ret;
+
+	if (selector >= ARRAY_SIZE(ast2700_soc0_groups))
+		return -EINVAL;
+
+	group = &ast2700_soc0_groups[selector];
+	if (!group->npins)
+		return -ENOTSUPP;
+
+	for (i = 0; i < group->npins; i++) {
+		ret = ast2700_soc0_pinctrl_pinconf_set(dev, group->pins[i],
+						       param, arg);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static const struct pinctrl_ops ast2700_soc0_pinctrl_ops = {
 	.set_state = pinctrl_generic_set_state,
 	.get_pins_count = ast2700_soc0_pinctrl_get_pins_count,
@@ -469,6 +602,10 @@ static const struct pinctrl_ops ast2700_soc0_pinctrl_ops = {
 	.get_function_name = ast2700_soc0_pinctrl_get_function_name,
 	.pinmux_group_set = ast2700_soc0_pinctrl_group_set,
 	.gpio_request_enable = ast2700_soc0_pinctrl_gpio_request_enable,
+	.pinconf_num_params = ARRAY_SIZE(ast2700_soc0_pinconf_params),
+	.pinconf_params = ast2700_soc0_pinconf_params,
+	.pinconf_set = ast2700_soc0_pinctrl_pinconf_set,
+	.pinconf_group_set = ast2700_soc0_pinctrl_pinconf_group_set,
 };
 
 static const struct udevice_id ast2700_soc0_pinctrl_ids[] = {

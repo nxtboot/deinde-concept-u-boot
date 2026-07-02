@@ -381,6 +381,7 @@ config ASPEED_AST2600_PINCTRL
 config ASPEED_AST2700_SOC0_PINCTRL
 	bool "Aspeed AST2700 SoC0 pin control driver"
 	depends on DM && PINCTRL_GENERIC && ASPEED_AST2700
+	select PINCONF
 	default y
 	help
 	  Support pin multiplexing control on Aspeed ast2700 SoC0. The driver
