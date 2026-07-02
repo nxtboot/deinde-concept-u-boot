@@ -1026,6 +1026,10 @@ def read_database():
                 value: set of boards using that option
 
     """
+    if not os.path.exists(CONFIG_DATABASE):
+        sys.exit(f"Error: database '{CONFIG_DATABASE}' not found. "
+                 f"Did you forget to generate it first with the -b option?")
+
     configs = {}
 
     # key is defconfig name, value is dict of (CONFIG_xxx, value)
