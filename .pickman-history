@@ -85790,3 +85790,29 @@ Push successful. Rebase complete.
 
 ---
 
+## 2026-07-01: us/master
+
+Branch: cherry-5c7ff1b5407
+
+Commits:
+- 5c7ff1b5407 clk/qcom: milos: Add remaining UFS clocks
+- e4f83e403ad clk/qcom: milos: Add TCSRCC clocks
+- f605dcee103 Merge tag 'qcom-fixes-2026.07' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon
+
+### Conversation log
+All 3 commits cherry-picked successfully:
+
+- **b2aeb6545df** clk/qcom: milos: Add remaining UFS clocks (1 file, +7 lines, matches original)
+- **c4005c12609** clk/qcom: milos: Add TCSRCC clocks (1 file, +66 lines, matches original)
+- **d7834bde208** Merge tag 'qcom-fixes-2026.07' (empty merge commit preserved with `--allow-empty`)
+
+**Build result:** OK — sandbox build passed for all three cherry-picks (initial, after commit 2, and final).
+
+**Fix-ups:** None — no conflicts, no delta issues. The merge commit resolved to empty (expected since the two underlying commits were already applied individually), and was preserved as an empty commit to maintain history tracking.
+
+**Concerning deltas:** None — both non-merge commits matched the originals exactly in file count and line count.
+
+Branch `cherry-5c7ff1b5407` is ready for pushing.
+
+---
+
