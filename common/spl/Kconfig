@@ -1459,7 +1459,8 @@ config SPL_RTC
 	  build.
 
 config SPL_SATA
-	bool "Support loading from SATA"
+	bool "Support SATA in SPL"
+	depends on SATA
 	help
 	  Enable support for SATA (Serial AT attachment) in SPL. This allows
 	  use of SATA devices such as hard drives and flash drivers for
