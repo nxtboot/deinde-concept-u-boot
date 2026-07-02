@@ -2033,7 +2033,7 @@ def parse_args():
         cpu_count = 1
 
     epilog = '''Move config options from headers to defconfig files. See
-doc/develop/moveconfig.rst for documentation.'''
+doc/develop/qconfig.rst for documentation.'''
 
     parser = ArgumentParser(epilog=epilog)
     # Add arguments here
