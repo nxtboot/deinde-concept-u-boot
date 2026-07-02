@@ -204,8 +204,8 @@ LDPPFLAGS += \
 	$(shell $(LD) --version | \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
-# Turn various CONFIG symbols into IMAGE symbols for easy reuse of
-# the scripts between SPL, TPL and VPL.
+# Turn various CONFIG symbols into IMAGE_MAX_SIZE and IMAGE_TEXT_BASE symbols
+# for easy reuse of the scripts between SPL, TPL and VPL.
 ifneq ($(CONFIG_$(PHASE_)MAX_SIZE),0x0)
 LDPPFLAGS += -DIMAGE_MAX_SIZE=$(CONFIG_$(PHASE_)MAX_SIZE)
 endif
