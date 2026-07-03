@@ -13,6 +13,7 @@
 #include <syscon.h>
 #include <wdt.h>
 
+#undef field_prep
 #define field_prep(_mask, _val) (((_val) << (ffs(_mask) - 1)) & (_mask))
 
 #define RSIP_CTL_CFG4		0xc0
