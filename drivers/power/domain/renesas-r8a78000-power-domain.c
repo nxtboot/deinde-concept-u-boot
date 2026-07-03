@@ -21,7 +21,9 @@
 #include <dt-bindings/power/r8a78000-power-scmi.h>
 #include <dt-bindings/reset/r8a78000-reset-scmi.h>
 
+#undef field_get
 #define field_get(_mask, _reg) (((_reg) & (_mask)) >> (ffs(_mask) - 1))
+#undef field_prep
 #define field_prep(_mask, _val) (((_val) << (ffs(_mask) - 1)) & (_mask))
 
 #define PKC_PROT_LOCK			0xa5a5a500
