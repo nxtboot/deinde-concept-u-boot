@@ -1536,9 +1536,9 @@ static efi_status_t tcg2_measure_secure_boot_variable(struct udevice *dev)
 		if (!data && !secure_variables[i].accept_empty)
 			continue;
 
-		if (u16_strcmp(u"DeployedMode", secure_variables[i].name))
+		if (!u16_strcmp(u"DeployedMode", secure_variables[i].name))
 			secure_variables[i].pcr_index = deployed_audit_pcr_index;
-		if (u16_strcmp(u"AuditMode", secure_variables[i].name))
+		if (!u16_strcmp(u"AuditMode", secure_variables[i].name))
 			secure_variables[i].pcr_index = deployed_audit_pcr_index;
 
 		ret = tcg2_measure_variable(dev, secure_variables[i].pcr_index,
