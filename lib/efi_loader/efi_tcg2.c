@@ -352,8 +352,8 @@ efi_tcg2_get_eventlog(struct efi_tcg2_protocol *this,
 	}
 
 	if (tcg2_platform_get_tpm2(&dev)) {
-		event_log_location = NULL;
-		event_log_last_entry = NULL;
+		*event_log_location = 0;
+		*event_log_last_entry = 0;
 		*event_log_truncated = false;
 		ret = EFI_SUCCESS;
 		goto out;
