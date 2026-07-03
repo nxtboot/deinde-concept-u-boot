@@ -9,3 +9,8 @@ config PINCTRL_AIROHA
 	select REGMAP
 	select SYSCON
 	bool
+
+config PINCTRL_AIROHA_AN7581
+	bool "Airoha AN7581 pin controller and gpio driver"
+	depends on TARGET_AN7581
+	select PINCTRL_AIROHA
