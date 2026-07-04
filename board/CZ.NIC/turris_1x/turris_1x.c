@@ -408,11 +408,11 @@ static void handle_reset_button(void)
 	}
 }
 
-static int recalculate_pcie_mem_law(phys_addr_t addr,
-				    pci_size_t pcie_size,
-				    enum law_trgt_if id,
-				    phys_addr_t *free_start,
-				    phys_size_t *free_size)
+static int __maybe_unused recalculate_pcie_mem_law(phys_addr_t addr,
+						   pci_size_t pcie_size,
+						   enum law_trgt_if id,
+						   phys_addr_t *free_start,
+						   phys_size_t *free_size)
 {
 	phys_size_t cur_size, new_size;
 	struct law_entry e;
@@ -440,13 +440,8 @@ static int recalculate_pcie_mem_law(phys_addr_t addr,
 
 static void recalculate_used_pcie_mem(void)
 {
-	phys_addr_t free_start1, free_start2;
-	phys_size_t free_size1, free_size2;
-	pci_size_t pcie1_used_mem_size;
-	pci_size_t pcie2_used_mem_size;
 	struct law_entry e;
 	phys_size_t size;
-	ofnode node;
 	int i;
 
 	size = gd->ram_size;
@@ -479,6 +474,12 @@ static void recalculate_used_pcie_mem(void)
 	}
 
 #ifdef CONFIG_PCI_PNP
+	phys_addr_t free_start1, free_start2;
+	phys_size_t free_size1, free_size2;
+	pci_size_t pcie1_used_mem_size;
+	pci_size_t pcie2_used_mem_size;
+	ofnode node;
+
 	/*
 	 * Detect how much space of PCIe MEM is needed for both PCIe 1 and
 	 * PCIe 2 controllers with all connected cards on whole hierarchy.

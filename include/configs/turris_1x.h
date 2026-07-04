@@ -263,10 +263,16 @@
  * Environment Configuration
  */
 
+#ifdef CONFIG_NVME
+#define BOOT_TARGET_NVME(func) func(NVME, nvme, 0)
+#else
+#define BOOT_TARGET_NVME(func)
+#endif
+
 #ifdef CONFIG_SDCARD
 #define BOOT_TARGET_DEVICES(func) \
 	func(MMC, mmc, 0) \
-	func(NVME, nvme, 0) \
+	BOOT_TARGET_NVME(func) \
 	func(SCSI, scsi, 0) \
 	func(USB, usb, 0) \
 	func(USB, usb, 1) \
@@ -279,7 +285,7 @@
 #else
 #define BOOT_TARGET_DEVICES(func) \
 	func(MMC, mmc, 0) \
-	func(NVME, nvme, 0) \
+	BOOT_TARGET_NVME(func) \
 	func(SCSI, scsi, 0) \
 	func(USB, usb, 0) \
 	func(USB, usb, 1) \

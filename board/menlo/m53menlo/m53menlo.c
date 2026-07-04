@@ -345,7 +345,7 @@ int board_late_init(void)
 	add_board_boot_modes(NULL);
 #endif
 
-#if defined(CONFIG_VIDEO_IPUV3)
+#if defined(CONFIG_VIDEO_IPUV3) && !defined(CONFIG_XPL_BUILD)
 	struct udevice *dev;
 	int xpos, ypos, ret;
 	char *s;

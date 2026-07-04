@@ -12,6 +12,17 @@ config FS
 	  Provides an interface for filesystems, allowing them to be
 	  persistently mounted. Filesystem can contain files and directory.
 
+config SPL_FS
+	bool "Support for filesystems in SPL"
+	depends on SPL
+	help
+	  Provides the filesystem uclass in SPL, allowing filesystems to be
+	  persistently mounted. This is not normally needed in SPL, which
+	  typically loads U-Boot from a raw offset or a single filesystem
+	  without the uclass. It is disabled by default, so the fs uclass
+	  Makefile rule can use the per-phase CONFIG symbol like other
+	  options.
+
 config DIR
 	bool "Support for directories"
 	depends on FS

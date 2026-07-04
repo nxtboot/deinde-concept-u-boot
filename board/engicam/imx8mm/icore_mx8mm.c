@@ -57,8 +57,9 @@ int board_phy_config(struct phy_device *phydev)
 
 int board_init(void)
 {
-	if (IS_ENABLED(CONFIG_FEC_MXC))
-		setup_fec();
+#ifdef CONFIG_FEC_MXC
+	setup_fec();
+#endif
 
 	return 0;
 }

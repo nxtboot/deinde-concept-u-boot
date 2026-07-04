@@ -720,7 +720,7 @@ static bool is_som_variant_1_2(void)
 	return (bool)!ret;
 }
 
-static void select_dt_from_module_version(void)
+static void __maybe_unused select_dt_from_module_version(void)
 {
 	if (is_som_variant_1_2())
 		env_set("variant", "-v1.2");

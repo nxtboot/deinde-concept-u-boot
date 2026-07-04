@@ -262,6 +262,9 @@ static int setup_fec(void)
 	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_FEC_MXC))
+		return 0;
+
 	ret = enable_fec_anatop_clock(0, ENET_25MHZ);
 	if (ret)
 		return ret;
@@ -380,8 +383,8 @@ static bool has_emmc(void)
 
 static int find_ethernet_phy(void)
 {
-	struct mii_dev *bus = NULL;
-	struct phy_device *phydev = NULL;
+	struct mii_dev *bus __maybe_unused = NULL;
+	struct phy_device *phydev __maybe_unused = NULL;
 	int phy_addr = -ENOENT;
 
 #ifdef CONFIG_FEC_MXC

@@ -9,6 +9,15 @@ menuconfig CMDLINE
 	  Depending on the number of commands enabled, this can add
 	  substantially to the size of U-Boot.
 
+config CLI_SIMPLE_PARSE
+	bool
+	default y if CMDLINE
+	help
+	  Build cli_simple_parse_line(), which splits a command line into its
+	  argument list. This is normally provided as part of the command line
+	  interface, but a few things use it without needing the full CLI (for
+	  example the DDR interactive debuggers), so they can select it here.
+
 if CMDLINE
 
 config HUSH_PARSER
