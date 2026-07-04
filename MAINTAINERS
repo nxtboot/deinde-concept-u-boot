@@ -1717,6 +1717,11 @@ F:	drivers/firmware/scmi/
 F:	include/scmi*
 N:	scmi
 
+SDHCI CADENCE
+M:	Tanmay Kathpalia <tanmay.kathpalia@altera.com>
+S:	Maintained
+F:	drivers/mmc/sdhci-cadence*
+
 SEAMA
 M:	Linus Walleij <linusw@kernel.org>
 S:	Maintained
