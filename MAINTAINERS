@@ -1984,6 +1984,11 @@ S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-ubi.git
 F:	drivers/mtd/ubi/
 
+U_BOOT_PYLIB
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	tools/u_boot_pylib/
+
 UFETCH
 M:	Casey Connolly <casey.connolly@linaro.org>
 S:	Maintained
