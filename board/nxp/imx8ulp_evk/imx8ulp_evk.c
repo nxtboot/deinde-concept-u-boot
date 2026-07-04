@@ -89,8 +89,9 @@ void mipi_dsi_panel_backlight(void)
 int board_init(void)
 {
 
-	if (IS_ENABLED(CONFIG_FEC_MXC))
-		setup_fec();
+#ifdef CONFIG_FEC_MXC
+	setup_fec();
+#endif
 
 	/* When sync with M33 is failed, use local driver to set for video */
 	if (!is_m33_handshake_necessary() && IS_ENABLED(CONFIG_VIDEO)) {
