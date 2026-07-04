@@ -80,7 +80,7 @@ struct efi_capsule_update_info update_info = {
 	.images = fw_images,
 };
 
-#if CONFIG_IS_ENABLED(TI_I2C_BOARD_DETECT)
+#if defined(CONFIG_TI_I2C_BOARD_DETECT) && !defined(CONFIG_XPL_BUILD)
 int do_board_detect(void)
 {
 	return do_board_detect_am6();
@@ -125,10 +125,10 @@ invalid_eeprom:
 #if CONFIG_IS_ENABLED(BOARD_LATE_INIT)
 int board_late_init(void)
 {
-	if (IS_ENABLED(CONFIG_TI_I2C_BOARD_DETECT)) {
-		setup_board_eeprom_env();
-		setup_serial_am6();
-	}
+#if defined(CONFIG_TI_I2C_BOARD_DETECT) && !defined(CONFIG_XPL_BUILD)
+	setup_board_eeprom_env();
+	setup_serial_am6();
+#endif
 
 	ti_set_fdt_env(NULL, NULL);
 	return 0;
