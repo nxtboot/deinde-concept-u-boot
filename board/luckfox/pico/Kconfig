@@ -1,0 +1,12 @@
+if TARGET_LUCKFOX_PICO_RV1103
+
+config SYS_BOARD
+	default "pico"
+
+config SYS_VENDOR
+	default "luckfox"
+
+config SYS_CONFIG_NAME
+	default "luckfox_pico"
+
+endif
