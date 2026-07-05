@@ -146,7 +146,7 @@ stages:
           make tools-only_config envtools -j$(nproc)
 
   - job: utils
-    displayName: 'Run binman, buildman, dtoc, Kconfig and patman testsuites'
+    displayName: 'Run binman, buildman, dtoc and Kconfig testsuites'
     pool:
       vmImage: $(ubuntu_vm)
     container:
@@ -166,7 +166,6 @@ stages:
           pip install -r test/py/requirements.txt \
             -r tools/binman/requirements.txt \
             -r tools/buildman/requirements.txt \
-            -r tools/patman/requirements.txt \
             -r tools/u_boot_pylib/requirements.txt \
             -r scripts/dtc/pylibfdt/requirements.txt
           export UBOOT_TRAVIS_BUILD_DIR=/tmp/tools-only
@@ -180,7 +179,6 @@ stages:
           ./tools/qconfig.py -t
           ./tools/dtoc/dtoc -t
           ./tools/u_boot_pylib/u_boot_pylib test
-          ./tools/patman/patman test
           make O=${UBOOT_TRAVIS_BUILD_DIR} testconfig
 
   - job: pylint
@@ -199,7 +197,6 @@ stages:
           pip install -r test/py/requirements.txt \
             -r tools/binman/requirements.txt \
             -r tools/buildman/requirements.txt \
-            -r tools/patman/requirements.txt \
             -r tools/u_boot_pylib/requirements.txt \
             -r scripts/dtc/pylibfdt/requirements.txt \
             asteval pylint==3.3.4 pyopenssl
