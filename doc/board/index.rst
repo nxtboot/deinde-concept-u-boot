@@ -37,6 +37,7 @@ Board-specific doc
    kontron/index
    lenovo/index
    lg/index
+   luckfox/index
    liebherr/index
    mediatek/index
    microchip/index
