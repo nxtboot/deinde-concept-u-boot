@@ -29,7 +29,7 @@ obj-$(CONFIG_MEASURED_BOOT) += measurement.o
 
 ifdef CONFIG_OF_LIVE
 ifndef CONFIG_SPL_BUILD
-obj-$(CONFIG_BOOTMETH_VBE_SIMPLE) += vbe_simple.o
+obj-$(CONFIG_BOOTMETH_VBE_SIMPLE) += vbe_simple.o vbe_read_fit.o
 endif
 endif
 obj-$(CONFIG_BOOTMETH_VBE) += vbe_fixup.o
