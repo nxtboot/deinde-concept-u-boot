@@ -16,7 +16,6 @@ General
    docstyle
    kconfig
    memory
-   patman
    pickman
    process
    release_cycle

@@ -73,9 +73,15 @@ Using patman
 
 You can use a tool called patman to prepare, check and send patches. It creates
 change logs, cover letters and patch notes. It also simplifies the process of
-sending multiple versions of a series.
+sending multiple versions of a series. patman is driven by tags in your commit
+messages, and can collect Reviewed-by and other tags from patchwork when you
+send a new version. It can optionally keep a local database of all your series,
+tracking each version and their review / applied status over time, so you can
+easily track upstreaming progress.
 
-See more details at :doc:`patman`.
+patman now lives outside the U-Boot tree; install it with
+``pip install patch-manager``. See the
+`patman documentation <https://deinde.dev/patman>`_ for details.
 
 General Patch Submission Rules
 ------------------------------
