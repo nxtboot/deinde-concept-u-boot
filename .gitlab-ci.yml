@@ -328,7 +328,8 @@ Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig, patman and pickman suites:
       . /tmp/venv/bin/activate;
       pip install -r test/py/requirements.txt -r tools/binman/requirements.txt
         -r tools/buildman/requirements.txt -r tools/patman/requirements.txt
-        -r tools/pickman/requirements.txt -r tools/u_boot_pylib/requirements.txt;
+        -r tools/pickman/requirements.txt -r tools/u_boot_pylib/requirements.txt
+        -r scripts/dtc/pylibfdt/requirements.txt;
       export UBOOT_TRAVIS_BUILD_DIR=/tmp/tools-only;
       export PYTHONPATH="${UBOOT_TRAVIS_BUILD_DIR}/scripts/dtc/pylibfdt";
       export PATH="${UBOOT_TRAVIS_BUILD_DIR}/scripts/dtc:${PATH}";
@@ -363,7 +364,8 @@ Run pylint:
     - . /tmp/venv/bin/activate
     - pip install -r test/py/requirements.txt -r tools/binman/requirements.txt
         -r tools/buildman/requirements.txt -r tools/patman/requirements.txt
-        -r tools/u_boot_pylib/requirements.txt asteval pylint==3.3.4 pyopenssl
+        -r tools/u_boot_pylib/requirements.txt
+        -r scripts/dtc/pylibfdt/requirements.txt asteval pylint==3.3.4 pyopenssl
     - export PATH=${PATH}:~/.local/bin
     - echo "[MASTER]" >> .pylintrc
     - echo "load-plugins=pylint.extensions.docparams" >> .pylintrc
