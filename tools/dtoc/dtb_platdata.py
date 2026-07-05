@@ -157,6 +157,10 @@ class DtbPlatdata():
             conv_name_to_c(node.name)
         _include_disabled: true to include nodes marked status = "disabled"
         _outfile: The current output file (sys.stdout or a real file)
+        _outfile_name: Final path the current output file will be renamed to,
+            or None when writing to stdout
+        _outfile_tmp: Temporary path currently being written, renamed to
+            _outfile_name by finish_output(), or None when writing to stdout
         _lines: Stashed list of output lines for outputting in the future
         _dirname: Directory to hold output files, or None for none (all files
             go to stdout)
@@ -179,6 +183,8 @@ class DtbPlatdata():
         self._valid_nodes_unsorted = None
         self._include_disabled = include_disabled
         self._outfile = None
+        self._outfile_name = None
+        self._outfile_tmp = None
         self._lines = []
         self._dirnames = [None] * len(Ftype)
         self._struct_data = collections.OrderedDict()
@@ -230,24 +236,45 @@ class DtbPlatdata():
         """
         dirname = self._dirnames[ftype]
         if dirname:
-            pathname = os.path.join(dirname, fname)
             if self._outfile:
-                self._outfile.close()
-            self._outfile = open(pathname, 'w')
+                self.finish_output()
+            self._open_output(os.path.join(dirname, fname))
         elif fname:
             if not self._outfile:
-                self._outfile = open(fname, 'w')
+                self._open_output(fname)
         else:
             self._outfile = sys.stdout
+
+    def _open_output(self, pathname):
+        """Open an output file, writing to a temporary file first
+
+        Output goes to a temporary file which finish_output() renames into
+        place, so that a parallel or incremental build never sees a
+        half-written file. That matters most for the generated header: a
+        compile which read it mid-write would fail against an incomplete
+        struct definition.
+
+        Args:
+            pathname (str): Final path of the file being generated
+        """
+        self._outfile_name = pathname
+        self._outfile_tmp = pathname + '.tmp'
+        self._outfile = open(self._outfile_tmp, 'w')
 
     def finish_output(self):
         """Finish outputing to a file
 
-        This closes the output file, if one is in use
+        This closes the output file, if one is in use, and renames the
+        temporary file into place so the result appears atomically.
         """
-        if self._outfile != sys.stdout:
-            self._outfile.close()
-            self._outfile = None
+        if self._outfile is None or self._outfile == sys.stdout:
+            return
+        self._outfile.close()
+        self._outfile = None
+        if self._outfile_tmp:
+            os.replace(self._outfile_tmp, self._outfile_name)
+            self._outfile_tmp = None
+            self._outfile_name = None
 
     def out(self, line):
         """Output a string to the output file
