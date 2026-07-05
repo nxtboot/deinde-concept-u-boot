@@ -1,5 +1,10 @@
 if ROCKCHIP_RV1103B
 
+config TARGET_OMEGA4_RV1103B
+	bool "OMEGA4_RV1103B"
+	help
+	  Support Onion's Omega4 RV1103B board.
+
 config ROCKCHIP_BOOT_MODE_REG
 	default 0x20160200
 
@@ -11,5 +16,7 @@ config SYS_SOC
 
 config SYS_MALLOC_F_LEN
 	default 0x400
+
+source "board/onion/omega4_rv1103b/Kconfig"
 
 endif
