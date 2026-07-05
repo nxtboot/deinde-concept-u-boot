@@ -1,0 +1,15 @@
+if ROCKCHIP_RV1103B
+
+config ROCKCHIP_BOOT_MODE_REG
+	default 0x20160200
+
+config ROCKCHIP_STIMER_BASE
+	default 0x20500000
+
+config SYS_SOC
+	default "rv1103b"
+
+config SYS_MALLOC_F_LEN
+	default 0x400
+
+endif
