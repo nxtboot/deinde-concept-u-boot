@@ -41,7 +41,7 @@ static bool cyclic_is_registered(const struct cyclic_info *cyclic)
 }
 
 void cyclic_register(struct cyclic_info *cyclic, cyclic_func_t func,
-		     uint64_t delay_us, const char *name)
+		     u64 delay_us, const char *name)
 {
 	cyclic_unregister(cyclic);
 
@@ -67,7 +67,7 @@ static void cyclic_run(void)
 {
 	struct cyclic_info *cyclic;
 	struct hlist_node *tmp;
-	uint64_t now, cpu_time;
+	u64 now, cpu_time;
 
 	/* Prevent recursion */
 	if (gd->flags & GD_FLG_CYCLIC_RUNNING)
