@@ -190,6 +190,9 @@ def get_details(config):
         # Make sure the script sees that it is being run from pytest
         env['U_BOOT_SOURCE_DIR'] = source_dir
 
+        # The hook selects the board's per-target lab env file from this
+        env['U_BOOT_BOARD_IDENTITY'] = board_identity
+
         # The hook drops the underlying labgrid-client stderr (it carries
         # spurious output that would corrupt the parsed stdout). Give it a
         # file to send that stderr to instead, so a failure can be reported
