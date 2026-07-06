@@ -1077,6 +1077,12 @@ nanopi-m5:
     ROLE: nanopi-m5
   <<: *sjg_lab_dfn
 
+# Luckfox Pico Mini B (RV1103, booted from RAM using maskrom)
+pico:
+  variables:
+    ROLE: pico
+  <<: *sjg_lab_dfn
+
 rpi5:
   variables:
     ROLE: rpi5
