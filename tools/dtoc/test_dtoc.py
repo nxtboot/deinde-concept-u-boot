@@ -15,6 +15,7 @@ import glob
 import os
 import pathlib
 import struct
+import tempfile
 import unittest
 
 from dtoc import dtb_platdata
@@ -1852,3 +1853,49 @@ U_BOOT_DRVINFO(spl_test2) = {
         self.assertIn("Node '/i2c@0/spl-test/pmic@9' requires parent node "
                       "'/i2c@0/spl-test' but it is not in the valid list",
                       str(exc.exception))
+
+
+class TestAtomicOutput(unittest.TestCase):
+    """Test that dtoc writes its output files atomically"""
+
+    def test_temp_then_rename(self):
+        """The final file appears only once it is fully written"""
+        scan = src_scan.Scanner(None, False)
+        plat = dtb_platdata.DtbPlatdata(scan, 'x.dtb', False)
+        with tempfile.TemporaryDirectory() as outdir:
+            plat.setup_output_dirs((outdir, outdir))
+            hdr = os.path.join(outdir, 'dt-structs-gen.h')
+
+            plat.setup_output(Ftype.HEADER, 'dt-structs-gen.h')
+            # Mid-write: only the temporary file exists, not the final one,
+            # so a concurrent compile cannot read a half-written header
+            self.assertFalse(os.path.exists(hdr))
+            self.assertTrue(os.path.exists(hdr + '.tmp'))
+            plat.out('struct foo { int bar; };\n')
+
+            plat.finish_output()
+            # Now the final file is in place with its content, no temp left
+            self.assertTrue(os.path.exists(hdr))
+            self.assertFalse(os.path.exists(hdr + '.tmp'))
+            with open(hdr, encoding='utf-8') as inf:
+                self.assertEqual(inf.read(), 'struct foo { int bar; };\n')
+
+    def test_switch_renames_previous(self):
+        """Switching output finalises the previous file atomically"""
+        scan = src_scan.Scanner(None, False)
+        plat = dtb_platdata.DtbPlatdata(scan, 'x.dtb', False)
+        with tempfile.TemporaryDirectory() as outdir:
+            plat.setup_output_dirs((outdir, outdir))
+            plat.setup_output(Ftype.HEADER, 'dt-structs-gen.h')
+            plat.out('h\n')
+
+            plat.setup_output(Ftype.SOURCE, 'dt-plat.c')
+            # The previous (header) file is renamed into place on the switch
+            self.assertTrue(
+                os.path.exists(os.path.join(outdir, 'dt-structs-gen.h')))
+            self.assertFalse(
+                os.path.exists(os.path.join(outdir, 'dt-structs-gen.h.tmp')))
+            plat.out('c\n')
+
+            plat.finish_output()
+            self.assertTrue(os.path.exists(os.path.join(outdir, 'dt-plat.c')))
