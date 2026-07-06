@@ -22,6 +22,9 @@ variables:
   SAGE_LAB: ""
   SJG_LAB: ""
   SJG_LAB_SLOW: ""
+  # Tell labgrid this is an automated run, so it skips the interactive
+  # "Terminal ready" console banner (which would corrupt captured output)
+  LG_QUIET: "1"
   PLATFORM: linux/amd64,linux/arm64
   GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_RUNNER_ID/$CI_CONCURRENT_ID/u-boot
 

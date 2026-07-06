@@ -22,8 +22,9 @@
 # Hostname and port for the gRPC coordinator
 export LG_COORDINATOR=kea:20408
 
-# Environment file for the lab
-export LG_ENV=/vid/software/devel/ubtest/lab/cfg/kea_env.cfg
+# Environment file for the lab: this board's per-target file, whose images:
+# section carries its firmware blobs. U_BOOT_BOARD_IDENTITY is the role.
+export LG_ENV=/vid/software/devel/ubtest/lab/cfg/targets/${U_BOOT_BOARD_IDENTITY}.cfg
 
 # Make sure only one buildman can run at a time, since it uses all CPUs
 export BUILDMAN_PROCESS_LIMIT=1
