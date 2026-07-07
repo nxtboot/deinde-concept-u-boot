@@ -569,6 +569,7 @@ N:	rk3
 N:	rk8
 N:	rkmtd
 N:	rockchip
+N:	rockusb
 # RV11xx SoC family
 N:	rv11
 F:	board/radxa/
