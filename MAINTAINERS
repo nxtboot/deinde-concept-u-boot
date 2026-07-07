@@ -567,6 +567,7 @@ N:	px5
 N:	rk3
 # RK8xx PMIC/regulator family
 N:	rk8
+N:	rkmtd
 N:	rockchip
 # RV11xx SoC family
 N:	rv11
