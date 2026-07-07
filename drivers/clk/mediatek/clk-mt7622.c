@@ -802,7 +802,7 @@ static const struct udevice_id mt7622_ssusbsys_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_mcucfg) = {
+U_BOOT_DRIVER(mt7622_mcucfg) = {
 	.name = "mt7622-mcucfg",
 	.id = UCLASS_SYSCON,
 	.of_match = mt7622_mcucfg_compat,
@@ -810,7 +810,7 @@ U_BOOT_DRIVER(mtk_mcucfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt7622_clk_apmixedsys) = {
 	.name = "mt7622-clock-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_apmixed_compat,
@@ -821,7 +821,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt7622_clk_topckgen) = {
 	.name = "mt7622-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_topckgen_compat,
@@ -832,7 +832,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_infracfg) = {
+U_BOOT_DRIVER(mt7622_clk_infracfg) = {
 	.name = "mt7622-clock-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_infracfg_compat,
@@ -842,7 +842,7 @@ U_BOOT_DRIVER(mtk_clk_infracfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_pericfg) = {
+U_BOOT_DRIVER(mt7622_clk_pericfg) = {
 	.name = "mt7622-clock-pericfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_pericfg_compat,
@@ -852,7 +852,7 @@ U_BOOT_DRIVER(mtk_clk_pericfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_pciesys) = {
+U_BOOT_DRIVER(mt7622_clk_pciesys) = {
 	.name = "mt7622-clock-pciesys",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_pciesys_compat,
@@ -862,7 +862,7 @@ U_BOOT_DRIVER(mtk_clk_pciesys) = {
 	.ops = &mtk_clk_gate_ops,
 };
 
-U_BOOT_DRIVER(mtk_clk_ethsys) = {
+U_BOOT_DRIVER(mt7622_clk_ethsys) = {
 	.name = "mt7622-clock-ethsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_ethsys_compat,
@@ -872,7 +872,7 @@ U_BOOT_DRIVER(mtk_clk_ethsys) = {
 	.ops = &mtk_clk_gate_ops,
 };
 
-U_BOOT_DRIVER(mtk_clk_sgmiisys) = {
+U_BOOT_DRIVER(mt7622_clk_sgmiisys) = {
 	.name = "mt7622-clock-sgmiisys",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_sgmiisys_compat,
@@ -881,7 +881,7 @@ U_BOOT_DRIVER(mtk_clk_sgmiisys) = {
 	.ops = &mtk_clk_gate_ops,
 };
 
-U_BOOT_DRIVER(mtk_clk_ssusbsys) = {
+U_BOOT_DRIVER(mt7622_clk_ssusbsys) = {
 	.name = "mt7622-clock-ssusbsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7622_ssusbsys_compat,
