@@ -823,7 +823,7 @@ static const struct udevice_id mt8183_infracfg_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt8183_clk_apmixedsys) = {
 	.name = "mt8183-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8183_apmixed_compat,
@@ -834,7 +834,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt8183_clk_topckgen) = {
 	.name = "mt8183-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8183_topckgen_compat,
@@ -845,7 +845,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_infracfg) = {
+U_BOOT_DRIVER(mt8183_clk_infracfg) = {
 	.name = "mt8183-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt8183_infracfg_compat,
