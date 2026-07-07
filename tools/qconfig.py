@@ -1353,11 +1353,13 @@ def prefix_config(cfg):
 
 
 # CONFIG options in Makefiles, with an optional $(SPL_)/$(PHASE_) prefix
-RE_MK_CONFIGS = re.compile(r'CONFIG_(\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))?([A-Za-z0-9_]*)')
+RE_MK_CONFIGS = re.compile(
+    r'CONFIG_(\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))?([A-Za-z0-9_]*)')
 
 # Makefile ifdefs: this only handles 'else' on its own line, so not
 # 'else ifeq ...', for example
-RE_IF = re.compile(r'^(ifdef|ifndef|endif|ifeq|ifneq|else)([^,]*,([^,]*)\))?.*$')
+RE_IF = re.compile(
+    r'^(ifdef|ifndef|endif|ifeq|ifneq|else)([^,]*,([^,]*)\))?.*$')
 
 # Normal CONFIG options in C
 RE_C_CONFIGS = re.compile(r'CONFIG_([A-Za-z0-9_]*)')
@@ -1366,7 +1368,8 @@ RE_C_CONFIGS = re.compile(r'CONFIG_([A-Za-z0-9_]*)')
 RE_CONFIG_IS = re.compile(r'CONFIG_IS_ENABLED\(([A-Za-z0-9_]*)\)')
 
 # Preprocessor #if/#ifdef directives, etc.
-RE_IFDEF = re.compile(r'^\s*#\s*(ifdef|ifndef|endif|if|elif|else)\s*(?:#.*)?(.*)$')
+RE_IFDEF = re.compile(
+    r'^\s*#\s*(ifdef|ifndef|endif|if|elif|else)\s*(?:#.*)?(.*)$')
 
 class ConfigUse:
     """Holds information about a use of a CONFIG option"""
@@ -1439,7 +1442,6 @@ def scan_makefiles(fname_dict):
             m_iter = RE_MK_CONFIGS.finditer(rest)
             m_cond = RE_IF.match(rest)
             last_use = None
-            use = None
             for m in m_iter:
                 real_opt = m.group(2)
                 if real_opt == '':
@@ -1480,8 +1482,6 @@ def scan_makefiles(fname_dict):
                         conds.append(cond)
                 else:
                     print(f'unknown condition: {rest}')
-        if conds:
-            print(f'leftover {conds}')
     return all_uses, fname_uses
 
 
@@ -1697,6 +1697,13 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
                 value (list of str): List of lines in that filename
         """
         def finish_file(last_fname, rest_list):
+            """Add the collected lines for a file to the right dict
+
+            Args:
+                last_fname (str or None): Filename the lines belong to, or
+                    None if at the start of the scan
+                rest_list (list of str): Grep output lines for the file
+            """
             if last_fname is None:
                 return
             if is_mkfile:
@@ -1741,9 +1748,9 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             elif 'Makefile' in root or ext == '.mk':
                 rest_list.append(rest)
                 is_mkfile = True
-            elif ext in ['.yml', '.sh', '.py', '.awk', '.pl', '.rst', '', '.sed',
-                         '.src', '.inc', '.l', '.i_shipped', '.txt', '.cmd',
-                         '.cfg', '.y', '.cocci', '.ini', '.asn1', '.base',
+            elif ext in ['.yml', '.sh', '.py', '.awk', '.pl', '.rst', '',
+                         '.sed', '.src', '.inc', '.l', '.i_shipped', '.txt',
+                         '.cmd', '.y', '.cocci', '.ini', '.asn1', '.base',
                          '.cnf', '.patch', '.mak', '.its', '.svg', '.tcl',
                          '.css', '.config', '.conf', '.yaml', '.dtso', '.key',
                          '.pem', '.toml', '.in']:
@@ -1754,7 +1761,8 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
                 pass
             elif dirname in ['configs']:
                 pass
-            elif dirname.startswith('doc') or dirname.startswith('scripts/kconfig'):
+            elif (dirname.startswith('doc') or
+                  dirname.startswith('scripts/kconfig')):
                 pass
             elif dirname.startswith('lib/mbedtls/external'):
                 pass
@@ -1767,7 +1775,19 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
 
     def check_missing(all_uses, spl_not_found, proper_not_found,
                       show_conflicts):
-        # Make sure we know about all the options in Makefiles
+        """Check for missing Kconfig options and conflicting uses
+
+        Args:
+            all_uses (dict): All uses of CONFIG options:
+                key (ConfigUse): Use of the option
+                value (list of str): Lines using the option
+            spl_not_found (set of str): Updated with options which are used
+                in an SPL context but have no SPL_ Kconfig
+            proper_not_found (set of str): Updated with options which are
+                used in a Proper context but have no Kconfig
+            show_conflicts (bool): True to show the missing options
+        """
+        # Make sure we know about all the options used
         not_found = check_not_found(all_uses, MODE_NORMAL)
         if show_conflicts:
             print('\nCONFIG options present in source but not Kconfig:')
@@ -1788,6 +1808,14 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             show_uses(not_found)
 
     def show_summary(spl_not_found, proper_not_found):
+        """Show a summary of the missing Kconfig options
+
+        Args:
+            spl_not_found (set of str): Options which are used in an SPL
+                context but have no SPL_ Kconfig
+            proper_not_found (set of str): Options which are used in a
+                Proper context but have no Kconfig
+        """
         print('\nCONFIG options used as SPL but without an SPL_ variant:')
         for item in sorted(spl_not_found):
             print(f'   {item}')
@@ -1797,6 +1825,12 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             print(f'   {item}')
 
     def write_update(spl_not_found):
+        """Write the updated scripts/conf_nospl file
+
+        Args:
+            spl_not_found (set of str): Options which are used in an SPL
+                context but have no SPL_ Kconfig
+        """
         with open(os.path.join(path, 'scripts', 'conf_nospl'), 'w',
                   encoding='utf-8') as out:
             print('''# Options which are never enabled in SPL.
@@ -1818,7 +1852,7 @@ or to all builds.
     def check_conflict(kconf, all_uses, show):
         """Check conflicts between uses of CONFIG options in source
 
-        Sometimes an option is used in an SPL context in once place and not in
+        Sometimes an option is used in an SPL context in one place and not in
         another. For example if we see CONFIG_SPL_FOO and CONFIG_FOO then we
         don't know whether FOO should be enabled in SPL if CONFIG_FOO is
         enabled, or only if CONFIG_SPL_FOO is enabled.
@@ -1867,7 +1901,6 @@ or to all builds.
                         conflict_dict[use.fname].append(use)
                         cfg_dict[use.cfg].append(use)
                 bad += 1
-        print(f'total bad: {bad}')
         return conflict_dict, cfg_dict
 
     def replace_in_file(fname, use_or_uses):
@@ -1886,33 +1919,33 @@ or to all builds.
         else:
             uses = [use_or_uses]
 
-        re_cfgs = []
+        pairs = []
         for use in uses:
             if use.is_mk:
-                expr = r'CONFIG_(?:\$\(SPL_(?:TPL_)?\))%s\b' % use.cfg
+                expr = (r'CONFIG_(?:\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))'
+                        fr'{use.cfg}\b')
             else:
                 expr = r'CONFIG_IS_ENABLED\(%s\)' % use.cfg
-            re_cfgs.append(re.compile(expr))
+            pairs.append((re.compile(expr), use))
 
         for line in data.splitlines():
             new_line = line
             if 'CONFIG_' in line:
                 todo = []
-                for i, re_cfg in enumerate(re_cfgs):
+                for re_cfg, use in pairs:
                     if not re_cfg.search(line):
-                        todo.append(re_cfg)
-                    use = uses[i]
+                        todo.append((re_cfg, use))
                     if use.is_mk:
                         new_line = re_cfg.sub(f'CONFIG_{use.cfg}', new_line)
                     else:
                         new = f'IS_ENABLED(CONFIG_{use.cfg})'
                         new_line = re_cfg.sub(new, new_line)
-                re_cfgs = todo
+                pairs = todo
             out.write(new_line)
             out.write('\n')
         out_data = out.getvalue()
         if out_data == data:
-            print(f'\n\nfailed with {fname}\n\n')
+            print(f'warning: no replacement done in {fname}')
         with open(fname, 'w', encoding='utf-8') as outf:
             outf.write(out_data)
 
@@ -1956,8 +1989,6 @@ or to all builds.
     print('Scanning Kconfig')
     kconf = scan_kconfig()
 
-    all_uses = collections.defaultdict(list)
-    fname_uses = {}
     mk_dict, src_dict = do_scan()
 
     # Scan the Makefiles and source code
