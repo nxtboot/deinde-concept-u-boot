@@ -574,6 +574,9 @@ N:	rv11
 F:	board/radxa/
 F:	board/theobroma-systems
 F:	drivers/gpio/rk_gpio.c
+F:	drivers/i2c/rk_i2c.c
+F:	drivers/pwm/rk_pwm.c
+F:	drivers/spi/rk_spi.[ch]
 F:	tools/rkcommon.c
 F:	tools/rkcommon.h
 F:	tools/rkimage.c
