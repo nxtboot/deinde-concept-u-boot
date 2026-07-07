@@ -37,6 +37,7 @@ Board-specific doc
    kontron/index
    lenovo/index
    lg/index
+   luckfox/index
    liebherr/index
    mediatek/index
    microchip/index
@@ -44,6 +45,7 @@ Board-specific doc
    motorola/index
    nvidia/index
    nxp/index
+   onion/index
    openpiton/index
    ouya/index
    pegatron/index

@@ -1578,13 +1578,21 @@ config SPL_SPI_LOAD
 	  Enable support for loading next stage, U-Boot or otherwise, from
 	  SPI NOR in U-Boot SPL.
 
+config SPL_SPI_NAND_LOAD
+	bool "Support loading from SPI NAND flash"
+	depends on SPL
+	depends on MTD && DM_MTD
+	help
+	  Enable support for loading next stage, U-Boot or otherwise, from
+	  SPI NAND in U-Boot SPL.
+
 endif # SPL_SPI_FLASH_SUPPORT
 
 config SYS_SPI_U_BOOT_OFFS
 	hex "address of u-boot payload in SPI flash"
 	default 0x8000 if ARCH_SUNXI
 	default 0x0
-	depends on SPL_SPI_LOAD || SPL_SPI_SUNXI
+	depends on SPL_SPI_LOAD || SPL_SPI_NAND_LOAD || SPL_SPI_SUNXI
 	help
 	 Address within SPI-Flash from where the u-boot payload is fetched
 	 from.

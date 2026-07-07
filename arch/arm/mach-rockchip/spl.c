@@ -16,6 +16,7 @@
 #include <mapmem.h>
 #include <ram.h>
 #include <spl.h>
+#include <spl_load.h>
 #include <asm/arch-rockchip/bootrom.h>
 #include <asm/arch-rockchip/timer.h>
 #include <asm/global_data.h>
@@ -171,15 +172,14 @@ void spl_board_prepare_for_boot(void)
 	cleanup_before_linux();
 }
 
-#if CONFIG_IS_ENABLED(RAM_DEVICE) && IS_ENABLED(CONFIG_SPL_LOAD_FIT)
+#if CONFIG_IS_ENABLED(RAM_DEVICE)
 binman_sym_declare_optional(ulong, payload, image_pos);
 binman_sym_declare_optional(ulong, payload, size);
 
 static ulong ramboot_load_read(struct spl_load_info *load, ulong sector,
 			       ulong count, void *buf)
 {
-	ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
-				    CONFIG_SPL_LOAD_FIT_ADDRESS);
+	ulong addr = (ulong)load->priv;
 
 	memcpy(buf, map_sysmem(addr + sector, 0), count);
 	return count;
@@ -188,29 +188,44 @@ static ulong ramboot_load_read(struct spl_load_info *load, ulong sector,
 static int ramboot_load_image(struct spl_image_info *spl_image,
 			      struct spl_boot_device *bootdev)
 {
-	struct legacy_img_hdr *header;
-	ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
-				    CONFIG_SPL_LOAD_FIT_ADDRESS);
 	ulong image_pos = binman_sym(ulong, payload, image_pos);
 	ulong size = binman_sym(ulong, payload, size);
+	struct legacy_img_hdr *header;
+	struct spl_load_info load;
 
-	if (addr == CFG_SYS_SDRAM_BASE || addr == CONFIG_SPL_TEXT_BASE)
-		return -ENODEV;
+	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT)) {
+		ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
+					    CONFIG_SPL_LOAD_FIT_ADDRESS);
 
-	if (image_pos != BINMAN_SYM_MISSING && size != BINMAN_SYM_MISSING) {
-		header = map_sysmem(image_pos, 0);
+		if (addr == CFG_SYS_SDRAM_BASE || addr == CONFIG_SPL_TEXT_BASE)
+			return -ENODEV;
+
+		if (image_pos != BINMAN_SYM_MISSING &&
+		    size != BINMAN_SYM_MISSING) {
+			header = map_sysmem(image_pos, 0);
+			if (image_get_magic(header) == FDT_MAGIC) {
+				memmove(map_sysmem(addr, 0), header, size);
+				memset(header, 0, sizeof(*header));
+			}
+		}
+
+		header = map_sysmem(addr, 0);
 		if (image_get_magic(header) == FDT_MAGIC) {
-			memmove(map_sysmem(addr, 0), header, size);
-			memset(header, 0, sizeof(*header));
+			spl_load_init(&load, ramboot_load_read,
+				      map_sysmem(addr, 0), 1);
+			return spl_load_simple_fit(spl_image, &load, 0,
+						   header);
 		}
 	}
 
-	header = map_sysmem(addr, 0);
-	if (image_get_magic(header) == FDT_MAGIC) {
-		struct spl_load_info load;
-
-		spl_load_init(&load, ramboot_load_read, NULL, 1);
-		return spl_load_simple_fit(spl_image, &load, 0, header);
+	/* Fall back to a legacy image placed directly after SPL */
+	if (image_pos != BINMAN_SYM_MISSING && size != BINMAN_SYM_MISSING) {
+		header = map_sysmem(image_pos, 0);
+		if (image_get_magic(header) == IH_MAGIC) {
+			spl_load_init(&load, ramboot_load_read,
+				      map_sysmem(image_pos, 0), 1);
+			return spl_load(spl_image, bootdev, &load, size, 0);
+		}
 	}
 
 	return -ENODEV;

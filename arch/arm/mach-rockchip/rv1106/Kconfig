@@ -1,0 +1,28 @@
+if ROCKCHIP_RV1106
+
+config TARGET_LUCKFOX_PICO_RV1103
+	bool "LUCKFOX_PICO_RV1103"
+	help
+	  Support Luckfox's Pico series of RV1103 boards, such as the Pico
+	  Mini B. These are small, low-cost boards with 64MB of in-package
+	  DDR2, a microSD slot and a USB-C port used for both power and
+	  maskrom-mode USB download; most I/O is on castellated edge pins.
+	  The Mini B adds a 128MB Winbond SPI NAND, from which it boots.
+	  U-Boot can also run entirely from RAM over USB, with nothing
+	  written to the flash.
+
+config ROCKCHIP_BOOT_MODE_REG
+	default 0xff020200
+
+config ROCKCHIP_STIMER_BASE
+	default 0xff590020
+
+config SYS_SOC
+	default "rv1106"
+
+config SYS_MALLOC_F_LEN
+	default 0x400
+
+source "board/luckfox/pico/Kconfig"
+
+endif

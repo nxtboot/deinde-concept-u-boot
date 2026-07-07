@@ -180,6 +180,13 @@ List of mainline supported Rockchip boards:
      - Yanyi Tech CoolPi CM5 EVB (coolpi-cm5-evb-rk3588)
      - Yanyi Tech CoolPi CM5 GenBook (coolpi-cm5-genbook-rk3588)
 
+* rv1103
+     - Luckfox Pico Mini B (luckfox-pico-mini-b-rv1103), see
+       :doc:`../luckfox/luckfox-pico`
+
+* rv1103b
+     - Onion Omega4 (omega4-rv1103b), see :doc:`../onion/omega4-rv1103b`
+
 * rv1108
      - Rockchip Evb-rv1108 (evb-rv1108)
      - Elgin-R1 (elgin-rv1108)
