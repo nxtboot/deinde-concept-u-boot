@@ -1153,7 +1153,7 @@ static const struct udevice_id mt7623_mcucfg_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_mcucfg) = {
+U_BOOT_DRIVER(mt7623_mcucfg) = {
 	.name = "mt7623-mcucfg",
 	.id = UCLASS_SYSCON,
 	.of_match = mt7623_mcucfg_compat,
@@ -1161,7 +1161,7 @@ U_BOOT_DRIVER(mtk_mcucfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt7623_clk_apmixedsys) = {
 	.name = "mt7623-clock-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_apmixed_compat,
@@ -1172,7 +1172,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt7623_clk_topckgen) = {
 	.name = "mt7623-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_topckgen_compat,
@@ -1183,7 +1183,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_infracfg) = {
+U_BOOT_DRIVER(mt7623_clk_infracfg) = {
 	.name = "mt7623-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_infracfg_compat,
@@ -1193,7 +1193,7 @@ U_BOOT_DRIVER(mtk_clk_infracfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_pericfg) = {
+U_BOOT_DRIVER(mt7623_clk_pericfg) = {
 	.name = "mt7623-pericfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_pericfg_compat,
@@ -1203,7 +1203,7 @@ U_BOOT_DRIVER(mtk_clk_pericfg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_hifsys) = {
+U_BOOT_DRIVER(mt7623_clk_hifsys) = {
 	.name = "mt7623-clock-hifsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_hifsys_compat,
@@ -1213,7 +1213,7 @@ U_BOOT_DRIVER(mtk_clk_hifsys) = {
 	.ops = &mtk_clk_gate_ops,
 };
 
-U_BOOT_DRIVER(mtk_clk_ethsys) = {
+U_BOOT_DRIVER(mt7623_clk_ethsys) = {
 	.name = "mt7623-clock-ethsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_ethsys_compat,
