@@ -565,6 +565,8 @@ N:	px30
 N:	px5
 # RK3xxx SoC family
 N:	rk3
+# RK8xx PMIC/regulator family
+N:	rk8
 N:	rockchip
 F:	arch/arm/dts/rv11*
 F:	board/radxa/
