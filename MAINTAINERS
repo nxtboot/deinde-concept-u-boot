@@ -563,20 +563,12 @@ T:	git https://source.denx.de/u-boot/custodians/u-boot-rockchip.git
 X:	configs/kmsupx5_defconfig
 N:	px30
 N:	px5
+# RK3xxx SoC family
+N:	rk3
 N:	rockchip
-F:	arch/arm/dts/rk3*
 F:	arch/arm/dts/rv11*
-F:	board/amarula/vyasa-rk3288/
-F:	board/anbernic/rgxx3_rk3566/
-F:	board/armsom/sige7-rk3588/
-F:	board/chipspark/popmetal_rk3288
-F:	board/firefly/
-F:	board/mqmaker/miqi_rk3288/
-F:	board/phytec/phycore_rk3288
-F:	board/pine64
 F:	board/radxa/
 F:	board/theobroma-systems
-F:	board/vamrs/rock960_rk3399/
 F:	drivers/gpio/rk_gpio.c
 F:	tools/rkcommon.c
 F:	tools/rkcommon.h
