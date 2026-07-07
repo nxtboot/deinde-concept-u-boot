@@ -1792,7 +1792,7 @@ static const struct udevice_id mt8188_imp_iic_wrap_en_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt8188_clk_apmixedsys) = {
 	.name = "mt8188-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_apmixed_compat,
@@ -1803,7 +1803,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt8188_clk_topckgen) = {
 	.name = "mt8188-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_topckgen_compat,
@@ -1814,7 +1814,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_infracfg_ao) = {
+U_BOOT_DRIVER(mt8188_clk_infracfg_ao) = {
 	.name = "mt8188-infracfg-ao",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_infracfg_ao_compat,
@@ -1824,7 +1824,7 @@ U_BOOT_DRIVER(mtk_clk_infracfg_ao) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_pericfg_ao) = {
+U_BOOT_DRIVER(mt8188_clk_pericfg_ao) = {
 	.name = "mt8188-pericfg-ao",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_pericfg_ao_compat,
@@ -1834,7 +1834,7 @@ U_BOOT_DRIVER(mtk_clk_pericfg_ao) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_imp_iic_wrap_c) = {
+U_BOOT_DRIVER(mt8188_clk_imp_iic_wrap_c) = {
 	.name = "mt8188-imp_iic_wrap_c",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_imp_iic_wrap_c_compat,
@@ -1844,7 +1844,7 @@ U_BOOT_DRIVER(mtk_clk_imp_iic_wrap_c) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_imp_iic_wrap_w) = {
+U_BOOT_DRIVER(mt8188_clk_imp_iic_wrap_w) = {
 	.name = "mt8188-imp_iic_wrap_w",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_imp_iic_wrap_w_compat,
@@ -1854,7 +1854,7 @@ U_BOOT_DRIVER(mtk_clk_imp_iic_wrap_w) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_imp_iic_wrap_en) = {
+U_BOOT_DRIVER(mt8188_clk_imp_iic_wrap_en) = {
 	.name = "mt8188-imp_iic_wrap_en",
 	.id = UCLASS_CLK,
 	.of_match = mt8188_imp_iic_wrap_en_compat,
