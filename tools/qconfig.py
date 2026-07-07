@@ -102,7 +102,7 @@ def get_matched_defconfigs(defconfigs_in):
     """Get all the defconfig files that match the patterns given.
 
     Args:
-        defconfigs_file (str or list of str): File containing a list of
+        defconfigs_in (str or list of str): File containing a list of
             defconfigs to process, or '-' to read the list from stdin, or a
             list of defconfig names
 
@@ -1259,13 +1259,14 @@ def find_config(dbase, config_list):
     """Find all defconfigs which match a config list
 
     Args:
+        dbase (tuple): Database from read_database()
         config_list (list of str): List of CONFIG options to check (each a regex
             consisting of a config option, with or without a CONFIG_ prefix. If
             an option is preceded by a tilde (~) then it must be false,
             otherwise it must be true)
 
-    Return:
-        set: matching defconfig, without the '_defconfig' suffix
+    Returns:
+        set: matching defconfigs, without the '_defconfig' suffix
     """
     # Start with all defconfigs
     _, all_defconfigs, config_db, _ = dbase
@@ -2407,7 +2408,7 @@ def ensure_database(threads):
                 value: set of boards using that option
     """
     if not db_is_current():
-        print('Building qconfig.db database...')
+        print(f'Building {CONFIG_DATABASE} database...')
         args = Namespace(build_db=True, verbose=False, force_sync=False,
                          dry_run=False, exit_on_error=False, jobs=threads,
                          git_ref=None, defconfigs=None, defconfiglist=None,
