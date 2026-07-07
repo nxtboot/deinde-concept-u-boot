@@ -559,15 +559,14 @@ M:	Philipp Tomsich <philipp.tomsich@vrull.eu>
 M:	Kever Yang <kever.yang@rock-chips.com>
 S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-rockchip.git
+N:	px30
 N:	rockchip
-F:	arch/arm/dts/px30*
 F:	arch/arm/dts/rk3*
 F:	arch/arm/dts/rv11*
 F:	board/amarula/vyasa-rk3288/
 F:	board/anbernic/rgxx3_rk3566/
 F:	board/armsom/sige7-rk3588/
 F:	board/chipspark/popmetal_rk3288
-F:	board/engicam/px30_core/
 F:	board/firefly/
 F:	board/mqmaker/miqi_rk3288/
 F:	board/phytec/phycore_rk3288
