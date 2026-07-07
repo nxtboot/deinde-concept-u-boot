@@ -595,7 +595,7 @@ static int mt7986_topckgen_probe(struct udevice *dev)
 	return mtk_common_clk_init(dev, &mt7986_topckgen_clk_tree);
 }
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt7986_clk_apmixedsys) = {
 	.name = "mt7986-clock-fixed-pll",
 	.id = UCLASS_CLK,
 	.of_match = mt7986_fixed_pll_compat,
@@ -606,7 +606,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt7986_clk_topckgen) = {
 	.name = "mt7986-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7986_topckgen_compat,
@@ -627,7 +627,7 @@ static int mt7986_infracfg_probe(struct udevice *dev)
 	return mtk_common_clk_init(dev, &mt7986_infracfg_clk_tree);
 }
 
-U_BOOT_DRIVER(mtk_clk_infracfg) = {
+U_BOOT_DRIVER(mt7986_clk_infracfg) = {
 	.name = "mt7986-clock-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7986_infracfg_compat,
@@ -682,7 +682,7 @@ static const struct udevice_id mt7986_ethsys_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_clk_ethsys) = {
+U_BOOT_DRIVER(mt7986_clk_ethsys) = {
 	.name = "mt7986-clock-ethsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7986_ethsys_compat,
