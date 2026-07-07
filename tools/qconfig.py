@@ -744,6 +744,12 @@ def _sync_defconfigs_worker(srcdir, defconfigs, result_queue, error_queue,
         orig = os.path.join(srcdir, 'configs', defconfig)
         try:
             if ref_srcdir:
+                # Leave #include defconfigs alone: write_min_config() would
+                # flatten them, destroying the include structure
+                if b'#include' in tools.read_file(orig):
+                    result_queue.put((defconfig, False, None))
+                    continue
+
                 # Load defconfig against the reference Kconfig tree, write
                 # a full .config, then load it into the current tree
                 ref_orig = os.path.join(ref_srcdir, 'configs', defconfig)
