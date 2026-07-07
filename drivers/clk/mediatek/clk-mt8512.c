@@ -862,7 +862,7 @@ static const struct udevice_id mt8512_infracfg_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt8512_clk_apmixedsys) = {
 	.name = "mt8512-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8512_apmixed_compat,
@@ -873,7 +873,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt8512_clk_topckgen) = {
 	.name = "mt8512-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8512_topckgen_compat,
@@ -884,7 +884,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen_cg) = {
+U_BOOT_DRIVER(mt8512_clk_topckgen_cg) = {
 	.name = "mt8512-topckgen-cg",
 	.id = UCLASS_CLK,
 	.of_match = mt8512_topckgen_cg_compat,
@@ -894,7 +894,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen_cg) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_infracfg) = {
+U_BOOT_DRIVER(mt8512_clk_infracfg) = {
 	.name = "mt8512-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt8512_infracfg_compat,
