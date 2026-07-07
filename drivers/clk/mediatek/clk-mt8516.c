@@ -803,7 +803,7 @@ static const struct udevice_id mt8516_topckgen_cg_compat[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt8516_clk_apmixedsys) = {
 	.name = "mt8516-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8516_apmixed_compat,
@@ -814,7 +814,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt8516_clk_topckgen) = {
 	.name = "mt8516-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8516_topckgen_compat,
@@ -825,7 +825,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen_cg) = {
+U_BOOT_DRIVER(mt8516_clk_topckgen_cg) = {
 	.name = "mt8516-topckgen-cg",
 	.id = UCLASS_CLK,
 	.of_match = mt8516_topckgen_cg_compat,
