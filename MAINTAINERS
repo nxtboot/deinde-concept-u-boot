@@ -559,7 +559,10 @@ M:	Philipp Tomsich <philipp.tomsich@vrull.eu>
 M:	Kever Yang <kever.yang@rock-chips.com>
 S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-rockchip.git
+# Exclude from N: px5 matches
+X:	configs/kmsupx5_defconfig
 N:	px30
+N:	px5
 N:	rockchip
 F:	arch/arm/dts/rk3*
 F:	arch/arm/dts/rv11*
