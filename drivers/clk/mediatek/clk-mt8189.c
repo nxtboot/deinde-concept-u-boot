@@ -2045,7 +2045,7 @@ static int mt8189_clk_gate_probe(struct udevice *dev)
 					data->gates[0].id);
 }
 
-U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+U_BOOT_DRIVER(mt8189_clk_apmixedsys) = {
 	.name = "mt8189-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_apmixed,
@@ -2056,7 +2056,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_topckgen) = {
+U_BOOT_DRIVER(mt8189_clk_topckgen) = {
 	.name = "mt8189-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_topckgen_compat,
@@ -2067,7 +2067,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_vlpckgen) = {
+U_BOOT_DRIVER(mt8189_clk_vlpckgen) = {
 	.name = "mt8189-vlpckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_vlpckgen,
@@ -2078,7 +2078,7 @@ U_BOOT_DRIVER(mtk_clk_vlpckgen) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
-U_BOOT_DRIVER(mtk_clk_gate) = {
+U_BOOT_DRIVER(mt8189_clk_gate) = {
 	.name = "mt8189-gate-clk",
 	.id = UCLASS_CLK,
 	.of_match = of_match_mt8189_clk_gate,
