@@ -102,7 +102,7 @@ def get_matched_defconfigs(defconfigs_in):
     """Get all the defconfig files that match the patterns given.
 
     Args:
-        defconfigs_file (str or list of str): File containing a list of
+        defconfigs_in (str or list of str): File containing a list of
             defconfigs to process, or '-' to read the list from stdin, or a
             list of defconfig names
 
@@ -488,32 +488,6 @@ def _sync_plain_defconfig(kconf, orig, dry_run):
     return updated
 
 
-def _build_include_defconfig(include_lines, delta, sep):
-    """Build defconfig content from include lines and overlay delta
-
-    Assembles a defconfig that uses #include directives by concatenating
-    the original #include lines with the overlay delta (the CONFIG lines
-    that are needed on top of what the includes provide). The separator
-    preserves the blank-line convention from the original file.
-
-    Args:
-        include_lines (list of bytes): The #include lines
-        delta (list of str): Sorted overlay config lines
-        sep (bytes): Separator between includes and delta (b'\\n' or b'')
-
-    Returns:
-        bytes: The defconfig content
-    """
-    out = b''
-    for line in include_lines:
-        out += line
-    if delta:
-        out += sep
-    for line in delta:
-        out += line.encode() if isinstance(line, str) else line
-    return out
-
-
 def _format_sym_value(sym, value=None):
     """Format a symbol value as a defconfig line
 
@@ -535,7 +509,7 @@ def _format_sym_value(sym, value=None):
     return f'CONFIG_{sym.name}={value}'
 
 
-def _rebuild_overlay(orig, needed):
+def _rebuild_overlay(orig, needed, base_entries, full_entries):
     """Rebuild a #include defconfig preserving the original line ordering
 
     Keeps existing overlay lines that are still needed (updating values
@@ -545,6 +519,12 @@ def _rebuild_overlay(orig, needed):
     Args:
         orig (str): Path to the original defconfig file
         needed (dict): Mapping of config name to defconfig line value
+        base_entries (dict): Mapping of config name to defconfig line for
+            entries provided by the include files; overlay lines which
+            simply restate one of these are kept, to avoid churn
+        full_entries (dict): Mapping of config name to defconfig line for
+            the full minimal config; overlay lines which match are still
+            correct, so are kept in place
 
     Returns:
         bytes: The rebuilt defconfig content
@@ -552,37 +532,45 @@ def _rebuild_overlay(orig, needed):
     orig_lines = tools.read_file(orig, binary=False).splitlines(keepends=True)
     keep = set()
     lines = []
-    in_overlay = False
     for line in orig_lines:
         if line.startswith('#include'):
             lines.append(line)
             continue
         name = _config_name(line)
         if not name:
-            # Blank lines or comments - keep them (marks start of overlay)
-            if not in_overlay:
-                lines.append(line)
-                in_overlay = True
+            # Blank lines and comments are structure; keep them
+            lines.append(line)
             continue
-        in_overlay = True
         if name in needed:
             # Keep this line (possibly with updated value)
             lines.append(needed[name] + '\n')
             keep.add(name)
+        elif full_entries.get(name) == line.strip():
+            # The line still matches the minimal config; keep it in place
+            lines.append(line)
+            keep.add(name)
+        elif base_entries.get(name) == line.strip():
+            # The line simply restates what the include files already
+            # provide; keep it to avoid churn
+            lines.append(line)
         # else: drop the line (no longer needed in overlay)
 
-    # Append new entries that weren't in the original overlay
+    # Append new entries that weren't in the original overlay, making sure
+    # the existing content ends with a newline first
     new_entries = []
     for name, line in needed.items():
         if name not in keep:
             new_entries.append(line + '\n')
     if new_entries:
+        if lines and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
         lines.extend(sorted(new_entries))
 
     return ''.join(lines).encode()
 
 
-def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
+def _verify_defconfig(kconf, srcdir, confdir, target, target_visible, needed,
+                      new_content):
     """Verify an #include defconfig and fix remaining config differences
 
     Loads the candidate defconfig through kconfiglib, compares against the
@@ -595,6 +583,10 @@ def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
         srcdir (str): Source-tree directory
         confdir (str): Directory for temp file placement
         target (dict): Target config {sym_name: str_value}
+        target_visible (set of str): Symbols which are visible in the
+            target config; corrections are only added for these, since an
+            invisible symbol takes its value from its dependencies and is
+            fixed by correcting them instead
         needed (dict): Overlay entries {config_name: line}, updated in place
         new_content (bytes): Current defconfig content to verify
 
@@ -614,6 +606,8 @@ def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
         extra_lines = []
         for sym in kconf.unique_defined_syms:
             if sym.name not in target or sym.str_value == target[sym.name]:
+                continue
+            if sym.name not in target_visible:
                 continue
             line = _format_sym_value(sym, target[sym.name])
             name = _config_name(line)
@@ -652,9 +646,13 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
     full_lines = _get_min_config_lines(kconf, full_tmp)
     os.unlink(full_tmp)
 
-    # Save the target config for verification
+    # Save the target config for verification, noting which symbols are
+    # visible there (invisible symbols take their value from their
+    # dependencies, so never need an explicit entry)
     target = {sym.name: sym.str_value
               for sym in kconf.unique_defined_syms}
+    target_visible = {sym.name for sym in kconf.unique_defined_syms
+                      if sym.visibility}
 
     # Build a temp file with just the #include lines (no overlay CONFIGs)
     include_lines = []
@@ -670,36 +668,44 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
         base_pp = _cpp_preprocess(srcdir, tmp.name)
 
     base_entries = _get_defconfig_entries(base_pp)
+    kconf.load_config(base_pp)
+    base_effective = {sym.name: sym.str_value
+                      for sym in kconf.unique_defined_syms}
     os.unlink(base_pp)
 
-    # Build the set of configs needed in the overlay: full_min entries not
-    # already provided by the include files
+    # Build the set of configs needed in the overlay: full_min entries which
+    # the include files provide neither textually nor effectively. The
+    # textual check covers entries hidden by unmet dependencies when the
+    # includes are loaded alone; the effective check covers values the
+    # includes produce indirectly, so that entries are not added merely
+    # because an include file is not in canonical minimal form. If this
+    # wrongly deems an entry provided, the verification pass adds it back
     needed = {}
+    full_entries = {}
     for line in full_lines:
         name = _config_name(line)
-        if not name or base_entries.get(name) != line.strip():
-            needed[name] = line.strip()
+        if not name:
+            continue
+        full_entries[name] = line.strip()
+        sym_name = name[len('CONFIG_'):]
+        if (base_entries.get(name) == line.strip() or
+                base_effective.get(sym_name) == target.get(sym_name)):
+            continue
+        needed[name] = line.strip()
 
-    new_content = _rebuild_overlay(orig, needed)
+    new_content = _rebuild_overlay(orig, needed, base_entries, full_entries)
     new_content = _verify_defconfig(kconf, srcdir, os.path.dirname(orig),
-                                    target, needed, new_content)
+                                    target, target_visible, needed,
+                                    new_content)
 
-    # Only update the file if the effective config actually changes.
-    # Removing redundant overlay entries is cosmetic and would create
-    # unnecessary churn in the commit.
+    # Overlay entries which simply restate the include files are kept, so
+    # any remaining difference is a real change: a stale entry dropped, a
+    # value fixed or a missing entry added
     if new_content == tools.read_file(orig):
         return False
-
-    verify_pp = _cpp_preprocess(srcdir, orig)
-    kconf.load_config(verify_pp)
-    os.unlink(verify_pp)
-    orig_effective = {sym.name: sym.str_value
-                      for sym in kconf.unique_defined_syms}
-    updated = orig_effective != target
-
-    if updated and not dry_run:
+    if not dry_run:
         tools.write_file(orig, new_content)
-    return updated
+    return True
 
 
 def _sync_defconfigs_worker(srcdir, defconfigs, result_queue, error_queue,
@@ -738,6 +744,12 @@ def _sync_defconfigs_worker(srcdir, defconfigs, result_queue, error_queue,
         orig = os.path.join(srcdir, 'configs', defconfig)
         try:
             if ref_srcdir:
+                # Leave #include defconfigs alone: write_min_config() would
+                # flatten them, destroying the include structure
+                if b'#include' in tools.read_file(orig):
+                    result_queue.put((defconfig, False, None))
+                    continue
+
                 # Load defconfig against the reference Kconfig tree, write
                 # a full .config, then load it into the current tree
                 ref_orig = os.path.join(ref_srcdir, 'configs', defconfig)
@@ -1247,13 +1259,14 @@ def find_config(dbase, config_list):
     """Find all defconfigs which match a config list
 
     Args:
+        dbase (tuple): Database from read_database()
         config_list (list of str): List of CONFIG options to check (each a regex
             consisting of a config option, with or without a CONFIG_ prefix. If
             an option is preceded by a tilde (~) then it must be false,
             otherwise it must be true)
 
-    Return:
-        set: matching defconfig, without the '_defconfig' suffix
+    Returns:
+        set: matching defconfigs, without the '_defconfig' suffix
     """
     # Start with all defconfigs
     _, all_defconfigs, config_db, _ = dbase
@@ -1341,11 +1354,13 @@ def prefix_config(cfg):
 
 
 # CONFIG options in Makefiles, with an optional $(SPL_)/$(PHASE_) prefix
-RE_MK_CONFIGS = re.compile(r'CONFIG_(\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))?([A-Za-z0-9_]*)')
+RE_MK_CONFIGS = re.compile(
+    r'CONFIG_(\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))?([A-Za-z0-9_]*)')
 
 # Makefile ifdefs: this only handles 'else' on its own line, so not
 # 'else ifeq ...', for example
-RE_IF = re.compile(r'^(ifdef|ifndef|endif|ifeq|ifneq|else)([^,]*,([^,]*)\))?.*$')
+RE_IF = re.compile(
+    r'^(ifdef|ifndef|endif|ifeq|ifneq|else)([^,]*,([^,]*)\))?.*$')
 
 # Normal CONFIG options in C
 RE_C_CONFIGS = re.compile(r'CONFIG_([A-Za-z0-9_]*)')
@@ -1354,7 +1369,8 @@ RE_C_CONFIGS = re.compile(r'CONFIG_([A-Za-z0-9_]*)')
 RE_CONFIG_IS = re.compile(r'CONFIG_IS_ENABLED\(([A-Za-z0-9_]*)\)')
 
 # Preprocessor #if/#ifdef directives, etc.
-RE_IFDEF = re.compile(r'^\s*#\s*(ifdef|ifndef|endif|if|elif|else)\s*(?:#.*)?(.*)$')
+RE_IFDEF = re.compile(
+    r'^\s*#\s*(ifdef|ifndef|endif|if|elif|else)\s*(?:#.*)?(.*)$')
 
 class ConfigUse:
     """Holds information about a use of a CONFIG option"""
@@ -1427,7 +1443,6 @@ def scan_makefiles(fname_dict):
             m_iter = RE_MK_CONFIGS.finditer(rest)
             m_cond = RE_IF.match(rest)
             last_use = None
-            use = None
             for m in m_iter:
                 real_opt = m.group(2)
                 if real_opt == '':
@@ -1468,8 +1483,6 @@ def scan_makefiles(fname_dict):
                         conds.append(cond)
                 else:
                     print(f'unknown condition: {rest}')
-        if conds:
-            print(f'leftover {conds}')
     return all_uses, fname_uses
 
 
@@ -1685,6 +1698,13 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
                 value (list of str): List of lines in that filename
         """
         def finish_file(last_fname, rest_list):
+            """Add the collected lines for a file to the right dict
+
+            Args:
+                last_fname (str or None): Filename the lines belong to, or
+                    None if at the start of the scan
+                rest_list (list of str): Grep output lines for the file
+            """
             if last_fname is None:
                 return
             if is_mkfile:
@@ -1729,9 +1749,9 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             elif 'Makefile' in root or ext == '.mk':
                 rest_list.append(rest)
                 is_mkfile = True
-            elif ext in ['.yml', '.sh', '.py', '.awk', '.pl', '.rst', '', '.sed',
-                         '.src', '.inc', '.l', '.i_shipped', '.txt', '.cmd',
-                         '.cfg', '.y', '.cocci', '.ini', '.asn1', '.base',
+            elif ext in ['.yml', '.sh', '.py', '.awk', '.pl', '.rst', '',
+                         '.sed', '.src', '.inc', '.l', '.i_shipped', '.txt',
+                         '.cmd', '.y', '.cocci', '.ini', '.asn1', '.base',
                          '.cnf', '.patch', '.mak', '.its', '.svg', '.tcl',
                          '.css', '.config', '.conf', '.yaml', '.dtso', '.key',
                          '.pem', '.toml', '.in']:
@@ -1742,7 +1762,8 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
                 pass
             elif dirname in ['configs']:
                 pass
-            elif dirname.startswith('doc') or dirname.startswith('scripts/kconfig'):
+            elif (dirname.startswith('doc') or
+                  dirname.startswith('scripts/kconfig')):
                 pass
             elif dirname.startswith('lib/mbedtls/external'):
                 pass
@@ -1755,7 +1776,19 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
 
     def check_missing(all_uses, spl_not_found, proper_not_found,
                       show_conflicts):
-        # Make sure we know about all the options in Makefiles
+        """Check for missing Kconfig options and conflicting uses
+
+        Args:
+            all_uses (dict): All uses of CONFIG options:
+                key (ConfigUse): Use of the option
+                value (list of str): Lines using the option
+            spl_not_found (set of str): Updated with options which are used
+                in an SPL context but have no SPL_ Kconfig
+            proper_not_found (set of str): Updated with options which are
+                used in a Proper context but have no Kconfig
+            show_conflicts (bool): True to show the missing options
+        """
+        # Make sure we know about all the options used
         not_found = check_not_found(all_uses, MODE_NORMAL)
         if show_conflicts:
             print('\nCONFIG options present in source but not Kconfig:')
@@ -1776,6 +1809,14 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             show_uses(not_found)
 
     def show_summary(spl_not_found, proper_not_found):
+        """Show a summary of the missing Kconfig options
+
+        Args:
+            spl_not_found (set of str): Options which are used in an SPL
+                context but have no SPL_ Kconfig
+            proper_not_found (set of str): Options which are used in a
+                Proper context but have no Kconfig
+        """
         print('\nCONFIG options used as SPL but without an SPL_ variant:')
         for item in sorted(spl_not_found):
             print(f'   {item}')
@@ -1785,6 +1826,12 @@ def do_scan_source(path, do_update, do_update_source, show_conflicts,
             print(f'   {item}')
 
     def write_update(spl_not_found):
+        """Write the updated scripts/conf_nospl file
+
+        Args:
+            spl_not_found (set of str): Options which are used in an SPL
+                context but have no SPL_ Kconfig
+        """
         with open(os.path.join(path, 'scripts', 'conf_nospl'), 'w',
                   encoding='utf-8') as out:
             print('''# Options which are never enabled in SPL.
@@ -1806,7 +1853,7 @@ or to all builds.
     def check_conflict(kconf, all_uses, show):
         """Check conflicts between uses of CONFIG options in source
 
-        Sometimes an option is used in an SPL context in once place and not in
+        Sometimes an option is used in an SPL context in one place and not in
         another. For example if we see CONFIG_SPL_FOO and CONFIG_FOO then we
         don't know whether FOO should be enabled in SPL if CONFIG_FOO is
         enabled, or only if CONFIG_SPL_FOO is enabled.
@@ -1855,7 +1902,6 @@ or to all builds.
                         conflict_dict[use.fname].append(use)
                         cfg_dict[use.cfg].append(use)
                 bad += 1
-        print(f'total bad: {bad}')
         return conflict_dict, cfg_dict
 
     def replace_in_file(fname, use_or_uses):
@@ -1874,33 +1920,33 @@ or to all builds.
         else:
             uses = [use_or_uses]
 
-        re_cfgs = []
+        pairs = []
         for use in uses:
             if use.is_mk:
-                expr = r'CONFIG_(?:\$\(SPL_(?:TPL_)?\))%s\b' % use.cfg
+                expr = (r'CONFIG_(?:\$\(SPL_(?:TPL_)?\)|\$\(PHASE_\))'
+                        fr'{use.cfg}\b')
             else:
                 expr = r'CONFIG_IS_ENABLED\(%s\)' % use.cfg
-            re_cfgs.append(re.compile(expr))
+            pairs.append((re.compile(expr), use))
 
         for line in data.splitlines():
             new_line = line
             if 'CONFIG_' in line:
                 todo = []
-                for i, re_cfg in enumerate(re_cfgs):
+                for re_cfg, use in pairs:
                     if not re_cfg.search(line):
-                        todo.append(re_cfg)
-                    use = uses[i]
+                        todo.append((re_cfg, use))
                     if use.is_mk:
                         new_line = re_cfg.sub(f'CONFIG_{use.cfg}', new_line)
                     else:
                         new = f'IS_ENABLED(CONFIG_{use.cfg})'
                         new_line = re_cfg.sub(new, new_line)
-                re_cfgs = todo
+                pairs = todo
             out.write(new_line)
             out.write('\n')
         out_data = out.getvalue()
         if out_data == data:
-            print(f'\n\nfailed with {fname}\n\n')
+            print(f'warning: no replacement done in {fname}')
         with open(fname, 'w', encoding='utf-8') as outf:
             outf.write(out_data)
 
@@ -1944,8 +1990,6 @@ or to all builds.
     print('Scanning Kconfig')
     kconf = scan_kconfig()
 
-    all_uses = collections.defaultdict(list)
-    fname_uses = {}
     mk_dict, src_dict = do_scan()
 
     # Scan the Makefiles and source code
@@ -2200,25 +2244,52 @@ class SyncTests(unittest.TestCase):
         self.assertIn(b'#include', content_after)
 
     def test_sync_include_skips_redundant(self):
-        """Syncing a #include defconfig skips cosmetic-only changes"""
-        # Create a temp defconfig that includes sandbox and redundantly
-        # sets a CONFIG that sandbox already sets
+        """Syncing a #include defconfig keeps include-redundant entries"""
+        # Pick an option which sandbox_defconfig sets explicitly, so the
+        # overlay entry simply restates the include
+        with open('configs/sandbox_defconfig', encoding='utf-8') as inf:
+            explicit = next(line for line in inf
+                            if line.startswith('CONFIG_') and
+                            line.rstrip().endswith('=y'))
         with tempfile.NamedTemporaryFile(
                 mode='w', prefix='test-', suffix='_defconfig',
                 dir='configs', delete=False) as tmp:
             tmp.write('#include "sandbox_defconfig"\n')
-            tmp.write('CONFIG_CMDLINE=y\n')
+            tmp.write(explicit)
             tmp_name = tmp.name
         try:
             updated = _sync_include_defconfig(self.kconf, self.srcdir,
                                               tmp_name, dry_run=False)
-            # Redundant CONFIG doesn't change the effective config,
-            # so the file should not be updated
+            # An entry which restates the include is harmless, so the file
+            # should not be rewritten just to drop it
             self.assertFalse(updated)
             with open(tmp_name) as inf:
                 result = inf.read()
             # File should be unchanged
-            self.assertIn('CONFIG_CMDLINE=y', result)
+            self.assertIn(explicit.strip(), result)
+            self.assertIn('#include "sandbox_defconfig"', result)
+        finally:
+            os.unlink(tmp_name)
+
+    def test_sync_include_drops_stale(self):
+        """Syncing a #include defconfig removes stale options"""
+        with tempfile.NamedTemporaryFile(
+                mode='w', prefix='test-', suffix='_defconfig',
+                dir='configs', delete=False) as tmp:
+            tmp.write('#include "sandbox_defconfig"\n')
+            tmp.write('# CONFIG_CMDLINE is not set\n')
+            tmp.write('CONFIG_NON_EXISTENT_OPTION=y\n')
+            tmp_name = tmp.name
+        try:
+            updated = _sync_include_defconfig(self.kconf, self.srcdir,
+                                              tmp_name, dry_run=False)
+            # The stale option must be dropped, with the real override and
+            # the include structure preserved
+            self.assertTrue(updated)
+            with open(tmp_name) as inf:
+                result = inf.read()
+            self.assertNotIn('CONFIG_NON_EXISTENT_OPTION', result)
+            self.assertIn('# CONFIG_CMDLINE is not set', result)
             self.assertIn('#include "sandbox_defconfig"', result)
         finally:
             os.unlink(tmp_name)
@@ -2337,7 +2408,7 @@ def ensure_database(threads):
                 value: set of boards using that option
     """
     if not db_is_current():
-        print('Building qconfig.db database...')
+        print(f'Building {CONFIG_DATABASE} database...')
         args = Namespace(build_db=True, verbose=False, force_sync=False,
                          dry_run=False, exit_on_error=False, jobs=threads,
                          git_ref=None, defconfigs=None, defconfiglist=None,
