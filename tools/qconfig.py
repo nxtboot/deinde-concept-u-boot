@@ -488,32 +488,6 @@ def _sync_plain_defconfig(kconf, orig, dry_run):
     return updated
 
 
-def _build_include_defconfig(include_lines, delta, sep):
-    """Build defconfig content from include lines and overlay delta
-
-    Assembles a defconfig that uses #include directives by concatenating
-    the original #include lines with the overlay delta (the CONFIG lines
-    that are needed on top of what the includes provide). The separator
-    preserves the blank-line convention from the original file.
-
-    Args:
-        include_lines (list of bytes): The #include lines
-        delta (list of str): Sorted overlay config lines
-        sep (bytes): Separator between includes and delta (b'\\n' or b'')
-
-    Returns:
-        bytes: The defconfig content
-    """
-    out = b''
-    for line in include_lines:
-        out += line
-    if delta:
-        out += sep
-    for line in delta:
-        out += line.encode() if isinstance(line, str) else line
-    return out
-
-
 def _format_sym_value(sym, value=None):
     """Format a symbol value as a defconfig line
 
@@ -535,7 +509,7 @@ def _format_sym_value(sym, value=None):
     return f'CONFIG_{sym.name}={value}'
 
 
-def _rebuild_overlay(orig, needed):
+def _rebuild_overlay(orig, needed, base_entries, full_entries):
     """Rebuild a #include defconfig preserving the original line ordering
 
     Keeps existing overlay lines that are still needed (updating values
@@ -545,6 +519,12 @@ def _rebuild_overlay(orig, needed):
     Args:
         orig (str): Path to the original defconfig file
         needed (dict): Mapping of config name to defconfig line value
+        base_entries (dict): Mapping of config name to defconfig line for
+            entries provided by the include files; overlay lines which
+            simply restate one of these are kept, to avoid churn
+        full_entries (dict): Mapping of config name to defconfig line for
+            the full minimal config; overlay lines which match are still
+            correct, so are kept in place
 
     Returns:
         bytes: The rebuilt defconfig content
@@ -552,37 +532,45 @@ def _rebuild_overlay(orig, needed):
     orig_lines = tools.read_file(orig, binary=False).splitlines(keepends=True)
     keep = set()
     lines = []
-    in_overlay = False
     for line in orig_lines:
         if line.startswith('#include'):
             lines.append(line)
             continue
         name = _config_name(line)
         if not name:
-            # Blank lines or comments - keep them (marks start of overlay)
-            if not in_overlay:
-                lines.append(line)
-                in_overlay = True
+            # Blank lines and comments are structure; keep them
+            lines.append(line)
             continue
-        in_overlay = True
         if name in needed:
             # Keep this line (possibly with updated value)
             lines.append(needed[name] + '\n')
             keep.add(name)
+        elif full_entries.get(name) == line.strip():
+            # The line still matches the minimal config; keep it in place
+            lines.append(line)
+            keep.add(name)
+        elif base_entries.get(name) == line.strip():
+            # The line simply restates what the include files already
+            # provide; keep it to avoid churn
+            lines.append(line)
         # else: drop the line (no longer needed in overlay)
 
-    # Append new entries that weren't in the original overlay
+    # Append new entries that weren't in the original overlay, making sure
+    # the existing content ends with a newline first
     new_entries = []
     for name, line in needed.items():
         if name not in keep:
             new_entries.append(line + '\n')
     if new_entries:
+        if lines and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
         lines.extend(sorted(new_entries))
 
     return ''.join(lines).encode()
 
 
-def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
+def _verify_defconfig(kconf, srcdir, confdir, target, target_visible, needed,
+                      new_content):
     """Verify an #include defconfig and fix remaining config differences
 
     Loads the candidate defconfig through kconfiglib, compares against the
@@ -595,6 +583,10 @@ def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
         srcdir (str): Source-tree directory
         confdir (str): Directory for temp file placement
         target (dict): Target config {sym_name: str_value}
+        target_visible (set of str): Symbols which are visible in the
+            target config; corrections are only added for these, since an
+            invisible symbol takes its value from its dependencies and is
+            fixed by correcting them instead
         needed (dict): Overlay entries {config_name: line}, updated in place
         new_content (bytes): Current defconfig content to verify
 
@@ -614,6 +606,8 @@ def _verify_defconfig(kconf, srcdir, confdir, target, needed, new_content):
         extra_lines = []
         for sym in kconf.unique_defined_syms:
             if sym.name not in target or sym.str_value == target[sym.name]:
+                continue
+            if sym.name not in target_visible:
                 continue
             line = _format_sym_value(sym, target[sym.name])
             name = _config_name(line)
@@ -652,9 +646,13 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
     full_lines = _get_min_config_lines(kconf, full_tmp)
     os.unlink(full_tmp)
 
-    # Save the target config for verification
+    # Save the target config for verification, noting which symbols are
+    # visible there (invisible symbols take their value from their
+    # dependencies, so never need an explicit entry)
     target = {sym.name: sym.str_value
               for sym in kconf.unique_defined_syms}
+    target_visible = {sym.name for sym in kconf.unique_defined_syms
+                      if sym.visibility}
 
     # Build a temp file with just the #include lines (no overlay CONFIGs)
     include_lines = []
@@ -670,36 +668,44 @@ def _sync_include_defconfig(kconf, srcdir, orig, dry_run):
         base_pp = _cpp_preprocess(srcdir, tmp.name)
 
     base_entries = _get_defconfig_entries(base_pp)
+    kconf.load_config(base_pp)
+    base_effective = {sym.name: sym.str_value
+                      for sym in kconf.unique_defined_syms}
     os.unlink(base_pp)
 
-    # Build the set of configs needed in the overlay: full_min entries not
-    # already provided by the include files
+    # Build the set of configs needed in the overlay: full_min entries which
+    # the include files provide neither textually nor effectively. The
+    # textual check covers entries hidden by unmet dependencies when the
+    # includes are loaded alone; the effective check covers values the
+    # includes produce indirectly, so that entries are not added merely
+    # because an include file is not in canonical minimal form. If this
+    # wrongly deems an entry provided, the verification pass adds it back
     needed = {}
+    full_entries = {}
     for line in full_lines:
         name = _config_name(line)
-        if not name or base_entries.get(name) != line.strip():
-            needed[name] = line.strip()
+        if not name:
+            continue
+        full_entries[name] = line.strip()
+        sym_name = name[len('CONFIG_'):]
+        if (base_entries.get(name) == line.strip() or
+                base_effective.get(sym_name) == target.get(sym_name)):
+            continue
+        needed[name] = line.strip()
 
-    new_content = _rebuild_overlay(orig, needed)
+    new_content = _rebuild_overlay(orig, needed, base_entries, full_entries)
     new_content = _verify_defconfig(kconf, srcdir, os.path.dirname(orig),
-                                    target, needed, new_content)
+                                    target, target_visible, needed,
+                                    new_content)
 
-    # Only update the file if the effective config actually changes.
-    # Removing redundant overlay entries is cosmetic and would create
-    # unnecessary churn in the commit.
+    # Overlay entries which simply restate the include files are kept, so
+    # any remaining difference is a real change: a stale entry dropped, a
+    # value fixed or a missing entry added
     if new_content == tools.read_file(orig):
         return False
-
-    verify_pp = _cpp_preprocess(srcdir, orig)
-    kconf.load_config(verify_pp)
-    os.unlink(verify_pp)
-    orig_effective = {sym.name: sym.str_value
-                      for sym in kconf.unique_defined_syms}
-    updated = orig_effective != target
-
-    if updated and not dry_run:
+    if not dry_run:
         tools.write_file(orig, new_content)
-    return updated
+    return True
 
 
 def _sync_defconfigs_worker(srcdir, defconfigs, result_queue, error_queue,
@@ -2200,25 +2206,52 @@ class SyncTests(unittest.TestCase):
         self.assertIn(b'#include', content_after)
 
     def test_sync_include_skips_redundant(self):
-        """Syncing a #include defconfig skips cosmetic-only changes"""
-        # Create a temp defconfig that includes sandbox and redundantly
-        # sets a CONFIG that sandbox already sets
+        """Syncing a #include defconfig keeps include-redundant entries"""
+        # Pick an option which sandbox_defconfig sets explicitly, so the
+        # overlay entry simply restates the include
+        with open('configs/sandbox_defconfig', encoding='utf-8') as inf:
+            explicit = next(line for line in inf
+                            if line.startswith('CONFIG_') and
+                            line.rstrip().endswith('=y'))
         with tempfile.NamedTemporaryFile(
                 mode='w', prefix='test-', suffix='_defconfig',
                 dir='configs', delete=False) as tmp:
             tmp.write('#include "sandbox_defconfig"\n')
-            tmp.write('CONFIG_CMDLINE=y\n')
+            tmp.write(explicit)
             tmp_name = tmp.name
         try:
             updated = _sync_include_defconfig(self.kconf, self.srcdir,
                                               tmp_name, dry_run=False)
-            # Redundant CONFIG doesn't change the effective config,
-            # so the file should not be updated
+            # An entry which restates the include is harmless, so the file
+            # should not be rewritten just to drop it
             self.assertFalse(updated)
             with open(tmp_name) as inf:
                 result = inf.read()
             # File should be unchanged
-            self.assertIn('CONFIG_CMDLINE=y', result)
+            self.assertIn(explicit.strip(), result)
+            self.assertIn('#include "sandbox_defconfig"', result)
+        finally:
+            os.unlink(tmp_name)
+
+    def test_sync_include_drops_stale(self):
+        """Syncing a #include defconfig removes stale options"""
+        with tempfile.NamedTemporaryFile(
+                mode='w', prefix='test-', suffix='_defconfig',
+                dir='configs', delete=False) as tmp:
+            tmp.write('#include "sandbox_defconfig"\n')
+            tmp.write('# CONFIG_CMDLINE is not set\n')
+            tmp.write('CONFIG_NON_EXISTENT_OPTION=y\n')
+            tmp_name = tmp.name
+        try:
+            updated = _sync_include_defconfig(self.kconf, self.srcdir,
+                                              tmp_name, dry_run=False)
+            # The stale option must be dropped, with the real override and
+            # the include structure preserved
+            self.assertTrue(updated)
+            with open(tmp_name) as inf:
+                result = inf.read()
+            self.assertNotIn('CONFIG_NON_EXISTENT_OPTION', result)
+            self.assertIn('# CONFIG_CMDLINE is not set', result)
             self.assertIn('#include "sandbox_defconfig"', result)
         finally:
             os.unlink(tmp_name)
