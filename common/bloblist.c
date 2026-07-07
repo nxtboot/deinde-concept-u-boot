@@ -674,7 +674,7 @@ int bloblist_init(void)
 	}
 	if (ret)
 		return log_msg_ret("ini", ret);
-	gd->flags |= GD_FLG_BLOBLIST_READY;
+	gd->flags |= GD_FLG_BLOBLIST_HANDOFF;
 
 #ifdef DEBUG
 	bloblist_show_stats();
