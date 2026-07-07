@@ -568,7 +568,8 @@ N:	rk3
 # RK8xx PMIC/regulator family
 N:	rk8
 N:	rockchip
-F:	arch/arm/dts/rv11*
+# RV11xx SoC family
+N:	rv11
 F:	board/radxa/
 F:	board/theobroma-systems
 F:	drivers/gpio/rk_gpio.c
