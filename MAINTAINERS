@@ -559,12 +559,10 @@ M:	Philipp Tomsich <philipp.tomsich@vrull.eu>
 M:	Kever Yang <kever.yang@rock-chips.com>
 S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-rockchip.git
+N:	rockchip
 F:	arch/arm/dts/px30*
 F:	arch/arm/dts/rk3*
-F:	arch/arm/dts/rockchip*
 F:	arch/arm/dts/rv11*
-F:	arch/arm/include/asm/arch-rockchip/
-F:	arch/arm/mach-rockchip/
 F:	board/amarula/vyasa-rk3288/
 F:	board/anbernic/rgxx3_rk3566/
 F:	board/armsom/sige7-rk3588/
@@ -575,25 +573,14 @@ F:	board/mqmaker/miqi_rk3288/
 F:	board/phytec/phycore_rk3288
 F:	board/pine64
 F:	board/radxa/
-F:	board/rockchip/
 F:	board/theobroma-systems
 F:	board/vamrs/rock960_rk3399/
-F:	drivers/clk/rockchip/
 F:	drivers/gpio/rk_gpio.c
-F:	drivers/misc/rockchip-efuse.c
-F:	drivers/mmc/rockchip_sdhci.c
-F:	drivers/mmc/rockchip_dw_mmc.c
-F:	drivers/pinctrl/rockchip/
-F:	drivers/ram/rockchip/
-F:	drivers/sysreset/sysreset_rockchip.c
-F:	drivers/ufs/*rockchip*
-F:	drivers/video/rockchip/
 F:	tools/rkcommon.c
 F:	tools/rkcommon.h
 F:	tools/rkimage.c
 F:	tools/rksd.c
 F:	tools/rkspi.c
-N:	rockchip
 
 ARM SAMSUNG
 M:	Minkyu Kang <mk7.kang@samsung.com>
