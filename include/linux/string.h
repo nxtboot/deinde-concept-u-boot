@@ -107,10 +107,6 @@ extern char * strndup(const char *, size_t);
 extern const char *strdup_const(const char *s);
 extern void kfree_const(const void *x);
 
-#ifndef __HAVE_ARCH_STRSWAB
-extern char * strswab(const char *);
-#endif
-
 #ifndef __HAVE_ARCH_MEMSET
 extern void * memset(void *,int,__kernel_size_t);
 #endif

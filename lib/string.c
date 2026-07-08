@@ -503,34 +503,6 @@ char * strsep(char **s, const char *ct)
 }
 #endif
 
-#ifndef __HAVE_ARCH_STRSWAB
-/**
- * strswab - swap adjacent even and odd bytes in %NUL-terminated string
- * s: address of the string
- *
- * returns the address of the swapped string or NULL on error. If
- * string length is odd, last byte is untouched.
- */
-char *strswab(const char *s)
-{
-	char *p, *q;
-
-	if ((NULL == s) || ('\0' == *s)) {
-		return (NULL);
-	}
-
-	for (p=(char *)s, q=p+1; (*p != '\0') && (*q != '\0'); p+=2, q+=2) {
-		char  tmp;
-
-		tmp = *p;
-		*p  = *q;
-		*q  = tmp;
-	}
-
-	return (char *) s;
-}
-#endif
-
 #ifndef __HAVE_ARCH_MEMSET
 /**
  * memset - Fill a region of memory with the given value
