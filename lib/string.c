@@ -702,6 +702,33 @@ char *strstr(const char *s1, const char *s2)
 }
 #endif
 
+/**
+ * strcasestr() - Case insensitive substring search
+ *
+ * @haystack:	string to be searched
+ * @needle:	string to search for
+ *
+ * Return:	pointer to the first occurrence or NULL
+ *
+ * The case of both strings are ignored.
+ */
+char *strcasestr(const char *haystack, const char *needle)
+{
+	size_t l1, l2;
+
+	l1 = strlen(haystack);
+	l2 = strlen(needle);
+
+	while (l1 >= l2) {
+		if (!strncasecmp(haystack, needle, l2))
+			return (char *)haystack;
+		haystack++;
+		l1--;
+	}
+
+	return NULL;
+}
+
 #ifndef __HAVE_ARCH_MEMCHR
 /**
  * memchr - Find a character in an area of memory.
