@@ -63,7 +63,7 @@ extern char * strchr(const char *,int);
  * @c: character to search for
  * Return: position of @c in @s, or end of @s if not found
  */
-const char *strchrnul(const char *s, int c);
+char *strchrnul(const char *s, int c);
 
 #ifndef __HAVE_ARCH_STRRCHR
 extern char * strrchr(const char *,int);

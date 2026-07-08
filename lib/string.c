@@ -264,12 +264,12 @@ char * strchr(const char * s, int c)
 }
 #endif
 
-const char *strchrnul(const char *s, int c)
+char *strchrnul(const char *s, int c)
 {
 	for (; *s != (char)c; ++s)
 		if (*s == '\0')
 			break;
-	return s;
+	return (char *)s;
 }
 
 #ifndef __HAVE_ARCH_STRRCHR
