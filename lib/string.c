@@ -702,7 +702,7 @@ void *memdup(const void *src, size_t len)
  *
  * @s1:		string to be searched
  * @s2:		string to search for
- * @len:	maximum number of characters in s2 to consider
+ * @len:	maximum number of characters in s1 to consider
  *
  * Return:	pointer to the first occurrence or NULL
  */
@@ -728,7 +728,6 @@ char *strnstr(const char *s1, const char *s2, size_t len)
  *
  * @s1:		string to be searched
  * @s2:		string to search for
- * @len:	maximum number of characters in s2 to consider
  *
  * Return:	pointer to the first occurrence or NULL
  */
