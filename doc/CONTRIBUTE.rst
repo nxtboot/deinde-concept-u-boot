@@ -47,6 +47,13 @@ to what's most often believed, you do not need to be an expert to review patches
 and the project will benefit from people with different skillsets and experience
 looking at the same patches and each catch different bugs.
 
+The project would also benefit from more :ref:`develop/index:testing`.
+
+New sections or updates to the documentation are most welcome, e.g.
+:ref:`usage/index:shell commands`. See :doc:`/develop/docstyle`.
+
+Thank you for your help!
+
 Patch Series
 ------------
 
