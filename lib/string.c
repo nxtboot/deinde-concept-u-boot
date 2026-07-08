@@ -399,7 +399,7 @@ void kfree_const(const void *x)
 		free((void *)x);
 }
 
-#ifndef __HAVE_ARCH_STRSPN
+
 /**
  * strspn - Calculate the length of the initial substring of @s which only
  *	contain letters in @accept
@@ -424,9 +424,7 @@ size_t strspn(const char *s, const char *accept)
 
 	return count;
 }
-#endif
 
-#ifndef __HAVE_ARCH_STRPBRK
 /**
  * strpbrk - Find the first occurrence of a set of characters
  * @cs: The string to be searched
@@ -444,9 +442,7 @@ char * strpbrk(const char * cs,const char * ct)
 	}
 	return NULL;
 }
-#endif
 
-#ifndef __HAVE_ARCH_STRTOK
 /**
  * strtok - Split a string into tokens
  * @s: The string to be searched
@@ -473,9 +469,7 @@ char * strtok(char * s,const char * ct)
 	___strtok = send;
 	return (sbegin);
 }
-#endif
 
-#ifndef __HAVE_ARCH_STRSEP
 /**
  * strsep - Split a string into tokens
  * @s: The string to be searched
@@ -501,7 +495,6 @@ char * strsep(char **s, const char *ct)
 
 	return sbegin;
 }
-#endif
 
 #ifndef __HAVE_ARCH_MEMSET
 /**
