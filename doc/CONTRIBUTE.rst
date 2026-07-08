@@ -38,6 +38,15 @@ script. Please don't send patches as attachments, and ensure corporate mail
 systems don't reformat patches, append disclaimers or other unnecessary notes.
 The b4 tool automates a number of components mentioned above.
 
+Code is not the only thing you can contribute to the project. As most
+open-source projects, the U-Boot project suffers from a lack of reviewers.
+Consider spending some time reading patches on `the mailing list archive
+<https://lists.denx.de/pipermail/u-boot/>`_ and providing feedback to
+contributors when something could be improved or if you have questions. Contrary
+to what's most often believed, you do not need to be an expert to review patches
+and the project will benefit from people with different skillsets and experience
+looking at the same patches and each catch different bugs.
+
 Patch Series
 ------------
 
