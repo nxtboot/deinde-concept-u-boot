@@ -36,10 +36,12 @@ static const struct mtk_scp_domain_data mt7622_scp_domain[] = {
 	},
 };
 
+MTK_SCP_SOC_DATA(mt7622, mt7622_scp_domain);
+
 static const struct udevice_id mt7622_power_domain_ids[] = {
 	{
 		.compatible = "mediatek,mt7622-scpsys",
-		.data = (ulong)&mt7622_scp_domain,
+		.data = (ulong)&mt7622_scp_soc_data,
 	},
 	{ /* sentinel */ }
 };

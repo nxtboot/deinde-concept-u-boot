@@ -12,6 +12,7 @@
 #include <power-domain-uclass.h>
 #include <linux/bitops.h>
 #include <linux/compiler.h>
+#include <linux/kernel.h>
 #include <linux/types.h>
 
 struct udevice;
@@ -68,10 +69,21 @@ struct mtk_scp_domain_data {
 	u32 bus_prot_mask;
 };
 
+struct mtk_scp_soc_data {
+	const struct mtk_scp_domain_data *data;
+	int num_domains;
+};
+
+#define MTK_SCP_SOC_DATA(_name, _domains)			\
+static const struct mtk_scp_soc_data _name##_scp_soc_data = {	\
+	.data = _domains,					\
+	.num_domains = ARRAY_SIZE(_domains),			\
+}
+
 struct mtk_scp_domain {
 	void __iomem *base;
 	void __iomem *infracfg;
-	const struct mtk_scp_domain_data *data;
+	const struct mtk_scp_soc_data *soc_data;
 };
 
 int mtk_power_domain_probe(struct udevice *dev);

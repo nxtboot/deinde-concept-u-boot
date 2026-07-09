@@ -65,14 +65,16 @@ static const struct mtk_scp_domain_data mt2701_scp_domain[] = {
 	},
 };
 
+MTK_SCP_SOC_DATA(mt2701, mt2701_scp_domain);
+
 static const struct udevice_id mt2701_power_domain_ids[] = {
 	{
 		.compatible = "mediatek,mt2701-scpsys",
-		.data = (ulong)&mt2701_scp_domain,
+		.data = (ulong)&mt2701_scp_soc_data,
 	},
 	{
 		.compatible = "mediatek,mt7623-scpsys",
-		.data = (ulong)&mt2701_scp_domain,
+		.data = (ulong)&mt2701_scp_soc_data,
 	},
 	{ /* sentinel */ }
 };
