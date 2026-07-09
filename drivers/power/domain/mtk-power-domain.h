@@ -80,7 +80,7 @@ static const struct mtk_scp_soc_data _name##_scp_soc_data = {	\
 	.num_domains = ARRAY_SIZE(_domains),			\
 }
 
-struct mtk_scp_domain {
+struct mtk_scpsys {
 	void __iomem *base;
 	void __iomem *infracfg;
 	const struct mtk_scp_soc_data *soc_data;

@@ -52,5 +52,5 @@ U_BOOT_DRIVER(mt7622_power_domain) = {
 	.ops = &mtk_power_domain_ops,
 	.probe = mtk_scpsys_probe,
 	.of_match = mt7622_power_domain_ids,
-	.priv_auto = sizeof(struct mtk_scp_domain),
+	.priv_auto = sizeof(struct mtk_scpsys),
 };
