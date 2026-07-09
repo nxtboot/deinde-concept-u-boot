@@ -126,3 +126,15 @@
 		};
 	};
 };
+
+&uart0 {
+	/*
+	 * TODO(sjg): experiment - the k1 clk driver reports 24MHz for the
+	 * UART clock but output garbles when the divisor is reprogrammed;
+	 * force the true 14.7456MHz reference and bypass the clock driver
+	 */
+	/delete-property/ resets;
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
+	clock-frequency = <14745600>;
+};
