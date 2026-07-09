@@ -159,6 +159,16 @@ config CI_UDC
 	  Say Y here to enable device controller functionality of the
 	  ChipIdea driver.
 
+config K1X_USB2_CI
+	bool "SpacemiT K1 USB2 device controller"
+	depends on !DM_USB_GADGET
+	select USB_GADGET_DUALSPEED
+	help
+	  Say Y here to enable device controller functionality of the
+	  SpacemiT K1 USB2 OTG controller, as used on the Banana Pi BPI-F3.
+	  This supports the USB download (fastboot/DFU) flows, including in
+	  SPL.
+
 config USB_GADGET_VBUS_DRAW
 	int "Maximum VBUS Power usage (2-500 mA)"
 	range 2 500

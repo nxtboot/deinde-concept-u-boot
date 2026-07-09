@@ -33,3 +33,4 @@ endif
 endif
 
 obj-$(CONFIG_CI_UDC) += ci_udc.o
+obj-$(CONFIG_K1X_USB2_CI) += k1x_usb2_ci.o
