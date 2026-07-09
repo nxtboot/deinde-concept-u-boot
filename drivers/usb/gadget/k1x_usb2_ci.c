@@ -638,7 +638,15 @@ static void handle_ep_complete(struct mv_ep *ep)
 
 	mv_req->req.status = 0;
 
-	mv_req->req.complete(&ep->ep, &mv_req->req);
+	/*
+	 * Only signal completion to the gadget for a real data phase. The
+	 * ep0 status phase re-uses the same request with its data-phase
+	 * complete() callback still set, so calling it again would deliver
+	 * the same control-write payload twice (seen as a DFU 'Wrong
+	 * sequence number'). This mirrors ci_udc's ep0_data_phase guard.
+	 */
+	if (num != 0 || ep0_state != WAIT_FOR_OUT_STATUS)
+		mv_req->req.complete(&ep->ep, &mv_req->req);
 	if (num == 0) {
 		switch (ep0_state) {
 		case DATA_STATE_XMIT:
