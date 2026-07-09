@@ -158,7 +158,7 @@ static int mtk_scpsys_power_off(struct power_domain *power_domain)
 	return 0;
 }
 
-int mtk_power_domain_probe(struct udevice *dev)
+int mtk_scpsys_probe(struct udevice *dev)
 {
 	struct ofnode_phandle_args args;
 	struct mtk_scp_domain *scpd = dev_get_priv(dev);

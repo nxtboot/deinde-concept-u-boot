@@ -86,7 +86,7 @@ struct mtk_scp_domain {
 	const struct mtk_scp_soc_data *soc_data;
 };
 
-int mtk_power_domain_probe(struct udevice *dev);
+int mtk_scpsys_probe(struct udevice *dev);
 
 extern const struct power_domain_ops mtk_power_domain_ops;
 

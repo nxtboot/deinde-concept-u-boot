@@ -83,7 +83,7 @@ U_BOOT_DRIVER(mt2701_power_domain) = {
 	.name = "mt2701_power_domain",
 	.id = UCLASS_POWER_DOMAIN,
 	.ops = &mtk_power_domain_ops,
-	.probe = mtk_power_domain_probe,
+	.probe = mtk_scpsys_probe,
 	.of_match = mt2701_power_domain_ids,
 	.priv_auto = sizeof(struct mtk_scp_domain),
 };
