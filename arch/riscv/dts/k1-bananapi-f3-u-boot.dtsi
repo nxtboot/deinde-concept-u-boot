@@ -28,3 +28,101 @@
 	clock-names = "osc", "vctcxo_1m", "vctcxo_3m", "vctcxo_24m",
 		      "pll1_d4", "pll1_d78_31p5", "pmua_aclk";
 };
+
+&binman {
+	u-boot-spl-ddr {
+		type = "section";
+		filename = "u-boot-spl-ddr.bin";
+		pad-byte = <0xff>;
+
+		u-boot-spl {
+		};
+
+		ddr-fw {
+			type = "blob";
+			filename = "ddr_fw.bin";
+			align = <64>;
+		};
+
+		u-boot-any {
+			type = "section";
+			size = <0>;
+			offset = <0>;
+		};
+	};
+};
+
+&{/soc} {
+	bootph-all;
+};
+
+&vctcxo_1m {
+	bootph-pre-ram;
+};
+
+&vctcxo_24m {
+	bootph-pre-ram;
+};
+
+&vctcxo_3m {
+	bootph-pre-ram;
+};
+
+&osc_32k {
+	bootph-pre-ram;
+};
+
+&syscon_mpmu {
+	bootph-pre-ram;
+};
+
+&pll {
+	bootph-pre-ram;
+};
+
+&syscon_apmu {
+	bootph-pre-ram;
+};
+
+&syscon_apbc {
+	bootph-pre-ram;
+};
+
+&uart0 {
+	bootph-pre-ram;
+};
+
+&i2c2 {
+	bootph-pre-ram;
+
+	eeprom@50 {
+		bootph-pre-ram;
+	};
+};
+
+&i2c8 {
+	bootph-pre-ram;
+
+	pmic@41 {
+		bootph-pre-ram;
+
+		regulators {
+			bootph-pre-ram;
+
+			buck1 {
+				regulator-name = "vdd_core";
+				bootph-pre-ram;
+			};
+
+			buck3 {
+				regulator-name = "vdd_1v8";
+				bootph-pre-ram;
+			};
+
+			aldo1 {
+				regulator-name = "vdd_1v8_mmc";
+				bootph-pre-ram;
+			};
+		};
+	};
+};
