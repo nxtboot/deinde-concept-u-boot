@@ -1,3 +1,8 @@
+9TRIPOD-X3568-V4
+M:	Coia Prant <coiaprant@gmail.com>
+S:	Maintained
+F:	configs/9tripod-x3568-v4-rk3568_defconfig
+
 BANANAPI-BPI-R2-PRO
 M:	Frank Wunderlich <frank-w@public-files.de>
 S:	Maintained
