@@ -61,11 +61,6 @@
 
 #define DCM_TOP_EN		BIT(0)
 
-enum scp_domain_type {
-	SCPSYS_MT2701,
-	SCPSYS_MT7622,
-};
-
 struct scp_domain;
 
 struct scp_domain_data {
@@ -80,7 +75,6 @@ struct scp_domain_data {
 struct scp_domain {
 	void __iomem *base;
 	void __iomem *infracfg;
-	enum scp_domain_type type;
 	struct scp_domain_data *data;
 };
 
@@ -315,26 +309,6 @@ static int scpsys_power_request(struct power_domain *power_domain)
 	return 0;
 }
 
-static int mtk_power_domain_hook(struct udevice *dev)
-{
-	struct scp_domain *scpd = dev_get_priv(dev);
-
-	scpd->type = (enum scp_domain_type)dev_get_driver_data(dev);
-
-	switch (scpd->type) {
-	case SCPSYS_MT2701:
-		scpd->data = scp_domain_mt2701;
-		break;
-	case SCPSYS_MT7622:
-		scpd->data = scp_domain_mt7622;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int mtk_power_domain_probe(struct udevice *dev)
 {
 	struct ofnode_phandle_args args;
@@ -347,9 +321,7 @@ static int mtk_power_domain_probe(struct udevice *dev)
 	if (!scpd->base)
 		return -ENOENT;
 
-	err = mtk_power_domain_hook(dev);
-	if (err)
-		return err;
+	scpd->data = (struct scp_domain_data *)dev_get_driver_data(dev);
 
 	/* get corresponding syscon phandle */
 	err = dev_read_phandle_with_args(dev, "infracfg", NULL, 0, 0, &args);
@@ -377,15 +349,15 @@ static int mtk_power_domain_probe(struct udevice *dev)
 static const struct udevice_id mtk_power_domain_ids[] = {
 	{
 		.compatible = "mediatek,mt2701-scpsys",
-		.data = SCPSYS_MT2701,
+		.data = (ulong)&scp_domain_mt2701,
 	},
 	{
 		.compatible = "mediatek,mt7622-scpsys",
-		.data = SCPSYS_MT7622,
+		.data = (ulong)&scp_domain_mt7622,
 	},
 	{
 		.compatible = "mediatek,mt7623-scpsys",
-		.data = SCPSYS_MT2701,
+		.data = (ulong)&scp_domain_mt2701,
 	},
 	{ /* sentinel */ }
 };
