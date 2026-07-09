@@ -16,8 +16,8 @@
 #include <linux/err.h>
 #include <linux/iopoll.h>
 
+#include <dt-bindings/power/mt7622-power.h>
 #include <dt-bindings/power/mt7623-power.h>
-#include <dt-bindings/power/mt7629-power.h>
 
 #define SPM_EN			(0xb16 << 16 | 0x1)
 #define SPM_VDE_PWR_CON		0x0210
@@ -64,7 +64,6 @@
 enum scp_domain_type {
 	SCPSYS_MT7622,
 	SCPSYS_MT7623,
-	SCPSYS_MT7629,
 };
 
 struct scp_domain;
@@ -138,22 +137,22 @@ static struct scp_domain_data scp_domain_mt7623[] = {
 	},
 };
 
-static struct scp_domain_data scp_domain_mt7629[] = {
-	[MT7629_POWER_DOMAIN_ETHSYS] = {
+static struct scp_domain_data scp_domain_mt7622[] = {
+	[MT7622_POWER_DOMAIN_ETHSYS] = {
 		.sta_mask = PWR_STATUS_ETHSYS,
 		.ctl_offs = SPM_ETHSYS_PWR_CON,
 		.sram_pdn_bits = GENMASK(11, 8),
 		.sram_pdn_ack_bits = GENMASK(15, 12),
 		.bus_prot_mask = (BIT(3) | BIT(17)),
 	},
-	[MT7629_POWER_DOMAIN_HIF0] = {
+	[MT7622_POWER_DOMAIN_HIF0] = {
 		.sta_mask = PWR_STATUS_HIF0,
 		.ctl_offs = SPM_HIF0_PWR_CON,
 		.sram_pdn_bits = GENMASK(11, 8),
 		.sram_pdn_ack_bits = GENMASK(15, 12),
 		.bus_prot_mask = GENMASK(25, 24),
 	},
-	[MT7629_POWER_DOMAIN_HIF1] = {
+	[MT7622_POWER_DOMAIN_HIF1] = {
 		.sta_mask = PWR_STATUS_HIF1,
 		.ctl_offs = SPM_HIF1_PWR_CON,
 		.sram_pdn_bits = GENMASK(11, 8),
@@ -323,12 +322,11 @@ static int mtk_power_domain_hook(struct udevice *dev)
 	scpd->type = (enum scp_domain_type)dev_get_driver_data(dev);
 
 	switch (scpd->type) {
+	case SCPSYS_MT7622:
+		scpd->data = scp_domain_mt7622;
+		break;
 	case SCPSYS_MT7623:
 		scpd->data = scp_domain_mt7623;
-		break;
-	case SCPSYS_MT7622:
-	case SCPSYS_MT7629:
-		scpd->data = scp_domain_mt7629;
 		break;
 	default:
 		return -EINVAL;
@@ -384,10 +382,6 @@ static const struct udevice_id mtk_power_domain_ids[] = {
 	{
 		.compatible = "mediatek,mt7623-scpsys",
 		.data = SCPSYS_MT7623,
-	},
-	{
-		.compatible = "mediatek,mt7629-scpsys",
-		.data = SCPSYS_MT7629,
 	},
 	{ /* sentinel */ }
 };
