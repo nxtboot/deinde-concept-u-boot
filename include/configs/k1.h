@@ -16,4 +16,8 @@
 #define RISCV_MMODE_TIMER_FREQ	    24000000
 #define RISCV_SMODE_TIMER_FREQ	    24000000
 
+/* Load U-Boot proper (u-boot.itb) into RAM over USB DFU in SPL */
+#define CFG_EXTRA_ENV_SETTINGS \
+	"dfu_alt_info_ram=u-boot.itb ram 0x08000000 0x800000\0"
+
 #endif /* __CONFIG_H */

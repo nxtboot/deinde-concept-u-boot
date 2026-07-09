@@ -339,7 +339,12 @@ void board_init_f(ulong dummy)
 
 u32 spl_boot_device(void)
 {
-	return BOOT_DEVICE_NOR;
+	/*
+	 * The BootROM has loaded this SPL over USB and there is no support
+	 * for reading U-Boot proper from storage yet, so pull it in over
+	 * USB DFU as u-boot.itb (see dfu_alt_info_ram)
+	 */
+	return BOOT_DEVICE_DFU;
 }
 
 void spl_board_init(void)
