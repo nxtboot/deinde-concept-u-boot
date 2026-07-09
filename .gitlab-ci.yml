@@ -1083,6 +1083,11 @@ pico:
     ROLE: pico
   <<: *sjg_lab_dfn
 
+jetson-nano:
+  variables:
+    ROLE: jetson-nano
+  <<: *sjg_lab_dfn
+
 rpi5:
   variables:
     ROLE: rpi5
