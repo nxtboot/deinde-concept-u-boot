@@ -83,12 +83,29 @@ config MESON_SECURE_POWER_DOMAIN
 	  Enable support for manipulating Amlogic Meson Secure power domains.
 	  Support for Amlogic A1 series.
 
-config MTK_POWER_DOMAIN
-	bool "Enable the MediaTek power domain driver"
+config MT2701_POWER_DOMAIN
+	bool "Enable the MediaTek power domain driver for MT2701 compatible SoC"
 	depends on POWER_DOMAIN && ARCH_MEDIATEK
+	select MTK_POWER_DOMAIN
 	help
 	  Enable support for manipulating MediaTek power domains via MMIO
-	  mapped registers.
+	  mapped registers for MT2701 compatible SoC. The driver powers
+	  the SoC power domains on and off and handles the associated bus
+	  protection bits. It is also used on MT7623.
+
+config MT7622_POWER_DOMAIN
+	bool "Enable the MediaTek power domain driver for MT7622 compatible SoC"
+	depends on POWER_DOMAIN && ARCH_MEDIATEK
+	select MTK_POWER_DOMAIN
+	help
+	  Enable support for manipulating MediaTek power domains via MMIO
+	  mapped registers for MT7622 compatible SoC. The driver powers
+	  the SoC power domains on and off and handles the associated bus
+	  protection bits. It is also used on MT7629.
+
+config MTK_POWER_DOMAIN
+	bool
+	depends on POWER_DOMAIN && ARCH_MEDIATEK
 
 config QCOM_RPMH_POWER_DOMAIN
 	bool "Enable the QCOM RPMH Power domain driver"

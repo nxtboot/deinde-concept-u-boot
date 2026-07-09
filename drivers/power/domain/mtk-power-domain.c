@@ -6,153 +6,13 @@
 
 #include <clk.h>
 #include <dm.h>
-#include <malloc.h>
-#include <power-domain-uclass.h>
 #include <regmap.h>
 #include <syscon.h>
 #include <asm/io.h>
-#include <asm/processor.h>
-#include <linux/bitops.h>
 #include <linux/err.h>
 #include <linux/iopoll.h>
 
-#include <dt-bindings/power/mt2701-power.h>
-#include <dt-bindings/power/mt7622-power.h>
-
-#define SPM_EN			(0xb16 << 16 | 0x1)
-#define SPM_VDE_PWR_CON		0x0210
-#define SPM_MFG_PWR_CON		0x0214
-#define SPM_ISP_PWR_CON		0x0238
-#define SPM_DIS_PWR_CON		0x023c
-#define SPM_CONN_PWR_CON	0x0280
-#define SPM_BDP_PWR_CON		0x029c
-#define SPM_ETH_PWR_CON		0x02a0
-#define SPM_HIF_PWR_CON		0x02a4
-#define SPM_IFR_MSC_PWR_CON	0x02a8
-#define SPM_ETHSYS_PWR_CON	0x2e0
-#define SPM_HIF0_PWR_CON	0x2e4
-#define SPM_HIF1_PWR_CON	0x2e8
-#define SPM_PWR_STATUS		0x60c
-#define SPM_PWR_STATUS_2ND	0x610
-
-#define PWR_RST_B_BIT		BIT(0)
-#define PWR_ISO_BIT		BIT(1)
-#define PWR_ON_BIT		BIT(2)
-#define PWR_ON_2ND_BIT		BIT(3)
-#define PWR_CLK_DIS_BIT		BIT(4)
-
-#define PWR_STATUS_CONN		BIT(1)
-#define PWR_STATUS_DISP		BIT(3)
-#define PWR_STATUS_MFG		BIT(4)
-#define PWR_STATUS_ISP		BIT(5)
-#define PWR_STATUS_VDEC		BIT(7)
-#define PWR_STATUS_BDP		BIT(14)
-#define PWR_STATUS_ETH		BIT(15)
-#define PWR_STATUS_HIF		BIT(16)
-#define PWR_STATUS_IFR_MSC	BIT(17)
-#define PWR_STATUS_ETHSYS	BIT(24)
-#define PWR_STATUS_HIF0		BIT(25)
-#define PWR_STATUS_HIF1		BIT(26)
-
-/* Infrasys configuration */
-#define INFRA_TOPDCM_CTRL	0x10
-#define INFRA_TOPAXI_PROT_EN	0x220
-#define INFRA_TOPAXI_PROT_STA1	0x228
-
-#define DCM_TOP_EN		BIT(0)
-
-struct mtk_scp_domain;
-
-struct mtk_scp_domain_data {
-	u32 sta_mask;
-	int ctl_offs;
-	u32 sram_pdn_bits;
-	u32 sram_pdn_ack_bits;
-	u32 bus_prot_mask;
-};
-
-struct mtk_scp_domain {
-	void __iomem *base;
-	void __iomem *infracfg;
-	const struct mtk_scp_domain_data *data;
-};
-
-static const struct mtk_scp_domain_data scp_domain_mt2701[] = {
-	[MT2701_POWER_DOMAIN_CONN] = {
-		.sta_mask = PWR_STATUS_CONN,
-		.ctl_offs = SPM_CONN_PWR_CON,
-		.bus_prot_mask = BIT(8) | BIT(2),
-	},
-	[MT2701_POWER_DOMAIN_DISP] = {
-		.sta_mask = PWR_STATUS_DISP,
-		.ctl_offs = SPM_DIS_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.bus_prot_mask = BIT(2),
-	},
-	[MT2701_POWER_DOMAIN_MFG] = {
-		.sta_mask = PWR_STATUS_MFG,
-		.ctl_offs = SPM_MFG_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(12, 12),
-	},
-	[MT2701_POWER_DOMAIN_VDEC] = {
-		.sta_mask = PWR_STATUS_VDEC,
-		.ctl_offs = SPM_VDE_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(12, 12),
-	},
-	[MT2701_POWER_DOMAIN_ISP] = {
-		.sta_mask = PWR_STATUS_ISP,
-		.ctl_offs = SPM_ISP_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(13, 12),
-	},
-	[MT2701_POWER_DOMAIN_BDP] = {
-		.sta_mask = PWR_STATUS_BDP,
-		.ctl_offs = SPM_BDP_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-	},
-	[MT2701_POWER_DOMAIN_ETH] = {
-		.sta_mask = PWR_STATUS_ETH,
-		.ctl_offs = SPM_ETH_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(15, 12),
-	},
-	[MT2701_POWER_DOMAIN_HIF] = {
-		.sta_mask = PWR_STATUS_HIF,
-		.ctl_offs = SPM_HIF_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(15, 12),
-	},
-	[MT2701_POWER_DOMAIN_IFR_MSC] = {
-		.sta_mask = PWR_STATUS_IFR_MSC,
-		.ctl_offs = SPM_IFR_MSC_PWR_CON,
-	},
-};
-
-static const struct mtk_scp_domain_data scp_domain_mt7622[] = {
-	[MT7622_POWER_DOMAIN_ETHSYS] = {
-		.sta_mask = PWR_STATUS_ETHSYS,
-		.ctl_offs = SPM_ETHSYS_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(15, 12),
-		.bus_prot_mask = (BIT(3) | BIT(17)),
-	},
-	[MT7622_POWER_DOMAIN_HIF0] = {
-		.sta_mask = PWR_STATUS_HIF0,
-		.ctl_offs = SPM_HIF0_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(15, 12),
-		.bus_prot_mask = GENMASK(25, 24),
-	},
-	[MT7622_POWER_DOMAIN_HIF1] = {
-		.sta_mask = PWR_STATUS_HIF1,
-		.ctl_offs = SPM_HIF1_PWR_CON,
-		.sram_pdn_bits = GENMASK(11, 8),
-		.sram_pdn_ack_bits = GENMASK(15, 12),
-		.bus_prot_mask = GENMASK(28, 26),
-	},
-};
+#include "mtk-power-domain.h"
 
 /**
  * This function enables the bus protection bits for disabled power
@@ -298,7 +158,7 @@ static int mtk_scpsys_power_off(struct power_domain *power_domain)
 	return 0;
 }
 
-static int mtk_power_domain_probe(struct udevice *dev)
+int mtk_power_domain_probe(struct udevice *dev)
 {
 	struct ofnode_phandle_args args;
 	struct mtk_scp_domain *scpd = dev_get_priv(dev);
@@ -335,32 +195,7 @@ static int mtk_power_domain_probe(struct udevice *dev)
 	return clk_enable_bulk(&bulk);
 }
 
-static const struct udevice_id mtk_power_domain_ids[] = {
-	{
-		.compatible = "mediatek,mt2701-scpsys",
-		.data = (ulong)&scp_domain_mt2701,
-	},
-	{
-		.compatible = "mediatek,mt7622-scpsys",
-		.data = (ulong)&scp_domain_mt7622,
-	},
-	{
-		.compatible = "mediatek,mt7623-scpsys",
-		.data = (ulong)&scp_domain_mt2701,
-	},
-	{ /* sentinel */ }
-};
-
-static const struct power_domain_ops mtk_power_domain_ops = {
+const struct power_domain_ops mtk_power_domain_ops = {
 	.off = mtk_scpsys_power_off,
 	.on = mtk_scpsys_power_on,
-};
-
-U_BOOT_DRIVER(mtk_power_domain) = {
-	.name = "mtk_power_domain",
-	.id = UCLASS_POWER_DOMAIN,
-	.ops = &mtk_power_domain_ops,
-	.probe = mtk_power_domain_probe,
-	.of_match = mtk_power_domain_ids,
-	.priv_auto	= sizeof(struct mtk_scp_domain),
 };
