@@ -9,6 +9,7 @@
 #ifndef __MTK_POWER_DOMAIN_H
 #define __MTK_POWER_DOMAIN_H
 
+#include <clk.h>
 #include <power-domain-uclass.h>
 #include <linux/bitops.h>
 #include <linux/compiler.h>
@@ -59,7 +60,18 @@ struct udevice;
 
 #define DCM_TOP_EN		BIT(0)
 
+#define SPM_MAX_BUS_PROT_DATA	6
+
 struct mtk_scp_domain;
+
+struct mtk_scpsys_bus_prot_data {
+	u32 bus_prot_mask;
+	u32 bus_prot_set;
+	u32 bus_prot_clr;
+	u32 bus_prot_sta;
+	bool bus_prot_reg_update;
+	bool ignore_clr_ack;
+};
 
 struct mtk_scp_domain_data {
 	u32 sta_mask;
@@ -67,6 +79,9 @@ struct mtk_scp_domain_data {
 	u32 sram_pdn_bits;
 	u32 sram_pdn_ack_bits;
 	u32 bus_prot_mask;
+	const struct mtk_scpsys_bus_prot_data bp_infracfg[SPM_MAX_BUS_PROT_DATA];
+	int pwr_sta_offs;
+	int pwr_sta2nd_offs;
 };
 
 struct mtk_scp_soc_data {
@@ -80,13 +95,36 @@ static const struct mtk_scp_soc_data _name##_scp_soc_data = {	\
 	.num_domains = ARRAY_SIZE(_domains),			\
 }
 
+struct mtk_scp_domain {
+	const struct mtk_scp_domain_data *data;
+	void __iomem *infracfg;
+	struct clk_bulk clks;
+	struct clk_bulk subsys_clks;
+	bool has_pd;
+	struct power_domain parent_pd;
+};
+
 struct mtk_scpsys {
 	void __iomem *base;
 	void __iomem *infracfg;
 	const struct mtk_scp_soc_data *soc_data;
+	struct mtk_scp_domain *domains;
 };
 
+#define _BUS_PROT(_mask, _set, _clr, _sta, _update, _ignore) {	\
+	.bus_prot_mask = (_mask),				\
+	.bus_prot_set = (_set),					\
+	.bus_prot_clr = (_clr),					\
+	.bus_prot_sta = (_sta),					\
+	.bus_prot_reg_update = (_update),			\
+	.ignore_clr_ack = (_ignore),				\
+}
+
+#define BUS_PROT_WR(_mask, _set, _clr, _sta)			\
+	_BUS_PROT(_mask, _set, _clr, _sta, false, false)
+
 int mtk_scpsys_probe(struct udevice *dev);
+int mtk_power_controller_probe(struct udevice *dev);
 
 extern const struct power_domain_ops mtk_power_domain_ops;
 

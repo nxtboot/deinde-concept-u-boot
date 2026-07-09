@@ -106,6 +106,8 @@ config MT7622_POWER_DOMAIN
 config MTK_POWER_DOMAIN
 	bool
 	depends on POWER_DOMAIN && ARCH_MEDIATEK
+	select REGMAP
+	select SYSCON
 
 config QCOM_RPMH_POWER_DOMAIN
 	bool "Enable the QCOM RPMH Power domain driver"
