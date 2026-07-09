@@ -64,7 +64,6 @@
 struct mtk_scp_domain;
 
 struct mtk_scp_domain_data {
-	struct mtk_scp_domain *scpd;
 	u32 sta_mask;
 	int ctl_offs;
 	u32 sram_pdn_bits;
@@ -75,10 +74,10 @@ struct mtk_scp_domain_data {
 struct mtk_scp_domain {
 	void __iomem *base;
 	void __iomem *infracfg;
-	struct mtk_scp_domain_data *data;
+	const struct mtk_scp_domain_data *data;
 };
 
-static struct mtk_scp_domain_data scp_domain_mt2701[] = {
+static const struct mtk_scp_domain_data scp_domain_mt2701[] = {
 	[MT2701_POWER_DOMAIN_CONN] = {
 		.sta_mask = PWR_STATUS_CONN,
 		.ctl_offs = SPM_CONN_PWR_CON,
@@ -131,7 +130,7 @@ static struct mtk_scp_domain_data scp_domain_mt2701[] = {
 	},
 };
 
-static struct mtk_scp_domain_data scp_domain_mt7622[] = {
+static const struct mtk_scp_domain_data scp_domain_mt7622[] = {
 	[MT7622_POWER_DOMAIN_ETHSYS] = {
 		.sta_mask = PWR_STATUS_ETHSYS,
 		.ctl_offs = SPM_ETHSYS_PWR_CON,
@@ -182,9 +181,10 @@ static int mtk_infracfg_clear_bus_protection(void __iomem *infracfg,
 				  !(val & mask), 100);
 }
 
-static int mtk_scpsys_domain_is_on(struct mtk_scp_domain_data *data)
+static int mtk_scpsys_domain_is_on(struct power_domain *power_domain)
 {
-	struct mtk_scp_domain *scpd = data->scpd;
+	struct mtk_scp_domain *scpd = dev_get_priv(power_domain->dev);
+	const struct mtk_scp_domain_data *data = &scpd->data[power_domain->id];
 	u32 sta = readl(scpd->base + SPM_PWR_STATUS) &
 			data->sta_mask;
 	u32 sta2 = readl(scpd->base + SPM_PWR_STATUS_2ND) &
@@ -205,7 +205,7 @@ static int mtk_scpsys_domain_is_on(struct mtk_scp_domain_data *data)
 static int mtk_scpsys_power_on(struct power_domain *power_domain)
 {
 	struct mtk_scp_domain *scpd = dev_get_priv(power_domain->dev);
-	struct mtk_scp_domain_data *data = &scpd->data[power_domain->id];
+	const struct mtk_scp_domain_data *data = &scpd->data[power_domain->id];
 	void __iomem *ctl_addr = scpd->base + data->ctl_offs;
 	u32 pdn_ack = data->sram_pdn_ack_bits;
 	u32 val;
@@ -220,7 +220,7 @@ static int mtk_scpsys_power_on(struct power_domain *power_domain)
 	val |= PWR_ON_2ND_BIT;
 	writel(val, ctl_addr);
 
-	ret = readx_poll_timeout(mtk_scpsys_domain_is_on, data, tmp, tmp > 0,
+	ret = readx_poll_timeout(mtk_scpsys_domain_is_on, power_domain, tmp, tmp > 0,
 				 100);
 	if (ret < 0)
 		return ret;
@@ -254,7 +254,7 @@ static int mtk_scpsys_power_on(struct power_domain *power_domain)
 static int mtk_scpsys_power_off(struct power_domain *power_domain)
 {
 	struct mtk_scp_domain *scpd = dev_get_priv(power_domain->dev);
-	struct mtk_scp_domain_data *data = &scpd->data[power_domain->id];
+	const struct mtk_scp_domain_data *data = &scpd->data[power_domain->id];
 	void __iomem *ctl_addr = scpd->base + data->ctl_offs;
 	u32 pdn_ack = data->sram_pdn_ack_bits;
 	u32 val;
@@ -291,20 +291,9 @@ static int mtk_scpsys_power_off(struct power_domain *power_domain)
 	val &= ~PWR_ON_2ND_BIT;
 	writel(val, ctl_addr);
 
-	ret = readx_poll_timeout(mtk_scpsys_domain_is_on, data, tmp, !tmp, 100);
+	ret = readx_poll_timeout(mtk_scpsys_domain_is_on, power_domain, tmp, !tmp, 100);
 	if (ret < 0)
 		return ret;
-
-	return 0;
-}
-
-static int mtk_scpsys_power_request(struct power_domain *power_domain)
-{
-	struct mtk_scp_domain *scpd = dev_get_priv(power_domain->dev);
-	struct mtk_scp_domain_data *data;
-
-	data = &scpd->data[power_domain->id];
-	data->scpd = scpd;
 
 	return 0;
 }
@@ -321,7 +310,7 @@ static int mtk_power_domain_probe(struct udevice *dev)
 	if (!scpd->base)
 		return -ENOENT;
 
-	scpd->data = (struct mtk_scp_domain_data *)dev_get_driver_data(dev);
+	scpd->data = (const struct mtk_scp_domain_data *)dev_get_driver_data(dev);
 
 	/* get corresponding syscon phandle */
 	err = dev_read_phandle_with_args(dev, "infracfg", NULL, 0, 0, &args);
@@ -365,7 +354,6 @@ static const struct udevice_id mtk_power_domain_ids[] = {
 static const struct power_domain_ops mtk_power_domain_ops = {
 	.off = mtk_scpsys_power_off,
 	.on = mtk_scpsys_power_on,
-	.request = mtk_scpsys_power_request,
 };
 
 U_BOOT_DRIVER(mtk_power_domain) = {
