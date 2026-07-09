@@ -924,6 +924,17 @@ int usb_gadget_handle_interrupts(int index)
 	return value;
 }
 
+int dm_usb_gadget_handle_interrupts(struct udevice *dev)
+{
+	/*
+	 * The modern g_dnl/DFU service loop pumps the controller through
+	 * this DM entry point. As a legacy (non-DM) gadget the weak stub in
+	 * udc-uclass would otherwise leave ep0 unserviced, so bridge it to
+	 * the driver's own handler
+	 */
+	return usb_gadget_handle_interrupts(0);
+}
+
 void udc_disconnect(void)
 {
 	struct mv_udc *udc = (struct mv_udc *)controller.ctrl->hccr;
