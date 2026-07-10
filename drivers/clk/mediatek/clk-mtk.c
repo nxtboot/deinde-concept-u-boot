@@ -40,6 +40,33 @@ static bool mtk_clk_tree_type_is_provider(enum mtk_clk_tree_type type)
 	return type != MTK_CLK_TREE_NONE && type < MTK_CLK_TREE_NUM_TYPES;
 }
 
+static enum mtk_clk_tree_type mtk_clk_tree_type_from_parent_flags(u16 flags)
+{
+	switch (flags & CLK_PARENT_MASK) {
+	case CLK_PARENT_APMIXED:
+		return MTK_CLK_TREE_APMIXED;
+	case CLK_PARENT_TOPCKGEN:
+		return MTK_CLK_TREE_TOPCKGEN;
+	case CLK_PARENT_INFRASYS:
+		return MTK_CLK_TREE_INFRASYS;
+	default:
+		return MTK_CLK_TREE_NONE;
+	}
+}
+
+static struct udevice *mtk_clk_tree_get_provider(enum mtk_clk_tree_type type)
+{
+	if (!mtk_clk_tree_type_is_provider(type))
+		return NULL;
+
+	return mtk_clk_providers[type] ?: ERR_PTR(-ENOENT);
+}
+
+static struct udevice *mtk_clk_parent_get_provider(u16 flags)
+{
+	return mtk_clk_tree_get_provider(mtk_clk_tree_type_from_parent_flags(flags));
+}
+
 static int mtk_clk_tree_register_provider(struct udevice *dev,
 					  const struct mtk_clk_tree *tree)
 {
@@ -209,50 +236,16 @@ static ulong mtk_clk_find_parent_rate(struct clk *clk, int id,
 static ulong mtk_find_parent_rate(struct mtk_clk_priv *priv, struct clk *clk,
 				  const int parent, u16 flags)
 {
-	struct udevice *parent_dev;
+	struct udevice *pdev;
 
-	switch (flags & CLK_PARENT_MASK) {
-	case CLK_PARENT_APMIXED:
-		/* APMIXEDSYS can be parent or grandparent. */
-		if (dev_get_driver_ops(clk->dev) == &mtk_clk_apmixedsys_ops ||
-		    dev_get_driver_ops(clk->dev) == &mtk_clk_fixed_pll_ops) {
-			parent_dev = clk->dev;
-		} else if (dev_get_driver_ops(priv->parent) == &mtk_clk_apmixedsys_ops ||
-			   dev_get_driver_ops(priv->parent) == &mtk_clk_fixed_pll_ops) {
-			parent_dev = priv->parent;
-		} else {
-			struct udevice *grandparent_dev = dev_get_parent(priv->parent);
-
-			if (dev_get_driver_ops(grandparent_dev) == &mtk_clk_apmixedsys_ops ||
-			    dev_get_driver_ops(grandparent_dev) == &mtk_clk_fixed_pll_ops)
-				parent_dev = grandparent_dev;
-			else
-				return -EINVAL;
-		}
-		break;
-	case CLK_PARENT_TOPCKGEN:
-		if (dev_get_driver_ops(clk->dev) == &mtk_clk_topckgen_ops)
-			parent_dev = clk->dev;
-		else if (dev_get_driver_ops(priv->parent) == &mtk_clk_topckgen_ops)
-			parent_dev = priv->parent;
-		else
-			return -EINVAL;
-
-		break;
-	case CLK_PARENT_INFRASYS:
-		if (dev_get_driver_ops(clk->dev) != &mtk_clk_infrasys_ops)
-			return -EINVAL;
-
-		parent_dev = clk->dev;
-		break;
-	case CLK_PARENT_EXT:
+	if ((flags & CLK_PARENT_MASK) == CLK_PARENT_EXT)
 		return mtk_ext_clock_get_rate(priv->tree, parent);
-	default:
-		parent_dev = NULL;
-		break;
-	}
 
-	return mtk_clk_find_parent_rate(clk, parent, parent_dev);
+	pdev = mtk_clk_parent_get_provider(flags);
+	if (IS_ERR(pdev))
+		return PTR_ERR(pdev);
+
+	return mtk_clk_find_parent_rate(clk, parent, pdev);
 }
 
 static ulong mtk_clk_mux_get_rate(struct clk *clk, u32 off)
@@ -1080,29 +1073,22 @@ static int mtk_clk_gate_disable(struct clk *clk)
 static ulong mtk_clk_gate_get_rate(struct clk *clk)
 {
 	struct mtk_cg_priv *priv = dev_get_priv(clk->dev);
-	struct udevice *parent = priv->parent;
 	const struct mtk_gate *gate;
+	struct udevice *pdev;
 
 	if (clk->id < priv->gates_offs)
 		return -EINVAL;
 
 	gate = &priv->gates[clk->id - priv->gates_offs];
-	/*
-	 * With requesting a TOPCKGEN parent, make sure the dev parent
-	 * is actually topckgen. This might not be the case for an
-	 * infracfg-ao implementation where:
-	 * parent = infracfg
-	 * parent->parent = topckgen
-	 */
-	if (gate->flags & CLK_PARENT_TOPCKGEN &&
-	    parent->driver != DM_DRIVER_GET(mtk_clk_topckgen)) {
-		priv = dev_get_priv(parent);
-		parent = priv->parent;
-	} else if (gate->flags & CLK_PARENT_EXT) {
-		return mtk_ext_clock_get_rate(priv->tree, gate->parent);
-	}
 
-	return mtk_clk_find_parent_rate(clk, gate->parent, parent);
+	if (gate->flags & CLK_PARENT_EXT)
+		return mtk_ext_clock_get_rate(priv->tree, gate->parent);
+
+	pdev = mtk_clk_parent_get_provider(gate->flags);
+	if (IS_ERR(pdev))
+		return -ENOENT;
+
+	return mtk_clk_find_parent_rate(clk, gate->parent, pdev);
 }
 
 #if CONFIG_IS_ENABLED(CMD_CLK)
