@@ -14,6 +14,8 @@
 #define CFG_SYS_NS16550_IER	    0x40 /* UART Unit Enable */
 
 #define RISCV_MMODE_TIMER_FREQ	    24000000
+#define RISCV_MMODE_TIMERBASE	    0xe4000000
+#define RISCV_MMODE_TIMEROFF	    0xbff8
 #define RISCV_SMODE_TIMER_FREQ	    24000000
 
 /* Load U-Boot proper (u-boot.itb) into RAM over USB DFU in SPL */
