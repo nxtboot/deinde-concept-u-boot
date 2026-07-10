@@ -79,6 +79,7 @@ static const struct mtk_clk_tree mt8365_apmixed_tree = {
 	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 	.plls = apmixed_plls,
 	.num_plls = ARRAY_SIZE(apmixed_plls),
+	.type = MTK_CLK_TREE_APMIXED,
 };
 
 /* topckgen */
@@ -595,6 +596,7 @@ static const struct mtk_clk_tree mt8365_topckgen_tree = {
 	.num_fdivs = ARRAY_SIZE(top_divs),
 	.num_muxes = ARRAY_SIZE(top_muxes),
 	.num_gates = ARRAY_SIZE(top_clk_gates),
+	.type = MTK_CLK_TREE_TOPCKGEN,
 };
 
 /* infracfg */
@@ -792,6 +794,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.name = "mt8365-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8365_apmixed_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt8365_apmixedsys_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_apmixedsys_ops,
@@ -802,6 +805,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.name = "mt8365-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8365_topckgen_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt8365_topckgen_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_topckgen_ops,
