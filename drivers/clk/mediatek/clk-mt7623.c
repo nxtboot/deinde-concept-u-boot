@@ -1009,6 +1009,7 @@ static const struct mtk_clk_tree mt7623_apmixedsys_clk_tree = {
 	.id_offs_map_size = ARRAY_SIZE(pll_id_offs_map),
 	.plls = apmixed_plls,
 	.num_plls = ARRAY_SIZE(apmixed_plls),
+	.type = MTK_CLK_TREE_APMIXED,
 };
 
 static const struct mtk_clk_tree mt7623_topckgen_clk_tree = {
@@ -1024,6 +1025,7 @@ static const struct mtk_clk_tree mt7623_topckgen_clk_tree = {
 	.num_fclks = ARRAY_SIZE(top_fixed_clks),
 	.num_fdivs = ARRAY_SIZE(top_fixed_divs),
 	.num_muxes = ARRAY_SIZE(top_muxes),
+	.type = MTK_CLK_TREE_TOPCKGEN,
 };
 
 static int mt7623_mcucfg_probe(struct udevice *dev)
@@ -1163,6 +1165,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.name = "mt7623-clock-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_apmixed_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7623_apmixedsys_probe,
 	.priv_auto	= sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_apmixedsys_ops,
@@ -1173,6 +1176,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.name = "mt7623-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7623_topckgen_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7623_topckgen_probe,
 	.priv_auto	= sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_topckgen_ops,
