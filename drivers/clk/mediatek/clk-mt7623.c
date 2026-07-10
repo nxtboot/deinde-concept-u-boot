@@ -1090,7 +1090,7 @@ static const struct mtk_clk_tree mt7623_clk_peri_tree = {
 
 static int mt7623_pericfg_probe(struct udevice *dev)
 {
-	return mtk_common_clk_infrasys_init(dev, &mt7623_clk_peri_tree);
+	return mtk_common_clk_init(dev, &mt7623_clk_peri_tree);
 }
 
 static int mt7623_hifsys_probe(struct udevice *dev)

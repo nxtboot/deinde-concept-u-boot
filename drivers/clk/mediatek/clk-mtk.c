@@ -1176,12 +1176,6 @@ int mtk_common_clk_init(struct udevice *dev, const struct mtk_clk_tree *tree)
 	return mtk_clk_tree_register_provider(dev, tree);
 }
 
-int mtk_common_clk_infrasys_init(struct udevice *dev,
-				 const struct mtk_clk_tree *tree)
-{
-	return mtk_common_clk_init(dev, tree);
-}
-
 int mtk_common_clk_gate_init(struct udevice *dev,
 			     const struct mtk_clk_tree *tree,
 			     const struct mtk_gate *gates, int num_gates,

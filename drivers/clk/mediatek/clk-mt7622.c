@@ -699,12 +699,12 @@ static int mt7622_topckgen_probe(struct udevice *dev)
 
 static int mt7622_infracfg_probe(struct udevice *dev)
 {
-	return mtk_common_clk_infrasys_init(dev, &mt7622_infra_clk_tree);
+	return mtk_common_clk_init(dev, &mt7622_infra_clk_tree);
 }
 
 static int mt7622_pericfg_probe(struct udevice *dev)
 {
-	return mtk_common_clk_infrasys_init(dev, &mt7622_peri_clk_tree);
+	return mtk_common_clk_init(dev, &mt7622_peri_clk_tree);
 }
 
 static int mt7622_pciesys_probe(struct udevice *dev)

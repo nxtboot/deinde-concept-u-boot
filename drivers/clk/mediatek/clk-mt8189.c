@@ -2031,7 +2031,7 @@ static int mt8189_topckgen_probe(struct udevice *dev)
 
 static int mt8189_infrasys_probe(struct udevice *dev)
 {
-	return mtk_common_clk_infrasys_init(dev, &mt8189_vlpckgen_clk_tree);
+	return mtk_common_clk_init(dev, &mt8189_vlpckgen_clk_tree);
 }
 
 static int mt8189_clk_gate_probe(struct udevice *dev)

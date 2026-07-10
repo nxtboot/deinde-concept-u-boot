@@ -803,7 +803,7 @@ static const struct udevice_id mt7987_infracfg_compat[] = {
 
 static int mt7987_infracfg_probe(struct udevice *dev)
 {
-	return mtk_common_clk_infrasys_init(dev, &mt7987_infracfg_clk_tree);
+	return mtk_common_clk_init(dev, &mt7987_infracfg_clk_tree);
 }
 
 U_BOOT_DRIVER(mtk_clk_infracfg) = {
