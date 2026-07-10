@@ -280,13 +280,11 @@ struct mtk_clk_tree {
 };
 
 struct mtk_clk_priv {
-	struct udevice *parent;
 	void __iomem *base;
 	const struct mtk_clk_tree *tree;
 };
 
 struct mtk_cg_priv {
-	struct udevice *parent;
 	void __iomem *base;
 	const struct mtk_clk_tree *tree;
 	const struct mtk_gate *gates;
