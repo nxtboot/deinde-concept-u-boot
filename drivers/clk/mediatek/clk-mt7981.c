@@ -622,6 +622,7 @@ static const struct mtk_clk_tree mt7981_fixed_pll_clk_tree = {
 	.fdivs_offs = CLK_APMIXED_NR_CLK,
 	.fclks = fixed_pll_clks,
 	.num_fclks = ARRAY_SIZE(fixed_pll_clks),
+	.type = MTK_CLK_TREE_APMIXED,
 };
 
 static const struct mtk_clk_tree mt7981_topckgen_clk_tree = {
@@ -636,6 +637,7 @@ static const struct mtk_clk_tree mt7981_topckgen_clk_tree = {
 	.num_fdivs = ARRAY_SIZE(top_fixed_divs),
 	.num_muxes = ARRAY_SIZE(top_muxes),
 	.flags = CLK_PARENT_TOPCKGEN,
+	.type = MTK_CLK_TREE_TOPCKGEN,
 };
 
 static const struct mtk_clk_tree mt7981_infracfg_clk_tree = {
@@ -651,6 +653,12 @@ static const struct mtk_clk_tree mt7981_infracfg_clk_tree = {
 	.num_muxes = ARRAY_SIZE(infra_muxes),
 	.num_gates = ARRAY_SIZE(infracfg_gates),
 	.flags = CLK_PARENT_INFRASYS,
+	.type = MTK_CLK_TREE_INFRASYS,
+};
+
+static const struct mtk_clk_tree mt7981_clk_tree = {
+	.ext_clk_rates = ext_clock_rates,
+	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 };
 
 static const struct udevice_id mt7981_fixed_pll_compat[] = {
@@ -683,6 +691,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.name = "mt7981-clock-fixed-pll",
 	.id = UCLASS_CLK,
 	.of_match = mt7981_fixed_pll_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7981_fixed_pll_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_fixed_pll_ops,
@@ -693,6 +702,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.name = "mt7981-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7981_topckgen_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7981_topckgen_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_topckgen_ops,
@@ -713,6 +723,7 @@ U_BOOT_DRIVER(mtk_clk_infracfg) = {
 	.name = "mt7981-clock-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7981_infracfg_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7981_infracfg_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_infrasys_ops,
@@ -742,7 +753,7 @@ static const struct mtk_gate sgmii0_cgs[] = {
 
 static int mt7981_sgmii0sys_probe(struct udevice *dev)
 {
-	return mtk_common_clk_gate_init(dev, &mt7981_topckgen_clk_tree,
+	return mtk_common_clk_gate_init(dev, &mt7981_clk_tree,
 					sgmii0_cgs, ARRAY_SIZE(sgmii0_cgs), 0);
 }
 
@@ -769,7 +780,7 @@ static const struct mtk_gate sgmii1_cgs[] = {
 
 static int mt7981_sgmii1sys_probe(struct udevice *dev)
 {
-	return mtk_common_clk_gate_init(dev, &mt7981_topckgen_clk_tree,
+	return mtk_common_clk_gate_init(dev, &mt7981_clk_tree,
 					sgmii1_cgs, ARRAY_SIZE(sgmii1_cgs), 0);
 }
 
@@ -810,7 +821,7 @@ static const struct mtk_gate eth_cgs[] = {
 
 static int mt7981_ethsys_probe(struct udevice *dev)
 {
-	return mtk_common_clk_gate_init(dev, &mt7981_topckgen_clk_tree,
+	return mtk_common_clk_gate_init(dev, &mt7981_clk_tree,
 					eth_cgs, ARRAY_SIZE(eth_cgs), 0);
 }
 
