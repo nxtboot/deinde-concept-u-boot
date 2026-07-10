@@ -1898,6 +1898,7 @@ static const struct mtk_gate_regs vlpcfg_ao_regs = {
  * arbitrary parent trees.
  */
 #define CLK_PARENT_VLP_CK CLK_PARENT_INFRASYS
+#define MTK_CLK_TREE_VLP_CK MTK_CLK_TREE_INFRASYS
 
 #define GATE_VLPCFG_AO(id, parent, shift, flags) \
 	GATE_FLAGS(id, parent, &vlpcfg_ao_regs, shift, flags | CLK_GATE_NO_SETCLR_INV)
@@ -1939,6 +1940,7 @@ static const struct mtk_clk_tree mt8189_apmixedsys_clk_tree = {
 	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 	.plls = apmixed_plls,
 	.num_plls = ARRAY_SIZE(apmixed_plls),
+	.type = MTK_CLK_TREE_APMIXED,
 };
 
 static const struct mtk_clk_tree mt8189_topckgen_clk_tree = {
@@ -1953,6 +1955,7 @@ static const struct mtk_clk_tree mt8189_topckgen_clk_tree = {
 	.num_fdivs = ARRAY_SIZE(top_fixed_divs),
 	.num_muxes = ARRAY_SIZE(top_muxes),
 	.num_gates = ARRAY_SIZE(top_gates),
+	.type = MTK_CLK_TREE_TOPCKGEN,
 };
 
 static const struct mtk_clk_tree mt8189_vlpckgen_clk_tree = {
@@ -1964,6 +1967,12 @@ static const struct mtk_clk_tree mt8189_vlpckgen_clk_tree = {
 	.gates = vlp_ck_gates,
 	.num_muxes = ARRAY_SIZE(vlp_ck_muxes),
 	.num_gates = ARRAY_SIZE(vlp_ck_gates),
+	.type = MTK_CLK_TREE_VLP_CK,
+};
+
+static const struct mtk_clk_tree mt8189_clk_tree = {
+	.ext_clk_rates = ext_clock_rates,
+	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 };
 
 static const struct udevice_id mt8189_apmixed[] = {
@@ -2031,7 +2040,7 @@ static int mt8189_clk_gate_probe(struct udevice *dev)
 
 	data = (void *)dev_get_driver_data(dev);
 
-	return mtk_common_clk_gate_init(dev, &mt8189_topckgen_clk_tree,
+	return mtk_common_clk_gate_init(dev, &mt8189_clk_tree,
 					data->gates, data->num_gates,
 					data->gates[0].id);
 }
@@ -2040,6 +2049,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.name = "mt8189-apmixedsys",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_apmixed,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt8189_apmixedsys_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_apmixedsys_ops,
@@ -2050,6 +2060,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.name = "mt8189-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_topckgen_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt8189_topckgen_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_topckgen_ops,
@@ -2060,6 +2071,7 @@ U_BOOT_DRIVER(mtk_clk_vlpckgen) = {
 	.name = "mt8189-vlpckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt8189_vlpckgen,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt8189_infrasys_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_infrasys_ops,
