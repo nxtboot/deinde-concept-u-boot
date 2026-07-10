@@ -51,6 +51,17 @@ int dram_init(void)
 {
 	gd->ram_base = CFG_SYS_SDRAM_BASE;
 	gd->ram_size = ddr_get_density() * SZ_1M;
+
+	/*
+	 * FIXME (sjg@chromium.org): the SPL DDR init does not yet map or
+	 * train the second 2GB bank at 0x100000000, so it reads back as
+	 * non-functional memory. Reporting it would let the EFI allocator
+	 * hand out that phantom region and corrupt itself. Limit U-Boot to
+	 * the low bank until the high bank is brought up.
+	 */
+	if (gd->ram_size > SZ_2G)
+		gd->ram_size = SZ_2G;
+
 	return 0;
 }
 

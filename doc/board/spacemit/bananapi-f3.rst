@@ -61,6 +61,20 @@ u-boot-env-default.bin, fw_dynamic.itb from vendor SDK
 .. _bsp: https://archive.spacemit.com/image/k1/version/bianbu/v2.0/
 .. _uboot: https://bianbu-linux.spacemit.com/en/device/boot#21-firmware-layout
 
+Memory
+~~~~~~
+The BPI-F3 populates 4 GiB of LPDDR4X as two 2 GiB banks: the first at
+``0`` and the second at ``1_0000_0000`` (the ``8000_0000``-``ffff_ffff``
+range is reserved for MMIO, so the memory is not contiguous).
+
+The SPL DDR init currently only brings up the first bank, so the second bank
+at ``1_0000_0000`` is not mapped and reads back as non-functional memory.
+To avoid advertising memory that does not work, ``dram_init()`` in
+``arch/riscv/cpu/k1/dram.c`` clamps the reported size to the low 2 GiB. As a
+result U-Boot sees only 2 GiB even on a 4 GiB board. Mapping and training the
+high bank in the SPL is still to be done; until then the upper 2 GiB is
+unavailable.
+
 Booting
 ~~~~~~~
 Sample boot log from Banana Pi BPI-F3 board
