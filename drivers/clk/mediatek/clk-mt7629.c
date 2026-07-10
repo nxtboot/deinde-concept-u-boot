@@ -603,22 +603,6 @@ static const struct mtk_clk_tree mt7629_clk_tree = {
 	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 };
 
-static const struct mtk_clk_tree mt7629_peri_clk_tree = {
-	.pll_parent = EXT_PARENT(CLK_PAD_CLK20M),
-	.ext_clk_rates = ext_clock_rates,
-	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
-	.fdivs_offs = CLK_TOP_TO_USB3_SYS,
-	.muxes_offs = CLK_TOP_AXI_SEL,
-	.plls = apmixed_plls,
-	.fclks = top_fixed_clks,
-	.fdivs = top_fixed_divs,
-	.muxes = top_muxes,
-	.num_plls = ARRAY_SIZE(apmixed_plls),
-	.num_fclks = ARRAY_SIZE(top_fixed_clks),
-	.num_fdivs = ARRAY_SIZE(top_fixed_divs),
-	.num_muxes = ARRAY_SIZE(top_muxes),
-};
-
 static int mt7629_mcucfg_probe(struct udevice *dev)
 {
 	void __iomem *base;
@@ -665,7 +649,7 @@ static int mt7629_infracfg_probe(struct udevice *dev)
 
 static int mt7629_pericfg_probe(struct udevice *dev)
 {
-	return mtk_common_clk_gate_init(dev, &mt7629_peri_clk_tree, peri_cgs,
+	return mtk_common_clk_gate_init(dev, &mt7629_clk_tree, peri_cgs,
 					ARRAY_SIZE(peri_cgs), CLK_PERI_PWM1_PD);
 }
 
