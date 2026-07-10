@@ -33,6 +33,27 @@
 #define SCP_AXICK_DCM_DIS_EN		BIT(0)
 #define SCP_AXICK_26M_SEL_EN		BIT(4)
 
+static struct udevice *mtk_clk_providers[MTK_CLK_TREE_NUM_TYPES];
+
+static bool mtk_clk_tree_type_is_provider(enum mtk_clk_tree_type type)
+{
+	return type != MTK_CLK_TREE_NONE && type < MTK_CLK_TREE_NUM_TYPES;
+}
+
+static int mtk_clk_tree_register_provider(struct udevice *dev,
+					  const struct mtk_clk_tree *tree)
+{
+	if (!mtk_clk_tree_type_is_provider(tree->type))
+		return 0;
+
+	if (mtk_clk_providers[tree->type])
+		return -EEXIST;
+
+	mtk_clk_providers[tree->type] = dev;
+
+	return 0;
+}
+
 /* shared functions */
 
 static const int mtk_common_clk_of_xlate(struct clk *clk,
@@ -1158,6 +1179,17 @@ const struct clk_ops mtk_clk_gate_ops = {
 #endif
 };
 
+int mtk_common_clk_parent_bind(struct udevice *dev)
+{
+	/*
+	 * Clock trees that provide parent clocks need to be probed right away
+	 * so that any clock depending on them will work correctly.
+	 */
+	dev_or_flags(dev, DM_FLAG_PROBE_AFTER_BIND);
+
+	return 0;
+}
+
 static int mtk_common_clk_init_drv(struct udevice *dev,
 				   const struct mtk_clk_tree *tree,
 				   const struct driver *drv)
@@ -1180,7 +1212,7 @@ static int mtk_common_clk_init_drv(struct udevice *dev,
 	priv->parent = parent;
 	priv->tree = tree;
 
-	return 0;
+	return mtk_clk_tree_register_provider(dev, tree);
 }
 
 int mtk_common_clk_init(struct udevice *dev,
