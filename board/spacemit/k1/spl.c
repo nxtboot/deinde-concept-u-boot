@@ -3,22 +3,21 @@
  * Copyright (c) 2025-2026, RISCstar Ltd.
  */
 
-#include <asm/io.h>
 #include <binman.h>
 #include <binman_sym.h>
-#include <clk.h>
 #include <clk-uclass.h>
+#include <clk.h>
 #include <cpu_func.h>
-#include <configs/k1.h>
-#include <cpu_func.h>
-#include <dm/device.h>
-#include <dm/uclass.h>
 #include <i2c.h>
-#include <linux/delay.h>
 #include <log.h>
-#include <power/regulator.h>
 #include <spl.h>
 #include <tlv_eeprom.h>
+#include <asm/io.h>
+#include <configs/k1.h>
+#include <dm/device.h>
+#include <dm/uclass.h>
+#include <linux/delay.h>
+#include <power/regulator.h>
 #include "tlv_codes.h"
 
 #define MUX_MODE4		4
