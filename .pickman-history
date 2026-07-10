@@ -85816,3 +85816,54 @@ Branch `cherry-5c7ff1b5407` is ready for pushing.
 
 ---
 
+### Review: 2026-07-10
+
+Branch: cherry-c480bbd92b3
+
+Comments addressed:
+
+
+### Conversation log
+Now resolving per the plan. First let me verify that `-h`/`-u` handling in do_reset() survives the revert:
+
+Confirmed — `do_reset()` handles `-h`, `-u`, `-w` via its switch after the revert. Applying the planned resolution:
+
+The clang diagnostics are just clangd lacking U-Boot include paths — buildman will be the real check. Continuing the cherry-pick:
+
+Now amend with a fix-up note, then check the delta and build:
+
+Build passes. Now verifying the maybe-already-applied mailmap commit:
+
+Now the merge commit, then a build check:
+
+The merge commit didn't get committed. Checking state:
+
+All 10 commits applied. Running the final build and verification:
+
+## Report
+
+**Situation found:** The task asked for a rebase, but the MR branch (`cherry-c480bbd92b3`, local and remote) pointed exactly at `ci/master` with zero commits — the previous session's cherry-picks were never applied because Edit permission was denied. So there was nothing to rebase; instead I completed the original cherry-pick work using the previous session's analysis.
+
+**What was done:**
+
+1. **Cherry-picked all 10 commits** from us/master onto the branch (based at ci/master 5156cb9910d):
+   - `c480bbd92b3` (sysreset args revert) — hit the known conflicts in `cmd/boot.c` and `doc/usage/cmd/reset.rst`. Resolved as planned: kept the `-h`/`-u` help and doc text unconditionally (these are handled by the switch in `do_reset()` and used by local commits 9fdab58b86d/96adc477bea — verified in the merged `sysreset-uclass.c`), dropped the `CONFIG_SYSRESET_CMD_RESET_ARGS` gating, `-c` and `-edl` text. A fix-up note was added to the commit message.
+   - The 8 regular commits applied cleanly with identical deltas to the originals.
+   - The merge commit `a25c9bd1921` was preserved as an empty commit with `-x -m 1 --allow-empty`.
+2. **Corrected one finding from the previous session:** `6da1278ee9c` (.mailmap Abbarapu) is **not** already applied — `e5b1c662b64` is the cherry-pick of the *original* address change (f21920f7e795), while 6da1278ee9c is Michal Simek's follow-up fix for it (different content). It was cherry-picked normally and applied cleanly.
+3. **Delta checks:** all commits match their originals; only the sysreset revert differs slightly in `doc/usage/cmd/reset.rst` (expected, due to the conflict fix-up).
+4. **Builds:** `buildman -L --board sandbox -w -o /tmp/pickman` passed after the conflicted commit, after the Kconfig change, and at the end — no warnings or errors.
+5. **Branches:** created local `cherry-c480bbd92b3-v2`; force-pushed to `ci/cherry-c480bbd92b3` (5156cb9910d → e9534fa324a), which will trigger the MR pipeline for !1150.
+
+**Suggested MR reply:**
+
+> The branch previously contained no commits — the earlier agent run was blocked by write-permission denials before any cherry-pick completed. All 10 commits are now applied on top of ci/master.
+>
+> The sysreset args revert (c480bbd92b3) conflicted with local commits 9fdab58b86d (hot reset -h) and 96adc477bea (firmware UI -u), whose help/doc text was gated under CONFIG_SYSRESET_CMD_RESET_ARGS. Resolution: keep the -h and -u help and documentation unconditionally (both options are handled directly by do_reset(), independent of the removed args callback) and drop the args gating, -c and -edl text. A fix-up note is recorded in the commit message.
+>
+> Note: 6da1278ee9c is not a duplicate of e5b1c662b64 as previously suspected — it is a follow-up fix for that commit, so it has been cherry-picked as well.
+>
+> Sandbox builds pass cleanly (buildman, no warnings). The merge commit is preserved as an empty commit for tracking.
+
+---
+
