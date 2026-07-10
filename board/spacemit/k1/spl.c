@@ -319,8 +319,8 @@ void board_init_f(ulong dummy)
 
 	riscv_cpu_setup();
 
-	reset_early_init();
 	clk_early_init();
+	reset_early_init();
 	serial_early_init();
 
 	preloader_console_init();
