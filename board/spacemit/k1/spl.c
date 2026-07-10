@@ -288,7 +288,12 @@ void ddr_early_init(void)
 	src = (void __iomem *)pos;
 	dst = (void __iomem *)(DDR_FIRMWARE_BASE);
 	log_info("DDR firmware: [0x%lx]:0x%x, size:0x%lx\n", pos, readl(src), size);
-	memcpy((u8 *)dst, (u8 *)src, size);
+	/*
+	 * The firmware blob is appended to the SPL image, so its source can
+	 * overlap the fixed load address depending on the image size. Use
+	 * memmove() to copy correctly even when the regions overlap.
+	 */
+	memmove((u8 *)dst, (u8 *)src, size);
 	size = round_up(size, 64);
 	flush_dcache_range((u32)(u64)dst, (u32)(u64)dst + size);
 
