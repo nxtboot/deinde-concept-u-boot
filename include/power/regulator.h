@@ -371,9 +371,6 @@ int regulator_get_enable(struct udevice *dev);
  */
 int regulator_set_enable(struct udevice *dev, bool enable);
 
-#define regulator_enable(dev) regulator_set_enable(dev, true)
-#define regulator_disable(dev) regulator_set_enable(dev, false)
-
 /**
  * regulator_set_enable_if_allowed: set regulator enable state if allowed by
  *					regulator
@@ -650,5 +647,8 @@ static inline int device_get_supply_regulator(struct udevice *dev, const char *s
 	return -ENOSYS;
 }
 #endif
+
+#define regulator_enable(dev) regulator_set_enable_if_allowed(dev, true)
+#define regulator_disable(dev) regulator_set_enable_if_allowed(dev, false)
 
 #endif /* _INCLUDE_REGULATOR_H_ */
