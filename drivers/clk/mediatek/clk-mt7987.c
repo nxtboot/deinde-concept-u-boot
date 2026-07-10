@@ -60,6 +60,7 @@ static const struct mtk_clk_tree mt7987_fixed_pll_clk_tree = {
 	.fclks = apmixedsys_mtk_plls,
 	.num_fclks = ARRAY_SIZE(apmixedsys_mtk_plls),
 	.flags = CLK_PARENT_APMIXED,
+	.type = MTK_CLK_TREE_APMIXED,
 };
 
 static const struct udevice_id mt7987_fixed_pll_compat[] = {
@@ -77,6 +78,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
 	.name = "mt7987-clock-fixed-pll",
 	.id = UCLASS_CLK,
 	.of_match = mt7987_fixed_pll_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7987_fixed_pll_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_fixed_pll_ops,
@@ -457,6 +459,12 @@ static const struct mtk_clk_tree mt7987_topckgen_clk_tree = {
 	.num_fdivs = ARRAY_SIZE(topckgen_mtk_fixed_factors),
 	.num_muxes = ARRAY_SIZE(topckgen_mtk_muxes),
 	.flags = CLK_PARENT_TOPCKGEN,
+	.type = MTK_CLK_TREE_TOPCKGEN,
+};
+
+static const struct mtk_clk_tree mt7987_clk_tree = {
+	.ext_clk_rates = ext_clock_rates,
+	.num_ext_clks = ARRAY_SIZE(ext_clock_rates),
 };
 
 static const struct udevice_id mt7987_topckgen_compat[] = {
@@ -480,6 +488,7 @@ U_BOOT_DRIVER(mtk_clk_topckgen) = {
 	.name = "mt7987-clock-topckgen",
 	.id = UCLASS_CLK,
 	.of_match = mt7987_topckgen_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7987_topckgen_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_topckgen_ops,
@@ -783,6 +792,7 @@ static const struct mtk_clk_tree mt7987_infracfg_clk_tree = {
 	.gates = infracfg_mtk_gates,
 	.num_muxes = ARRAY_SIZE(infracfg_mtk_mux),
 	.num_gates = ARRAY_SIZE(infracfg_mtk_gates),
+	.type = MTK_CLK_TREE_INFRASYS,
 };
 
 static const struct udevice_id mt7987_infracfg_compat[] = {
@@ -800,6 +810,7 @@ U_BOOT_DRIVER(mtk_clk_infracfg) = {
 	.name = "mt7987-clock-infracfg",
 	.id = UCLASS_CLK,
 	.of_match = mt7987_infracfg_compat,
+	.bind = mtk_common_clk_parent_bind,
 	.probe = mt7987_infracfg_probe,
 	.priv_auto = sizeof(struct mtk_clk_priv),
 	.ops = &mtk_clk_infrasys_ops,
@@ -829,7 +840,7 @@ static const struct mtk_gate eth_cgs[] = {
 
 static int mt7987_ethsys_probe(struct udevice *dev)
 {
-	return mtk_common_clk_gate_init(dev, &mt7987_topckgen_clk_tree, eth_cgs,
+	return mtk_common_clk_gate_init(dev, &mt7987_clk_tree, eth_cgs,
 					ARRAY_SIZE(eth_cgs), 0);
 }
 
