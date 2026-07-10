@@ -85,7 +85,7 @@ static const struct mtk_gate_regs apmixed_cg_regs = {
 		.parent = _parent,			\
 		.regs = &apmixed_cg_regs,		\
 		.shift = _shift,			\
-		.flags = CLK_GATE_NO_SETCLR_INV,	\
+		.flags = CLK_GATE_NO_SETCLR_INV | CLK_PARENT_APMIXED,	\
 	}
 
 static const struct mtk_gate apmixed_cgs[] = {
