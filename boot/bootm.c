@@ -718,6 +718,18 @@ static int bootm_find_other(ulong img_addr, const char *conf_ramdisk,
 
 #if !defined(USE_HOSTCC) || defined(CONFIG_FIT_SIGNATURE)
 /**
+ * enum bootm_decomp_limit - What bounded the decompression buffer.
+ * @BOOTM_DECOMP_LIMIT_GLOBAL:    Global CONFIG_SYS_BOOTM_LEN limit.
+ * @BOOTM_DECOMP_LIMIT_PER_IMAGE: Per-image buffer sized from the
+ *                                compressed image (e.g. the
+ *                                kernel_noload decompression buffer).
+ */
+enum bootm_decomp_limit {
+	BOOTM_DECOMP_LIMIT_GLOBAL,
+	BOOTM_DECOMP_LIMIT_PER_IMAGE,
+};
+
+/**
  * handle_decomp_error() - display a decompression error
  *
  * This function tries to produce a useful message. In the case where the
@@ -727,11 +739,14 @@ static int bootm_find_other(ulong img_addr, const char *conf_ramdisk,
  * @comp_type:		Compression type being used (IH_COMP_...)
  * @uncomp_size:	Number of bytes uncompressed
  * @buf_size:		Number of bytes the decompresion buffer was
+ * @limit:		Which allocation actually bounded the buffer, so the
+ *			hint points at the knob the reader can act on
  * @ret:		errno error code received from compression library
  * Return: Appropriate BOOTM_ERR_ error code
  */
 static int handle_decomp_error(int comp_type, size_t uncomp_size,
-			       size_t buf_size, int ret)
+			       size_t buf_size,
+			       enum bootm_decomp_limit limit, int ret)
 {
 	const char *name = genimg_get_comp_name(comp_type);
 
@@ -740,10 +755,15 @@ static int handle_decomp_error(int comp_type, size_t uncomp_size,
 		return BOOTM_ERR_UNIMPLEMENTED;
 
 	if ((comp_type == IH_COMP_GZIP && ret == Z_BUF_ERROR) ||
-	    uncomp_size >= buf_size)
-		printf("Image too large: increase CONFIG_SYS_BOOTM_LEN\n");
-	else
+	    uncomp_size >= buf_size) {
+		if (limit == BOOTM_DECOMP_LIMIT_PER_IMAGE)
+			printf("Image too large for the per-image decompression buffer (%#zx bytes)\n",
+			       buf_size);
+		else
+			printf("Image too large: increase CONFIG_SYS_BOOTM_LEN\n");
+	} else {
 		printf("%s: uncompress error %d\n", name, ret);
+	}
 
 	/*
 	 * The decompression routines are now safe, so will not write beyond
@@ -789,6 +809,7 @@ static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 	bool no_overlap;
 	void *load_buf, *image_buf;
 	ulong decomp_len;
+	enum bootm_decomp_limit decomp_limit = BOOTM_DECOMP_LIMIT_GLOBAL;
 	int err;
 
 	log_debug("load_os: type '%s' os '%s' comp '%s'\n",
@@ -819,19 +840,18 @@ static int bootm_load_os(struct bootm_info *bmi, int boot_progress)
 
 	load_buf = map_sysmem(load, 0);
 	image_buf = map_sysmem(os.image_start, image_len);
-	if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp)
+	if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp) {
 		decomp_len = bmi->kern_comp_size;
-	else
+		decomp_limit = BOOTM_DECOMP_LIMIT_PER_IMAGE;
+	} else {
 		decomp_len = bmi->ignore_bootm_len ? image_len * 10 : bootm_len();
+	}
 	err = image_decomp(os.comp, load, os.image_start, os.type,
 			   load_buf, image_buf, image_len, decomp_len,
 			   &load_end);
 	if (err) {
-		err = handle_decomp_error(os.comp, load_end - load, decomp_len,
-					  err);
-		if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp)
-			printf("Note: noload decompression buffer is %#lx bytes (not CONFIG_SYS_BOOTM_LEN)\n",
-			       decomp_len);
+		err = handle_decomp_error(os.comp, load_end - load,
+					  decomp_len, decomp_limit, err);
 		bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 		return err;
 	}
@@ -1522,7 +1542,8 @@ static int bootm_host_load_image(const void *fit, int req_image_type,
 	free(load_buf);
 
 	if (ret) {
-		ret = handle_decomp_error(image_comp, load_end - 0, buf_size, ret);
+		ret = handle_decomp_error(image_comp, load_end - 0, buf_size,
+					  BOOTM_DECOMP_LIMIT_GLOBAL, ret);
 		if (ret != BOOTM_ERR_UNIMPLEMENTED)
 			return ret;
 	}
