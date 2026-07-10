@@ -40,6 +40,18 @@ secondary_harts_relocation_error:
 .globl _start
 _start:
 #if CONFIG_IS_ENABLED(RISCV_MMODE)
+#ifdef CONFIG_RISCV_ISA_F
+	/*
+	 * Enable the FPU. With a hard-float ABI (e.g. lp64d) the compiler
+	 * may use the floating-point registers for ordinary integer code,
+	 * not only for float and double values. At M-mode reset mstatus.FS
+	 * is 0 (FPU off), so the first such access traps before the trap
+	 * handler below is installed, hanging the boot. In S-mode the FPU
+	 * is already enabled by the M-mode firmware.
+	 */
+	li	t0, MSTATUS_FS
+	csrs	CSR_MSTATUS, t0
+#endif
 	csrr	a0, CSR_MHARTID
 #endif
 
