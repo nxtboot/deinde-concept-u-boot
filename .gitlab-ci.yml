@@ -1083,6 +1083,12 @@ pico:
     ROLE: pico
   <<: *sjg_lab_dfn
 
+# Banana Pi BPI-F3 (SpacemiT K1, booted from RAM over USB DFU)
+bpif3:
+  variables:
+    ROLE: bpif3
+  <<: *sjg_lab_dfn
+
 jetson-nano:
   variables:
     ROLE: jetson-nano
