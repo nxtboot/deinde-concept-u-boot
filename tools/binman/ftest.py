@@ -3951,14 +3951,55 @@ class TestFunctional(unittest.TestCase):
         """Test that an image with an Intel FIT and pointer can be created"""
         data = self._DoReadFile('x86/intel_fit.dts')
         self.assertEqual(U_BOOT_DATA, data[:len(U_BOOT_DATA)])
-        fit = data[16:32];
+        fit = data[0x40:0x50];
         self.assertEqual(b'_FIT_   \x01\x00\x00\x00\x00\x01\x80}' , fit)
-        ptr = struct.unpack('<i', data[0x40:0x44])[0]
+        ptr = struct.unpack('<i', data[0xc0:0xc4])[0]
 
         image = control.images['image']
         entries = image.GetEntries()
         expected_ptr = entries['intel-fit'].image_pos #- (1 << 32)
         self.assertEqual(expected_ptr, ptr + (1 << 32))
+
+    def testPackIntelFitUcode(self):
+        """Test an Intel FIT with microcode entries"""
+        # Two fake microcode updates with the total-size field at 0x20: the
+        # first 0x40 bytes, the second the default size (2KB, field zero)
+        ucode1 = struct.pack('<12L', 1, 2, 20260101, 0x906a4, 5, 1, 0x80,
+                             0x10, 0x40, 0, 0, 0)
+        ucode1 += bytes(0x40 - len(ucode1))
+        ucode2 = struct.pack('<12L', 1, 3, 20260102, 0x906a4, 5, 1, 0x80,
+                             0x10, 0, 0, 0, 0)
+        ucode2 += bytes(2048 - len(ucode2))
+
+        # Add zero padding on the end, to check that the walk stops at it
+        TestFunctional._MakeInputFile('ucode.bin',
+                                      ucode1 + ucode2 + bytes(0x30))
+
+        data = self._DoReadFile('x86/intel_fit_ucode.dts')
+
+        image = control.images['image']
+        entries = image.GetEntries()
+        ucode_pos = entries['microcode'].image_pos
+        fit_offset = entries['intel-fit'].image_pos - (1 << 32) + 0x1000
+
+        fit = data[fit_offset:fit_offset + 3 * 16]
+        sig, count, version, tflag, csum = struct.unpack_from('<8sIHBB', fit)
+        self.assertEqual(b'_FIT_   ', sig)
+        self.assertEqual(3, count)
+        self.assertEqual(0, sum(fit[:16 * count]) & 0xff)
+
+        for seq, expected in enumerate([ucode_pos, ucode_pos + 0x40]):
+            addr, size, version, ftype, csum = struct.unpack_from(
+                '<QIHBB', fit, (1 + seq) * 16)
+            self.assertEqual(expected, addr)
+            self.assertEqual(1, ftype)
+
+    def testPackIntelFitUcodeMissing(self):
+        """Test an Intel FIT with a missing microcode sibling"""
+        with self.assertRaises(ValueError) as e:
+            self._DoReadFile('x86/intel_fit_ucode_missing.dts')
+        self.assertIn("No sibling 'microcode' for microcode",
+                      str(e.exception))
 
     def testPackIntelFitMissing(self):
         """Test detection of a FIT pointer with not FIT region"""
