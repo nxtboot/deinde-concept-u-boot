@@ -1604,6 +1604,7 @@ F:	drivers/power/regulator/sandbox_pmbus.c
 F:	drivers/thermal/pmbus_thermal.c
 F:	include/pmbus.h
 F:	lib/pmbus.c
+F:	test/dm/pmbus.c
 
 POWER
 M:	Jaehoon Chung <jh80.chung@samsung.com>
