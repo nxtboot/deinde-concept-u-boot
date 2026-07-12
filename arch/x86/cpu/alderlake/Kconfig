@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright 2026 Simon Glass <sjg@chromium.org>
+
+config INTEL_ALDERLAKE
+	bool
+	select INTEL_SOC
+	select TPL_X86_TSC_TIMER_NATIVE
+	select PCIEX_LENGTH_256MB
+	select TPL_OF_PLATDATA_PARENT
+	select TPL_OF_PLATDATA_INST
+	select TPL_READ_ONLY
+	imply TPL
+	imply SPL
+	imply TPL_X86_16BIT_INIT
+	imply TPL_OF_PLATDATA
+	imply HAVE_X86_FIT
+	help
+	  Alder Lake is a hybrid (P- and E-core) SoC from Intel, launched in
+	  2021 as 12th-generation Core. This supports running U-Boot natively
+	  on Alder Lake-P devices such as brya-class Chromebooks: TPL sets up
+	  Cache-as-RAM using FSP-T and runs execute-in-place from the SPI
+	  flash, then SPL performs memory init with FSP-M
+
+	  Note that USE_CAR is deliberately not selected: FSP-T's TempRamInit
+	  decides where Cache-as-RAM lives and reports it back, so car.S sets
+	  the stack from that, rather than from SYS_CAR_ADDR/SYS_CAR_SIZE
+
+if INTEL_ALDERLAKE
+
+config FSP2_PWRM_BASE
+	default 0xfe000000
+
+config MMCONF_BASE_ADDRESS
+	hex
+	default 0xc0000000
+
+config PCR_BASE_ADDRESS
+	hex
+	default 0xfd000000
+	help
+	  Base address for the Private Configuration Register (PCR) space,
+	  used to access GPIO and other devices over the P2SB sideband. This
+	  is programmed into the P2SB SBREG BAR early in boot
+
+config FSP_T_ADDR
+	hex
+	default 0xfff1f000
+	help
+	  Flash-mapped address of the FSP-T binary, which must match the
+	  ImageBase it is linked for, since it executes in place
+
+config FSP_T_ENTRY_OFFSET
+	hex
+	default 0x3e3
+	help
+	  Offset of the TempRamInit entry point within the FSP-T binary, from
+	  the TempRamInitEntryOffset field of its FSP_INFO_HEADER (shown by
+	  SplitFspBin.py info). Used directly since there is no stack, and so
+	  no easy way to parse the header, before TempRamInit is called
+
+config FSP_M_ADDR
+	hex
+	default 0xffe5f000
+	help
+	  Flash-mapped address of the FSP-M binary, matching its ImageBase so
+	  that it can execute in place during memory init
+
+config FSP_S_ADDR
+	hex
+	default 0xffe00000
+	help
+	  Flash-mapped address of the FSP-S binary
+
+config TPL_SIZE_LIMIT
+	default 0x3b000
+
+config DCACHE_RAM_BASE
+	default 0xfef00000
+
+config DCACHE_RAM_SIZE
+	default 0xc0000
+
+endif
