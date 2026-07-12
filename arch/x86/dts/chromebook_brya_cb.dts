@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass
+ *
+ * Brya-class Chromebook (Alder Lake) running U-Boot as a coreboot payload.
+ * At runtime this is the generic coreboot payload; the difference is that
+ * the build wraps U-Boot into a full brya flash image (see
+ * chromebook_brya-u-boot.dtsi)
+ */
+
+/dts-v1/;
+
+#include "coreboot.dtsi"
+
+/ {
+	model = "Google Chromebook brya";
+	compatible = "google,brya", "coreboot,x86-payload";
+};
