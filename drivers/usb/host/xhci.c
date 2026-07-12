@@ -442,6 +442,7 @@ static int xhci_configure_endpoints(struct usb_device *udev, bool ctx_change)
 	struct xhci_virt_device *virt_dev;
 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
 	union xhci_trb *event;
+	int ret = 0;
 
 	virt_dev = ctrl->devs[udev->slot_id];
 	in_ctx = virt_dev->in_ctx;
@@ -465,12 +466,13 @@ static int xhci_configure_endpoints(struct usb_device *udev, bool ctx_change)
 		printf("ERROR: %s command returned completion code %d.\n",
 			ctx_change ? "Evaluate Context" : "Configure Endpoint",
 			GET_COMP_CODE(le32_to_cpu(event->event_cmd.status)));
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
 
 	xhci_acknowledge_event(ctrl);
 
-	return 0;
+	return ret;
 }
 
 /**
