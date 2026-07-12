@@ -85898,3 +85898,74 @@ Rebase complete and pushed. Here is a summary:
 
 ---
 
+### Review: 2026-07-10
+
+Branch: cherry-08183ba1af1
+
+Comments addressed:
+
+
+### Conversation log
+Now the azure-pipelines.yml:
+
+Delta matches exactly.
+
+All 12 commits applied. Now build test:
+
+Build passes. Now create v2 branch, push, and update MR:
+
+Push succeeded. Let me verify the MR now sees the commits:
+
+## Summary
+
+The MR `!1151` was in a broken state: the remote branch had been reset back to `ci/master` with none of the 12 patman-removal commits from `us/master` applied, and GitLab was showing `has_conflicts=True, merge_status=cannot_be_merged`. Continued the interrupted cherry-pick from the previous session.
+
+**Actions taken:**
+- Re-cherry-picked the 12-commit series `08183ba1af1..18761722e67` onto `ci/master`
+- Resolved the following conflicts:
+  - `doc/develop/codingstyle.rst`: dropped the b4 guide block that upstream moves (the block sits after the ci/master-only clang-format section, which is why git couldn't auto-merge). Kept HEAD's clang-format content
+  - `doc/develop/index.rst`: kept `pickman` toctree entry, dropped `patman`
+  - `.gitlab-ci.yml`, `.azure-pipelines.yml`: kept ci/master's expanded `test_suites` job (`hwids_to_dtsi`, `pickman`, `u_boot_pylib`, coverage) while removing all `patman` references and adding `pylibfdt/requirements.txt`
+  - `test/run`: kept HEAD's `TOOLPATH`/`PATH` additions, removed the `patman test` line
+  - Multiple `tools/patman/*.py` files (test_*, pyproject.toml, requirements.txt, checkpatch, cmdline, control, cser_helper, cseries, database, patchwork, send, status): took the delete side per the upstream intent
+  - `tools/patman/__main__.py`: replaced with the upstream stub verbatim
+  - Merge commit `18761722e67`: applied as empty commit (all payload already in the individual picks)
+- Every stat matched upstream except for the modify/delete cases where ci/master had grown the deleted files (expected larger deletion counts, no other divergence)
+- `buildman -L --board sandbox -w -o /tmp/pickman` passed
+- Created local `cherry-08183ba1af1-v2`
+- Force-pushed to `ci/cherry-08183ba1af1` (new SHA `a33e4c763fb`), MR !1151 now updated
+
+**Suggested MR reply:**
+> Rebased on latest `ci/master` (`5156cb9910d`). Applied all 12 commits from the upstream series; conflicts came from ci/master-only changes to codingstyle.rst (new clang-format section moved the b4 block), toctree (added `pickman`), CI YAMLs (expanded `test_suites` job with `pickman`, `hwids_to_dtsi`, coverage, `u_boot_pylib`), `test/run` (added `TOOLPATH`/`PATH`), and a locally-modified `tools/patman/patman.rst` / `__main__.py` / `checkpatch.py` / etc — all reconciled while preserving both sides' intent. Sandbox build passes.
+
+---
+
+### Review: 2026-07-12
+
+Branch: cherry-08183ba1af1
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded cleanly. Let me verify deltas match.
+
+All commit deltas match. The "DIFF" flag on the merge commit is a false positive (empty merge, no stat body). Now run the build.
+
+Build passed. Now push.
+
+## Summary
+
+Rebased MR !1151 (`cherry-08183ba1af1`) onto the latest `ci/master` (`9e3cd8202d0`, was `5156cb9910d`). The rebase completed cleanly with **no conflicts** — none of the new ci/master commits (Banana Pi BPI-F3 / SpacemiT K1 series) touched files in the patman-removal set.
+
+**Verification:**
+- All 13 commit deltas (`git show --stat`) match byte-for-byte with pre-rebase state (the one "DIFF" flag was a false positive from parsing the empty merge commit's stat output).
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, 8s).
+- Created local `cherry-08183ba1af1-v3` (v2 already existed from prior session).
+- Force-pushed to `ci/cherry-08183ba1af1`: `a33e4c763fb → bb3408c43ae`.
+
+**Suggested MR reply:**
+> Rebased onto latest `ci/master` (`9e3cd8202d0`). No conflicts — the new BPI-F3 / SpacemiT K1 work does not touch any of the patman-removal files. All 13 commit deltas identical to the previous revision. Sandbox build passes.
+
+---
+
