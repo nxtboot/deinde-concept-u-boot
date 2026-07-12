@@ -10,6 +10,7 @@
 
 #include <config.h>
 #include <asm/post.h>
+#include "early_console.h"
 
 .globl car_init
 car_init:
@@ -25,6 +26,12 @@ car_init:
 
 car_init_start:
 	post_code(POST_CAR_START)
+
+	/*
+	 * Bring up the console before Cache-as-RAM, so that a failure in
+	 * TempRamInit can be seen. This needs no stack
+	 */
+	early_console_init
 
 	/*
 	 * The FSP_INFO_HEADER cannot easily be parsed without a stack, so
@@ -62,6 +69,7 @@ temp_ram_init_ret:
 
 car_init_fail:
 	post_code(POST_CAR_FAILURE)
+	early_putc 'F'
 
 die:
 	hlt

@@ -11,7 +11,6 @@
 #include <init.h>
 #include <log.h>
 #include <spl.h>
-#include <asm/arch/uart.h>
 
 /**
  * arch_cpu_init_tpl() - Set up the console in TPL
@@ -25,8 +24,6 @@ static int arch_cpu_init_tpl(void)
 {
 	struct udevice *serial;
 	int ret;
-
-	adl_early_uart_init();
 
 	gd->baudrate = CONFIG_BAUDRATE;
 	ret = uclass_first_device_err(UCLASS_SERIAL, &serial);
