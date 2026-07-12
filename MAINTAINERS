@@ -1591,6 +1591,14 @@ S:	Maintained
 F:	cmd/pci_mps.c
 F:	test/cmd/pci_mps.c
 
+PMBUS
+M:	Vincent Jardin <vjardin@free.fr>
+S:	Maintained
+F:	cmd/pmbus.c
+F:	doc/develop/pmbus.rst
+F:	include/pmbus.h
+F:	lib/pmbus.c
+
 POWER
 M:	Jaehoon Chung <jh80.chung@samsung.com>
 M:	Peng Fan <peng.fan@nxp.com>

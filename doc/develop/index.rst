@@ -55,6 +55,7 @@ Implementation
    makefiles
    malloc
    menus
+   pmbus
    printf
    smbios
    spl
