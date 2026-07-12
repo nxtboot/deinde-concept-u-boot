@@ -2,6 +2,7 @@
 
 dtb-y += bayleybay.dtb \
 	cherryhill.dtb \
+	chromebook_brya.dtb \
 	chromebook_brya_cb.dtb \
 	chromebook_coral.dtb \
 	chromebook_link.dtb \

@@ -8,6 +8,17 @@ choice
 	prompt "Mainboard model"
 	optional
 
+config TARGET_CHROMEBOOK_BRYA
+	bool "Chromebook brya"
+	select EVENT
+	help
+	  This is the reference design for Alder Lake-based Chromebooks,
+	  released in 2021 as 12th-generation Core. Devices such as felwinter
+	  are variants of it. The design supports LPDDR4X/LPDDR5 memory, PCIe
+	  WiFi and Bluetooth, NVMe storage, up to two cameras, USB 3 Type A
+	  and Type C ports, a Chrome OS EC connected on eSPI and a Ti50 or
+	  Cr50 secure chip from Google.
+
 config TARGET_CHROMEBOOK_CORAL
 	bool "Chromebook coral"
 	select BIOSEMU
@@ -81,6 +92,7 @@ config TARGET_CHROMEBOOK_SAMUS_TPL
 
 endchoice
 
+source "board/google/chromebook_brya/Kconfig"
 source "board/google/chromebook_coral/Kconfig"
 source "board/google/chromebook_link/Kconfig"
 source "board/google/chromebox_panther/Kconfig"

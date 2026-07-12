@@ -1,0 +1,70 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ *
+ * Brya-class Chromebook (Alder Lake), running U-Boot natively
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+/include/ "skeleton.dtsi"
+/include/ "rtc.dtsi"
+/include/ "reset.dtsi"
+
+#include "tsc_timer.dtsi"
+
+/ {
+	model = "Google Chromebook brya";
+	compatible = "google,brya", "intel,alderlake";
+
+	aliases {
+		serial0 = &serial;
+	};
+
+	chosen {
+		stdout-path = &serial;
+	};
+
+	config {
+		silent-console = <0>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <0>;
+			intel,apic-id = <0>;
+		};
+	};
+
+	pci {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		bootph-all;
+		/*
+		 * The ECAM region is at 0xc0000000, so PCI memory goes above
+		 * it, below the 4GB MMIO which the SoC uses
+		 */
+		ranges = <0x02000000 0x0 0xd0000000 0xd0000000 0 0x10000000
+			  0x42000000 0x0 0xb0000000 0xb0000000 0 0x10000000
+			  0x01000000 0x0 0x1000 0x1000 0 0xefff>;
+
+		serial: serial@1e,0 {
+			reg = <0x0000f000 0 0 0 0>;
+			bootph-all;
+			compatible = "intel,apl-ns16550";
+			early-regs = <0xfe03e000 0x20>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			current-speed = <115200>;
+			pci,no-autoconfig;
+		};
+	};
+};
