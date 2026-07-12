@@ -85940,3 +85940,32 @@ The MR `!1151` was in a broken state: the remote branch had been reset back to `
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-08183ba1af1
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded cleanly. Let me verify deltas match.
+
+All commit deltas match. The "DIFF" flag on the merge commit is a false positive (empty merge, no stat body). Now run the build.
+
+Build passed. Now push.
+
+## Summary
+
+Rebased MR !1151 (`cherry-08183ba1af1`) onto the latest `ci/master` (`9e3cd8202d0`, was `5156cb9910d`). The rebase completed cleanly with **no conflicts** — none of the new ci/master commits (Banana Pi BPI-F3 / SpacemiT K1 series) touched files in the patman-removal set.
+
+**Verification:**
+- All 13 commit deltas (`git show --stat`) match byte-for-byte with pre-rebase state (the one "DIFF" flag was a false positive from parsing the empty merge commit's stat output).
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes (1 built, 8s).
+- Created local `cherry-08183ba1af1-v3` (v2 already existed from prior session).
+- Force-pushed to `ci/cherry-08183ba1af1`: `a33e4c763fb → bb3408c43ae`.
+
+**Suggested MR reply:**
+> Rebased onto latest `ci/master` (`9e3cd8202d0`). No conflicts — the new BPI-F3 / SpacemiT K1 work does not touch any of the patman-removal files. All 13 commit deltas identical to the previous revision. Sandbox build passes.
+
+---
+
