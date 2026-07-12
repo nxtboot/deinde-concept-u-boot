@@ -85969,3 +85969,40 @@ Rebased MR !1151 (`cherry-08183ba1af1`) onto the latest `ci/master` (`9e3cd8202d
 
 ---
 
+## 2026-07-12: us/master
+
+Branch: cherry-ece349ade29
+
+Commits:
+- ece349ade29 Prepare v2026.07
+
+### Conversation log
+The suggested match a92b1e254f7 is NOT the same commit — it's a "pickman: Record cherry-pick" commit. No "Prepare v2026.07" exists in ci/master. Proceeding with the cherry-pick.
+
+The Makefile change was already effectively applied (EXTRAVERSION is already empty). The 1-line delta is negligible. Now running the build test.
+
+## Cherry-pick Complete
+
+**Status:** Success
+
+**Branch:** `cherry-ece349ade29` (based on ci/master)
+
+**Commits picked:**
+- `703f1ff6462` — Prepare v2026.07 (from `ece349ade29`)
+
+**Verification of "maybe already applied" hint:**
+- `a92b1e254f7` is NOT the same commit — it's a "pickman: Record cherry-pick" commit, unrelated. Cherry-pick proceeded.
+
+**Delta check:**
+- Original: 3 files, 902 insertions, 16 deletions
+- Cherry-picked: 2 files, 901 insertions, 15 deletions
+- 1-line difference: the `Makefile` `EXTRAVERSION` bump was already applied in ci/master (already empty), so cherry-pick auto-merged and dropped that hunk. Not a concerning delta.
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups:** None
+
+Branch is ready for pushing.
+
+---
+
