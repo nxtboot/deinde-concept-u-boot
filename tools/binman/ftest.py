@@ -2784,6 +2784,124 @@ class TestFunctional(unittest.TestCase):
             self._DoReadFile('cbfs/bad_type.dts')
         self.assertIn("Unknown cbfs-type 'badtype'", str(e.exception))
 
+    def _MakeCorebootRom(self, fname='coreboot.rom', with_payload=False):
+        """Create a small CBFS to use as a coreboot ROM
+
+        Args:
+            fname (str): Filename to write to in the input directory
+            with_payload (bool): True to include an existing fallback/payload
+                file, as with a coreboot image built with a payload
+
+        Returns:
+            str: Full path of the file written
+        """
+        cbw = cbfs_util.CbfsWriter(0x800)
+        cbw.add_file_raw('config', b'cbconfig')
+        if with_payload:
+            cbw.add_file_raw('fallback/payload', b'old-payload')
+        return self._MakeInputFile(fname, cbw.get_data())
+
+    def _CheckCorebootRom(self, data):
+        """List the files in a coreboot ROM using cbfstool
+
+        Args:
+            data (bytes): Contents of the ROM
+
+        Returns:
+            str: Output of 'cbfstool print' on the ROM
+        """
+        cbfstool = bintool.Bintool.create('cbfstool')
+        fname = tools.get_output_filename('check.rom')
+        tools.write_file(fname, data)
+        return cbfstool.run_cmd(fname, 'print')
+
+    def testCorebootRom(self):
+        """Test building a coreboot ROM with a payload inserted"""
+        self._MakeCorebootRom()
+        data = self._DoReadFile('cbfs/coreboot_rom.dts')
+        self.assertEqual(0x800, len(data))
+        out = self._CheckCorebootRom(data)
+        self.assertIn('config', out)
+        self.assertIn('fallback/payload', out)
+
+    def testCorebootRomReplace(self):
+        """Test replacing the existing payload of a coreboot ROM"""
+        self._MakeCorebootRom('cbrom-payload.rom', with_payload=True)
+        data = self._DoReadFile('cbfs/coreboot_rom_replace.dts')
+        out = self._CheckCorebootRom(data)
+        self.assertEqual(1, out.count('fallback/payload'))
+
+    def testCorebootRomSpl(self):
+        """Test a coreboot ROM whose load address comes from the SPL ELF"""
+        self._SetupSplElf('elf_sections_tee')
+        self._MakeCorebootRom()
+        # The devicetree gives no cbfs-load-addr, so binman must derive it
+        # from the u-boot-spl ELF
+        data = self._DoReadFile('cbfs/coreboot_rom_spl.dts')
+        out = self._CheckCorebootRom(data)
+        self.assertIn('fallback/payload', out)
+
+    def testCorebootRomEntryArg(self):
+        """Test passing the coreboot ROM filename as an entry argument"""
+        self._MakeCorebootRom('cbrom-arg.rom')
+        entry_args = {
+            'coreboot-rom-path': 'cbrom-arg.rom',
+        }
+        data = self._DoReadFileDtb('cbfs/coreboot_rom.dts',
+                                   entry_args=entry_args)[0]
+        out = self._CheckCorebootRom(data)
+        self.assertIn('fallback/payload', out)
+
+    def testCorebootRomCollection(self):
+        """Test a coreboot ROM referenced from a collection"""
+        self._MakeCorebootRom()
+        data = self._DoReadFile('cbfs/coreboot_rom_collection.dts')
+        # The image contains the ROM twice: via the collection and via the
+        # coreboot-rom entry itself
+        self.assertEqual(2 * 0x800, len(data))
+        out = self._CheckCorebootRom(data[:0x800])
+        self.assertIn('fallback/payload', out)
+
+    def testCorebootRomNoContent(self):
+        """Test a coreboot ROM with an entry which has no contents"""
+        self._MakeCorebootRom()
+        with self.assertRaises(ValueError) as e:
+            self._DoReadFile('cbfs/coreboot_rom_no_content.dts')
+        self.assertIn('Could not complete processing of contents',
+                      str(e.exception))
+
+    def testCorebootRomMissing(self):
+        """Test a missing coreboot ROM when missing blobs are allowed"""
+        with terminal.capture() as (stdout, stderr):
+            self._DoTestFile('cbfs/coreboot_rom_missing.dts',
+                             allow_missing=True)
+        err = stderr.getvalue()
+        self.assertRegex(err, "Image 'image'.*missing.*: coreboot-rom")
+
+    def testCorebootRomNotFound(self):
+        """Test that a missing coreboot ROM is normally an error"""
+        with self.assertRaises(ValueError) as e:
+            self._DoTestFile('cbfs/coreboot_rom_missing.dts')
+        self.assertIn("Filename 'cbrom-missing.rom' not found in input path",
+                      str(e.exception))
+
+    def testCorebootRomMissingBintool(self):
+        """Test building a coreboot ROM with cbfstool missing"""
+        self._MakeCorebootRom()
+        with terminal.capture() as (stdout, stderr):
+            self._DoTestFile('cbfs/coreboot_rom.dts',
+                             force_missing_bintools='cbfstool')
+        err = stderr.getvalue()
+        self.assertRegex(err, "Image 'image'.*missing bintools.*: cbfstool")
+
+    def testCorebootRomNoLoadAddr(self):
+        """Test a coreboot ROM with no load address and no ELF to derive it"""
+        self._MakeCorebootRom()
+        with self.assertRaises(ValueError) as e:
+            self._DoTestFile('cbfs/coreboot_rom_no_addr.dts')
+        self.assertIn("Missing 'cbfs-load-addr' and no ELF payload to derive "
+                      'it from', str(e.exception))
+
     def testList(self):
         """Test listing the files in an image"""
         self._CheckLz4()
