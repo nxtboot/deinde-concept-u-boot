@@ -4,6 +4,7 @@
 
 config INTEL_ALDERLAKE
 	bool
+	select HAVE_FSP
 	select INTEL_SOC
 	select TPL_X86_TSC_TIMER_NATIVE
 	select PCIEX_LENGTH_256MB

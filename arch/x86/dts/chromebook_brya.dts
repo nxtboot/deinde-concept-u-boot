@@ -56,6 +56,35 @@
 			  0x42000000 0x0 0xb0000000 0xb0000000 0 0x10000000
 			  0x01000000 0x0 0x1000 0x1000 0 0xefff>;
 
+		northbridge: host-bridge@0,0 {
+			reg = <0x00000000 0 0 0 0>;
+			bootph-pre-ram;
+			bootph-some-ram;
+			compatible = "intel,alderlake-hostbridge";
+		};
+
+		spi: fast-spi@1f,5 {
+			reg = <0x0000fd00 0 0 0 0>;
+			bootph-pre-ram;
+			bootph-some-ram;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "intel,fast-spi";
+			early-regs = <0xfe010000 0x1000>;
+			intel,hardware-seq = <1>;
+
+			fwstore_spi: spi-flash@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				bootph-pre-ram;
+				bootph-some-ram;
+				reg = <0>;
+				m25p,fast-read;
+				compatible = "winbond,w25q256jw",
+					 "jedec,spi-nor";
+			};
+		};
+
 		serial: serial@1e,0 {
 			reg = <0x0000f000 0 0 0 0>;
 			bootph-all;
