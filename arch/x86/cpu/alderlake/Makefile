@@ -4,6 +4,7 @@
 
 obj-$(CONFIG_TPL_BUILD) += car.o
 obj-$(CONFIG_TPL_BUILD) += fsp_t.o
+obj-$(CONFIG_TPL_BUILD) += spl.o
 obj-$(CONFIG_XPL_BUILD) += cpu_spl.o
 obj-y += early_uart.o
 obj-y += dram.o
