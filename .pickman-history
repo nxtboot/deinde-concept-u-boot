@@ -85867,3 +85867,34 @@ All 10 commits applied. Running the final build and verification:
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-c480bbd92b3
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly. Let me verify and build.
+
+All deltas match exactly. Now build:
+
+Build passed. Now create -v2 branch and push.
+
+Rebase complete and pushed. Here is a summary:
+
+## Report
+
+**What was done:**
+
+1. **Rebased** `cherry-c480bbd92b3` (11 commits, including the pickman review-handling record) onto latest `ci/master` (5156cb9910d → 9e3cd8202d0). The rebase completed cleanly with no conflicts — the ci/master updates were entirely in Spacemit K1 / RISC-V areas, which don't touch anything in this MR's cherry-picked changes.
+2. **Delta verification:** all 11 commits have identical `--stat` output before and after rebase (empty merge commit preserved with `--keep-empty`).
+3. **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passed with no warnings or errors.
+4. **Branches:** created local `cherry-c480bbd92b3-v3` (v2 was left over from the previous session). Force-pushed the rebased branch to `ci/cherry-c480bbd92b3` (e9534fa324a → 51402fd9913), which will trigger a new MR pipeline for !1150.
+
+**Suggested MR reply:**
+
+> Rebased onto latest ci/master (5156cb9910d → 9e3cd8202d0). No conflicts — the target-branch updates were confined to Spacemit K1 / RISC-V code, which does not overlap with anything in this series. All 11 commits (including the preserved empty merge commit) have identical --stat deltas before and after the rebase, and the sandbox buildman check is clean.
+
+---
+
