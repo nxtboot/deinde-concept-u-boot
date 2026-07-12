@@ -513,6 +513,16 @@ static int xhci_init_ep_contexts_if(struct usb_device *udev,
 		trb_64 = 0;
 
 		/*
+		 * U-Boot does not support isochronous transfers, so skip such
+		 * endpoints rather than claiming schedule bandwidth for them.
+		 * Programming them can make the Configure Endpoint command
+		 * fail with COMP_BW_ERR, e.g. for a webcam, making the whole
+		 * device unusable.
+		 */
+		if (usb_endpoint_xfer_isoc(endpt_desc))
+			continue;
+
+		/*
 		 * Get values to fill the endpoint context, mostly from ep
 		 * descriptor. The average TRB buffer lengt for bulk endpoints
 		 * is unclear as we have no clue on scatter gather list entry
@@ -624,6 +634,9 @@ static int xhci_set_configuration(struct usb_device *udev)
 		num_of_ep = ifdesc->no_of_ep;
 		/* EP_FLAG gives values 1 & 4 for EP1OUT and EP2IN */
 		for (cur_ep = 0; cur_ep < num_of_ep; cur_ep++) {
+			/* Isochronous endpoints are not programmed */
+			if (usb_endpoint_xfer_isoc(&ifdesc->ep_desc[cur_ep]))
+				continue;
 			ep_flag = xhci_get_ep_index(&ifdesc->ep_desc[cur_ep]);
 			ctrl_ctx->add_flags |= cpu_to_le32(1 << (ep_flag + 1));
 			if (max_ep_flag < ep_flag)
