@@ -24,6 +24,13 @@ int fsp_setup_pinctrl(void)
 	ofnode node;
 	int ret;
 
+	/*
+	 * Not all SoCs have an Intel pinctrl driver yet; those set up their
+	 * pads another way
+	 */
+	if (!IS_ENABLED(CONFIG_PINCTRL_INTEL))
+		return 0;
+
 	/* Make sure pads are set up early in U-Boot */
 	if (!ll_boot_init() || xpl_phase() != PHASE_BOARD_F)
 		return 0;

@@ -8,6 +8,8 @@
 #ifndef __ASM_FSP_INTERNAL_H
 #define __ASM_FSP_INTERNAL_H
 
+#include <linux/errno.h>
+
 struct binman_entry;
 struct fsp_header;
 struct fspm_upd;
@@ -93,6 +95,13 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
  * Return: 0 if OK, -ENOENT if no data (whereupon the caller can continue and
  *	expect a slower boot), other -ve value on other error
  */
+#ifdef CONFIG_ENABLE_MRC_CACHE
 int prepare_mrc_cache(struct fspm_upd *upd);
+#else
+static inline int prepare_mrc_cache(struct fspm_upd *upd)
+{
+	return -ENOENT;
+}
+#endif
 
 #endif

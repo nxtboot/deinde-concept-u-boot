@@ -18,6 +18,7 @@
 #include <asm/arch/fsp/fsp_configs.h>
 #include <asm/arch/fsp/fsp_m_upd.h>
 
+#ifdef CONFIG_ENABLE_MRC_CACHE
 static int prepare_mrc_cache_type(enum mrc_type_t type,
 				  struct mrc_data_container **cachep)
 {
@@ -55,6 +56,7 @@ int prepare_mrc_cache(struct fspm_upd *upd)
 
 	return 0;
 }
+#endif /* ENABLE_MRC_CACHE */
 
 int fsp_memory_init(bool s3wake, bool use_spi_flash)
 {
