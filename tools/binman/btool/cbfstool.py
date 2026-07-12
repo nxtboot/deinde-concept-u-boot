@@ -186,6 +186,48 @@ class Bintoolcbfstool(bintool.Bintool):
             ]
         return self.run_cmd(*args)
 
+    def add_flat_binary(self, cbfs_fname, name, fname, load, entry,
+                        compress='lzma'):
+        """Add a flat binary as a payload to the CBFS
+
+        Args:
+            cbfs_fname (str): Filename of CBFS to update
+            name (str): Name to use inside the CBFS
+            fname (str): Filename of file to add
+            load (int): Address to load the binary
+            entry (int): Address of the entry point
+            compress (str): Compression to use (cbfs_util.COMPRESS_NAMES)
+
+        Returns:
+            str: Tool output
+        """
+        args = [cbfs_fname,
+                'add-flat-binary',
+                '-n', name,
+                '-f', fname,
+                '-c', compress or 'none',
+                '-l', f'{load:#x}',
+                '-e', f'{entry:#x}',
+            ]
+        return self.run_cmd(*args)
+
+    def remove(self, cbfs_fname, name):
+        """Remove a file from the CBFS
+
+        Args:
+            cbfs_fname (str): Filename of CBFS to update
+            name (str): Name of the file to remove
+
+        Returns:
+            CommandResult: Result from running the command; the return code is
+                non-zero if the file is not present
+        """
+        args = [cbfs_fname,
+                'remove',
+                '-n', name,
+            ]
+        return self.run_cmd_result(*args, raise_on_error=False)
+
     def fail(self):
         """Run cbfstool with invalid arguments to check it reports failure
 
