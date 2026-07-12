@@ -63,7 +63,13 @@
 			u-boot-tpl {
 				offset = <CONFIG_TPL_TEXT_BASE>;
 			};
+			microcode {
+				type = "blob-ext";
+				filename = "mu_06-9a-04.bin";
+				align = <16>;
+			};
 			intel-fit {
+				fit,microcode = "microcode";
 			};
 			intel-fit-ptr {
 			};
