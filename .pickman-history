@@ -86003,6 +86003,53 @@ The Makefile change was already effectively applied (EXTRAVERSION is already emp
 **Fix-ups:** None
 
 Branch is ready for pushing.
+Branch: cherry-ca1c292d2ee
+
+Commits:
+- ca1c292d2ee string: fix prototype of memdup()
+- 719cacb92e0 stdio: drop stdio_clone
+- 349d148f16d lib/string.c: drop pointless __HAVE_ARCH_STRDUP
+- 8c664d21357 lib/string.c: introduce memdup_nul() helper
+- ee8be5d4a10 lib/string.c: implement strdup() and strndup() in terms of memdup_nul()
+- b87ff4878d0 lib/hashtable.c: use memdup_nul() in himport_r
+- 11168813bf9 common/cli.c: use memdup_nul() in run_command_list()
+- 4ef201e607e drivers/core: use memdup() instead of malloc()+memcpy()
+- 8d209186a1e test: lib: add test of memdup_nul()
+- e3e651c480c Merge patch series "add memdup_nul(), use it and memdup() in a few places"
+
+### Conversation log
+Delta matches. Building test.
+
+That's a pre-existing sandbox include issue, not related to my changes.
+
+Pre-existing clang diagnostics unrelated to our changes. Let me amend the commit message with a fix-up note and continue.
+
+All 10 commits present. Final build check:
+
+## Cherry-pick Summary
+
+All 10 commits successfully cherry-picked onto branch `cherry-ca1c292d2ee` (based on `ci/master`):
+
+- `27c49970b08` string: fix prototype of memdup()
+- `f3f3d1a89e8` stdio: drop stdio_clone
+- `62413c1d868` lib/string.c: drop pointless __HAVE_ARCH_STRDUP **(fix-up)**
+- `ea4ab4d6803` lib/string.c: introduce memdup_nul() helper
+- `40572995248` lib/string.c: implement strdup()/strndup() in terms of memdup_nul()
+- `21ca366a742` lib/hashtable.c: use memdup_nul() in himport_r
+- `14c841e823c` common/cli.c: use memdup_nul() in run_command_list()
+- `0768d086d4f` drivers/core: use memdup() instead of malloc()+memcpy()
+- `99c33c0f580` test: lib: add test of memdup_nul()
+- `44b50d2d0a2` Merge patch series "add memdup_nul()..."
+
+**Build result:** OK — 1/1 boards built, no warnings/errors.
+
+**Fix-ups made:**
+- `62413c1d868` (drop __HAVE_ARCH_STRDUP): Conflict in `include/linux/string.h` and `lib/string.c` because our tree has local `strdup_const()`/`kfree_const()` additions that were inside the removed `#ifndef __HAVE_ARCH_STRDUP` block. Resolved by preserving the local additions outside the removed guard. Note added to commit message.
+- Merge commit `44b50d2d0a2`: Trivial whitespace-only conflict in `lib/string.c`; resolved by keeping HEAD version. The merge ended up carrying a 1-line whitespace addition to `include/linux/string.h`.
+
+**Delta concerns:** None — all individual commits matched the original file/line counts exactly.
+
+Branch is ready to push; not merged into any other branch.
 
 ---
 
