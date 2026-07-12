@@ -1249,14 +1249,16 @@ config SPL_OS_BOOT_ARGS
 
 config SPL_PAYLOAD_ARGS_ADDR
 	hex "Address in memory to load 'args' file for Falcon Mode to"
-	depends on SPL_OS_BOOT_ARGS
+	depends on SPL_OS_BOOT_ARGS || SPL_OPENSBI
 	default 0x88000000 if ARCH_OMAP2PLUS
 	default 0x99000000 if ARCH_SC5XX && SC59X_64
 	default 0xA0000000 if ARCH_SC5XX && TARGET_SC594_SOM_EZKIT
 	default 0x80000000 if ARCH_SC5XX && TARGET_SC594_SOM_EZLITE
+	default 0x0
 	help
 	  Address in memory where the 'args' file, typically a device tree
-	  will be loaded in to memory.
+	  will be loaded in to memory. A value of 0 disables the copy of the
+	  device tree performed by the OpenSBI SPL loader.
 
 config SYS_NAND_SPL_KERNEL_OFFS
 	hex "Address in memory to load the OS file for Falcon mode to"
