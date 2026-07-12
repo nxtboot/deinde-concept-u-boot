@@ -31,6 +31,7 @@ from pickman import __main__ as pickman
 from pickman import agent
 from pickman import control
 from pickman import database
+from pickman import drift
 from pickman import gitlab_api as gitlab
 
 # Test URL constants
@@ -6847,6 +6848,358 @@ class TestResolveSubtreeConflicts(unittest.TestCase):
                     'dts', 'v6.15-dts', 'dts/upstream', '/tmp/test')
         self.assertFalse(success)
         self.assertEqual(log, '')
+
+
+# A diff covering the cases which matter: a change, a file with two hunks, a
+# file deleted downstream and a binary file
+#
+# The lines are joined rather than written as one string, since a diff has
+# leading spaces and tabs which are not welcome in a source file
+DRIFT_DIFF = '\n'.join([
+    'diff --git a/README b/README',
+    'index 5653f68..f43d956 100644',
+    '--- a/README',
+    '+++ b/README',
+    '@@ -1,4 +1,4 @@',
+    '- # SPDX-License-Identifier: GPL-2.0+',
+    '+# SPDX-License-Identifier: GPL-2.0+',
+    ' #',
+    ' # (C) Copyright 2000',
+    ' #',
+    'diff --git a/drivers/video/vid.c b/drivers/video/vid.c',
+    'index 1111111..2222222 100644',
+    '--- a/drivers/video/vid.c',
+    '+++ b/drivers/video/vid.c',
+    '@@ -10,6 +10,7 @@ static int probe(void)',
+    ' {',
+    ' \tint ret;',
+    ' ',
+    '+\tdebug("hello\\n");',
+    ' \tret = init();',
+    ' \tif (ret)',
+    ' \t\treturn ret;',
+    '@@ -30,3 +31,4 @@ int remove(void)',
+    ' \tfree(priv);',
+    ' \treturn 0;',
+    ' }',
+    '+/* end */',
+    'diff --git a/tools/old.c b/tools/old.c',
+    'deleted file mode 100644',
+    'index 3333333..0000000',
+    '--- a/tools/old.c',
+    '+++ /dev/null',
+    '@@ -1,3 +0,0 @@',
+    '-int main(void)',
+    '-{',
+    '-}',
+    'diff --git a/logo.bmp b/logo.bmp',
+    'index 4444444..5555555 100644',
+    'Binary files a/logo.bmp and b/logo.bmp differ',
+    '',
+])
+
+
+class TestDriftFingerprint(unittest.TestCase):
+    """Tests for hunk fingerprinting"""
+
+    def test_ignores_context(self):
+        """Test that only added and removed lines affect the fingerprint"""
+        first = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+new', ' ctx'])
+        second = drift.fingerprint(
+            ['@@ -99,2 +99,2 @@ func()', '-old', '+new', ' different ctx'])
+        self.assertEqual(first, second)
+
+    def test_content_change(self):
+        """Test that a change to the delta changes the fingerprint"""
+        first = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+new'])
+        second = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+other'])
+        self.assertNotEqual(first, second)
+
+    def test_length(self):
+        """Test that a fingerprint is the expected length"""
+        fprint = drift.fingerprint(['@@ -1 +1 @@', '+x'])
+        self.assertEqual(len(fprint), drift.FP_LEN)
+
+    def test_non_utf8(self):
+        """Test that a line which is not valid UTF-8 can be fingerprinted"""
+        raw = b'+caf\xf3'.decode('utf-8', errors='surrogateescape')
+        fprint = drift.fingerprint(['@@ -1 +1 @@', raw])
+        self.assertEqual(len(fprint), drift.FP_LEN)
+
+
+class TestDriftAddedLines(unittest.TestCase):
+    """Tests for working out which downstream lines a hunk adds"""
+
+    def test_added(self):
+        """Test that added lines get the correct downstream line numbers"""
+        lines = ['@@ -10,3 +10,4 @@', ' ctx', '+one', ' ctx', '+two']
+        self.assertEqual(drift.added_lines(10, lines), [11, 13])
+
+    def test_removed_takes_no_space(self):
+        """Test that a removed line does not advance the line number"""
+        lines = ['@@ -10,3 +10,2 @@', ' ctx', '-gone', '+new']
+        self.assertEqual(drift.added_lines(10, lines), [11])
+
+    def test_no_newline_marker(self):
+        """Test that the 'no newline at end of file' note is not a line"""
+        lines = ['@@ -1,1 +1,1 @@', '-old', '\\ No newline at end of file',
+                 '+new']
+        self.assertEqual(drift.added_lines(1, lines), [1])
+
+    def test_deletion_only(self):
+        """Test that a hunk which only removes lines adds nothing"""
+        lines = ['@@ -1,3 +0,0 @@', '-one', '-two', '-three']
+        self.assertEqual(drift.added_lines(0, lines), [])
+
+
+class TestDriftParseDiff(unittest.TestCase):
+    """Tests for parsing git diff output"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.fdiffs = drift.parse_diff(DRIFT_DIFF)
+        self.by_path = {fdiff.path: fdiff for fdiff in self.fdiffs}
+
+    def test_empty(self):
+        """Test that an empty diff produces nothing"""
+        self.assertEqual(drift.parse_diff(''), [])
+
+    def test_files_found(self):
+        """Test that every file in the diff is found"""
+        self.assertEqual(
+            [fdiff.path for fdiff in self.fdiffs],
+            ['README', 'drivers/video/vid.c', 'tools/old.c', 'logo.bmp'])
+
+    def test_hunks(self):
+        """Test that a file with two hunks yields both"""
+        fdiff = self.by_path['drivers/video/vid.c']
+        self.assertEqual(len(fdiff.hunks), 2)
+        self.assertEqual(fdiff.hunks[0].start, 10)
+        self.assertEqual(fdiff.hunks[0].count, 7)
+        self.assertEqual(fdiff.hunks[0].added, [13])
+        self.assertEqual(fdiff.hunks[1].added, [34])
+
+    def test_hunk_without_count(self):
+        """Test a hunk header which gives no line count, meaning one line"""
+        diff = ('diff --git a/f b/f\n--- a/f\n+++ b/f\n'
+                '@@ -1 +1 @@\n-old\n+new\n')
+        hunk = drift.parse_diff(diff)[0].hunks[0]
+        self.assertEqual(hunk.start, 1)
+        self.assertEqual(hunk.count, 1)
+
+    def test_header_kept(self):
+        """Test that the header is kept, so a patch can be rebuilt"""
+        fdiff = self.by_path['README']
+        self.assertEqual(fdiff.header[0], 'diff --git a/README b/README')
+        self.assertIn('--- a/README', fdiff.header)
+        self.assertIn('+++ b/README', fdiff.header)
+
+    def test_binary(self):
+        """Test that a binary difference is flagged and has no hunks"""
+        fdiff = self.by_path['logo.bmp']
+        self.assertTrue(fdiff.binary)
+        self.assertEqual(fdiff.hunks, [])
+
+    def test_deleted(self):
+        """Test that a file deleted downstream is flagged"""
+        self.assertTrue(self.by_path['tools/old.c'].deleted)
+        self.assertFalse(self.by_path['README'].deleted)
+
+    def test_preamble_ignored(self):
+        """Test that anything before the first file is ignored"""
+        fdiffs = drift.parse_diff('some noise\n' + DRIFT_DIFF)
+        self.assertEqual(len(fdiffs), 4)
+
+
+class TestDriftAccepts(unittest.TestCase):
+    """Tests for the accept file"""
+
+    def test_read(self):
+        """Test reading entries, skipping comments and blank lines"""
+        text = ('# a comment\n'
+                '\n'
+                'README                 *        Our fix for line 1\n'
+                'drivers/video/vid.c    a1b2c3d  Needed by bootstd\n')
+        accepts = drift.read_accepts(text)
+        self.assertEqual(len(accepts), 2)
+        self.assertEqual(accepts[0],
+                         drift.Accept('README', '*', 'Our fix for line 1'))
+        self.assertEqual(accepts[1].fingerprint, 'a1b2c3d')
+        self.assertEqual(accepts[1].reason, 'Needed by bootstd')
+
+    def test_read_empty(self):
+        """Test that an empty accept file yields no entries"""
+        self.assertEqual(drift.read_accepts(''), [])
+
+    def test_read_malformed(self):
+        """Test that a line with too few fields is reported"""
+        with self.assertRaises(ValueError) as exc:
+            drift.read_accepts('README *\n')
+        self.assertIn('README *', str(exc.exception))
+        self.assertIn(':1:', str(exc.exception))
+
+    def test_round_trip(self):
+        """Test that entries survive being written and read back"""
+        accepts = [drift.Accept('README', '*', 'Our fix'),
+                   drift.Accept('a/b.c', 'abc123def456', 'Downstream tweak')]
+        again = drift.read_accepts(drift.format_accepts(accepts))
+        self.assertEqual(sorted(accepts), again)
+
+    def test_format_sorted(self):
+        """Test that entries are sorted, to keep the diff small"""
+        accepts = [drift.Accept('zzz', '*', 'Last'),
+                   drift.Accept('aaa', '*', 'First')]
+        out = drift.format_accepts(accepts)
+        self.assertLess(out.index('First'), out.index('Last'))
+
+    def test_format_header(self):
+        """Test that the file explains itself"""
+        out = drift.format_accepts([])
+        self.assertIn('deltas from upstream which are intentional', out)
+        self.assertTrue(out.endswith('\n'))
+
+
+class TestDriftMatchAccept(unittest.TestCase):
+    """Tests for matching a hunk against the accept file"""
+
+    def test_whole_file(self):
+        """Test that '*' covers every hunk in a file"""
+        accepts = [drift.Accept('README', '*', 'Our fix')]
+        self.assertEqual(
+            drift.match_accept(accepts, 'README', 'abc123').reason, 'Our fix')
+
+    def test_one_hunk(self):
+        """Test that a fingerprint covers only that hunk"""
+        accepts = [drift.Accept('a/b.c', 'abc123', 'Wanted')]
+        self.assertIsNotNone(drift.match_accept(accepts, 'a/b.c', 'abc123'))
+        self.assertIsNone(drift.match_accept(accepts, 'a/b.c', 'other1'))
+
+    def test_glob(self):
+        """Test that a glob covers the files it matches"""
+        accepts = [drift.Accept('arch/arm/dts/*.dtsi', '*', 'Ours')]
+        self.assertIsNotNone(
+            drift.match_accept(accepts, 'arch/arm/dts/k3.dtsi', 'abc123'))
+        self.assertIsNone(
+            drift.match_accept(accepts, 'arch/arm/dts/k3.dts', 'abc123'))
+
+    def test_directory(self):
+        """Test that a pattern ending in '/' covers everything below it"""
+        accepts = [drift.Accept('test/hooks/', '*', 'Downstream hooks')]
+        self.assertIsNotNone(
+            drift.match_accept(accepts, 'test/hooks/deep/f.py', 'abc123'))
+        self.assertIsNone(
+            drift.match_accept(accepts, 'test/other/f.py', 'abc123'))
+
+    def test_no_match(self):
+        """Test that an unrelated file does not match"""
+        accepts = [drift.Accept('README', '*', 'Our fix')]
+        self.assertIsNone(drift.match_accept(accepts, 'Makefile', 'abc123'))
+
+
+class TestDriftClassify(unittest.TestCase):
+    """Tests for classifying hunks as wanted, accepted or drift"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.by_path = {fdiff.path: fdiff
+                        for fdiff in drift.parse_diff(DRIFT_DIFF)}
+        self.vid = self.by_path['drivers/video/vid.c']
+
+    def test_no_downstream_commit(self):
+        """Test that every hunk is drift when nothing touched the file"""
+        verdicts = drift.classify(self.vid, [], None)
+        self.assertEqual([vdt.state for vdt in verdicts],
+                         [drift.DRIFT, drift.DRIFT])
+
+    def test_accepted(self):
+        """Test that the accept file exempts a hunk"""
+        fprint = self.vid.hunks[0].fingerprint
+        accepts = [drift.Accept('drivers/video/vid.c', fprint, 'Wanted')]
+        verdicts = drift.classify(self.vid, accepts, None)
+        self.assertEqual(verdicts[0].state, drift.ACCEPTED)
+        self.assertEqual(verdicts[0].reason, 'Wanted')
+        self.assertEqual(verdicts[1].state, drift.DRIFT)
+
+    def test_blame_wanted(self):
+        """Test that a hunk a downstream commit wrote is wanted"""
+        # The first hunk adds line 13, the second adds line 34
+        blame = {13: 'abc123'}
+        verdicts = drift.classify(self.vid, [], blame)
+        self.assertEqual(verdicts[0].state, drift.WANTED)
+        self.assertEqual(verdicts[0].reason, 'abc123')
+        self.assertEqual(verdicts[1].state, drift.DRIFT)
+
+    def test_blame_no_owner(self):
+        """Test that a hunk no downstream commit wrote is drift"""
+        verdicts = drift.classify(self.vid, [], {999: 'abc123'})
+        self.assertEqual([vdt.state for vdt in verdicts],
+                         [drift.DRIFT, drift.DRIFT])
+
+    def test_deletion_kept_when_blamed(self):
+        """Test that a deletion is left alone when blame is in use
+
+        Blame can say who wrote a line but not who deleted one, so reverting
+        it might resurrect code a downstream commit meant to remove.
+        """
+        old = self.by_path['tools/old.c']
+        verdicts = drift.classify(old, [], {})
+        self.assertEqual(verdicts[0].state, drift.WANTED)
+        self.assertEqual(verdicts[0].reason, 'deletion')
+
+    def test_deletion_is_drift_without_blame(self):
+        """Test that a deletion is drift when no commit touched the file"""
+        old = self.by_path['tools/old.c']
+        verdicts = drift.classify(old, [], None)
+        self.assertEqual(verdicts[0].state, drift.DRIFT)
+
+
+class TestDriftBuildPatch(unittest.TestCase):
+    """Tests for building the patch which reverts drift"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.fdiffs = drift.parse_diff(DRIFT_DIFF)
+
+    def test_nothing_to_do(self):
+        """Test that a tree with no drift produces no patch"""
+        verdicts = {fdiff.path: [drift.Verdict(hunk, drift.WANTED, 'x')
+                                 for hunk in fdiff.hunks]
+                    for fdiff in self.fdiffs}
+        self.assertEqual(drift.build_patch(self.fdiffs, verdicts), '')
+
+    def test_only_drift_hunks(self):
+        """Test that only the drift hunks appear in the patch"""
+        verdicts = {}
+        for fdiff in self.fdiffs:
+            verdicts[fdiff.path] = [
+                drift.Verdict(hunk, drift.WANTED, 'x')
+                for hunk in fdiff.hunks]
+        vid = 'drivers/video/vid.c'
+        hunk = self.fdiffs[1].hunks[1]
+        verdicts[vid][1] = drift.Verdict(hunk, drift.DRIFT, None)
+
+        patch = drift.build_patch(self.fdiffs, verdicts)
+        self.assertIn('diff --git a/drivers/video/vid.c', patch)
+        self.assertIn('/* end */', patch)
+        # The wanted hunk in the same file must not be reverted
+        self.assertNotIn('debug("hello', patch)
+        self.assertNotIn('README', patch)
+        self.assertTrue(patch.endswith('\n'))
+
+
+class TestDriftGroupByArea(unittest.TestCase):
+    """Tests for grouping drifted files by area of the tree"""
+
+    def test_group(self):
+        """Test that files are grouped by a sensible area"""
+        areas = drift.group_by_area([
+            'README', 'arch/arm/dts/k3.dtsi', 'arch/arm/cpu/cpu.c',
+            'arch/riscv/lib/boot.c', 'lib/efi_loader/efi.c', 'cmd/gpt.c'])
+        self.assertEqual(list(areas), [
+            'README', 'arch/arm', 'arch/riscv', 'cmd', 'lib'])
+        self.assertEqual(areas['arch/arm'],
+                         ['arch/arm/cpu/cpu.c', 'arch/arm/dts/k3.dtsi'])
+        self.assertEqual(areas['lib'], ['lib/efi_loader/efi.c'])
 
 
 if __name__ == '__main__':
