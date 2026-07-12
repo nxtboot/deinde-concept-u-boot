@@ -86300,3 +86300,29 @@ Retry the pipeline; no source change is required.
 
 ---
 
+## 2026-07-12: us/master
+
+Branch: cherry-825f8ee2fcf
+
+Commits:
+- 825f8ee2fcf ti: Quote board_init in ti_common.env
+- 6b109a1304a siemens: Quote A/B flags in env tests
+- 2120834c25d beaglev_fire: Quote no_of_overlays in design test
+- 9458e39c659 mccmon6: Quote recovery_status in bootcmd test
+- 93d7dc20e80 aristainetos2: Quote rescue_reason in rescueboot test
+- 9a13d087325 Merge patch series "test: Quote variables in 'test -n' expressions across boards"
+
+### Conversation log
+All 6 commits cherry-picked successfully onto branch `cherry-825f8ee2fcf`.
+
+**Final status:**
+- Build: OK (no warnings or errors)
+- All 6 commits present in git log
+- No fix-ups needed — all cherry-picks applied cleanly
+- No concerning deltas — each cherry-pick matches the original exactly (same files, same line counts)
+- The merge commit `9a13d087325` was applied as an empty commit (as expected for a merge on a linear branch) using `--allow-empty` to preserve the history marker
+
+Branch is ready for pushing.
+
+---
+
