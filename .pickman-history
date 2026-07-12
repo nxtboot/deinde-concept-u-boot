@@ -86053,3 +86053,46 @@ Branch is ready to push; not merged into any other branch.
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-ca1c292d2ee
+
+Comments addressed:
+
+
+### Conversation log
+Good — the remaining hits are prose/logs in old entries, not actual conflict markers. Continue.
+
+Build passed. Now push to the remote.
+
+Rebase, build, and push all succeeded. Summary:
+
+## Rebase Summary — MR !1155 (cherry-ca1c292d2ee)
+
+**Rebased onto:** `ci/master` (6904c90560e)
+
+**Commits (11 total, all preserved including the merge commit and pickman-history commit):**
+- 92fd5596a12 string: fix prototype of memdup()
+- bfa474b11f0 stdio: drop stdio_clone
+- dbd21405c9c lib/string.c: drop pointless __HAVE_ARCH_STRDUP
+- 6def0340dcb lib/string.c: introduce memdup_nul() helper
+- 1502d8d1141 lib/string.c: implement strdup()/strndup() in terms of memdup_nul()
+- 820acee935f lib/hashtable.c: use memdup_nul() in himport_r
+- 3b690b80ff9 common/cli.c: use memdup_nul() in run_command_list()
+- 59a5ff7134a drivers/core: use memdup() instead of malloc()+memcpy()
+- c69d0c43388 test: lib: add test of memdup_nul()
+- c9180de9d34 Merge patch series "add memdup_nul()..."
+- a763f08ae07 pickman: Record cherry-pick of 10 commits from us/master
+
+**Conflicts resolved:** Only a `.pickman-history` merge conflict in the trailing pickman-record commit — resolved by keeping both existing history entries (the pre-existing `cherry-ece349ade29` entry from ci/master and the new `cherry-ca1c292d2ee` entry). No source-code conflicts. Deltas of all rebased commits are unchanged from the pre-rebase versions.
+
+**Build check:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 boards built OK, no warnings/errors.
+
+**Push:** Force-pushed to remote `ci` branch `cherry-ca1c292d2ee` (44b50d2d0a2 → a763f08ae07). GitLab will trigger a new MR pipeline automatically.
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master` (6904c90560e). Only conflict was in `.pickman-history` (kept both entries). No source-code conflicts, deltas unchanged. Sandbox build passes cleanly. Force-pushed to update the MR.
+
+---
+
