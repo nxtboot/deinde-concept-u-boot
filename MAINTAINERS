@@ -1596,6 +1596,9 @@ M:	Vincent Jardin <vjardin@free.fr>
 S:	Maintained
 F:	cmd/pmbus.c
 F:	doc/develop/pmbus.rst
+F:	drivers/power/regulator/pmbus_generic.c
+F:	drivers/power/regulator/pmbus_helper.c
+F:	drivers/power/regulator/pmbus_helper.h
 F:	include/pmbus.h
 F:	lib/pmbus.c
 

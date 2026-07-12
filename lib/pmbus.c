@@ -762,6 +762,23 @@ int pmbus_set_active(int bus_seq, u8 addr)
 	}
 
 	/*
+	 * No MFR_ID chip-match (a spec compliant part with no per chip
+	 * driver, e.g. a Flex / Delta PSU): if a generic / chip
+	 * UCLASS_REGULATOR is bound at this address, reuse its
+	 * VOUT_MODE detected driver_info so telemetry decodes through
+	 * the right per class formats instead of the blanket
+	 * LINEAR16 / LINEAR11 fallback.
+	 */
+	if (CONFIG_IS_ENABLED(DM_REGULATOR_PMBUS_HELPER) &&
+	    !pmbus_active_state.info) {
+		const struct pmbus_driver_info *di =
+			pmbus_regulator_info_by_addr(bus_seq, addr);
+
+		if (di)
+			pmbus_active_state.info = di;
+	}
+
+	/*
 	 * MFR_MODEL / MFR_REVISION are best effort. Use the same byte
 	 * order the matched chip declared; if nothing matched, use the
 	 * forward order.

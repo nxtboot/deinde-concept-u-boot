@@ -465,6 +465,43 @@ void pmbus_print_telemetry(struct udevice *chip);
 void pmbus_print_status_word(struct udevice *chip);
 
 /*
+ * Regulator -> thermal bridge.
+ *
+ * Read READ_TEMPERATURE_1 (8Dh) from a UCLASS_REGULATOR device that
+ * was bound by a pmbus_helper based chip driver, decode it through
+ * the chip's pmbus_driver_info (so the MPS DIRECT 1 degC/LSB quirk
+ * and the standard LINEAR11 encoding are both handled), select the
+ * regulator's PAGE first on multi rail parts, and return the result
+ * in millidegrees Celsius.
+ *
+ * This is what the generic drivers/thermal/pmbus_thermal.c companion
+ * calls on its parent; keeping the decode here avoids exposing the
+ * regulator-private pmbus_regulator_priv layout to other subsystems.
+ *
+ * Returns 0 on success, or a negative errno (-ENODEV if reg is not a
+ * probed pmbus regulator, -EIO on bus error).
+ */
+int pmbus_regulator_read_temp(struct udevice *reg_dev, int *temp_mc);
+
+/*
+ * Look up the pmbus_driver_info of a probed UCLASS_REGULATOR device at
+ * (bus_seq, addr) that is driven by a pmbus_helper based chip driver
+ * (mpq8785, pmbus_generic, ...). Probes the device so its identify
+ * hook has run and format[] is populated, then returns its
+ * driver_info. Returns NULL if no such regulator is bound at that
+ * address, if the device is not a pmbus regulator, or if
+ * CONFIG_DM_REGULATOR_PMBUS_HELPER is disabled.
+ *
+ * Lets pmbus_set_active() -- and thus the pmbus CLI and the board
+ * boot snapshots -- reuse the rich, VOUT_MODE detected driver_info of
+ * a DT bound generic / chip regulator when the device is selected by
+ * raw <bus>:<addr> (which has no chip-match registry entry and would
+ * otherwise fall back to blanket LINEAR16 / LINEAR11 decoding).
+ */
+const struct pmbus_driver_info *pmbus_regulator_info_by_addr(int bus_seq,
+							     u8 addr);
+
+/*
  * Status bit name decoding.
  *
  * Sparse mask to name table. pmbus_print_bits() emits only the bits
