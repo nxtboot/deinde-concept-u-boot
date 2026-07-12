@@ -59,6 +59,21 @@ config FSP_T_ENTRY_OFFSET
 	  SplitFspBin.py info). Used directly since there is no stack, and so
 	  no easy way to parse the header, before TempRamInit is called
 
+config FSP_CODE_REGION_BASE
+	hex
+	default 0xfff00000
+	help
+	  Base address of the region which FSP-T sets up to be cached for
+	  execute-in-place code, i.e. the part of the SPI flash which the PCH
+	  maps below 4GB. The FSP's own default for this is zero, which makes
+	  TempRamInit fail, so it must be provided
+
+config FSP_CODE_REGION_SIZE
+	hex
+	default 0x100000
+	help
+	  Size of the execute-in-place code region (see FSP_CODE_REGION_BASE)
+
 config FSP_M_ADDR
 	hex
 	default 0xffe5f000

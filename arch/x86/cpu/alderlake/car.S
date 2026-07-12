@@ -79,9 +79,11 @@ die:
 	/*
 	 * Handcrafted ROM stack for the TempRamInit call: the return
 	 * address, then the single parameter, a pointer to the FSPT_UPD
-	 * region. NULL selects the defaults built into the FSP-T binary.
+	 * region. The FSP's own copy of that has a zero code region, which
+	 * makes TempRamInit fail, so U-Boot's filled-in copy is passed; it
+	 * is const, so it is in the ROM and can be read without a stack.
 	 */
 	.balign	4
 temp_ram_init_romstack:
 	.long	temp_ram_init_ret
-	.long	0			/* FSPT_UPD pointer (NULL) */
+	.long	temp_ram_init_params
