@@ -749,6 +749,7 @@ static int _xhci_alloc_device(struct usb_device *udev)
 {
 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
 	union xhci_trb *event;
+	int code;
 	int ret;
 
 	/*
@@ -766,8 +767,13 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	if (!event)
 		return -ETIMEDOUT;
 
-	BUG_ON(GET_COMP_CODE(le32_to_cpu(event->event_cmd.status))
-		!= COMP_SUCCESS);
+	code = GET_COMP_CODE(le32_to_cpu(event->event_cmd.status));
+	if (code != COMP_SUCCESS) {
+		printf("ERROR: Enable Slot command returned completion code %d.\n",
+		       code);
+		xhci_acknowledge_event(ctrl);
+		return -ENODEV;
+	}
 
 	udev->slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags));
 
