@@ -597,3 +597,13 @@ config DM_REGULATOR_MPQ8785
 	  digital multiphase voltage regulators with PMBus. Supports
 	  MPM3695, MPM3695-25, MPM82504, and MPQ8785. Adapted from the
 	  Linux drivers/hwmon/pmbus/mpq8785.c reference.
+
+config SANDBOX_PMBUS
+	bool "Sandbox PMBus 1.x chip emulator"
+	depends on SANDBOX && PMBUS && DM_I2C
+	help
+	  Emulate a PMBus 1.x compliant chip behind a sandbox I2C bus so
+	  the PMBus framework (lib/pmbus.c), the generic regulator
+	  (DM_REGULATOR_PMBUS_GENERIC) and the pmbus CLI command can be
+	  exercised by the dm unit tests with no real hardware. Only
+	  useful for testing; say N on real boards.

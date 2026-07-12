@@ -53,3 +53,4 @@ obj-$(CONFIG_DM_REGULATOR_MT6359) += mt6359_regulator.o
 obj-$(CONFIG_DM_REGULATOR_PMBUS_HELPER)  += pmbus_helper.o
 obj-$(CONFIG_DM_REGULATOR_PMBUS_GENERIC) += pmbus_generic.o
 obj-$(CONFIG_DM_REGULATOR_MPQ8785)       += mpq8785.o
+obj-$(CONFIG_SANDBOX_PMBUS)              += sandbox_pmbus.o
