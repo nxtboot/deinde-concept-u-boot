@@ -86262,3 +86262,41 @@ All other 20 commits applied cleanly with `-x`. The branch has not been merged a
 
 ---
 
+### Pipeline fix: 2026-07-13 (attempt 1)
+
+Branch: cherry-46606025225
+
+Failed jobs:
+- bpif3 (sjg-lab)
+- pico (sjg-lab)
+
+### Conversation log
+I've read the logs. Let me check out the branch and examine the commits to correlate.
+
+Let me verify the sdhci commit is functionally a no-op by checking the code before it:
+
+## Report: Infrastructure/transient failures — no code changes made
+
+**Verdict**: Both job failures are lab/hardware issues, not caused by any commit on the branch. The branch `cherry-46606025225-fix1` has been created pointing at the unchanged HEAD (06a454ea96d).
+
+### Diagnosis
+
+**bpif3 (job 552406)**: The FSBL (u-boot-spl-ddr.bin) staged successfully over the SpacemiT boot-ROM protocol, but the DFU gadget for downloading u-boot.itb never enumerated — `dfu-util: No DFU capable USB device available` on all 5 retry attempts, ending in `Lab failure: Marking connection bad`. This is a USB-loader readiness problem on the lab host/board.
+
+**pico (job 552404)**: The console log shows serial corruption — a command arrived as `pa�t types` (garbled `part types`) and stale `md` output interleaved after prompts. Despite that, the pytest summary reads `28 passed, 519 skipped` — a classic UART/lab flake causing a nonzero harness exit (status 2).
+
+### Why the branch is not responsible
+
+I checked every change on the branch (23 files vs base):
+
+- The only core code touched that these boards use is `drivers/mmc/sdhci.c` (commit 567698b6c29, "mmc: sdhci: Start status timeout after command issue"). I verified it is a **functional no-op**: it removes the `start = get_timer(0)` initialisation at function entry, but the timer was *already* re-initialised immediately after the command write (line 303, present since 2015) — the exact behaviour the commit describes is already in place.
+- Everything else is power-domain/pmic staticize-constify (none used by K1 or RV1103), am335x board code, MCP230xx Kconfig, cv1800b_sdhci (Sophgo, different SoC), and ds1307 RTC — all irrelevant to bpif3 (spacemit_k1) and pico (luckfox-pico-mini-b-rv1103).
+- Nothing touches RISC-V, spacemit, USB gadget, DFU, or serial code.
+- Both boards build cleanly locally: `buildman -o /tmp/pickman spacemit_k1 luckfox-pico-mini-b-rv1103` — 0 errors (spacemit_k1 shows only the expected missing-OPENSBI-blob warning outside CI).
+
+### Recommendation
+
+Retry the pipeline; no source change is required.
+
+---
+
