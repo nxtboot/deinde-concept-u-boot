@@ -82,6 +82,41 @@
 #define MCHBAR_EDRAMBAR		0x5408
 #define MCHBAR_REGBAR		0x5420
 
+/*
+ * The SMBus controller, which also hosts the TCO watchdog. The FSP uses the
+ * watchdog during memory init, so the TCO I/O base must decode
+ */
+#define PCH_DEV_SMBUS		PCI_BDF(0, 0x1f, 4)
+#define SMBUS_IO_BASE		0xefa0
+#define SMBUS_HOSTC		0x40	/* config space */
+#define SMBUS_HOSTC_HST_EN	BIT(0)
+/* offsets within the I/O BAR */
+#define SMBHSTSTAT		0x0
+#define SMBHSTCTL		0x2
+#define SMBUS_TCOBASE		0x50
+#define SMBUS_TCOCTL		0x54
+#define SMBUS_TCOCTL_EN		BIT(8)
+#define TCO_BASE_ADDRESS	0x400
+#define TCO1_CNT		0x08
+#define TCO1_TMR_HLT		BIT(11)
+
+/* The DMI sideband port holds the general-purpose memory range registers */
+#define PID_DMI			0x88
+#define GPMR_TCOBASE		0x2778
+#define GPMR_TCOEN		BIT(1)
+
+/**
+ * pcr_reg() - Get the address of a PCR register, reached through the P2SB
+ *
+ * @pid: Sideband port ID
+ * @offset: Register offset within the port
+ * Return: pointer to the register
+ */
+static void *pcr_reg(uint pid, uint offset)
+{
+	return (void *)(CONFIG_PCR_BASE_ADDRESS + (pid << 16) + offset);
+}
+
 /**
  * arch_cpu_init_tpl() - Set up the console in TPL
  *
@@ -111,8 +146,7 @@ static int arch_cpu_init_tpl(void)
  */
 static void *psf3_reg(uint offset)
 {
-	return (void *)(CONFIG_PCR_BASE_ADDRESS + (PID_PSF3 << 16) +
-			PSF3_PMC_REG_BASE + offset);
+	return pcr_reg(PID_PSF3, PSF3_PMC_REG_BASE + offset);
 }
 
 /**
@@ -178,6 +212,40 @@ static void setup_sa_bars(void)
 	for (i = 1; i <= 6; i++)
 		pci_x86_write_config(SA_DEV_ROOT, SA_PAM0 + i, 0x33,
 				     PCI_SIZE_8);
+}
+
+/**
+ * setup_smbus_tco() - Set up the SMBus controller and its TCO watchdog
+ *
+ * The FSP uses the watchdog during memory init, so its I/O range must
+ * decode; the TCO timer is halted, since nothing services it. coreboot does
+ * the same in romstage just before FSP-M.
+ */
+static void setup_smbus_tco(void)
+{
+	/* SMBus I/O base and enable */
+	pci_x86_write_config(PCH_DEV_SMBUS, PCI_BASE_ADDRESS_4, SMBUS_IO_BASE,
+			     PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_SMBUS, SMBUS_HOSTC, SMBUS_HOSTC_HST_EN,
+			     PCI_SIZE_8);
+	pci_x86_write_config(PCH_DEV_SMBUS, PCI_COMMAND, PCI_COMMAND_IO,
+			     PCI_SIZE_16);
+
+	/* Disable interrupts and clear errors */
+	outb(0, SMBUS_IO_BASE + SMBHSTCTL);
+	outb(0xff, SMBUS_IO_BASE + SMBHSTSTAT);
+
+	/* Program the TCO base, disabled while changing the address */
+	pci_x86_write_config(PCH_DEV_SMBUS, SMBUS_TCOCTL, 0, PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_SMBUS, SMBUS_TCOBASE, TCO_BASE_ADDRESS,
+			     PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_SMBUS, SMBUS_TCOCTL, SMBUS_TCOCTL_EN,
+			     PCI_SIZE_32);
+
+	/* Point the DMI fabric at it too, then halt the timer */
+	writel(TCO_BASE_ADDRESS | GPMR_TCOEN, pcr_reg(PID_DMI, GPMR_TCOBASE));
+	outw(inw(TCO_BASE_ADDRESS + TCO1_CNT) | TCO1_TMR_HLT,
+	     TCO_BASE_ADDRESS + TCO1_CNT);
 }
 
 /**
@@ -270,6 +338,7 @@ static int arch_cpu_init_spl(void)
 	setup_p2sb();
 	setup_pwrmbase();
 	setup_sa_bars();
+	setup_smbus_tco();
 
 	/*
 	 * Clear the ACPI power-management status and set the sleep state to
