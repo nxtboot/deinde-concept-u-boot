@@ -34,6 +34,16 @@
 #define ACPI_BASE_ADDRESS	0x1800
 
 /*
+ * The P2SB, which provides the sideband (PCR) register space. It must be set
+ * up before any PCR access, such as the ACPI-base setup below. Its HPTC
+ * register enables HPET decode, which FspMemoryInit() relies on to store its
+ * global-data pointer
+ */
+#define PCH_DEV_P2SB		PCI_BDF(0, 0x1f, 1)
+#define P2SB_HPTC		0x60
+#define P2SB_HPTC_ADDR_ENABLE	BIT(7)
+
+/*
  * The PMC's ACPI-base BAR is shadowed in the PSF3 fabric, so it is set up
  * there rather than in PCI config. Sideband port ID 0xbc, PMC register base
  * 0x1100, then BAR4 (the ACPI base) and the I/O-enable shadow
@@ -84,19 +94,65 @@ static void *psf3_reg(uint offset)
 }
 
 /**
+ * setup_p2sb() - Set up the P2SB sideband BAR and enable HPET decode
+ *
+ * All PCR accesses go through the P2SB's sideband-register BAR, and its HPTC
+ * register enables HPET decode, which FspMemoryInit() uses to store its
+ * global-data pointer. This must run before any PCR access, such as
+ * setup_acpi_base().
+ */
+static void setup_p2sb(void)
+{
+	pci_x86_write_config(PCH_DEV_P2SB, PCI_BASE_ADDRESS_0,
+			     CONFIG_PCR_BASE_ADDRESS, PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_P2SB, PCI_BASE_ADDRESS_1, 0,
+			     PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_P2SB, PCI_COMMAND,
+			     PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER,
+			     PCI_SIZE_16);
+
+	pci_x86_write_config(PCH_DEV_P2SB, P2SB_HPTC, P2SB_HPTC_ADDR_ENABLE,
+			     PCI_SIZE_8);
+}
+
+/**
+ * check_acpi_base() - Check that the ACPI base has decoded
+ *
+ * Warn if the P2SB or the ACPI-base shadow does not read back as expected.
+ */
+static void check_acpi_base(void)
+{
+	ulong vendev, bar;
+	u32 bar4, pcien;
+
+	pci_x86_read_config(PCH_DEV_P2SB, PCI_VENDOR_ID, &vendev,
+			    PCI_SIZE_32);
+	pci_x86_read_config(PCH_DEV_P2SB, PCI_BASE_ADDRESS_0, &bar,
+			    PCI_SIZE_32);
+	bar4 = readl(psf3_reg(PSF_SHDW_BAR4));
+	pcien = readl(psf3_reg(PSF_SHDW_PCIEN));
+	if (vendev == 0xffffffff || (bar4 & ~0xf) != ACPI_BASE_ADDRESS ||
+	    !(pcien & PSF_PCIEN_IOEN))
+		log_warning("P2SB: vendev %lx, bar %lx, psf3 bar4 %x, pcien %x\n",
+			    vendev, bar, bar4, pcien);
+	else
+		log_debug("P2SB: acpi base %x decoded\n", bar4);
+}
+
+/**
  * setup_acpi_base() - Set up the PMC's ACPI I/O base
  *
- * Without it FSP-M cannot read the power and sleep state. Note that the PSF
- * is reached through the P2SB sideband BAR, which at this point is only set
- * up when the debug UART is enabled (see adl_early_uart_init()); a later
- * patch sets it up explicitly.
+ * Without it FSP-M cannot read the power and sleep state, and its PMC code
+ * polls I/O ports which read as 0xffff, so it never gets through memory
+ * init. The PSF is reached through the P2SB sideband BAR, set up in
+ * setup_p2sb().
  *
  * Return: true if the base was programmed, false if not reachable
  */
 static bool setup_acpi_base(void)
 {
 	if (readl(psf3_reg(PSF_SHDW_BAR4)) == 0xffffffff) {
-		log_warning("ACPI base: PSF3 not reachable\n");
+		log_warning("PSF3 read failed; ACPI base not set up\n");
 		return false;
 	}
 
@@ -140,6 +196,13 @@ static int arch_cpu_init_spl(void)
 	 */
 	fast_spi_early_init(PCH_DEV_FAST_SPI, FAST_SPI_BASE);
 
+	/*
+	 * The PMC's config header is shadowed in the PSF, so the PWRM setup
+	 * (which writes the PMC command register) must come before the ACPI
+	 * base setup: writing the command register clears the shadow's
+	 * I/O-enable bit, which the ACPI-base setup sets
+	 */
+	setup_p2sb();
 	setup_pwrmbase();
 
 	/*
@@ -149,6 +212,7 @@ static int arch_cpu_init_spl(void)
 	 * writes would go to an undecoded I/O range
 	 */
 	if (setup_acpi_base()) {
+		check_acpi_base();
 		outw(0xffff, ACPI_BASE_ADDRESS + PM1_STS);
 		outl(inl(ACPI_BASE_ADDRESS + PM1_CNT) &
 		     ~(SLP_TYP_MASK | SLP_EN),
