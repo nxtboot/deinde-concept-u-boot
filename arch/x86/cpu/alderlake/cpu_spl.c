@@ -11,7 +11,9 @@
 #include <init.h>
 #include <log.h>
 #include <spl.h>
+#include <asm/cpu.h>
 #include <asm/fast_spi.h>
+#include <asm/msr.h>
 #include <asm/pci.h>
 #include <asm/io.h>
 #include <linux/bitops.h>
@@ -104,6 +106,13 @@
 #define PID_DMI			0x88
 #define GPMR_TCOBASE		0x2778
 #define GPMR_TCOEN		BIT(1)
+
+/* Writing zero to this MSR unlocks the memory configuration (TXT) */
+#define MSR_LT_UNLOCK_MEMORY	0x2e6
+
+/* CPUID.1 ecx flags showing that the CPU supports TXT */
+#define CPUID_ECX_VMX		BIT(5)
+#define CPUID_ECX_SMX		BIT(6)
 
 /**
  * pcr_reg() - Get the address of a PCR register, reached through the P2SB
@@ -249,6 +258,26 @@ static void setup_smbus_tco(void)
 }
 
 /**
+ * unlock_txt_memory() - Unlock the memory configuration on TXT-capable CPUs
+ *
+ * TXT-capable CPUs lock the memory configuration at reset and the MRC cannot
+ * program the memory controller until it is unlocked (TXT BIOS spec section
+ * 6.2.5). No TXT launch has happened, so it is safe to unlock; coreboot does
+ * the same before FSP-M when TXT is not in use.
+ */
+static void unlock_txt_memory(void)
+{
+	struct cpuid_result res;
+
+	res = cpuid(1);
+	if ((res.ecx & (CPUID_ECX_VMX | CPUID_ECX_SMX)) !=
+	    (CPUID_ECX_VMX | CPUID_ECX_SMX))
+		return;
+
+	wrmsr(MSR_LT_UNLOCK_MEMORY, 0, 0);
+}
+
+/**
  * check_acpi_base() - Check that the ACPI base has decoded
  *
  * Warn if the P2SB or the ACPI-base shadow does not read back as expected.
@@ -339,6 +368,7 @@ static int arch_cpu_init_spl(void)
 	setup_pwrmbase();
 	setup_sa_bars();
 	setup_smbus_tco();
+	unlock_txt_memory();
 
 	/*
 	 * Clear the ACPI power-management status and set the sleep state to
