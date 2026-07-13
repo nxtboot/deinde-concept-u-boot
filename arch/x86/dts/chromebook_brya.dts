@@ -153,6 +153,13 @@
 				m25p,fast-read;
 				compatible = "winbond,w25q256jw",
 					 "jedec,spi-nor";
+
+				rw-mrc-cache {
+					label = "rw-mrc-cache";
+					reg = <0x01000000 0x20000>;
+					bootph-pre-ram;
+					bootph-some-ram;
+				};
 			};
 		};
 	};

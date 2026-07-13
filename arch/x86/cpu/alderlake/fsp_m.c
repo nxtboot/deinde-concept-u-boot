@@ -233,14 +233,17 @@ static int read_memory_id(void)
 int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 {
 	struct fspm_arch_upd *arch = &upd->arch;
+	int cache_ret;
 	int mem_id;
 
 	/*
-	 * Tell the FSP where it may put its stack. The memory settings
-	 * themselves start from the FSP's own defaults, which the caller has
-	 * copied in
+	 * Look for saved memory-training data. With it, the FSP skips the
+	 * lengthy training and does not ask for a reset afterwards
 	 */
 	arch->nvs_buffer_ptr = NULL;
+	cache_ret = prepare_mrc_cache(upd);
+	if (cache_ret && cache_ret != -ENOENT)
+		return log_msg_ret("mrc", cache_ret);
 
 	/*
 	 * The FSP needs its own stack. U-Boot's is at the top of the region
@@ -255,7 +258,8 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 	 */
 	arch->stack_size = 0x38000;
 	arch->boot_loader_tolum_size = 0;
-	arch->boot_mode = FSP_BOOT_WITH_FULL_CONFIGURATION;
+	arch->boot_mode = cache_ret ? FSP_BOOT_WITH_FULL_CONFIGURATION :
+		FSP_BOOT_ASSUMING_NO_CONFIGURATION_CHANGES;
 
 	mem_id = read_memory_id();
 	if (mem_id < 0)
