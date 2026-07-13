@@ -11,6 +11,12 @@
 #include <init.h>
 #include <log.h>
 #include <spl.h>
+#include <asm/fast_spi.h>
+#include <asm/pci.h>
+
+/* The fast-SPI controller, which holds the flash's memory map */
+#define PCH_DEV_FAST_SPI	PCI_BDF(0, 0x1f, 5)
+#define FAST_SPI_BASE		0xfe010000
 
 /**
  * arch_cpu_init_tpl() - Set up the console in TPL
@@ -40,7 +46,14 @@ static int arch_cpu_init_tpl(void)
  */
 static int arch_cpu_init_spl(void)
 {
-	/* TODO(sjg@chromium.org): Set up BARs and devices needed by FSP-M */
+	/*
+	 * Give the fast-SPI controller its BAR. FSP-M is read through the
+	 * flash's memory map, which is found from this controller's
+	 * registers, and nothing has set it up at this point. The shared
+	 * helper also enables prefetching and write access
+	 */
+	fast_spi_early_init(PCH_DEV_FAST_SPI, FAST_SPI_BASE);
+
 	return 0;
 }
 

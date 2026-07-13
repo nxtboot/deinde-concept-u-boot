@@ -88,6 +88,13 @@
 			  0x01000000 0x0 0x1000 0x1000 0 0xefff>;
 		u-boot,skip-auto-config-until-reloc;
 
+		/*
+		 * The PCIe root ports are not usable until silicon init has
+		 * run, and scanning them before that hangs the platform, so
+		 * only the devices in this devicetree are used until then
+		 */
+		u-boot,skip-enumeration-until-reloc;
+
 		northbridge: host-bridge@0,0 {
 			reg = <0x00000000 0 0 0 0>;
 			bootph-pre-ram;
