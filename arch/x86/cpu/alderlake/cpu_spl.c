@@ -20,6 +20,16 @@
 #define PCH_DEV_FAST_SPI	PCI_BDF(0, 0x1f, 5)
 #define FAST_SPI_BASE		0xfe010000
 
+/*
+ * The PMC (power-management controller), whose PWRM MMIO block holds the ETR
+ * register used to request a global reset. FSP-M asks for a reset after
+ * memory init, and that must be a global reset so the CSE is reset too
+ */
+#define PCH_DEV_PMC		PCI_BDF(0, 0x1f, 2)
+#define PWRM_BASE		0xfe000000
+#define PWRM_ACTL		0x1bd8
+#define PWRM_EN			BIT(8)
+
 /* ACPI I/O base, holding PM1_STS/EN/CNT etc. which FSP-M reads */
 #define ACPI_BASE_ADDRESS	0x1800
 
@@ -99,6 +109,23 @@ static bool setup_acpi_base(void)
 }
 
 /**
+ * setup_pwrmbase() - Set up the PMC's PWRM MMIO base
+ *
+ * This holds the ETR register, which selects whether a CF9 reset is a global
+ * reset. FSP-M requests a reset after memory init and it must be a global one
+ * (see fsp_handle_reset()), so PWRM must be decoding by then.
+ */
+static void setup_pwrmbase(void)
+{
+	pci_x86_write_config(PCH_DEV_PMC, PCI_BASE_ADDRESS_0, PWRM_BASE,
+			     PCI_SIZE_32);
+	pci_x86_write_config(PCH_DEV_PMC, PCI_COMMAND,
+			     PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER,
+			     PCI_SIZE_16);
+	setbits_le32(PWRM_BASE + PWRM_ACTL, PWRM_EN);
+}
+
+/**
  * arch_cpu_init_spl() - Set up the BARs and devices which FSP-M needs
  *
  * Return: 0 if OK, -ve on error
@@ -112,6 +139,8 @@ static int arch_cpu_init_spl(void)
 	 * helper also enables prefetching and write access
 	 */
 	fast_spi_early_init(PCH_DEV_FAST_SPI, FAST_SPI_BASE);
+
+	setup_pwrmbase();
 
 	/*
 	 * Clear the ACPI power-management status and set the sleep state to
