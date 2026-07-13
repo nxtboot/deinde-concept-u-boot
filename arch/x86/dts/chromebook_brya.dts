@@ -32,6 +32,22 @@
 		silent-console = <0>;
 	};
 
+	/*
+	 * The console. This uses the UART's MMIO directly, rather than a PCI
+	 * node, since probing a PCI device means enumerating the bus, which
+	 * cannot be done before silicon init. The BAR is set up by the early
+	 * console code in TPL
+	 */
+	serial: serial@fe03e000 {
+		bootph-all;
+		compatible = "intel,apl-ns16550";
+		reg = <0xfe03e000 0x100>;
+		early-regs = <0xfe03e000 0x100>;
+		reg-shift = <2>;
+		clock-frequency = <1843200>;
+		current-speed = <115200>;
+	};
+
 	board {
 		bootph-pre-ram;
 		compatible = "google,brya-board";
@@ -70,6 +86,7 @@
 		ranges = <0x02000000 0x0 0xd0000000 0xd0000000 0 0x10000000
 			  0x42000000 0x0 0xb0000000 0xb0000000 0 0x10000000
 			  0x01000000 0x0 0x1000 0x1000 0 0xefff>;
+		u-boot,skip-auto-config-until-reloc;
 
 		northbridge: host-bridge@0,0 {
 			reg = <0x00000000 0 0 0 0>;
@@ -130,17 +147,6 @@
 				compatible = "winbond,w25q256jw",
 					 "jedec,spi-nor";
 			};
-		};
-
-		serial: serial@1e,0 {
-			reg = <0x0000f000 0 0 0 0>;
-			bootph-all;
-			compatible = "intel,apl-ns16550";
-			early-regs = <0xfe03e000 0x20>;
-			reg-shift = <2>;
-			clock-frequency = <1843200>;
-			current-speed = <115200>;
-			pci,no-autoconfig;
 		};
 	};
 };
