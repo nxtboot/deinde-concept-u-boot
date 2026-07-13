@@ -20,7 +20,7 @@ import os
 import re
 import tempfile
 
-import aiohttp
+import aiohttp  # pylint: disable=import-error
 
 from u_boot_pylib import claude as claude_mod
 from u_boot_pylib import gitutil
@@ -28,8 +28,6 @@ from u_boot_pylib import terminal
 from u_boot_pylib import tools
 from u_boot_pylib import tout
 
-from patman import cser_helper
-from patman import database
 from patman import gmail
 from patman import patchstream
 from patman import workflow
@@ -38,6 +36,25 @@ try:
     from claude_agent_sdk import ClaudeAgentOptions
 except ImportError:
     ClaudeAgentOptions = None
+
+# Details of a patch (commit) stored in the review database. This used to live
+# in patman's database module, which has since moved out of the U-Boot tree
+Pcommit = namedtuple(
+    'PCOMMIT',
+    'idnum,seq,subject,svid,change_id,state,patch_id,num_comments')
+
+
+def review_worktree_path(repo, branch_name):
+    """Get the on-disk path for a per-review worktree
+
+    Args:
+        repo (str): Top-level dir of the main checkout
+        branch_name (str): Review branch name
+
+    Return:
+        str: Path where the review worktree lives (may not yet exist)
+    """
+    return os.path.join(repo, '.git', 'patman', 'worktrees', branch_name)
 
 class ReviewContext:  # pylint: disable=R0902
     """Common context for review operations
@@ -1640,7 +1657,7 @@ def _register_series(cser, clean_name, version, link, series_data,
     patches = series_data.get('patches', [])
     pcommits = []
     for i, patch in enumerate(patches):
-        pcommits.append(database.Pcommit(idnum=None, seq=i,
+        pcommits.append(Pcommit(idnum=None, seq=i,
             subject=patch.get('name', ''), svid=svid, change_id=None,
             state=None, patch_id=patch.get('id'), num_comments=0))
     if pcommits:
@@ -1652,7 +1669,7 @@ def _register_series(cser, clean_name, version, link, series_data,
         for pcm, patch in zip(pclist, patches):
             patch_id = patch.get('id')
             if patch_id:
-                cser.db.pcommit_update(database.Pcommit(
+                cser.db.pcommit_update(Pcommit(
                     idnum=pcm.idnum, seq=pcm.seq, subject=pcm.subject,
                     svid=svid, change_id=pcm.change_id, state=pcm.state,
                     patch_id=patch_id, num_comments=pcm.num_comments))
@@ -1976,7 +1993,7 @@ def do_review(args, pwork, cser):
     ctx.main_repo = gitutil.get_top_level()
     ups = pwork.upstream if pwork else None
     ctx.branch_name = _make_review_name(link, ups)
-    wt_path = cser_helper.review_worktree_path(ctx.main_repo, ctx.branch_name)
+    wt_path = review_worktree_path(ctx.main_repo, ctx.branch_name)
     tout.notice(f'Using review worktree {wt_path}')
     ctx.repo_path = gitutil.ensure_worktree(
         ctx.main_repo, wt_path, ctx.branch_name, ctx.upstream_branch)
