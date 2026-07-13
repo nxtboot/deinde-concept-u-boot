@@ -12,6 +12,7 @@
 #include <log.h>
 #include <asm-generic/gpio.h>
 #include <linux/build_bug.h>
+#include <linux/sizes.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_m_upd.h>
 
@@ -137,6 +138,62 @@ static int setup_memory(struct fsp_m_config *cfg, int mem_id)
 }
 
 /**
+ * setup_platform() - Apply coreboot's non-memory FSP-M settings
+ *
+ * These are the settings which coreboot uses on brya but which differ from
+ * the FSP's own defaults (checked against FspmUpd.dsc in the FSP source).
+ * The memory training works without them, but they keep the FSP away from
+ * devices it should not touch and skip ME interactions U-Boot does not
+ * need.
+ *
+ * @cfg: FSP-M configuration to update
+ */
+static void setup_platform(struct fsp_m_config *cfg)
+{
+	/*
+	 * Do not poll the CSE for CPU-replacement status: with the CSE not
+	 * fully operational the check times out and forces a full retrain
+	 * on every boot
+	 */
+	cfg->skip_cpu_replacement_check = 1;
+
+	/* BIOS Guard defaults to on; coreboot always disables it */
+	cfg->bios_guard = 0;
+
+	/* Leave the PCU thermal-management registers unlocked */
+	cfg->lock_pt_mregs = 0;
+
+	/* The GPIO pads are configured by U-Boot, not the FSP */
+	cfg->gpio_override = 1;
+
+	/* coreboot uses an 8MB TSEG; the FSP default is 16MB */
+	cfg->tseg_size = SZ_8M;
+
+	/*
+	 * The debug UART is already set up (mode 4 is 'skip init'); the
+	 * default of 2 has the FSP reinitialise and hide it
+	 */
+	cfg->serial_io_uart_debug_mode = 4;
+	cfg->serial_io_uart_debug_controller_number = 0;
+	/* the FSP writes its own debug output through this base */
+	cfg->serial_io_uart_debug_mmio_base = CONFIG_DEBUG_UART_BASE;
+
+	/* Devices not fitted / not enabled on brya */
+	cfg->sa_ipu_enable = 0;
+	cfg->pch_ish_enable = 0;
+	cfg->tcss_itbt_pcie3_en = 0;
+
+	/* coreboot does not use C6 DRAM */
+	cfg->enable_c6_dram = 0;
+
+	/*
+	 * coreboot sets the CPU ratio from the flex-ratio MSR, which reads
+	 * as zero on these parts; the FSP default is 0x1c
+	 */
+	cfg->cpu_ratio = 0;
+}
+
+/**
  * read_memory_id() - Read the DRAM-ID straps
  *
  * The board fits one of several memory parts, indicated by a few strapping
@@ -204,6 +261,8 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 	if (mem_id < 0)
 		return log_msg_ret("memory ID", mem_id);
 	log_debug("Memory ID %d\n", mem_id);
+
+	setup_platform(&upd->config);
 
 	return setup_memory(&upd->config, mem_id);
 }
