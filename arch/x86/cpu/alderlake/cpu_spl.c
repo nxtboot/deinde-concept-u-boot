@@ -60,6 +60,28 @@
 #define SLP_TYP_MASK		(7 << 10)
 #define SLP_EN			BIT(13)
 
+/*
+ * System-agent (host bridge 00:00.0) fixed BARs, which coreboot programs
+ * just before FSP-M, so the MRC can use them. The addresses come from
+ * coreboot's soc/intel/alderlake iomap
+ */
+#define SA_DEV_ROOT		PCI_BDF(0, 0, 0)
+#define SA_EPBAR		0x40
+#define SA_MCHBAR		0x48
+#define SA_DMIBAR		0x68
+#define SA_BAR_ENABLE		BIT(0)
+#define SA_PAM0			0x80
+
+#define MCH_BASE		0xfedc0000
+#define DMI_BASE		0xfeda0000
+#define EP_BASE			0xfeda1000
+#define EDRAM_BASE		0xfed80000
+#define REG_BASE		0xfb000000
+
+/* These two BARs live within the MCHBAR MMIO space */
+#define MCHBAR_EDRAMBAR		0x5408
+#define MCHBAR_REGBAR		0x5420
+
 /**
  * arch_cpu_init_tpl() - Set up the console in TPL
  *
@@ -113,6 +135,49 @@ static void setup_p2sb(void)
 
 	pci_x86_write_config(PCH_DEV_P2SB, P2SB_HPTC, P2SB_HPTC_ADDR_ENABLE,
 			     PCI_SIZE_8);
+}
+
+/**
+ * setup_sa_bars() - Set up the system agent's fixed BARs
+ *
+ * The MRC uses these during memory init. Also open the PAM region so that
+ * 0xc0000-0xfffff is serviced by DRAM. coreboot does this in romstage just
+ * before calling FSP-M.
+ */
+static void setup_sa_bars(void)
+{
+	uint i;
+
+	/* The upper halves of these 64-bit BARs are zero */
+	pci_x86_write_config(SA_DEV_ROOT, SA_MCHBAR + 4, 0, PCI_SIZE_32);
+	pci_x86_write_config(SA_DEV_ROOT, SA_MCHBAR, MCH_BASE | SA_BAR_ENABLE,
+			     PCI_SIZE_32);
+	pci_x86_write_config(SA_DEV_ROOT, SA_DMIBAR + 4, 0, PCI_SIZE_32);
+	pci_x86_write_config(SA_DEV_ROOT, SA_DMIBAR, DMI_BASE | SA_BAR_ENABLE,
+			     PCI_SIZE_32);
+	pci_x86_write_config(SA_DEV_ROOT, SA_EPBAR + 4, 0, PCI_SIZE_32);
+	pci_x86_write_config(SA_DEV_ROOT, SA_EPBAR, EP_BASE | SA_BAR_ENABLE,
+			     PCI_SIZE_32);
+
+	/*
+	 * REGBAR and EDRAMBAR are programmed through MCHBAR; as with the
+	 * BARs above, write the upper half first so the BAR never decodes
+	 * at a stale address
+	 */
+	writel(0, MCH_BASE + MCHBAR_REGBAR + 4);
+	writel(REG_BASE | SA_BAR_ENABLE, MCH_BASE + MCHBAR_REGBAR);
+	writel(0, MCH_BASE + MCHBAR_EDRAMBAR + 4);
+	writel(EDRAM_BASE | SA_BAR_ENABLE, MCH_BASE + MCHBAR_EDRAMBAR);
+
+	/*
+	 * Let reads and writes to the PAM region go to DRAM. Each PAM
+	 * register covers two segments, one per nibble, with 3 enabling
+	 * both reads and writes; PAM0's lower nibble is reserved
+	 */
+	pci_x86_write_config(SA_DEV_ROOT, SA_PAM0, 0x30, PCI_SIZE_8);
+	for (i = 1; i <= 6; i++)
+		pci_x86_write_config(SA_DEV_ROOT, SA_PAM0 + i, 0x33,
+				     PCI_SIZE_8);
 }
 
 /**
@@ -204,6 +269,7 @@ static int arch_cpu_init_spl(void)
 	 */
 	setup_p2sb();
 	setup_pwrmbase();
+	setup_sa_bars();
 
 	/*
 	 * Clear the ACPI power-management status and set the sleep state to
