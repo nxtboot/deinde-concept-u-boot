@@ -63,6 +63,10 @@
 			u-boot-tpl {
 				offset = <CONFIG_TPL_TEXT_BASE>;
 			};
+			spd {
+				type = "blob-ext";
+				filename = "spd.bin";
+			};
 			microcode {
 				type = "blob-ext";
 				filename = "mu_06-9a-04.bin";
