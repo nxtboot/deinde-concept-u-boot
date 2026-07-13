@@ -86143,3 +86143,69 @@ All done. Summary:
 
 ---
 
+### Pipeline fix: 2026-07-13 (attempt 1)
+
+Branch: cherry-ca1c292d2ee
+
+Failed jobs:
+- build all 32bit ARM platforms (world_build)
+- efi-aarch64 (sjg-lab)
+- bpif3 (sjg-lab)
+- pico (sjg-lab)
+- rockpro64 (sjg-lab)
+- coral (sjg-lab)
+
+### Conversation log
+No obvious symbol conflicts. Let me check how the CI world build job runs, to interpret exit code 100.
+
+The series diff looks benign. Let me confirm what buildman exit code 100 means with the `-PEWM` flags.
+
+Found it — real failure: am335x HS boards overflow SPL SRAM by 4 bytes. Let me find all failing boards.
+
+The upstream fix (SPL_OPTIMIZE_INLINING for am335x) isn't in this tree. Let me verify the option exists here and test it on the failing boards.
+
+The spi variant includes the base defconfig, so one edit covers both boards. Let me test it before deciding how to commit.
+
+Both boards now build. Before committing, I need to check the branch topology (there's a merge commit in the series).
+
+All am335x boards build cleanly. Let me also sanity-build the boards from the lab jobs (their failures were infrastructure, but cheap to verify the builds).
+
+All builds pass. Now create the local fix branch.
+
+Done. Result is on local branch `cherry-ca1c292d2ee-fix1` (not pushed).
+
+## Report — MR !1155 pipeline failures (attempt 1)
+
+### Root cause
+
+**Job "build all 32bit ARM platforms" (real failure, fixed):**
+The provided log tail only showed the warning summary, so I fetched the full job log. Two boards failed:
+- `am335x_hs_evm`
+- `am335x_hs_evm_spi` (its defconfig `#include`s the first)
+
+Both with: `u-boot-spl section '__u_boot_list' will not fit in region '.sram'` — **overflowed by 4 bytes**.
+
+Responsible commit: **"lib/string.c: implement strdup() and strndup() in terms of memdup_nul()"**. Before it, SPL kept a self-contained `strdup` (0x22 bytes). After it, SPL keeps `strdup` (0x18) + `memdup_nul` (0x26) = +28 bytes, and these HS boards only had 24 bytes of SRAM headroom in this tree. I verified the base commit builds and the branch reproduces the overflow locally.
+
+### Fix
+
+Amended the responsible commit (via `rf 9`) to add `CONFIG_SPL_OPTIMIZE_INLINING=y` to `configs/am335x_hs_evm_defconfig` (covers both boards), with a `[pickman]` note appended. This mirrors the upstream precedent (commit 6e01c9435ee did exactly this for `am335x_evm` when OF_UPSTREAM grew SPL), and keeping it in the same commit preserves bisectability. The empty "Merge patch series" commit and both pickman record commits survived the rebase intact.
+
+### Verification
+
+- `um build sandbox` — clean
+- `buildman am335x_hs_evm am335x_hs_evm_spi am335x_evm` — 0 failures (only pre-existing dtc warnings, same as master)
+- `buildman spacemit_k1 luckfox-pico-mini-b-rv1103 chromebook_coral efi-arm_app64 rockpro64-rk3399` — 0 failures (missing-blob warnings are expected locally)
+
+### Remaining failed jobs — infrastructure, no changes made
+
+- **coral**: labgrid place acquired by user `sglass` — needs `labgrid-client -p coral allow ellesmere/gitlab-runner`
+- **efi-aarch64**: `OSError: [Errno 5] Input/output error` on the console — lab connection failure
+- **bpif3**: DFU/USB loader not ready after 5 retries — lab hardware flake
+- **pico**: console timeout mid-`setenv` after 14 tests passed — lab connection dropped
+- **rockpro64**: 10s timeout waiting for U-Boot prompt, "Lab failure: marking connection bad" — likely lab flake (worth watching on the retry, though nothing in this series plausibly affects rk3399 boot)
+
+These should be retried once the coral place is released; no code changes are warranted for them.
+
+---
+
