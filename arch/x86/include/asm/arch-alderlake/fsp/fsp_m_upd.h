@@ -15,6 +15,26 @@
 #include <asm/arch/fsp/fsp_configs.h>
 #include <asm/arch/fsp/fsp_t_upd.h>
 
+/* Values for fsp_m_config user_bd: the board type, from FSP's MemInfoHob.h */
+enum fsp_user_bd_t {
+	USER_BD_MOBILE,
+	USER_BD_DESKTOP_2DPC,
+	USER_BD_DESKTOP_1DPC,
+	USER_BD_SERVER,
+	USER_BD_HEDT,
+	USER_BD_ULT_MOBILE,
+};
+
+/* Values for fsp_m_config sa_gv: system-agent geyserville (freq switching) */
+enum fsp_sa_gv_t {
+	SA_GV_DISABLED,
+	SA_GV_FIXED_POINT0,
+	SA_GV_FIXED_POINT1,
+	SA_GV_FIXED_POINT2,
+	SA_GV_FIXED_POINT3,
+	SA_GV_ENABLED,
+};
+
 /**
  * struct fspm_arch_upd - architectural settings for FSP-M
  *

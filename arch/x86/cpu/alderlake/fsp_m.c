@@ -119,6 +119,20 @@ static int setup_memory(struct fsp_m_config *cfg, int mem_id)
 	cfg->lp_ddr_dq_dqs_re_training = 1;
 	cfg->ect = 1;				/* early command training */
 
+	/* Felwinter is a ULT mobile board */
+	cfg->user_bd = USER_BD_ULT_MOBILE;
+
+	/*
+	 * Use a fixed memory frequency rather than SA-GV (dynamic frequency
+	 * switching), which is the FSP default. SA-GV needs a reset during
+	 * the first training to apply its frequency points, and relies on
+	 * the training data being saved so that the reset is not needed
+	 * again; there is no such storage yet, so it would reset on every
+	 * boot. Point 1 is the frequency coreboot's fixed setting uses on
+	 * this platform
+	 */
+	cfg->sa_gv = SA_GV_FIXED_POINT1;
+
 	return 0;
 }
 
