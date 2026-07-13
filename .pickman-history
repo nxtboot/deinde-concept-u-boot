@@ -86096,3 +86096,50 @@ Rebase, build, and push all succeeded. Summary:
 
 ---
 
+### Review: 2026-07-13
+
+Branch: cherry-ca1c292d2ee
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match exactly. Now run the build check.
+
+Build passes. Now create the local version branch and push.
+
+All done. Summary:
+
+## Rebase Summary — MR !1155 (cherry-ca1c292d2ee)
+
+**Rebased onto:** `ci/master` (89d494e4f40, "Merge branch 'fix-patman' into 'master'")
+
+**Result:** Clean rebase — no conflicts at all this time. All 12 commits preserved, including the empty merge commit and both pickman record commits:
+
+- 619171cf236 string: fix prototype of memdup()
+- 495482a796c stdio: drop stdio_clone
+- d4dd7ab15f7 lib/string.c: drop pointless __HAVE_ARCH_STRDUP
+- 4848d292a76 lib/string.c: introduce memdup_nul() helper
+- 6aab4659d8a lib/string.c: implement strdup() and strndup() in terms of memdup_nul()
+- 046bb78bad1 lib/hashtable.c: use memdup_nul() in himport_r
+- c28cba91824 common/cli.c: use memdup_nul() in run_command_list()
+- e57d4cfb091 drivers/core: use memdup() instead of malloc()+memcpy()
+- e171a567df8 test: lib: add test of memdup_nul()
+- 3298cce5630 Merge patch series "add memdup_nul()..."
+- 8fd0973c444 pickman: Record cherry-pick of 10 commits from us/master
+- a88c98bf750 pickman: Record review handling for cherry-ca1c292d2ee
+
+**Delta check:** Compared `git show --stat` for every commit before and after the rebase (hashes stripped) — identical, no drift.
+
+**Build check:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 boards built OK, no warnings or errors.
+
+**Local branch:** `cherry-ca1c292d2ee-v3` created (`-v2` already existed from the previous round).
+
+**Push:** Force-pushed to `ci/cherry-ca1c292d2ee` (a763f08ae07 → a88c98bf750). GitLab will trigger a new MR pipeline automatically.
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master` (89d494e4f40). The rebase was clean with no conflicts; all commit deltas are unchanged from the previous version. Sandbox build passes with no warnings or errors. Force-pushed to update the MR.
+
+---
+
