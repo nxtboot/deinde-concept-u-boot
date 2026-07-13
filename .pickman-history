@@ -86209,3 +86209,56 @@ These should be retried once the coral place is released; no code changes are wa
 
 ---
 
+## 2026-07-13: us/master
+
+Branch: cherry-46606025225
+
+Commits:
+- 46606025225 rtc: ds1307: Handle oscillator stop flag set on ds1339 chip
+- 55e767426ef board: ti: am335x: Conditional MDIO PAD configuration instead of static for AM335_ICE
+- 88338f9d147 gpio: Correct dependencies for MCP230xx
+- 731a875ae76 mmc: sdhci: Start status timeout after command issue
+- b487d05633a mmc: bootstd: Staticize and constify driver ops
+- 993c405ed7e power: pmic: emul: Staticize and constify driver ops
+- 3a4a8963aac mmc: cv1800b_sdhci: honor 'no-1-8-v' DT property
+- 0e7a86e0cf8 power: domain: apple: Staticize and constify driver ops
+- e6c69731c98 power: domain: bcm6328: Staticize and constify driver ops
+- 2e8078e5d54 power: domain: imx8-legacy: Staticize and constify driver ops
+- 77a8a30ef8b power: domain: imx8: Staticize and constify driver ops
+- 10c5b89e217 power: domain: imx8m: Staticize and constify driver ops
+- f82c349b915 power: domain: imx8mp-mediamix: Staticize and constify driver ops
+- ad9ca3e7766 power: domain: meson-ee-pwrc: Staticize and constify driver ops
+- 4f87439ed46 power: domain: meson-gx-pwrc: Staticize and constify driver ops
+- 2e59c9fa4ff power: domain: meson-secure-pwrc: Staticize and constify driver ops
+- b51735a38a1 power: domain: mtk: Staticize and constify driver ops
+- d82d49e1a6d power: domain: sandbox: Staticize and constify driver ops
+- 1aea809ba2d power: domain: scmi: Staticize and constify driver ops
+- f89d17c3608 power: domain: tegra186: Staticize and constify driver ops
+- 77fa442ff51 power: domain: zynqmp: Staticize and constify driver ops
+- a6f6947e43f Merge tag 'mmc-next-2026-05-15' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+The delta matches the original exactly (1 file, 1+/1-). I'll add a note about the conflict resolution, then build:
+
+Same context conflict — the merge's tree lacks `sandbox_i2c_pmic_remove()`, which ci/master has (and it's still referenced by the driver). Keep our version:
+
+All 22 commits are present. Final build:
+
+All done. Final status:
+
+## Summary
+
+**Branch**: `cherry-46606025225` (based on ci/master, 22 commits ahead, ready for pushing)
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**All 22 commits applied**, each verified against the original with matching file lists and line counts (no concerning deltas).
+
+**Fix-ups made**:
+1. `power: pmic: emul: Staticize and constify driver ops` (54bae9d85a7) — context conflict in `drivers/power/pmic/i2c_pmic_emul.c` because ci/master carries an extra `sandbox_i2c_pmic_remove()` function adjacent to the ops struct. Resolved by keeping that function and applying the staticize/constify change; resulting delta matches the original exactly (1 file, 1+/1-). A note was added to the commit message.
+2. `Merge tag 'mmc-next-2026-05-15' ...` (b4f7c69f3db) — the merge conflicted on the same file (the merge's tree lacks `sandbox_i2c_pmic_remove()`, which the driver still references in ci/master). Resolved by keeping our version, which made the cherry-pick empty; committed with `--allow-empty` to preserve the merge commit message in history, as required.
+
+All other 20 commits applied cleanly with `-x`. The branch has not been merged anywhere.
+
+---
+
