@@ -45,6 +45,8 @@ enum fsp_sa_gv_t {
  * @boot_loader_tolum_size: Memory to reserve below the top of low usable
  *	memory, for the bootloader
  * @boot_mode: One of FSP_BOOT_...
+ * @fsp_event_handler: Called by the FSP to report events (status codes and
+ *	debug messages), or NULL. See fspm_event_handler()
  */
 struct __packed fspm_arch_upd {
 	u8 revision;
@@ -54,7 +56,8 @@ struct __packed fspm_arch_upd {
 	u32 stack_size;
 	u32 boot_loader_tolum_size;
 	u32 boot_mode;
-	u8 reserved1[8];
+	void *fsp_event_handler;
+	u8 reserved1[4];
 };
 
 /**

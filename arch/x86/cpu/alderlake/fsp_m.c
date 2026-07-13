@@ -9,6 +9,7 @@
 
 #include <binman_sym.h>
 #include <dm.h>
+#include <efi.h>
 #include <log.h>
 #include <asm-generic/gpio.h>
 #include <linux/build_bug.h>
@@ -60,6 +61,24 @@ static const u8 dqs_map[8][2] = {
 /* The board uses only 100ohm Rcomp resistors, with these targets */
 #define RCOMP_RESISTOR		100
 static const u16 rcomp_targets[5] = { 40, 30, 30, 30, 30 };
+
+/* Status-code type class reported to fspm_event_handler() */
+#define STATUS_CODE_TYPE_MASK	0xff
+#define STATUS_PROGRESS_CODE	1
+#define STATUS_ERROR_CODE	2
+
+/* Statically-sized header preceding any event data */
+struct status_code_data {
+	u16 header_size;
+	u16 size;
+	efi_guid_t type;
+};
+
+/* String event payload, following the header */
+struct status_code_string {
+	u32 string_type;	/* 0 is ASCII */
+	const char *str;
+};
 
 /**
  * setup_memory() - Provide the board's memory configuration to the FSP
@@ -149,6 +168,54 @@ static int setup_memory(struct fsp_m_config *cfg, int mem_id)
 	 */
 	cfg->enable_c6_dram = 0;
 	cfg->cpu_ratio = 0;
+
+	return 0;
+}
+
+/**
+ * fspm_event_handler() - Receive status codes from the FSP
+ *
+ * The FSP reports progress and error status codes through this callback,
+ * with a description string attached to the major milestones, even in a
+ * release build. Log them, so that a hang inside FspMemoryInit() shows
+ * how far it got. The FSP calls this on its own stack.
+ */
+/**
+ * status_code_str() - Find the description string attached to an event
+ *
+ * @data: Event data from the FSP, or NULL if it sent none
+ * Return: the string, or NULL if the event has none
+ */
+static const char *status_code_str(struct status_code_data *data)
+{
+	const struct status_code_string *pl;
+
+	if (!data || data->size < sizeof(struct status_code_string))
+		return NULL;
+	pl = (void *)((u8 *)data + data->header_size);
+	if (pl->string_type || !pl->str)
+		return NULL;
+
+	return pl->str;
+}
+
+static u32 fspm_event_handler(u32 type, u32 value, u32 instance,
+			      efi_guid_t *caller_id,
+			      struct status_code_data *data)
+{
+	uint code_type = type & STATUS_CODE_TYPE_MASK;
+
+	if (code_type == STATUS_ERROR_CODE) {
+		const char *str = status_code_str(data);
+
+		log_warning("FSP: error %x %x %s\n", type, value,
+			    str ? str : "");
+	} else {
+		const char *str = status_code_str(data);
+
+		if (str)
+			log_debug("FSP: %x %x %s\n", type, value, str);
+	}
 
 	return 0;
 }
@@ -306,6 +373,13 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 	arch->boot_loader_tolum_size = 0;
 	arch->boot_mode = cache_ret ? FSP_BOOT_WITH_FULL_CONFIGURATION :
 		FSP_BOOT_ASSUMING_NO_CONFIGURATION_CHANGES;
+
+	/*
+	 * The FSP only looks at the event handler when the arch revision is
+	 * at least 2; the binary's default is 1
+	 */
+	arch->revision = 2;
+	arch->fsp_event_handler = fspm_event_handler;
 
 	mem_id = read_memory_id();
 	if (mem_id < 0)
