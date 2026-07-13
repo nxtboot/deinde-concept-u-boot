@@ -107,6 +107,23 @@
 #define GPMR_TCOBASE		0x2778
 #define GPMR_TCOEN		BIT(1)
 
+/*
+ * The eSPI/LPC bridge's I/O decode ranges. The fixed enables cover the EC's
+ * ports (62/66 etc.) and the generic ranges cover brya's EC host command,
+ * data and memory-map windows. Each is mirrored into the DMI fabric
+ */
+#define PCH_DEV_ESPI		PCI_BDF(0, 0x1f, 0)
+#define LPC_IO_ENABLES		0x82
+#define LPC_GEN1_DEC		0x84
+#define LPC_FIXED_IOE		0x3f0c
+#define GPMR_LPCLGIR1		0x2730
+#define GPMR_LPCIOE		0x2774
+
+/* RTC configuration in its sideband port; enables the upper CMOS bank */
+#define PID_RTC			0xc3
+#define PCR_RTC_CONF		0x3400
+#define PCR_RTC_CONF_UCMOS_EN	BIT(2)
+
 /* Writing zero to this MSR unlocks the memory configuration (TXT) */
 #define MSR_LT_UNLOCK_MEMORY	0x2e6
 
@@ -191,6 +208,13 @@ static void setup_sa_bars(void)
 {
 	uint i;
 
+	/*
+	 * Note: coreboot also programs PCIEXBAR (ECAM) and clears TSEG here,
+	 * but doing either hangs the very next HECI MMIO access on this
+	 * board, and the FSP evidently sets up ECAM itself (its PCI accesses
+	 * work without it), so neither is done
+	 */
+
 	/* The upper halves of these 64-bit BARs are zero */
 	pci_x86_write_config(SA_DEV_ROOT, SA_MCHBAR + 4, 0, PCI_SIZE_32);
 	pci_x86_write_config(SA_DEV_ROOT, SA_MCHBAR, MCH_BASE | SA_BAR_ENABLE,
@@ -255,6 +279,33 @@ static void setup_smbus_tco(void)
 	writel(TCO_BASE_ADDRESS | GPMR_TCOEN, pcr_reg(PID_DMI, GPMR_TCOBASE));
 	outw(inw(TCO_BASE_ADDRESS + TCO1_CNT) | TCO1_TMR_HLT,
 	     TCO_BASE_ADDRESS + TCO1_CNT);
+}
+
+/**
+ * setup_lpc_decodes() - Set up the eSPI/LPC I/O decodes and CMOS upper bank
+ *
+ * Set up the decodes for the EC's ranges, mirroring each into the DMI
+ * fabric, and enable the upper CMOS bank. coreboot does this in its
+ * bootblock; the EC's ports must decode before anything talks to it.
+ */
+static void setup_lpc_decodes(void)
+{
+	/* brya's generic decode ranges, from its coreboot devicetree */
+	/* the fourth entry deliberately clears the unused range */
+	static const u32 gen_dec[4] = { 0x00fc0801, 0x000c0201, 0x00fc0901 };
+	uint i;
+
+	pci_x86_write_config(PCH_DEV_ESPI, LPC_IO_ENABLES, LPC_FIXED_IOE,
+			     PCI_SIZE_16);
+	writel(LPC_FIXED_IOE, pcr_reg(PID_DMI, GPMR_LPCIOE));
+
+	for (i = 0; i < ARRAY_SIZE(gen_dec); i++) {
+		pci_x86_write_config(PCH_DEV_ESPI, LPC_GEN1_DEC + 4 * i,
+				     gen_dec[i], PCI_SIZE_32);
+		writel(gen_dec[i], pcr_reg(PID_DMI, GPMR_LPCLGIR1 + 4 * i));
+	}
+
+	setbits_le32(pcr_reg(PID_RTC, PCR_RTC_CONF), PCR_RTC_CONF_UCMOS_EN);
 }
 
 /**
@@ -368,6 +419,7 @@ static int arch_cpu_init_spl(void)
 	setup_pwrmbase();
 	setup_sa_bars();
 	setup_smbus_tco();
+	setup_lpc_decodes();
 	unlock_txt_memory();
 
 	/*
