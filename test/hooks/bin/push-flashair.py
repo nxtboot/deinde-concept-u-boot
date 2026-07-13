@@ -29,7 +29,7 @@
 import argparse
 import fnmatch
 import os
-import requests
+import requests  # pylint: disable=import-error
 import sys
 try:
     from os import scandir

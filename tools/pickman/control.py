@@ -15,7 +15,7 @@ import tempfile
 import time
 import unittest
 
-import requests
+import requests  # pylint: disable=import-error
 
 # Allow 'from pickman import xxx' to work via symlink
 our_path = os.path.dirname(os.path.realpath(__file__))

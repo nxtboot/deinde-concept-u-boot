@@ -90,6 +90,7 @@ def _get_credentials(account=None):
     Raises:
         FileNotFoundError: if client_secret.json is missing
     """
+    # pylint: disable=import-error
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
@@ -141,7 +142,7 @@ def get_service(account=None):
     Returns:
         googleapiclient.discovery.Resource: Gmail API service
     """
-    from googleapiclient.discovery import build
+    from googleapiclient.discovery import build  # pylint: disable=import-error
 
     creds = _get_credentials(account)
     return build('gmail', 'v1', credentials=creds)

@@ -20,7 +20,7 @@ import os
 import re
 import tempfile
 
-import aiohttp
+import aiohttp  # pylint: disable=import-error
 
 from u_boot_pylib import claude as claude_mod
 from u_boot_pylib import gitutil
