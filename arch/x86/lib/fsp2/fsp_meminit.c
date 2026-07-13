@@ -76,8 +76,8 @@ static void fsp_handle_reset(int status)
 }
 
 #ifdef CONFIG_ENABLE_MRC_CACHE
-static int prepare_mrc_cache_type(enum mrc_type_t type,
-				  struct mrc_data_container **cachep)
+int prepare_mrc_cache_type(enum mrc_type_t type,
+			   struct mrc_data_container **cachep)
 {
 	struct mrc_data_container *cache;
 	struct mrc_region entry;
@@ -105,11 +105,6 @@ int prepare_mrc_cache(struct fspm_upd *upd)
 	if (ret)
 		return log_msg_ret("Cannot get normal cache", ret);
 	upd->arch.nvs_buffer_ptr = cache->data;
-
-	ret = prepare_mrc_cache_type(MRC_TYPE_VAR, &cache);
-	if (ret)
-		return log_msg_ret("Cannot get var cache", ret);
-	upd->config.variable_nvs_buffer_ptr = cache->data;
 
 	return 0;
 }

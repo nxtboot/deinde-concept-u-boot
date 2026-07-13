@@ -8,6 +8,7 @@
 #ifndef __ASM_FSP_INTERNAL_H
 #define __ASM_FSP_INTERNAL_H
 
+#include <asm/mrccache.h>
 #include <linux/errno.h>
 
 struct binman_entry;
@@ -99,6 +100,28 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 int prepare_mrc_cache(struct fspm_upd *upd);
 #else
 static inline int prepare_mrc_cache(struct fspm_upd *upd)
+{
+	return -ENOENT;
+}
+#endif
+
+/**
+ * prepare_mrc_cache_type() - Find one type of cached MRC data
+ *
+ * This looks in the given MRC-cache region for the most recent data. It is
+ * used by SoC code which needs to pass extra cache types to the FSP, beyond
+ * the normal data handled by prepare_mrc_cache().
+ *
+ * @type: Type of cache data to find
+ * @cachep: Returns the most recent cache record found, on success
+ * Return: 0 if OK, -ENOENT if no data, other -ve value on error
+ */
+#ifdef CONFIG_ENABLE_MRC_CACHE
+int prepare_mrc_cache_type(enum mrc_type_t type,
+			   struct mrc_data_container **cachep);
+#else
+static inline int prepare_mrc_cache_type(enum mrc_type_t type,
+					 struct mrc_data_container **cachep)
 {
 	return -ENOENT;
 }
