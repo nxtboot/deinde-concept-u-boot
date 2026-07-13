@@ -11,6 +11,8 @@
 #include <init.h>
 #include <log.h>
 #include <spl.h>
+#include <time.h>
+#include <linux/delay.h>
 #include <asm/cpu.h>
 #include <asm/fast_spi.h>
 #include <asm/msr.h>
@@ -130,6 +132,17 @@
 /* CPUID.1 ecx flags showing that the CPU supports TXT */
 #define CPUID_ECX_VMX		BIT(5)
 #define CPUID_ECX_SMX		BIT(6)
+
+/*
+ * The PMC IPC mailbox, at the bottom of the PWRM MMIO space. Command 0xa9
+ * sub-command 1 asks the PMC to disable the MEI (HECI) devices, 0 to enable
+ */
+#define PMC_IPC_CMD		0x0
+#define PMC_IPC_STS		0x4
+#define PMC_IPC_STS_BUSY	BIT(0)
+#define PMC_IPC_STS_ERR		BIT(1)
+#define PMC_IPC_MEI_DISABLE	0xa9
+#define PMC_IPC_SUBCMD_SHIFT	12
 
 /**
  * pcr_reg() - Get the address of a PCR register, reached through the P2SB
@@ -395,6 +408,37 @@ static void setup_pwrmbase(void)
 }
 
 /**
+ * set_mei_enabled() - Enable or disable the MEI (HECI) devices via the PMC
+ *
+ * The PMC's MEI-disable setting is sticky across at least an EC reset and
+ * upsets even memory-mapped SPI reads while it is in force, so a previous
+ * boot which disabled the devices must re-enable them early.
+ *
+ * @enable: true to enable the MEI devices, false to disable them
+ * Return: 0 if OK, -EIO on a mailbox error, -ETIMEDOUT on timeout
+ */
+static int set_mei_enabled(bool enable)
+{
+	ulong start;
+	u32 sts;
+
+	writel(PMC_IPC_MEI_DISABLE | ((enable ? 0 : 1) << PMC_IPC_SUBCMD_SHIFT),
+	       PWRM_BASE + PMC_IPC_CMD);
+	start = get_timer(0);
+	do {
+		sts = readl(PWRM_BASE + PMC_IPC_STS);
+		if (!(sts & PMC_IPC_STS_BUSY)) {
+			if (sts & PMC_IPC_STS_ERR)
+				return -EIO;
+			return 0;
+		}
+		udelay(100);
+	} while (get_timer(start) < 1000);
+
+	return -ETIMEDOUT;
+}
+
+/**
  * arch_cpu_init_spl() - Set up the BARs and devices which FSP-M needs
  *
  * Return: 0 if OK, -ve on error
@@ -450,10 +494,24 @@ int arch_cpu_init(void)
 {
 	int ret = 0;
 
-	if (xpl_phase() == PHASE_TPL)
+	if (xpl_phase() == PHASE_TPL) {
+		/*
+		 * A previous boot may have left the MEI devices disabled (the
+		 * PMC setting is sticky) which upsets even mapped-SPI reads,
+		 * so re-enable them before anything else. PWRM must decode
+		 * for the PMC IPC mailbox to be reachable
+		 */
+		setup_pwrmbase();
+		/*
+		 * Ignore any failure here, since the console is not up yet;
+		 * if the MEI devices stay disabled, SPL fails to locate FSP-M
+		 * and reports an error there
+		 */
+		set_mei_enabled(true);
 		ret = arch_cpu_init_tpl();
-	else if (xpl_phase() == PHASE_SPL)
+	} else if (xpl_phase() == PHASE_SPL) {
 		ret = arch_cpu_init_spl();
+	}
 
 	return ret;
 }
