@@ -17,6 +17,7 @@
 #define LOG_CATEGORY UCLASS_GPIO
 
 #include <dm.h>
+#include <dt-structs.h>
 #include <irq.h>
 #include <log.h>
 #include <malloc.h>
