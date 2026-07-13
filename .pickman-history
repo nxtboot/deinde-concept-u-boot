@@ -86406,3 +86406,44 @@ Done. Here is what happened and the suggested MR reply.
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-825f8ee2fcf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, bpif3, rockpro64, Check ...
+
+### Conversation log
+## Report
+
+**Comment addressed:** The single review comment is the pickman bot's own attempt-3 pipeline report — the same recurring pattern of pre-existing CI/infrastructure failures. Not a reviewer-requested code change.
+
+**Analysis (unchanged from attempts 1, 2, and 3):**
+
+The 7 failing jobs have zero overlap with the files touched by these cherry-picks (`include/configs/*.h` and `include/env/ti/ti_common.env`):
+
+- **Check make {check, qcheck, tcheck}**: stale `pip install -r tools/patman/requirements.txt` in `.gitlab-ci.yml`; the file was removed upstream in `f5ee62bf6ce` before this branch existed
+- **Run pylint**: missing optional deps (`requests`, `aiohttp`, `google.*`, `googleapiclient`) in `tools/pickman/control.py`, `tools/patman/{gmail,review}.py`, `test/hooks/bin/push-flashair.py` — none touched by the cherry-picks
+- **rockpro64**: SPL sha256 / MMC block read errors — lab hardware/SD-card issue; Rockchip is not one of the boards changed
+- **bpif3**: `dfu-util: No DFU capable USB device available` — lab USB/DFU infrastructure; Spacemit K1 not touched
+- **efi-x86_64-uboot-iso-install**: Initramfs unpacking failure and 10-min job timeout; x86_64 EFI target not touched
+
+**Actions taken:**
+- Verified sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, clean
+- Created marker branch `cherry-825f8ee2fcf-v4`
+- Force-pushed to remote `ci` → `Everything up-to-date` (no code delta from prior attempts)
+
+**Suggested MR reply:**
+
+> No fix required — same conclusion as attempts 1, 2, and 3. All 7 failing jobs are pre-existing CI/infrastructure issues with zero overlap on the files touched by these cherry-picks (`include/configs/*.h`, `include/env/ti/ti_common.env`):
+>
+> - **Check make {check,qcheck,tcheck}**: stale `pip install -r tools/patman/requirements.txt` in `.gitlab-ci.yml`; upstream removed the file in `f5ee62bf6ce` before this branch was cut
+> - **Run pylint**: import errors for optional deps (`requests`, `aiohttp`, `google.auth.*`, `googleapiclient`) in files these commits do not touch
+> - **rockpro64**: SPL sha256/MMC read failure — lab hardware issue on a Rockchip board not affected by these env-quoting changes
+> - **bpif3**: `No DFU capable USB device available` — lab USB infrastructure issue on a Spacemit K1 board not affected by these changes
+> - **efi-x86_64-uboot-iso-install**: Initramfs unpack failure and job timeout — x86_64 EFI target not touched by these changes
+>
+> Sandbox build clean. Branch content is identical to prior attempts; remote push was a no-op (`Everything up-to-date`), so this update will not trigger a new pipeline.
+
+---
+
