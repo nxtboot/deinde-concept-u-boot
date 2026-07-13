@@ -8,6 +8,7 @@
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/intel-adl-gpio.h>
 
 /include/ "skeleton.dtsi"
 /include/ "rtc.dtsi"
@@ -29,6 +30,20 @@
 
 	config {
 		silent-console = <0>;
+	};
+
+	board {
+		bootph-pre-ram;
+		compatible = "google,brya-board";
+
+		/*
+		 * The DRAM-ID straps, which select the SPD data to use. They
+		 * are read as a binary value, with the first GPIO as bit 0
+		 */
+		memory-id-gpios = <&gpio_e GPP_E11 GPIO_ACTIVE_HIGH>,
+				  <&gpio_e GPP_E2 GPIO_ACTIVE_HIGH>,
+				  <&gpio_e GPP_E1 GPIO_ACTIVE_HIGH>,
+				  <&gpio_e GPP_E12 GPIO_ACTIVE_HIGH>;
 	};
 
 	cpus {
@@ -61,6 +76,38 @@
 			bootph-pre-ram;
 			bootph-some-ram;
 			compatible = "intel,alderlake-hostbridge";
+		};
+
+		p2sb: p2sb@1f,1 {
+			reg = <0x0000f900 0 0 0 0>;
+			bootph-all;
+			compatible = "intel,p2sb";
+			early-regs = <0xfd000000 0x1000000>;
+			pci,no-autoconfig;
+
+			/*
+			 * The interrupt controller. GPE routing is not set up
+			 * yet, so the route table is empty
+			 */
+			itss {
+				bootph-all;
+				compatible = "intel,itss";
+				intel,p2sb-port-id = <0xc4>;
+				intel,pmc-routes = <0 0>;
+			};
+
+			/* GPIO community 4 holds GPP_C, F, E */
+			pinctrl_com4 {
+				compatible = "intel,alderlake-pinctrl";
+				bootph-all;
+				intel,p2sb-port-id = <PID_GPIOCOM4>;
+				gpio_e: gpio-com4 {
+					compatible = "intel,gpio";
+					bootph-all;
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
 		};
 
 		spi: fast-spi@1f,5 {
