@@ -187,6 +187,14 @@ static void setup_platform(struct fsp_m_config *cfg)
 	cfg->enable_c6_dram = 0;
 
 	/*
+	 * The FSP default leaves VT-d enabled but with all the VT-d base
+	 * addresses zero; its VtdInit() then hangs (postcode 0xa51).
+	 * coreboot either fills in the base addresses or disables VT-d;
+	 * U-Boot has no use for VT-d, so disable it
+	 */
+	cfg->vtd_disable = 1;
+
+	/*
 	 * coreboot sets the CPU ratio from the flex-ratio MSR, which reads
 	 * as zero on these parts; the FSP default is 0x1c
 	 */
