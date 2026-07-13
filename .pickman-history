@@ -86481,3 +86481,33 @@ Done. The rebase is complete and pushed.
 
 ---
 
+### Review: 2026-07-13
+
+Branch: cherry-825f8ee2fcf
+
+Comments addressed:
+
+
+### Conversation log
+Build is clean (1/1). Check existing marker branches to pick the next suffix:
+
+Done. The rebase is complete and pushed.
+
+## Report
+
+**Actions taken:**
+1. Checked out `cherry-825f8ee2fcf` and fetched `ci` — the branch was based on `89d494e4f40`, behind the new tip `30723fdaa43` ("Merge branch 'cherry-ca1c292d2ee' into 'master'")
+2. Ran `git rebase --keep-empty ci/master` — completed cleanly, **no conflicts** (11 commits replayed)
+3. Verified deltas: compared `git show --stat` output for every commit before and after the rebase — **identical** file lists and line counts for all 11 commits (5 quoting patches, the empty series-merge marker `5a68c88619e`, and 5 `.pickman-history` commits). The empty merge commit was preserved
+4. Build verified: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, clean
+5. Created local marker branch `cherry-825f8ee2fcf-v7` (v2–v6 already existed)
+6. Force-pushed to `ci/cherry-825f8ee2fcf` (`eaabc4b91df...646d9711e0c`), which triggers a fresh MR pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto latest ci/master (`30723fdaa43`) with `--keep-empty`. No conflicts; all 6 cherry-picked commits apply with identical deltas and the empty series-merge marker is preserved. Sandbox build is clean (buildman 1/1).
+>
+> The base already includes the fix-patman series (pylint import suppression and removal of the stale `tools/patman/requirements.txt` reference), so the `Run pylint` and `Check make {check,qcheck,tcheck}` failures from earlier pipeline attempts should now pass. Any remaining lab-job failures (rpi/bpif3/rockpro64/efi-*) would be hardware/infrastructure issues unrelated to these env-quoting changes.
+
+---
+
