@@ -86367,3 +86367,42 @@ Let me create the -v2 branch marker and re-push to re-trigger the pipeline (in c
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-825f8ee2fcf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, Check make tcheck, Check make qcheck, Che...
+
+### Conversation log
+The review comment is the pickman bot's own attempt-2 report — the same infrastructure/CI pipeline failures previously analyzed. Let me verify the build and push a v3 marker.
+
+Done. Here is what happened and the suggested MR reply.
+
+## Report
+
+**Comment addressed:** The single comment is the pickman bot's own attempt-2 pipeline report (efi-aarch64, Check make {t,q,}check, Run pylint). Not a reviewer-requested change — a status log, identical in shape to attempts 1 and 2.
+
+**Analysis (unchanged from prior attempts):**
+- Cherry-picks only touch `include/configs/*.h` and `include/env/ti/ti_common.env` (env-variable quoting)
+- `Check make {check,qcheck,tcheck}`: stale `pip install -r tools/patman/requirements.txt` in `.gitlab-ci.yml`; the file was removed upstream in `f5ee62bf6ce` before this branch existed
+- `Run pylint`: missing optional deps (`requests`, `aiohttp`, `google.*`, `googleapiclient`) in `tools/pickman/control.py`, `tools/patman/{gmail,review}.py`, `test/hooks/bin/push-flashair.py` — none touched by the cherry-picks
+- `efi-aarch64`: lab-runner build environment issue (`readelf: Failed to read file's magic number` inside `scripts/build-efi -a arm`); the efi-arm_app64 target is not one of the boards affected by these env-quoting changes
+
+**Actions taken:**
+- Verified sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, clean
+- Created marker branch `cherry-825f8ee2fcf-v3`
+- Force-pushed to remote `ci` → `Everything up-to-date` (no code delta from prior attempts)
+
+**Suggested MR reply:**
+
+> No fix required — same conclusion as attempts 1 and 2. All 5 failing jobs are pre-existing CI/infrastructure issues with zero overlap on the files touched by these cherry-picks (`include/configs/*.h`, `include/env/ti/ti_common.env`):
+>
+> - **Check make {check,qcheck,tcheck}**: stale `pip install -r tools/patman/requirements.txt` in `.gitlab-ci.yml`; upstream removed the file in `f5ee62bf6ce` ("tools: Stop packaging patman as a pip module") before this branch was cut
+> - **Run pylint**: import errors for optional deps (`requests`, `aiohttp`, `google.auth.*`, `googleapiclient`) in files (`tools/pickman/control.py`, `tools/patman/{gmail,review}.py`, `test/hooks/bin/push-flashair.py`) that these commits do not touch
+> - **efi-aarch64**: lab-runner build environment error (`readelf: Failed to read file's magic number` in `scripts/build-efi -a arm`, `checkarmreloc` fails); efi-arm_app64 is not one of the boards touched by the env-quoting changes
+>
+> Sandbox build clean. Branch content is identical to attempt 1; remote push was a no-op (`Everything up-to-date`), so this update will not trigger a new pipeline.
+
+---
+
