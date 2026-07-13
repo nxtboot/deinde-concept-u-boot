@@ -10,6 +10,11 @@ Optional properties:
 	configuration in TPL/SPL to reduce code size and boot time, since these
 	phases only know about a small subset of PCI devices.
 
+- u-boot,skip-enumeration-until-reloc : Don't scan (enumerate) the bus until
+	after U-Boot has relocated. Some platforms cannot access the PCI devices
+	until the silicon has been set up, which happens later in boot. Devices
+	in the devicetree are still bound, so they can be used beforehand.
+
 For PCI devices the following optional property is available:
 
 - pci,no-autoconfig : Don't automatically configure this PCI device at all.

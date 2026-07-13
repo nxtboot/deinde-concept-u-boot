@@ -1182,6 +1182,9 @@ static int pci_uclass_pre_probe(struct udevice *bus)
 	hose->first_busno = dev_seq(bus);
 	hose->last_busno = dev_seq(bus);
 	if (dev_has_ofnode(bus)) {
+		hose->skip_enumeration_until_reloc =
+			dev_read_bool(bus,
+				      "u-boot,skip-enumeration-until-reloc");
 		hose->skip_auto_config_until_reloc =
 			dev_read_bool(bus,
 				      "u-boot,skip-auto-config-until-reloc");
@@ -1196,9 +1199,11 @@ static int pci_uclass_post_probe(struct udevice *bus)
 	int ret;
 
 	debug("%s: probing bus %d\n", __func__, dev_seq(bus));
-	ret = pci_bind_bus_devices(bus);
-	if (ret)
-		return log_msg_ret("bind", ret);
+	if (!hose->skip_enumeration_until_reloc || (gd->flags & GD_FLG_RELOC)) {
+		ret = pci_bind_bus_devices(bus);
+		if (ret)
+			return log_msg_ret("bind", ret);
+	}
 
 	if (CONFIG_IS_ENABLED(PCI_PNP) && ll_boot_init() &&
 	    (!hose->skip_auto_config_until_reloc ||
