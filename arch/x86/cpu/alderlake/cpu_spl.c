@@ -13,10 +13,32 @@
 #include <spl.h>
 #include <asm/fast_spi.h>
 #include <asm/pci.h>
+#include <asm/io.h>
+#include <linux/bitops.h>
 
 /* The fast-SPI controller, which holds the flash's memory map */
 #define PCH_DEV_FAST_SPI	PCI_BDF(0, 0x1f, 5)
 #define FAST_SPI_BASE		0xfe010000
+
+/* ACPI I/O base, holding PM1_STS/EN/CNT etc. which FSP-M reads */
+#define ACPI_BASE_ADDRESS	0x1800
+
+/*
+ * The PMC's ACPI-base BAR is shadowed in the PSF3 fabric, so it is set up
+ * there rather than in PCI config. Sideband port ID 0xbc, PMC register base
+ * 0x1100, then BAR4 (the ACPI base) and the I/O-enable shadow
+ */
+#define PID_PSF3		0xbc
+#define PSF3_PMC_REG_BASE	0x1100
+#define PSF_SHDW_BAR4		0x10
+#define PSF_SHDW_PCIEN		0x1c
+#define PSF_PCIEN_IOEN		0x01
+
+/* ACPI PM1 register offsets and fields */
+#define PM1_STS			0x00
+#define PM1_CNT			0x04
+#define SLP_TYP_MASK		(7 << 10)
+#define SLP_EN			BIT(13)
 
 /**
  * arch_cpu_init_tpl() - Set up the console in TPL
@@ -40,6 +62,43 @@ static int arch_cpu_init_tpl(void)
 }
 
 /**
+ * psf3_reg() - Get the address of a register in the PSF3 fabric
+ *
+ * @offset: Register offset from the PMC's PSF3 register base
+ * Return: pointer to the register
+ */
+static void *psf3_reg(uint offset)
+{
+	return (void *)(CONFIG_PCR_BASE_ADDRESS + (PID_PSF3 << 16) +
+			PSF3_PMC_REG_BASE + offset);
+}
+
+/**
+ * setup_acpi_base() - Set up the PMC's ACPI I/O base
+ *
+ * Without it FSP-M cannot read the power and sleep state. Note that the PSF
+ * is reached through the P2SB sideband BAR, which at this point is only set
+ * up when the debug UART is enabled (see adl_early_uart_init()); a later
+ * patch sets it up explicitly.
+ *
+ * Return: true if the base was programmed, false if not reachable
+ */
+static bool setup_acpi_base(void)
+{
+	if (readl(psf3_reg(PSF_SHDW_BAR4)) == 0xffffffff) {
+		log_warning("ACPI base: PSF3 not reachable\n");
+		return false;
+	}
+
+	/* Disable I/O decode while changing the address */
+	clrbits_le32(psf3_reg(PSF_SHDW_PCIEN), PSF_PCIEN_IOEN);
+	writel(ACPI_BASE_ADDRESS, psf3_reg(PSF_SHDW_BAR4));
+	setbits_le32(psf3_reg(PSF_SHDW_PCIEN), PSF_PCIEN_IOEN);
+
+	return true;
+}
+
+/**
  * arch_cpu_init_spl() - Set up the BARs and devices which FSP-M needs
  *
  * Return: 0 if OK, -ve on error
@@ -53,6 +112,19 @@ static int arch_cpu_init_spl(void)
 	 * helper also enables prefetching and write access
 	 */
 	fast_spi_early_init(PCH_DEV_FAST_SPI, FAST_SPI_BASE);
+
+	/*
+	 * Clear the ACPI power-management status and set the sleep state to
+	 * S0, so that FSP-M reads a sane power state rather than a stale
+	 * wake status. Skipped when the base is not decoding, since the
+	 * writes would go to an undecoded I/O range
+	 */
+	if (setup_acpi_base()) {
+		outw(0xffff, ACPI_BASE_ADDRESS + PM1_STS);
+		outl(inl(ACPI_BASE_ADDRESS + PM1_CNT) &
+		     ~(SLP_TYP_MASK | SLP_EN),
+		     ACPI_BASE_ADDRESS + PM1_CNT);
+	}
 
 	return 0;
 }
