@@ -86326,3 +86326,44 @@ Branch is ready for pushing.
 
 ---
 
+### Review: 2026-07-12
+
+Branch: cherry-825f8ee2fcf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-aarch64, bpif3, rpi, Check make tcheck, Check make...
+
+### Conversation log
+The build passes cleanly. The review comment is the pickman bot's own report from attempt 1, describing pipeline failures that were determined to be pre-existing infrastructure issues, not caused by these cherry-picks. There is no actionable code change requested.
+
+Let me create the -v2 branch marker and re-push to re-trigger the pipeline (in case some of the lab failures were transient).
+
+## Report
+
+**Comment addressed:** The single review comment is the pickman bot's own attempt-1 pipeline report — it documents 7 failing jobs (efi-aarch64, bpif3, rpi, Check make {t,q,}check, Run pylint). Not a reviewer-requested change; a status log.
+
+**Analysis re-verified (unchanged from attempt 1):**
+- Cherry-picks only touch `include/configs/*.h` and `include/env/ti/ti_common.env` (env-variable quoting)
+- Lab timeouts (rpi/bpif3/efi-aarch64) are hardware/serial/USB infrastructure
+- `Check make {check,qcheck,tcheck}` all fail on stale `tools/patman/requirements.txt` in `.gitlab-ci.yml` — that file was removed upstream in `f5ee62bf6ce` before this branch existed
+- Pylint fails on missing optional deps (`requests`, `aiohttp`, `google.*`) in files none of these commits touch
+- Zero overlap between failure signals and cherry-picked files
+
+**Actions taken:**
+- Verified branch: 6 cherry-picked commits + pickman marker, all present
+- Verified sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, clean
+- Created marker branch `cherry-825f8ee2fcf-v2`
+- Force-pushed to remote `ci` → `Everything up-to-date` (no code delta from attempt 1)
+
+**Suggested MR reply:**
+
+> No fix required — re-confirmed after attempt 1. All 7 failing jobs are pre-existing infrastructure/CI issues with zero overlap on the files touched by these cherry-picks (`include/configs/*.h`, `include/env/ti/ti_common.env`):
+>
+> - **Lab timeouts** (rpi, bpif3, efi-aarch64): serial/USB hardware issues unrelated to env-variable quoting
+> - **Check make {check,qcheck,tcheck}**: stale `pip install -r tools/patman/requirements.txt` in `.gitlab-ci.yml`; the file was removed upstream in `f5ee62bf6ce` ("tools: Stop packaging patman as a pip module") *before* this branch was cut
+> - **Run pylint**: import errors for optional deps (`requests`, `aiohttp`, `google.auth.*`, `googleapiclient`) in files (`tools/pickman/control.py`, `tools/patman/{gmail,review}.py`, `test/hooks/bin/push-flashair.py`) that these commits do not touch
+>
+> Sandbox build clean. Branch content is identical to attempt 1; remote push was a no-op (`Everything up-to-date`), so no new pipeline will be triggered by this update.
+
+---
+
