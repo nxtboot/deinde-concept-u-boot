@@ -763,7 +763,19 @@ static int ich_protect_lockdown(struct udevice *dev)
 	/* Disable the BIOS write protect so write commands are allowed */
 	if (priv->pch)
 		ret = pch_set_spi_protect(priv->pch, false);
-	if (ret == -ENOSYS) {
+	if (ret == -ENOSYS && plat->ich_version == ICHV_APL) {
+		/*
+		 * On fast-SPI the BIOS-control register is in PCI config
+		 * space, not the MMIO region, and the firmware may have
+		 * re-enabled write protection since it was disabled early
+		 * in boot
+		 */
+		ret = dm_pci_clrset_config8(dev, SPIBAR_BIOS_CONTROL,
+					    SPIBAR_BIOS_CONTROL_EISS,
+					    SPIBAR_BIOS_CONTROL_WPD);
+		if (ret)
+			return ret;
+	} else if (ret == -ENOSYS) {
 		u8 bios_cntl;
 
 		bios_cntl = ich_readb(priv, priv->bcr);
