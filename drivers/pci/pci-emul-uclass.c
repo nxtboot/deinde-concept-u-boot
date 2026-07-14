@@ -73,7 +73,7 @@ uint sandbox_pci_read_bar(u32 barval, int type, uint size)
 		} else {
 			result = (~(size - 1) &
 				PCI_BASE_ADDRESS_MEM_MASK) |
-				PCI_BASE_ADDRESS_MEM_TYPE_32;
+				(type & PCI_BASE_ADDRESS_MEM_TYPE_MASK);
 		}
 	}
 

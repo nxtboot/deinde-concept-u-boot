@@ -119,6 +119,17 @@ static void dm_pciauto_setup_device(struct udevice *dev,
 			      (unsigned long long)bar_size);
 		}
 
+		/*
+		 * A disabled device can report a BAR with its type bits set
+		 * but no size; there is nothing to allocate for it
+		 */
+		if (!bar_size) {
+			debug("skipped\n");
+			if (found_mem64)
+				bar += 4;
+			continue;
+		}
+
 		ret = pciauto_region_allocate(bar_res, bar_size,
 					      &bar_value, found_mem64);
 		if (ret)

@@ -491,3 +491,21 @@ static int dm_test_pci_phys_to_bus(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_phys_to_bus, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/*
+ * Test that auto-configuration skips a BAR which has no size. The swap_case
+ * emulator has a 64-bit BAR (BAR2/3) which reports its type bits but no size,
+ * as a disabled device does. Auto-config must skip it silently, rather than
+ * asking for a zero-length region and printing a failure.
+ */
+static int dm_test_pci_no_size_bar(struct unit_test_state *uts)
+{
+	struct udevice *bus;
+
+	/* Probing the bus runs auto-config, which must produce no error */
+	ut_assertok(uclass_get_device(UCLASS_PCI, 0, &bus));
+	ut_assert_console_end();
+
+	return 0;
+}
+DM_TEST(dm_test_pci_no_size_bar, UTF_SCAN_PDATA | UTF_SCAN_FDT | UTF_CONSOLE);
