@@ -23,7 +23,10 @@ For PCI devices the following optional property is available:
 	UART being used to debug PCI configuration, since reconfiguring it stops
 	the UART from working until the driver is re-probed, and this can cause
 	output to be lost. This should not generally be used in production code,
-	although it is often harmless.
+	although it is often harmless. This property may also be set on the PCI
+	bus (controller) node, in which case auto-configuration is disabled for
+	every device on that bus; this suits platforms where the firmware or an
+	earlier U-Boot phase has already assigned the BARs.
 
 - u-boot,pci-pre-reloc : List of vendor/device IDs to bind before relocation, even
 	if they are not bridges. This is useful if the device is needed (e.g. a

@@ -509,3 +509,23 @@ static int dm_test_pci_no_size_bar(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_no_size_bar, UTF_SCAN_PDATA | UTF_SCAN_FDT | UTF_CONSOLE);
+
+/*
+ * Test that 'pci,no-autoconfig' on a bus disables auto-configuration for every
+ * device on it. The device on bus 3 would normally have its BARs assigned, but
+ * with the property set they are left unassigned.
+ */
+static int dm_test_pci_no_autoconfig(struct unit_test_state *uts)
+{
+	struct udevice *bus, *swap;
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 3, &bus));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(3, 0x00, 0), &swap));
+
+	/* Auto-config is disabled, so the BARs are left unassigned */
+	ut_asserteq(0, dm_pci_read_bar32(swap, 0));
+	ut_asserteq(0, dm_pci_read_bar32(swap, 1));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_no_autoconfig, UTF_SCAN_PDATA | UTF_SCAN_FDT);

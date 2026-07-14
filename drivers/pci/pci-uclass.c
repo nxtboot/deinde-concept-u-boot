@@ -558,6 +558,16 @@ int pci_auto_config_devices(struct udevice *bus)
 
 	sub_bus = dev_seq(bus);
 	debug("%s: start\n", __func__);
+
+	/*
+	 * The BARs may already be set up, e.g. by firmware which the board
+	 * relies on; sizing them can then break the platform
+	 */
+	if (dev_has_ofnode(bus) && dev_read_bool(bus, "pci,no-autoconfig")) {
+		log_debug("autoconfig disabled for this bus\n");
+		return sub_bus;
+	}
+
 	pciauto_config_init(hose);
 	for (device_find_first_child(bus, &dev);
 	     dev;
