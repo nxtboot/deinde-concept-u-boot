@@ -59,10 +59,15 @@
 				offset = <CONFIG_FSP_T_ADDR>;
 			};
 #endif
+			vbt {
+				type = "blob-ext";
+				filename = "vbt.bin";
+			};
 #ifdef CONFIG_TPL
 			u-boot-tpl {
 				offset = <CONFIG_TPL_TEXT_BASE>;
 			};
+#endif
 			spd {
 				type = "blob-ext";
 				filename = "spd.bin";
@@ -77,6 +82,7 @@
 			};
 			intel-fit-ptr {
 			};
+#ifdef CONFIG_TPL
 			x86-start16-tpl {
 				offset = <CONFIG_SYS_X86_START16>;
 			};

@@ -40,8 +40,11 @@ int fsp_setup_pinctrl(void)
 	if (ret)
 		return log_msg_ret("no fsp pinctrl", ret);
 	node = ofnode_path("fsp");
-	if (!ofnode_valid(node))
-		return log_msg_ret("no fsp params", -EINVAL);
+	if (!ofnode_valid(node)) {
+		/* The board's own pinctrl config is enough */
+		log_debug("No fsp node; skipping pad config\n");
+		return 0;
+	}
 	ret = pinctrl_config_pads_for_node(dev, node);
 	if (ret)
 		return log_msg_ret("pad config", ret);

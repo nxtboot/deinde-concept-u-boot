@@ -80,11 +80,17 @@
 		#size-cells = <2>;
 		bootph-all;
 		/*
+		 * The FSP assigns the BARs it needs; reassigning them upsets
+		 * its silicon init, which polls the graphics engine through
+		 * its own BAR
+		 */
+		pci,no-autoconfig;
+		/*
 		 * The ECAM region is at 0xc0000000, so PCI memory goes above
 		 * it, below the 4GB MMIO which the SoC uses
 		 */
-		ranges = <0x02000000 0x0 0xd0000000 0xd0000000 0 0x10000000
-			  0x42000000 0x0 0xb0000000 0xb0000000 0 0x10000000
+		ranges = <0x02000000 0x0 0xd0000000 0xd0000000 0 0x20000000
+			  0x42000000 0x0 0x90000000 0x90000000 0 0x30000000
 			  0x01000000 0x0 0x1000 0x1000 0 0xefff>;
 		u-boot,skip-auto-config-until-reloc;
 
@@ -100,6 +106,8 @@
 			bootph-pre-ram;
 			bootph-some-ram;
 			compatible = "intel,alderlake-hostbridge";
+			/* Its 'BARs' are fixed registers, not real BARs */
+			pci,no-autoconfig;
 		};
 
 		p2sb: p2sb@1f,1 {
@@ -143,6 +151,11 @@
 			compatible = "intel,fast-spi";
 			early-regs = <0xfe010000 0x1000>;
 			intel,hardware-seq = <1>;
+			/*
+			 * Sizing this BAR breaks the flash memory map, which
+			 * U-Boot is running from
+			 */
+			pci,no-autoconfig;
 
 			fwstore_spi: spi-flash@0 {
 				#address-cells = <1>;
