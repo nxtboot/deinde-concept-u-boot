@@ -18,6 +18,30 @@
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/global_data.h>
 
+int fsp_temp_ram_exit(void)
+{
+	fsp_temp_ram_exit_func func;
+	struct binman_entry entry;
+	struct fsp_header *hdr;
+	struct udevice *dev;
+	int ret;
+
+	ret = fsp_locate_fsp(FSP_M, &entry, false, &dev, &hdr, NULL);
+	if (ret)
+		return log_msg_ret("flm", ret);
+	if (!hdr->fsp_tempram_exit)
+		return 0;
+
+	log_debug("TempRamExit\n");
+	func = (fsp_temp_ram_exit_func)(hdr->img_base + hdr->fsp_tempram_exit);
+	ret = func(NULL);
+	if (ret)
+		return log_msg_ret("tre", ret);
+	log_debug("done\n");
+
+	return 0;
+}
+
 int fsp_silicon_init(bool s3wake, bool use_spi_flash)
 {
 	struct fsps_upd upd, *fsp_upd;

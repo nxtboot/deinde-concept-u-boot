@@ -96,15 +96,24 @@ int arch_fsp_init_r(void)
 		return 0;
 
 	/*
-	 * TODO(sjg): FSP-S hangs in its graphics power-management init
-	 * (postcode 0xa63), polling the graphics engine which never
-	 * responds. Skip silicon init until that is understood; U-Boot
-	 * reaches a prompt without it
+	 * Now that U-Boot is running from DRAM, have the FSP move its own
+	 * state out of Cache-as-RAM, so that silicon init can find it
+	 */
+	ret = fsp_temp_ram_exit();
+	if (ret)
+		return log_msg_ret("tre", ret);
+
+	/*
+	 * TODO(sjg@chromium.org): Silicon init hangs while setting up the
+	 * system agent (postcode 0xa61) or the graphics power management
+	 * (0xa63), depending on the settings used. U-Boot reaches a prompt
+	 * without it, so leave it out until it works
 	 */
 	if (0) {
+		/* This must be called before any devices are probed */
 		ret = fsp_silicon_init(s3wake, false);
 		if (ret)
-			return log_msg_ret("fsp_s", ret);
+			return log_msg_ret("fss", ret);
 	}
 
 	return 0;

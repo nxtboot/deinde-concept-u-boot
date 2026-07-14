@@ -61,6 +61,18 @@ int fsp_silicon_init(bool s3wake, bool use_spi_flash);
 typedef asmlinkage int (*fsp_silicon_init_func)(struct fsps_upd *params);
 
 /**
+ * fsp_temp_ram_exit_func() - Tell the FSP that Cache-as-RAM is going away
+ *
+ * The FSP keeps its own state in Cache-as-RAM during memory init. This
+ * call has it move that state into DRAM, so that the state is still valid
+ * when silicon init runs later
+ *
+ * @params: Unused, must be NULL
+ * Return: 0 if OK, -ve on error
+ */
+typedef asmlinkage int (*fsp_temp_ram_exit_func)(void *params);
+
+/**
  *  fsp_setup_pinctrl() - Set up the pinctrl for FSP
  *
  * @ctx: Event context (not used)
