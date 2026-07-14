@@ -73,6 +73,14 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	 */
 	cfg->skip_mp_init = 1;
 
+	/*
+	 * The FSP default enables VMD, which remaps the storage root ports
+	 * into the VMD controller's own domain, hiding the NVMe SSD from
+	 * normal PCI enumeration (00:1d.0 then shows the VMD dummy device
+	 * instead of the root port). coreboot disables VMD on this board
+	 */
+	cfg->vmd_enable = 0;
+
 	return 0;
 }
 
