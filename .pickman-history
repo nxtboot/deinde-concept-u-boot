@@ -86511,3 +86511,43 @@ Done. The rebase is complete and pushed.
 
 ---
 
+### Review: 2026-07-14
+
+Branch: cherry-825f8ee2fcf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+Content is exactly the expected env-quoting changes plus pickman history markers. Now verify the build:
+
+Done. Here is the report.
+
+## Report
+
+**Comment addressed:** `[project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required.`
+
+This is the pickman bot's escalation after exhausting automatic retries — not a reviewer-requested code change. No code fix is applicable, and importantly the situation has already been resolved by the earlier rebases.
+
+**Analysis:**
+- The branch is already based on the **current** ci/master tip (`30723fdaa43`), so no rebase was needed this time
+- That base includes the fix-patman series, which resolves the two systematic CI failures from attempts 1–3 (`Run pylint` optional-dep import errors and the stale `tools/patman/requirements.txt` reference behind `Check make {check,qcheck,tcheck}`)
+- Diff vs ci/master confirms the branch touches only the expected files: `include/configs/{aristainetos2,beaglev_fire,draco-etamin,mccmon6,siemens-am33x-common,siemens-env-common}.h`, `include/env/ti/ti_common.env`, plus `.pickman-history` markers
+- Remaining lab-job failures seen across attempts (rpi/bpif3/rockpro64/efi-*) are hardware/infrastructure issues on boards these env-quoting commits do not modify
+
+**Actions taken:**
+1. Checked out `cherry-825f8ee2fcf`, fetched `ci` — already on latest master
+2. Verified sandbox build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1/1 built, clean
+3. Created marker branch `cherry-825f8ee2fcf-v8` (v2–v7 already existed)
+4. Force-pushed to `ci/cherry-825f8ee2fcf` (`646d9711e0c..50656392a5e` — pickman history marker only), triggering a fresh MR pipeline on the post-fix-patman base
+
+**Suggested MR reply:**
+
+> Manual intervention response after the retry limit: no code fix is required within the scope of these cherry-picks. The 6 commits only touch `include/configs/*.h` and `include/env/ti/ti_common.env` (env-variable quoting for 'test -n').
+>
+> The branch has since been rebased onto current master, which includes the fix-patman series — this resolves the two systematic failures from all three retry attempts (`Run pylint` optional-dependency import errors and the stale `tools/patman/requirements.txt` reference behind `Check make {check,qcheck,tcheck}`). A fresh pipeline has been triggered on this base.
+>
+> Any remaining lab-job failures (rpi/bpif3/rockpro64/efi-*) are hardware/serial/USB infrastructure issues on boards this series does not modify. Sandbox build is clean (buildman 1/1). Recommend reviewing the env-quoting changes on their merits and treating any residual lab flakiness separately.
+
+---
+
