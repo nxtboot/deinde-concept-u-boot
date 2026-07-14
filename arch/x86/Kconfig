@@ -565,6 +565,17 @@ config ENABLE_MRC_CACHE
 	  platform (eg: Intel Queensbay), which means selecting this option
 	  here does not make any difference.
 
+config SPL_ENABLE_MRC_CACHE
+	bool "Enable MRC cache in SPL"
+	depends on SPL && ENABLE_MRC_CACHE
+	default y
+	help
+	  Look for cached memory-training data in SPL and pass it to the
+	  FSP-M binary, so that it can skip the full memory training. This
+	  makes booting much faster, since training can take a minute or
+	  more. Without this option, SPL saves training data but never uses
+	  it, so every boot trains from scratch.
+
 config HAVE_MRC
 	bool "Add a System Agent binary"
 	select HAS_ROM
