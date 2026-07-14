@@ -86209,3 +86209,94 @@ These should be retried once the coral place is released; no code changes are wa
 
 ---
 
+## 2026-07-13: us/master
+
+Branch: cherry-46606025225
+
+Commits:
+- 46606025225 rtc: ds1307: Handle oscillator stop flag set on ds1339 chip
+- 55e767426ef board: ti: am335x: Conditional MDIO PAD configuration instead of static for AM335_ICE
+- 88338f9d147 gpio: Correct dependencies for MCP230xx
+- 731a875ae76 mmc: sdhci: Start status timeout after command issue
+- b487d05633a mmc: bootstd: Staticize and constify driver ops
+- 993c405ed7e power: pmic: emul: Staticize and constify driver ops
+- 3a4a8963aac mmc: cv1800b_sdhci: honor 'no-1-8-v' DT property
+- 0e7a86e0cf8 power: domain: apple: Staticize and constify driver ops
+- e6c69731c98 power: domain: bcm6328: Staticize and constify driver ops
+- 2e8078e5d54 power: domain: imx8-legacy: Staticize and constify driver ops
+- 77a8a30ef8b power: domain: imx8: Staticize and constify driver ops
+- 10c5b89e217 power: domain: imx8m: Staticize and constify driver ops
+- f82c349b915 power: domain: imx8mp-mediamix: Staticize and constify driver ops
+- ad9ca3e7766 power: domain: meson-ee-pwrc: Staticize and constify driver ops
+- 4f87439ed46 power: domain: meson-gx-pwrc: Staticize and constify driver ops
+- 2e59c9fa4ff power: domain: meson-secure-pwrc: Staticize and constify driver ops
+- b51735a38a1 power: domain: mtk: Staticize and constify driver ops
+- d82d49e1a6d power: domain: sandbox: Staticize and constify driver ops
+- 1aea809ba2d power: domain: scmi: Staticize and constify driver ops
+- f89d17c3608 power: domain: tegra186: Staticize and constify driver ops
+- 77fa442ff51 power: domain: zynqmp: Staticize and constify driver ops
+- a6f6947e43f Merge tag 'mmc-next-2026-05-15' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+The delta matches the original exactly (1 file, 1+/1-). I'll add a note about the conflict resolution, then build:
+
+Same context conflict — the merge's tree lacks `sandbox_i2c_pmic_remove()`, which ci/master has (and it's still referenced by the driver). Keep our version:
+
+All 22 commits are present. Final build:
+
+All done. Final status:
+
+## Summary
+
+**Branch**: `cherry-46606025225` (based on ci/master, 22 commits ahead, ready for pushing)
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**All 22 commits applied**, each verified against the original with matching file lists and line counts (no concerning deltas).
+
+**Fix-ups made**:
+1. `power: pmic: emul: Staticize and constify driver ops` (54bae9d85a7) — context conflict in `drivers/power/pmic/i2c_pmic_emul.c` because ci/master carries an extra `sandbox_i2c_pmic_remove()` function adjacent to the ops struct. Resolved by keeping that function and applying the staticize/constify change; resulting delta matches the original exactly (1 file, 1+/1-). A note was added to the commit message.
+2. `Merge tag 'mmc-next-2026-05-15' ...` (b4f7c69f3db) — the merge conflicted on the same file (the merge's tree lacks `sandbox_i2c_pmic_remove()`, which the driver still references in ci/master). Resolved by keeping our version, which made the cherry-pick empty; committed with `--allow-empty` to preserve the merge commit message in history, as required.
+
+All other 20 commits applied cleanly with `-x`. The branch has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-07-13 (attempt 1)
+
+Branch: cherry-46606025225
+
+Failed jobs:
+- bpif3 (sjg-lab)
+- pico (sjg-lab)
+
+### Conversation log
+I've read the logs. Let me check out the branch and examine the commits to correlate.
+
+Let me verify the sdhci commit is functionally a no-op by checking the code before it:
+
+## Report: Infrastructure/transient failures — no code changes made
+
+**Verdict**: Both job failures are lab/hardware issues, not caused by any commit on the branch. The branch `cherry-46606025225-fix1` has been created pointing at the unchanged HEAD (06a454ea96d).
+
+### Diagnosis
+
+**bpif3 (job 552406)**: The FSBL (u-boot-spl-ddr.bin) staged successfully over the SpacemiT boot-ROM protocol, but the DFU gadget for downloading u-boot.itb never enumerated — `dfu-util: No DFU capable USB device available` on all 5 retry attempts, ending in `Lab failure: Marking connection bad`. This is a USB-loader readiness problem on the lab host/board.
+
+**pico (job 552404)**: The console log shows serial corruption — a command arrived as `pa�t types` (garbled `part types`) and stale `md` output interleaved after prompts. Despite that, the pytest summary reads `28 passed, 519 skipped` — a classic UART/lab flake causing a nonzero harness exit (status 2).
+
+### Why the branch is not responsible
+
+I checked every change on the branch (23 files vs base):
+
+- The only core code touched that these boards use is `drivers/mmc/sdhci.c` (commit 567698b6c29, "mmc: sdhci: Start status timeout after command issue"). I verified it is a **functional no-op**: it removes the `start = get_timer(0)` initialisation at function entry, but the timer was *already* re-initialised immediately after the command write (line 303, present since 2015) — the exact behaviour the commit describes is already in place.
+- Everything else is power-domain/pmic staticize-constify (none used by K1 or RV1103), am335x board code, MCP230xx Kconfig, cv1800b_sdhci (Sophgo, different SoC), and ds1307 RTC — all irrelevant to bpif3 (spacemit_k1) and pico (luckfox-pico-mini-b-rv1103).
+- Nothing touches RISC-V, spacemit, USB gadget, DFU, or serial code.
+- Both boards build cleanly locally: `buildman -o /tmp/pickman spacemit_k1 luckfox-pico-mini-b-rv1103` — 0 errors (spacemit_k1 shows only the expected missing-OPENSBI-blob warning outside CI).
+
+### Recommendation
+
+Retry the pipeline; no source change is required.
+
+---
+
