@@ -33,6 +33,22 @@
 	};
 
 	/*
+	 * Only the boot processor for now: it provides the MADT local-APIC
+	 * entry and the CPU count for the ACPI tables
+	 */
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "cpu-x86";
+			reg = <0>;
+			intel,apic-id = <0>;
+		};
+	};
+
+	/*
 	 * The console. This uses the UART's MMIO directly, rather than a PCI
 	 * node, since probing a PCI device means enumerating the bus, which
 	 * cannot be done before silicon init. The BAR is set up by the early
