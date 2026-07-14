@@ -67,6 +67,26 @@ int dram_init(void)
 		}
 		gd->ram_size = ho->ram_size;
 		handoff_load_dram_banks(ho);
+
+		/*
+		 * Collect the memory-training data from the FSP's HOBs, so
+		 * that it can be saved to the SPI flash later in the boot.
+		 * The HOBs live in Cache-as-RAM, which is torn down by
+		 * TempRamExit, so mrccache_reserve() copies the data out
+		 * before relocation
+		 */
+		if (CONFIG_IS_ENABLED(MRC_CACHE_SAVE)) {
+			struct mrc_output *norm, *var;
+
+			norm = &gd->arch.mrc[MRC_TYPE_NORMAL];
+			var = &gd->arch.mrc[MRC_TYPE_VAR];
+			norm->buf = fsp_get_nvs_data(gd->arch.hob_list,
+						     &norm->len);
+			var->buf = fsp_get_var_nvs_data(gd->arch.hob_list,
+							&var->len);
+			log_debug("proper: normal %x, var %x\n", norm->len,
+				  var->len);
+		}
 #endif
 		ret = arch_fsps_preinit();
 		if (ret)
