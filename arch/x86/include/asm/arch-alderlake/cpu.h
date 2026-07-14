@@ -20,4 +20,13 @@
  */
 void adl_log_pm_state(const char *when);
 
+/**
+ * adl_release_ssd_reset() - Release the NVMe SSD's PERST# signal
+ *
+ * The SSD is powered up with its reset held when the pads are first set
+ * up; this releases the reset once the power is stable, so that silicon
+ * init can train the PCIe link
+ */
+void adl_release_ssd_reset(void);
+
 #endif /* _ASM_ARCH_CPU_H */

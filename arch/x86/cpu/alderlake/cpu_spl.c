@@ -17,6 +17,7 @@
 #include <asm/fast_spi.h>
 #include <asm/msr.h>
 #include <asm/pci.h>
+#include <asm/arch/gpio.h>
 #include <asm/io.h>
 #include <linux/bitops.h>
 
@@ -96,6 +97,23 @@
 /* These two BARs live within the MCHBAR MMIO space */
 #define MCHBAR_EDRAMBAR		0x5408
 #define MCHBAR_REGBAR		0x5420
+
+/*
+ * GPIO pad configuration for the NVMe SSD, from coreboot's felwinter GPIO
+ * tables. Each pad has 16 bytes of config registers at PAD_CFG_BASE within
+ * its community's sideband space; the index is relative to the community's
+ * first pad (community 0 starts at GPP_B0, community 1 at GPP_S0)
+ */
+#define PAD_CFG_BASE		0x700
+#define PAD_CFG_SIZE		16
+
+/* Pad-configuration DW0 fields */
+#define PAD_RESET_DEEP		BIT(30)
+#define PAD_TRIG_OFF		(2 << 25)
+#define PAD_MODE_NF1		BIT(10)
+#define PAD_RX_DISABLE		BIT(9)
+#define PAD_GPO(val)		(PAD_RESET_DEEP | PAD_TRIG_OFF | \
+				 PAD_RX_DISABLE | (val))
 
 /*
  * The SMBus controller, which also hosts the TCO watchdog. The FSP uses the
@@ -449,11 +467,40 @@ static int set_mei_enabled(bool enable)
 	return -ETIMEDOUT;
 }
 
-/**
- * arch_cpu_init_spl() - Set up the BARs and devices which FSP-M needs
- *
- * Return: 0 if OK, -ve on error
+static void pad_cfg_write(uint pid, uint index, u32 dw0, u32 dw1)
+{
+	void *ptr = (void *)(CONFIG_PCR_BASE_ADDRESS + (pid << 16) +
+			     PAD_CFG_BASE + index * PAD_CFG_SIZE);
+
+	writel(dw0, ptr);
+	writel(dw1, ptr + 4);
+}
+
+/*
+ * Power up the NVMe SSD with its reset held, and route its clock-request
+ * pad to the clock generator. The reset is released by
+ * adl_release_ssd_reset() once FSP-M has run, by which time the power is
+ * stable, so that silicon init can train the link
  */
+static void setup_ssd_pads(void)
+{
+	/* GPP_B2: M2_SSD_PLA_L (power-loss assert, inactive) */
+	pad_cfg_write(PID_GPIOCOM0, GPP_B2 - GPP_B0, PAD_GPO(1), 0);
+	/* GPP_B4: SSD_PERST_L, held in reset */
+	pad_cfg_write(PID_GPIOCOM0, GPP_B4 - GPP_B0, PAD_GPO(0), 0);
+	/* GPP_D6: SRCCLKREQ1#, native function */
+	pad_cfg_write(PID_GPIOCOM1, GPP_D6 - GPP_S0,
+		      PAD_RESET_DEEP | PAD_MODE_NF1, 0);
+	/* GPP_D11: EN_PP3300_SSD, power on */
+	pad_cfg_write(PID_GPIOCOM1, GPP_D11 - GPP_S0, PAD_GPO(1), 0);
+}
+
+void adl_release_ssd_reset(void)
+{
+	/* GPP_B4: SSD_PERST_L, released */
+	pad_cfg_write(PID_GPIOCOM0, GPP_B4 - GPP_B0, PAD_GPO(1), 0);
+}
+
 void adl_log_pm_state(const char *when)
 {
 	log_debug("PM(%s): gblrst_cause %x %x, hpr_cause0 %x, tco_sts %x/%x, smi_en %x, smi_sts %x\n",
@@ -466,6 +513,11 @@ void adl_log_pm_state(const char *when)
 		  inl(ACPI_BASE_ADDRESS + SMI_STS));
 }
 
+/**
+ * arch_cpu_init_spl() - Set up the BARs and devices which FSP-M needs
+ *
+ * Return: 0 if OK, -ve on error
+ */
 static int arch_cpu_init_spl(void)
 {
 	/*
@@ -487,6 +539,7 @@ static int arch_cpu_init_spl(void)
 	setup_sa_bars();
 	setup_smbus_tco();
 	setup_lpc_decodes();
+	setup_ssd_pads();
 	unlock_txt_memory();
 
 	/*
