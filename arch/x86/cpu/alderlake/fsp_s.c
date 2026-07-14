@@ -64,6 +64,15 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	/* U-Boot does not use the FSP's graphics output protocol */
 	cfg->pei_graphics_peim_init = 0;
 
+	/*
+	 * Skip the FSP's multi-processor init: U-Boot does its own MP init
+	 * later. Note that the FSP takes over the APs if cpu_mp_ppi is left
+	 * at zero (coreboot passes a real PPI unconditionally for this
+	 * reason), but with skip_mp_init set the AP-hungry phases do not
+	 * run
+	 */
+	cfg->skip_mp_init = 1;
+
 	return 0;
 }
 
@@ -109,18 +118,10 @@ int arch_fsp_init_r(void)
 	if (ret)
 		return log_msg_ret("tre", ret);
 
-	/*
-	 * TODO(sjg@chromium.org): Silicon init hangs while setting up the
-	 * system agent (postcode 0xa61) or the graphics power management
-	 * (0xa63), depending on the settings used. U-Boot reaches a prompt
-	 * without it, so leave it out until it works
-	 */
-	if (0) {
-		/* This must be called before any devices are probed */
-		ret = fsp_silicon_init(s3wake, false);
-		if (ret)
-			return log_msg_ret("fss", ret);
-	}
+	/* This must be called before any devices are probed */
+	ret = fsp_silicon_init(s3wake, false);
+	if (ret)
+		return log_msg_ret("fss", ret);
 
 	return 0;
 }
