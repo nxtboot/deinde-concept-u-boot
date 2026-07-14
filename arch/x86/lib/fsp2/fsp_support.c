@@ -120,8 +120,16 @@ u32 fsp_notify(struct fsp_header *fsp_hdr, u32 phase)
 	if (!fsp_hdr)
 		fsp_hdr = gd->arch.fsp_s_hdr;
 
-	if (!fsp_hdr)
-		return log_msg_ret("no FSP", -ENOENT);
+	/*
+	 * If silicon init did not run (e.g. it is stubbed out during
+	 * bring-up) there is no FSP state to notify, so this is not an
+	 * error; warn so that it is visible
+	 */
+	if (!fsp_hdr) {
+		log_warning("FSP-S did not run, skipping notify (phase %x)\n",
+			    phase);
+		return 0;
+	}
 
 	notify = (fsp_notify_f)(fsp_hdr->img_base + fsp_hdr->fsp_notify);
 	params.phase = phase;
