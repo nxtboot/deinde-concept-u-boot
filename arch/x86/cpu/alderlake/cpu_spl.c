@@ -61,6 +61,17 @@
 /* ACPI PM1 register offsets and fields */
 #define PM1_STS			0x00
 #define PM1_CNT			0x04
+#define SMI_EN			0x30
+#define SMI_STS			0x34
+
+/* Global-reset and host-partial-reset cause registers, in the PWRM space */
+#define GBLRST_CAUSE0		0x1924
+#define GBLRST_CAUSE1		0x1928
+#define HPR_CAUSE0		0x192c
+
+/* TCO watchdog status; SECOND_TO_STS in TCO2 means the watchdog rebooted */
+#define TCO1_STS		0x04
+#define TCO2_STS		0x06
 #define SLP_TYP_MASK		(7 << 10)
 #define SLP_EN			BIT(13)
 
@@ -443,6 +454,18 @@ static int set_mei_enabled(bool enable)
  *
  * Return: 0 if OK, -ve on error
  */
+void adl_log_pm_state(const char *when)
+{
+	log_debug("PM(%s): gblrst_cause %x %x, hpr_cause0 %x, tco_sts %x/%x, smi_en %x, smi_sts %x\n",
+		  when, readl(PWRM_BASE + GBLRST_CAUSE0),
+		  readl(PWRM_BASE + GBLRST_CAUSE1),
+		  readl(PWRM_BASE + HPR_CAUSE0),
+		  inw(TCO_BASE_ADDRESS + TCO1_STS),
+		  inw(TCO_BASE_ADDRESS + TCO2_STS),
+		  inl(ACPI_BASE_ADDRESS + SMI_EN),
+		  inl(ACPI_BASE_ADDRESS + SMI_STS));
+}
+
 static int arch_cpu_init_spl(void)
 {
 	/*
@@ -465,6 +488,12 @@ static int arch_cpu_init_spl(void)
 	setup_smbus_tco();
 	setup_lpc_decodes();
 	unlock_txt_memory();
+
+	/*
+	 * Log the reset-cause and watchdog state which decides FSP-M's
+	 * memory-init flow; helpful when a boot hangs in memory init
+	 */
+	adl_log_pm_state("pre-fspm");
 
 	/*
 	 * Clear the ACPI power-management status and set the sleep state to

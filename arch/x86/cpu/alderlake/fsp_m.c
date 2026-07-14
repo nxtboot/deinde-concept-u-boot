@@ -13,6 +13,7 @@
 #include <asm-generic/gpio.h>
 #include <linux/build_bug.h>
 #include <linux/sizes.h>
+#include <asm/arch/cpu.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_m_upd.h>
 
@@ -281,5 +282,7 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 
 int fspm_done(struct udevice *dev)
 {
+	adl_log_pm_state("post-fspm");
+
 	return 0;
 }
