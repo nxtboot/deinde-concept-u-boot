@@ -546,15 +546,23 @@ int dm_pciauto_config_device(struct udevice *dev)
 	pci_io = ctlr_hose->pci_io;
 
 	dm_pci_read_config16(dev, PCI_CLASS_DEVICE, &class);
+	if (CONFIG_IS_ENABLED(LOG)) {
+		u32 vendev;
+
+		dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendev);
+		log_debug("dev %s class %x vendev %x\n", dev->name, class,
+			  vendev);
+	}
 
 	switch (class) {
 	case PCI_CLASS_BRIDGE_PCI:
-		debug("PCI Autoconfig: Found P2P bridge, device %d\n",
-		      PCI_DEV(dm_pci_get_bdf(dev)));
+		log_debug("PCI Autoconfig: Found P2P bridge, device %d\n",
+			  PCI_DEV(dm_pci_get_bdf(dev)));
 
 		dm_pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
 
 		ret = dm_pci_hose_probe_bus(dev);
+		log_debug("hose_probe_bus: ret=%d\n", ret);
 		if (ret < 0)
 			return log_msg_ret("probe", ret);
 		sub_bus = ret;
