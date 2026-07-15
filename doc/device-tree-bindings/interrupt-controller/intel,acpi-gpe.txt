@@ -12,6 +12,12 @@ Required properties:
      cell 1: 0 (flags, but none are currently defined)
 - reg : The register bank for the controller (set this to the ACPI base).
 
+Optional properties:
+
+- gpe0-sts : Offset of the GPE0 status registers within the ACPI register
+     bank. Defaults to 0x20, which is where most PCHs put them; Alder Lake
+     and later use 0x60.
+
 Example:
 
 	general-purpose-events {
