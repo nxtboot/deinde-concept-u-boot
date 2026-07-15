@@ -182,7 +182,19 @@ static void setup_platform(struct fsp_m_config *cfg)
 	/* Devices not fitted / not enabled on brya */
 	cfg->sa_ipu_enable = 0;
 	cfg->pch_ish_enable = 0;
+
+	/*
+	 * Disable the Thunderbolt root ports and DMA engines: nothing sets
+	 * up the type-C subsystem (no IOM firmware interaction), so the
+	 * kernel's thunderbolt driver otherwise spends minutes timing out
+	 * against dead controllers
+	 */
+	cfg->tcss_itbt_pcie0_en = 0;
+	cfg->tcss_itbt_pcie1_en = 0;
+	cfg->tcss_itbt_pcie2_en = 0;
 	cfg->tcss_itbt_pcie3_en = 0;
+	cfg->tcss_dma0_en = 0;
+	cfg->tcss_dma1_en = 0;
 
 	/* coreboot does not use C6 DRAM */
 	cfg->enable_c6_dram = 0;
