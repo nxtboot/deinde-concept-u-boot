@@ -33,22 +33,6 @@
 	};
 
 	/*
-	 * Only the boot processor for now: it provides the MADT local-APIC
-	 * entry and the CPU count for the ACPI tables
-	 */
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu@0 {
-			device_type = "cpu";
-			compatible = "cpu-x86";
-			reg = <0>;
-			intel,apic-id = <0>;
-		};
-	};
-
-	/*
 	 * The console. This uses the UART's MMIO directly, rather than a PCI
 	 * node, since probing a PCI device means enumerating the bus, which
 	 * cannot be done before silicon init. The BAR is set up by the early
@@ -78,6 +62,13 @@
 				  <&gpio_e GPP_E12 GPIO_ACTIVE_HIGH>;
 	};
 
+	/*
+	 * The CPUs provide the MADT local-APIC entries and the CPU count
+	 * for the ACPI tables. This processor (i3-1215U) has two P-cores
+	 * with two threads each and four E-cores; the APIC IDs follow the
+	 * Alder Lake hybrid layout, with a stride of 8 between P-cores and
+	 * 2 between E-cores
+	 */
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -87,6 +78,55 @@
 			compatible = "intel,alderlake-cpu";
 			reg = <0>;
 			intel,apic-id = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <1>;
+			intel,apic-id = <1>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <2>;
+			intel,apic-id = <8>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <3>;
+			intel,apic-id = <9>;
+		};
+
+		cpu@4 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <4>;
+			intel,apic-id = <0x10>;
+		};
+
+		cpu@5 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <5>;
+			intel,apic-id = <0x12>;
+		};
+
+		cpu@6 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <6>;
+			intel,apic-id = <0x14>;
+		};
+
+		cpu@7 {
+			device_type = "cpu";
+			compatible = "intel,alderlake-cpu";
+			reg = <7>;
+			intel,apic-id = <0x16>;
 		};
 	};
 
