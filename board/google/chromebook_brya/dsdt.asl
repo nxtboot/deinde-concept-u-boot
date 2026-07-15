@@ -77,6 +77,17 @@ DefinitionBlock(
 					     ReadWrite, 0, 0xfe03e000,
 					     0xfe03efff, 0, 0x1000)
 
+				/*
+				 * The fast-SPI controller's fixed BAR:
+				 * reassigning it can upset the PCH while
+				 * the CSE accesses the flash, throwing the
+				 * platform into a reset loop
+				 */
+				DWordMemory (ResourceProducer, PosDecode,
+					     MinFixed, MaxFixed, NonCacheable,
+					     ReadWrite, 0, 0xfe010000,
+					     0xfe010fff, 0, 0x1000)
+
 				/* Prefetchable memory */
 				QWordMemory (ResourceProducer, PosDecode,
 					     MinFixed, MaxFixed, NonCacheable,
