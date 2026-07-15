@@ -171,8 +171,13 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	else
 		log_warning("VBT not found; graphics init may hang\n");
 
-	/* U-Boot does not use the FSP's graphics output protocol */
-	cfg->pei_graphics_peim_init = 0;
+	/*
+	 * Run the FSP's graphics init (the GOP): as well as providing a
+	 * display, it performs the display-engine init (CDCLK and friends)
+	 * without which the kernel's i915 driver panics in
+	 * intel_gt_init_clock_frequency()
+	 */
+	cfg->pei_graphics_peim_init = 1;
 
 	/*
 	 * Skip the FSP's multi-processor init: with it enabled (and the
