@@ -47,6 +47,21 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PM1_TMR			0x8
 #define SMI_EN			0x30
 
+/* Deepest package C-state for MSR_PMG_CST_CONFIG_CONTROL[3:0] */
+#define PKG_C_STATE_LIMIT_C10	8
+
+/*
+ * Package C-state interrupt-response-time limits, in 1024ns units,
+ * from coreboot's cannonlake configure_c_states() (Alder Lake leaves
+ * these to the FSP, which does not program them under U-Boot)
+ */
+#define C_STATE_LATENCY_CONTROL_0_LIMIT	0x4e	/* package C3 */
+#define C_STATE_LATENCY_CONTROL_1_LIMIT	0x76	/* package C6/C7 short */
+#define C_STATE_LATENCY_CONTROL_2_LIMIT	0x94	/* package C6/C7 long */
+#define C_STATE_LATENCY_CONTROL_3_LIMIT	0xfa	/* package C8 */
+#define C_STATE_LATENCY_CONTROL_4_LIMIT	0x14c	/* package C9 */
+#define C_STATE_LATENCY_CONTROL_5_LIMIT	0x3f2	/* package C10 */
+
 /* Layout of the standard Intel microcode-update header */
 #define UCODE_UPDATE_REV	0x04
 #define UCODE_SIG		0x0c
@@ -156,10 +171,42 @@ static void find_microcode(void)
  * the MP flight plan probes its CPU device. Only touches MSRs, since on
  * the APs this runs with no driver-model or console services
  */
+/**
+ * adl_cstate_init() - Set up the C-state machinery on this core
+ *
+ * The FSP would normally do this in its per-AP feature programming,
+ * which U-Boot does not use. Allow all package C-states, lock the
+ * configuration and set the interrupt-response-time limit for each
+ * package C-state, following coreboot's cannonlake
+ * configure_c_states(). Without the response-time limits a core
+ * entering C6 hangs the SoC
+ */
+static void adl_cstate_init(void)
+{
+	msr_clrsetbits_64(MSR_PMG_CST_CONFIG_CONTROL,
+			  PKG_C_STATE_LIMIT_C2_MASK | CORE_C_STATE_LIMIT_C10_MASK,
+			  PKG_C_STATE_LIMIT_C10 | CST_CFG_LOCK_MASK);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_0,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_0_LIMIT);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_1,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_1_LIMIT);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_2,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_2_LIMIT);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_3,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_3_LIMIT);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_4,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_4_LIMIT);
+	wrmsrl(MSR_C_STATE_LATENCY_CONTROL_5,
+	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_5_LIMIT);
+}
+
 static void adl_core_init(void)
 {
 	/* Clear out pending MCEs and enable the machine-check banks */
 	cpu_mca_configure();
+
+	/* Set up C-states, which the skipped FSP CPU init would do */
+	adl_cstate_init();
 
 	/* Allow the local APIC to send TPR updates */
 	msr_clrsetbits_64(MSR_PIC_MSG_CONTROL, TPR_UPDATES_DISABLE, 0);
