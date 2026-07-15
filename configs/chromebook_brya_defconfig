@@ -5,7 +5,6 @@ CONFIG_SYS_MALLOC_F_LEN=0x8000
 CONFIG_NR_DRAM_BANKS=8
 CONFIG_SMP=y
 CONFIG_MAX_CPUS=8
-CONFIG_MAX_CPUS=16
 CONFIG_DEFAULT_DEVICE_TREE="chromebook_brya"
 CONFIG_TPL_TEXT_BASE=0xfff90000
 CONFIG_SPL_SYS_MALLOC_F_LEN=0x20000
@@ -22,7 +21,7 @@ CONFIG_X86_OFFSET_SPL=0xffd00000
 CONFIG_SYS_MONITOR_BASE=0x01110000
 # CONFIG_EFI_LOADER is not set
 CONFIG_BOOTSTD_FULL=y
-CONFIG_BOOTCOMMAND="bootflow scan -l; bootflow select 0; bootflow cmdline set console uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set i915.modeset 0; bootflow cmdline set nosoftlockup 1; bootflow boot"
+CONFIG_BOOTCOMMAND="bootflow scan -l; bootflow select 0; bootflow cmdline set console uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set i915.modeset 0; bootflow cmdline set intel_idle.max_cstate 2; bootflow boot"
 CONFIG_SYS_CONSOLE_INFO_QUIET=y
 # CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
 CONFIG_LOG=y
