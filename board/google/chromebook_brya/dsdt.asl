@@ -12,6 +12,7 @@
 
 #include <acpi/acpi_table.h>
 #include <asm/acpi/global_nvs.h>
+#include "variant_ec.h"
 
 DefinitionBlock(
 	"dsdt.aml",
@@ -87,7 +88,44 @@ DefinitionBlock(
 			{
 				Return (MCRS)
 			}
+
+			/* The eSPI bridge, which hosts the EC */
+			Device (LPCB)
+			{
+				Name (_ADR, 0x001f0000)
+			}
+
+			/* I2C1, which hosts the Cr50 TPM */
+			Device (I2C1)
+			{
+				Name (_ADR, 0x00150001)
+
+				Device (TPM)
+				{
+					Name (_HID, "GOOG0005")
+					Name (_UID, 1)
+					Name (_CRS, ResourceTemplate ()
+					{
+						I2cSerialBusV2 (0x50,
+							ControllerInitiated,
+							400000,
+							AddressingMode7Bit,
+							"\\_SB.PCI0.I2C1", 0,
+							ResourceConsumer, ,
+							Exclusive)
+					})
+				}
+			}
 		}
+	}
+
+	/* Chrome OS Embedded Controller */
+	Scope (\_SB.PCI0.LPCB)
+	{
+		/* ACPI code for EC SuperIO functions */
+		#include <asm/acpi/cros_ec/superio.asl>
+		/* ACPI code for EC functions */
+		#include <asm/acpi/cros_ec/ec.asl>
 	}
 
 	/* Chrome OS specific */

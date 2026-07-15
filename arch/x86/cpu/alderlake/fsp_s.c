@@ -6,6 +6,7 @@
  */
 
 #include <binman.h>
+#include <binman_sym.h>
 #include <dm.h>
 #include <init.h>
 #include <log.h>
@@ -16,6 +17,10 @@
 #include <asm/fsp2/fsp_api.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_s_upd.h>
+
+/* The microcode collection, which the FSP loads on the APs */
+binman_sym_declare(ulong, microcode, image_pos);
+binman_sym_declare(ulong, microcode, size);
 
 /* The system agent's fixed BARs, which PCI enumeration can disturb */
 #define SA_DEV_ROOT		PCI_BDF(0, 0, 0)
@@ -65,13 +70,15 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->pei_graphics_peim_init = 0;
 
 	/*
-	 * Skip the FSP's multi-processor init: U-Boot does its own MP init
-	 * later. Note that the FSP takes over the APs if cpu_mp_ppi is left
-	 * at zero (coreboot passes a real PPI unconditionally for this
-	 * reason), but with skip_mp_init set the AP-hungry phases do not
-	 * run
+	 * Skip the FSP's multi-processor init: with it enabled (and the
+	 * microcode region provided) silicon init hangs, and the FSP takes
+	 * over the APs when cpu_mp_ppi is zero. The APs therefore run
+	 * without updated microcode until the OS loads it, since U-Boot
+	 * does not yet run its own MP init on this platform
 	 */
 	cfg->skip_mp_init = 1;
+	cfg->microcode_region_base = binman_sym(ulong, microcode, image_pos);
+	cfg->microcode_region_size = binman_sym(ulong, microcode, size);
 
 	/*
 	 * The FSP default enables VMD, which remaps the storage root ports
