@@ -148,6 +148,24 @@ unsigned int install_e820_map(unsigned int max_entries,
 	entries[num_entries].type = E820_RESERVED;
 	num_entries++;
 
+	/*
+	 * Mark the ACPI tables. Without this they sit in usable RAM: the
+	 * kernel parses them early, then allocates over them, and by the
+	 * time it loads the namespace the DSDT is corrupted, failing with
+	 * AE_NO_ACPI_TABLES. The kernel resolves the overlap with the
+	 * system-memory entry by taking the higher type
+	 */
+	if (IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE) &&
+	    gd->arch.table_end_high > gd->arch.table_start_high) {
+		struct e820_entry *entry = &entries[num_entries];
+
+		entry->addr = gd->arch.table_start_high;
+		entry->size = gd->arch.table_end_high -
+			gd->arch.table_start_high;
+		entry->type = E820_ACPI;
+		num_entries++;
+	}
+
 	if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)) {
 		ulong stack_size;
 
