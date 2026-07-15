@@ -66,6 +66,16 @@ DefinitionBlock(
 					     ReadWrite, 0, 0xd0000000,
 					     0xefffffff, 0, 0x20000000)
 
+				/*
+				 * The console UART's fixed BAR: exposing it
+				 * as a window stops the kernel reassigning
+				 * it, which would silence the console
+				 */
+				DWordMemory (ResourceProducer, PosDecode,
+					     MinFixed, MaxFixed, NonCacheable,
+					     ReadWrite, 0, 0xfe03e000,
+					     0xfe03efff, 0, 0x1000)
+
 				/* Prefetchable memory */
 				QWordMemory (ResourceProducer, PosDecode,
 					     MinFixed, MaxFixed, NonCacheable,

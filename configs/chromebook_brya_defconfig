@@ -20,6 +20,7 @@ CONFIG_X86_OFFSET_SPL=0xffd00000
 CONFIG_SYS_MONITOR_BASE=0x01110000
 # CONFIG_EFI_LOADER is not set
 CONFIG_BOOTSTD_FULL=y
+CONFIG_BOOTCOMMAND="bootflow scan -l; bootflow select 0; bootflow cmdline set console uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set i915.modeset 0; bootflow boot"
 CONFIG_SYS_CONSOLE_INFO_QUIET=y
 # CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
 CONFIG_LOG=y
