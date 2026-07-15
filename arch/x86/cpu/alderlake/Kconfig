@@ -13,6 +13,7 @@ config INTEL_ALDERLAKE
 	imply INTEL_GPIO
 	imply CLK
 	imply CLK_INTEL
+	imply ACPI_GPE
 	imply P2SB
 	imply HAVE_P2SB
 	imply HAVE_ITSS

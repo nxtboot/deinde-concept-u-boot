@@ -109,13 +109,19 @@
 
 /* Pad-configuration DW0 fields */
 #define PAD_RESET_DEEP		BIT(30)
+#define PAD_TRIG_EDGE		BIT(25)
 #define PAD_TRIG_OFF		(2 << 25)
+#define PAD_RX_INVERT		BIT(23)
+#define PAD_ROUTE_SCI		BIT(19)
 #define PAD_MODE_NF1		BIT(10)
 #define PAD_RX_DISABLE		BIT(9)
 #define PAD_TX_DISABLE		BIT(8)
 #define PAD_GPO(val)		(PAD_RESET_DEEP | PAD_TRIG_OFF | \
 				 PAD_RX_DISABLE | (val))
 #define PAD_GPI			(PAD_RESET_DEEP | PAD_TRIG_OFF | \
+				 PAD_TX_DISABLE)
+#define PAD_GPI_SCI_EDGE_INV	(PAD_RESET_DEEP | PAD_TRIG_EDGE | \
+				 PAD_RX_INVERT | PAD_ROUTE_SCI | \
 				 PAD_TX_DISABLE)
 
 /*
@@ -517,8 +523,12 @@ static void setup_gsc_pads(void)
 	/* GPP_H7: PCH_I2C1_SCL, native function */
 	pad_cfg_write(PID_GPIOCOM1, GPP_H7 - GPP_S0,
 		      PAD_RESET_DEEP | PAD_MODE_NF1, 0);
-	/* GPP_A13: GSC_PCH_INT_ODL, input */
-	pad_cfg_write(PID_GPIOCOM0, GPP_A13 - GPP_B0, PAD_GPI, 0);
+	/*
+	 * GPP_A13: GSC_PCH_INT_ODL, input, routed to SCI so that the GSC's
+	 * short active-low command-complete pulses latch in the GPE status
+	 * register, where the TPM driver polls for them
+	 */
+	pad_cfg_write(PID_GPIOCOM0, GPP_A13 - GPP_B0, PAD_GPI_SCI_EDGE_INV, 0);
 }
 
 void adl_log_pm_state(const char *when)

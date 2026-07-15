@@ -14,8 +14,11 @@
 #include <spi_flash.h>
 #include <linux/linkage.h>
 #include <asm/global_data.h>
+#include <asm/io.h>
 #include <asm/mrccache.h>
 #include <asm/pci.h>
+#include <asm/arch/gpio.h>
+#include <asm/arch/iomap.h>
 #include <asm/fsp2/fsp_api.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_s_upd.h>
@@ -43,6 +46,51 @@ binman_sym_declare(ulong, microcode, size);
 
 /* PchSerialIoPci: the controller enumerates as a PCI device */
 #define SERIAL_IO_I2C_PCI		1
+
+/*
+ * GPE routing: which GPIO group feeds each of the three GPE0 DWORDs. The PMC's
+ * GPE_CFG register (in PWRM) holds the PMC code for each group and every GPIO
+ * community's MISCCFG register (in its sideband space) holds the matching group
+ * number; for the three groups used here the two encodings happen to have the
+ * same values. The routing matches coreboot's brya devicetree: GPP_A -> DW0,
+ * GPP_E -> DW1, GPP_F -> DW2, so GPP_A13 (the GSC interrupt) latches in
+ * GPE0_STS DW0 bit 13
+ */
+#define GPE_CFG			0x1920
+#define  GPE_DW_MASK		0xfff
+#define  GPE_DW0_GPP_A		0x2
+#define  GPE_DW1_GPP_E		(0xc << 4)
+#define  GPE_DW2_GPP_F		(0xa << 8)
+#define  GPE_ROUTE		(GPE_DW0_GPP_A | GPE_DW1_GPP_E | \
+				 GPE_DW2_GPP_F)
+
+#define MISCCFG			0x10
+#define  MISCCFG_GPE_MASK	(0xfff << 8)
+#define  MISCCFG_ROUTE		(GPE_ROUTE << 8)
+
+/* The GPIO communities on Alder Lake-P */
+static const u8 gpio_pids[] = {
+	PID_GPIOCOM0, PID_GPIOCOM1, PID_GPIOCOM2, PID_GPIOCOM3,
+	PID_GPIOCOM4, PID_GPIOCOM5,
+};
+
+/*
+ * Route the GPIO groups to the GPE0 DWORDs. The FSP leaves this at reset
+ * defaults, so do it here, after silicon init, as coreboot does in its ramstage
+ */
+static void setup_gpe_routing(void)
+{
+	int i;
+
+	clrsetbits_le32((void *)(PCH_PWRM_BASE_ADDRESS + GPE_CFG),
+			GPE_DW_MASK, GPE_ROUTE);
+	for (i = 0; i < ARRAY_SIZE(gpio_pids); i++) {
+		void *ptr = (void *)(CONFIG_PCR_BASE_ADDRESS +
+				     ((ulong)gpio_pids[i] << 16) + MISCCFG);
+
+		clrsetbits_le32(ptr, MISCCFG_GPE_MASK, MISCCFG_ROUTE);
+	}
+}
 
 /*
  * A do-nothing MP-services PPI for the FSP. With cpu_mp_ppi left at zero
@@ -219,6 +267,8 @@ int arch_fsp_init_r(void)
 	ret = fsp_silicon_init(s3wake, false);
 	if (ret)
 		return log_msg_ret("fss", ret);
+
+	setup_gpe_routing();
 
 	return 0;
 }

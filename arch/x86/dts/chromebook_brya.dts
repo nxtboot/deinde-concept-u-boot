@@ -10,6 +10,7 @@
 #include <dt-bindings/clock/intel-clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/intel-adl-gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 /include/ "skeleton.dtsi"
 /include/ "rtc.dtsi"
@@ -32,6 +33,19 @@
 	clk: clock {
 		compatible = "intel,apl-clk";
 		#clock-cells = <1>;
+	};
+
+	/*
+	 * The PMC's ACPI I/O space (IOMAP_ACPI_BASE, 0x100 bytes). The
+	 * GPE0 status registers sit at 0x60 within it on this PCH,
+	 * unlike the usual 0x20
+	 */
+	acpi_gpe: general-purpose-events {
+		reg = <0x1800 0x100>;
+		compatible = "intel,acpi-gpe";
+		gpe0-sts = <0x60>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 
 	config {
@@ -189,14 +203,17 @@
 			/*
 			 * The Google Security Chip (Cr50), providing the TPM.
 			 * Its command-complete signal on GPP_A13 is a short
-			 * pulse, which polling the pad level misses, so the
-			 * driver's fixed-delay fallback is used until a
-			 * latched GPE interrupt is wired up, as coral does
+			 * pulse, which polling the pad level would miss, so
+			 * the pad routes to SCI and the driver watches the
+			 * latched GPE status: GPP_A is on GPE0 DW0, so
+			 * GPP_A13 is GPE number 13
 			 */
 			tpm: tpm@50 {
 				reg = <0x50>;
 				compatible = "google,cr50";
 				u-boot,i2c-offset-len = <0>;
+				interrupts-extended = <&acpi_gpe 13
+					IRQ_TYPE_EDGE_FALLING>;
 				acpi,hid = "GOOG0005";
 				acpi,ddn = "I2C TPM";
 				acpi,name = "TPMI";
