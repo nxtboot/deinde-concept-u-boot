@@ -7,6 +7,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/clock/intel-clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/intel-adl-gpio.h>
 
@@ -26,6 +27,11 @@
 
 	chosen {
 		stdout-path = &serial;
+	};
+
+	clk: clock {
+		compatible = "intel,apl-clk";
+		#clock-cells = <1>;
 	};
 
 	config {
@@ -169,6 +175,34 @@
 			pci,no-autoconfig;
 		};
 
+		i2c_1: i2c@15,1 {
+			compatible = "intel,apl-i2c", "snps,designware-i2c-pci";
+			reg = <0x0200a910 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <400000>;
+			i2c,speeds = <100000 400000>;
+			clocks = <&clk CLK_I2C>;
+			i2c-scl-rising-time-ns = <650>;
+			i2c-scl-falling-time-ns = <400>;
+
+			/*
+			 * The Google Security Chip (Cr50), providing the TPM.
+			 * Its command-complete signal on GPP_A13 is a short
+			 * pulse, which polling the pad level misses, so the
+			 * driver's fixed-delay fallback is used until a
+			 * latched GPE interrupt is wired up, as coral does
+			 */
+			tpm: tpm@50 {
+				reg = <0x50>;
+				compatible = "google,cr50";
+				u-boot,i2c-offset-len = <0>;
+				acpi,hid = "GOOG0005";
+				acpi,ddn = "I2C TPM";
+				acpi,name = "TPMI";
+			};
+		};
+
 		p2sb: p2sb@1f,1 {
 			reg = <0x0000f900 0 0 0 0>;
 			bootph-all;
@@ -185,6 +219,17 @@
 				compatible = "intel,itss";
 				intel,p2sb-port-id = <0xc4>;
 				intel,pmc-routes = <0 0>;
+			};
+
+			/* GPIO community 0 holds GPP_B, T, A */
+			pinctrl_com0 {
+				compatible = "intel,alderlake-pinctrl";
+				intel,p2sb-port-id = <PID_GPIOCOM0>;
+				gpio_a: gpio-com0 {
+					compatible = "intel,gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
 			};
 
 			/* GPIO community 4 holds GPP_C, F, E */

@@ -21,7 +21,7 @@ CONFIG_X86_OFFSET_SPL=0xffd00000
 CONFIG_SYS_MONITOR_BASE=0x01110000
 # CONFIG_EFI_LOADER is not set
 CONFIG_BOOTSTD_FULL=y
-CONFIG_BOOTCOMMAND="bootflow scan -l; bootflow select 0; bootflow cmdline set console uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set i915.modeset 0; bootflow cmdline set intel_idle.max_cstate 2; bootflow boot"
+CONFIG_BOOTCOMMAND="tpm2 autostart; bootflow scan -l; bootflow select 0; bootflow cmdline set console uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set i915.modeset 0; bootflow cmdline set intel_idle.max_cstate 2; bootflow boot"
 CONFIG_SYS_CONSOLE_INFO_QUIET=y
 # CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
 CONFIG_LOG=y
@@ -50,6 +50,8 @@ CONFIG_SPL_SEPARATE_BSS=y
 CONFIG_GENERATE_ACPI_TABLE=y
 CONFIG_INTEL_ACPIGEN=y
 CONFIG_CPU=y
+CONFIG_DM_I2C=y
+CONFIG_SYS_I2C_DW=y
 CONFIG_NVME_PCI=y
 CONFIG_SPI=y
 CONFIG_SPL_SPI=y
@@ -73,3 +75,9 @@ CONFIG_SPL_P2SB=y
 CONFIG_TPL_P2SB=y
 CONFIG_TPL_PINCTRL=y
 CONFIG_TPL_DM_GPIO=y
+CONFIG_CMD_TPM=y
+# CONFIG_TPM_V1 is not set
+CONFIG_TPM2_CR50_I2C=y
+CONFIG_TPM=y
+CONFIG_SHA256=y
+# CONFIG_SPL_SHA256 is not set
