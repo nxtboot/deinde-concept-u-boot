@@ -132,6 +132,15 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->microcode_region_size = binman_sym(ulong, microcode, size);
 
 	/*
+	 * Keep the PCH ACPI PM timer running: left at zero, this makes the
+	 * FSP disable the timer and enable the microcode's PM-timer
+	 * emulation instead, but only on the boot processor, so the
+	 * kernel's acpi_pm clocksource reads garbage on the other CPUs.
+	 * coreboot also sets this, doing its own timer management
+	 */
+	cfg->enable_tco_timer = 1;
+
+	/*
 	 * The FSP default enables VMD, which remaps the storage root ports
 	 * into the VMD controller's own domain, hiding the NVMe SSD from
 	 * normal PCI enumeration (00:1d.0 then shows the VMD dummy device
