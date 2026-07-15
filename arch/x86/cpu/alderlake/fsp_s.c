@@ -141,6 +141,22 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->enable_tco_timer = 1;
 
 	/*
+	 * CPU power management, matching coreboot. Without this the
+	 * C-state machinery is left unconfigured and any core entering C6
+	 * (which power-gates the core, relying on the PUNIT and
+	 * voltage-regulator management set up here) hangs the SoC, so the
+	 * kernel is limited to C1E on its command line
+	 */
+	cfg->pm_support = 1;
+	cfg->hwp = 1;
+	cfg->cx = 1;
+	cfg->ps_on_enable = 1;
+	cfg->pkg_c_state_limit = 255;	/* no limit (auto) */
+
+	/* VccIn Aux Imon IccMax: 32A for a 15W Alder Lake-P, in 1/4A units */
+	cfg->vcc_in_aux_imon_icc_imax = 128;
+
+	/*
 	 * The FSP default enables VMD, which remaps the storage root ports
 	 * into the VMD controller's own domain, hiding the NVMe SSD from
 	 * normal PCI enumeration (00:1d.0 then shows the VMD dummy device
