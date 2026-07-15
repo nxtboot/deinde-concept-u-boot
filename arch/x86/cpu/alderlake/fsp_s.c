@@ -8,9 +8,11 @@
 #include <binman.h>
 #include <binman_sym.h>
 #include <dm.h>
+#include <efi.h>
 #include <init.h>
 #include <log.h>
 #include <spi_flash.h>
+#include <linux/linkage.h>
 #include <asm/global_data.h>
 #include <asm/mrccache.h>
 #include <asm/pci.h>
@@ -38,6 +40,55 @@ binman_sym_declare(ulong, microcode, size);
 
 /* PchSerialIoSkipInit: leave the console UART alone */
 #define SERIAL_IO_UART_SKIP_INIT	4
+
+/*
+ * A do-nothing MP-services PPI for the FSP. With cpu_mp_ppi left at zero
+ * the FSP assumes ownership of the APs even when skip_mp_init is set
+ * (coreboot carries a FIXME about this), waking them with its own
+ * INIT-SIPI sequence during silicon init and leaving them in an unknown
+ * state. Handing it this stub instead keeps it off them entirely;
+ * U-Boot's mp_init brings them up later. The layout follows the EDK2
+ * EDKII_PEI_MP_SERVICES2_PPI and the FSP is built with the EDK2 IA32
+ * ABI, hence asmlinkage. The stubs take no parameters, which is safe
+ * since the caller pops the arguments in this ABI
+ */
+struct mp_services2_ppi {
+	efi_status_t (asmlinkage *get_number_of_processors)(void *this,
+			efi_uintn_t *nump, efi_uintn_t *num_enabledp);
+	efi_status_t (asmlinkage *get_processor_info)(void);
+	efi_status_t (asmlinkage *startup_all_aps)(void);
+	efi_status_t (asmlinkage *startup_this_ap)(void);
+	efi_status_t (asmlinkage *switch_bsp)(void);
+	efi_status_t (asmlinkage *enable_disable_ap)(void);
+	efi_status_t (asmlinkage *who_am_i)(void);
+	efi_status_t (asmlinkage *startup_all_cpus)(void);
+};
+
+static asmlinkage efi_status_t mps_get_number_of_processors(void *this,
+		efi_uintn_t *nump, efi_uintn_t *num_enabledp)
+{
+	/* The BSP alone; the FSP must leave the APs to U-Boot */
+	*nump = 1;
+	*num_enabledp = 1;
+
+	return EFI_SUCCESS;
+}
+
+static asmlinkage efi_status_t mps_unsupported(void)
+{
+	return EFI_UNSUPPORTED;
+}
+
+static struct mp_services2_ppi mp_services_noop = {
+	.get_number_of_processors	= mps_get_number_of_processors,
+	.get_processor_info		= mps_unsupported,
+	.startup_all_aps		= mps_unsupported,
+	.startup_this_ap		= mps_unsupported,
+	.switch_bsp			= mps_unsupported,
+	.enable_disable_ap		= mps_unsupported,
+	.who_am_i			= mps_unsupported,
+	.startup_all_cpus		= mps_unsupported,
+};
 
 int fsps_update_config(struct udevice *dev, ulong rom_offset,
 		       struct fsps_upd *upd)
@@ -71,12 +122,12 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 
 	/*
 	 * Skip the FSP's multi-processor init: with it enabled (and the
-	 * microcode region provided) silicon init hangs, and the FSP takes
-	 * over the APs when cpu_mp_ppi is zero. The APs therefore run
-	 * without updated microcode until the OS loads it, since U-Boot
-	 * does not yet run its own MP init on this platform
+	 * microcode region provided) silicon init hangs. U-Boot's mp_init
+	 * brings up the APs and loads their microcode instead. The stub
+	 * MP-services PPI stops the FSP from touching the APs itself
 	 */
 	cfg->skip_mp_init = 1;
+	cfg->cpu_mp_ppi = (ulong)&mp_services_noop;
 	cfg->microcode_region_base = binman_sym(ulong, microcode, image_pos);
 	cfg->microcode_region_size = binman_sym(ulong, microcode, size);
 
