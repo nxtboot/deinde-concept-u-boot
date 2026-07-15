@@ -862,6 +862,17 @@ int mp_init(void)
 		return ret;
 	}
 
+	/*
+	 * Probe the boot CPU now so its driver can find the microcode for
+	 * the APs (setting ucode_base) before load_sipi_vector() records
+	 * it. The flight plan probes each CPU as well, but that is too
+	 * late: the APs load microcode as soon as they start, before the
+	 * flight plan runs
+	 */
+	ret = device_probe(cpu);
+	if (ret)
+		return log_msg_ret("probe", ret);
+
 	if (num_cpus < 2)
 		debug("Warning: Only 1 CPU is detected\n");
 
