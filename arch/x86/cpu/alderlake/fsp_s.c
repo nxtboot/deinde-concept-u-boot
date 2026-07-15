@@ -41,6 +41,9 @@ binman_sym_declare(ulong, microcode, size);
 /* PchSerialIoSkipInit: leave the console UART alone */
 #define SERIAL_IO_UART_SKIP_INIT	4
 
+/* PchSerialIoPci: the controller enumerates as a PCI device */
+#define SERIAL_IO_I2C_PCI		1
+
 /*
  * A do-nothing MP-services PPI for the FSP. With cpu_mp_ppi left at zero
  * the FSP assumes ownership of the APs even when skip_mp_init is set
@@ -105,6 +108,9 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 
 	/* The console UART is already set up */
 	cfg->serial_io_uart_mode[0] = SERIAL_IO_UART_SKIP_INIT;
+
+	/* The GSC (Cr50 TPM) is on I2C1; expose it as a PCI device */
+	cfg->serial_io_i2c_mode[1] = SERIAL_IO_I2C_PCI;
 
 	/*
 	 * Provide the Video BIOS Table, found through the image's fdtmap.
