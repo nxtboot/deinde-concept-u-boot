@@ -23,6 +23,12 @@
 	compatible = "google,brya", "intel,alderlake";
 
 	aliases {
+		/*
+		 * Number the I2C bus as the hardware does, so the ACPI name
+		 * inferred for the generated SSDT (I2C1) matches the device
+		 * declared in the DSDT
+		 */
+		i2c1 = &i2c_1;
 		serial0 = &serial;
 	};
 
