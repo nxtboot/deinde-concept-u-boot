@@ -87179,6 +87179,47 @@ acquired by labgrid.
 The lab place was held by another user when the job ran; nothing on the branch could affect that.
 
 **Actions taken:** None. No fix commit was applied and no `cherry-21a3b9f03b0-fix1` branch was created, per the instruction: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."* The current tip remains `b629710eb00` on branch `cherry-21a3b9f03b0`. Recommend simply retrying the pipeline.
+---
+
+## 2026-07-16: us/master
+
+Branch: cherry-7bb1917b15b
+
+Commits:
+- 7bb1917b15b Merge tag 'v2026.07-rc3' into next
+
+### Conversation log
+The first cherry-pick has conflicts. Per instructions, before aborting let me check whether this merge is already present in ci/master:
+
+The commit is not already applied. Let me examine the situation more closely before deciding how to resolve:
+
+Those matches are pickman record commits. Let me verify the actual commits exist in ci/master:
+
+The empty merge marker commit is in place. Now verifying state and running the build:
+
+All done. Final state:
+
+```
+5dff525667b Merge tag 'v2026.07-rc3' into next
+0db97ace290 Merge branch 'cherry-06bf459570b' into 'master'
+b9d1c5c0d6b pickman: Record review handling for cherry-06bf459570b
+```
+
+## Report
+
+**Build result:** OK — sandbox built cleanly with no warnings or errors (`buildman -L --board sandbox -w -o /tmp/pickman`).
+
+**Cherry-pick outcome:** The merge commit 7bb1917b15b ("Merge tag 'v2026.07-rc3' into next") was recorded as an **empty commit** (5dff525667b) with the original message, the `-x` cherry-pick reference, and an explanatory note.
+
+**Why it ended up empty (fix-ups made):**
+- The direct `git cherry-pick -x -m 1 --allow-empty` hit ~20 conflicts because all 143 rc3-side commits had already been cherry-picked into ci/master individually via earlier pickman runs (verified: "Prepare v2026.07-rc3" = 90bca5d44b5, "xilinx-for-v2026.07-rc3" merge = 1a9d3b5dc2d, etc.)
+- I verified with `--remerge-diff` that the upstream merge contains no manual conflict resolutions of its own, so it carries no unique content
+- All conflicts were resolved to the HEAD (ci/master) version
+- One caution handled deliberately: the merge would have re-applied `mmc: sdhci-cadence: trigger tuning for SD HS mode on SD6HC (v6) PHY` (b42c67188c1, ~156 lines staged cleanly), but ci/master contains an **intentional revert** of that commit (c158ca14b5c). I dropped those staged changes to respect the revert
+
+**Concerning deltas:** The delta is 100% different from the original (empty vs full merge diff), but this is expected and correct for a merge-marker commit whose content already exists in the target branch.
+
+The branch `cherry-7bb1917b15b` is ready for pushing.
 
 ---
 
