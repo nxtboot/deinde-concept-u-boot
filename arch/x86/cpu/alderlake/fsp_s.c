@@ -225,20 +225,44 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->enable_tco_timer = 1;
 
 	/*
-	 * CPU power management, matching coreboot. Without this the
-	 * C-state machinery is left unconfigured and any core entering C6
-	 * (which power-gates the core, relying on the PUNIT and
-	 * voltage-regulator management set up here) hangs the SoC, so the
-	 * kernel is limited to C1E on its command line
+	 * CPU power-management and voltage-regulator policy for brya, so
+	 * that the FSP's CPU feature pass (when enabled) sees the right
+	 * configuration. Without the feature pass the C-state machinery is
+	 * left unconfigured and any core entering C6 (which power-gates the
+	 * core, relying on the PUNIT and voltage-regulator management set
+	 * up here) hangs the SoC, so the kernel is limited to C1E on its
+	 * command line.
+	 * VccInAuxImonIccImax is 32A for a 15W Alder Lake-P, in 1/4A units
 	 */
 	cfg->pm_support = 1;
 	cfg->hwp = 1;
 	cfg->cx = 1;
 	cfg->ps_on_enable = 1;
-	cfg->pkg_c_state_limit = 255;	/* no limit (auto) */
-
-	/* VccIn Aux Imon IccMax: 32A for a 15W Alder Lake-P, in 1/4A units */
+	cfg->pkg_c_state_limit = 255;
 	cfg->vcc_in_aux_imon_icc_imax = 128;
+	/* Disable the C-state demotions on brya */
+	cfg->pkg_c_state_demotion = 0;
+	cfg->c1_state_auto_demotion = 0;
+	cfg->energy_efficient_turbo = 0;
+	/*
+	 * The VR settings for the 15W ADL-P SKU, from coreboot's
+	 * vr_config.c tables: IA (domain 0) and GT (domain 1) loadlines
+	 * in 1/100 mohm, Icc max in 1/4 A, TDC limit in 1/8 A
+	 */
+	cfg->ac_loadline[0] = 280;
+	cfg->dc_loadline[0] = 280;
+	cfg->ac_loadline[1] = 320;
+	cfg->dc_loadline[1] = 320;
+	cfg->icc_max[0] = 320;
+	cfg->icc_max[1] = 160;
+	cfg->tdc_enable[0] = 1;
+	cfg->tdc_enable[1] = 1;
+	cfg->tdc_current_limit[0] = 160;
+	cfg->tdc_current_limit[1] = 160;
+	cfg->tdc_time_window[0] = 28000;
+	cfg->tdc_time_window[1] = 28000;
+	cfg->irms[0] = 1;
+	cfg->irms[1] = 1;
 
 	/*
 	 * The FSP default enables VMD, which remaps the storage root ports
