@@ -29,7 +29,13 @@ struct __packed fsps_arch_upd {
 	u8 reserved[3];
 	u32 length;
 	u32 fsp_event_handler;
-	u8 reserved1[20];
+	/*
+	 * Make FspSiliconInit() return early, with the remaining work
+	 * split into phases run through FspMultiPhaseSiInit(), between
+	 * which the bootloader gets control (see fsp_silicon_init())
+	 */
+	u8 enable_multi_phase_silicon_init;
+	u8 reserved1[19];
 };
 
 /**

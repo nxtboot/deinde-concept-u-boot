@@ -141,12 +141,37 @@ static struct mp_services2_ppi mp_services_noop = {
 	.startup_all_cpus		= mps_unsupported,
 };
 
+/* BIOS_RESET_CPL lives in the MCHBAR MMIO space */
+#define BIOS_RESET_CPL		0x5da8
+
+/*
+ * Called before each FspMultiPhaseSiInit() phase. coreboot sets
+ * BIOS_RESET_CPL itself before phase 2 (its phase-1 callback does TCSS
+ * setup, not needed here with Thunderbolt disabled)
+ */
+void fsp_multi_phase_si_init_cb(int phase)
+{
+	if (phase == 2) {
+		log_debug("Setting BIOS_RESET_CPL\n");
+		setbits_8(MCH_BASE + BIOS_RESET_CPL, 3);
+		log_debug("done (now %x)\n", readb(MCH_BASE + BIOS_RESET_CPL));
+	}
+}
+
 int fsps_update_config(struct udevice *dev, ulong rom_offset,
 		       struct fsps_upd *upd)
 {
 	struct fsp_s_config *cfg = &upd->config;
 	void *vbt_buf;
 	int ret;
+
+	/*
+	 * Run silicon init in phases. This FSP reports a
+	 * single phase (its phase count is only non-zero with the TCSS
+	 * xHCI enabled), so the phase-2 callback below is not reached, but
+	 * the flow then matches coreboot's exactly
+	 */
+	upd->arch.enable_multi_phase_silicon_init = 1;
 
 	/*
 	 * The end-of-post message goes to the CSE, which cannot be relied
