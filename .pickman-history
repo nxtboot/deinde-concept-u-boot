@@ -86611,5 +86611,109 @@ All done. Final status:
 
 The branch is ready for pushing. It has not been merged anywhere.
 
+## 2026-07-14: us/master
+
+Branch: cherry-40b43c94d29
+
+Commits:
+- 40b43c94d29 clk: stub: Sort compatible strings alphabetically
+- be1dc88b4a1 clk: qcom: clk-stub: Add compatibles for QCS615/SA8775P
+- 4b1580e0608 clk: qcom: sa8775p: Add UFS clock support
+- 213edfd6450 clk: qcom: qcs615: Add UFS clock support
+- 7e670b7d6e1 clk: qcom: sc7280: Add UFS clock support
+- 83edbe9426a drivers: ufs: qcom: Initialize and enable clocks before hardware access
+- 6d2bcb6398c ufs: qcom: Remove redundant POST_CHANGE clock setup call
+- c9eb2d64e2c dts: lemans-evk-u-boot: add override dtsi
+- 8fce24a418b serial: msm-geni: configure RX watermark register
+- 53e6ccc0c10 cmd: ufetch: show net feature when NET_LWIP is selected
+- 218cbc4b126 cmd: ufetch: only show comma separator if there was a previous feature
+- 140f248556f clk/qcom: Add SM6125 clock driver
+- b6470f662a4 qcom_defconfig: Enable SM6125 clock driver
+- 60bc1eb8c2f drivers: pinctrl: Add Qualcomm SM6125 TLMM driver
+- 246b0f185ac gpio: qcom_pmic: Staticize and constify driver ops
+- bc281192880 gpio: qcom: Staticize and constify driver ops
+- 5a995c2fe0b pci: pcie_dw_qcom: Staticize and constify driver ops
+- d54d2ec651e phy: qcom: Add SM6115 and SM6125 to QMP UFS PHY driver
+- bf6de813673 clk/qcom: qcm2290: Fix vote_bit of gpll6 clock
+- 0d131b3b060 board/qualcomm: qcom-phone: Add poweroff command
+- 11e1be868cb Merge tag 'qcom-next-18May2026' of https://source.denx.de/u-boot/custodians/u-boot-snapdragon into next
+
+### Conversation log
+Commit 1/21 done, delta matches, build passes. Continuing.
+
+Same conflict in the merge commit — resolving the same way (keep the fixed bootmenu_9):
+
+All done. Branch `cherry-40b43c94d29` is ready for pushing.
+
+## Final Status
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**Commits applied: 20 of 21** (one skipped as already applied)
+
+| # | New hash | Original | Subject |
+|---|----------|----------|---------|
+| 1 | f2684eff785 | 40b43c94d29 | clk: stub: Sort compatible strings alphabetically |
+| 2 | 0aba4232b10 | be1dc88b4a1 | clk: qcom: clk-stub: Add compatibles for QCS615/SA8775P |
+| 3 | 73a0bb37193 | 4b1580e0608 | clk: qcom: sa8775p: Add UFS clock support |
+| 4 | dc60da4004e | 213edfd6450 | clk: qcom: qcs615: Add UFS clock support |
+| 5 | 455b2e03e44 | 7e670b7d6e1 | clk: qcom: sc7280: Add UFS clock support |
+| 6 | 74f4cad3577 | 83edbe9426a | drivers: ufs: qcom: Initialize and enable clocks before hardware access |
+| 7 | b7eb5c3c0d4 | 6d2bcb6398c | ufs: qcom: Remove redundant POST_CHANGE clock setup call |
+| — | *skipped* | c9eb2d64e2c | dts: lemans-evk-u-boot: add override dtsi — **already applied** |
+| 8 | 614eaaed537 | 8fce24a418b | serial: msm-geni: configure RX watermark register |
+| 9 | cea45ddcccb | 53e6ccc0c10 | cmd: ufetch: show net feature when NET_LWIP is selected |
+| 10 | 780882d9d7c | 218cbc4b126 | cmd: ufetch: only show comma separator if there was a previous feature |
+| 11 | d8648d5bce1 | 140f248556f | clk/qcom: Add SM6125 clock driver |
+| 12 | 0ab925a8a94 | b6470f662a4 | qcom_defconfig: Enable SM6125 clock driver |
+| 13 | 89ed759f8e5 | 60bc1eb8c2f | drivers: pinctrl: Add Qualcomm SM6125 TLMM driver |
+| 14 | 37f8e278804 | 246b0f185ac | gpio: qcom_pmic: Staticize and constify driver ops |
+| 15 | ba40c2eec48 | bc281192880 | gpio: qcom: Staticize and constify driver ops |
+| 16 | e442ef5c709 | 5a995c2fe0b | pci: pcie_dw_qcom: Staticize and constify driver ops |
+| 17 | 6dade0a8ef2 | d54d2ec651e | phy: qcom: Add SM6115 and SM6125 to QMP UFS PHY driver |
+| 18 | 0c2cb2f261c | bf6de813673 | clk/qcom: qcm2290: Fix vote_bit of gpll6 clock |
+| 19 | 33603c5f5c6 | 0d131b3b060 | board/qualcomm: qcom-phone: Add poweroff command |
+| 20 | 30cc5187ac1 | 11e1be868cb | Merge tag 'qcom-next-18May2026' (empty, preserved with --allow-empty) |
+
+**Already-applied verification:** The suggested match 9f99ddd5ed8 turned out to be a pickman history record, not the dtsi commit itself. The real match is 778d509e613 in ci/master (cherry-picked earlier from c2019e01d06) — the patch content is byte-identical to c9eb2d64e2c apart from the hash and cherry-pick trailer, so it was skipped.
+
+**Fix-ups:**
+- Commit 19 (poweroff): conflict in board/qualcomm/qcom-phone.env because ci/master already has the fixed bootmenu_9 line ('fdt addr $fdt_addr_r; ...') from the earlier "fix 'Dump bootargs'" cherry-pick. Resolved by keeping the fixed line and adding the new bootmenu_10 entry; a note was added to the commit message.
+- Commit 20 (merge): same bootmenu_9 conflict, resolved the same way; the merge then became empty (all its content was already applied) and was preserved as an empty commit with the original merge message.
+
+**Concerning deltas:** None — every non-empty cherry-pick matched the original's files and line counts exactly.
+
+---
+
+### Review: 2026-07-14
+
+Branch: cherry-40b43c94d29
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, bpif3, pico, nanopi-m5, ...
+
+### Conversation log
+The local branch is already based directly on ci/master. Let me check whether the remote MR branch differs from local — maybe the local copy was already rebased but not pushed.
+
+Build passes cleanly. Create the -v2 branch and force-push to update the MR:
+
+Done. Here's the summary:
+
+## What was done
+
+**Root cause of the "behind" state:** the remote MR branch had been clobbered — `ci/cherry-40b43c94d29` pointed at `ae52c30ac59` ("Suppress pylint import errors..."), an unrelated patman-fix commit that is already an ancestor of ci/master. The local branch, by contrast, already contained the full 21-commit series based directly on the current ci/master tip (`4120dc8ca8c`).
+
+**Rebase:** `git rebase --keep-empty ci/master` was a no-op — "Current branch is up to date". All 21 commits (including the empty merge commit `30cc5187ac1` and the pickman record `83e98daa2c7`) are intact, so there were no conflicts and no per-commit delta changes to verify.
+
+**Review comment:** the single comment is the bot's own pipeline-fix report concluding all seven failed jobs (six sjg-lab jobs hit a GitLab 502 outage before fetching source; efi-x86_64-uboot-iso-install hit a transient apt failure plus timeout) were infrastructure issues. It requests no code change, so nothing to address.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+**Branches:** created local `cherry-40b43c94d29-v2`; force-pushed to `ci/cherry-40b43c94d29` (`ae52c30ac59..83e98daa2c7`), verified the remote now matches local HEAD. A new MR pipeline will trigger automatically.
+
+## Suggested MR reply
+
+> The remote branch had been overwritten with unrelated content (`ae52c30ac59`, already contained in master), which is why the MR appeared behind the target branch. It has been restored to the full 21-commit series, which is already based on the current master tip — the rebase was a no-op with no conflicts. Sandbox builds cleanly with buildman. The review comment is the earlier pipeline diagnosis (infrastructure-only failures: GitLab 502 outage and a transient apt error) and requires no code change; the fresh pipeline triggered by this push should confirm.
+
 ---
 
