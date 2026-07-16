@@ -282,6 +282,17 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->c1_state_auto_demotion = 0;
 	cfg->energy_efficient_turbo = 0;
 	/*
+	 * The remaining PM configuration for brya: C1E enable, a 10C
+	 * thermal-control offset, the PMC's S0ix substate mask (S0i2.0 |
+	 * S0i3.0 for Alder Lake-P), the system agent's thermal device and
+	 * 1.5% FIVR spread-spectrum
+	 */
+	cfg->c1e = 1;
+	cfg->tcc_activation_offset = 10;
+	cfg->pmc_lpm_s0ix_sub_state_enable_mask = 0x09;
+	cfg->device4_enable = 1;
+	cfg->fivr_spread_spectrum = 8;
+	/*
 	 * The VR settings for the 15W ADL-P SKU, from coreboot's
 	 * vr_config.c tables: IA (domain 0) and GT (domain 1) loadlines
 	 * in 1/100 mohm, Icc max in 1/4 A, TDC limit in 1/8 A
