@@ -86551,3 +86551,65 @@ This is the pickman bot's escalation after exhausting automatic retries — not 
 
 ---
 
+## 2026-07-14: us/master
+
+Branch: cherry-94a9680b62d
+
+Commits:
+- 94a9680b62d MAINTAINERS: Use N: for NXP entry
+- ba80ed218d2 nitrogen6x: Fix compile error if VIDEO_IPUV3 is disabled
+- 1eb024281f7 imx8mq: reform2: Switch to OF_UPSTREAM
+- f80ec8cfd77 imx8mq: phanbell: Switch OF_UPSTREAM
+- 3893fdcf631 imx8mq: pico: Switch OF_UPSTREAM
+- aef46903247 imx8mq: librem5: Switch to OF_UPSTREAM
+- d91270ae825 imx8mq: kontron-pitx-imx8m: Switch OF_UPSTREAM
+- d4817ba78e3 imx8mq: Drop arch/arm/dts/imx8mq.dtsi
+- e1a7afcf92a imx8mm/n: Drop unused dtsi
+- c8ca3314f24 imx: Add SPI NOR A/B switching support
+- 9dd6b95453b imx9: scmi: soc: Add support for detecting primary/secondary bmode on MX95
+- f745c1ab4ea imx9: scmi: Support iMX95/94/952 secondary boot
+- 39f52b7c29e net: phy: nxp-c45-tja11xx: Fix incorrect usage of devm_kzalloc
+- 6bc840568f4 i2c: imx_lpi2c: Fix MSR status check issue in STOP
+- 5841eff4d2d imx8mp_evk: Fix the ND mode VDD_SOC voltage
+- 6b9813ff88c imx9: clock: Fix missing break in get_clk_src_rate
+- 84a17fea21f imx: ahab: Use authenticated header for images loading
+- c9a8f673e0b imx9: Add support for saving DDR training data to NVM
+- 36755f64b34 arm: mach-imx: Add command to expose QB functionality
+- b37fa572ad0 board: nxp: imx9{4, 5, 52}_evk: Add qb save option in SPL
+- dffae7d2a63 doc: board: nxp: Add Quickboot documentation
+- 85319b2e672 board: toradex: smarc-imx95: remove gpio1 reg
+- 454e72874fd board: toradex: verdin-imx95: remove gpio1 reg
+- 5efdfae304e arm: mx6: cm-fx6: Staticize and constify driver ops
+- cbd2dc2bddc arm: mx6: module_fuse: update node path for Linux 6.13
+- 1b0c1407d8f power: regulator: pfuze100: Fix unchecked pmic_reg_read, return value
+- 3ebee64e81f imx: priblob: Fix build break
+- a8684df5ed0 arm: imx9: Update i.MX91 part number detection
+- 11af22cd1e2 net: fsl_enetc: fix the duplex setting on the iMX platform
+- 9e46861a01d net: fsl_enetc: Add support for i.MX952
+- dc4dd589269 Merge tag 'u-boot-imx-next-20260515' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+Delta matches. Build test:
+
+All 31 commits are present. Final build:
+
+All done. Final status:
+
+## Cherry-pick complete: `cherry-94a9680b62d`
+
+**Result: all 31 commits applied, final sandbox build passes with no warnings or errors.**
+
+### Details
+- **Branch**: `cherry-94a9680b62d`, created from `ci/master` (b6d5bbf270f), now 31 commits ahead
+- **30 regular commits**: all cherry-picked cleanly with `-x`. Several needed only automatic merging (MAINTAINERS, arch/arm/dts/Makefile, defconfigs, soc.c files) which git resolved without conflict
+- **1 merge commit** (dc4dd589269): cherry-picked with `-m 1` and became empty (as expected, since all its content was already picked); committed with `--allow-empty` to preserve the merge message in history
+
+### Verification
+- **Delta checks**: every cherry-picked commit's diffstat matches the original exactly (same files, same insertion/deletion counts) — no concerning deltas
+- **Build tests**: `buildman -L --board sandbox -w -o /tmp/pickman` passed after every single commit and on the final tree
+- **Fix-ups**: none required — no manual conflict resolution, no amended commits, no `[FAILED]` placeholders
+
+The branch is ready for pushing. It has not been merged anywhere.
+
+---
+
