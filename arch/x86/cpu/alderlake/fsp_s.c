@@ -292,6 +292,24 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->pmc_lpm_s0ix_sub_state_enable_mask = 0x09;
 	cfg->device4_enable = 1;
 	cfg->fivr_spread_spectrum = 8;
+
+	/*
+	 * Felwinter has no external V1p05/Vnn bypass rails, but the FSP
+	 * default (0x1) enables their use in the S0i1/S0i2 states, so the
+	 * PMC would drive voltage regulators that do not exist on this
+	 * board. Zero the whole external-FIVR configuration
+	 */
+	cfg->pch_fivr_ext_v1p05_rail_enabled_states = 0;
+	cfg->pch_fivr_ext_v1p05_rail_supported_voltage_states = 0;
+	cfg->pch_fivr_ext_v1p05_rail_voltage = 0;
+	cfg->pch_fivr_ext_v1p05_rail_icc_max = 0;
+	cfg->pch_fivr_ext_vnn_rail_enabled_states = 0;
+	cfg->pch_fivr_ext_vnn_rail_supported_voltage_states = 0;
+	cfg->pch_fivr_ext_vnn_rail_voltage = 0;
+	cfg->pch_fivr_ext_vnn_rail_icc_max = 0;
+	cfg->pch_fivr_ext_vnn_rail_sx_enabled_states = 0;
+	cfg->pch_fivr_ext_vnn_rail_sx_voltage = 0;
+	cfg->pch_fivr_ext_vnn_rail_sx_icc_max = 0;
 	/*
 	 * The VR settings for the 15W ADL-P SKU, from coreboot's
 	 * vr_config.c tables: IA (domain 0) and GT (domain 1) loadlines
