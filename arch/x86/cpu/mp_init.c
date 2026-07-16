@@ -684,9 +684,19 @@ static int ap_wait_for_instruction(struct udevice *cpu, void *unused)
 {
 	struct mp_callback lcb;
 	struct mp_callback **per_cpu_slot;
+	bool use_mwait;
 
 	if (!IS_ENABLED(CONFIG_SMP_AP_WORK))
 		return 0;
+
+	/*
+	 * Idle in C1 via monitor/mwait if available, rather than spinning:
+	 * a busy-polling AP stays in C0, which burns power and can upset
+	 * platform power management (the pcode's BIOS_RESET_CPL handshake
+	 * on Alder Lake needs the other cores to be able to idle). A write
+	 * to the monitored mailbox slot wakes the AP immediately
+	 */
+	use_mwait = cpuid(1).ecx & (1 << 3);
 
 	per_cpu_slot = &ap_callbacks[dev_seq(cpu)];
 
@@ -694,7 +704,16 @@ static int ap_wait_for_instruction(struct udevice *cpu, void *unused)
 		struct mp_callback *cb = read_callback(per_cpu_slot);
 
 		if (!cb) {
-			asm ("pause");
+			if (use_mwait) {
+				asm volatile("monitor" : : "a" (per_cpu_slot),
+					     "c" (0), "d" (0));
+				/* Re-check to avoid a lost wakeup */
+				if (!read_callback(per_cpu_slot))
+					asm volatile("mwait" : : "a" (0),
+						     "c" (0));
+			} else {
+				asm("pause");
+			}
 			continue;
 		}
 
