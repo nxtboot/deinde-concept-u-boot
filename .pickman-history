@@ -87035,3 +87035,58 @@ If a human reviewer posts actual code feedback, or you explicitly want a no-op `
 
 ---
 
+## 2026-07-16: us/master
+
+Branch: cherry-21a3b9f03b0
+
+Commits:
+- 21a3b9f03b0 arm: Fix typo in linker script
+- ccec4ce2ee8 sysreset: qemu virt: Use map_sysmem()
+- 0bcd158db30 sysreset: qemu virt: Use __raw_writel()
+- 5116fed77de rtc: goldfish: Use __raw_readl() and __raw_writel()
+- 75a1d7280a7 timer: goldfish: Use __raw_readl()
+- 3e2b261647a m68k: Fix writew(), writel(), readw(), readl() endianness for classic m68k
+- 009cd5b56db virtio: mmio: Allow instantiation via platform data
+- b781017fb63 virtio: cmd: Depend on VIRTIO_BLK
+- ddba15ab72d virtio: blk: Fix converting the vendor id to a string
+- 3dc2761d634 board: qemu: m68k: Create virtio mmio instances
+- bb354d04459 Merge patch series "Add virtio-mmio support to m68k virt machine"
+
+### Conversation log
+The diagnostics are just clangd include-path noise, not real issues. Per the instructions, I'll amend to note the fix-up:
+
+Delta matches the original (only a blank-line difference). Build test:
+
+The merge commit's tree changes are already applied by the individual picks. Resolve by keeping HEAD:
+
+All 11 commits present. Final build:
+
+All done. Branch `cherry-21a3b9f03b0` is ready for pushing, 11 commits ahead of ci/master.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**Commits applied (in order):**
+| New hash | Subject |
+|---|---|
+| 06d28e081c2 | arm: Fix typo in linker script |
+| 8b3ae5ee6e9 | sysreset: qemu virt: Use map_sysmem() |
+| db919650c30 | sysreset: qemu virt: Use __raw_writel() |
+| 5415fc22068 | rtc: goldfish: Use __raw_readl() and __raw_writel() |
+| a8b667993a1 | timer: goldfish: Use __raw_readl() |
+| ee977e75c99 | m68k: Fix writew()/writel()/readw()/readl() endianness |
+| 7b0d5d03685 | virtio: mmio: Allow instantiation via platform data |
+| 2a6e011b39c | virtio: cmd: Depend on VIRTIO_BLK |
+| 090aedb444c | virtio: blk: Fix converting the vendor id to a string |
+| 37a0fb3f15f | board: qemu: m68k: Create virtio mmio instances |
+| d18daa9c686 | Merge patch series "Add virtio-mmio support to m68k virt machine" |
+
+**Fix-ups made:**
+- **090aedb444c** (virtio: blk vendor id fix): context conflict in include/virtio.h — the original patch adds `VIRTIO_VENDOR_QEMU` next to the `VIRTIO_ID_*` defines, which no longer exist on ci/master. Resolved by adding only the `VIRTIO_VENDOR_QEMU` define; a note was appended to the commit message. Delta matches the original (virtio_blk.c change identical; virtio.h is 2 insertions vs 3, the missing line being a blank line).
+- **d18daa9c686** (merge commit): same virtio.h conflict resurfaced; resolved by keeping HEAD since all tree changes were already applied by the individual picks. Committed as an empty commit with `--allow-empty` to preserve the merge message, as instructed.
+
+**Concerning deltas:** none — all commits match their originals in files and line counts.
+
+---
+
