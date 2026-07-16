@@ -15,6 +15,9 @@
 #include <linux/linkage.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <asm/lapic.h>
+#include <asm/mp.h>
+#include <asm/msr.h>
 #include <asm/mrccache.h>
 #include <asm/pci.h>
 #include <asm/arch/gpio.h>
@@ -143,6 +146,40 @@ static struct mp_services2_ppi mp_services_noop = {
 
 /* BIOS_RESET_CPL lives in the MCHBAR MMIO space */
 #define BIOS_RESET_CPL		0x5da8
+
+/* IA32_MISC_ENABLE bit 38 disengages turbo when set */
+#define TURBO_DISENGAGE_HI	BIT(38 - 32)
+
+/* Runs on every CPU: allow turbo (clear the disengage bit) */
+static void enable_turbo_cb(void *arg)
+{
+	msr_t msr;
+
+	msr = msr_read(MSR_IA32_MISC_ENABLE);
+	msr.hi &= ~TURBO_DISENGAGE_HI;
+	msr_write(MSR_IA32_MISC_ENABLE, msr);
+}
+
+/*
+ * Enable turbo on every CPU and request the maximum (1-core turbo)
+ * ratio on the boot processor.
+ * Without this the cores stay at their boot ratio until the kernel's
+ * cpufreq management takes over
+ */
+static void set_max_ratio(void)
+{
+	msr_t msr, perf;
+	int ret;
+
+	ret = mp_run_on_cpus(MP_SELECT_ALL, enable_turbo_cb, NULL);
+	if (ret)
+		log_warning("turbo enable failed (err=%d)\n", ret);
+	msr = msr_read(MSR_TURBO_RATIO_LIMIT);
+	perf.lo = (msr.lo & 0xff) << 8;
+	perf.hi = 0;
+	msr_write(MSR_IA32_PERF_CTL, perf);
+	log_debug("PERF_CTL set to %x\n", perf.lo);
+}
 
 /*
  * Called before each FspMultiPhaseSiInit() phase. coreboot sets
@@ -331,6 +368,9 @@ int arch_misc_init(void)
 {
 	if (!ll_boot_init())
 		return 0;
+
+	/* The CPUs are up (cpu_init_r has run), so turbo can be enabled */
+	set_max_ratio();
 
 	/*
 	 * Save the memory-training data now that the boot is well past the
