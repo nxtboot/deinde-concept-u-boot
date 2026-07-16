@@ -87090,3 +87090,53 @@ All done. Branch `cherry-21a3b9f03b0` is ready for pushing, 11 commits ahead of 
 
 ---
 
+### Review: 2026-07-16
+
+Branch: cherry-21a3b9f03b0
+
+Comments addressed:
+
+
+### Conversation log
+The 11 code commits applied cleanly; the only conflict is in the `.pickman-history` tracking file. Let me look:
+
+This is an append-append conflict in the log file — both branches added entries at the same point. The correct resolution is to keep both. Let me check the full conflict region:
+
+All 12 commits present, empty merge commit preserved, all per-commit deltas identical to before the rebase. Now the build:
+
+Build passes cleanly. Now create the versioned local branch and push:
+
+Remote confirmed at `915f2ad4f34`, matching local HEAD. All done.
+
+## Report
+
+**Rebase:** `git rebase --keep-empty ci/master` — all 11 code commits (including the empty merge commit) applied cleanly with no conflicts. The only conflict was in `.pickman-history`, where both branches appended log entries at the same point; resolved by keeping both entries with the standard `---` separator and header.
+
+**Delta verification:** compared `git show --stat` for every commit before and after the rebase — identical across all 12 commits (11 cherry-picks + pickman record). No fix-ups needed.
+
+**Commits after rebase:**
+| New hash | Subject |
+|---|---|
+| 44781d21928 | arm: Fix typo in linker script |
+| 4036c15cc04 | sysreset: qemu virt: Use map_sysmem() |
+| 6b48e7d1458 | sysreset: qemu virt: Use __raw_writel() |
+| 132ca2f1675 | rtc: goldfish: Use __raw_readl() and __raw_writel() |
+| 65ef6614fb4 | timer: goldfish: Use __raw_readl() |
+| 718a548c580 | m68k: Fix writew()/writel()/readw()/readl() endianness |
+| 0b5be9cc9e2 | virtio: mmio: Allow instantiation via platform data |
+| e0b97fd0aa2 | virtio: cmd: Depend on VIRTIO_BLK |
+| 168d9a96047 | virtio: blk: Fix converting the vendor id to a string |
+| f023d2fc6df | board: qemu: m68k: Create virtio mmio instances |
+| 2b6c3d249a3 | Merge patch series "Add virtio-mmio support to m68k virt machine" (empty, preserved) |
+| 915f2ad4f34 | pickman: Record cherry-pick of 11 commits from us/master |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+**Branches:** created local `cherry-21a3b9f03b0-v2`; force-pushed to `ci/cherry-21a3b9f03b0` (`d18daa9c686..915f2ad4f34`) and verified the remote matches local HEAD. GitLab will trigger a fresh MR pipeline automatically.
+
+## Suggested MR reply
+
+> Rebased onto the current ci/master with `git rebase --keep-empty`. All 11 commits applied cleanly with no code conflicts — the only conflict was in the `.pickman-history` log file, resolved by keeping both branches' entries. Per-commit deltas are identical to the pre-rebase series, the empty merge commit is preserved, and sandbox builds cleanly with buildman. A fresh pipeline has been triggered by the push.
+
+---
+
