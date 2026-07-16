@@ -86987,3 +86987,51 @@ If a human reviewer posts actual feedback, or you want a `-v2` push purely to tr
 
 ---
 
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The branch state is confirmed: HEAD `97c6e057727`, with the 36 staticize/constify commits intact (35 files, 34 insertions / 36 deletions — pure `static const` refactorings) plus pickman's own `.pickman-history` record commits. The single comment to address is the bot's terminal retry-limit notice.
+
+## Result: No code fix possible — the comment itself declares manual intervention required
+
+**MR !1161, branch `cherry-06bf459570b`, HEAD `97c6e057727`**
+
+### Analysis of the comment
+
+The one "review comment" is authored by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the pickman bot's own identity — and reads:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is not a review request and contains nothing actionable in code. It is the bot's terminal state marker after three pipeline-fix attempts, each of which independently concluded (with build verification and per-board Kconfig checks) that the failures were lab/infrastructure issues:
+
+- **Attempt 1:** serial I/O Errno-5 errors, lab timeouts, and a stale-flashed BeaglePlay (running 2021.01 firmware)
+- **Attempt 2:** corrupt ELF in a shared lab build dir, bpif3 DFU/USB never enumerating, minnowmax serial timeout mid-test
+- **Attempt 3:** rockpro64 eMMC block-read EIO in SPL plus SD voltage-select failure (-110) on the ellesmere node — with the log proving the correct MR build was running
+
+Across all three pipelines, **none of the failing boards compiles any driver touched by this branch**. The failures rotate between different boards and different infra failure modes — the signature of lab flakiness, not a code regression.
+
+### Action taken
+
+- Checked out `cherry-06bf459570b`, verified HEAD and branch content — code unchanged since the original cherry-pick head `67ab0abefa1`
+- **No code changes made, no `-v2` branch, no force push, no rebuild**
+
+Force-pushing an unchanged revision now would directly defeat the purpose of the retry limit: it would trigger yet another pipeline against the same flaky lab hardware and re-enter the loop the limit exists to break. The escalation the bot is asking for is genuinely human/operational, not something addressable in this repository.
+
+### What manual intervention is actually needed (for the MR reply)
+
+> Retry limit reached as designed. Three independent diagnoses confirm all pipeline failures are lab infrastructure issues on boards that do not compile any driver touched by this branch (36 one-line `static const` driver-ops refactorings; sandbox and all affected-board buildman targets build cleanly locally). Recommended manual actions:
+> 1. Check the ellesmere node's rockpro64 eMMC/SD hardware (repeated block-read EIO in SPL, SD voltage-select -110)
+> 2. Check bpif3 USB/DFU cabling (device never enumerates for dfu-util)
+> 3. Reflash/verify the BeaglePlay node (was still running 2021.01 firmware)
+> 4. Clear the shared lab build directory used by efi-aarch64 (corrupt u-boot ELF)
+> 5. Once the lab is healthy, re-run the failed jobs or merge on the strength of the passing branch pipeline (8428) — no code change is warranted
+
+If a human reviewer posts actual code feedback, or you explicitly want a no-op `-v2` push to force a fresh pipeline once the lab is fixed, I can do that on request.
+
+---
+
