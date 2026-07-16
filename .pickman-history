@@ -86897,3 +86897,48 @@ If you want me to force a `-v3` push anyway to trigger a fresh pipeline, say the
 
 ---
 
+### Pipeline fix: 2026-07-16 (attempt 3)
+
+Branch: cherry-06bf459570b
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+
+### Conversation log
+Both builds pass (rockpro64 only warns about the expected missing external BL31 blob — pre-existing, unrelated). Now confirm none of the touched drivers are in the rockpro64 config:
+
+No matches — but let me double-check the exact Kconfig symbols against the Makefiles to be sure I used the right names:
+
+## Result: No code fix needed — rockpro64 failure is a lab/hardware issue
+
+**MR !1161, branch `cherry-06bf459570b`, attempt 3**
+
+### Diagnosis (job 554640, rockpro64)
+
+The board received the **correct build** — the boot log shows `U-Boot TPL/SPL 2026.04-gbaff802ca2ec`, matching the MR head `baff802ca2e`. TPL ran fine (DDR init OK), SPL started, read the FIT config and verified the ATF image hash from eMMC (MMC2)... then hit raw MMC failures:
+
+- MMC2 (eMMC): `spl_load_simple_fit: can't load image loadables index 0 (ret = -5)` followed by `mmc_load_image_raw_sector: mmc block read error` — the read *command itself* failed mid-load (EIO), not a hash/content mismatch
+- MMC1 (SD fallback): `Card did not respond to voltage select! : -110` — a hardware-level SD negotiation failure
+- Identical failure on a second reset attempt, then labgrid timed out waiting for the prompt: "Lab failure: Marking connection bad"
+
+This is a physical eMMC/SD problem on the lab board (ellesmere runner), not a code regression.
+
+### Why the code cannot be responsible
+
+The branch is 36 one-line `static const` refactorings of driver-ops structs. I checked the rockpro64-rk3399 `.config` against every touched driver's Kconfig symbol (RKMTD, SATA_MV, FSL_SATA, CLK_AST*/SUNXI, CPU_ARMV8, all mailbox/misc/qfw/reset/rtc/scsi/spi symbols, BOOTDEV_SPI_FLASH): **none is enabled** — zero touched files are compiled into the rockpro64 TPL, SPL or U-Boot proper. The SPL that failed contains no code from this branch.
+
+### Verification performed
+
+- `um build sandbox` — clean
+- `buildman -o /tmp/pickman rockpro64` — builds successfully (only the pre-existing missing-BL31-blob binman warning, unrelated)
+
+### Action taken
+
+- Checked out `cherry-06bf459570b` (HEAD `aeb7ec04955`)
+- Created local branch `cherry-06bf459570b-fix3` — **identical, no code changes**
+- No commit amend, no fixup — the remedy is to retry the job (or check the lab board's eMMC/SD hardware)
+
+This is the third consecutive attempt where the pipeline fails only on lab infrastructure (serial I/O errors, DFU/USB, stale flashes, and now eMMC read errors), each time on boards that don't link any touched driver. The rockpro64 node's storage may warrant a hardware check if this recurs.
+
+---
+
