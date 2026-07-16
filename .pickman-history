@@ -86717,3 +86717,70 @@ Done. Here's the summary:
 
 ---
 
+## 2026-07-16: us/master
+
+Branch: cherry-06bf459570b
+
+Commits:
+- 06bf459570b ata: fsl_sata: Staticize and constify driver ops
+- 2908a3f35b0 ata: sata_mv: Staticize and constify driver ops
+- 64abe3cfcc1 block: rockchip: Staticize and constify driver ops
+- a8f49cc1938 clk: ast2500: Staticize and constify driver ops
+- f23324e49ef clk: ast2600: Staticize and constify driver ops
+- 368255a9a0a clk: sunxi: Drop the extern
+- 31df5fc7d4c clk: sunxi: Staticize and constify driver ops
+- 499cb93dec8 mailbox: apple: Staticize and constify driver ops
+- 44f6ca49e9d mailbox: imx: Staticize and constify driver ops
+- b2961202a7a mailbox: k3-sec-proxy: Staticize and constify driver ops
+- 85f4b086911 mailbox: renesas: Staticize and constify driver ops
+- 0a1347f0a1d mailbox: sandbox: Staticize and constify driver ops
+- e253640e3ff mailbox: stm32-ipcc: Staticize and constify driver ops
+- 0bda59b1fac misc: cros_ec: Staticize and constify driver ops
+- d6a87d042e5 misc: i2c: eeprom-emul: Staticize and constify driver ops
+- 9ef7c13308f misc: x86: Staticize and constify driver ops
+- da1ac763c98 mtd: spi: bootstd: Staticize and constify driver ops
+- 1f1ec618f2a cpu: armv8: Staticize driver ops
+- c2912fa76b6 reset: ast2500: Staticize and constify driver ops
+- cecdc51a466 reset: ast2600: Staticize and constify driver ops
+- 432749b1a3f reset: at91: Staticize and constify driver ops
+- 6333bec332e reset: bcm6345: Staticize and constify driver ops
+- 1fe34ada73a reset: dra7: Staticize and constify driver ops
+- 85be3b92879 reset: mediatek: Staticize and constify driver ops
+- 4020549f9bb reset: meson: Staticize and constify driver ops
+- 35cd9d8636c reset: npcm: Staticize and constify driver ops
+- 2a7e739c040 reset: raspberrypi: Staticize and constify driver ops
+- ce830106bf3 reset: sunxi: Staticize and constify driver ops
+- 1e38a363c2a reset: sandbox: Staticize and constify driver ops
+- 9c631c5dbb0 reset: sti: Staticize and constify driver ops
+- 6f69da0d0fd reset: tegra-car: Staticize and constify driver ops
+- c97fbda5fab reset: tegra186: Staticize and constify driver ops
+- a504ad9e685 rtc: emul: Staticize and constify driver ops
+- 50e6cda6b6b scsi: sandbox: Staticize and constify driver ops
+- 05f76ca898b spi: apple: Staticize and constify driver ops
+- 85b643b7d08 Merge branch 'staticize-constify-drivers' into next
+
+### Conversation log
+First cherry-pick succeeded with matching delta and clean build. Now I'll process the remaining regular commits sequentially, building after each:
+
+Commits 2–13 all applied cleanly with matching deltas and passing builds. Continuing:
+
+All 35 regular commits applied. Now the merge commit:
+
+All 36 commits cherry-picked successfully. Final status:
+
+## Result: Success
+
+**Branch:** `cherry-06bf459570b` (based on ci/master, 36 commits ahead, ready for pushing)
+
+**Build:** OK — sandbox builds cleanly with no warnings or errors, verified with buildman after each cherry-pick and again at the end.
+
+**Commits:** All 36 present (verified with `git log --oneline -n 38`):
+- 35 regular commits, each applied with `-x` and matching the original delta exactly (all are 1-file, 1 insertion / 1 deletion changes, except 'clk: sunxi: Drop the extern' which is 2 deletions, matching its original)
+- 1 merge commit ('Merge branch 'staticize-constify-drivers' into next') preserved as an empty commit with the original merge message and the cherry-picked-from note
+
+**Fix-ups:** None needed. Three commits required automatic content merging due to context drift (drivers/qfw/qfw-uclass.c, drivers/scsi/sandbox_scsi.c, drivers/spi/apple_spi.c), but git resolved these automatically and the resulting deltas are identical to the originals.
+
+**Concerning deltas:** None — every cherry-picked commit's stat matches its original.
+
+---
+
