@@ -86717,3 +86717,321 @@ Done. Here's the summary:
 
 ---
 
+## 2026-07-16: us/master
+
+Branch: cherry-06bf459570b
+
+Commits:
+- 06bf459570b ata: fsl_sata: Staticize and constify driver ops
+- 2908a3f35b0 ata: sata_mv: Staticize and constify driver ops
+- 64abe3cfcc1 block: rockchip: Staticize and constify driver ops
+- a8f49cc1938 clk: ast2500: Staticize and constify driver ops
+- f23324e49ef clk: ast2600: Staticize and constify driver ops
+- 368255a9a0a clk: sunxi: Drop the extern
+- 31df5fc7d4c clk: sunxi: Staticize and constify driver ops
+- 499cb93dec8 mailbox: apple: Staticize and constify driver ops
+- 44f6ca49e9d mailbox: imx: Staticize and constify driver ops
+- b2961202a7a mailbox: k3-sec-proxy: Staticize and constify driver ops
+- 85f4b086911 mailbox: renesas: Staticize and constify driver ops
+- 0a1347f0a1d mailbox: sandbox: Staticize and constify driver ops
+- e253640e3ff mailbox: stm32-ipcc: Staticize and constify driver ops
+- 0bda59b1fac misc: cros_ec: Staticize and constify driver ops
+- d6a87d042e5 misc: i2c: eeprom-emul: Staticize and constify driver ops
+- 9ef7c13308f misc: x86: Staticize and constify driver ops
+- da1ac763c98 mtd: spi: bootstd: Staticize and constify driver ops
+- 1f1ec618f2a cpu: armv8: Staticize driver ops
+- c2912fa76b6 reset: ast2500: Staticize and constify driver ops
+- cecdc51a466 reset: ast2600: Staticize and constify driver ops
+- 432749b1a3f reset: at91: Staticize and constify driver ops
+- 6333bec332e reset: bcm6345: Staticize and constify driver ops
+- 1fe34ada73a reset: dra7: Staticize and constify driver ops
+- 85be3b92879 reset: mediatek: Staticize and constify driver ops
+- 4020549f9bb reset: meson: Staticize and constify driver ops
+- 35cd9d8636c reset: npcm: Staticize and constify driver ops
+- 2a7e739c040 reset: raspberrypi: Staticize and constify driver ops
+- ce830106bf3 reset: sunxi: Staticize and constify driver ops
+- 1e38a363c2a reset: sandbox: Staticize and constify driver ops
+- 9c631c5dbb0 reset: sti: Staticize and constify driver ops
+- 6f69da0d0fd reset: tegra-car: Staticize and constify driver ops
+- c97fbda5fab reset: tegra186: Staticize and constify driver ops
+- a504ad9e685 rtc: emul: Staticize and constify driver ops
+- 50e6cda6b6b scsi: sandbox: Staticize and constify driver ops
+- 05f76ca898b spi: apple: Staticize and constify driver ops
+- 85b643b7d08 Merge branch 'staticize-constify-drivers' into next
+
+### Conversation log
+First cherry-pick succeeded with matching delta and clean build. Now I'll process the remaining regular commits sequentially, building after each:
+
+Commits 2–13 all applied cleanly with matching deltas and passing builds. Continuing:
+
+All 35 regular commits applied. Now the merge commit:
+
+All 36 commits cherry-picked successfully. Final status:
+
+## Result: Success
+
+**Branch:** `cherry-06bf459570b` (based on ci/master, 36 commits ahead, ready for pushing)
+
+**Build:** OK — sandbox builds cleanly with no warnings or errors, verified with buildman after each cherry-pick and again at the end.
+
+**Commits:** All 36 present (verified with `git log --oneline -n 38`):
+- 35 regular commits, each applied with `-x` and matching the original delta exactly (all are 1-file, 1 insertion / 1 deletion changes, except 'clk: sunxi: Drop the extern' which is 2 deletions, matching its original)
+- 1 merge commit ('Merge branch 'staticize-constify-drivers' into next') preserved as an empty commit with the original merge message and the cherry-picked-from note
+
+**Fix-ups:** None needed. Three commits required automatic content merging due to context drift (drivers/qfw/qfw-uclass.c, drivers/scsi/sandbox_scsi.c, drivers/spi/apple_spi.c), but git resolved these automatically and the resulting deltas are identical to the originals.
+
+**Concerning deltas:** None — every cherry-picked commit's stat matches its original.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, efi-aarch64, play, efi-x...
+
+### Conversation log
+I need to stop and report this clearly rather than proceed blindly.
+
+**Analysis:**
+
+The one "review comment" on MR !1161 is the bot's own attempt-1 summary comment, posted by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` (the pickman bot's own GitLab user). It is not a human review comment. Its content simply reports what the previous no-op fix attempt did (concluded that the failures were lab infrastructure issues and made no code changes).
+
+**Current MR state:**
+- MR !1161 is open
+- Head SHA: `67ab0abefa1` (matches current local `cherry-06bf459570b` HEAD)
+- Pipeline **8431 is currently running** on the head SHA
+- Pipeline 8428 (previous SHA) succeeded on the branch ref; 8429 (MR ref) failed with the lab/infra flakes already diagnosed
+- The only non-system note on the MR is the bot's own attempt-1 summary — no human feedback, no threads, no review requests
+
+**Nothing actionable:**
+- No code review comment exists asking for a change
+- The bot's own status note is not something to "address" — it just records prior action
+- A pipeline is already running against the current HEAD, so re-pushing would be wasteful and would cancel the running pipeline
+
+**Action taken:** None. I did not modify any commits, did not create a `-v2` branch, and did not push. Doing so would (a) fabricate a code change to answer a non-question, and (b) needlessly restart the currently-running pipeline 8431.
+
+**Suggested reply to post on the MR** (only if the harness insists on a reply):
+
+> No action needed: the referenced comment is this bot's own attempt-1 summary, not a human review request. Pipeline 8431 is currently running on the unchanged head (67ab0abefa1); waiting for it before considering any further action.
+
+If you'd like me to force a `-v2` push anyway (e.g. to trigger a fresh pipeline), tell me — but based on the actual content of the "comment," there's nothing to change.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, efi-aarch64, play, efi-x...
+
+### Conversation log
+The nested pickman-review agent already ran and reached a definitive conclusion. Here is the report:
+
+## Result: No action needed
+
+**MR !1161** (branch `cherry-06bf459570b`)
+
+The single "review comment" flagged for me to address is the pickman bot's own attempt-1 status summary (posted by `project_1_bot_2541d37e7146e9c25808a380e05ebef0`, i.e. the same bot we push as). It is not a human review request — it simply records the previous determination that all five pipeline-1 failures were lab/infrastructure flakes (Errno-5 serial I/O and lab timeouts on boards that don't use any of the touched drivers) and that no code fix was warranted.
+
+### Current MR state
+- Head SHA `67ab0abefa1` unchanged since attempt 1
+- **Pipeline 8431 is currently running** against that head
+- Pipeline 8428 (branch ref) already succeeded; 8429 (MR ref) is the one with the infra flakes
+- No human review comments, no unresolved threads, no requested changes
+
+### Action taken
+- Checked out `cherry-06bf459570b` — HEAD verified
+- **No code changes made.** No `-v2` branch created. No force push performed.
+
+Fabricating a commit to "address" the bot's own status note would waste CI, cancel the in-flight pipeline 8431, and add noise to the MR history. The prior diagnosis (lab/infra, not code) still stands, and the running pipeline will show whether the retry cleared the flakes.
+
+### Suggested MR reply
+
+> No action needed: the referenced comment is this bot's own attempt-1 summary, not a human review request. Pipeline 8431 is currently running on the unchanged head `67ab0abefa1`; awaiting its result before considering any further action.
+
+If you want me to force a `-v2` push anyway to trigger yet another fresh pipeline, say the word — but based on the actual content of the comment, there is nothing in the code to change.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-aarch64, bpif3, minnowmax.
+
+All three failures are...
+
+### Conversation log
+## Result: No action needed — bot is being asked to address its own status comment
+
+**MR !1161, branch `cherry-06bf459570b`, HEAD `baff802ca2e`**
+
+The single "review comment" flagged for me to address is the pickman bot's own **attempt-2 status summary** (author `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the same bot that pushes as us). It is not a human review request. It merely records the previous determination that the three attempt-2 pipeline failures (`efi-aarch64`, `bpif3`, `minnowmax`) were lab/infrastructure flakes — corrupt build-dir ELF, USB DFU not ready, and a serial timeout mid-env-quote test — on boards that don't even link the touched drivers.
+
+This is the same self-referential loop hit on attempt 1: the bot flags its own summary as a "comment to address," and the correct answer remains the same.
+
+### Current state
+- HEAD `baff802ca2e` unchanged since attempt 2
+- No human review comments, no unresolved threads, no requested changes
+- Branch content is 36 pure `static const` refactorings of isolated driver-ops structs
+
+### Action taken
+- Checked out `cherry-06bf459570b` — HEAD `baff802ca2e` verified
+- **No code changes made.** No `-v3` branch created. No force push performed. No rebuild.
+
+Fabricating a commit to "address" the bot's own status note would:
+1. Cancel any in-flight pipeline on the current head
+2. Consume CI capacity for a no-op change
+3. Add noise to the MR history
+4. Not fix anything, since the underlying issue is lab infrastructure
+
+### Suggested MR reply
+
+> No action needed: the referenced comment is this bot's own attempt-2 status summary, not a human review request. The three failures (efi-aarch64 corrupt build-dir ELF, bpif3 DFU not ready, minnowmax serial timeout) remain lab/infrastructure flakes on boards that don't use any driver touched by this branch. Please re-run the failed jobs; a force-push would only invalidate CI without changing anything.
+
+If you want me to force a `-v3` push anyway to trigger a fresh pipeline, say the word — but there is nothing in the code to change.
+
+---
+
+### Pipeline fix: 2026-07-16 (attempt 3)
+
+Branch: cherry-06bf459570b
+
+Failed jobs:
+- rockpro64 (sjg-lab)
+
+### Conversation log
+Both builds pass (rockpro64 only warns about the expected missing external BL31 blob — pre-existing, unrelated). Now confirm none of the touched drivers are in the rockpro64 config:
+
+No matches — but let me double-check the exact Kconfig symbols against the Makefiles to be sure I used the right names:
+
+## Result: No code fix needed — rockpro64 failure is a lab/hardware issue
+
+**MR !1161, branch `cherry-06bf459570b`, attempt 3**
+
+### Diagnosis (job 554640, rockpro64)
+
+The board received the **correct build** — the boot log shows `U-Boot TPL/SPL 2026.04-gbaff802ca2ec`, matching the MR head `baff802ca2e`. TPL ran fine (DDR init OK), SPL started, read the FIT config and verified the ATF image hash from eMMC (MMC2)... then hit raw MMC failures:
+
+- MMC2 (eMMC): `spl_load_simple_fit: can't load image loadables index 0 (ret = -5)` followed by `mmc_load_image_raw_sector: mmc block read error` — the read *command itself* failed mid-load (EIO), not a hash/content mismatch
+- MMC1 (SD fallback): `Card did not respond to voltage select! : -110` — a hardware-level SD negotiation failure
+- Identical failure on a second reset attempt, then labgrid timed out waiting for the prompt: "Lab failure: Marking connection bad"
+
+This is a physical eMMC/SD problem on the lab board (ellesmere runner), not a code regression.
+
+### Why the code cannot be responsible
+
+The branch is 36 one-line `static const` refactorings of driver-ops structs. I checked the rockpro64-rk3399 `.config` against every touched driver's Kconfig symbol (RKMTD, SATA_MV, FSL_SATA, CLK_AST*/SUNXI, CPU_ARMV8, all mailbox/misc/qfw/reset/rtc/scsi/spi symbols, BOOTDEV_SPI_FLASH): **none is enabled** — zero touched files are compiled into the rockpro64 TPL, SPL or U-Boot proper. The SPL that failed contains no code from this branch.
+
+### Verification performed
+
+- `um build sandbox` — clean
+- `buildman -o /tmp/pickman rockpro64` — builds successfully (only the pre-existing missing-BL31-blob binman warning, unrelated)
+
+### Action taken
+
+- Checked out `cherry-06bf459570b` (HEAD `aeb7ec04955`)
+- Created local branch `cherry-06bf459570b-fix3` — **identical, no code changes**
+- No commit amend, no fixup — the remedy is to retry the job (or check the lab board's eMMC/SD hardware)
+
+This is the third consecutive attempt where the pipeline fails only on lab infrastructure (serial I/O errors, DFU/USB, stale flashes, and now eMMC read errors), each time on boards that don't link any touched driver. The rockpro64 node's storage may warrant a hardware check if this recurs.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) rockpro64.
+
+Both builds pass (rockpro64 only warns abo...
+
+### Conversation log
+This is the same self-referential pattern as attempts 1 and 2: the "review comment" to address is the pickman bot's own attempt-3 status summary, not a human review request. Let me verify the current state of the branch before concluding.
+
+The branch state is confirmed: HEAD `50a1d08bbf6` consists of the 36 staticize/constify commits plus pickman's own `.pickman-history` record commits (which touch no code). The single comment to address is, once again, the bot's own status summary.
+
+## Result: No action needed — comment is the bot's own attempt-3 status summary
+
+**MR !1161, branch `cherry-06bf459570b`, HEAD `50a1d08bbf6`**
+
+### Analysis of the comment
+
+The one "review comment" flagged for handling is authored by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the same pickman bot identity that pushes this MR. It is the **attempt-3 pipeline-fix summary**, which records the previous determination that the rockpro64 failure (job 554640) was a lab hardware issue: eMMC block-read EIO mid-SPL-load plus SD `voltage select -110` fallback failure on the ellesmere runner, on a board whose config enables **none** of the drivers touched by this branch.
+
+This is the third occurrence of the same self-referential loop (attempts 1 and 2 hit it too): the bot's own status note gets flagged as a "comment to address". It contains no request for changes, no question, and no actionable feedback.
+
+### Current state
+
+- HEAD `50a1d08bbf6` — the code content (36 one-line `static const` driver-ops refactorings + preserved merge commit) is unchanged; the commits above `67ab0abefa1` only append to `.pickman-history`
+- No human review comments, no unresolved threads, no requested changes
+- Working tree clean (one untracked `pylint.diff`, pre-existing and unrelated)
+
+### Action taken
+
+- Checked out `cherry-06bf459570b` and verified HEAD
+- **No code changes made.** No `-v2` branch created, no rebuild, no force push
+
+Force-pushing an unchanged (or fabricated) revision would cancel any in-flight pipeline, burn CI capacity, and add noise without fixing anything — the underlying issue remains lab infrastructure, not code.
+
+### Suggested MR reply
+
+> No action needed: the referenced comment is this bot's own attempt-3 status summary, not a human review request. The rockpro64 failure remains a lab hardware issue (eMMC read EIO in SPL plus SD voltage-select failure) on a board that compiles none of the drivers touched by this branch. Please re-run the failed job or check the ellesmere node's eMMC/SD hardware; a force-push would only invalidate CI without changing anything.
+
+If a human reviewer posts actual feedback, or you want a `-v2` push purely to trigger a fresh pipeline, I can do that — but there is nothing in the code to change.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-06bf459570b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The branch state is confirmed: HEAD `97c6e057727`, with the 36 staticize/constify commits intact (35 files, 34 insertions / 36 deletions — pure `static const` refactorings) plus pickman's own `.pickman-history` record commits. The single comment to address is the bot's terminal retry-limit notice.
+
+## Result: No code fix possible — the comment itself declares manual intervention required
+
+**MR !1161, branch `cherry-06bf459570b`, HEAD `97c6e057727`**
+
+### Analysis of the comment
+
+The one "review comment" is authored by `project_1_bot_2541d37e7146e9c25808a380e05ebef0` — the pickman bot's own identity — and reads:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is not a review request and contains nothing actionable in code. It is the bot's terminal state marker after three pipeline-fix attempts, each of which independently concluded (with build verification and per-board Kconfig checks) that the failures were lab/infrastructure issues:
+
+- **Attempt 1:** serial I/O Errno-5 errors, lab timeouts, and a stale-flashed BeaglePlay (running 2021.01 firmware)
+- **Attempt 2:** corrupt ELF in a shared lab build dir, bpif3 DFU/USB never enumerating, minnowmax serial timeout mid-test
+- **Attempt 3:** rockpro64 eMMC block-read EIO in SPL plus SD voltage-select failure (-110) on the ellesmere node — with the log proving the correct MR build was running
+
+Across all three pipelines, **none of the failing boards compiles any driver touched by this branch**. The failures rotate between different boards and different infra failure modes — the signature of lab flakiness, not a code regression.
+
+### Action taken
+
+- Checked out `cherry-06bf459570b`, verified HEAD and branch content — code unchanged since the original cherry-pick head `67ab0abefa1`
+- **No code changes made, no `-v2` branch, no force push, no rebuild**
+
+Force-pushing an unchanged revision now would directly defeat the purpose of the retry limit: it would trigger yet another pipeline against the same flaky lab hardware and re-enter the loop the limit exists to break. The escalation the bot is asking for is genuinely human/operational, not something addressable in this repository.
+
+### What manual intervention is actually needed (for the MR reply)
+
+> Retry limit reached as designed. Three independent diagnoses confirm all pipeline failures are lab infrastructure issues on boards that do not compile any driver touched by this branch (36 one-line `static const` driver-ops refactorings; sandbox and all affected-board buildman targets build cleanly locally). Recommended manual actions:
+> 1. Check the ellesmere node's rockpro64 eMMC/SD hardware (repeated block-read EIO in SPL, SD voltage-select -110)
+> 2. Check bpif3 USB/DFU cabling (device never enumerates for dfu-util)
+> 3. Reflash/verify the BeaglePlay node (was still running 2021.01 firmware)
+> 4. Clear the shared lab build directory used by efi-aarch64 (corrupt u-boot ELF)
+> 5. Once the lab is healthy, re-run the failed jobs or merge on the strength of the passing branch pipeline (8428) — no code change is warranted
+
+If a human reviewer posts actual code feedback, or you explicitly want a no-op `-v2` push to force a fresh pipeline once the lab is fixed, I can do that on request.
+
+---
+
