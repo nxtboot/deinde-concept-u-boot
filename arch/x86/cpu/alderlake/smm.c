@@ -18,8 +18,10 @@
 #include <asm/lapic.h>
 #include <asm/mp.h>
 #include <asm/msr.h>
+#include <asm/pci.h>
 #include <asm/arch/cpu.h>
 #include <linux/delay.h>
+#include <linux/log2.h>
 #include <linux/string.h>
 
 /* IA32_APIC_BASE, bit 10 selects x2APIC (MSR-based) register access */
@@ -39,6 +41,12 @@
 /* Communication with the relocation stub (see smm_asm.S) */
 #define SMM_MAILBOX	0x37f00
 #define SMM_DONE	0x37f04
+#define SMM_SMRR_BASE	0x37f08
+#define SMM_SMRR_MASK	0x37f0c
+
+/* The system agent's TSEG base and Base-of-GTT-Stolen-Memory registers */
+#define SA_TSEG		0xb8
+#define SA_BGSM		0xb4
 
 /* The PCH's SMI enable register; GBL_SMI_EN and EOS gate delivery */
 #define SMI_EN		0x1830
@@ -89,16 +97,46 @@ static void relocate_cb(void *arg)
 
 int adl_smm_relocate(int num_cpus)
 {
+	ulong tseg, bgsm, tseg_size;
+	u32 smrr_base, smrr_mask;
 	void *buf;
 	int seq;
 
 	log_debug("APIC base %x (x2apic %d)\n", msr_read(MSR_APIC_BASE).lo,
 		  !!(msr_read(MSR_APIC_BASE).lo & APIC_BASE_X2APIC));
 
-	buf = memalign(SMM_STRIDE, num_cpus * SMM_STRIDE);
-	if (!buf)
-		return log_msg_ret("buf", -ENOMEM);
+	/*
+	 * Use the TSEG as the SMRAM, as coreboot does: it is the region
+	 * the SMRR must cover (covering an ordinary heap buffer would
+	 * make it inaccessible outside SMM)
+	 */
+	pci_x86_read_config(PCI_BDF(0, 0, 0), SA_TSEG, &tseg, PCI_SIZE_32);
+	pci_x86_read_config(PCI_BDF(0, 0, 0), SA_BGSM, &bgsm, PCI_SIZE_32);
+	tseg &= 0xfff00000;
+	bgsm &= 0xfff00000;
+	tseg_size = bgsm - tseg;
+	log_debug("TSEG %lx size %lx\n", tseg, tseg_size);
+
+	smrr_base = 0;
+	smrr_mask = 0;
+	buf = (void *)tseg;
+	writel(0x55aa1234, buf);
+	if (readl(buf) == 0x55aa1234 && tseg_size >= num_cpus * SMM_STRIDE &&
+	    is_power_of_2(tseg_size) && !(tseg & (tseg_size - 1))) {
+		/* Cover the TSEG with the SMRR, write-back */
+		smrr_base = tseg | 6;
+		smrr_mask = (u32)~(tseg_size - 1) | BIT(11);
+	} else {
+		log_warning("TSEG unusable (%lx/%lx), no SMRR\n", tseg,
+			    tseg_size);
+		buf = memalign(SMM_STRIDE, num_cpus * SMM_STRIDE);
+		if (!buf)
+			return log_msg_ret("buf", -ENOMEM);
+	}
 	memset(buf, '\0', num_cpus * SMM_STRIDE);
+
+	writel(smrr_base, (void *)SMM_SMRR_BASE);
+	writel(smrr_mask, (void *)SMM_SMRR_MASK);
 
 	/* Install the resident handler at each CPU's new entry point */
 	for (seq = 0; seq < num_cpus; seq++)

@@ -14,6 +14,10 @@
 /* Completion flag, set by the relocation handler before RSM */
 #define SMM_DONE	0x37f04
 
+/* SMRR base (with memory type) and mask (with valid bit); mask 0 = skip */
+#define SMM_SMRR_BASE	0x37f08
+#define SMM_SMRR_MASK	0x37f0c
+
 /* The SMBASE field of the save-state area at the default SMBASE */
 #define SMM_SAVE_SMBASE	0x3fef8
 
@@ -37,6 +41,25 @@ adl_smm_reloc_stub:
 	movl	(%ebx), %eax
 	movl	$SMM_SAVE_SMBASE, %edi
 	movl	%eax, (%edi)
+	/*
+	 * Program the SMRR (only writable inside SMM) if a mask was
+	 * provided. The mask's high dword is reserved (the SMRR only
+	 * covers below 4GB), so %edx must be zero for both writes
+	 */
+	movl	$SMM_SMRR_MASK, %ebx
+	movl	(%ebx), %eax
+	testl	%eax, %eax
+	jz	1f
+	xorl	%edx, %edx
+	movl	$SMM_SMRR_BASE, %ebx
+	movl	(%ebx), %eax
+	movl	$0x1f2, %ecx
+	wrmsr
+	movl	$SMM_SMRR_MASK, %ebx
+	movl	(%ebx), %eax
+	movl	$0x1f3, %ecx
+	wrmsr
+1:
 	movl	$SMM_DONE, %ebx
 	movl	$1, (%ebx)
 	rsm
