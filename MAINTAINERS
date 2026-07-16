@@ -1667,8 +1667,8 @@ T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-nand-flash.git
 F:	drivers/mtd/nand/raw/
 
 RISC-V
-M:	Rick Chen <rick@andestech.com>
-M:	Leo <ycliang@andestech.com>
+M:	Tim Ouyang <tim609@andestech.com>
+M:	Leo Liang <leo.liang@sifive.com>
 S:	Maintained
 T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-riscv.git
 F:	arch/riscv/
