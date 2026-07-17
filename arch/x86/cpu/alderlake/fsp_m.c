@@ -142,6 +142,14 @@ static int setup_memory(struct fsp_m_config *cfg, int mem_id)
 	 */
 	cfg->sa_gv = SA_GV_FIXED_POINT1;
 
+	/*
+	 * Two more FSP-M settings for brya, both left at the FSP defaults
+	 * here: disable C6DRAM (the C-state DRAM save machinery) and let
+	 * pcode choose the boot ratio rather than pinning it to 28
+	 */
+	cfg->enable_c6_dram = 0;
+	cfg->cpu_ratio = 0;
+
 	return 0;
 }
 
