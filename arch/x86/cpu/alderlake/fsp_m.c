@@ -74,6 +74,13 @@ static int setup_memory(struct fsp_m_config *cfg, int mem_id)
 	u32 *spd_ptr;
 	int i;
 
+	/*
+	 * Memory cannot train without the SPD, so the symbol must resolve
+	 * in this phase; catch a build that disables binman symbols for it
+	 * (see binman_sym_assert()) rather than failing silently at run
+	 * time
+	 */
+	binman_sym_assert(spd);
 	spd_base = binman_sym(ulong, spd, image_pos);
 	spd_size = binman_sym(ulong, spd, size);
 	if (spd_base == BINMAN_SYM_MISSING)
