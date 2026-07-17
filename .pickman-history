@@ -87282,3 +87282,40 @@ The lab place was held by another user (`kea/labgrid`) when the job tried to con
 
 ---
 
+### Review: 2026-07-16
+
+Branch: cherry-7bb1917b15b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, efi-aarch64.
+
+While those build, let me look a...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push to the MR:
+
+All done. Here's the report:
+
+## Report
+
+**Branch state:** `cherry-7bb1917b15b` pushed to `ci` (406d05feaab..3ec227e64d9), MR !1163 updated. Local branch `cherry-7bb1917b15b-v2` created at the same head.
+
+### Comment analysis
+
+The single review comment (`project_1_bot_...`) is not a change request — it is the pickman bot's own record of "Pipeline fix (attempt 1)", documenting the work already completed on this branch:
+
+- **edison**: infrastructure failure (lab place held by another user) — no code change needed, retry will pass
+- **efi-aarch64**: real bug, already fixed by commit 406d05feaab ("Makefile: Avoid updating the u-boot ELF in place"), which eliminates the parallel-make race where `objcopy --update-section` rewrote the u-boot ELF in place while `checkarmreloc`/`u-boot.srec`/etc. read it concurrently
+
+No new code changes were required. The only delta pushed was the pickman history record commit (3ec227e64d9), which the remote was missing — the fix commit itself was already on the remote branch.
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 boards built cleanly, no warnings
+
+### Suggested MR reply
+
+> The pipeline fix from attempt 1 is now fully incorporated on the branch. The efi-aarch64 failure is fixed by "Makefile: Avoid updating the u-boot ELF in place" (406d05feaab), which injects the devicetree while writing u-boot-app.efi instead of modifying the u-boot ELF in place, removing the parallel-make race in checkarmreloc. The edison failure was lab contention (place held by another user) and needs only a retry. Sandbox builds cleanly with no warnings.
+
+---
+
