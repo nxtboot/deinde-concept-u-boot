@@ -182,6 +182,42 @@
 #define PMC_IPC_MEI_DISABLE	0xa9
 #define PMC_IPC_SUBCMD_SHIFT	12
 
+/*
+ * The PCH thermal registers, behind the PMC on this generation. All of
+ * them are programmed and LOCKED before memory init: the
+ * catastrophic power-down enable, PMC-to-EC temperature reporting, the
+ * three throttle levels (with the thermal throttle enabled) and the
+ * PCH-hot level, using its default 50C trip point. pcode's thermal and
+ * throttling machinery reads this configuration
+ */
+#define THERMAL_CTEN		0x150c
+#define  CTEN_LOCK		BIT(31)
+#define  CTEN_CPDEN		BIT(0)
+#define THERMAL_ECRPTEN		0x1510
+#define  ECRPTEN_LOCK		BIT(31)
+#define  ECRPTEN_EN_RPT		BIT(0)
+#define THERMAL_TL		0x1520
+#define  TL_LOCK		BIT(31)
+#define  TL_TTEN		BIT(29)
+#define THERMAL_TLEN		0x1528
+#define  TLEN_LOCK		BIT(31)
+#define THERMAL_PHLC		0x1540
+#define  PHLC_LOCK		BIT(31)
+
+/* The three throttle levels for a 50C trip: T2L 60, T1L 55, T0L 50 */
+#define THERMAL_TRIP		50
+#define THERMAL_LTT		((THERMAL_TRIP + 10) << 20 | \
+				 (THERMAL_TRIP + 5) << 10 | THERMAL_TRIP)
+
+/*
+ * BIOS_RESET_CPL, in the MCHBAR space: bit 0 tells pcode that BIOS memory
+ * init is complete, bit 1 that power-management init is complete. Until
+ * these are set, pcode holds off power-management flows; coreboot sets
+ * them right after silicon init (FSP-S MultiPhaseSiInit phase 2), which
+ * never happens here since FSP-S is stubbed out
+ */
+#define BIOS_RESET_CPL		0x5da8
+
 /**
  * pcr_reg() - Get the address of a PCR register, reached through the P2SB
  *
@@ -531,6 +567,23 @@ static void setup_gsc_pads(void)
 	pad_cfg_write(PID_GPIOCOM0, GPP_A13 - GPP_B0, PAD_GPI_SCI_EDGE_INV, 0);
 }
 
+static void setup_thermal(void)
+{
+	setbits_le32(PWRM_BASE + THERMAL_CTEN, CTEN_CPDEN | CTEN_LOCK);
+	setbits_le32(PWRM_BASE + THERMAL_ECRPTEN, ECRPTEN_EN_RPT |
+		     ECRPTEN_LOCK);
+	writel(THERMAL_LTT | TL_TTEN | TL_LOCK, PWRM_BASE + THERMAL_TL);
+	setbits_le32(PWRM_BASE + THERMAL_PHLC, PHLC_LOCK);
+	setbits_le32(PWRM_BASE + THERMAL_TLEN, TLEN_LOCK);
+}
+
+void adl_set_bios_reset_cpl(void)
+{
+	setbits_8(MCH_BASE + BIOS_RESET_CPL, 3);
+	log_info("Set BIOS_RESET_CPL (now %x)\n",
+		 readb(MCH_BASE + BIOS_RESET_CPL));
+}
+
 void adl_log_pm_state(const char *when)
 {
 	log_debug("PM(%s): gblrst_cause %x %x, hpr_cause0 %x, tco_sts %x/%x, smi_en %x, smi_sts %x\n",
@@ -566,6 +619,7 @@ static int arch_cpu_init_spl(void)
 	 */
 	setup_p2sb();
 	setup_pwrmbase();
+	setup_thermal();
 	setup_sa_bars();
 	setup_smbus_tco();
 	setup_lpc_decodes();
