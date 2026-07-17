@@ -239,6 +239,13 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	cfg->pei_graphics_peim_init = 1;
 
 	/*
+	 * Tell the GOP the lid is open, so it powers the panel on and
+	 * enables the backlight. Left at 0 the FSP treats the lid as
+	 * closed and leaves the panel dark
+	 */
+	cfg->lid_status = 1;
+
+	/*
 	 * Skip the FSP's multi-processor init: with it enabled (and the
 	 * microcode region provided) silicon init hangs. U-Boot's mp_init
 	 * brings up the APs and loads their microcode instead. The stub
