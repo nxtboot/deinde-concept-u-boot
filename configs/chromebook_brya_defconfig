@@ -22,6 +22,10 @@ CONFIG_SYS_MONITOR_BASE=0x01110000
 # CONFIG_EFI_LOADER is not set
 CONFIG_BOOTSTD_FULL=y
 CONFIG_BOOTSTAGE=y
+CONFIG_SPL_BOOTSTAGE=y
+CONFIG_SPL_BOOTSTAGE_RECORD_COUNT=20
+CONFIG_BOOTSTAGE_STASH=y
+CONFIG_BOOTSTAGE_STASH_ADDR=0x130000
 CONFIG_BOOTCOMMAND="tpm2 autostart; bootflow scan -l; bootflow select 0; bootflow cmdline set earlycon uart8250,mmio32,0xfe03e000,115200n8; bootflow cmdline set console ttyS0,115200n8; bootflow cmdline set i915.modeset 0; bootflow cmdline set intel_idle.max_cstate 2; bootflow boot"
 CONFIG_SYS_CONSOLE_INFO_QUIET=y
 # CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
