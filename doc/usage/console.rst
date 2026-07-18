@@ -25,10 +25,10 @@ assigning its name to the corresponding environment variable. For
 example::
 
     # Use the serial input
-    setenv stdin serial
+    env set stdin serial
 
     # Use the video console
-    setenv stdout vidconsole
+    env set stdout vidconsole
 
 Do a simple `saveenv` to save the console settings in the environment
 and get them working on the next startup, too.
@@ -100,12 +100,12 @@ The number of lines per page is determined in the following order of priority:
 Examples::
 
     # Set page size to 30 lines (hex value 1e)
-    setenv pager 1e
+    env set pager 1e
 
     # Set page size to 24 lines (hex value 18)  
-    setenv pager 18
+    env set pager 18
 
     # Disable paging
-    setenv pager 0
+    env set pager 0
 
 For developer documentation, please see :doc:`/develop/console`.
