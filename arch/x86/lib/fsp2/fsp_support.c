@@ -98,7 +98,16 @@ int fsp_get_header(ulong offset, ulong size, bool use_spi_flash,
 		ret = spi_flash_read_dm(dev, offset, size, base);
 		if (ret)
 			return log_msg_ret("Could not read FPS-M", ret);
-	} else {
+	} else if ((ulong)base != offset) {
+		/*
+		 * An execute-in-place FSP (e.g. FSP-M) already sits at its
+		 * image base, so there is nothing to copy. Writing the
+		 * flash-mapped region onto itself is not just pointless: if
+		 * it is cacheable at this point (e.g. before the MTRRs are
+		 * committed), the stores create dirty cache lines backed by
+		 * ROM, which hang the machine when the cache is next
+		 * flushed
+		 */
 		memcpy(base, (void *)offset, size);
 	}
 	ptr = base + (ptr - (void *)buf);
