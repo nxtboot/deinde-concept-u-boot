@@ -87140,3 +87140,45 @@ Remote confirmed at `915f2ad4f34`, matching local HEAD. All done.
 
 ---
 
+### Pipeline fix: 2026-07-18 (attempt 1)
+
+Branch: cherry-21a3b9f03b0
+
+Failed jobs:
+- sandbox with clang test.py (test.py)
+- sandbox test.py (test.py)
+- edison (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+Let me build and run the specific failing test locally to see if it's a pre-existing issue.
+
+## Report
+
+**Root cause: transient / infrastructure failures — no code changes needed.**
+
+**Branch changes are unrelated to failing tests.** The 11 code commits touch:
+- ARM linker script (typo)
+- m68k io.h + qemu-m68k board + m68k Kconfig
+- virtio_mmio / virtio_blk / virtio.h (m68k platform-data instantiation)
+- goldfish_rtc, goldfish_timer, sysreset_qemu_virt_ctrl drivers (m68k/qemu-virt only, not built for sandbox)
+
+None of these files are compiled into the sandbox binary, and none touch the bootstd / android bootflow / mmc / test infrastructure exercised by the failing test.
+
+**Failing test.py jobs (556207, 556208, 556027, 556028)** all fail on the same single test:
+`test_ut[ut_bootstd_bootflow_android_image_v4]` → `U-Boot exited with signal 11 (SIGSEGV)`
+
+The SIGSEGV happens *after* the test body completes (the full `Showing all bootflows` table with 2 valid bootflows is printed and matches expected output), so it looks like a teardown/cleanup crash. Verified locally: built sandbox on this exact branch and ran the test 5 times in a row — passes cleanly every time. Same for `um py -B sandbox`. This is a known flaky sandbox test, not something this branch introduced.
+
+**edison job (556198)** failure is pure lab infrastructure:
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid.
+```
+The lab place was held by another user when the job ran; nothing on the branch could affect that.
+
+**Actions taken:** None. No fix commit was applied and no `cherry-21a3b9f03b0-fix1` branch was created, per the instruction: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."* The current tip remains `b629710eb00` on branch `cherry-21a3b9f03b0`. Recommend simply retrying the pipeline.
+
+---
+
