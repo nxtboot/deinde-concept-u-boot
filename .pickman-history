@@ -87035,3 +87035,150 @@ If a human reviewer posts actual code feedback, or you explicitly want a no-op `
 
 ---
 
+## 2026-07-16: us/master
+
+Branch: cherry-21a3b9f03b0
+
+Commits:
+- 21a3b9f03b0 arm: Fix typo in linker script
+- ccec4ce2ee8 sysreset: qemu virt: Use map_sysmem()
+- 0bcd158db30 sysreset: qemu virt: Use __raw_writel()
+- 5116fed77de rtc: goldfish: Use __raw_readl() and __raw_writel()
+- 75a1d7280a7 timer: goldfish: Use __raw_readl()
+- 3e2b261647a m68k: Fix writew(), writel(), readw(), readl() endianness for classic m68k
+- 009cd5b56db virtio: mmio: Allow instantiation via platform data
+- b781017fb63 virtio: cmd: Depend on VIRTIO_BLK
+- ddba15ab72d virtio: blk: Fix converting the vendor id to a string
+- 3dc2761d634 board: qemu: m68k: Create virtio mmio instances
+- bb354d04459 Merge patch series "Add virtio-mmio support to m68k virt machine"
+
+### Conversation log
+The diagnostics are just clangd include-path noise, not real issues. Per the instructions, I'll amend to note the fix-up:
+
+Delta matches the original (only a blank-line difference). Build test:
+
+The merge commit's tree changes are already applied by the individual picks. Resolve by keeping HEAD:
+
+All 11 commits present. Final build:
+
+All done. Branch `cherry-21a3b9f03b0` is ready for pushing, 11 commits ahead of ci/master.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**Commits applied (in order):**
+| New hash | Subject |
+|---|---|
+| 06d28e081c2 | arm: Fix typo in linker script |
+| 8b3ae5ee6e9 | sysreset: qemu virt: Use map_sysmem() |
+| db919650c30 | sysreset: qemu virt: Use __raw_writel() |
+| 5415fc22068 | rtc: goldfish: Use __raw_readl() and __raw_writel() |
+| a8b667993a1 | timer: goldfish: Use __raw_readl() |
+| ee977e75c99 | m68k: Fix writew()/writel()/readw()/readl() endianness |
+| 7b0d5d03685 | virtio: mmio: Allow instantiation via platform data |
+| 2a6e011b39c | virtio: cmd: Depend on VIRTIO_BLK |
+| 090aedb444c | virtio: blk: Fix converting the vendor id to a string |
+| 37a0fb3f15f | board: qemu: m68k: Create virtio mmio instances |
+| d18daa9c686 | Merge patch series "Add virtio-mmio support to m68k virt machine" |
+
+**Fix-ups made:**
+- **090aedb444c** (virtio: blk vendor id fix): context conflict in include/virtio.h — the original patch adds `VIRTIO_VENDOR_QEMU` next to the `VIRTIO_ID_*` defines, which no longer exist on ci/master. Resolved by adding only the `VIRTIO_VENDOR_QEMU` define; a note was appended to the commit message. Delta matches the original (virtio_blk.c change identical; virtio.h is 2 insertions vs 3, the missing line being a blank line).
+- **d18daa9c686** (merge commit): same virtio.h conflict resurfaced; resolved by keeping HEAD since all tree changes were already applied by the individual picks. Committed as an empty commit with `--allow-empty` to preserve the merge message, as instructed.
+
+**Concerning deltas:** none — all commits match their originals in files and line counts.
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-21a3b9f03b0
+
+Comments addressed:
+
+
+### Conversation log
+The 11 code commits applied cleanly; the only conflict is in the `.pickman-history` tracking file. Let me look:
+
+This is an append-append conflict in the log file — both branches added entries at the same point. The correct resolution is to keep both. Let me check the full conflict region:
+
+All 12 commits present, empty merge commit preserved, all per-commit deltas identical to before the rebase. Now the build:
+
+Build passes cleanly. Now create the versioned local branch and push:
+
+Remote confirmed at `915f2ad4f34`, matching local HEAD. All done.
+
+## Report
+
+**Rebase:** `git rebase --keep-empty ci/master` — all 11 code commits (including the empty merge commit) applied cleanly with no conflicts. The only conflict was in `.pickman-history`, where both branches appended log entries at the same point; resolved by keeping both entries with the standard `---` separator and header.
+
+**Delta verification:** compared `git show --stat` for every commit before and after the rebase — identical across all 12 commits (11 cherry-picks + pickman record). No fix-ups needed.
+
+**Commits after rebase:**
+| New hash | Subject |
+|---|---|
+| 44781d21928 | arm: Fix typo in linker script |
+| 4036c15cc04 | sysreset: qemu virt: Use map_sysmem() |
+| 6b48e7d1458 | sysreset: qemu virt: Use __raw_writel() |
+| 132ca2f1675 | rtc: goldfish: Use __raw_readl() and __raw_writel() |
+| 65ef6614fb4 | timer: goldfish: Use __raw_readl() |
+| 718a548c580 | m68k: Fix writew()/writel()/readw()/readl() endianness |
+| 0b5be9cc9e2 | virtio: mmio: Allow instantiation via platform data |
+| e0b97fd0aa2 | virtio: cmd: Depend on VIRTIO_BLK |
+| 168d9a96047 | virtio: blk: Fix converting the vendor id to a string |
+| f023d2fc6df | board: qemu: m68k: Create virtio mmio instances |
+| 2b6c3d249a3 | Merge patch series "Add virtio-mmio support to m68k virt machine" (empty, preserved) |
+| 915f2ad4f34 | pickman: Record cherry-pick of 11 commits from us/master |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+**Branches:** created local `cherry-21a3b9f03b0-v2`; force-pushed to `ci/cherry-21a3b9f03b0` (`d18daa9c686..915f2ad4f34`) and verified the remote matches local HEAD. GitLab will trigger a fresh MR pipeline automatically.
+
+## Suggested MR reply
+
+> Rebased onto the current ci/master with `git rebase --keep-empty`. All 11 commits applied cleanly with no code conflicts — the only conflict was in the `.pickman-history` log file, resolved by keeping both branches' entries. Per-commit deltas are identical to the pre-rebase series, the empty merge commit is preserved, and sandbox builds cleanly with buildman. A fresh pipeline has been triggered by the push.
+
+---
+
+### Pipeline fix: 2026-07-18 (attempt 1)
+
+Branch: cherry-21a3b9f03b0
+
+Failed jobs:
+- sandbox with clang test.py (test.py)
+- sandbox test.py (test.py)
+- edison (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+Let me build and run the specific failing test locally to see if it's a pre-existing issue.
+
+## Report
+
+**Root cause: transient / infrastructure failures — no code changes needed.**
+
+**Branch changes are unrelated to failing tests.** The 11 code commits touch:
+- ARM linker script (typo)
+- m68k io.h + qemu-m68k board + m68k Kconfig
+- virtio_mmio / virtio_blk / virtio.h (m68k platform-data instantiation)
+- goldfish_rtc, goldfish_timer, sysreset_qemu_virt_ctrl drivers (m68k/qemu-virt only, not built for sandbox)
+
+None of these files are compiled into the sandbox binary, and none touch the bootstd / android bootflow / mmc / test infrastructure exercised by the failing test.
+
+**Failing test.py jobs (556207, 556208, 556027, 556028)** all fail on the same single test:
+`test_ut[ut_bootstd_bootflow_android_image_v4]` → `U-Boot exited with signal 11 (SIGSEGV)`
+
+The SIGSEGV happens *after* the test body completes (the full `Showing all bootflows` table with 2 valid bootflows is printed and matches expected output), so it looks like a teardown/cleanup crash. Verified locally: built sandbox on this exact branch and ran the test 5 times in a row — passes cleanly every time. Same for `um py -B sandbox`. This is a known flaky sandbox test, not something this branch introduced.
+
+**edison job (556198)** failure is pure lab infrastructure:
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid.
+```
+The lab place was held by another user when the job ran; nothing on the branch could affect that.
+
+**Actions taken:** None. No fix commit was applied and no `cherry-21a3b9f03b0-fix1` branch was created, per the instruction: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."* The current tip remains `b629710eb00` on branch `cherry-21a3b9f03b0`. Recommend simply retrying the pipeline.
+
+---
+

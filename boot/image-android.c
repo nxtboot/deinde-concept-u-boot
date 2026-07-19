@@ -168,12 +168,22 @@ static void android_vendor_boot_image_v3_v4_parse_hdr(const struct andr_vnd_boot
 	data->bootconfig_addr = end;
 	if (hdr->bootconfig_size) {
 		void *bootconfig_ptr = map_sysmem(data->bootconfig_addr,
-						  data->bootconfig_size +
-						  BOOTCONFIG_TRAILER_SIZE);
-		data->bootconfig_size += add_trailer((ulong)bootconfig_ptr,
-						     data->bootconfig_size);
+						  data->bootconfig_size);
+		bool has_trailer;
+
+		/*
+		 * Do not write a trailer into the source image here: the image
+		 * buffer has no room for it, so doing so overflows into adjacent
+		 * memory. Only reserve space for the trailer, which is written
+		 * into the correctly sized ramdisk copy by
+		 * android_boot_append_bootconfig().
+		 */
+		has_trailer = is_trailer_present((ulong)bootconfig_ptr +
+						 data->bootconfig_size);
 		unmap_sysmem(bootconfig_ptr);
 		data->ramdisk_size += data->bootconfig_size;
+		if (!has_trailer)
+			data->ramdisk_size += BOOTCONFIG_TRAILER_SIZE;
 	}
 	end += ALIGN(data->bootconfig_size, hdr->page_size);
 	data->vendor_boot_img_total_size = end - map_to_sysmem(hdr);
@@ -548,13 +558,23 @@ static long android_boot_append_bootconfig(const struct andr_image_data *img_dat
 		       bootconfig_src, img_data->bootconfig_size);
 		unmap_sysmem(bootconfig_src);
 
+		void *bootconfig_ptr = (char *)ramdisk_dest +
+				       img_data->vendor_ramdisk_size +
+				       img_data->boot_ramdisk_size;
+
 		if (params && params_len > 1) {
-			void *bootconfig_ptr = (char *)ramdisk_dest +
-					       img_data->vendor_ramdisk_size +
-					       img_data->boot_ramdisk_size;
 			bytes_added = add_bootconfig_parameters(params, params_len,
 								(ulong)bootconfig_ptr,
 								img_data->bootconfig_size);
+		} else {
+			/*
+			 * No extra params: still make sure the copied bootconfig
+			 * ends with a trailer (no-op if already present). This
+			 * writes into the ramdisk copy, which was sized to
+			 * include the trailer.
+			 */
+			bytes_added = add_trailer((ulong)bootconfig_ptr,
+						  img_data->bootconfig_size);
 		}
 	}
 
