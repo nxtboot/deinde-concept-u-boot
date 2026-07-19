@@ -87179,6 +87179,184 @@ acquired by labgrid.
 The lab place was held by another user when the job ran; nothing on the branch could affect that.
 
 **Actions taken:** None. No fix commit was applied and no `cherry-21a3b9f03b0-fix1` branch was created, per the instruction: *"If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes."* The current tip remains `b629710eb00` on branch `cherry-21a3b9f03b0`. Recommend simply retrying the pipeline.
+---
+
+## 2026-07-16: us/master
+
+Branch: cherry-7bb1917b15b
+
+Commits:
+- 7bb1917b15b Merge tag 'v2026.07-rc3' into next
+
+### Conversation log
+The first cherry-pick has conflicts. Per instructions, before aborting let me check whether this merge is already present in ci/master:
+
+The commit is not already applied. Let me examine the situation more closely before deciding how to resolve:
+
+Those matches are pickman record commits. Let me verify the actual commits exist in ci/master:
+
+The empty merge marker commit is in place. Now verifying state and running the build:
+
+All done. Final state:
+
+```
+5dff525667b Merge tag 'v2026.07-rc3' into next
+0db97ace290 Merge branch 'cherry-06bf459570b' into 'master'
+b9d1c5c0d6b pickman: Record review handling for cherry-06bf459570b
+```
+
+## Report
+
+**Build result:** OK — sandbox built cleanly with no warnings or errors (`buildman -L --board sandbox -w -o /tmp/pickman`).
+
+**Cherry-pick outcome:** The merge commit 7bb1917b15b ("Merge tag 'v2026.07-rc3' into next") was recorded as an **empty commit** (5dff525667b) with the original message, the `-x` cherry-pick reference, and an explanatory note.
+
+**Why it ended up empty (fix-ups made):**
+- The direct `git cherry-pick -x -m 1 --allow-empty` hit ~20 conflicts because all 143 rc3-side commits had already been cherry-picked into ci/master individually via earlier pickman runs (verified: "Prepare v2026.07-rc3" = 90bca5d44b5, "xilinx-for-v2026.07-rc3" merge = 1a9d3b5dc2d, etc.)
+- I verified with `--remerge-diff` that the upstream merge contains no manual conflict resolutions of its own, so it carries no unique content
+- All conflicts were resolved to the HEAD (ci/master) version
+- One caution handled deliberately: the merge would have re-applied `mmc: sdhci-cadence: trigger tuning for SD HS mode on SD6HC (v6) PHY` (b42c67188c1, ~156 lines staged cleanly), but ci/master contains an **intentional revert** of that commit (c158ca14b5c). I dropped those staged changes to respect the revert
+
+**Concerning deltas:** The delta is 100% different from the original (empty vs full merge diff), but this is expected and correct for a merge-marker commit whose content already exists in the target branch.
+
+The branch `cherry-7bb1917b15b` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-07-16 (attempt 1)
+
+Branch: cherry-7bb1917b15b
+
+Failed jobs:
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+
+### Conversation log
+While those build, let me look at the checkarmreloc rule to understand the efi failure mode.
+
+Now apply the fix:
+
+Now rebuild fresh and compare against baseline:
+
+Build passes now, but the artifact differs at byte 217. Need to check whether it's benign (timestamp) or a real layout difference:
+
+The old build is itself nondeterministic (timestamp-driven — same first-diff byte). Let me compare structure between old and new builds instead:
+
+Headers and sizes are identical — the content diffs are just build-timestamp nondeterminism. Now verify the DTB is genuinely embedded in the new artifact (not the empty placeholder):
+
+DTB correctly embedded with proper flags. Quick check that nothing else expects the u-boot ELF itself to contain the updated dtb:
+
+While those run, let me double-check the final Makefile changes:
+
+Sandbox build passes. Waiting on the stress loop, then I'll run the full buildman check.
+
+All 5 stress runs pass (and the in-place write is now structurally impossible). Now the full buildman check:
+
+Both boards build cleanly (the sandbox64 dtc warnings are pre-existing and unrelated). Now commit the fix. Let me check the Co-developed-by style used in this repo:
+
+Done. Both branches are in place — here's the full report:
+
+## Report
+
+**Branch:** `cherry-7bb1917b15b-fix1` created (HEAD = 406d05feaab, one new commit on top of the MR branch; not pushed)
+
+### Job: edison — infrastructure failure, no code change
+The job failed immediately with:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid
+```
+The lab place was held by another user (`kea/labgrid`) when the job tried to configure the board. This is a lab/board-contention issue, not related to the branch. A retry should pass once the place is free.
+
+### Job: efi-aarch64 — real bug, fixed
+**Symptom:** `readelf: Error: u-boot: Failed to read file's magic number` in the `checkarmreloc` target. I reproduced the identical failure locally with buildman, even though the MR head (5dff5256) is an **empty merge-marker commit** — so the bug lives in ci/master itself, not in any commit on this branch.
+
+**Root cause:** a parallel-make race introduced by 2e7bf25f6bf ("Support separate DTB files with the UEFI app"), long-present in ci/master. The `u-boot-app.efi` rule runs `objcopy --update-section .embedded_dtb=... u-boot` **in place** on the u-boot ELF, while sibling INPUTS-y targets (`checkarmreloc`, `u-boot.srec`, `u-boot.sym`, `System.map`, ...) — which only depend on `u-boot` — read the same file concurrently. When the timing lines up, readelf sees a partially-written file and the build fails.
+
+**Fix (new fixup commit, since the responsible commit is deep in ci/master history, not on this branch):** fold the `--update-section`/`--set-section-flags` arguments into `OBJCOPYFLAGS_u-boot-app.efi`, so the DTB is injected by the same objcopy that writes `u-boot-app.efi` and the u-boot ELF is never modified. `cmd_embeddtb` is kept for the ulib examples, where the in-place update doesn't race.
+
+**Verification:**
+- Output artifact is structurally identical (same size, identical section headers; byte diffs are pre-existing build-timestamp nondeterminism — the old build differs from itself the same way)
+- The embedded DTB in the new `u-boot-app.efi` matches `dts/dt.dtb` byte-for-byte, with correct section flags
+- 5/5 clean parallel builds of efi-arm_app64 pass (and the race is now structurally impossible)
+- `um build sandbox` passes; `buildman -o /tmp/pickman edison efi-arm_app64 sandbox` — all 11 boards build, no new warnings
+
+---
+
+### Review: 2026-07-16
+
+Branch: cherry-7bb1917b15b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, efi-aarch64.
+
+While those build, let me look a...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push to the MR:
+
+All done. Here's the report:
+
+## Report
+
+**Branch state:** `cherry-7bb1917b15b` pushed to `ci` (406d05feaab..3ec227e64d9), MR !1163 updated. Local branch `cherry-7bb1917b15b-v2` created at the same head.
+
+### Comment analysis
+
+The single review comment (`project_1_bot_...`) is not a change request — it is the pickman bot's own record of "Pipeline fix (attempt 1)", documenting the work already completed on this branch:
+
+- **edison**: infrastructure failure (lab place held by another user) — no code change needed, retry will pass
+- **efi-aarch64**: real bug, already fixed by commit 406d05feaab ("Makefile: Avoid updating the u-boot ELF in place"), which eliminates the parallel-make race where `objcopy --update-section` rewrote the u-boot ELF in place while `checkarmreloc`/`u-boot.srec`/etc. read it concurrently
+
+No new code changes were required. The only delta pushed was the pickman history record commit (3ec227e64d9), which the remote was missing — the fix commit itself was already on the remote branch.
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 boards built cleanly, no warnings
+
+### Suggested MR reply
+
+> The pipeline fix from attempt 1 is now fully incorporated on the branch. The efi-aarch64 failure is fixed by "Makefile: Avoid updating the u-boot ELF in place" (406d05feaab), which injects the devicetree while writing u-boot-app.efi instead of modifying the u-boot ELF in place, removing the parallel-make race in checkarmreloc. The edison failure was lab contention (place held by another user) and needs only a retry. Sandbox builds cleanly with no warnings.
+
+---
+
+### Review: 2026-07-19
+
+Branch: cherry-7bb1917b15b
+
+Comments addressed:
+
+
+### Conversation log
+This is the classic append-append conflict in the `.pickman-history` log file. The resolution is to keep both sides. Let me see the full conflict region.
+
+Rebase completed. Now verify the commit deltas against the pre-rebase state:
+
+Everything checks out — the Makefile patch differs only in the commit hash line, and the empty merge-marker commit is preserved with its message. Now the build:
+
+Remote confirmed at `6474d7052dc`, matching local HEAD. All done.
+
+## Report
+
+**Rebase:** `git rebase --keep-empty ci/master` — the branch was 16 commits behind. All 5 commits reapplied; the only conflict was in `.pickman-history`, an append-append conflict where both this branch and the freshly-merged `cherry-21a3b9f03b0` MR added log entries under the same `## 2026-07-16: us/master` heading. Resolved by keeping both entries, separated with the standard `---` separator and a repeated date header, matching the file's existing pattern.
+
+**Commits after rebase:**
+| New hash | Subject | Delta check |
+|---|---|---|
+| 4f1df3e9422 | Merge tag 'v2026.07-rc3' into next | empty marker preserved, message intact |
+| 043fd1ee5d4 | pickman: Record cherry-pick of 1 commits | 41 vs 42 insertions (shared header line absorbed in conflict resolution — log file only) |
+| 2e701108e1f | Makefile: Avoid updating the u-boot ELF in place | patch byte-identical to 406d05feaab |
+| d485135a86b | pickman: Record pipeline fix | identical (59 insertions) |
+| 6474d7052dc | pickman: Record review handling | identical (37 insertions) |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+**Branches:** created local `cherry-7bb1917b15b-v3` (a `-v2` already existed); force-pushed via `pickman push-branch` to `ci/cherry-7bb1917b15b` (`3ec227e64d9...6474d7052dc`) and verified the remote matches local HEAD. GitLab will trigger a fresh MR pipeline automatically.
+
+**Concerning deltas:** none — the only non-identical delta is one line in the `.pickman-history` log file, inherent to the conflict resolution.
+
+## Suggested MR reply
+
+> Rebased onto the current ci/master with `git rebase --keep-empty`. The only conflict was an append-append clash in the .pickman-history log file, resolved by keeping both branches' entries. The empty merge-marker commit for v2026.07-rc3 is preserved, the efi-aarch64 Makefile fix reapplied byte-identically, and sandbox builds cleanly with buildman. A fresh pipeline has been triggered by the push.
 
 ---
 

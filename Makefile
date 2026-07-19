@@ -1354,7 +1354,8 @@ quiet_cmd_objcopy = OBJCOPY $@
 cmd_objcopy = $(OBJCOPY) --gap-fill=0xff $(OBJCOPYFLAGS) \
 	$(OBJCOPYFLAGS_$(@F)) $< $@
 
-# Inject the DTB into u-boot
+# Inject the DTB into an ELF, in place (used for ulib examples). Do not use
+# this on files which other make targets read in parallel, such as u-boot
 quiet_cmd_embeddtb = OBJCOPY $@
 cmd_embeddtb = $(OBJCOPY) --update-section .embedded_dtb=dts/dt.dtb --set-section-flags .embedded_dtb=contents,alloc,load,data $<
 
@@ -1980,9 +1981,13 @@ cmd_ldr = $(LD) $(LDFLAGS_$(@F)) \
 	       $(filter-out FORCE,$^) -o $@
 
 
-OBJCOPYFLAGS_u-boot-app.efi := $(OBJCOPYFLAGS_EFI)
+# Inject the DTB while creating the output file, rather than updating the
+# u-boot ELF in place, since other targets (e.g. checkarmreloc, u-boot.srec)
+# read that file in parallel
+OBJCOPYFLAGS_u-boot-app.efi := $(OBJCOPYFLAGS_EFI) \
+	$(if $(CONFIG_OF_SEPARATE),--update-section .embedded_dtb=dts/dt.dtb \
+		--set-section-flags .embedded_dtb=contents$(comma)alloc$(comma)load$(comma)data)
 u-boot-app.efi: u-boot dts/dt.dtb FORCE
-	$(if $(CONFIG_OF_SEPARATE),$(call if_changed,embeddtb))
 	$(call if_changed,zobjcopy)
 
 u-boot.bin.o: u-boot.bin FORCE
