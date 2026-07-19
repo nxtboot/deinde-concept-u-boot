@@ -2134,6 +2134,50 @@ def _is_merge_in_progress():
         return False
 
 
+# git operations which leave a *_HEAD ref while unfinished, mapped to the
+# command which abandons each one
+IN_PROGRESS_OPS = {
+    'CHERRY_PICK_HEAD': ['cherry-pick', '--abort'],
+    'MERGE_HEAD': ['merge', '--abort'],
+    'REVERT_HEAD': ['revert', '--abort'],
+}
+
+
+def _has_unresolved_conflict():
+    """Check whether the working tree has an unresolved conflict
+
+    The cherry-pick agent can return without finishing the job - for example
+    if it is blocked partway through - leaving a cherry-pick, merge or revert
+    in progress, or unmerged paths in the index.  The git state is the ground
+    truth for this, whatever the agent reports.
+
+    Return:
+        bool: True if an operation is in progress or a path is unmerged
+    """
+    for ref in IN_PROGRESS_OPS:
+        res = command.run_one('git', 'rev-parse', '--verify', '--quiet', ref,
+                              capture=True, raise_on_error=False)
+        if not res.return_code:
+            return True
+    return bool(run_git(['ls-files', '--unmerged']))
+
+
+def _abort_in_progress():
+    """Abort any cherry-pick, merge or revert in progress
+
+    This leaves the working tree clean, so that pickman can move off the
+    branch.  Errors are ignored, since this is a best-effort cleanup.
+    """
+    for ref, git_args in IN_PROGRESS_OPS.items():
+        res = command.run_one('git', 'rev-parse', '--verify', '--quiet', ref,
+                              capture=True, raise_on_error=False)
+        if not res.return_code:
+            try:
+                run_git(git_args)
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+
 def _subtree_run_update(name, tag):
     """Run update-subtree.sh to pull a subtree update.
 
@@ -2523,6 +2567,17 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
             tout.warning(f'Branch {branch_name} does not exist - '
                          'agent may have aborted')
             success = False
+
+    # The agent may report success while leaving a conflict unresolved, for
+    # example if it was blocked partway through.  Pushing that branch or
+    # committing history on top of it would be wrong, and the later checkout
+    # back to the original branch would fail, so trust the git state over the
+    # agent: abandon the set and get back to a clean tree
+    if success and _has_unresolved_conflict():
+        tout.warning(f'Branch {branch_name} has unresolved conflicts - '
+                     'agent did not finish; abandoning this set')
+        _abort_in_progress()
+        success = False
 
     # Update commit status based on result
     status = 'applied' if success else 'conflict'

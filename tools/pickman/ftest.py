@@ -1519,6 +1519,114 @@ class TestApply(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertIn('No new commits to cherry-pick', stdout.getvalue())
 
+    def test_apply_unresolved_conflict(self):
+        """Test that a conflict left by the agent is not pushed as an MR
+
+        If the agent returns while a cherry-pick is still in progress - say
+        it was blocked partway through - pickman must not push the branch,
+        create an MR or commit the history on top of the conflict.
+        """
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'abc123')
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+
+        commits = [control.CommitInfo('h' * 40, 'hhhhhhh', 'A commit',
+                                      'Me <me@example.com>')]
+        args = argparse.Namespace(cmd='apply', source='us/master',
+                                  branch='cherry-hhhhhhh', remote='ci',
+                                  target='master', push=True)
+
+        # The branch --list check must see the branch as existing
+        command.TEST_RESULT = command.CommandResult(stdout='cherry-hhhhhhh')
+
+        with mock.patch.object(control, 'build_applied_map', return_value={}), \
+             mock.patch.object(agent, 'cherry_pick_commits',
+                               return_value=(True, 'log')), \
+             mock.patch.object(agent, 'read_signal_file',
+                               return_value=(None, None)), \
+             mock.patch.object(control, '_has_unresolved_conflict',
+                               return_value=True), \
+             mock.patch.object(control, '_abort_in_progress') as mock_abort, \
+             mock.patch.object(control, 'push_mr') as mock_push:
+            with terminal.capture() as (_, stderr):
+                ret, success, _ = control.execute_apply(
+                    dbs, 'us/master', commits, 'cherry-hhhhhhh', args)
+
+        self.assertEqual(ret, 1)
+        self.assertFalse(success)
+        mock_abort.assert_called_once()
+        mock_push.assert_not_called()
+        self.assertIn('unresolved conflicts', stderr.getvalue())
+
+
+class TestInProgressOps(unittest.TestCase):
+    """Tests for detecting and aborting an in-progress git operation"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    def test_conflict_from_in_progress_ref(self):
+        """Test that a cherry-pick in progress is detected"""
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            # rev-parse of CHERRY_PICK_HEAD succeeds, meaning it exists
+            if 'CHERRY_PICK_HEAD' in args:
+                return command.CommandResult(stdout='deadbeef', return_code=0)
+            return command.CommandResult(return_code=1)
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            self.assertTrue(control._has_unresolved_conflict())
+
+    def test_conflict_from_unmerged_path(self):
+        """Test that an unmerged path is detected with no ref present"""
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            if 'ls-files' in args:
+                return command.CommandResult(stdout='100644 abc 1\tfoo.c\n')
+            return command.CommandResult(return_code=1)
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            self.assertTrue(control._has_unresolved_conflict())
+
+    def test_no_conflict(self):
+        """Test that a clean tree reports no conflict"""
+        command.TEST_RESULT = command.CommandResult(stdout='', return_code=1)
+        with terminal.capture():
+            self.assertFalse(control._has_unresolved_conflict())
+
+    def test_abort_runs_matching_command(self):
+        """Test that abort runs the command for the operation in progress"""
+        seen = []
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            seen.append(args)
+            # Only a merge is in progress
+            if 'rev-parse' in args:
+                return command.CommandResult(
+                    return_code=0 if 'MERGE_HEAD' in args else 1)
+            return command.CommandResult()
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            control._abort_in_progress()
+
+        aborts = [a for a in seen if a[:2] == ['git', 'merge']]
+        self.assertEqual(aborts, [['git', 'merge', '--abort']])
+        # A cherry-pick was not in progress, so it must not be aborted
+        self.assertFalse([a for a in seen if a[:2] == ['git', 'cherry-pick']])
+
 
 class TestCommitSource(unittest.TestCase):
     """Tests for commit-source command."""
@@ -2962,7 +3070,9 @@ class TestExecuteApply(unittest.TestCase):
             args = argparse.Namespace(push=False)
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'conversation log')):
+                                   return_value=(True, 'conversation log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     ret, success, conv_log = control.execute_apply(
@@ -3017,7 +3127,9 @@ class TestExecuteApply(unittest.TestCase):
                                       target='main')
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'log')):
+                                   return_value=(True, 'log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     with mock.patch.object(gitlab, 'push_and_create_mr',
@@ -3043,7 +3155,9 @@ class TestExecuteApply(unittest.TestCase):
                                       target='main')
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'log')):
+                                   return_value=(True, 'log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     with mock.patch.object(gitlab, 'push_and_create_mr',
