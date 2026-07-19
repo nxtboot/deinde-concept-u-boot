@@ -87319,3 +87319,44 @@ No new code changes were required. The only delta pushed was the pickman history
 
 ---
 
+### Review: 2026-07-19
+
+Branch: cherry-7bb1917b15b
+
+Comments addressed:
+
+
+### Conversation log
+This is the classic append-append conflict in the `.pickman-history` log file. The resolution is to keep both sides. Let me see the full conflict region.
+
+Rebase completed. Now verify the commit deltas against the pre-rebase state:
+
+Everything checks out — the Makefile patch differs only in the commit hash line, and the empty merge-marker commit is preserved with its message. Now the build:
+
+Remote confirmed at `6474d7052dc`, matching local HEAD. All done.
+
+## Report
+
+**Rebase:** `git rebase --keep-empty ci/master` — the branch was 16 commits behind. All 5 commits reapplied; the only conflict was in `.pickman-history`, an append-append conflict where both this branch and the freshly-merged `cherry-21a3b9f03b0` MR added log entries under the same `## 2026-07-16: us/master` heading. Resolved by keeping both entries, separated with the standard `---` separator and a repeated date header, matching the file's existing pattern.
+
+**Commits after rebase:**
+| New hash | Subject | Delta check |
+|---|---|---|
+| 4f1df3e9422 | Merge tag 'v2026.07-rc3' into next | empty marker preserved, message intact |
+| 043fd1ee5d4 | pickman: Record cherry-pick of 1 commits | 41 vs 42 insertions (shared header line absorbed in conflict resolution — log file only) |
+| 2e701108e1f | Makefile: Avoid updating the u-boot ELF in place | patch byte-identical to 406d05feaab |
+| d485135a86b | pickman: Record pipeline fix | identical (59 insertions) |
+| 6474d7052dc | pickman: Record review handling | identical (37 insertions) |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings or errors.
+
+**Branches:** created local `cherry-7bb1917b15b-v3` (a `-v2` already existed); force-pushed via `pickman push-branch` to `ci/cherry-7bb1917b15b` (`3ec227e64d9...6474d7052dc`) and verified the remote matches local HEAD. GitLab will trigger a fresh MR pipeline automatically.
+
+**Concerning deltas:** none — the only non-identical delta is one line in the `.pickman-history` log file, inherent to the conflict resolution.
+
+## Suggested MR reply
+
+> Rebased onto the current ci/master with `git rebase --keep-empty`. The only conflict was an append-append clash in the .pickman-history log file, resolved by keeping both branches' entries. The empty merge-marker commit for v2026.07-rc3 is preserved, the efi-aarch64 Makefile fix reapplied byte-identically, and sandbox builds cleanly with buildman. A fresh pipeline has been triggered by the push.
+
+---
+
