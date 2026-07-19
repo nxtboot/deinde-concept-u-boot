@@ -87400,3 +87400,41 @@ Rebased commits:
 
 ---
 
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-e9848e30bd8
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+
+### Conversation log
+All four job logs point to lab-infrastructure problems, not code failures. Let me quickly confirm the branch contents don't touch anything lab-related.
+
+## Report: Infrastructure failures — no code changes made
+
+All four failing jobs are lab/runner infrastructure problems, not caused by any commit on the branch. I made no changes and did not create a fix branch.
+
+### Diagnosis per job
+
+All four jobs failed on runner `ellesmere-lab` within a ~2-minute window (14:57–14:59 UTC), before or during board acquisition — none reached actual test execution against the branch's code:
+
+- **play** (559800): labgrid coordinator error — `Server error: Error: Failed to acquire resources for place play` during `u-boot-test-getrole play --configure`. Pytest died with INTERNALERROR before collecting tests.
+- **vbe** (559799): identical failure — `Failed to acquire resources for place ff3399`.
+- **tk1** (559798): stale resource lock — `Matching resource 'NetworkSerialPort' (kea/tk1/...) already acquired by place 'tk1'` followed by an `asyncio.exceptions.TimeoutError` in the coordinator.
+- **edison** (559802): board recovery failure — the xfstk BootROM downloader logged `Intel SoC Device Detection Failed` for 21 attempts plus `USB resource not available`, then the job hit the 10-minute GitLab timeout (`execution took longer than 10m0s`).
+
+The pattern (three resource-acquisition failures plus one USB device-detection failure, all on the same host at the same time) indicates the labgrid coordinator/exporter or USB infrastructure on ellesmere was in a bad state.
+
+### Why the branch is not at fault
+
+The 5 commits on the branch touch only: `test/py/utils.py`, fs test helpers, `gpio-uclass.c`, `led_sw_blink.c`, cros_ec headers/drivers, and one apollolake file. Nothing touches `test/py/conftest.py`, the lab hooks (`u-boot-test-*`), or labgrid configuration. The failures occur in the harness before U-Boot from this branch is even flashed (edison got furthest and failed in board recovery, which is pre-test).
+
+### Recommendation
+
+Retry the pipeline (possibly after clearing the stale `tk1` place lock and checking the edison USB connection on ellesmere). No commit amendment or fixup is needed.
+
+---
+
