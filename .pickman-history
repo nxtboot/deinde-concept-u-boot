@@ -87360,3 +87360,81 @@ Remote confirmed at `6474d7052dc`, matching local HEAD. All done.
 
 ---
 
+### Review: 2026-07-19
+
+Branch: cherry-e9848e30bd8
+
+Comments addressed:
+
+
+### Conversation log
+Clean rebase, no conflicts. Now compare deltas:
+
+All deltas match exactly. Now build:
+
+Rebase complete and MR !1164 updated. Summary:
+
+## What was done
+
+1. **Checked out** `cherry-e9848e30bd8` (local and remote `ci/cherry-e9848e30bd8` were identical, 5 commits ahead of an older ci/master)
+2. **Rebased** onto latest ci/master (`7ec8d24e07c`) with `git rebase --keep-empty` — completed cleanly with **no conflicts**; the intentionally-empty `boot/fit: read default-config` commit was preserved
+3. **Verified deltas**: per-commit `git show --stat` before/after rebase match exactly for all 5 commits
+4. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` passes (1/1 built, no warnings)
+5. **Created** local branch `cherry-e9848e30bd8-v2`
+6. **Force-pushed** to `ci/cherry-e9848e30bd8` (`edc4b4f3ecb` → `a427482bed0`), which triggers the MR pipeline
+
+Rebased commits:
+- `40a29d048b8` test: fs: Use shared generate_file from utils
+- `fab92828d82` gpio: uclass: show DT gpio-line-names
+- `50ebb8b0dce` led: Fix toggling LED on initial SW blink
+- `1d4824b6922` cros_ec: Sync ec_commands.h from upstream Chrome OS EC
+- `a427482bed0` boot/fit: read default-config property (empty; fix already in ci/master's fit_print.c)
+
+## Note for the MR
+
+⚠️ The MR description lists 8 commits, but the branch only contains the first 5 picks. The previous session was blocked mid-cherry-pick of `b31f551bfcf` (fit regression test) awaiting edit permission on `test/py/tests/test_fit.py`, and `2c9b117aa48` (fdt_for_each_subnode conversion) plus the final merge commit `77efd55f89e` were never picked. This rebase task did not add them — the series is still incomplete and needs a follow-up to finish those three commits.
+
+## Suggested MR reply
+
+> Rebased onto latest ci/master (7ec8d24e07c) with --keep-empty; no conflicts, all commit deltas unchanged and sandbox build passes. Note: the branch still contains only the first 5 of 8 planned commits — the picks of b31f551bfcf, 2c9b117aa48 and the merge commit 77efd55f89e remain outstanding from the earlier permission-blocked session.
+
+---
+
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-e9848e30bd8
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+
+### Conversation log
+All four job logs point to lab-infrastructure problems, not code failures. Let me quickly confirm the branch contents don't touch anything lab-related.
+
+## Report: Infrastructure failures — no code changes made
+
+All four failing jobs are lab/runner infrastructure problems, not caused by any commit on the branch. I made no changes and did not create a fix branch.
+
+### Diagnosis per job
+
+All four jobs failed on runner `ellesmere-lab` within a ~2-minute window (14:57–14:59 UTC), before or during board acquisition — none reached actual test execution against the branch's code:
+
+- **play** (559800): labgrid coordinator error — `Server error: Error: Failed to acquire resources for place play` during `u-boot-test-getrole play --configure`. Pytest died with INTERNALERROR before collecting tests.
+- **vbe** (559799): identical failure — `Failed to acquire resources for place ff3399`.
+- **tk1** (559798): stale resource lock — `Matching resource 'NetworkSerialPort' (kea/tk1/...) already acquired by place 'tk1'` followed by an `asyncio.exceptions.TimeoutError` in the coordinator.
+- **edison** (559802): board recovery failure — the xfstk BootROM downloader logged `Intel SoC Device Detection Failed` for 21 attempts plus `USB resource not available`, then the job hit the 10-minute GitLab timeout (`execution took longer than 10m0s`).
+
+The pattern (three resource-acquisition failures plus one USB device-detection failure, all on the same host at the same time) indicates the labgrid coordinator/exporter or USB infrastructure on ellesmere was in a bad state.
+
+### Why the branch is not at fault
+
+The 5 commits on the branch touch only: `test/py/utils.py`, fs test helpers, `gpio-uclass.c`, `led_sw_blink.c`, cros_ec headers/drivers, and one apollolake file. Nothing touches `test/py/conftest.py`, the lab hooks (`u-boot-test-*`), or labgrid configuration. The failures occur in the harness before U-Boot from this branch is even flashed (edison got furthest and failed in board recovery, which is pre-test).
+
+### Recommendation
+
+Retry the pipeline (possibly after clearing the stale `tk1` place lock and checking the edison USB connection on ellesmere). No commit amendment or fixup is needed.
+
+---
+
