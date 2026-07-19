@@ -87360,3 +87360,43 @@ Remote confirmed at `6474d7052dc`, matching local HEAD. All done.
 
 ---
 
+### Review: 2026-07-19
+
+Branch: cherry-e9848e30bd8
+
+Comments addressed:
+
+
+### Conversation log
+Clean rebase, no conflicts. Now compare deltas:
+
+All deltas match exactly. Now build:
+
+Rebase complete and MR !1164 updated. Summary:
+
+## What was done
+
+1. **Checked out** `cherry-e9848e30bd8` (local and remote `ci/cherry-e9848e30bd8` were identical, 5 commits ahead of an older ci/master)
+2. **Rebased** onto latest ci/master (`7ec8d24e07c`) with `git rebase --keep-empty` — completed cleanly with **no conflicts**; the intentionally-empty `boot/fit: read default-config` commit was preserved
+3. **Verified deltas**: per-commit `git show --stat` before/after rebase match exactly for all 5 commits
+4. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` passes (1/1 built, no warnings)
+5. **Created** local branch `cherry-e9848e30bd8-v2`
+6. **Force-pushed** to `ci/cherry-e9848e30bd8` (`edc4b4f3ecb` → `a427482bed0`), which triggers the MR pipeline
+
+Rebased commits:
+- `40a29d048b8` test: fs: Use shared generate_file from utils
+- `fab92828d82` gpio: uclass: show DT gpio-line-names
+- `50ebb8b0dce` led: Fix toggling LED on initial SW blink
+- `1d4824b6922` cros_ec: Sync ec_commands.h from upstream Chrome OS EC
+- `a427482bed0` boot/fit: read default-config property (empty; fix already in ci/master's fit_print.c)
+
+## Note for the MR
+
+⚠️ The MR description lists 8 commits, but the branch only contains the first 5 picks. The previous session was blocked mid-cherry-pick of `b31f551bfcf` (fit regression test) awaiting edit permission on `test/py/tests/test_fit.py`, and `2c9b117aa48` (fdt_for_each_subnode conversion) plus the final merge commit `77efd55f89e` were never picked. This rebase task did not add them — the series is still incomplete and needs a follow-up to finish those three commits.
+
+## Suggested MR reply
+
+> Rebased onto latest ci/master (7ec8d24e07c) with --keep-empty; no conflicts, all commit deltas unchanged and sandbox build passes. Note: the branch still contains only the first 5 of 8 planned commits — the picks of b31f551bfcf, 2c9b117aa48 and the merge commit 77efd55f89e remain outstanding from the earlier permission-blocked session.
+
+---
+
