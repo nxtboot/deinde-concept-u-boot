@@ -208,6 +208,17 @@
 			pci,no-autoconfig;
 		};
 
+		/*
+		 * Integrated graphics: the FSP's GOP initialises the display
+		 * and reports the framebuffer in a HOB, which this driver
+		 * picks up
+		 */
+		gma@2,0 {
+			bootph-some-ram;
+			reg = <0x00001000 0 0 0 0>;
+			compatible = "fsp-fb";
+		};
+
 		i2c_1: i2c@15,1 {
 			compatible = "intel,apl-i2c", "snps,designware-i2c-pci";
 			reg = <0x0200a910 0 0 0 0>;
