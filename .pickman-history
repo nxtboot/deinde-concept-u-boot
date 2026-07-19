@@ -87483,3 +87483,24 @@ The branch is ready for pushing; nothing has been merged elsewhere.
 
 ---
 
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-5e41a5deb4b
+
+Failed jobs:
+- pine64 (sjg-lab)
+- edison (sjg-lab)
+
+### Conversation log
+## Report
+
+- **Responsible commit**: none — neither failure is caused by the branch
+- **Root cause**:
+  - pine64: serial-console byte corruption during `test_pinmux_dev_bad` (UART glitch); the printed string in the source is correct
+  - edison: lab hardware failure — xfstk could not detect the Edison SoC over USB, leading to a 10-minute job timeout
+- **Change made**: none; `cherry-5e41a5deb4b-fix1` was created pointing at the unchanged branch head (1143aa403da) so a retry can be triggered
+
+Recommendation: retry both jobs; if edison keeps failing, the board's USB connection in the lab needs physical attention.
+
+---
+
