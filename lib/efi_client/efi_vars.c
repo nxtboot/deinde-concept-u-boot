@@ -8,6 +8,7 @@
 
 #define __efi_runtime
 
+#include <charset.h>
 #include <errno.h>
 #include <asm/global_data.h>
 #include <efi.h>
@@ -53,5 +54,14 @@ efi_status_t efi_query_variable_info_int(u32 attributes,
 					maximum_variable_storage_size,
 					remaining_variable_storage_size,
 					maximum_variable_size);
+}
+
+const efi_guid_t *efi_auth_var_get_guid(const u16 *name)
+{
+	if (!u16_strcmp(name, u"db") || !u16_strcmp(name, u"dbx") ||
+	    !u16_strcmp(name, u"dbt") || !u16_strcmp(name, u"dbr"))
+		return &efi_guid_image_security_database;
+
+	return &efi_global_variable_guid;
 }
 
