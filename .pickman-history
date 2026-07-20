@@ -87717,3 +87717,39 @@ comment required no new code change — only the requested rebase.
    /tmp/pickman' passes at each of the 11 commits
 4. Re-ran the tests at the branch tip: 'ut fit_verity' 4/4 pass and the
    test_mkimage_verity py tests 3/3 pass
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: I grated write-access, so please can you do this again?...
+
+### Conversation log
+All 11 commits build cleanly. Quick test run to confirm functionality after the rebase:
+
+Done. MR !1166 is updated and a fresh pipeline will run.
+
+## Report
+
+**Rebase** (`git rebase --keep-empty ci/master`, branch was 19 commits behind):
+- Only one conflict: `.pickman-history` — both this branch and the now-merged `cherry-5e41a5deb4b` appended session logs at the same spot. Resolved by keeping both entries, each under its own section header (log file only, no code involved).
+- The empty series merge commit `Merge patch series "fit: dm-verity support"` was preserved via `--keep-empty`.
+
+**Per-commit verification (all 11 commits):**
+- Diffstat comparison pre- vs post-rebase: **identical** for every commit
+- `buildman -L --board sandbox -w -o /tmp/pickman` at each commit: **all clean**
+
+**Tests at the tip:**
+- `ut fit_verity`: 4/4 pass
+- `test_mkimage_verity` py tests: 3/3 pass
+
+**Review comment** ([sjg]: "I granted write-access, so please can you do this again?"): the requested work was already completed in the previous session once access was granted — all 9 dm-verity commits are cherry-picked, adapted (fit_print.c port, imgtool/`fit_get_name()` API updates, `fit_estimate_hash_sig_size()` brought in) and were pushed as `c438bc32e0f`. No new code change was needed; this session added the rebase on top. A `pickman: Record` commit documents this.
+
+**Branches:** local `cherry-d3eee4d3b12-v3` created; force-pushed `cherry-d3eee4d3b12` to ci (`c438bc32e0f` → `6f4e5930d8c`).
+
+## Suggested MR reply
+
+> Thanks — the cherry-pick was completed in the previous round once write access was granted (all 9 commits, with the fit_print.c and mkimage/imgtool adaptations). This update rebases the branch onto current master (19 commits behind); the only conflict was in the .pickman-history log, resolved by keeping both entries. Every rebased commit has an identical diffstat to before and builds cleanly for sandbox; the fit_verity unit tests (4) and mkimage round-trip py tests (3) still pass.
+
+---
+
