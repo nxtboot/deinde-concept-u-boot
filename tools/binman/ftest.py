@@ -2841,6 +2841,18 @@ class TestFunctional(unittest.TestCase):
         out = self._CheckCorebootRom(data)
         self.assertIn('fallback/payload', out)
 
+    def testCorebootRomNestedSpl(self):
+        """Test deriving the load address from an SPL ELF within a subsection
+
+        The SPL is nested inside a section, so binman must recurse through the
+        subnodes to find its ELF and derive the load/entry addresses from it.
+        """
+        self._SetupSplElf('elf_sections_tee')
+        self._MakeCorebootRom()
+        data = self._DoReadFile('cbfs/coreboot_rom_nested_spl.dts')
+        out = self._CheckCorebootRom(data)
+        self.assertIn('fallback/payload', out)
+
     def testCorebootRomEntryArg(self):
         """Test passing the coreboot ROM filename as an entry argument"""
         self._MakeCorebootRom('cbrom-arg.rom')
