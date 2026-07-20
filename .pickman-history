@@ -87690,3 +87690,30 @@ The single review comment was the bot's own pipeline-fix record (edison/play lab
 
 ---
 
+
+### Rebase and review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: I granted write-access, so please can you do this again?
+
+## Report
+
+**Comment analysis:** The comment asks for the cherry-pick work (previously
+blocked on write access to boot/fit_print.c) to be redone. That work was in
+fact already completed in the previous session once access was granted: all
+9 commits are on the branch and were force-pushed as c438bc32e0f. So the
+comment required no new code change — only the requested rebase.
+
+**What was done:**
+1. Rebased the branch onto the updated ci/master with
+   'git rebase --keep-empty ci/master' (was 19 commits behind)
+2. The only conflict was in .pickman-history — both this branch and the
+   now-merged cherry-5e41a5deb4b appended session logs at the same point.
+   Resolved by keeping both entries, giving each its own section header
+3. Verified every rebased commit: per-commit diffstats are identical to
+   the pre-rebase branch, and 'buildman -L --board sandbox -w -o
+   /tmp/pickman' passes at each of the 11 commits
+4. Re-ran the tests at the branch tip: 'ut fit_verity' 4/4 pass and the
+   test_mkimage_verity py tests 3/3 pass
