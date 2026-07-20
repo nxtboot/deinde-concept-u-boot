@@ -87961,3 +87961,52 @@ All done. Final status:
 
 ---
 
+### Pipeline fix: 2026-07-20 (attempt 1)
+
+Branch: cherry-7af4196d9e9
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+This confirms the picture. The `cmd_auto_complete()` change only runs on tab completion at an existing prompt — it cannot prevent a board from booting. Let me do a quick sanity build and create the requested branch.
+
+## Report: All three failures are lab/infrastructure issues — no code changes made
+
+I checked out `cherry-7af4196d9e9`, examined all six commits and the three job logs. None of the failures is caused by the branch:
+
+### Job analysis
+
+**edison (561982)** — pytest aborts during configure, before any test runs:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+```
+This is a labgrid place-reservation conflict (the place is held by `kea/labgrid`). U-Boot was never built or booted — pure lab infrastructure issue.
+
+**felwinter-cb (561973)** — coreboot bootblock/romstage run normally, cse_lite issues its RO→RW Global Reset, then the board never reaches the U-Boot prompt and the rfc2217 serial connection dies (`connection failed (reader thread died)`). This is an x86 Chromebook; no commit on the branch touches x86, coreboot support, or the generic boot path.
+
+**rpi3 (561943)** — 20-second timeout waiting for the U-Boot prompt with no console output at all after flashing. No commit on the branch touches rpi or bcm283x code.
+
+### Why the branch cannot be responsible
+
+The branch contains only:
+- `fs/fat/fat_write.c` timestamp fix — only affects FAT *write* timestamps, not the boot path
+- `common/command.c` NULL-pointer fix in `cmd_auto_complete()` — only executes on tab completion once a prompt already exists, so it cannot block reaching the prompt (I reviewed the diff; the logic is a straightforward NULL fallback to `CONFIG_SYS_PROMPT`)
+- am33xx `arch_misc_init()` change — TI am33xx only
+- two TI K3 DFU environment changes — K3 only
+- an empty preserved merge commit
+
+None of these can affect edison (never ran), felwinter-cb (x86), or rpi3 (bcm283x). The MR description also confirms sandbox built cleanly after every pick, and I re-verified: `um build sandbox` passes with no warnings or errors.
+
+### Result
+
+- **Responsible commit**: none — these are transient lab failures (labgrid reservation conflict on edison; boards failing to come up / serial dying on felwinter-cb and rpi3)
+- **Change made**: none; the code is untouched
+- **Branch**: `cherry-7af4196d9e9-fix1` created locally, pointing at the unchanged branch head (8851262608f)
+
+Recommendation: retry the three sjg-lab jobs once the edison place is free and the felwinter-cb/rpi3 boards are healthy.
+
+---
+
