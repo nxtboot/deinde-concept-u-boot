@@ -87825,3 +87825,38 @@ Done. MR !1166 is updated and a fresh pipeline will run.
 
 ---
 
+### Pipeline fix: 2026-07-20 (attempt 2)
+
+Branch: cherry-d3eee4d3b12
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Report: all four failures are lab infrastructure — no code changes made
+
+**Branch state:** checked out `cherry-d3eee4d3b12` (pipeline ran against `0ec3811f`). Local branch `cherry-d3eee4d3b12-fix2` created at the current tip; **no source changes were made** because no commit is responsible.
+
+### Diagnosis per job
+
+Every job failed *before U-Boot ever produced a prompt* — during lab reservation, flashing, or first boot. All four ran on the same `ellesmere-lab` runner in an 18-minute window (18:36–18:54), pointing to the lab being in a bad state.
+
+- **edison (562487)** — labgrid place contention, identical to attempt 1: `place edison is not acquired by your user, acquired by labgrid` / `acquired by a different user (kea/labgrid)`. pytest aborted in `pytest_configure`; no test or U-Boot code ran at all. Someone needs to release/kick the labgrid place.
+- **felwinter-cb (562478)** — coreboot boots (the double bootblock/romstage pass is the normal cse_lite RO→RW global reset), then a 180 s timeout waiting for the U-Boot prompt, and the job died on the 10 m job timeout. No U-Boot output ever appeared.
+- **bpif3 (562477)** — the SpacemiT K1 boot-ROM USB loader was `not ready` through 3 of 5 retries before the lab timeout hit. The image was never even sent to the board.
+- **rpi3 (562448)** — image written, then `No U-Boot prompt` / 20 s pexpect timeout on first boot. No console output from U-Boot.
+
+### Why the code is not the cause
+
+- The branch's only target-side runtime code (in `bootm.c`, `image-board.c`, `image-fit.c`, `fit_print.c`) executes during `bootm`/FIT boot — long after the U-Boot prompt these boards never reached. It is also gated by `CONFIG_FIT_VERITY`, and I verified the built `.config` for all four boards has it **disabled** (only sandbox enables it); the hooks compile to inline no-op stubs.
+- Build verification: `um build sandbox` clean; `buildman -o /tmp/pickman edison rpi_3_32b spacemit_k1 chromebook_brya_cb` — all 4 build OK (only expected missing-vendor-blob warnings for opensbi/coreboot-rom in the local environment).
+
+### Recommendation
+
+Re-run the four lab jobs. For edison specifically, the labgrid place needs releasing first (labgrid itself suggests `labgrid-client -p edison allow ellesmere/gitlab-runner`) — this is the second consecutive attempt it has failed on the same reservation conflict, so a re-run without fixing the reservation will fail again.
+
+---
+
