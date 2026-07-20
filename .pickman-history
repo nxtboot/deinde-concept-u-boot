@@ -88010,3 +88010,38 @@ Recommendation: retry the three sjg-lab jobs once the edison place is free and t
 
 ---
 
+### Review: 2026-07-20
+
+Branch: cherry-7af4196d9e9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, felwinter-cb, rpi3.
+
+This confirms the picture...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push:
+
+All done. Summary:
+
+## Report
+
+**Comment analysis**: The single review comment (`project_1_bot_...`) is not an actionable code-review comment — it is the bot's own report from pipeline-fix attempt 1, which concluded that all three failed jobs (edison, felwinter-cb, rpi3) were lab/infrastructure failures:
+- edison: labgrid place held by another user — U-Boot never ran
+- felwinter-cb: board died during coreboot's cse_lite RO→RW reset, serial connection lost — x86, untouched by this branch
+- rpi3: no console output after flashing — bcm283x, untouched by this branch
+
+**Code changes made**: None — none were requested or warranted. The six cherry-picked commits are unchanged.
+
+**Actions taken**:
+- Checked out `cherry-7af4196d9e9` (head 6b9ea8cae37, which is the remote head plus the `.pickman-history` record commit from attempt 1)
+- Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly, no warnings
+- Created local branch `cherry-7af4196d9e9-v2` at the same head
+- Force-pushed to `ci/cherry-7af4196d9e9` (8851262608f → 6b9ea8cae37), which updates MR !1169 and triggers a fresh pipeline — this serves as the recommended retry of the three lab jobs
+
+**Suggested reply to post on the MR**:
+
+> The review comment is the pipeline-fix report itself and requires no code change: all three failures (edison, felwinter-cb, rpi3) were lab/infrastructure issues unrelated to the cherry-picked commits. The branch has been re-pushed unchanged (code-wise) to trigger a fresh pipeline, which retries the affected sjg-lab jobs. Sandbox builds cleanly with no warnings. If the lab boards are healthy, the jobs should now pass.
+
+---
+
