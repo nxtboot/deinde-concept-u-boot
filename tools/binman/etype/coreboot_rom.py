@@ -54,10 +54,10 @@ class Entry_coreboot_rom(Entry_section):
                     offset = <0x10000>;
                 };
             };
+        };
 
     The load and entry addresses are taken from the u-boot-spl ELF, so they
     do not need to be specified here.
-        };
 
     Note that binman can already create a CBFS and build images containing
     FSP, microcode, XIP stages and an Intel FIT (see chromebook_coral, for
