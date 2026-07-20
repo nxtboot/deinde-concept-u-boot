@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	binman {
+		coreboot-rom {
+			coreboot-filename = "cbrom-payload.rom";
+			cbfs-name = "fallback/payload";
+			cbfs-load-addr = <0x1110000>;
+			cbfs-entry-addr = <0x1110040>;
+			cbfs-compress = "none";
+			u-boot {
+			};
+			u-boot-dtb {
+				offset = <0x100>;
+			};
+		};
+	};
+};

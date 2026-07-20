@@ -1,0 +1,7 @@
+CHROMEBOOK BRYA BOARD
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	board/google/chromebook_brya/
+F:	arch/x86/dts/chromebook_brya_cb.dts
+F:	arch/x86/dts/chromebook_brya_cb-u-boot.dtsi
+F:	configs/chromebook_brya_cb_defconfig

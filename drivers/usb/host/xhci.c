@@ -442,6 +442,7 @@ static int xhci_configure_endpoints(struct usb_device *udev, bool ctx_change)
 	struct xhci_virt_device *virt_dev;
 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
 	union xhci_trb *event;
+	int ret = 0;
 
 	virt_dev = ctrl->devs[udev->slot_id];
 	in_ctx = virt_dev->in_ctx;
@@ -465,12 +466,13 @@ static int xhci_configure_endpoints(struct usb_device *udev, bool ctx_change)
 		printf("ERROR: %s command returned completion code %d.\n",
 			ctx_change ? "Evaluate Context" : "Configure Endpoint",
 			GET_COMP_CODE(le32_to_cpu(event->event_cmd.status)));
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
 
 	xhci_acknowledge_event(ctrl);
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -509,6 +511,16 @@ static int xhci_init_ep_contexts_if(struct usb_device *udev,
 		endpt_desc = &ifdesc->ep_desc[cur_ep];
 		ss_ep_comp_desc = &ifdesc->ss_ep_comp_desc[cur_ep];
 		trb_64 = 0;
+
+		/*
+		 * U-Boot does not support isochronous transfers, so skip such
+		 * endpoints rather than claiming schedule bandwidth for them.
+		 * Programming them can make the Configure Endpoint command
+		 * fail with COMP_BW_ERR, e.g. for a webcam, making the whole
+		 * device unusable.
+		 */
+		if (usb_endpoint_xfer_isoc(endpt_desc))
+			continue;
 
 		/*
 		 * Get values to fill the endpoint context, mostly from ep
@@ -622,6 +634,9 @@ static int xhci_set_configuration(struct usb_device *udev)
 		num_of_ep = ifdesc->no_of_ep;
 		/* EP_FLAG gives values 1 & 4 for EP1OUT and EP2IN */
 		for (cur_ep = 0; cur_ep < num_of_ep; cur_ep++) {
+			/* Isochronous endpoints are not programmed */
+			if (usb_endpoint_xfer_isoc(&ifdesc->ep_desc[cur_ep]))
+				continue;
 			ep_flag = xhci_get_ep_index(&ifdesc->ep_desc[cur_ep]);
 			ctrl_ctx->add_flags |= cpu_to_le32(1 << (ep_flag + 1));
 			if (max_ep_flag < ep_flag)
@@ -747,6 +762,7 @@ static int _xhci_alloc_device(struct usb_device *udev)
 {
 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
 	union xhci_trb *event;
+	int code;
 	int ret;
 
 	/*
@@ -764,8 +780,13 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	if (!event)
 		return -ETIMEDOUT;
 
-	BUG_ON(GET_COMP_CODE(le32_to_cpu(event->event_cmd.status))
-		!= COMP_SUCCESS);
+	code = GET_COMP_CODE(le32_to_cpu(event->event_cmd.status));
+	if (code != COMP_SUCCESS) {
+		printf("ERROR: Enable Slot command returned completion code %d.\n",
+		       code);
+		xhci_acknowledge_event(ctrl);
+		return -ENODEV;
+	}
 
 	udev->slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags));
 

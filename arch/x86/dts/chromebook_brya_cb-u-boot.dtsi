@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass
+ *
+ * Build both the coreboot-payload binary and a complete brya flash image
+ * (u-boot.rom): the coreboot build provides everything up to the payload as
+ * a ready-made image, into which binman inserts U-Boot
+ */
+
+/ {
+	binman {
+		multiple-images;
+
+		image {
+			filename = "u-boot-x86-with-spl.bin";
+			u-boot-spl {
+			};
+			u-boot {
+				offset = <0x10000>;
+			};
+		};
+
+		rom {
+			filename = "u-boot.rom";
+			coreboot-rom {
+				cbfs-name = "fallback/payload";
+
+				u-boot-spl {
+				};
+				u-boot {
+					offset = <0x10000>;
+				};
+			};
+		};
+	};
+};

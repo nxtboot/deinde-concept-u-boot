@@ -1091,6 +1091,13 @@ bpif3:
     ROLE: bpif3
   <<: *sjg_lab_dfn
 
+# Felwinter Chromebook (brya, Alder Lake), booting U-Boot as a coreboot
+# payload from an EM100 flash emulator
+felwinter-cb:
+  variables:
+    ROLE: felwinter-cb
+  <<: *sjg_lab_dfn
+
 jetson-nano:
   variables:
     ROLE: jetson-nano
