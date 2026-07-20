@@ -12,9 +12,7 @@
 
 #include <linux/types.h>
 #include <asm/fsp2/fsp_api.h>
-
-/* 'ADLUPD_T' */
-#define FSPT_UPD_SIGNATURE	0x545f4450554c4441ULL
+#include <asm/arch/fsp/fsp_configs.h>
 
 #define FSPT_UPD_TERMINATOR	0x55aa
 
