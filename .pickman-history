@@ -87860,3 +87860,39 @@ Re-run the four lab jobs. For edison specifically, the labgrid place needs relea
 
 ---
 
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, felwinter-cb, bpif3, rpi3.
+
+## Report: all fou...
+
+### Conversation log
+Build is clean. Now create the `-v5` branch and push:
+
+Done. MR !1166 is updated (`1a210708438` → `04f228ecee7`) and a fresh pipeline will run.
+
+## Report
+
+**Review comment** ([project_1_bot…]: "Pipeline fix (attempt 2): fixed failed job(s) edison, felwinter-cb, bpif3, rpi3"): this is the bot's own automated record of the previous session's pipeline diagnosis, not a request for changes. That session already established all four failures were lab infrastructure:
+
+- **edison** — labgrid place held by another user (`kea/labgrid`); second consecutive occurrence
+- **felwinter-cb** — coreboot booted but U-Boot prompt never appeared; job timeout
+- **bpif3** — SpacemiT boot-ROM USB loader "not ready"; image never sent to board
+- **rpi3** — no console output on first boot
+
+None involve branch code: the dm-verity runtime hooks are gated by `CONFIG_FIT_VERITY`, which is disabled on all four boards. **No source changes were made this round** — nothing actionable remained.
+
+**What this round did:**
+- Verified the branch state: the only unpushed commit was `04f228ecee7`, the `pickman: Record` commit documenting the attempt-2 diagnosis (touches `.pickman-history` only)
+- `buildman -L --board sandbox -w -o /tmp/pickman`: clean
+- Created local branch `cherry-d3eee4d3b12-v5`; pushed `cherry-d3eee4d3b12` to ci, which also re-triggers the pipeline — exactly what the diagnosis recommended for the transient lab failures
+
+## Suggested MR reply
+
+> The four failed jobs (edison, felwinter-cb, bpif3, rpi3) all died before U-Boot ever reached a prompt — labgrid place contention on edison (second time; the place needs releasing with `labgrid-client -p edison allow ellesmere/gitlab-runner`), and flashing/boot-ROM/console issues on the other three, all on ellesmere-lab within an 18-minute window. The branch code cannot be responsible: CONFIG_FIT_VERITY is disabled on all four boards, so the dm-verity hooks compile to no-op stubs, and all four boards build cleanly. No code changes made; this push records the diagnosis and re-triggers the pipeline. If edison fails again it will be the same reservation conflict until the labgrid place is released.
+
+---
+
