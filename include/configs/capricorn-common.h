@@ -88,19 +88,6 @@
 	ENV_EMMC \
 	ENV_NET
 
-#ifdef CONFIG_ENV_WRITEABLE_LIST
-#define CFG_ENV_FLAGS_LIST_STATIC \
-	"bootcount:dw," \
-	"bootdelay:sw," \
-	"bootlimit:dw," \
-	"partitionset_active:sw," \
-	"rastate:dw," \
-	"sig_a:sw,sig_b:sw," \
-	"target_env:sw," \
-	"upgrade_available:dw," \
-	"ustate:dw"
-#endif
-
 /* Default location for tftp and bootm */
 
 /* On CCP board, USDHC1 is for eMMC */

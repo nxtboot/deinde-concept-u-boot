@@ -87438,3 +87438,103 @@ Retry the pipeline (possibly after clearing the stale `tk1` place lock and check
 
 ---
 
+## 2026-07-19: us/master
+
+Branch: cherry-5e41a5deb4b
+
+Commits:
+- 5e41a5deb4b env: migrate static flags list to Kconfig
+- e11b0c5cab4 doc: remove configuration settings from README
+- 8d5f30b52f7 Merge patch series "env: migrate static flags list to Kconfig"
+
+### Conversation log
+The first cherry-pick has a conflict. Per instructions, let me first check whether the commits are already applied in ci/master:
+
+The file `configs/imx8qxp_capricorn.config` was deleted in ci/master. Let me find out why:
+
+Now amend to note the fix-up, per the instructions:
+
+Delta matches the original except the intentionally-dropped 1-line fragment change. Build test:
+
+Both conflicts stem from ci/master divergence in capricorn files; the merge should contribute nothing new since both series commits are already applied. Resolve by keeping HEAD:
+
+Staged delta is empty as expected — the merge becomes an empty commit preserving the message:
+
+All three commits are cherry-picked onto `cherry-5e41a5deb4b` and the final build passes.
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after each pick and at the end).
+
+**Commits on the branch (based on ci/master):**
+| New hash | Original | Subject |
+|---|---|---|
+| 337fbfdef7e | 5e41a5deb4b | env: migrate static flags list to Kconfig |
+| 88c83d9da24 | e11b0c5cab4 | doc: remove configuration settings from README |
+| 3b5bae2b0b1 | 8d5f30b52f7 | Merge patch series "env: migrate static flags list to Kconfig" (empty, message preserved) |
+
+**Fix-ups made:**
+- **337fbfdef7e**: Conflict on `configs/imx8qxp_capricorn.config` — the fragment doesn't exist in ci/master (it was created later in us/master by 445626b8a63). I verified the commits were *not* already applied under different hashes, then resolved by accepting the deletion. This is the correct resolution because in ci/master capricorn does not enable `ENV_WRITEABLE_LIST`, so its header flags list is inactive — matching the original commit's own policy of not converting inactive header-only cases (iot2050, smegw01). Adding the defconfig entry would have activated a previously-inactive list. A note describing this fix-up is appended to the commit message.
+- **3b5bae2b0b1**: The merge replay hit the same capricorn conflicts (fragment deletion plus a `capricorn-common.h` divergence from unrelated ci/master differences). Resolved by keeping HEAD; the staged delta was then empty, confirming the two prior picks fully cover the series, so it was committed with `--allow-empty` preserving the original merge message and a cherry-pick reference.
+
+**Deltas:** Commit 1 matches the original stat exactly except the intentionally-dropped 1-line fragment change (17 vs 18 files, 71 vs 72 insertions). Commit 2 matches exactly (124 deletions in README). No concerning deltas.
+
+The branch is ready for pushing; nothing has been merged elsewhere.
+
+---
+
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-5e41a5deb4b
+
+Failed jobs:
+- pine64 (sjg-lab)
+- edison (sjg-lab)
+
+### Conversation log
+## Report
+
+- **Responsible commit**: none — neither failure is caused by the branch
+- **Root cause**:
+  - pine64: serial-console byte corruption during `test_pinmux_dev_bad` (UART glitch); the printed string in the source is correct
+  - edison: lab hardware failure — xfstk could not detect the Edison SoC over USB, leading to a 10-minute job timeout
+- **Change made**: none; `cherry-5e41a5deb4b-fix1` was created pointing at the unchanged branch head (1143aa403da) so a retry can be triggered
+
+Recommendation: retry both jobs; if edison keeps failing, the board's USB connection in the lab needs physical attention.
+
+---
+
+### Review: 2026-07-19
+
+Branch: cherry-5e41a5deb4b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) pine64, edison.
+
+## Report
+
+- **Responsible commit**: ...
+
+### Conversation log
+Build passes. Now create the `-v2` branch and push to update the MR:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is the bot's own pipeline-fix report from attempt 1, not a code review request. It states explicitly that no commit on the branch is responsible for the failures:
+- **pine64**: serial-console byte corruption during `test_pinmux_dev_bad` (transient UART glitch)
+- **edison**: lab hardware failure (xfstk could not detect the SoC over USB)
+
+There is therefore **nothing to change in the code** — the only actionable item is the comment's own recommendation to retry the failed jobs.
+
+**What was done:**
+1. Checked out `cherry-5e41a5deb4b`; confirmed the local head (cea24716294, the `.pickman-history` record commit) was one bookkeeping commit ahead of the remote (1143aa403da) with no source changes
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — completed cleanly
+3. Created local branch `cherry-5e41a5deb4b-v2` at the current head
+4. Force-pushed to `ci/cherry-5e41a5deb4b` (1143aa403da → cea24716294), which triggers a fresh MR pipeline — effectively retrying the pine64 and edison jobs as the comment recommends
+
+**Suggested MR reply:**
+
+> No code changes needed — the pipeline-fix report confirms neither failure is caused by this branch (pine64: transient UART corruption; edison: lab USB/xfstk detection failure). The branch has been re-pushed to trigger a fresh pipeline, retrying both jobs. If edison fails again the same way, its USB connection in the lab likely needs physical attention.
+
+---
+
