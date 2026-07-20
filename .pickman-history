@@ -87921,3 +87921,43 @@ replayed successfully.
 cherry-d3eee4d3b12 to ci to update the MR.
 
 ---
+
+## 2026-07-20: us/master
+
+Branch: cherry-7af4196d9e9
+
+Commits:
+- 7af4196d9e9 fs: fat: fix seconds in timestamp
+- 8429766a7f0 common/command.c: Avoid NULL pointer use in cmd_auto_complete
+- 5151c208b56 am33xx: don't assume we have a UCLASS_MISC device present
+- 2b6d243be22 env: ti: k3_dfu: load only the next stage binary
+- 1ea8b3e8e2d env: ti: k3_dfu: use Kconfig options for addresses
+- ddd1f2192de Merge patch series "Update envs to use Kconfig values"
+
+### Conversation log
+Delta matches. Building:
+
+All 6 commits present. Final build:
+
+All done. Final status:
+
+**Branch**: `cherry-7af4196d9e9` (based on ci/master), ready for pushing
+
+**Commits cherry-picked** (all 6 present):
+| New hash | Original | Subject |
+|---|---|---|
+| e672b3fcaf2 | 7af4196d9e9 | fs: fat: fix seconds in timestamp |
+| 05bd84e7f16 | 8429766a7f0 | common/command.c: Avoid NULL pointer use in cmd_auto_complete |
+| 7d6b1e77fba | 5151c208b56 | am33xx: don't assume we have a UCLASS_MISC device present |
+| e2aa4deb00c | 2b6d243be22 | env: ti: k3_dfu: load only the next stage binary |
+| 34c818769d2 | 1ea8b3e8e2d | env: ti: k3_dfu: use Kconfig options for addresses |
+| 8f79511e2d9 | ddd1f2192de | Merge patch series "Update envs to use Kconfig values" (empty, preserved with --allow-empty) |
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors)
+
+**Deltas**: All commits matched their originals exactly (same files, same insertion/deletion counts)
+
+**Fix-ups**: None needed — every pick applied cleanly (one auto-merge in fs/fat/fat_write.c, no conflicts). The merge commit came through empty as expected and was committed with its original message intact.
+
+---
+
