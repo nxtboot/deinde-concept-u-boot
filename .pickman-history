@@ -87753,3 +87753,33 @@ Done. MR !1166 is updated and a fresh pipeline will run.
 
 ---
 
+### Review: 2026-07-20 (round 3)
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: please check this:
+  https://concept.u-boot.org/u-boot/u-boot/-/jobs/561993
+
+Diagnosis: job 561993 (binman tests) fails in testSimpleFitImagePos
+because mkimage now produces a FIT 512 bytes smaller than binman's
+ftest.py expects. The mkimage cherry-pick brings in
+fit_estimate_hash_sig_size() from upstream commit 7d4eacb0e68, which
+replaces the fixed 1024-byte size_inc step with an estimate (4 hash
+nodes x 128 = 512 bytes for the binman fit test image), but the
+ftest.py expectation update from that same upstream commit was not
+brought along.
+
+Fix: fold the ftest.py hunk from upstream 7d4eacb0e68 into the
+'tools: mkimage: add dm-verity Merkle-tree generation' commit
+(sizes 1890->1378, 1840->1328, offsets 1844->1332) and note the
+adaptation in the commit message.
+
+Verification:
+1. binman full suite with fresh mkimage: 613 tests, all pass
+   (including testSimpleFitImagePos)
+2. buildman -L --board sandbox -w -o /tmp/pickman: clean
+3. ut fit_verity: 4/4 pass
+4. test_mkimage_verity py tests: 3/3 pass
+
+---
