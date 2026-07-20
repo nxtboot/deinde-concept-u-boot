@@ -87483,6 +87483,41 @@ The branch is ready for pushing; nothing has been merged elsewhere.
 
 ---
 
+## 2026-07-19: us/master
+
+Branch: cherry-d3eee4d3b12
+
+Commits:
+- d3eee4d3b12 image: fit: add dm-verity property name constants
+- cafe3d6e90e boot: fit: support generating DM verity cmdline parameters
+- 96e180d354d include: hexdump: make hex2bin() usable from host tools
+- 1e482985523 tools: mkimage: add dm-verity Merkle-tree generation
+- f34597790e6 doc: fit: add dm-verity boot parameter documentation
+- e7ee728ace3 test: boot: add runtime unit test for fit_verity_build_cmdline()
+- e52b2c6e7fd test: py: add mkimage dm-verity round-trip test
+- 89d3c1fe1b0 configs: sandbox: enable CONFIG_FIT_VERITY
+- 746a986fe24 Merge patch series "fit: dm-verity support"
+
+### Conversation log
+Now resolve the conflict: keep the HEAD side (print code lives in fit_print.c on ci/master).
+
+I need write permission for `boot/fit_print.c` to continue. Here's the situation and why:
+
+**Status so far:**
+1. ✅ `d3eee4d3b12` (image: fit: add dm-verity property name constants) — cherry-picked cleanly, build passes
+2. ⏸️ `cafe3d6e90e` (boot: fit: support generating DM verity cmdline parameters) — conflict in `boot/image-fit.c`
+
+**The conflict:** ci/master has refactored FIT printing out of `boot/image-fit.c` into `boot/fit_print.c` (using a `struct fit_print_ctx` pattern), while the original commit adds its `fit_image_print_dm_verity()` function amid the old print code in `image-fit.c`.
+
+**My resolution plan (in progress):**
+- `boot/image-fit.c`: resolved — kept ci/master's side (print code gone); the functional `fit_verity_build_cmdline()` / `fit_verity_build_target()` / `fit_verity_apply_bootargs()` code and new includes auto-merged fine
+- `boot/fit_print.c`: need to add the adapted `fit_image_print_dm_verity()` using the ctx/`emit_label()` pattern, plus hook it into `fit_image_print_verification_data()` for `FIT_VERITY_NODENAME`
+- Then amend the commit with a note about the adaptation
+
+Please grant write access to `boot/fit_print.c` (and generally to the repo files, since later commits touch `tools/`, `test/`, `doc/`, `configs/`) so I can finish the port and continue the remaining 7 cherry-picks.
+
+---
+
 ### Pipeline fix: 2026-07-19 (attempt 1)
 
 Branch: cherry-5e41a5deb4b
@@ -87535,6 +87570,43 @@ There is therefore **nothing to change in the code** — the only actionable ite
 **Suggested MR reply:**
 
 > No code changes needed — the pipeline-fix report confirms neither failure is caused by this branch (pine64: transient UART corruption; edison: lab USB/xfstk detection failure). The branch has been re-pushed to trigger a fresh pipeline, retrying both jobs. If edison fails again the same way, its USB connection in the lab likely needs physical attention.
+
+---
+
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-d3eee4d3b12
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+The tree is currently mid-cherry-pick with a conflict; the pipeline failures themselves are clearly lab infrastructure issues, not code problems. Let me verify:
+
+Both failed jobs are infrastructure/lab issues, not code problems. No source changes are needed.
+
+## Diagnosis
+
+**Branch state:** HEAD is `9a35d4a65ba` — a single cherry-picked commit that only adds `#define` constants to `include/image.h` (no C code, no functional change). The repo is currently mid-cherry-pick on the next commit (`cafe3d6e90e`) with an unresolved conflict in `boot/image-fit.c` — that is the user's own in-progress work (per the MR description) and unrelated to the failing pipeline jobs, which ran against `9a35d4a6`.
+
+Since HEAD only adds header constants, it cannot plausibly cause runtime failures on ARM lab boards.
+
+### Job `edison` (job 560561) — labgrid reservation issue
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+The pytest session bailed in `pytest_configure` because `u-boot-test-getrole edison --configure` failed: the labgrid "place" for edison was held by a different user (`kea/labgrid`). Pure lab-reservation contention — no U-Boot code involved.
+
+### Job `play` (job 560559) — appears transient
+The tail shows a normal boot trace and pytest summary `3 passed, 25 skipped, 1 deselected in 79.71s`, i.e. every test that ran passed. Yet the job exited with status 2. With no test failure visible and the boot log intact, this looks like a transient runner/harness issue (pytest returning 2 typically means an interrupt or internal error, not a functional test failure). The only code change in the branch is header `#define`s, so a real regression is not credible.
+
+## Action taken
+
+Nothing. Per the guidance in the task ("If the failure is an infrastructure or transient issue … report this without making changes"), I did not modify any commit, did not add a fixup, and did not create `cherry-d3eee4d3b12-fix1` (there is nothing to place on it, and the working tree is mid-cherry-pick from the user's own workflow which I did not disturb).
+
+**Recommendation:** re-run both lab jobs. If `edison` still fails, someone needs to release the labgrid place (or run the `labgrid-client -p edison allow ellesmere/gitlab-runner` command suggested by labgrid itself). If `play` still fails, then it's worth pulling the full test log rather than just the tail.
 
 ---
 
