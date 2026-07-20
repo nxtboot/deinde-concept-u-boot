@@ -87783,3 +87783,45 @@ Verification:
 4. test_mkimage_verity py tests: 3/3 pass
 
 ---
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: please check this: https://concept.u-boot.org/u-boot/u-boot/-/jobs/561993...
+
+### Conversation log
+The estimate function matches upstream exactly. The issue must be that binman's expected values differ. Let me compare the binman test between branches:
+
+Test passes. Amend the commit with the ftest.py change and a message note:
+
+The /tmp/b/sandbox build is stale from mid-rebase (before the sandbox config commit). Rebuild at HEAD:
+
+All green. Now record the review handling per branch convention:
+
+Now create the versioned branch and push:
+
+Done. MR !1166 is updated and a fresh pipeline will run.
+
+## Report
+
+**Review comment** ([sjg]: check job 561993): the job is a real code failure, not infrastructure. Binman's `testSimpleFitImagePos` failed because mkimage now builds a FIT 512 bytes smaller than ftest.py expects (fit:size 1328 vs expected 1840).
+
+**Root cause:** the cherry-picked mkimage commit brings in `fit_estimate_hash_sig_size()` from upstream `7d4eacb0e68` (needed because the dm-verity commit modifies that function). That upstream commit replaces the fixed 1024-byte `size_inc` step with an estimate (4 hash nodes × 128 = 512 for binman's fit test image) **and** updates binman's ftest.py expectations to match — but the ftest.py hunk was not brought along during the earlier conflict resolution, so ci/master's old expectations (1890/1840/1844) remained.
+
+**Fix:** folded the ftest.py hunk from upstream `7d4eacb0e68` into the `tools: mkimage: add dm-verity Merkle-tree generation` commit (sizes 1890→1378, 1840→1328, offsets 1844→1332) via `rf 9` + amend, with a note added to the commit message. The empty series merge commit survived the rebase. A `pickman: Record` commit documents the round.
+
+**Verification:**
+- Full binman suite with freshly built mkimage: **613 tests, all pass** (including `testSimpleFitImagePos`)
+- `buildman -L --board sandbox -w -o /tmp/pickman`: clean
+- `ut fit_verity`: 4/4 pass
+- `test_mkimage_verity` py tests: 3/3 pass
+
+**Branches:** local `cherry-d3eee4d3b12-v4` created; force-pushed `cherry-d3eee4d3b12` to ci (`6f4e5930d8c` → `0ec3811ff68`).
+
+## Suggested MR reply
+
+> Good catch — that binman failure was real. The mkimage cherry-pick brings in fit_estimate_hash_sig_size() from upstream 7d4eacb0e68 (the dm-verity commit modifies it), which shrinks the test FIT by 512 bytes (4 hash nodes × 128 instead of the fixed 1024-byte step), but the matching binman ftest.py expectation update from that same upstream commit was missed. I have folded that hunk into the mkimage commit and noted it in the commit message. The full binman suite (613 tests) now passes with the new mkimage, sandbox builds cleanly, and the fit_verity unit tests (4) and mkimage round-trip py tests (3) still pass.
+
+---
+
