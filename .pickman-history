@@ -87610,3 +87610,83 @@ Nothing. Per the guidance in the task ("If the failure is an infrastructure or t
 
 ---
 
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play.
+
+The tree is currently mid-cherry-pick w...
+
+### Conversation log
+The functional code is resolved. Now I need to find the print-related code from the original commit that must be ported to `fit_print.c`.
+
+Now let me look at `boot/fit_print.c` to understand the ctx/emit pattern on ci/master.
+
+Now I'll add the adapted `fit_image_print_dm_verity()` to `fit_print.c` using the ctx/emit pattern:
+
+Now stage the resolution and continue the cherry-pick:
+
+The clang diagnostics are LSP include-path false positives (`'log.h' file not found`), not real errors — the build will verify. Let me check how the previous cherry-pick recorded notes, then amend with an adaptation note:
+
+The convention is separate `pickman: Record` commits. Let me pull `.pickman-history` out of the cherry-picked commit and give it its own commit:
+
+Now commit the history record separately, then build-test this commit before continuing with the remaining picks:
+
+Build passes. Now check how previous cherry branches handled the final merge commit:
+
+Only a comment reference remains. Let me check it and the call sites of the new function:
+
+Now check the auto-merged image-host.c verity code — the `-E` check may fit naturally there instead:
+
+ci/master's `fit_get_name()` takes 2 args now. Fix the auto-merged incoming code:
+
+Check for other stale API usage in the merged verity code:
+
+`size_inc` is already `int`. Wire in the estimate function, matching upstream's structure:
+
+Verify how upstream handles the error-return here (to mirror exactly):
+
+Now cherry-pick the final merge commit as an empty commit with `-x`, matching the previous branch convention:
+
+The merge replays already-picked changes; resolve by keeping ours (result: empty commit, as on the previous cherry branch):
+
+The message picked up conflict comment lines. Clean them up:
+
+Unit tests pass. Run the Python round-trip test too:
+
+All tests pass. Create the `-v2` branch and push:
+
+Done. The MR is updated and the pipeline will re-run automatically.
+
+## What was done
+
+The single review comment was the bot's own pipeline-fix record (edison/play lab failures — infrastructure, no code action needed), so nothing to address there. The real outstanding work was the mid-cherry-pick state the branch was left in, which I completed now that write access was available:
+
+**1. Finished `cafe3d6e90e` (boot: fit: DM verity cmdline)**
+- Kept the already-resolved `boot/image-fit.c` (functional code only; print code stays out)
+- Added `fit_image_print_dm_verity()` to `boot/fit_print.c` using the `fit_print_ctx`/`emit_type()` pattern, hooked into `fit_image_print_verification_data()` for `FIT_VERITY_NODENAME`
+- Pulled the unrelated `.pickman-history` change out of the commit into a separate `pickman: Record` commit, per branch convention
+- Noted the adaptation in the commit message
+
+**2. Cherry-picked the remaining 6 commits**, one conflict in `1e482985523` (mkimage Merkle-tree):
+- ci/master uses `struct imgtool *itl` instead of `struct image_tool_params *params`, and `fit_get_name()` now takes two arguments — adapted the new code accordingly
+- The commit modifies `fit_estimate_hash_sig_size()`, which does not yet exist on ci/master, so I brought in that function and its use in `fit_handle_file()` (mirroring us/master exactly); the dm-verity "-E required" check lives there
+- Noted these adaptations in the commit message
+
+**3. Cherry-picked the series merge commit** `746a986fe24` as an empty commit with `-x`, matching how previous cherry branches record the series cover letter.
+
+**Verification:**
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean (with `CONFIG_FIT_VERITY` now enabled)
+- `ut fit_verity` — 4/4 pass
+- `test_mkimage_verity` py tests — 3/3 pass
+
+**Branches:** local `cherry-d3eee4d3b12-v2` created; force-pushed to `ci/cherry-d3eee4d3b12` (9a35d4a65ba → c438bc32e0f).
+
+## Suggested MR reply
+
+> All 9 commits from the dm-verity series are now cherry-picked. Two conflicts needed adaptation: the FIT print code moved to fit_print.c (ported `fit_image_print_dm_verity()` to the ctx/emit pattern) and mkimage's imgtool refactor (renamed params→itl, 2-arg `fit_get_name()`, and brought in `fit_estimate_hash_sig_size()` which the picked commit modifies but which was not yet on this branch). Sandbox builds cleanly, the `fit_verity` unit tests (4) and mkimage round-trip py tests (3) all pass. The earlier edison/play failures were lab infrastructure (labgrid place contention / transient runner error) — please re-run if they recur.
+
+---
+
