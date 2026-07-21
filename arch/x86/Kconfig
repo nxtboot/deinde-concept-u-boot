@@ -435,6 +435,17 @@ config SPL_FSP_VERSION2
 	  This covers versions 2.0 and 2.1. See here for details:
 	  https://github.com/IntelFsp/fsp/wiki
 
+config FSP2_PWRM_BASE
+	hex
+	depends on FSP_VERSION2
+	default 0
+	help
+	  MMIO base of the PMC's PWRM register space, used to reach the ETR
+	  register which makes a CF9 reset global. This differs between SoCs,
+	  so each one must provide it; the default of zero means it is not
+	  known, in which case a reset requested by the FSP is performed as a
+	  plain host reset without touching ETR.
+
 config FSP_FILE
 	string "Firmware Support Package binary filename"
 	depends on FSP_VERSION1
