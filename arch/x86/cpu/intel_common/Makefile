@@ -34,6 +34,7 @@ obj-y += microcode.o
 endif
 endif
 obj-y += pch.o
+obj-y += reset.o
 obj-$(CONFIG_HAVE_ITSS) += itss.o
 obj-$(CONFIG_HAVE_P2SB) += p2sb.o
 
