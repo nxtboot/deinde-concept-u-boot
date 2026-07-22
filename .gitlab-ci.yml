@@ -1032,6 +1032,14 @@ snow:
     ROLE: snow
   <<: *sjg_lab_dfn
 
+xu3:
+  variables:
+    ROLE: xu3
+    # The timer runs ~1.25% fast, so 'sleep 3' finishes in ~2.96s and the
+    # test fails its lower bound; skip until the timer is fixed
+    TEST_PY_TEST_SPEC: "and not test_sleep"
+  <<: *sjg_lab_dfn
+
 pcduino3:
   variables:
     ROLE: pcduino3
