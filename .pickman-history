@@ -88084,3 +88084,40 @@ All deltas match perfectly. Now build sandbox:
 
 ---
 
+## 2026-07-22: us/master
+
+Branch: cherry-59d52a99757
+
+Commits:
+- 59d52a99757 board: ti: j722s: add processor ACL entry for wkup_r5
+- 7920dc90dd5 board: toradex: verdin-am62p: update tifs-rm-cfg
+- 4fd5302675a board: toradex: verdin-am62: add missing tifs-rm-cfg.yaml
+- 78dff83dd78 board: toradex: aquila-am69: update rm-cfg.yaml and tifs-rm-cfg.yaml
+- 927e4880f2d arm: dts: k3: k3-am62*5-verdin-binman: Enable tifs-rm-cfg in binman
+- b40fee4d6d6 Merge patch series "board: toradex: k3: Sync rm-cfg with TIFS v12.00.00 firmware"
+
+### Conversation log
+All 6 commits are on branch `cherry-59d52a99757`. Final status:
+
+**Build result:** OK (sandbox build passes cleanly)
+
+**Cherry-pick results:**
+| # | Commit | Result |
+|---|---|---|
+| 1 | `38f3a23831f` — board: ti: j722s: add processor ACL entry for wkup_r5 | Clean cherry-pick, deltas match (1 file, +3/-3) |
+| 2 | `5f1cf24f4ab` — board: toradex: verdin-am62p: update tifs-rm-cfg | Clean cherry-pick, deltas match (1 file, +762/-714) |
+| 3 | `38440302912` — board: toradex: verdin-am62: add missing tifs-rm-cfg.yaml | Clean cherry-pick, deltas match (1 new file, +867) |
+| 4 | `8368c78fac2` — board: toradex: aquila-am69: update rm-cfg/tifs-rm-cfg [FAILED] | **Empty commit** — files don't exist in ci/master (aquila-am69 board support was never applied). Manual `git apply --3way` also failed with "does not exist in index". |
+| 5 | `306c9cfc381` — arm: dts: k3: k3-am62*5-verdin-binman: Enable tifs-rm-cfg in binman | Clean cherry-pick with auto-merge, deltas match (2 files, +8) |
+| 6 | `c72680e841c` — Merge patch series (b40fee4d6d6) | **Empty merge commit** — same aquila-am69 conflict resolved by deleting the missing files; merge preserved per instructions |
+
+**Fix-ups made:**
+- Commit #4 became an empty `[FAILED]` commit because the aquila-am69 board directory is absent from ci/master.
+- Commit #6 (the merge) is preserved as empty; a note was added to the message noting aquila-am69 files were skipped.
+
+**Concerning deltas:** None for the applied commits — every non-empty cherry-pick matched the original file/line counts exactly. The two aquila-am69 commits are deliberately empty because the parent board-support commit is missing from ci/master.
+
+Branch `cherry-59d52a99757` is left ready for pushing.
+
+---
+
