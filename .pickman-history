@@ -88121,3 +88121,44 @@ Branch `cherry-59d52a99757` is left ready for pushing.
 
 ---
 
+### Review: 2026-07-22
+
+Branch: cherry-59d52a99757
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, felwinter-cb, bp...
+
+### Conversation log
+## Report: No code changes — third confirmation that failures are infrastructure/flake
+
+**Review comment analysis:**
+The "comment" is once again the previous fix attempt's own report, which correctly concluded that all 5 failing jobs (efi-x86_64-uboot-iso-install, edison, felwinter-cb, bpif3, `Check make qcheck`) were unrelated to any file this branch touches:
+
+- `edison`, `felwinter-cb` — labgrid place lock contention (test never started)
+- `bpif3` — SpaceMit K1 DFU hardware issue (U-Boot never shipped to board)
+- `efi-x86_64-uboot-iso-install` — Ubuntu ISO kernel oops + 10-minute wall
+- `Check make qcheck` — sandbox `cmd_zip_gzwrite` flake (verified to pass locally last round)
+
+**Branch state:** tip `b4f8a9c69a5`, unchanged.
+
+**Files touched by the branch** (all YAML data / device-tree binman glue — no C source, no cross-target headers):
+- `board/ti/j722s/sec-cfg.yaml`
+- `board/toradex/verdin-am62p/tifs-rm-cfg.yaml`
+- `board/toradex/verdin-am62/tifs-rm-cfg.yaml` (new)
+- `arch/arm/dts/k3-am625-verdin-wifi-dev-binman.dtsi`
+- `arch/arm/dts/k3-am62p5-verdin-wifi-dev-binman.dtsi`
+
+**Actions taken:**
+1. Checked out `cherry-59d52a99757` (tip `b4f8a9c69a5`).
+2. Sanity-built sandbox — clean (no output).
+3. Created local branch `cherry-59d52a99757-v3` at the same tip.
+4. Ran `./tools/pickman/pickman push-branch cherry-59d52a99757 -r ci -f` — result: `Everything up-to-date` (remote already matches).
+
+**Suggested reply to post on the MR:**
+
+> This is the third pipeline-fix pass for the same class of failures, and the tree remains unchanged. The five failing jobs (edison, felwinter-cb, bpif3, efi-x86_64-uboot-iso-install, `Check make qcheck`) are all lab lock contention, hardware/DFU issues, an Ubuntu-installer boot failure, and a sandbox `cmd_zip_gzwrite` flake — none of them can be influenced by the Toradex Verdin AM62/AM62p tifs-rm-cfg YAML, the verdin binman .dtsi glue, or the J722s sec-cfg entry that this branch touches. Sandbox rebuilds cleanly. Branch tip unchanged at `b4f8a9c69a5`; please retry the failed jobs directly in the GitLab UI once the lab has cleared. A no-op force-push does not create a new pipeline.
+
+**Note:** Because there are no code changes, `pickman push-branch -f` was a no-op. A pipeline re-trigger must be done manually via the GitLab UI (retry the failed jobs) — pushing the same SHA does not spawn a new pipeline.
+
+---
+
