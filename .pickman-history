@@ -87483,6 +87483,41 @@ The branch is ready for pushing; nothing has been merged elsewhere.
 
 ---
 
+## 2026-07-19: us/master
+
+Branch: cherry-d3eee4d3b12
+
+Commits:
+- d3eee4d3b12 image: fit: add dm-verity property name constants
+- cafe3d6e90e boot: fit: support generating DM verity cmdline parameters
+- 96e180d354d include: hexdump: make hex2bin() usable from host tools
+- 1e482985523 tools: mkimage: add dm-verity Merkle-tree generation
+- f34597790e6 doc: fit: add dm-verity boot parameter documentation
+- e7ee728ace3 test: boot: add runtime unit test for fit_verity_build_cmdline()
+- e52b2c6e7fd test: py: add mkimage dm-verity round-trip test
+- 89d3c1fe1b0 configs: sandbox: enable CONFIG_FIT_VERITY
+- 746a986fe24 Merge patch series "fit: dm-verity support"
+
+### Conversation log
+Now resolve the conflict: keep the HEAD side (print code lives in fit_print.c on ci/master).
+
+I need write permission for `boot/fit_print.c` to continue. Here's the situation and why:
+
+**Status so far:**
+1. ✅ `d3eee4d3b12` (image: fit: add dm-verity property name constants) — cherry-picked cleanly, build passes
+2. ⏸️ `cafe3d6e90e` (boot: fit: support generating DM verity cmdline parameters) — conflict in `boot/image-fit.c`
+
+**The conflict:** ci/master has refactored FIT printing out of `boot/image-fit.c` into `boot/fit_print.c` (using a `struct fit_print_ctx` pattern), while the original commit adds its `fit_image_print_dm_verity()` function amid the old print code in `image-fit.c`.
+
+**My resolution plan (in progress):**
+- `boot/image-fit.c`: resolved — kept ci/master's side (print code gone); the functional `fit_verity_build_cmdline()` / `fit_verity_build_target()` / `fit_verity_apply_bootargs()` code and new includes auto-merged fine
+- `boot/fit_print.c`: need to add the adapted `fit_image_print_dm_verity()` using the ctx/`emit_label()` pattern, plus hook it into `fit_image_print_verification_data()` for `FIT_VERITY_NODENAME`
+- Then amend the commit with a note about the adaptation
+
+Please grant write access to `boot/fit_print.c` (and generally to the repo files, since later commits touch `tools/`, `test/`, `doc/`, `configs/`) so I can finish the port and continue the remaining 7 cherry-picks.
+
+---
+
 ### Pipeline fix: 2026-07-19 (attempt 1)
 
 Branch: cherry-5e41a5deb4b
@@ -87538,3 +87573,351 @@ There is therefore **nothing to change in the code** — the only actionable ite
 
 ---
 
+### Pipeline fix: 2026-07-19 (attempt 1)
+
+Branch: cherry-d3eee4d3b12
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+The tree is currently mid-cherry-pick with a conflict; the pipeline failures themselves are clearly lab infrastructure issues, not code problems. Let me verify:
+
+Both failed jobs are infrastructure/lab issues, not code problems. No source changes are needed.
+
+## Diagnosis
+
+**Branch state:** HEAD is `9a35d4a65ba` — a single cherry-picked commit that only adds `#define` constants to `include/image.h` (no C code, no functional change). The repo is currently mid-cherry-pick on the next commit (`cafe3d6e90e`) with an unresolved conflict in `boot/image-fit.c` — that is the user's own in-progress work (per the MR description) and unrelated to the failing pipeline jobs, which ran against `9a35d4a6`.
+
+Since HEAD only adds header constants, it cannot plausibly cause runtime failures on ARM lab boards.
+
+### Job `edison` (job 560561) — labgrid reservation issue
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+The pytest session bailed in `pytest_configure` because `u-boot-test-getrole edison --configure` failed: the labgrid "place" for edison was held by a different user (`kea/labgrid`). Pure lab-reservation contention — no U-Boot code involved.
+
+### Job `play` (job 560559) — appears transient
+The tail shows a normal boot trace and pytest summary `3 passed, 25 skipped, 1 deselected in 79.71s`, i.e. every test that ran passed. Yet the job exited with status 2. With no test failure visible and the boot log intact, this looks like a transient runner/harness issue (pytest returning 2 typically means an interrupt or internal error, not a functional test failure). The only code change in the branch is header `#define`s, so a real regression is not credible.
+
+## Action taken
+
+Nothing. Per the guidance in the task ("If the failure is an infrastructure or transient issue … report this without making changes"), I did not modify any commit, did not add a fixup, and did not create `cherry-d3eee4d3b12-fix1` (there is nothing to place on it, and the working tree is mid-cherry-pick from the user's own workflow which I did not disturb).
+
+**Recommendation:** re-run both lab jobs. If `edison` still fails, someone needs to release the labgrid place (or run the `labgrid-client -p edison allow ellesmere/gitlab-runner` command suggested by labgrid itself). If `play` still fails, then it's worth pulling the full test log rather than just the tail.
+
+---
+
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play.
+
+The tree is currently mid-cherry-pick w...
+
+### Conversation log
+The functional code is resolved. Now I need to find the print-related code from the original commit that must be ported to `fit_print.c`.
+
+Now let me look at `boot/fit_print.c` to understand the ctx/emit pattern on ci/master.
+
+Now I'll add the adapted `fit_image_print_dm_verity()` to `fit_print.c` using the ctx/emit pattern:
+
+Now stage the resolution and continue the cherry-pick:
+
+The clang diagnostics are LSP include-path false positives (`'log.h' file not found`), not real errors — the build will verify. Let me check how the previous cherry-pick recorded notes, then amend with an adaptation note:
+
+The convention is separate `pickman: Record` commits. Let me pull `.pickman-history` out of the cherry-picked commit and give it its own commit:
+
+Now commit the history record separately, then build-test this commit before continuing with the remaining picks:
+
+Build passes. Now check how previous cherry branches handled the final merge commit:
+
+Only a comment reference remains. Let me check it and the call sites of the new function:
+
+Now check the auto-merged image-host.c verity code — the `-E` check may fit naturally there instead:
+
+ci/master's `fit_get_name()` takes 2 args now. Fix the auto-merged incoming code:
+
+Check for other stale API usage in the merged verity code:
+
+`size_inc` is already `int`. Wire in the estimate function, matching upstream's structure:
+
+Verify how upstream handles the error-return here (to mirror exactly):
+
+Now cherry-pick the final merge commit as an empty commit with `-x`, matching the previous branch convention:
+
+The merge replays already-picked changes; resolve by keeping ours (result: empty commit, as on the previous cherry branch):
+
+The message picked up conflict comment lines. Clean them up:
+
+Unit tests pass. Run the Python round-trip test too:
+
+All tests pass. Create the `-v2` branch and push:
+
+Done. The MR is updated and the pipeline will re-run automatically.
+
+## What was done
+
+The single review comment was the bot's own pipeline-fix record (edison/play lab failures — infrastructure, no code action needed), so nothing to address there. The real outstanding work was the mid-cherry-pick state the branch was left in, which I completed now that write access was available:
+
+**1. Finished `cafe3d6e90e` (boot: fit: DM verity cmdline)**
+- Kept the already-resolved `boot/image-fit.c` (functional code only; print code stays out)
+- Added `fit_image_print_dm_verity()` to `boot/fit_print.c` using the `fit_print_ctx`/`emit_type()` pattern, hooked into `fit_image_print_verification_data()` for `FIT_VERITY_NODENAME`
+- Pulled the unrelated `.pickman-history` change out of the commit into a separate `pickman: Record` commit, per branch convention
+- Noted the adaptation in the commit message
+
+**2. Cherry-picked the remaining 6 commits**, one conflict in `1e482985523` (mkimage Merkle-tree):
+- ci/master uses `struct imgtool *itl` instead of `struct image_tool_params *params`, and `fit_get_name()` now takes two arguments — adapted the new code accordingly
+- The commit modifies `fit_estimate_hash_sig_size()`, which does not yet exist on ci/master, so I brought in that function and its use in `fit_handle_file()` (mirroring us/master exactly); the dm-verity "-E required" check lives there
+- Noted these adaptations in the commit message
+
+**3. Cherry-picked the series merge commit** `746a986fe24` as an empty commit with `-x`, matching how previous cherry branches record the series cover letter.
+
+**Verification:**
+- `buildman -L --board sandbox -w -o /tmp/pickman` — clean (with `CONFIG_FIT_VERITY` now enabled)
+- `ut fit_verity` — 4/4 pass
+- `test_mkimage_verity` py tests — 3/3 pass
+
+**Branches:** local `cherry-d3eee4d3b12-v2` created; force-pushed to `ci/cherry-d3eee4d3b12` (9a35d4a65ba → c438bc32e0f).
+
+## Suggested MR reply
+
+> All 9 commits from the dm-verity series are now cherry-picked. Two conflicts needed adaptation: the FIT print code moved to fit_print.c (ported `fit_image_print_dm_verity()` to the ctx/emit pattern) and mkimage's imgtool refactor (renamed params→itl, 2-arg `fit_get_name()`, and brought in `fit_estimate_hash_sig_size()` which the picked commit modifies but which was not yet on this branch). Sandbox builds cleanly, the `fit_verity` unit tests (4) and mkimage round-trip py tests (3) all pass. The earlier edison/play failures were lab infrastructure (labgrid place contention / transient runner error) — please re-run if they recur.
+
+---
+
+
+### Rebase and review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: I granted write-access, so please can you do this again?
+
+## Report
+
+**Comment analysis:** The comment asks for the cherry-pick work (previously
+blocked on write access to boot/fit_print.c) to be redone. That work was in
+fact already completed in the previous session once access was granted: all
+9 commits are on the branch and were force-pushed as c438bc32e0f. So the
+comment required no new code change — only the requested rebase.
+
+**What was done:**
+1. Rebased the branch onto the updated ci/master with
+   'git rebase --keep-empty ci/master' (was 19 commits behind)
+2. The only conflict was in .pickman-history — both this branch and the
+   now-merged cherry-5e41a5deb4b appended session logs at the same point.
+   Resolved by keeping both entries, giving each its own section header
+3. Verified every rebased commit: per-commit diffstats are identical to
+   the pre-rebase branch, and 'buildman -L --board sandbox -w -o
+   /tmp/pickman' passes at each of the 11 commits
+4. Re-ran the tests at the branch tip: 'ut fit_verity' 4/4 pass and the
+   test_mkimage_verity py tests 3/3 pass
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: I grated write-access, so please can you do this again?...
+
+### Conversation log
+All 11 commits build cleanly. Quick test run to confirm functionality after the rebase:
+
+Done. MR !1166 is updated and a fresh pipeline will run.
+
+## Report
+
+**Rebase** (`git rebase --keep-empty ci/master`, branch was 19 commits behind):
+- Only one conflict: `.pickman-history` — both this branch and the now-merged `cherry-5e41a5deb4b` appended session logs at the same spot. Resolved by keeping both entries, each under its own section header (log file only, no code involved).
+- The empty series merge commit `Merge patch series "fit: dm-verity support"` was preserved via `--keep-empty`.
+
+**Per-commit verification (all 11 commits):**
+- Diffstat comparison pre- vs post-rebase: **identical** for every commit
+- `buildman -L --board sandbox -w -o /tmp/pickman` at each commit: **all clean**
+
+**Tests at the tip:**
+- `ut fit_verity`: 4/4 pass
+- `test_mkimage_verity` py tests: 3/3 pass
+
+**Review comment** ([sjg]: "I granted write-access, so please can you do this again?"): the requested work was already completed in the previous session once access was granted — all 9 dm-verity commits are cherry-picked, adapted (fit_print.c port, imgtool/`fit_get_name()` API updates, `fit_estimate_hash_sig_size()` brought in) and were pushed as `c438bc32e0f`. No new code change was needed; this session added the rebase on top. A `pickman: Record` commit documents this.
+
+**Branches:** local `cherry-d3eee4d3b12-v3` created; force-pushed `cherry-d3eee4d3b12` to ci (`c438bc32e0f` → `6f4e5930d8c`).
+
+## Suggested MR reply
+
+> Thanks — the cherry-pick was completed in the previous round once write access was granted (all 9 commits, with the fit_print.c and mkimage/imgtool adaptations). This update rebases the branch onto current master (19 commits behind); the only conflict was in the .pickman-history log, resolved by keeping both entries. Every rebased commit has an identical diffstat to before and builds cleanly for sandbox; the fit_verity unit tests (4) and mkimage round-trip py tests (3) still pass.
+
+---
+
+### Review: 2026-07-20 (round 3)
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: please check this:
+  https://concept.u-boot.org/u-boot/u-boot/-/jobs/561993
+
+Diagnosis: job 561993 (binman tests) fails in testSimpleFitImagePos
+because mkimage now produces a FIT 512 bytes smaller than binman's
+ftest.py expects. The mkimage cherry-pick brings in
+fit_estimate_hash_sig_size() from upstream commit 7d4eacb0e68, which
+replaces the fixed 1024-byte size_inc step with an estimate (4 hash
+nodes x 128 = 512 bytes for the binman fit test image), but the
+ftest.py expectation update from that same upstream commit was not
+brought along.
+
+Fix: fold the ftest.py hunk from upstream 7d4eacb0e68 into the
+'tools: mkimage: add dm-verity Merkle-tree generation' commit
+(sizes 1890->1378, 1840->1328, offsets 1844->1332) and note the
+adaptation in the commit message.
+
+Verification:
+1. binman full suite with fresh mkimage: 613 tests, all pass
+   (including testSimpleFitImagePos)
+2. buildman -L --board sandbox -w -o /tmp/pickman: clean
+3. ut fit_verity: 4/4 pass
+4. test_mkimage_verity py tests: 3/3 pass
+
+---
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [sjg]: pickman: please check this: https://concept.u-boot.org/u-boot/u-boot/-/jobs/561993...
+
+### Conversation log
+The estimate function matches upstream exactly. The issue must be that binman's expected values differ. Let me compare the binman test between branches:
+
+Test passes. Amend the commit with the ftest.py change and a message note:
+
+The /tmp/b/sandbox build is stale from mid-rebase (before the sandbox config commit). Rebuild at HEAD:
+
+All green. Now record the review handling per branch convention:
+
+Now create the versioned branch and push:
+
+Done. MR !1166 is updated and a fresh pipeline will run.
+
+## Report
+
+**Review comment** ([sjg]: check job 561993): the job is a real code failure, not infrastructure. Binman's `testSimpleFitImagePos` failed because mkimage now builds a FIT 512 bytes smaller than ftest.py expects (fit:size 1328 vs expected 1840).
+
+**Root cause:** the cherry-picked mkimage commit brings in `fit_estimate_hash_sig_size()` from upstream `7d4eacb0e68` (needed because the dm-verity commit modifies that function). That upstream commit replaces the fixed 1024-byte `size_inc` step with an estimate (4 hash nodes × 128 = 512 for binman's fit test image) **and** updates binman's ftest.py expectations to match — but the ftest.py hunk was not brought along during the earlier conflict resolution, so ci/master's old expectations (1890/1840/1844) remained.
+
+**Fix:** folded the ftest.py hunk from upstream `7d4eacb0e68` into the `tools: mkimage: add dm-verity Merkle-tree generation` commit (sizes 1890→1378, 1840→1328, offsets 1844→1332) via `rf 9` + amend, with a note added to the commit message. The empty series merge commit survived the rebase. A `pickman: Record` commit documents the round.
+
+**Verification:**
+- Full binman suite with freshly built mkimage: **613 tests, all pass** (including `testSimpleFitImagePos`)
+- `buildman -L --board sandbox -w -o /tmp/pickman`: clean
+- `ut fit_verity`: 4/4 pass
+- `test_mkimage_verity` py tests: 3/3 pass
+
+**Branches:** local `cherry-d3eee4d3b12-v4` created; force-pushed `cherry-d3eee4d3b12` to ci (`6f4e5930d8c` → `0ec3811ff68`).
+
+## Suggested MR reply
+
+> Good catch — that binman failure was real. The mkimage cherry-pick brings in fit_estimate_hash_sig_size() from upstream 7d4eacb0e68 (the dm-verity commit modifies it), which shrinks the test FIT by 512 bytes (4 hash nodes × 128 instead of the fixed 1024-byte step), but the matching binman ftest.py expectation update from that same upstream commit was missed. I have folded that hunk into the mkimage commit and noted it in the commit message. The full binman suite (613 tests) now passes with the new mkimage, sandbox builds cleanly, and the fit_verity unit tests (4) and mkimage round-trip py tests (3) still pass.
+
+---
+
+### Pipeline fix: 2026-07-20 (attempt 2)
+
+Branch: cherry-d3eee4d3b12
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+## Report: all four failures are lab infrastructure — no code changes made
+
+**Branch state:** checked out `cherry-d3eee4d3b12` (pipeline ran against `0ec3811f`). Local branch `cherry-d3eee4d3b12-fix2` created at the current tip; **no source changes were made** because no commit is responsible.
+
+### Diagnosis per job
+
+Every job failed *before U-Boot ever produced a prompt* — during lab reservation, flashing, or first boot. All four ran on the same `ellesmere-lab` runner in an 18-minute window (18:36–18:54), pointing to the lab being in a bad state.
+
+- **edison (562487)** — labgrid place contention, identical to attempt 1: `place edison is not acquired by your user, acquired by labgrid` / `acquired by a different user (kea/labgrid)`. pytest aborted in `pytest_configure`; no test or U-Boot code ran at all. Someone needs to release/kick the labgrid place.
+- **felwinter-cb (562478)** — coreboot boots (the double bootblock/romstage pass is the normal cse_lite RO→RW global reset), then a 180 s timeout waiting for the U-Boot prompt, and the job died on the 10 m job timeout. No U-Boot output ever appeared.
+- **bpif3 (562477)** — the SpacemiT K1 boot-ROM USB loader was `not ready` through 3 of 5 retries before the lab timeout hit. The image was never even sent to the board.
+- **rpi3 (562448)** — image written, then `No U-Boot prompt` / 20 s pexpect timeout on first boot. No console output from U-Boot.
+
+### Why the code is not the cause
+
+- The branch's only target-side runtime code (in `bootm.c`, `image-board.c`, `image-fit.c`, `fit_print.c`) executes during `bootm`/FIT boot — long after the U-Boot prompt these boards never reached. It is also gated by `CONFIG_FIT_VERITY`, and I verified the built `.config` for all four boards has it **disabled** (only sandbox enables it); the hooks compile to inline no-op stubs.
+- Build verification: `um build sandbox` clean; `buildman -o /tmp/pickman edison rpi_3_32b spacemit_k1 chromebook_brya_cb` — all 4 build OK (only expected missing-vendor-blob warnings for opensbi/coreboot-rom in the local environment).
+
+### Recommendation
+
+Re-run the four lab jobs. For edison specifically, the labgrid place needs releasing first (labgrid itself suggests `labgrid-client -p edison allow ellesmere/gitlab-runner`) — this is the second consecutive attempt it has failed on the same reservation conflict, so a re-run without fixing the reservation will fail again.
+
+---
+
+### Review: 2026-07-20
+
+Branch: cherry-d3eee4d3b12
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, felwinter-cb, bpif3, rpi3.
+
+## Report: all fou...
+
+### Conversation log
+Build is clean. Now create the `-v5` branch and push:
+
+Done. MR !1166 is updated (`1a210708438` → `04f228ecee7`) and a fresh pipeline will run.
+
+## Report
+
+**Review comment** ([project_1_bot…]: "Pipeline fix (attempt 2): fixed failed job(s) edison, felwinter-cb, bpif3, rpi3"): this is the bot's own automated record of the previous session's pipeline diagnosis, not a request for changes. That session already established all four failures were lab infrastructure:
+
+- **edison** — labgrid place held by another user (`kea/labgrid`); second consecutive occurrence
+- **felwinter-cb** — coreboot booted but U-Boot prompt never appeared; job timeout
+- **bpif3** — SpacemiT boot-ROM USB loader "not ready"; image never sent to board
+- **rpi3** — no console output on first boot
+
+None involve branch code: the dm-verity runtime hooks are gated by `CONFIG_FIT_VERITY`, which is disabled on all four boards. **No source changes were made this round** — nothing actionable remained.
+
+**What this round did:**
+- Verified the branch state: the only unpushed commit was `04f228ecee7`, the `pickman: Record` commit documenting the attempt-2 diagnosis (touches `.pickman-history` only)
+- `buildman -L --board sandbox -w -o /tmp/pickman`: clean
+- Created local branch `cherry-d3eee4d3b12-v5`; pushed `cherry-d3eee4d3b12` to ci, which also re-triggers the pipeline — exactly what the diagnosis recommended for the transient lab failures
+
+## Suggested MR reply
+
+> The four failed jobs (edison, felwinter-cb, bpif3, rpi3) all died before U-Boot ever reached a prompt — labgrid place contention on edison (second time; the place needs releasing with `labgrid-client -p edison allow ellesmere/gitlab-runner`), and flashing/boot-ROM/console issues on the other three, all on ellesmere-lab within an 18-minute window. The branch code cannot be responsible: CONFIG_FIT_VERITY is disabled on all four boards, so the dm-verity hooks compile to no-op stubs, and all four boards build cleanly. No code changes made; this push records the diagnosis and re-triggers the pipeline. If edison fails again it will be the same reservation conflict until the labgrid place is released.
+
+---
+
+
+
+### Rebase: 2026-07-22
+
+Branch: cherry-d3eee4d3b12
+
+## Report
+
+Branch was 2 commits behind ci/master (xu3 lab job addition, and the
+preceding merge). Rebased with 'git rebase --keep-empty ci/master' —
+clean, no conflicts. All 17 commits (10 functional + 7 pickman records)
+replayed successfully.
+
+**Verification:**
+- Non-.pickman-history diff between old tip and new tip is exactly the
+  xu3 CI job hunk from ci/master — nothing else changed
+- Per-commit diffstats identical for all functional commits
+- 'buildman -L --board sandbox -w -o /tmp/pickman' at HEAD: clean
+- 'ut fit_verity' at HEAD: 4/4 pass
+- 'test_mkimage_verity' py tests: 3/3 pass
+
+**Branches:** local cherry-d3eee4d3b12-v6 created; will force-push
+cherry-d3eee4d3b12 to ci to update the MR.
+
+---
