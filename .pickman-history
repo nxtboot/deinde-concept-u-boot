@@ -87896,3 +87896,28 @@ None involve branch code: the dm-verity runtime hooks are gated by `CONFIG_FIT_V
 
 ---
 
+
+
+### Rebase: 2026-07-22
+
+Branch: cherry-d3eee4d3b12
+
+## Report
+
+Branch was 2 commits behind ci/master (xu3 lab job addition, and the
+preceding merge). Rebased with 'git rebase --keep-empty ci/master' —
+clean, no conflicts. All 17 commits (10 functional + 7 pickman records)
+replayed successfully.
+
+**Verification:**
+- Non-.pickman-history diff between old tip and new tip is exactly the
+  xu3 CI job hunk from ci/master — nothing else changed
+- Per-commit diffstats identical for all functional commits
+- 'buildman -L --board sandbox -w -o /tmp/pickman' at HEAD: clean
+- 'ut fit_verity' at HEAD: 4/4 pass
+- 'test_mkimage_verity' py tests: 3/3 pass
+
+**Branches:** local cherry-d3eee4d3b12-v6 created; will force-push
+cherry-d3eee4d3b12 to ci to update the MR.
+
+---
