@@ -88394,3 +88394,120 @@ The branch is left clean at commit 7 (`a755ca55faf`), working tree clean, ready 
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-9c04852e596
+
+Commits:
+- 9c04852e596 timer: sp804: Fix dev_read_addr error check
+- 6c164d51d69 configs: am62x: Add splashscreen config fragment
+- e853b26d0cd configs: am62x: Add splashscreen prune config fragment
+- 83f3e2c30b2 configs: am62x_evm_a53_ethboot_defconfig: Disable splashscreen
+- abd948e5421 configs: am62x_evm_a53_defconfig: Enable A53 splashscreen at u-boot SPL
+- 4674475760d Merge patch series "Enable splashscreen functionality on AM62X"
+
+### Conversation log
+Now amend with a fix-up note as instructed:
+
+Delta is close (one extra blank line before the include). Build test:
+
+The merge is trying to re-apply mainline-side differences our branch intentionally lacks. Resolve by keeping our version — the merge commit becomes empty, which is expected:
+
+All 6 commits are cherry-picked onto `cherry-9c04852e596` (based on ci/master) and the branch is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with buildman after each cherry-pick and in the final verification (no warnings or errors).
+
+**Commits (oldest first):**
+| Original | New | Notes |
+|---|---|---|
+| 9c04852e596 timer: sp804: Fix dev_read_addr error check | 5de9c534bf8 | clean, delta matches |
+| 6c164d51d69 configs: am62x: Add splashscreen config fragment | 832101a1b03 | clean, delta matches |
+| e853b26d0cd configs: am62x: Add splashscreen prune config fragment | 39446a150cd | clean, delta matches |
+| 83f3e2c30b2 configs: am62x_evm_a53_ethboot_defconfig: Disable splashscreen | b41cef1fa24 | clean, delta matches |
+| abd948e5421 configs: am62x_evm_a53_defconfig: Enable A53 splashscreen at u-boot SPL | 020690bbf7f | conflict, resolved (see below) |
+| 4674475760d Merge patch series "Enable splashscreen functionality on AM62X" | 40cd49b6990 | empty merge commit, preserved with --allow-empty |
+
+**Fix-ups made:**
+- **020690bbf7f**: The defconfig on ci/master differs from upstream context (it has CONFIG_SYS_BOOTM_LEN/CONFIG_ZSTD but lacks the k3_efi_capsule and am62x_a53_usbdfu includes). Resolved by applying the two intended changes — SPL_SIZE_LIMIT bumped 0x40000 → 0x80000 and the splashscreen include appended — while keeping the branch's existing content. A note was added to the commit message. Delta: 3 insertions/1 deletion vs original's 2/1 (one extra blank line before the include) — not concerning.
+- **40cd49b6990**: The merge commit conflicted by trying to re-introduce mainline-only defconfig content; resolved by keeping the branch's version, resulting in an empty commit (expected, kept for history). The stray "# Conflicts:" section was removed from the message and a resolution note added.
+
+**Concerning deltas:** none.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-9c04852e596
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison.
+
+This failure is an **infrastructure issue, no...
+
+### Conversation log
+The branch is checked out. Let me examine the single review comment.
+
+**Assessment of the comment** ([project_1_bot_...]): This is not a human review request — it is the bot's own "Pipeline fix (attempt 1)" report, which itself concludes that the edison job failure is an **infrastructure issue** (labgrid place `edison` held by `kea/labgrid`, causing `u-boot-test-getrole` to fail before any test ran) and explicitly states **"no changes are needed"** and that no fix branch was created.
+
+There is therefore no actionable code change to make:
+
+- The branch content (sp804 timer fix + AM62x splashscreen defconfigs) does not touch the edison board, test hooks, or lab tooling.
+- The comment's own recommendation is operational: retry the edison job once the labgrid place is free, or kick/allow the stale `kea/labgrid` acquisition.
+
+Since no commits were modified, I have made no amendments, created no `-v2` branch, and performed no force push — pushing an unchanged branch would only re-trigger the pipeline without addressing anything (though a manual retry of the edison job is exactly what's wanted, that's done via the GitLab UI/API, not a push).
+
+## Report
+
+**Changes made:** none — the sole comment is an informational infrastructure-failure diagnosis, not an actionable review request.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix bot's own diagnosis confirming the edison failure is infrastructure-only (labgrid place contention with kea/labgrid), so no code changes are required on this branch. The branch content is unrelated to the edison board. Action needed: release or kick the stale labgrid acquisition (e.g. `labgrid-client -p edison allow ellesmere/gitlab-runner`) and retry the edison job. The branch itself is unchanged and remains ready to merge once the job passes.
+
+If you'd like, I can still force-push to re-trigger the pipeline (which would re-run edison), but a targeted job retry is the cleaner option.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-9c04852e596
+
+Comments addressed:
+
+
+### Conversation log
+The merge-base is already the tip of ci/master — the local branch appears up to date. Let me check whether the remote MR branch differs:
+
+The remote branch shows unexpected content (commits for a different cherry branch). Let me fetch and re-check:
+
+The remote MR branch has been clobbered with content from a different MR (cherry-d3eee4d3b12) and no longer contains our commits. Let me verify the local branch structure and dates:
+
+Build passes. Now create the `-v2` local branch and force-push to restore the correct content on the remote MR branch:
+
+## Report
+
+**Key finding:** No actual rebase was needed — the situation was different from what the task assumed.
+
+### What happened
+
+- The **local branch** `cherry-9c04852e596` was already based on the current `ci/master` tip (a546a9cb1b5) — the cherry-picks from earlier today were made directly on top of it. `git rebase --keep-empty ci/master` reported "Current branch is up to date".
+- The **remote MR branch**, however, had been **clobbered by a mistaken push from a different MR**: it pointed to 16f1c1f7e42, a "pickman: Record review handling for cherry-**d3eee4d3b12**" commit from 2026-07-22, and contained **none** of this MR's commits (no sp804 fix, no AM62x splashscreen changes). This is why the MR appeared behind/stale.
+
+### Actions taken
+
+1. Checked out `cherry-9c04852e596`; confirmed working tree clean and history intact (6 cherry-picked commits including the preserved empty merge commit 40cd49b6990, plus 2 pickman record commits)
+2. Ran `git rebase --keep-empty ci/master` — no-op, branch already up to date, so **no deltas changed** (per-commit delta comparison not applicable)
+3. Built with `buildman -L --board sandbox -w -o /tmp/pickman` — **OK, no warnings or errors**
+4. Created local backup branch `cherry-9c04852e596-v2`
+5. Force-pushed via `./tools/pickman/pickman push-branch cherry-9c04852e596 -r ci -f` — remote updated `16f1c1f7e42 → e0f0de0f74d`, verified remote now matches local HEAD
+
+### Suggested reply to post on the MR
+
+> The MR branch appeared out of date because the remote ref had been overwritten by a mistaken force-push containing content from a different MR (cherry-d3eee4d3b12) — it no longer held this series at all. The correct local branch was already based on the current ci/master tip, so no rebase was required and no commit deltas changed. The branch has been force-pushed back, restoring the series: the sp804 dev_read_addr fix, the four AM62x splashscreen defconfig commits, and the preserved empty merge commit. Sandbox builds cleanly with buildman (no warnings or errors). The push has re-triggered the MR pipeline.
+
+**Note for the maintainer:** it may be worth checking how the cherry-d3eee4d3b12 content ended up on this MR's remote branch (likely a wrong-branch `pickman push-branch` yesterday at 08:59), in case the same mix-up affected other MR branches.
+
+---
+
