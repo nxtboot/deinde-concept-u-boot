@@ -88663,3 +88663,40 @@ The branch is left ready for pushing; nothing was merged elsewhere.
 
 ---
 
+### Pipeline fix: 2026-07-23 (attempt 1)
+
+Branch: cherry-3ab8ea4a444
+
+Failed jobs:
+- edison (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rock5b (sjg-lab)
+- colibrimx8 (sjg-lab)
+
+### Conversation log
+## Report: All four failures are infrastructure/transient — no code changes made
+
+I diagnosed each failed job and none of them is caused by the branch's commits (which only remove `unused`/`__maybe_unused`/`__used` attribute markers from linker-list entries and adjust sandbox link order):
+
+### Per-job diagnosis
+
+- **edison** (567150): labgrid place-acquisition failure — `place edison is not acquired by your user, acquired by labgrid`. The job failed in `pytest_configure` before any U-Boot code ran. Pure lab infrastructure issue.
+- **rock5b** (567137): `dd: error writing '/dev/sdp': Input/output error` while flashing u-boot-rockchip.bin to the SD mux. Hardware/storage failure on the lab host.
+- **colibrimx8** (567134): `Lab timeout: Marking connection bad` during board bootstrap — lab infrastructure timeout, no test even ran.
+- **qemu-x86_64** (567144): a single flaky test, `test_efi_selftest_text_input_ex` (47 passed, 1 failed). All earlier key checks in the same test passed (EOT, BS, TAB, 'a', UP, Euro sign); only the final multi-byte escape sequence `ESC [ 1 5 ; 4 ~` (SHIFT+ALT+FN 5) timed out. This is a known timing flake: if the escape-sequence bytes arrive over the serial console with a gap, the EFI console parser mis-decodes them. The branch touches nothing in console/input handling, and the selftest's linker-list entry demonstrably works since the test itself ran.
+
+### Ruling out the linker-list changes
+
+The one plausible concern was that dropping attributes could cause linker-list entries to be discarded. I checked: `ll_entry_declare()` entries are non-static globals in named `__u_boot_list_2_*` sections, kept by `KEEP()` in the linker scripts, so removing the warning-suppression attributes cannot drop them — and the EFI selftests on qemu-x86_64 all registered and ran correctly, confirming this.
+
+### Verification
+
+- `um build sandbox` — clean, no output
+- `buildman -o /tmp/pickman` for colibrimx8, edison, qemu-x86_64, rock5b, sandbox (14 boards via fuzzy match) — all 14 built; only pre-existing warnings (rockchip missing-blob notes, sandbox dtc `ranges` warnings)
+
+### Result
+
+Branch `cherry-3ab8ea4a444-fix1` created, identical to `cherry-3ab8ea4a444` (HEAD `57be1e9d3d4`) — no commits amended or added. The recommended action is simply to retry the pipeline; the edison/rock5b/colibrimx8 lab issues may need the lab operator's attention (particularly the rock5b SD-card I/O error, which may recur).
+
+---
+
