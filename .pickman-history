@@ -88617,3 +88617,49 @@ All done. Here's the report:
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-3ab8ea4a444
+
+Commits:
+- 3ab8ea4a444 sandbox: Drop special link order treatment of start.o and sdl.o
+- 4355a9a5f00 linker_lists: Do not set "unused" attribute
+- 6e73890c739 event: Remove obsolete comment and __used attributes
+- cceccea3a99 Merge patch series "Cleanup some linker list usage issues"
+
+### Conversation log
+The first cherry-pick has conflicts. Per instructions, let me first check whether these commits are already present in ci/master:
+
+Now let me see the full original commit (it also touches arch/sandbox/Makefile) and the conflicted file:
+
+Now amend to note the conflict resolution, then verify the delta:
+
+Delta matches exactly. Build test:
+
+All changes are already applied, so the merge commit will be empty as expected. Continue:
+
+All done. Final status:
+
+## Result: Success
+
+Branch `cherry-3ab8ea4a444` (based on `ci/master`) now has all 4 commits:
+
+| Commit | Original | Status |
+|---|---|---|
+| `9a56870e888` | 3ab8ea4a444 sandbox: Drop special link order treatment of start.o and sdl.o | Applied with fix-up |
+| `5f9313d17cf` | 4355a9a5f00 linker_lists: Do not set "unused" attribute | Clean |
+| `a47ff7474ea` | 6e73890c739 event: Remove obsolete comment and __used attributes | Clean |
+| `f8cc8200229` | cceccea3a99 Merge patch series "Cleanup some linker list usage issues" | Empty (preserved) |
+
+**Build result:** ok — sandbox built cleanly with buildman after each cherry-pick and at the end (no warnings or errors).
+
+**Fix-ups made:**
+- **Commit 1** had a conflict in `arch/sandbox/cpu/Makefile`: ci/master's `obj-y` line has extra objects (mem.o, tty.o, fuzz.o/main.o conditional block) not in the upstream parent. Resolved by moving `start.o` to the front of `obj-y` and converting sdl.o from `extra-` to `obj-`, keeping all ci/master objects. A note describing this was appended to the commit message. Resulting delta matches the original exactly (2 files, +2/−12).
+- **Merge commit** conflicted the same way (it replays the series against its first parent); resolved by keeping our already-applied HEAD content, which made the commit empty. It was committed with `--allow-empty` reusing the original merge message plus the `(cherry picked from ...)` line.
+
+**Concerning deltas:** none — commits 1–3 all match their originals' file lists and line counts exactly.
+
+The branch is left ready for pushing; nothing was merged elsewhere.
+
+---
+
