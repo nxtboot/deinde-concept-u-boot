@@ -88334,3 +88334,63 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-15cc283d1ba
+
+Commits:
+- 15cc283d1ba bootdev: Fix the case where the driver ops field is null.
+- 83cf74a01a8 block: ide: Drop empty bootdev_ops structure
+- ce12ad70b8b ata: sata: Drop empty bootdev_ops structure
+- e84d147bd3e scsi: Drop empty bootdev_ops structure
+- e81c552171d virtio: Drop empty bootdev_ops structure
+- 679eb25fb8f bloblist / handoff: Make this depend on BLOBLIST_FIXED
+- b4858d2afcf bloblist: Demote not finding a bloblist to a debug
+- 5ab16002136 bloblist: Rework bloblist_init and bloblist_maybe_init
+- b5f2880261e Merge patch series "Clean up bloblist initialization"
+
+### Conversation log
+The commits are not already applied — this is a genuine conflict. Let me examine it.
+
+The cherry-pick needed a conflict resolution, so per instructions I'll amend with a note.
+
+Commit 1 done — delta matches exactly, build passes. Continuing with the rest.
+
+Now the big one — the rework commit, which will likely conflict with the local rework. Let me examine it first.
+
+This is a complex 4-file conflict. Let me examine each conflict.
+
+## Cherry-pick stopped at commit 8 of 9 — complex conflict
+
+### Status: 7 of 9 commits applied successfully on `cherry-15cc283d1ba`
+
+| # | Commit | Result |
+|---|--------|--------|
+| 1 | bootdev: Fix the case where the driver ops field is null | ✅ applied (conflict resolved) |
+| 2 | block: ide: Drop empty bootdev_ops structure | ✅ clean, delta exact |
+| 3 | ata: sata: Drop empty bootdev_ops structure | ✅ clean, delta exact |
+| 4 | scsi: Drop empty bootdev_ops structure | ✅ clean, delta exact |
+| 5 | virtio: Drop empty bootdev_ops structure | ✅ clean, delta exact |
+| 6 | bloblist / handoff: Make this depend on BLOBLIST_FIXED | ✅ clean, delta exact |
+| 7 | bloblist: Demote not finding a bloblist to a debug | ✅ applied (adapted) |
+| 8 | bloblist: Rework bloblist_init and bloblist_maybe_init | ❌ **aborted — complex conflict** |
+| 9 | Merge patch series "Clean up bloblist initialization" | ⏸ not attempted |
+
+**Build result:** sandbox built cleanly with buildman after every applied commit (no warnings or errors).
+
+### Fix-ups made (noted in the amended commit messages)
+- **Commit 1**: ci/master has an extra `bflow->entry = iter->entry;` line in `bootdev_get_bootflow()`; kept it while applying the new `ops && ops->get_bootflow` structure. Delta matches the original exactly (10+/5-).
+- **Commit 7**: ci/master's `bloblist_init()` is already reworked locally, so the original one-liner didn't apply; I applied its intent by demoting the local equivalent message (`"Expected bloblist at %lx not found"`) from `log_warning` to `log_debug`.
+
+### Why commit 8 cannot be auto-resolved
+The conflict spans 4 files (`common/bloblist.c`, `common/board_f.c`, `include/bloblist.h`, `lib/fdtdec.c`) and is architectural, not textual:
+
+- **ci/master** has its own standard-passage based bloblist rework: `bloblist_init()` uses `passage_valid()` / `gd_passage_bloblist()`, includes `SPL_BLOBLIST_RELOC` relocation handling, and `fdtdec_setup()` gets the devicetree via `OF_PASSAGE`. It has no `xferlist_from_boot_arg()`, `bloblist_maybe_init()` or `bloblist_check_reg_conv()`.
+- **Upstream's commit** reworks the transfer-list based implementation into a new `bloblist_exists()` function, moves `GD_FLG_BLOBLIST_READY` setting into `bloblist_check()`/`bloblist_new()`, makes `bloblist_init()` create-only, and has `fdtdec_setup()` consult `bloblist_exists()`.
+
+Merging these requires deciding how (or whether) to express `bloblist_exists()` in terms of the passage mechanism, where the `SPL_BLOBLIST_RELOC` logic belongs in the new structure, and how `fdtdec_setup()` should combine the passage and bloblist paths. That's a manual design decision for you.
+
+The branch is left clean at commit 7 (`a755ca55faf`), working tree clean, ready for either manual resolution of commit 8 or pushing as-is. The merge commit (9) was not attempted since it should follow commit 8.
+
+---
+
