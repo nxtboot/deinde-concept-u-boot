@@ -88548,3 +88548,41 @@ The branch is left checked out and ready for pushing; it was not merged anywhere
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-081ffe9b3fc
+
+Commits:
+- 081ffe9b3fc ls1028a: only include drivers/net/fsl_enetc.h when driver is compiled
+- 4cbd0faab82 arm: ls102xa: use platform data to check Ethernet interface is not SGMII
+- 987b5eabc35 net: tsec: make tsec_private a private structure
+- 77cc22b8095 net: guard SYS_RX_ETH_BUFFER with NET
+- d1725126909 net: SYS_RX_ETH_BUFFER defaults to 8 when CONFIG_FSL_ENETC=y
+- 3518bf17ba4 phy: Kconfig: use bool instead of tristate
+- 6184a9b1067 phy: ti-pipe3: Use device API for DT parsing
+- dde8b3b7e10 phy: marvell: comphy: Use dev_read_addr_index_ptr()
+- b9469df60e1 phy: cadence: Use device API
+- 45e5625d71e net: ethoc: Use dev_read_addr_index()
+- c174c1f7f12 net: qe: dm_qe_uec: Use dev_read_addr()
+- 0e2ba59bc5a net: calxedaxgmac: Use dev_read_addr()
+- 23532fcb7d0 net: dc2114x: Use dev_remap_addr()
+- f603d10d72b net: mvpp2: Use dev_read_addr_index_ptr()
+- dafa6a36037 net: mvpp2: convert FDT access to ofnode API
+- 31af00bdc6a Merge tag 'net-next-20260603' of https://source.denx.de/u-boot/custodians/u-boot-net into next
+
+### Conversation log
+All 16 commits are present. Running the final build:
+
+All done. Final status:
+
+**Result: success** — branch `cherry-081ffe9b3fc` created from `ci/master` with all 16 commits, ready for pushing.
+
+- **Build**: sandbox builds cleanly with buildman after every commit and after the full series — no warnings or errors
+- **Fix-ups**: none needed; all 15 regular commits applied cleanly (two had trivial auto-merges in `include/net-common.h` with no manual intervention)
+- **Deltas**: every cherry-picked commit matches its original exactly (same files, same line counts)
+- **Merge commit**: `31af00bdc6a` (net-next-20260603 merge) resulted in an empty commit as expected, committed with `--allow-empty` to preserve the merge message in history
+
+The branch was left checked out and has not been merged anywhere.
+
+---
+
