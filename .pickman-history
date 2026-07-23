@@ -88205,3 +88205,39 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-07-23 (attempt 1)
+
+Branch: cherry-6edb2e1ce24
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- felwinter-cb (sjg-lab)
+- colibrimx8 (sjg-lab)
+
+### Conversation log
+The edison job is a lab infrastructure issue (labgrid place not acquired). Let me check the other logs.
+
+Play and efi-x86_64-uboot-iso are also lab timeouts. Checking the remaining two:
+
+All five failures look infrastructure-related. Let me verify the branch changes couldn't plausibly affect any of these boards:
+
+## Report: all five failures are lab/infrastructure issues — no code changes made
+
+**No commit on the branch is responsible.** The series changes only Phytec-specific files (board/phytec/, include/env/phytec/, doc/board/phytec/, k3-am625-phycore-som-binman.dtsi). None of the five failing boards (edison = x86, play = BeaglePlay, efi-x86_64 = QEMU, felwinter-cb = Chromebook brya, colibrimx8 = iMX8X) build or use any of that code.
+
+Per-job diagnosis:
+
+| Job | Root cause |
+|---|---|
+| **edison** | Labgrid place-acquisition conflict: 'place edison is not acquired by your user, acquired by labgrid' — the runner could not take the board; pytest died in configure before running anything |
+| **play** | Board-side storage failure: SD card returned 'Error reading cluster' / '** No partition table - mmc 1 **' repeatedly, then a lab timeout executing 'help'. The console log also shows the board running an old U-Boot 2021.01 build from Jan 2023, so the new image never even booted — flash/media problem in the lab |
+| **efi-x86_64-uboot-iso** | 'Lab timeout' during 'Writing U-Boot using method qemu-efi-iso'; 712 deselected, nothing ran |
+| **felwinter-cb** | RFC2217 serial connection died ('connection failed (reader thread died)') while waiting for the U-Boot prompt after em100 flashing — lab serial infrastructure |
+| **colibrimx8** | test_dm_compat flake: the "bad drivers" it found were `` `-- ``, `|` and `|--` — tree-drawing characters, meaning some 'dm tree' console lines were wrapped/misaligned when captured over serial. Console corruption, not a driver issue; 41 other tests passed |
+
+**Actions taken:** none to the code. Local branch `cherry-6edb2e1ce24-fix1` has been created, identical to `cherry-6edb2e1ce24` (HEAD 381d2738a3d). Recommendation: retry the failed jobs; if edison keeps failing, the labgrid place needs releasing (`labgrid-client -p edison allow ellesmere/gitlab-runner`), and the play SD card looks like it may need reimaging or replacement.
+
+---
+
