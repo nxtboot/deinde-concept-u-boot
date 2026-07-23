@@ -88394,3 +88394,46 @@ The branch is left clean at commit 7 (`a755ca55faf`), working tree clean, ready 
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-9c04852e596
+
+Commits:
+- 9c04852e596 timer: sp804: Fix dev_read_addr error check
+- 6c164d51d69 configs: am62x: Add splashscreen config fragment
+- e853b26d0cd configs: am62x: Add splashscreen prune config fragment
+- 83f3e2c30b2 configs: am62x_evm_a53_ethboot_defconfig: Disable splashscreen
+- abd948e5421 configs: am62x_evm_a53_defconfig: Enable A53 splashscreen at u-boot SPL
+- 4674475760d Merge patch series "Enable splashscreen functionality on AM62X"
+
+### Conversation log
+Now amend with a fix-up note as instructed:
+
+Delta is close (one extra blank line before the include). Build test:
+
+The merge is trying to re-apply mainline-side differences our branch intentionally lacks. Resolve by keeping our version — the merge commit becomes empty, which is expected:
+
+All 6 commits are cherry-picked onto `cherry-9c04852e596` (based on ci/master) and the branch is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with buildman after each cherry-pick and in the final verification (no warnings or errors).
+
+**Commits (oldest first):**
+| Original | New | Notes |
+|---|---|---|
+| 9c04852e596 timer: sp804: Fix dev_read_addr error check | 5de9c534bf8 | clean, delta matches |
+| 6c164d51d69 configs: am62x: Add splashscreen config fragment | 832101a1b03 | clean, delta matches |
+| e853b26d0cd configs: am62x: Add splashscreen prune config fragment | 39446a150cd | clean, delta matches |
+| 83f3e2c30b2 configs: am62x_evm_a53_ethboot_defconfig: Disable splashscreen | b41cef1fa24 | clean, delta matches |
+| abd948e5421 configs: am62x_evm_a53_defconfig: Enable A53 splashscreen at u-boot SPL | 020690bbf7f | conflict, resolved (see below) |
+| 4674475760d Merge patch series "Enable splashscreen functionality on AM62X" | 40cd49b6990 | empty merge commit, preserved with --allow-empty |
+
+**Fix-ups made:**
+- **020690bbf7f**: The defconfig on ci/master differs from upstream context (it has CONFIG_SYS_BOOTM_LEN/CONFIG_ZSTD but lacks the k3_efi_capsule and am62x_a53_usbdfu includes). Resolved by applying the two intended changes — SPL_SIZE_LIMIT bumped 0x40000 → 0x80000 and the splashscreen include appended — while keeping the branch's existing content. A note was added to the commit message. Delta: 3 insertions/1 deletion vs original's 2/1 (one extra blank line before the include) — not concerning.
+- **40cd49b6990**: The merge commit conflicted by trying to re-introduce mainline-only defconfig content; resolved by keeping the branch's version, resulting in an empty commit (expected, kept for history). The stray "# Conflicts:" section was removed from the message and a resolution note added.
+
+**Concerning deltas:** none.
+
+---
+
