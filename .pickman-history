@@ -88267,3 +88267,70 @@ Done. Here's the summary:
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-c39e0e257c9
+
+Commits:
+- c39e0e257c9 boot: cedit: Check ofnode_read_prop return value
+- 6da8ecc5189 video: bridge: anx6345: Staticize and constify driver ops
+- af65e247e77 video: bridge: ps862x: Staticize and constify driver ops
+- 772ef8b0890 video: bridge: ptn3460: Staticize and constify driver ops
+- 3ddd78074e8 video: console: normal: Staticize and constify driver ops
+- c6266daa1e2 video: console: rotate: Staticize and constify driver ops
+- 8f7717c7566 video: console: truetype: Staticize and constify driver ops
+- b2f7404fd8a video: dw_mipi_dsi: Staticize and constify driver ops
+- 7e7b3106a50 video: imx: ldb: Staticize and constify driver ops
+- dd2f4d967f1 video: stm32: Staticize and constify driver ops
+- 16185d7ff31 video: tda19988: Staticize and constify driver ops
+- 674afbcf6e9 video: tegra: Staticize and constify driver ops
+- 3c32572a27d common: splash_source: fix cryptic error messages
+- 6033096d3c1 video: Correct dependencies of LOGICORE_DP_TX
+- ff3bece92fc video: Correct dependencies for VIDEO_LCD_RAYDIUM_RM68200
+- df08b27590d video: Correct dependencies for VIDEO_TIDSS
+- 1c8b592611f video: simplefb: Map framebuffer region on probe on ARM64
+- 258310ab39a video: simplefb: Parse memory region from memory-region property
+- 2be4b2269ee video: Kconfig: fix indentation of help text
+- 5f5b8ae2938 video: kconfig: replace tristate with bool for LCD panel drivers
+- 5cf4b142848 video console: add 6x8 console font from linux
+- 0a46055d96a Merge patch series "video: bridge: anx6345: Staticize and constify driver ops"
+
+### Conversation log
+The message got duplicated — let me fix it properly with the fix-up note.
+
+Delta matches (2 insertions in boot/cedit.c). Now the build test:
+
+Build passes. Continuing with the next commits — the 11 "Staticize and constify" ones:
+
+`console_ops` is only used within console_normal.c, so staticizing is safe. Resolve keeping the local wrapper function:
+
+Same pattern — `console_truetype_ops` is only referenced in this file. Resolving:
+
+The resolution results in no changes (as expected — the merge is preserved as an empty commit):
+
+All 22 commits applied. Final verification:
+
+All 22 commits cherry-picked successfully onto `cherry-c39e0e257c9` (based on ci/master), and the final sandbox build passes.
+
+## Final status
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and at the end (no warnings or errors).
+
+**Commits**: 22/22 applied, in order, all with `(cherry picked from ...)` lines. The merge commit was preserved as an empty commit with its original message.
+
+**Fix-ups made** (3 conflicts, all resolved and noted in the amended commit messages):
+
+1. **boot: cedit: Check ofnode_read_prop return value** — the local branch renames textline fields (`max_chars` → `tin.line_chars`, `buf` → `tin.buf`). Applied the NULL check using the local field names.
+
+2. **video: console: normal: Staticize and constify driver ops** — the local branch has an extra `console_putc_xy()` wrapper next to the ops struct. Kept the wrapper and made the struct `static const`. Verified `console_ops` is not referenced outside the file, so staticizing is safe.
+
+3. **video: console: truetype: Staticize and constify driver ops** — the local branch has an extra `console_truetype_remove()` function next to the ops struct. Same resolution; `console_truetype_ops` is also file-local only.
+
+The final merge commit (0a46055d96a) conflicted in the same two console files (its diff re-applies the series against the local wrappers); resolved by keeping HEAD since all changes were already applied, resulting in the expected empty commit.
+
+**Deltas**: All cherry-picked commits match their originals exactly in files and line counts (the two console conflicts still ended up as identical 1-insertion/1-deletion diffs). No concerning deltas.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+

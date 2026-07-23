@@ -139,7 +139,7 @@ static int console_putc_xy(struct udevice *dev, void *vctx, uint x_frac,
 	return console_normal_putc_xy(dev, vctx, x_frac, y, cp);
 }
 
-struct vidconsole_ops console_ops = {
+static const struct vidconsole_ops console_ops = {
 	.putc_xy	= console_putc_xy,
 	.move_rows	= console_move_rows,
 	.set_row	= console_set_row,

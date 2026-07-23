@@ -287,7 +287,7 @@ static int console_putc_xy_3(struct udevice *dev, void *vctx, uint x_frac,
 	return VID_TO_POS(fontdata->width);
 }
 
-struct vidconsole_ops console_ops_1 = {
+static const struct vidconsole_ops console_ops_1 = {
 	.putc_xy	= console_putc_xy_1,
 	.move_rows	= console_move_rows_1,
 	.set_row	= console_set_row_1,
@@ -297,7 +297,7 @@ struct vidconsole_ops console_ops_1 = {
 	.ctx_new	= console_simple_ctx_new,
 };
 
-struct vidconsole_ops console_ops_2 = {
+static const struct vidconsole_ops console_ops_2 = {
 	.putc_xy	= console_putc_xy_2,
 	.move_rows	= console_move_rows_2,
 	.set_row	= console_set_row_2,
@@ -307,7 +307,7 @@ struct vidconsole_ops console_ops_2 = {
 	.ctx_new	= console_simple_ctx_new,
 };
 
-struct vidconsole_ops console_ops_3 = {
+static const struct vidconsole_ops console_ops_3 = {
 	.putc_xy	= console_putc_xy_3,
 	.move_rows	= console_move_rows_3,
 	.set_row	= console_set_row_3,
