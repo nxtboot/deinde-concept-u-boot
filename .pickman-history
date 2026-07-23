@@ -88470,3 +88470,44 @@ If you'd like, I can still force-push to re-trigger the pipeline (which would re
 
 ---
 
+### Review: 2026-07-23
+
+Branch: cherry-9c04852e596
+
+Comments addressed:
+
+
+### Conversation log
+The merge-base is already the tip of ci/master — the local branch appears up to date. Let me check whether the remote MR branch differs:
+
+The remote branch shows unexpected content (commits for a different cherry branch). Let me fetch and re-check:
+
+The remote MR branch has been clobbered with content from a different MR (cherry-d3eee4d3b12) and no longer contains our commits. Let me verify the local branch structure and dates:
+
+Build passes. Now create the `-v2` local branch and force-push to restore the correct content on the remote MR branch:
+
+## Report
+
+**Key finding:** No actual rebase was needed — the situation was different from what the task assumed.
+
+### What happened
+
+- The **local branch** `cherry-9c04852e596` was already based on the current `ci/master` tip (a546a9cb1b5) — the cherry-picks from earlier today were made directly on top of it. `git rebase --keep-empty ci/master` reported "Current branch is up to date".
+- The **remote MR branch**, however, had been **clobbered by a mistaken push from a different MR**: it pointed to 16f1c1f7e42, a "pickman: Record review handling for cherry-**d3eee4d3b12**" commit from 2026-07-22, and contained **none** of this MR's commits (no sp804 fix, no AM62x splashscreen changes). This is why the MR appeared behind/stale.
+
+### Actions taken
+
+1. Checked out `cherry-9c04852e596`; confirmed working tree clean and history intact (6 cherry-picked commits including the preserved empty merge commit 40cd49b6990, plus 2 pickman record commits)
+2. Ran `git rebase --keep-empty ci/master` — no-op, branch already up to date, so **no deltas changed** (per-commit delta comparison not applicable)
+3. Built with `buildman -L --board sandbox -w -o /tmp/pickman` — **OK, no warnings or errors**
+4. Created local backup branch `cherry-9c04852e596-v2`
+5. Force-pushed via `./tools/pickman/pickman push-branch cherry-9c04852e596 -r ci -f` — remote updated `16f1c1f7e42 → e0f0de0f74d`, verified remote now matches local HEAD
+
+### Suggested reply to post on the MR
+
+> The MR branch appeared out of date because the remote ref had been overwritten by a mistaken force-push containing content from a different MR (cherry-d3eee4d3b12) — it no longer held this series at all. The correct local branch was already based on the current ci/master tip, so no rebase was required and no commit deltas changed. The branch has been force-pushed back, restoring the series: the sp804 dev_read_addr fix, the four AM62x splashscreen defconfig commits, and the preserved empty merge commit. Sandbox builds cleanly with buildman (no warnings or errors). The push has re-triggered the MR pipeline.
+
+**Note for the maintainer:** it may be worth checking how the cherry-d3eee4d3b12 content ended up on this MR's remote branch (likely a wrong-branch `pickman push-branch` yesterday at 08:59), in case the same mix-up affected other MR branches.
+
+---
+
