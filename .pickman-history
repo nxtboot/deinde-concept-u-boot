@@ -87921,3 +87921,166 @@ replayed successfully.
 cherry-d3eee4d3b12 to ci to update the MR.
 
 ---
+
+## 2026-07-20: us/master
+
+Branch: cherry-7af4196d9e9
+
+Commits:
+- 7af4196d9e9 fs: fat: fix seconds in timestamp
+- 8429766a7f0 common/command.c: Avoid NULL pointer use in cmd_auto_complete
+- 5151c208b56 am33xx: don't assume we have a UCLASS_MISC device present
+- 2b6d243be22 env: ti: k3_dfu: load only the next stage binary
+- 1ea8b3e8e2d env: ti: k3_dfu: use Kconfig options for addresses
+- ddd1f2192de Merge patch series "Update envs to use Kconfig values"
+
+### Conversation log
+Delta matches. Building:
+
+All 6 commits present. Final build:
+
+All done. Final status:
+
+**Branch**: `cherry-7af4196d9e9` (based on ci/master), ready for pushing
+
+**Commits cherry-picked** (all 6 present):
+| New hash | Original | Subject |
+|---|---|---|
+| e672b3fcaf2 | 7af4196d9e9 | fs: fat: fix seconds in timestamp |
+| 05bd84e7f16 | 8429766a7f0 | common/command.c: Avoid NULL pointer use in cmd_auto_complete |
+| 7d6b1e77fba | 5151c208b56 | am33xx: don't assume we have a UCLASS_MISC device present |
+| e2aa4deb00c | 2b6d243be22 | env: ti: k3_dfu: load only the next stage binary |
+| 34c818769d2 | 1ea8b3e8e2d | env: ti: k3_dfu: use Kconfig options for addresses |
+| 8f79511e2d9 | ddd1f2192de | Merge patch series "Update envs to use Kconfig values" (empty, preserved with --allow-empty) |
+
+**Build result**: OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors)
+
+**Deltas**: All commits matched their originals exactly (same files, same insertion/deletion counts)
+
+**Fix-ups**: None needed — every pick applied cleanly (one auto-merge in fs/fat/fat_write.c, no conflicts). The merge commit came through empty as expected and was committed with its original message intact.
+
+---
+
+### Pipeline fix: 2026-07-20 (attempt 1)
+
+Branch: cherry-7af4196d9e9
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+This confirms the picture. The `cmd_auto_complete()` change only runs on tab completion at an existing prompt — it cannot prevent a board from booting. Let me do a quick sanity build and create the requested branch.
+
+## Report: All three failures are lab/infrastructure issues — no code changes made
+
+I checked out `cherry-7af4196d9e9`, examined all six commits and the three job logs. None of the failures is caused by the branch:
+
+### Job analysis
+
+**edison (561982)** — pytest aborts during configure, before any test runs:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+```
+This is a labgrid place-reservation conflict (the place is held by `kea/labgrid`). U-Boot was never built or booted — pure lab infrastructure issue.
+
+**felwinter-cb (561973)** — coreboot bootblock/romstage run normally, cse_lite issues its RO→RW Global Reset, then the board never reaches the U-Boot prompt and the rfc2217 serial connection dies (`connection failed (reader thread died)`). This is an x86 Chromebook; no commit on the branch touches x86, coreboot support, or the generic boot path.
+
+**rpi3 (561943)** — 20-second timeout waiting for the U-Boot prompt with no console output at all after flashing. No commit on the branch touches rpi or bcm283x code.
+
+### Why the branch cannot be responsible
+
+The branch contains only:
+- `fs/fat/fat_write.c` timestamp fix — only affects FAT *write* timestamps, not the boot path
+- `common/command.c` NULL-pointer fix in `cmd_auto_complete()` — only executes on tab completion once a prompt already exists, so it cannot block reaching the prompt (I reviewed the diff; the logic is a straightforward NULL fallback to `CONFIG_SYS_PROMPT`)
+- am33xx `arch_misc_init()` change — TI am33xx only
+- two TI K3 DFU environment changes — K3 only
+- an empty preserved merge commit
+
+None of these can affect edison (never ran), felwinter-cb (x86), or rpi3 (bcm283x). The MR description also confirms sandbox built cleanly after every pick, and I re-verified: `um build sandbox` passes with no warnings or errors.
+
+### Result
+
+- **Responsible commit**: none — these are transient lab failures (labgrid reservation conflict on edison; boards failing to come up / serial dying on felwinter-cb and rpi3)
+- **Change made**: none; the code is untouched
+- **Branch**: `cherry-7af4196d9e9-fix1` created locally, pointing at the unchanged branch head (8851262608f)
+
+Recommendation: retry the three sjg-lab jobs once the edison place is free and the felwinter-cb/rpi3 boards are healthy.
+
+---
+
+### Review: 2026-07-20
+
+Branch: cherry-7af4196d9e9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, felwinter-cb, rpi3.
+
+This confirms the picture...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push:
+
+All done. Summary:
+
+## Report
+
+**Comment analysis**: The single review comment (`project_1_bot_...`) is not an actionable code-review comment — it is the bot's own report from pipeline-fix attempt 1, which concluded that all three failed jobs (edison, felwinter-cb, rpi3) were lab/infrastructure failures:
+- edison: labgrid place held by another user — U-Boot never ran
+- felwinter-cb: board died during coreboot's cse_lite RO→RW reset, serial connection lost — x86, untouched by this branch
+- rpi3: no console output after flashing — bcm283x, untouched by this branch
+
+**Code changes made**: None — none were requested or warranted. The six cherry-picked commits are unchanged.
+
+**Actions taken**:
+- Checked out `cherry-7af4196d9e9` (head 6b9ea8cae37, which is the remote head plus the `.pickman-history` record commit from attempt 1)
+- Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly, no warnings
+- Created local branch `cherry-7af4196d9e9-v2` at the same head
+- Force-pushed to `ci/cherry-7af4196d9e9` (8851262608f → 6b9ea8cae37), which updates MR !1169 and triggers a fresh pipeline — this serves as the recommended retry of the three lab jobs
+
+**Suggested reply to post on the MR**:
+
+> The review comment is the pipeline-fix report itself and requires no code change: all three failures (edison, felwinter-cb, rpi3) were lab/infrastructure issues unrelated to the cherry-picked commits. The branch has been re-pushed unchanged (code-wise) to trigger a fresh pipeline, which retries the affected sjg-lab jobs. Sandbox builds cleanly with no warnings. If the lab boards are healthy, the jobs should now pass.
+
+---
+
+### Review: 2026-07-22
+
+Branch: cherry-7af4196d9e9
+
+Comments addressed:
+
+
+### Conversation log
+All deltas match perfectly. Now build sandbox:
+
+## Report
+
+**Rebase completed successfully:**
+- Checked out `cherry-7af4196d9e9`, fetched latest `ci/master`
+- Ran `git rebase --keep-empty ci/master` — clean rebase, no conflicts across all 9 commits (6 cherry-picks + empty merge preserved + 3 pickman-history commits)
+- ci/master was 2 commits ahead (`c0a654b9736` XU3 lab job + `0a07421373c` merge), unrelated to any file touched by this branch
+
+**Delta verification (before → after rebase):** All 6 real commits match exactly.
+| Commit | Delta |
+|---|---|
+| fs: fat: fix seconds in timestamp | 1 file, +2/-2 ✓ |
+| common/command.c: NULL fix | 1 file, +9/-5 ✓ |
+| am33xx: UCLASS_MISC | 1 file, +9/-3 ✓ |
+| k3_dfu: load next stage | 2 files, +8/-2 ✓ |
+| k3_dfu: use Kconfig | 2 files, +2/-9 ✓ |
+| Merge patch series (empty) | preserved ✓ |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly, no warnings.
+
+**Push:** Force-pushed to `ci/cherry-7af4196d9e9` (`6b9ea8cae37` → `c1829f4cdf4`), which updates MR !1169 and triggers a fresh pipeline.
+
+**Local branches:** `cherry-7af4196d9e9-v3` created at the new head (v2 was already used previously).
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master` (which had only picked up the ODROID-XU3 lab-job addition — no conflicts, no files in common). All six cherry-picked commits kept identical deltas to their originals, the empty merge commit was preserved, and sandbox builds cleanly with no warnings. Force-pushed to trigger a fresh pipeline.
+
+---
+
