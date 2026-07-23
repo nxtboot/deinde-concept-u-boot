@@ -88162,3 +88162,46 @@ The "comment" is once again the previous fix attempt's own report, which correct
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-6edb2e1ce24
+
+Commits:
+- 6edb2e1ce24 board: phytec: phycore_am62x: Add tifs-rm-cfg
+- c2edb9cb2bb arm: dts: k3-am625-phycore-som-binman: Enable tifs-rm-cfg
+- 68532aab6d3 board: phytec: phycore_am68x: Update rm-cfg
+- ef5b4a7eae2 include: env: phytec: Drop legacy RAUC boot logic
+- 86f4f05ad87 doc: board: phytec: Fix typos and copy-paste errors in K3 docs
+- 14ba26ebdda doc: board: phytec: k3: Document boot flow and watchdog
+- 6e8d82b9e9b doc: board: phytec: Document DDR size override Kconfigs
+- 9f00cec3d83 Merge patch series "board: phytec: Update rm-cfgs, env and docs"
+
+### Conversation log
+Commit 1 matches and builds. Continuing:
+
+All done. Final status:
+
+## Cherry-pick complete on branch `cherry-6edb2e1ce24`
+
+**All 8 commits applied** on top of ci/master:
+
+| New hash | Commit | Notes |
+|---|---|---|
+| 428ac2e4ba5 | board: phytec: phycore_am62x: Add tifs-rm-cfg | clean |
+| 05758b5effa | arm: dts: k3-am625-phycore-som-binman: Enable tifs-rm-cfg | auto-merged, clean |
+| 0b64d7eb15c | board: phytec: phycore_am68x: Update rm-cfg | clean |
+| 00c0a3bbb21 | include: env: phytec: Drop legacy RAUC boot logic | clean |
+| 762ab52f558 | doc: board: phytec: Fix typos and copy-paste errors in K3 docs | clean |
+| 0476ab69533 | doc: board: phytec: k3: Document boot flow and watchdog | clean |
+| 51b48dc23f7 | doc: board: phytec: Document DDR size override Kconfigs | clean |
+| 36d053c6a9e | Merge patch series "board: phytec: Update rm-cfgs, env and docs" | empty commit, message preserved with cherry-pick reference |
+
+- **Build result**: sandbox built cleanly with buildman after every commit and at the end — no warnings or errors
+- **Fix-ups**: none needed; no conflicts
+- **Deltas**: every cherry-pick matched the original exactly (same files, same line counts)
+- The merge commit came out empty (as expected since all children were already picked) and was committed with `--allow-empty`, preserving the series description and Link tag
+
+The branch is ready for pushing.
+
+---
+
