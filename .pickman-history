@@ -88586,3 +88586,34 @@ The branch was left checked out and has not been merged anywhere.
 
 ---
 
+### Review: 2026-07-23
+
+Branch: cherry-081ffe9b3fc
+
+Comments addressed:
+
+
+### Conversation log
+This is a trivial conflict in the pickman history file — both branches appended an entry under the same date heading. I'll resolve it by keeping both entries, each with its own heading and separator. Let me check the file format around the conflict:
+
+All done. Here's the report:
+
+## Report for MR !1178 (cherry-081ffe9b3fc)
+
+**Result: success** — rebased onto latest ci/master and force-pushed; remote verified at `95f5d29a70b`.
+
+### What was done
+1. Checked out `cherry-081ffe9b3fc` (17 commits: 16 cherry-picks including the empty net-next merge, plus 1 pickman record commit); branch was 6 commits behind ci/master (the cherry-d86b3a753fe USB dwc3 MR had landed)
+2. Ran `git rebase --keep-empty ci/master`
+3. **One conflict**, in `.pickman-history` only — both this branch and the newly-merged MR appended a log entry under the same date heading. Resolved by keeping both entries with a `---` separator. No code files conflicted
+4. **Delta check**: compared `git show --stat` for all 17 commits before and after the rebase — identical (same files, same line counts). The empty merge commit `1c9fefd73f7` (net-next-20260603) is preserved
+5. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — passes, no warnings or errors
+6. Created local backup branch `cherry-081ffe9b3fc-v2`
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-081ffe9b3fc -r ci -f`: remote updated `8c9d12ddb1d → 95f5d29a70b`, confirmed matching local HEAD; the MR pipeline will re-trigger automatically
+
+### Suggested reply to post on the MR
+
+> Rebased onto the current ci/master tip (which now includes the cherry-d86b3a753fe USB dwc3 series). The only conflict was in the .pickman-history log file, where both branches had appended an entry — resolved by keeping both. All 16 cherry-picked commits apply with deltas identical to before the rebase, and the empty net-next-20260603 merge commit is preserved with --keep-empty. Sandbox builds cleanly with buildman (no warnings or errors). The branch has been force-pushed, re-triggering the MR pipeline.
+
+---
+
