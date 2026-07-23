@@ -88511,3 +88511,40 @@ Build passes. Now create the `-v2` local branch and force-push to restore the co
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-d86b3a753fe
+
+Commits:
+- d86b3a753fe usb: dwc3: am62: Staticize and constify driver ops
+- f0dccb21eb6 usb: dwc3: sti: Staticize and constify driver ops
+- 2e9e8915616 usb: dwc3: generic: Staticize and constify driver ops
+- e255cf65a95 Merge branch 'next' of git://source.denx.de/u-boot-usb into next
+
+### Conversation log
+Delta matches. Running the build test:
+
+Now for the merge commit, first verifying whether it's already applied as 572a43a2522:
+
+All 4 commits cherry-picked successfully onto branch `cherry-d86b3a753fe` (based on ci/master).
+
+## Final status
+
+**Commits on the branch:**
+| New hash | Original | Subject |
+|---|---|---|
+| 20eb836e51b | d86b3a753fe | usb: dwc3: am62: Staticize and constify driver ops |
+| 464bb08aab9 | f0dccb21eb6 | usb: dwc3: sti: Staticize and constify driver ops |
+| 8c921ab7003 | 2e9e8915616 | usb: dwc3: generic: Staticize and constify driver ops |
+| 654c3e11def | e255cf65a95 | Merge branch 'next' of git://source.denx.de/u-boot-usb into next (empty) |
+
+**Build result:** ok — sandbox built cleanly with buildman after each pick and at the end, no warnings or errors.
+
+**Already-applied check:** The suggested match 572a43a2522 is a *different* commit — it is a March 2026 pickman merge touching `common/usb_onboard_hub.c`, whereas e255cf65a95 is the June u-boot-usb merge bringing in the three dwc3 commits. So the merge was cherry-picked rather than skipped. It naturally resolved to empty (its content is exactly the three dwc3 commits already picked) and was committed with `--allow-empty` to preserve the merge message.
+
+**Fix-ups:** none needed — all three code commits applied cleanly with deltas exactly matching the originals (1/1/10 lines changed respectively).
+
+The branch is left checked out and ready for pushing; it was not merged anywhere.
+
+---
+
