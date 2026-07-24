@@ -89395,3 +89395,36 @@ The branch is left checked out and ready for pushing; it has not been merged any
 
 ---
 
+### Review: 2026-07-24
+
+Branch: cherry-e81bb069a41
+
+Comments addressed:
+
+
+### Conversation log
+All 17 code commits applied cleanly; only the `.pickman-history` record file conflicted. Let me resolve it.
+
+Both sides append a record under the same `## 2026-07-24: us/master` heading — HEAD (ci/master) has a record for another branch, ours has this branch's record. I'll keep both, with a separator between them.
+
+Rebase complete. Now comparing per-commit deltas before/after:
+
+All done. Summary:
+
+## Rebase complete: `cherry-e81bb069a41` → ci/master
+
+**Actions taken:**
+1. `git rebase --keep-empty ci/master` — rebased all 18 commits (17 cherry-picks + 1 pickman record) over the 36 new commits on ci/master.
+2. **One conflict**, in `.pickman-history` only (the pickman record commit): ci/master had gained a record for another branch (`cherry-0ba428236ea`) under the same date heading. Resolved by keeping both records with a `---` separator. No code files conflicted.
+3. **Delta check:** per-commit `git show --stat` diffstats before and after the rebase are byte-identical for all 18 commits — no drift.
+4. **Empty merge record preserved:** `fb881f7481f` (Merge tag 'xilinx-for-v2026.10-rc1-v2', cherry-picked from `5d4d6e331d3`) survived via `--keep-empty`.
+5. `buildman -L --board sandbox -w -o /tmp/pickman` — **build OK**, no warnings or errors.
+6. Created local branch `cherry-e81bb069a41-v2` at `dca3c4dbbe1`.
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-e81bb069a41 -r ci -f` — remote updated `0f2788ecc42` → `dca3c4dbbe1`; GitLab will trigger a new MR pipeline.
+
+### Suggested reply to post on the MR
+
+> The branch has been rebased onto the current ci/master with `git rebase --keep-empty ci/master`. All 17 cherry-picked commits applied cleanly with per-commit diffstats identical to before the rebase, and the empty merge record for 'xilinx-for-v2026.10-rc1-v2' is preserved. The only conflict was in the .pickman-history log file (overlapping records from another branch) and was resolved by keeping both entries. Sandbox builds cleanly with no warnings; the new tip is `dca3c4dbbe1` and a fresh MR pipeline has been triggered.
+
+---
+
