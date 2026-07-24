@@ -89348,3 +89348,50 @@ Build passes cleanly. The comment is terminal — no code changes are possible o
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-e81bb069a41
+
+Commits:
+- e81bb069a41 configs: zynqmp: Enable USB gadget download support
+- 38831cce709 board: zynqmp: Remove hardcoded USB ethernet initialization
+- 62a49635b01 xilinx: mbv: Disable AVAILABLE_HARTS
+- 472ea8b621e xilinx: mbv: Allow compiler to optimize inlining in SPL
+- 7188742e7e9 arm64: xilinx: Add PMC PGGS3 and PGGS4 registers
+- f2390069d45 firmware: zynqmp: Add PMC PGGS register read API
+- 371a6c1744f board: xilinx: Add capsule and FWU support
+- 818c06faa11 board: amd: Add capsule and FWU support
+- edccbc53afb board: xilinx: Add FWU boot index support
+- de6b77c22f5 configs: xilinx: Enable DFU MTD support
+- 4706bd02088 configs: amd: Enable capsule update and DFU support
+- 19f7def2646 reset: Add reset_reset() and reset_reset_bulk() API
+- 724d3cafe3b reset: Add sandbox tests for reset_reset() and reset_reset_bulk()
+- 4e3f64c7cc0 reset: sandbox: Cover reset_reset() fallback with second sandbox provider
+- f59b7a010e2 spi: cadence: Use reset_reset_bulk() for proper reset cycling
+- 8efa173b389 reset: zynqmp: Implement rst_reset using PM_RESET_ACTION_PULSE
+- 5d4d6e331d3 Merge tag 'xilinx-for-v2026.10-rc1-v2' of https://source.denx.de/u-boot/custodians/u-boot-microblaze into next
+
+### Conversation log
+Simple conflict — the original just adds a line, and ci/master has an extra `CONFIG_SPL_MAX_SIZE` line at that spot. I'll keep both.
+
+The merge conflict is just the ci/master-specific `CONFIG_SPL_MAX_SIZE` line again — keep it.
+
+All 17 commits present. Verify the merge commit message and run the final build:
+
+All done. Final status:
+
+## Cherry-pick complete: `cherry-e81bb069a41` (17/17 commits)
+
+**Build result:** OK — sandbox built cleanly after every commit and in the final verification (no warnings or errors).
+
+**Fix-ups made:**
+1. **`xilinx: mbv: Disable AVAILABLE_HARTS`** — context conflict in `configs/xilinx_mbv32_defconfig` with the ci/master-specific `CONFIG_SPL_MAX_SIZE=0x40000` line. Kept both lines; note added to the commit message.
+2. **`xilinx: mbv: Allow compiler to optimize inlining in SPL`** — same context conflict at the same spot. Kept both lines; note added to the commit message.
+3. **Merge commit `5d4d6e331d3`** — conflicted on the same `CONFIG_SPL_MAX_SIZE` line; resolved by keeping the ci/master line. The merge became empty (expected, since all content was already picked) and was committed with `--allow-empty` to preserve the merge message. I also stripped the `# Conflicts:` comment that leaked into the message.
+
+**Deltas:** Every cherry-picked commit matched its original exactly in files and line counts (the two conflicted defconfig commits are still 1 file, 1 insertion, identical to the originals). No concerning deltas.
+
+The branch is left checked out and ready for pushing; it has not been merged anywhere.
+
+---
+
