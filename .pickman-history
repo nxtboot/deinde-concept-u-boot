@@ -89428,3 +89428,36 @@ All done. Summary:
 
 ---
 
+### Review: 2026-07-24
+
+Branch: cherry-e81bb069a41
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly with no conflicts. Now verify the deltas and the empty merge record:
+
+Build passes. Create the versioned local branch and force-push:
+
+All done. Summary:
+
+## Rebase complete: `cherry-e81bb069a41` → ci/master (MR !1183)
+
+**Actions taken:**
+1. Checked out `cherry-e81bb069a41` and fetched `ci` — the branch was 19 commits behind ci/master (base had moved past the merge of `cherry-0ba428236ea` and others).
+2. `git rebase --keep-empty ci/master` — **all 19 commits rebased cleanly with no conflicts** (17 cherry-picks + the empty merge record + 2 pickman record commits).
+3. **Delta check:** per-commit `git show --stat` diffstats captured before and after the rebase are byte-identical for all 19 commits — no drift.
+4. **Empty merge record preserved:** `d934ab4087f` (Merge tag 'xilinx-for-v2026.10-rc1-v2', from `5d4d6e331d3`) survived via `--keep-empty`.
+5. `buildman -L --board sandbox -w -o /tmp/pickman` — **build OK**, no warnings or errors.
+6. Created local branch `cherry-e81bb069a41-v3` at `f96d0dd9566` (`-v2` already existed from the previous rebase).
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-e81bb069a41 -r ci -f` — remote updated `dca3c4dbbe1` → `f96d0dd9566`; GitLab will trigger a fresh MR pipeline.
+
+**No issues encountered** — this was a clean rebase with nothing to resolve.
+
+### Suggested reply to post on the MR
+
+> The branch has been rebased onto the current ci/master with `git rebase --keep-empty ci/master`. All 19 commits applied cleanly with no conflicts, per-commit diffstats are identical to before the rebase, and the empty merge record for 'xilinx-for-v2026.10-rc1-v2' is preserved. Sandbox builds cleanly with no warnings; the new tip is `f96d0dd9566` and a fresh MR pipeline has been triggered.
+
+---
+
