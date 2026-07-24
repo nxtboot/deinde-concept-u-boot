@@ -89018,3 +89018,52 @@ The "behind target branch" status was **not** caused by the local branch being s
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-e91911169bc
+
+Commits:
+- e91911169bc Merge tag 'v2026.07-rc4' into next
+
+### Conversation log
+The first cherry-pick has conflicts. Before deciding, let me check whether this merge is already present in ci/master.
+
+Not already applied — I need to resolve the conflicts. Let me examine each.
+
+The .gitignore conflict is trivial — both sides add the same line. Let me view and fix the current file state.
+
+The fix doesn't apply — resolve by keeping the HEAD side:
+
+HEAD's version is a superset (adds ARCH_ROCKCHIP) — keep HEAD:
+
+All conflicts resolved. Now stage and continue, adding a note about the fix-ups:
+
+The repair hunk legitimately arrives via this merge. I also notice ci/master has an empty "[FAILED]" commit for a follow-up fix that likely depends on this hunk:
+
+Good — the merge includes the already-fixed version (no extra dash), matching my resolution. Continuing the cherry-pick:
+
+Now the build test:
+
+Build passes. Final verification:
+
+All done. Final status:
+
+## Summary
+
+**Branch `cherry-e91911169bc`** is ready, containing the single merge commit `d5954c4a2ea` (cherry-picked from `e91911169bc`, "Merge tag 'v2026.07-rc4' into next").
+
+**Build result:** OK — `buildman -L --board sandbox -w -o /tmp/pickman` completed with no warnings or errors.
+
+**Conflicts resolved (5 files):**
+- `.gitignore` — both sides added `/test/fdt_overlay/test-fdt-overlay-stacked.dtbo.S`; deduplicated
+- `Makefile` (version) — kept ci/master's `EXTRAVERSION =` (empty), matching the precedent from the rc3 merge cherry-pick which keeps ci/master at 2026.04
+- `boot/pxe_utils.c` — the merge's only change (`initrd_filesize[10]` → `[17]`) targets a variable that no longer exists in ci/master's refactored `label_boot()`; kept the ci/master side
+- `doc/develop/release_cycle.rst` — ci/master is already on the later cycle dates; kept HEAD
+- `lib/Kconfig` — kept ci/master's superset `default y if ARCH_BCM283X || ARCH_ROCKCHIP`
+
+**Delta note (expected, not a problem):** the original merge touches ~25 files, but the cherry-pick nets only **+5 lines in the Makefile**. Nearly all rc4 content is already in ci/master via earlier cherry-picks (same as the rc3 merge, which was recorded empty). The one genuine incoming change is the `CONFIG_CC_OPTIMIZE_FOR_DEBUG` KBUILD_CFLAGS `-Og` block — a repair from upstream that ci/master lacks (its follow-up fix `820cbed634d` is an empty `[FAILED]` commit there). The merge brings the block in its already-fixed form (no extra leading dash), which effectively supersedes that failed commit.
+
+**Fix-up note** was added to the commit message describing the resolutions. The branch is left ready for pushing; nothing was merged back.
+
+---
+
