@@ -88926,3 +88926,63 @@ All done. Here is my report:
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-0ba428236ea
+
+Commits:
+- 0ba428236ea imx8mm: icore-mx8mm: Switch to OF_UPSTREAM
+- 05a7b0c2a8c imx8mp: icore-mx8mp-edimm2.2: Switch to OF_UPSTREAM
+- 612d49cc8d8 imx8mm: pgh: Switch to OF_UPSTREAM
+- c8bab9f6ba5 imx8mp: msc-sm2s: Switch to OF_UPSTREAM
+- 19e841acb8d imx7ulp: Switch to OF_UPSTREAM
+- 57da8cf8d55 imx91: Switch to OF_UPSTREAM
+- e2de4c95f24 imx93-frdm: Switch to OF_UPSTREAM
+- 0358c474d97 imx93_var_som: Switch to OF_UPSTREAM
+- ce79378a19b arm: dts: imx: Update watchdog nodes for dynamic base address lookup
+- 5ca1f5b54d0 imx: soc: Get watchdog base addresses from device tree
+- 3cacd1b1809 watchdog: ulp_wdog: Use driver model for reset_cpu()
+- 4f8d6c8f417 imx: Remove hardcoded watchdog base address macros
+- d77199aebb7 ARM: dts: add TQMa6UL[L]x[L] u-boot device tree fragments
+- 771070a46ad ARM: dts: tqma6ul: add boot phase properties
+- 0b9897e7a41 board: tq: add TQMa6UL[L]x[L] SOM and MBa6ULx baseboard
+- 35c47a1eab7 configs: add defconfigs for TQMa6UL[L]x[L] SOM on MBa6ULx baseboard
+- 2d47fbc31d3 arm: gic-v3-its: Fix LPI pending table size calculation
+- 76b12586eb9 board: tqma7: update fastboot env
+- dfd83eab76c arm: imx8mp: Add new variant parts support
+- 4feabb2b8a5 arch: imx9: Fix blk_dwrite/blk_derase error checking
+- 0757f40c89c imx: kontron-sl-mx6ul: Enable I2C support
+- e80108c966f clk: imx: don't build i.MX/RTxxxx code for all users of CCF
+- 79b5f41d571 arm: imx9: Fix broken formatting
+- fa03ee371de sysinfo: uclass: use sysinfo_priv size for per_device_auto
+- 0ef21dd37dc sysinfo: add sysinfo_get_and_detect() helper
+- a30556bc424 sysinfo: tq_eeprom: new driver
+- d57090e980f board: tq: common: add sysinfo setup helper
+- 3880ac196b3 arm: dts: tqma7: add eeprom nvmem-layout
+- 0a3ccbdd25f arm: dts: tqma7: integrate tq,eeprom sysinfo driver
+- 33d46e70790 boards: tqma7: call tq-sysinfo setup
+- d0a62df7533 cpu: imx8_cpu: Add iMX8MP UltraLite Part cpu type
+- 3782bf8a0ad cpu: imx8_cpu: fix the mpidr check
+- 9e87893c24d Merge tag 'u-boot-imx-next-20260605' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+The merge commit is empty (expected, since all its changes were picked individually). Committing it to preserve the message:
+
+All 33 cherry-picks completed successfully on branch `cherry-0ba428236ea`.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every commit and in the final verification (no warnings or errors).
+
+**Cherry-picks:** 32 regular commits applied cleanly with `git cherry-pick -x`. Several needed auto-merging (arch/arm/dts/Makefile, defconfigs, soc.c files, MAINTAINERS, drivers/cpu/imx8_cpu.c, drivers/clk/Makefile), but all resolved automatically with no conflicts.
+
+**Merge commit:** `9e87893c24d` (Merge tag 'u-boot-imx-next-20260605') resulted in an empty commit since all its content was already picked individually. It was committed with `--allow-empty` as instructed, preserving the full merge message and the `(cherry picked from commit 9e87893c24d...)` reference — now `1ea3fff5b9e`.
+
+**Fix-ups made:** None — no manual conflict resolution or amendments were needed.
+
+**Delta checks:** Every cherry-picked commit's stat (files and line counts) matched the original exactly. No concerning deltas.
+
+The branch `cherry-0ba428236ea` is ready for pushing (33 commits ahead of ci/master).
+
+---
+
