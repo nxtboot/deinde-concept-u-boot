@@ -88815,3 +88815,49 @@ The branch is ready for pushing; it was not merged anywhere.
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-58545b01062
+
+Commits:
+- 58545b01062 cmd_date: make mk_date() static
+- 3bf0e5d90c0 cmd: date: validate date using rtc_month_days()
+- 8763c0169d8 rtc: pcf85063: adjust date format to adhere to the rtc_time spec
+- 1f042466410 rtc: pcf85063: add support for NXP PCF85063 family
+- 49754d293ea rtc: pcf85063: add missing register definitions
+- 2b6de25797b rtc: pcf85063: keep the divider chain in reset during set_time
+- d8f535cd8f7 rtc: pcf85063: support loading quartz-load capacitance from device tree
+- 059174b9554 rtc: pcf85063: add power loss detection during probe
+- 8294d86b1d9 drivers: Kconfig: rtc_pcf85063: note unsupported chip features
+- b8b7761e898 Merge patch series "rtc: pcf85036: improve spec coherence and extend features"
+
+### Conversation log
+All 10 commits cherry-picked successfully onto `cherry-58545b01062` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors, both after each individual cherry-pick and in the final combined build.
+
+**Commits applied (oldest first):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| 1cf135b8fd6 | 58545b01062 | cmd_date: make mk_date() static |
+| e9e18432718 | 3bf0e5d90c0 | cmd: date: validate date using rtc_month_days() |
+| f580bc31350 | 8763c0169d8 | rtc: pcf85063: adjust date format to adhere to the rtc_time spec |
+| 3124a5c3141 | 1f042466410 | rtc: pcf85063: add support for NXP PCF85063 family |
+| 598985aa485 | 49754d293ea | rtc: pcf85063: add missing register definitions |
+| a746cfa9e5f | 2b6de25797b | rtc: pcf85063: keep the divider chain in reset during set_time |
+| bc6b59deae7 | d8f535cd8f7 | rtc: pcf85063: support loading quartz-load capacitance from device tree |
+| 44c2b66d583 | 059174b9554 | rtc: pcf85063: add power loss detection during probe |
+| 6908ed71384 | 8294d86b1d9 | drivers: Kconfig: rtc_pcf85063: note unsupported chip features |
+| 0e49605d968 | b8b7761e898 | Merge patch series "rtc: pcf85036: improve spec coherence and extend features" (empty, message preserved) |
+
+**Fix-ups:** None needed — every regular commit applied cleanly with an exact stat match to the original (identical files and line counts). The merge commit resulted in an empty commit as expected and was committed with `--allow-empty --no-edit`, preserving the full merge message and the `(cherry picked from ...)` trailer.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
