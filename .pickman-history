@@ -88548,3 +88548,72 @@ The branch is left checked out and ready for pushing; it was not merged anywhere
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-081ffe9b3fc
+
+Commits:
+- 081ffe9b3fc ls1028a: only include drivers/net/fsl_enetc.h when driver is compiled
+- 4cbd0faab82 arm: ls102xa: use platform data to check Ethernet interface is not SGMII
+- 987b5eabc35 net: tsec: make tsec_private a private structure
+- 77cc22b8095 net: guard SYS_RX_ETH_BUFFER with NET
+- d1725126909 net: SYS_RX_ETH_BUFFER defaults to 8 when CONFIG_FSL_ENETC=y
+- 3518bf17ba4 phy: Kconfig: use bool instead of tristate
+- 6184a9b1067 phy: ti-pipe3: Use device API for DT parsing
+- dde8b3b7e10 phy: marvell: comphy: Use dev_read_addr_index_ptr()
+- b9469df60e1 phy: cadence: Use device API
+- 45e5625d71e net: ethoc: Use dev_read_addr_index()
+- c174c1f7f12 net: qe: dm_qe_uec: Use dev_read_addr()
+- 0e2ba59bc5a net: calxedaxgmac: Use dev_read_addr()
+- 23532fcb7d0 net: dc2114x: Use dev_remap_addr()
+- f603d10d72b net: mvpp2: Use dev_read_addr_index_ptr()
+- dafa6a36037 net: mvpp2: convert FDT access to ofnode API
+- 31af00bdc6a Merge tag 'net-next-20260603' of https://source.denx.de/u-boot/custodians/u-boot-net into next
+
+### Conversation log
+All 16 commits are present. Running the final build:
+
+All done. Final status:
+
+**Result: success** — branch `cherry-081ffe9b3fc` created from `ci/master` with all 16 commits, ready for pushing.
+
+- **Build**: sandbox builds cleanly with buildman after every commit and after the full series — no warnings or errors
+- **Fix-ups**: none needed; all 15 regular commits applied cleanly (two had trivial auto-merges in `include/net-common.h` with no manual intervention)
+- **Deltas**: every cherry-picked commit matches its original exactly (same files, same line counts)
+- **Merge commit**: `31af00bdc6a` (net-next-20260603 merge) resulted in an empty commit as expected, committed with `--allow-empty` to preserve the merge message in history
+
+The branch was left checked out and has not been merged anywhere.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-081ffe9b3fc
+
+Comments addressed:
+
+
+### Conversation log
+This is a trivial conflict in the pickman history file — both branches appended an entry under the same date heading. I'll resolve it by keeping both entries, each with its own heading and separator. Let me check the file format around the conflict:
+
+All done. Here's the report:
+
+## Report for MR !1178 (cherry-081ffe9b3fc)
+
+**Result: success** — rebased onto latest ci/master and force-pushed; remote verified at `95f5d29a70b`.
+
+### What was done
+1. Checked out `cherry-081ffe9b3fc` (17 commits: 16 cherry-picks including the empty net-next merge, plus 1 pickman record commit); branch was 6 commits behind ci/master (the cherry-d86b3a753fe USB dwc3 MR had landed)
+2. Ran `git rebase --keep-empty ci/master`
+3. **One conflict**, in `.pickman-history` only — both this branch and the newly-merged MR appended a log entry under the same date heading. Resolved by keeping both entries with a `---` separator. No code files conflicted
+4. **Delta check**: compared `git show --stat` for all 17 commits before and after the rebase — identical (same files, same line counts). The empty merge commit `1c9fefd73f7` (net-next-20260603) is preserved
+5. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — passes, no warnings or errors
+6. Created local backup branch `cherry-081ffe9b3fc-v2`
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-081ffe9b3fc -r ci -f`: remote updated `8c9d12ddb1d → 95f5d29a70b`, confirmed matching local HEAD; the MR pipeline will re-trigger automatically
+
+### Suggested reply to post on the MR
+
+> Rebased onto the current ci/master tip (which now includes the cherry-d86b3a753fe USB dwc3 series). The only conflict was in the .pickman-history log file, where both branches had appended an entry — resolved by keeping both. All 16 cherry-picked commits apply with deltas identical to before the rebase, and the empty net-next-20260603 merge commit is preserved with --keep-empty. Sandbox builds cleanly with buildman (no warnings or errors). The branch has been force-pushed, re-triggering the MR pipeline.
+
+---
+
