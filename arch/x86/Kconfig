@@ -565,6 +565,45 @@ config ENABLE_MRC_CACHE
 	  platform (eg: Intel Queensbay), which means selecting this option
 	  here does not make any difference.
 
+config SPL_ENABLE_MRC_CACHE
+	bool "Enable MRC cache in SPL"
+	depends on SPL && ENABLE_MRC_CACHE
+	default y
+	help
+	  Look for cached memory-training data in SPL and pass it to the
+	  FSP-M binary, so that it can skip the full memory training. This
+	  makes booting much faster, since training can take a minute or
+	  more. Without this option, SPL saves training data but never uses
+	  it, so every boot trains from scratch.
+
+config MRC_CACHE_SAVE
+	bool "Save the MRC cache in U-Boot proper"
+	depends on ENABLE_MRC_CACHE && SPL
+	help
+	  Save the memory-training data in U-Boot proper. The data is
+	  picked out of the FSP hand-off blocks by dram_init(), copied out
+	  of Cache-as-RAM by mrccache_reserve() before relocation and
+	  written to the SPI flash by arch_misc_init(). This keeps the
+	  SPI-flash writing out of SPL, which runs while the CSE is still
+	  busy with its own flash accesses early in boot.
+
+	  On platforms where FSP-M requests a reset after training, the
+	  SPL save (SPL_MRC_CACHE_SAVE) is still needed alongside this,
+	  since a training boot reboots from SPL and never reaches U-Boot
+	  proper. Without this option, SPL saves at the end of its run
+	  instead, as Apollo Lake does.
+
+config SPL_MRC_CACHE_SAVE
+	bool "Save the MRC cache in SPL"
+	depends on ENABLE_MRC_CACHE && SPL
+	default y
+	help
+	  Save the memory-training data in SPL. This is needed on
+	  platforms where FSP-M requests a reset after training: the data
+	  only exists in the FSP's heap in Cache-as-RAM, so it must be
+	  written out before the reset, or the boot after the reset would
+	  have to train all over again.
+
 config HAVE_MRC
 	bool "Add a System Agent binary"
 	select HAS_ROM

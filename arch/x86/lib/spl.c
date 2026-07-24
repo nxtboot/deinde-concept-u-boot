@@ -128,7 +128,8 @@ static int x86_spl_init(void)
 		return ret;
 	}
 	log_debug("mrc\n");
-	if (IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)) {
+	if (IS_ENABLED(CONFIG_ENABLE_MRC_CACHE) &&
+	    !IS_ENABLED(CONFIG_MRC_CACHE_SAVE)) {
 		ret = mrccache_spl_save();
 		if (ret)
 			log_debug("Failed to write to mrccache (err=%d)\n",

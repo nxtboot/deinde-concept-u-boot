@@ -80,12 +80,6 @@
 		#size-cells = <2>;
 		bootph-all;
 		/*
-		 * The FSP assigns the BARs it needs; reassigning them upsets
-		 * its silicon init, which polls the graphics engine through
-		 * its own BAR
-		 */
-		pci,no-autoconfig;
-		/*
 		 * The ECAM region is at 0xc0000000, so PCI memory goes above
 		 * it, below the 4GB MMIO which the SoC uses
 		 */
@@ -100,6 +94,15 @@
 		 * only the devices in this devicetree are used until then
 		 */
 		u-boot,skip-enumeration-until-reloc;
+
+		/*
+		 * The console UART, used via the MMIO node above; disable
+		 * it here so that PCI enumeration leaves its BAR alone
+		 */
+		serial-pci@1e,0 {
+			reg = <0x0000f000 0 0 0 0>;
+			status = "disabled";
+		};
 
 		northbridge: host-bridge@0,0 {
 			reg = <0x00000000 0 0 0 0>;

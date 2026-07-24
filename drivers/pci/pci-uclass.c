@@ -575,7 +575,7 @@ int pci_auto_config_devices(struct udevice *bus)
 		unsigned int max_bus;
 		int ret;
 
-		debug("%s: device %s\n", __func__, dev->name);
+		log_debug("configuring device %s\n", dev->name);
 		if (dev_has_ofnode(dev) &&
 		    dev_read_bool(dev, "pci,no-autoconfig"))
 			continue;

@@ -9,4 +9,24 @@
 /* Crystal-clock frequency, used by the TSC timer */
 #define CTC_FREQ		38400000
 
+/**
+ * adl_log_pm_state() - Log reset-cause and SMI/TCO status registers
+ *
+ * This reports the PMC's global-reset cause registers, the TCO watchdog
+ * status and the SMI enable/status registers, to help diagnose a platform
+ * reset or freeze on a previous boot
+ *
+ * @when: Tag to include in the log line, e.g. "pre-fspm"
+ */
+void adl_log_pm_state(const char *when);
+
+/**
+ * adl_release_ssd_reset() - Release the NVMe SSD's PERST# signal
+ *
+ * The SSD is powered up with its reset held when the pads are first set
+ * up; this releases the reset once the power is stable, so that silicon
+ * init can train the PCIe link
+ */
+void adl_release_ssd_reset(void);
+
 #endif /* _ASM_ARCH_CPU_H */

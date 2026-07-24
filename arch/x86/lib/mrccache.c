@@ -149,11 +149,11 @@ static int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 
 	/* Find the last used block */
 	base_addr = entry->base + entry->offset;
-	debug("Updating MRC cache data\n");
+	log_debug("Updating MRC cache data\n");
 	cache = mrccache_find_current(entry);
 	if (cache && (cache->data_size == cur->data_size) &&
 	    (!memcmp(cache, cur, cache->data_size + sizeof(*cur)))) {
-		debug("MRC data in flash is up to date. No update\n");
+		log_debug("MRC data in flash is up to date. No update\n");
 		return -EEXIST;
 	}
 
@@ -166,12 +166,13 @@ static int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 	 * again at block 0.
 	 */
 	if (!cache) {
-		debug("Erasing the MRC cache region of %x bytes at %x\n",
-		      entry->length, entry->offset);
+		log_debug("Erasing the MRC cache region of %x bytes at %x\n",
+			  entry->length, entry->offset);
 
 		ret = spi_flash_erase_dm(sf, entry->offset, entry->length);
 		if (ret) {
-			debug("Failed to erase flash region\n");
+			log_debug("Failed to erase flash region (err=%d)\n",
+				  ret);
 			return ret;
 		}
 		cache = (struct mrc_data_container *)base_addr;
@@ -179,11 +180,11 @@ static int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 
 	/* Write the data out */
 	offset = (ulong)cache - base_addr + entry->offset;
-	debug("Write MRC cache update to flash at %lx\n", offset);
+	log_debug("Write MRC cache update to flash at %lx\n", offset);
 	ret = spi_flash_write_dm(sf, offset, cur->data_size + sizeof(*cur),
 				 cur);
 	if (ret) {
-		debug("Failed to write to SPI flash\n");
+		log_debug("Failed to write to SPI flash (err=%d)\n", ret);
 		return log_msg_ret("Cannot update mrccache", ret);
 	}
 
@@ -316,9 +317,12 @@ static int mrccache_save_type(enum mrc_type_t type)
 
 	ret = mrccache_update(sf, &entry, cache);
 	if (!ret)
-		debug("Saved MRC data with checksum %04x\n", cache->checksum);
+		log_debug("Saved MRC data with checksum %04x\n",
+			  cache->checksum);
 	else if (ret == -EEXIST)
-		debug("MRC data is the same as last time, skipping save\n");
+		log_debug("MRC data is the same as last time, skipping save\n");
+	else
+		return log_msg_ret("upd", ret);
 
 	return 0;
 }

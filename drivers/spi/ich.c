@@ -532,14 +532,21 @@ static int ich_spi_exec_op_hwseq(struct spi_slave *slave,
 	offset = op->addr.val;
 	len = op->data.nbytes;
 
+	/*
+	 * Hardware sequencing generates its own SPI commands and handles
+	 * large flash devices itself, so the 3-byte and 4-byte opcodes map
+	 * to the same cycle and the mode-switch commands need do nothing
+	 */
 	switch (op->cmd.opcode) {
 	case SPINOR_OP_RDID:
 		cycle = HSFSTS_CYCLE_RDID;
 		break;
 	case SPINOR_OP_READ_FAST:
+	case SPINOR_OP_READ_FAST_4B:
 		cycle = HSFSTS_CYCLE_READ;
 		break;
 	case SPINOR_OP_PP:
+	case SPINOR_OP_PP_4B:
 		cycle = HSFSTS_CYCLE_WRITE;
 		break;
 	case SPINOR_OP_WREN:
@@ -552,8 +559,11 @@ static int ich_spi_exec_op_hwseq(struct spi_slave *slave,
 		cycle = HSFSTS_CYCLE_RD_STATUS;
 		break;
 	case SPINOR_OP_WRDI:
+	case SPINOR_OP_EN4B:
+	case SPINOR_OP_EX4B:
 		return 0;  /* ignore */
 	case SPINOR_OP_BE_4K:
+	case SPINOR_OP_BE_4K_4B:
 		cycle = HSFSTS_CYCLE_4K_ERASE;
 		ret = exec_sync_hwseq_xfer(regs, cycle, offset, 0);
 		return ret;
@@ -753,7 +763,19 @@ static int ich_protect_lockdown(struct udevice *dev)
 	/* Disable the BIOS write protect so write commands are allowed */
 	if (priv->pch)
 		ret = pch_set_spi_protect(priv->pch, false);
-	if (ret == -ENOSYS) {
+	if (ret == -ENOSYS && plat->ich_version == ICHV_APL) {
+		/*
+		 * On fast-SPI the BIOS-control register is in PCI config
+		 * space, not the MMIO region, and the firmware may have
+		 * re-enabled write protection since it was disabled early
+		 * in boot
+		 */
+		ret = dm_pci_clrset_config8(dev, SPIBAR_BIOS_CONTROL,
+					    SPIBAR_BIOS_CONTROL_EISS,
+					    SPIBAR_BIOS_CONTROL_WPD);
+		if (ret)
+			return ret;
+	} else if (ret == -ENOSYS) {
 		u8 bios_cntl;
 
 		bios_cntl = ich_readb(priv, priv->bcr);

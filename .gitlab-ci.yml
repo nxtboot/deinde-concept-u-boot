@@ -982,6 +982,8 @@ bob:
 ff3399:
   variables:
     ROLE: ff3399
+  # Shares the Firefly-RK3399 board with the 'vbe' job, so serialise them
+  resource_group: ff3399-board
   <<: *sjg_lab_dfn
 
 coral:
@@ -1162,6 +1164,7 @@ tk1:
 vbe:
   variables:
     ROLE: vbe
+  resource_group: ff3399-board
   <<: *sjg_lab_dfn
 
 play:
@@ -1179,6 +1182,9 @@ efi-aarch64:
 edison:
   variables:
     ROLE: edison
+  # The board's USB data path is faulty and it cannot boot until it is
+  # repaired, so do not let it block the pipeline
+  allow_failure: true
   <<: *sjg_lab_dfn
 
 # Digilent Zybo (Zynq-7010); U-Boot written to the SD card via SD-Wire

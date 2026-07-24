@@ -5,6 +5,9 @@
 config INTEL_ALDERLAKE
 	bool
 	select HAVE_FSP
+	select ARCH_MISC_INIT
+	imply MRC_CACHE_SAVE
+	imply SPL_MRC_CACHE_SAVE
 	imply PINCTRL_INTEL
 	imply PINCTRL_INTEL_ALDERLAKE
 	imply INTEL_GPIO

@@ -144,9 +144,10 @@ int fsp_locate_fsp(enum fsp_type_t type, struct binman_entry *entry,
 	}
 
 	if (xpl_phase() >= PHASE_BOARD_F) {
-		if (type != FSP_S)
+		if (type != FSP_S && type != FSP_M)
 			return -EPROTONOSUPPORT;
-		ret = binman_entry_find("intel-fsp-s", entry);
+		ret = binman_entry_find(type == FSP_S ? "intel-fsp-s" :
+					"intel-fsp-m", entry);
 		if (ret)
 			return log_msg_ret("binman entry", ret);
 		if (!use_spi_flash)

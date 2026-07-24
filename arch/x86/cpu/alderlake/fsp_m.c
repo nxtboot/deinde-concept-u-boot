@@ -13,6 +13,7 @@
 #include <asm-generic/gpio.h>
 #include <linux/build_bug.h>
 #include <linux/sizes.h>
+#include <asm/arch/cpu.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_m_upd.h>
 
@@ -199,6 +200,16 @@ static void setup_platform(struct fsp_m_config *cfg)
 	 * as zero on these parts; the FSP default is 0x1c
 	 */
 	cfg->cpu_ratio = 0;
+
+	/*
+	 * Feed clock source 1 to PCH root port 9 (the NVMe SSD, at PCI
+	 * 00:1d.0), with CLKREQ 1, as coreboot's brya devicetree does. The
+	 * FSP default leaves every clock source unused, so the SSD's link
+	 * never trains without this. The value is the 0-based root-port
+	 * number
+	 */
+	cfg->pcie_clk_src_usage[1] = 8;
+	cfg->pcie_clk_src_clk_req[1] = 1;
 }
 
 /**
@@ -281,5 +292,10 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 
 int fspm_done(struct udevice *dev)
 {
+	adl_log_pm_state("post-fspm");
+
+	/* The SSD's power has been up for the whole of memory init */
+	adl_release_ssd_reset();
+
 	return 0;
 }

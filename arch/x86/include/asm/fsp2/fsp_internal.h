@@ -88,6 +88,19 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 		       struct fsps_upd *upd);
 
 /**
+ * fsp_temp_ram_exit() - Tell the FSP that Cache-as-RAM is finished with
+ *
+ * The FSP keeps its state in Cache-as-RAM during memory init, with a
+ * pointer to it in the HPET registers. This has the FSP move that state
+ * into DRAM, so that it is still valid when silicon init runs. It must be
+ * called once U-Boot is running from DRAM, since it tears down
+ * Cache-as-RAM
+ *
+ * Return: 0 if OK, -ve on error
+ */
+int fsp_temp_ram_exit(void);
+
+/**
  * prepare_mrc_cache() - Read the MRC cache into the product-data struct
  *
  * This looks for cached Memory-reference code (MRC) data and stores it into
