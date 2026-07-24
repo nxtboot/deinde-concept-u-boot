@@ -88986,3 +88986,35 @@ The branch `cherry-0ba428236ea` is ready for pushing (33 commits ahead of ci/mas
 
 ---
 
+### Review: 2026-07-24
+
+Branch: cherry-0ba428236ea
+
+Comments addressed:
+
+
+### Conversation log
+Done. Here's the report:
+
+## Report: MR !1182 rebase — no rebase needed, remote branch corrected
+
+### What I found
+
+The "behind target branch" status was **not** caused by the local branch being stale — it was caused by the **remote MR branch pointing at the wrong content entirely**:
+
+- **Local `cherry-0ba428236ea`** (`96df3d02ce8`): the correct 34 commits (33 cherry-picks + pickman record), already based **directly on the current ci/master tip** (`0ef44b6b4ab`), 0 commits behind
+- **Remote `cherry-0ba428236ea`** (`2f694e720b9`): stale content, 174 commits behind master, containing only 3 `.pickman-history` bookkeeping commits belonging to *other* MRs (`cherry-58545b01062`, `cherry-9c04852e596`, `cherry-d3eee4d3b12`) — evidently clobbered by an errant push at some point. It did **not** contain the 33 imx cherry-picks at all.
+
+### Actions taken
+
+1. `git rebase --keep-empty ci/master` — reported "already up to date"; a genuine no-op. No commits rewritten, no conflicts, the empty merge record `1ea3fff5b9e` (Merge tag 'u-boot-imx-next-20260605') is preserved. Since no commit was rewritten, per-commit delta checks were unnecessary (all hashes unchanged).
+2. `buildman -L --board sandbox -w -o /tmp/pickman` — **build OK**, no warnings or errors.
+3. Created local branch `cherry-0ba428236ea-v2` at `96df3d02ce8`.
+4. Force-pushed via `./tools/pickman/pickman push-branch cherry-0ba428236ea -r ci -f` — remote now confirmed at `96df3d02ce8`. The 3 overwritten remote-only commits were only `.pickman-history` records for other branches, so nothing of value was lost.
+
+### Suggested reply to post on the MR
+
+> The branch has been refreshed. Investigation showed the local series was already based on the current ci/master tip (`0ef44b6b4ab`), so `git rebase --keep-empty ci/master` was a no-op with no conflicts and the empty merge record preserved. The MR appeared behind because the remote branch had been clobbered with unrelated pickman-history commits and did not contain the series. The correct branch (34 commits, top `96df3d02ce8`) has now been force-pushed, and sandbox builds cleanly. The new MR pipeline should run against the proper content; note the earlier `edison` failure was labgrid resource contention and may recur until the stale place acquisition is released.
+
+---
+
