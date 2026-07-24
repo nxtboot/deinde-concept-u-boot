@@ -88728,3 +88728,34 @@ Build is clean. Now create the -v2 branch and push:
 
 ---
 
+### Review: 2026-07-23
+
+Branch: cherry-3ab8ea4a444
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase of MR !1179 (`cherry-3ab8ea4a444`) onto latest `ci/master` — success**
+
+**What was done:**
+1. Fetched `ci` and checked out `cherry-3ab8ea4a444`; ci/master had moved forward by 45 commits (all x86 alderlake/brya work, unrelated to this series)
+2. Ran `git rebase --keep-empty ci/master` — completed cleanly with **no conflicts**; all 7 commits replayed:
+   - `6b7488b5414` sandbox: Drop special link order treatment of start.o and sdl.o
+   - `8c7d8353950` linker_lists: Do not set "unused" attribute
+   - `cab904efa1d` event: Remove obsolete comment and __used attributes
+   - `d819c17c339` Merge patch series (empty merge commit, preserved)
+   - plus the 3 `.pickman-history` record commits
+3. **Delta verification:** `git show --stat` before/after matches exactly for every commit (same files, same +/− counts), and `git range-diff` shows all 7 commits as `=` (identical patches)
+4. **Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+5. Created local branch `cherry-3ab8ea4a444-v3` (v2 already existed from the previous round) at `c041aba226f`
+6. Force-pushed via `./tools/pickman/pickman push-branch cherry-3ab8ea4a444 -r ci -f` (`1edfe49338a...c041aba226f`), which updates MR !1179 and triggers a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto the latest ci/master (45 new commits, all x86 alderlake/brya work). The rebase applied cleanly with no conflicts; range-diff confirms all commits are unchanged, and the empty merge commit is preserved with --keep-empty. Sandbox builds cleanly with buildman (no warnings or errors). Branch force-pushed to trigger a new pipeline.
+
+---
+
