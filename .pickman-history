@@ -89067,3 +89067,50 @@ All done. Final status:
 
 ---
 
+### Pipeline fix: 2026-07-24 (attempt 1)
+
+Branch: cherry-e91911169bc
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+
+### Conversation log
+Both logs point to lab/infrastructure problems rather than code failures, but let me verify by checking what the branch actually changes.
+
+## Report: Infrastructure failures — no code changes made
+
+Both job failures are lab/infrastructure issues, not caused by the MR. I have made no changes and have not created a fix branch.
+
+### Evidence
+
+The MR (`d5954c4a2ea`, cherry-pick of the v2026.07-rc4 merge) nets exactly **+5 lines in the Makefile**, all inside an `ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (the `-Og` flags). Neither `edison_defconfig` nor `chromebook_brya_defconfig` (the felwinter role) enables that option, so the change is completely inert for both failing boards. A sandbox build passes cleanly.
+
+### Job diagnoses
+
+**edison (job 569923)** — labgrid place-acquisition conflict. The test harness failed immediately at configure time:
+
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+...
+place edison is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+
+The place lock is held by another user/host (`kea/labgrid`), so the runner on ellesmere could not acquire the board. Pure lab contention — no test even started.
+
+**felwinter (job 569914)** — lab timeout during first boot after flashing:
+
+```
+Writing U-Boot using method em100
+MRC: no saved training data in the previous image
+Lab timeout: Marking connection bad - no other tests will run
+```
+
+With no saved MRC training data, memory training on the freshly flashed brya image takes longer than the lab timeout allows. This is known board/lab flakiness on a cold flash, unrelated to the (inert) Makefile change.
+
+### Recommendation
+
+Retry the pipeline. For edison, the stale `kea/labgrid` place lock may need to be released/kicked first.
+
+---
+
