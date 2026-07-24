@@ -88893,3 +88893,36 @@ Build verified clean. Here is my report:
 
 ---
 
+### Review: 2026-07-23
+
+Branch: cherry-58545b01062
+
+Comments addressed:
+
+
+### Conversation log
+Build passes cleanly. Now create the -v2 local branch and force-push to the original remote branch:
+
+All done. Here is my report:
+
+## Report
+
+**Situation found:** This was not a normal rebase. The local branch `cherry-58545b01062` was already based on the current ci/master tip (`732fe808c8f`), but the **remote** MR branch had somehow been overwritten with entirely unrelated content — commits belonging to `cherry-d3eee4d3b12` and `cherry-9c04852e596` (a dm-verity series), sitting 155 commits behind ci/master with none of the pcf85063/date commits present. This stale/wrong remote state is why the MR showed as behind.
+
+**Actions taken:**
+1. Checked out `cherry-58545b01062` and fetched `ci` — confirmed local branch content matches the MR record (10 cherry-picked commits + 2 pickman record commits)
+2. Ran `git rebase --keep-empty ci/master` — **no-op**: "Current branch is up to date". All 12 commit hashes are unchanged (`1cf135b8fd6` … `11471ba2730`), so per-commit deltas are identical by definition, and the empty merge commit `0e49605d968` is preserved
+3. Ran `buildman -L --board sandbox -w -o /tmp/pickman` — **builds cleanly** (1 built, no warnings or errors)
+4. Created local branch `cherry-58545b01062-v2`
+5. Force-pushed via `./tools/pickman/pickman push-branch cherry-58545b01062 -r ci -f` — remote updated `f43a36698d8` → `11471ba2730` and verified the remote branch now matches local HEAD and contains ci/master
+
+**Concerning deltas:** None — no commits were rewritten.
+
+**Suggested reply to post on the MR:**
+
+> The branch has been brought up to date with ci/master. The local series was already based on the current ci/master tip (`732fe808c8f`), so the rebase was a no-op with all commit hashes unchanged and the empty merge commit preserved. The remote branch had, however, been left pointing at unrelated content (commits from cherry-d3eee4d3b12/cherry-9c04852e596, 155 commits behind master), which is why the MR appeared behind — it has now been force-pushed to the correct series (`11471ba2730`). Sandbox builds cleanly with no warnings or errors. The MR pipeline will retrigger automatically from the push.
+
+**Note for a human:** it may be worth checking how the remote `cherry-58545b01062` branch came to contain `cherry-d3eee4d3b12` content — possibly a mistaken force-push from another pickman session. Nothing further is needed on this MR itself.
+
+---
+
