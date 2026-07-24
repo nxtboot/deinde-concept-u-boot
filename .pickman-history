@@ -88815,3 +88815,114 @@ The branch is ready for pushing; it was not merged anywhere.
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-58545b01062
+
+Commits:
+- 58545b01062 cmd_date: make mk_date() static
+- 3bf0e5d90c0 cmd: date: validate date using rtc_month_days()
+- 8763c0169d8 rtc: pcf85063: adjust date format to adhere to the rtc_time spec
+- 1f042466410 rtc: pcf85063: add support for NXP PCF85063 family
+- 49754d293ea rtc: pcf85063: add missing register definitions
+- 2b6de25797b rtc: pcf85063: keep the divider chain in reset during set_time
+- d8f535cd8f7 rtc: pcf85063: support loading quartz-load capacitance from device tree
+- 059174b9554 rtc: pcf85063: add power loss detection during probe
+- 8294d86b1d9 drivers: Kconfig: rtc_pcf85063: note unsupported chip features
+- b8b7761e898 Merge patch series "rtc: pcf85036: improve spec coherence and extend features"
+
+### Conversation log
+All 10 commits cherry-picked successfully onto `cherry-58545b01062` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors, both after each individual cherry-pick and in the final combined build.
+
+**Commits applied (oldest first):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| 1cf135b8fd6 | 58545b01062 | cmd_date: make mk_date() static |
+| e9e18432718 | 3bf0e5d90c0 | cmd: date: validate date using rtc_month_days() |
+| f580bc31350 | 8763c0169d8 | rtc: pcf85063: adjust date format to adhere to the rtc_time spec |
+| 3124a5c3141 | 1f042466410 | rtc: pcf85063: add support for NXP PCF85063 family |
+| 598985aa485 | 49754d293ea | rtc: pcf85063: add missing register definitions |
+| a746cfa9e5f | 2b6de25797b | rtc: pcf85063: keep the divider chain in reset during set_time |
+| bc6b59deae7 | d8f535cd8f7 | rtc: pcf85063: support loading quartz-load capacitance from device tree |
+| 44c2b66d583 | 059174b9554 | rtc: pcf85063: add power loss detection during probe |
+| 6908ed71384 | 8294d86b1d9 | drivers: Kconfig: rtc_pcf85063: note unsupported chip features |
+| 0e49605d968 | b8b7761e898 | Merge patch series "rtc: pcf85036: improve spec coherence and extend features" (empty, message preserved) |
+
+**Fix-ups:** None needed — every regular commit applied cleanly with an exact stat match to the original (identical files and line counts). The merge commit resulted in an empty commit as expected and was committed with `--allow-empty --no-edit`, preserving the full merge message and the `(cherry picked from ...)` trailer.
+
+**Concerning deltas:** None.
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-58545b01062
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison.
+
+This is an infrastructure failure, not a code...
+
+### Conversation log
+Build verified clean. Here is my report:
+
+## Report
+
+**Comment analysis:** The single review comment is not an actionable code-review comment — it is the bot's own "Pipeline fix (attempt 1)" report, echoing the diagnosis already in the MR description: the edison job failed because the labgrid place `edison` was held by another user (`kea/labgrid`), causing `u-boot-test-getrole` to fail at pytest configure time. It explicitly concludes "no changes are needed" and requests no modification to the branch.
+
+**Actions taken:**
+- Checked out `cherry-58545b01062` and confirmed it matches the recorded state (10 cherry-picked commits plus the pickman record commit at `d2f965f4e23`)
+- Ran `buildman -L --board sandbox -w -o /tmp/pickman` — sandbox builds cleanly (1 built, no warnings or errors)
+
+**Actions deliberately not taken:**
+- No code changes, since none were requested
+- No `-v2` branch created and no force push — the branch content is unchanged, so pushing the identical SHA would be a no-op and would not retrigger the MR pipeline. Creating an empty rev bump would only add noise.
+
+**Suggested reply to post on the MR:**
+
+> This comment is informational (the pipeline-fix diagnosis) and requests no code change, so the branch is unchanged. The edison failure is labgrid place contention (`edison` held by `kea/labgrid`), not a code issue — the 10 commits touch only `cmd/date.c` and the pcf85063 RTC driver/Kconfig. Sandbox has been re-verified to build cleanly on this branch. Please retry the edison job once the place is free, or have the lab admin run `labgrid-client -p edison allow ellesmere/gitlab-runner` if concurrent access is intended.
+
+**Remaining action for a human:** retry the edison CI job (or resolve the labgrid place ownership) — this cannot be fixed from the branch.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-58545b01062
+
+Comments addressed:
+
+
+### Conversation log
+Build passes cleanly. Now create the -v2 local branch and force-push to the original remote branch:
+
+All done. Here is my report:
+
+## Report
+
+**Situation found:** This was not a normal rebase. The local branch `cherry-58545b01062` was already based on the current ci/master tip (`732fe808c8f`), but the **remote** MR branch had somehow been overwritten with entirely unrelated content — commits belonging to `cherry-d3eee4d3b12` and `cherry-9c04852e596` (a dm-verity series), sitting 155 commits behind ci/master with none of the pcf85063/date commits present. This stale/wrong remote state is why the MR showed as behind.
+
+**Actions taken:**
+1. Checked out `cherry-58545b01062` and fetched `ci` — confirmed local branch content matches the MR record (10 cherry-picked commits + 2 pickman record commits)
+2. Ran `git rebase --keep-empty ci/master` — **no-op**: "Current branch is up to date". All 12 commit hashes are unchanged (`1cf135b8fd6` … `11471ba2730`), so per-commit deltas are identical by definition, and the empty merge commit `0e49605d968` is preserved
+3. Ran `buildman -L --board sandbox -w -o /tmp/pickman` — **builds cleanly** (1 built, no warnings or errors)
+4. Created local branch `cherry-58545b01062-v2`
+5. Force-pushed via `./tools/pickman/pickman push-branch cherry-58545b01062 -r ci -f` — remote updated `f43a36698d8` → `11471ba2730` and verified the remote branch now matches local HEAD and contains ci/master
+
+**Concerning deltas:** None — no commits were rewritten.
+
+**Suggested reply to post on the MR:**
+
+> The branch has been brought up to date with ci/master. The local series was already based on the current ci/master tip (`732fe808c8f`), so the rebase was a no-op with all commit hashes unchanged and the empty merge commit preserved. The remote branch had, however, been left pointing at unrelated content (commits from cherry-d3eee4d3b12/cherry-9c04852e596, 155 commits behind master), which is why the MR appeared behind — it has now been force-pushed to the correct series (`11471ba2730`). Sandbox builds cleanly with no warnings or errors. The MR pipeline will retrigger automatically from the push.
+
+**Note for a human:** it may be worth checking how the remote `cherry-58545b01062` branch came to contain `cherry-d3eee4d3b12` content — possibly a mistaken force-push from another pickman session. Nothing further is needed on this MR itself.
+
+---
+
