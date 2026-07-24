@@ -89018,3 +89018,333 @@ The "behind target branch" status was **not** caused by the local branch being s
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-e91911169bc
+
+Commits:
+- e91911169bc Merge tag 'v2026.07-rc4' into next
+
+### Conversation log
+The first cherry-pick has conflicts. Before deciding, let me check whether this merge is already present in ci/master.
+
+Not already applied — I need to resolve the conflicts. Let me examine each.
+
+The .gitignore conflict is trivial — both sides add the same line. Let me view and fix the current file state.
+
+The fix doesn't apply — resolve by keeping the HEAD side:
+
+HEAD's version is a superset (adds ARCH_ROCKCHIP) — keep HEAD:
+
+All conflicts resolved. Now stage and continue, adding a note about the fix-ups:
+
+The repair hunk legitimately arrives via this merge. I also notice ci/master has an empty "[FAILED]" commit for a follow-up fix that likely depends on this hunk:
+
+Good — the merge includes the already-fixed version (no extra dash), matching my resolution. Continuing the cherry-pick:
+
+Now the build test:
+
+Build passes. Final verification:
+
+All done. Final status:
+
+## Summary
+
+**Branch `cherry-e91911169bc`** is ready, containing the single merge commit `d5954c4a2ea` (cherry-picked from `e91911169bc`, "Merge tag 'v2026.07-rc4' into next").
+
+**Build result:** OK — `buildman -L --board sandbox -w -o /tmp/pickman` completed with no warnings or errors.
+
+**Conflicts resolved (5 files):**
+- `.gitignore` — both sides added `/test/fdt_overlay/test-fdt-overlay-stacked.dtbo.S`; deduplicated
+- `Makefile` (version) — kept ci/master's `EXTRAVERSION =` (empty), matching the precedent from the rc3 merge cherry-pick which keeps ci/master at 2026.04
+- `boot/pxe_utils.c` — the merge's only change (`initrd_filesize[10]` → `[17]`) targets a variable that no longer exists in ci/master's refactored `label_boot()`; kept the ci/master side
+- `doc/develop/release_cycle.rst` — ci/master is already on the later cycle dates; kept HEAD
+- `lib/Kconfig` — kept ci/master's superset `default y if ARCH_BCM283X || ARCH_ROCKCHIP`
+
+**Delta note (expected, not a problem):** the original merge touches ~25 files, but the cherry-pick nets only **+5 lines in the Makefile**. Nearly all rc4 content is already in ci/master via earlier cherry-picks (same as the rc3 merge, which was recorded empty). The one genuine incoming change is the `CONFIG_CC_OPTIMIZE_FOR_DEBUG` KBUILD_CFLAGS `-Og` block — a repair from upstream that ci/master lacks (its follow-up fix `820cbed634d` is an empty `[FAILED]` commit there). The merge brings the block in its already-fixed form (no extra leading dash), which effectively supersedes that failed commit.
+
+**Fix-up note** was added to the commit message describing the resolutions. The branch is left ready for pushing; nothing was merged back.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 1)
+
+Branch: cherry-e91911169bc
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+
+### Conversation log
+Both logs point to lab/infrastructure problems rather than code failures, but let me verify by checking what the branch actually changes.
+
+## Report: Infrastructure failures — no code changes made
+
+Both job failures are lab/infrastructure issues, not caused by the MR. I have made no changes and have not created a fix branch.
+
+### Evidence
+
+The MR (`d5954c4a2ea`, cherry-pick of the v2026.07-rc4 merge) nets exactly **+5 lines in the Makefile**, all inside an `ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (the `-Og` flags). Neither `edison_defconfig` nor `chromebook_brya_defconfig` (the felwinter role) enables that option, so the change is completely inert for both failing boards. A sandbox build passes cleanly.
+
+### Job diagnoses
+
+**edison (job 569923)** — labgrid place-acquisition conflict. The test harness failed immediately at configure time:
+
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+...
+place edison is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+
+The place lock is held by another user/host (`kea/labgrid`), so the runner on ellesmere could not acquire the board. Pure lab contention — no test even started.
+
+**felwinter (job 569914)** — lab timeout during first boot after flashing:
+
+```
+Writing U-Boot using method em100
+MRC: no saved training data in the previous image
+Lab timeout: Marking connection bad - no other tests will run
+```
+
+With no saved MRC training data, memory training on the freshly flashed brya image takes longer than the lab timeout allows. This is known board/lab flakiness on a cold flash, unrelated to the (inert) Makefile change.
+
+### Recommendation
+
+Retry the pipeline. For edison, the stale `kea/labgrid` place lock may need to be released/kicked first.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e91911169bc
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, felwinter.
+
+Both logs point to lab/infrastruct...
+
+### Conversation log
+Build passes. No changes were made and none are needed, so I did not create a -v2 branch or force-push — pushing an identical SHA would not trigger a new pipeline anyway.
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot`) is not an actionable review request — it is the bot's own "Pipeline fix (attempt 1)" report from the previous session. That report already concluded:
+
+- **edison (job 569923)**: labgrid place-acquisition conflict — the place is held by `kea/labgrid` on another host; the test never started.
+- **felwinter (job 569914)**: lab timeout during cold-flash first boot (MRC memory retraining exceeded the lab timeout) — known board flakiness.
+- The MR's net change (+5 lines in the Makefile, inside `ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG`) is inert for both boards, so neither failure can be caused by this branch.
+
+**Verification done now:**
+- Branch `cherry-e91911169bc` checked out; delta vs `ci/master` confirmed as just the merge commit `d5954c4a2ea` (+5 Makefile lines) plus two `.pickman-history` records.
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes cleanly, no warnings.
+
+**Actions taken:** None required; no code changes, no push.
+
+**Suggested MR reply:**
+
+> The review comment is the pipeline-fix report itself and requests no code changes. Both job failures (edison, felwinter) are lab/infrastructure issues unrelated to this MR, whose only net change is an inert `CONFIG_CC_OPTIMIZE_FOR_DEBUG` Makefile block. The sandbox build has been re-verified and passes. Please retry the pipeline; for edison, the stale `kea/labgrid` place lock may first need to be released or kicked.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 2)
+
+Branch: cherry-e91911169bc
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+## Report: Infrastructure failures again — no code changes made
+
+All three job failures on attempt 2 are lab/infrastructure issues, not caused by the MR. I have made no changes and created no fix branch (pushing an identical SHA would not trigger a new pipeline anyway).
+
+### Evidence the MR cannot be responsible
+
+The branch's net code change vs `ci/master` is still exactly **+5 lines in the Makefile**, all inside an `else ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (the `-Og` flags). None of the three failing boards' defconfigs (`edison_defconfig`, `chromebook_brya_cb_defconfig`, the spacemit_k1/bpif3 config) enables `CC_OPTIMIZE_FOR_DEBUG` — a grep across configs/ finds no match — so the change is completely inert for all of them. The two other new commits are `.pickman-history` records only.
+
+### Job diagnoses
+
+**edison (job 570438)** — identical failure to attempt 1: labgrid place-acquisition conflict at configure time, before any test ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+place edison is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+The stale `kea/labgrid` place lock flagged in attempt 1 is **still held** — it was not released before the retry. This job will keep failing until someone runs `labgrid-client -p edison kick` (or the kea host releases it), or allows co-acquisition via `labgrid-client -p edison allow ellesmere/gitlab-runner`.
+
+**felwinter-cb (job 570428)** — lab hardware/console failure during first boot after em100 flashing. The console never showed a U-Boot prompt within 180 s, and on the retry the RFC2217 serial connection itself collapsed:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 180 seconds exceeded during waiting for login
+serial.serialutil.SerialException: connection failed (reader thread died)
+Lab failure: Marking connection bad - no other tests will run
+```
+Same cold-flash flakiness seen in attempt 1 (MRC retraining after fresh flash), compounded by the ser2net/RFC2217 reader thread dying — a lab console problem, not a build problem.
+
+**bpif3 (job 570427)** — the SpacemiT K1 USB download loader never came up:
+```
+USB loader not ready (attempt 1/5..4/5); resetting and retrying
+USB resource not available; retrying reset with longer delays
+Lab timeout: Marking connection bad - no other tests will run
+```
+The failure occurs while trying to *send* the image over USB — U-Boot code was never even executed on the board. This is a lab USB/board-recovery issue.
+
+### Recommendation
+
+1. **edison**: release or kick the `kea/labgrid` place lock before retrying — the retry loop cannot succeed while it is held.
+2. **bpif3**: check the board's USB download path (cable/hub/power) on ellesmere; may need a manual power-cycle.
+3. **felwinter-cb**: check the ser2net console service for the board, then retry.
+4. Retry the pipeline once the above are addressed. No branch changes are needed; the sandbox build was verified clean in the previous session and the delta is unchanged.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e91911169bc
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, felwinter-cb, bpif3.
+
+## Report: Infrastructur...
+
+### Conversation log
+Build passes cleanly. No code changes are needed, so I have not created a -v2 branch or force-pushed — pushing an identical SHA would not trigger a new pipeline.
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot`) is not an actionable review request — it is the bot's own "Pipeline fix (attempt 2)" report from the previous session, echoed back as a comment. It already contains the full diagnosis and explicitly states no code changes were made or needed:
+
+- **edison (job 570438)**: labgrid place-acquisition conflict — the stale `kea/labgrid` place lock is still held; the job fails at configure time before any test runs. It will keep failing until the lock is kicked/released (`labgrid-client -p edison kick`) or co-acquisition is allowed.
+- **felwinter-cb (job 570428)**: lab console failure during cold-flash first boot — 180 s login timeout plus the RFC2217 reader thread dying (ser2net problem).
+- **bpif3 (job 570427)**: SpacemiT K1 USB download loader never came up — U-Boot code was never executed on the board; lab USB/board-recovery issue.
+
+**Verification done now:**
+- Branch `cherry-e91911169bc` checked out; delta vs `ci/master` confirmed as the merge commit `d5954c4a2ea` (+5 Makefile lines, all inside the `CONFIG_CC_OPTIMIZE_FOR_DEBUG` block) plus pickman-history records. No failing board's defconfig enables that option, so the change remains inert for all three.
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes, no warnings.
+
+**Actions taken:** None required; no code changes, no new branch, no push.
+
+**Suggested MR reply:**
+
+> The review comment is the attempt-2 pipeline-fix report itself and requests no code changes. All three job failures (edison, felwinter-cb, bpif3) are lab/infrastructure issues unrelated to this MR, whose only net change is an inert `CONFIG_CC_OPTIMIZE_FOR_DEBUG` Makefile block. The sandbox build has been re-verified and passes. Before retrying the pipeline, please: (1) kick or release the stale `kea/labgrid` place lock on edison — the retry loop cannot succeed while it is held; (2) check the bpif3 USB download path (cable/hub/power) on ellesmere; (3) check the ser2net console service for felwinter-cb. Retrying without addressing the edison lock in particular will reproduce the same failure a third time.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 3)
+
+Branch: cherry-e91911169bc
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+Both failures are the same ones diagnosed in attempts 1 and 2. Let me verify the branch state to confirm nothing has changed before reporting.
+
+Confirmed — the branch delta is unchanged and inert. No code changes are needed; both failures are the same infrastructure issues from attempts 1 and 2, recurring for the third time.
+
+## Report: Infrastructure failures (third consecutive occurrence) — no code changes made
+
+Neither failure is caused by the MR. I have made no changes and created no fix branch, since there is nothing to fix in the code (and re-pushing an identical SHA would not trigger a new pipeline).
+
+### Evidence the MR cannot be responsible
+
+The branch's net code change vs `ci/master` is still exactly **+5 lines in the Makefile**, inside an `else ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (`-Og` / `-Wno-maybe-uninitialized`). Neither `edison_defconfig` nor `chromebook_brya_cb_defconfig` enables `CC_OPTIMIZE_FOR_DEBUG`, so the change is completely inert for both failing boards. The remaining commits are `.pickman-history` records only. The sandbox build was verified clean in the prior attempts and the delta is byte-identical.
+
+### Job diagnoses
+
+**edison (job 570703)** — identical to attempts 1 and 2: labgrid place-acquisition conflict at configure time, before any test ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+place edison is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+The stale `kea/labgrid` place lock flagged in both previous attempts is **still held**. This is now the third failure with the exact same error. The job cannot succeed until someone runs `labgrid-client -p edison kick` (or the kea host releases the place), or co-acquisition is allowed via `labgrid-client -p edison allow ellesmere/gitlab-runner`. Retrying without doing this is pointless.
+
+**felwinter-cb (job 570693)** — same cold-flash console failure as attempts 1 and 2. After em100 flashing, coreboot runs bootblock → romstage, performs the cse_lite RW partition switch and HECI Global Reset (normal on a fresh flash), reboots through romstage again — but the U-Boot payload prompt never appears within the 180 s timeout, and on the retry the RFC2217 serial connection collapses:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 180 seconds exceeded during waiting for login
+serial.serialutil.SerialException: connection failed (reader thread died)
+Lab failure: Marking connection bad - no other tests will run
+```
+The console dies at the ser2net/RFC2217 layer, and the boot stalls after romstage on a cold flash (MRC retraining). This is board/lab flakiness, not a build problem — the coreboot image is not even built from this MR.
+
+### Recommendation
+
+Do **not** simply retry again — attempt 3 reproduced attempt 2 exactly, as predicted. Before any retry:
+
+1. **edison**: kick/release the `kea/labgrid` place lock (`labgrid-client -p edison kick`). This is mandatory; three attempts have now failed on the identical lock.
+2. **felwinter-cb**: restart/check the ser2net console service for the board and consider a manual warm boot so MRC training data is cached before the CI flash, or raise the first-boot timeout for cold flashes.
+
+No branch `cherry-e91911169bc-fix3` was created, as there is no code fix to carry.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e91911169bc
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) edison, felwinter-cb.
+
+Both failures are the same ones...
+
+### Conversation log
+Build passes cleanly. No code changes are needed, so I have not created a -v2 branch or force-pushed — pushing an identical SHA would not trigger a new pipeline.
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot`) is not an actionable review request — it is the bot's own "Pipeline fix (attempt 3)" report echoed back as a comment. It explicitly states no code changes were made or needed. This is now the third iteration of the same feedback loop: the bot's diagnostic report gets re-posted as a review comment, which then triggers another review-handling round with nothing to fix.
+
+**Verification done now:**
+- Branch `cherry-e91911169bc` checked out; delta vs `ci/master` confirmed unchanged — the merge commit `d5954c4a2ea` plus pickman-history records, netting exactly +5 Makefile lines inside the `else ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (`-Og` / `-Wno-maybe-uninitialized`). Neither `edison_defconfig` nor `chromebook_brya_cb_defconfig` enables that option, so the change remains inert for both failing boards.
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes, no warnings (exit 0).
+
+**Actions taken:** None required; no code changes, no new branch, no push.
+
+**Suggested MR reply:**
+
+> The review comment is the attempt-3 pipeline-fix report itself and requests no code changes. Both job failures (edison, felwinter-cb) are the same lab/infrastructure issues diagnosed in attempts 1–3; this MR's only net change is an inert `CONFIG_CC_OPTIMIZE_FOR_DEBUG` Makefile block, and the sandbox build has been re-verified clean. **Please do not retry the pipeline until the lab issues are fixed** — three identical attempts confirm retrying alone cannot succeed:
+> 1. **edison**: the stale `kea/labgrid` place lock is still held — run `labgrid-client -p edison kick` (or release from the kea host, or allow co-acquisition for ellesmere/gitlab-runner).
+> 2. **felwinter-cb**: check/restart the ser2net console service (the RFC2217 reader thread dies), and consider caching MRC training data via a warm boot before the CI cold-flash, or raising the first-boot timeout.
+>
+> Manual intervention on these two lab issues is required before a retry can pass.
+
+**Note for the operator:** the pickman review-handling automation may want to filter out `project_1_bot` self-comments from the "review comments to address" list, since they re-trigger this loop indefinitely with no actionable content.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e91911169bc
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The delta is unchanged — just the +5 inert Makefile lines. Verifying the build still passes:
+
+Build passes cleanly. The comment is terminal — no code changes are possible or needed, so I have not created a -v2 branch or pushed.
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot`) is the automation's own terminal status message: *"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."* It is not a code-review request and contains nothing actionable for this branch. It confirms exactly what attempts 1–3 concluded: the failures are lab/infrastructure issues that retries cannot fix, and a human must now intervene in the lab.
+
+**Verification done now:**
+- Branch `cherry-e91911169bc` checked out; delta vs `ci/master` re-confirmed as the merge commit `d5954c4a2ea` netting exactly **+5 Makefile lines** (the inert `CONFIG_CC_OPTIMIZE_FOR_DEBUG` block), plus pickman-history records. No failing board enables that option.
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes, exit 0, no warnings.
+
+**Actions taken:** None required — no code changes, no `-v2` branch, no force-push (an identical SHA would not trigger a new pipeline anyway).
+
+**Suggested MR reply:**
+
+> The retry limit has been reached, as expected — all three pipeline attempts failed on the same lab/infrastructure issues, which this MR (whose only net change is an inert `CONFIG_CC_OPTIMIZE_FOR_DEBUG` Makefile block) cannot cause or fix. The sandbox build has been re-verified and passes. Manual lab intervention is required before any further retry:
+> 1. **edison**: release or kick the stale `kea/labgrid` place lock (`labgrid-client -p edison kick`, or allow co-acquisition for ellesmere/gitlab-runner) — all three attempts failed at configure time on this identical lock.
+> 2. **felwinter-cb**: check/restart the ser2net console service (the RFC2217 reader thread dies during cold-flash first boot); consider caching MRC training data via a warm boot before the CI flash, or raising the first-boot timeout.
+> 3. **bpif3** (attempt 2 only): check the USB download path (cable/hub/power) on ellesmere.
+>
+> Once the edison lock is cleared and the felwinter-cb console is healthy, the pipeline can be retried manually; the branch itself is ready to merge.
+
+**Note for the operator:** this is the fourth consecutive round in which the bot's own report was fed back as a "review comment to address". The review-handling automation should filter out `project_1_bot` self-comments (and terminal status messages like this one) from the actionable list, otherwise the loop will continue indefinitely with nothing to do.
+
+---
+
