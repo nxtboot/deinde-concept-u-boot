@@ -88756,6 +88756,62 @@ Comments addressed:
 **Suggested MR reply:**
 
 > Rebased onto the latest ci/master (45 new commits, all x86 alderlake/brya work). The rebase applied cleanly with no conflicts; range-diff confirms all commits are unchanged, and the empty merge commit is preserved with --keep-empty. Sandbox builds cleanly with buildman (no warnings or errors). Branch force-pushed to trigger a new pipeline.
+---
+
+## 2026-07-23: us/master
+
+Branch: cherry-5a21396c974
+
+Commits:
+- 5a21396c974 configs: sc5xx: Do not store environment in SPI flash
+- 77c79a2c60f mach-sc5xx: Remove update commands from default environment
+- e4b04e491fe mach-sc59x: Add CONFIG_SC5XX_LOADADDR
+- c1fcf768637 mach-sc5xx: Update boot commands
+- 3b9b94ef68c mach-sc5xx: Switch from tftp to wget
+- a29a895bdce mach-sc5xx: Add USB boot command
+- 78e5581f0bc mach-sc5xx: Remove preliminary binman support
+- ad72a93757d dts: sc594: Fix gige-reset line on EZKIT
+- 87ea6e67959 mach-sc5xx: sc573: Rename EZKIT board to EZLITE
+- 4088df81f10 mach-sc5xx: Update image load address
+- a6438a10267 mach-sc5xx: Update SPI bootargs for ubifs
+- 21eeb0176bb configs: sc5xx: Set default bootcmd to SPI boot
+- c6796425da4 arm: sc5xx: Remove SC5XX_LOADADDR
+- 03398e94314 arm: sc5xx: add missing boot env selectors
+- 54026efab10 arm: sc5xx: Add fdt_addr_r, kernel_addr_r, and ramdisk_addr_r
+- e8c00a5e283 mach-sc5xx: Remove unused image offset Kconfig options
+- 397a14dd714 Merge patch series "sc5xx Environment Cleanup and Fixes"
+
+### Conversation log
+Commit 1/17 OK (8 files, 35 deletions matches; build passes). Continuing.
+
+Delta matches exactly. Amending with a note about the conflict resolution, then building.
+
+Same trivial ordering conflict — the commit removes `CONFIG_SC5XX_FITIMAGE_OFFSET`.
+
+Commit 4/17 OK. Continuing.
+
+Commit 13/17 OK. Continuing with the remaining four.
+
+Same trivial ordering conflict in the merge commit. HEAD already contains all the series changes; keep HEAD's line.
+
+All 17 commits present. Running the final build.
+
+All done. Final status:
+
+## Result: Success — all 17 commits cherry-picked onto `cherry-5a21396c974` (based on `ci/master`)
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**Fix-ups made** (all the same trivial cause: `ci/master` has `CONFIG_SPL_SYS_MALLOC_F_LEN` positioned after `CONFIG_SPL_SERIAL` in the sc573 defconfig, while us/master has it before):
+
+1. **`mach-sc5xx: Remove update commands from default environment`** — resolved a context conflict in `configs/sc573-ezkit_defconfig` (kept HEAD's line ordering, removed `CONFIG_SC5XX_UBOOT_OFFSET`). Note added to commit message.
+2. **`mach-sc5xx: Update boot commands`** — same conflict in `configs/sc573-ezkit_defconfig` (removed `CONFIG_SC5XX_FITIMAGE_OFFSET`). Note added.
+3. **`arm: sc5xx: Remove SC5XX_LOADADDR`** — same conflict in `configs/sc573-ezlite_defconfig` (replaced `CONFIG_SC5XX_LOADADDR` with `CONFIG_SYS_LOAD_ADDR`). Note added.
+4. **Merge commit `397a14dd714`** — same context conflict; the resolution left it empty (as expected, since all content was already applied), so it was committed with `--allow-empty` preserving the full merge message and cherry-pick reference.
+
+**Delta checks:** every cherry-picked commit's diffstat matched the original exactly (same files, same line counts) — no concerning deltas.
+
+The branch is ready for pushing; it was not merged anywhere.
 
 ---
 
