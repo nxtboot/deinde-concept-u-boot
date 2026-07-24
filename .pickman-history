@@ -89230,3 +89230,52 @@ Build passes cleanly. No code changes are needed, so I have not created a -v2 br
 
 ---
 
+### Pipeline fix: 2026-07-24 (attempt 3)
+
+Branch: cherry-e91911169bc
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+Both failures are the same ones diagnosed in attempts 1 and 2. Let me verify the branch state to confirm nothing has changed before reporting.
+
+Confirmed — the branch delta is unchanged and inert. No code changes are needed; both failures are the same infrastructure issues from attempts 1 and 2, recurring for the third time.
+
+## Report: Infrastructure failures (third consecutive occurrence) — no code changes made
+
+Neither failure is caused by the MR. I have made no changes and created no fix branch, since there is nothing to fix in the code (and re-pushing an identical SHA would not trigger a new pipeline).
+
+### Evidence the MR cannot be responsible
+
+The branch's net code change vs `ci/master` is still exactly **+5 lines in the Makefile**, inside an `else ifdef CONFIG_CC_OPTIMIZE_FOR_DEBUG` block (`-Og` / `-Wno-maybe-uninitialized`). Neither `edison_defconfig` nor `chromebook_brya_cb_defconfig` enables `CC_OPTIMIZE_FOR_DEBUG`, so the change is completely inert for both failing boards. The remaining commits are `.pickman-history` records only. The sandbox build was verified clean in the prior attempts and the delta is byte-identical.
+
+### Job diagnoses
+
+**edison (job 570703)** — identical to attempts 1 and 2: labgrid place-acquisition conflict at configure time, before any test ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+place edison is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+The stale `kea/labgrid` place lock flagged in both previous attempts is **still held**. This is now the third failure with the exact same error. The job cannot succeed until someone runs `labgrid-client -p edison kick` (or the kea host releases the place), or co-acquisition is allowed via `labgrid-client -p edison allow ellesmere/gitlab-runner`. Retrying without doing this is pointless.
+
+**felwinter-cb (job 570693)** — same cold-flash console failure as attempts 1 and 2. After em100 flashing, coreboot runs bootblock → romstage, performs the cse_lite RW partition switch and HECI Global Reset (normal on a fresh flash), reboots through romstage again — but the U-Boot payload prompt never appears within the 180 s timeout, and on the retry the RFC2217 serial connection collapses:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 180 seconds exceeded during waiting for login
+serial.serialutil.SerialException: connection failed (reader thread died)
+Lab failure: Marking connection bad - no other tests will run
+```
+The console dies at the ser2net/RFC2217 layer, and the boot stalls after romstage on a cold flash (MRC retraining). This is board/lab flakiness, not a build problem — the coreboot image is not even built from this MR.
+
+### Recommendation
+
+Do **not** simply retry again — attempt 3 reproduced attempt 2 exactly, as predicted. Before any retry:
+
+1. **edison**: kick/release the `kea/labgrid` place lock (`labgrid-client -p edison kick`). This is mandatory; three attempts have now failed on the identical lock.
+2. **felwinter-cb**: restart/check the ser2net console service for the board and consider a manual warm boot so MRC training data is cached before the CI flash, or raise the first-boot timeout for cold flashes.
+
+No branch `cherry-e91911169bc-fix3` was created, as there is no code fix to carry.
+
+---
+
