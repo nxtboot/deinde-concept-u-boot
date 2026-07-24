@@ -2,6 +2,13 @@ CHROMEBOOK BRYA BOARD
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
 F:	board/google/chromebook_brya/
+F:	doc/board/google/chromebook_brya.rst
+F:	arch/x86/dts/chromebook_brya.dts
+F:	arch/x86/dts/chromebook_brya-u-boot.dtsi
 F:	arch/x86/dts/chromebook_brya_cb.dts
 F:	arch/x86/dts/chromebook_brya_cb-u-boot.dtsi
 F:	configs/chromebook_brya_cb_defconfig
+F:	configs/chromebook_brya_defconfig
+F:	arch/x86/cpu/alderlake/
+F:	arch/x86/include/asm/arch-alderlake/
+F:	include/configs/chromebook_brya.h

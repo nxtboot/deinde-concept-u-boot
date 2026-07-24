@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ *
+ * Flash-image layout for the native brya build. Everything TPL needs must
+ * be inside the top 16MB of the flash, which the PCH maps at 0xff000000:
+ * the reset vector, FIT, TPL itself (which runs execute-in-place) and
+ * FSP-T and FSP-M, which are placed at the ImageBase addresses they are
+ * linked for. SPL and U-Boot proper are loaded into RAM, so their flash
+ * position is not fixed by hardware.
+ */
+
+#include <config.h>
+
+#ifdef CONFIG_ROM_SIZE
+/ {
+	binman {
+		multiple-images;
+
+		rom {
+			filename = "u-boot.rom";
+			end-at-4gb;
+			sort-by-offset;
+			pad-byte = <0xff>;
+			size = <CONFIG_ROM_SIZE>;
+
+			intel-descriptor {
+				filename = "descriptor.bin";
+				assume-size = <0x1000>;
+			};
+			intel-me {
+				filename = "me.bin";
+				offset = <0xfe001000>;
+				assume-size = <0x4ff000>;
+			};
+			u-boot {
+				offset = <CONFIG_X86_OFFSET_U_BOOT>;
+			};
+			u-boot-dtb {
+			};
+			fdtmap {
+			};
+#ifdef CONFIG_SPL
+			u-boot-spl {
+				offset = <CONFIG_X86_OFFSET_SPL>;
+			};
+#endif
+#ifdef CONFIG_FSP_M_ADDR
+			intel-fsp-s {
+				filename = "fsp_S.bin";
+				offset = <CONFIG_FSP_S_ADDR>;
+			};
+			intel-fsp-m {
+				filename = "fsp_M.bin";
+				offset = <CONFIG_FSP_M_ADDR>;
+			};
+			intel-fsp-t {
+				filename = "fsp_T.bin";
+				offset = <CONFIG_FSP_T_ADDR>;
+			};
+#endif
+			vbt {
+				type = "blob-ext";
+				filename = "vbt.bin";
+			};
+#ifdef CONFIG_TPL
+			u-boot-tpl {
+				offset = <CONFIG_TPL_TEXT_BASE>;
+			};
+#endif
+			spd {
+				type = "blob-ext";
+				filename = "spd.bin";
+			};
+			microcode {
+				type = "blob-ext";
+				filename = "mu_06-9a-04.bin";
+				align = <16>;
+			};
+			intel-fit {
+				fit,microcode = "microcode";
+			};
+			intel-fit-ptr {
+			};
+#ifdef CONFIG_TPL
+			x86-start16-tpl {
+				offset = <CONFIG_SYS_X86_START16>;
+			};
+			x86-reset16-tpl {
+				offset = <CONFIG_RESET_VEC_LOC>;
+			};
+#endif
+			image-header {
+				location = "end";
+			};
+		};
+	};
+};
+#endif

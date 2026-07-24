@@ -126,6 +126,7 @@ source "board/google/Kconfig"
 source "board/intel/Kconfig"
 
 # platform-specific options below
+source "arch/x86/cpu/alderlake/Kconfig"
 source "arch/x86/cpu/apollolake/Kconfig"
 source "arch/x86/cpu/baytrail/Kconfig"
 source "arch/x86/cpu/braswell/Kconfig"
@@ -261,6 +262,8 @@ config BOARD_ROMSIZE_KB_8192
 	bool
 config BOARD_ROMSIZE_KB_16384
 	bool
+config BOARD_ROMSIZE_KB_32768
+	bool
 
 choice
 	prompt "ROM chip size"
@@ -271,6 +274,7 @@ choice
 	default UBOOT_ROMSIZE_KB_4096 if BOARD_ROMSIZE_KB_4096
 	default UBOOT_ROMSIZE_KB_8192 if BOARD_ROMSIZE_KB_8192
 	default UBOOT_ROMSIZE_KB_16384 if BOARD_ROMSIZE_KB_16384
+	default UBOOT_ROMSIZE_KB_32768 if BOARD_ROMSIZE_KB_32768
 	help
 	  Select the size of the ROM chip you intend to flash U-Boot on.
 
@@ -307,6 +311,13 @@ config UBOOT_ROMSIZE_KB_16384
 	help
 	  Choose this option if you have a 16384 KB (16 MB) ROM chip.
 
+config UBOOT_ROMSIZE_KB_32768
+	bool "32768 KB (32 MB)"
+	help
+	  Choose this option if you have a 32768 KB (32 MB) ROM chip. Recent
+	  Intel platforms use ROMs of this size, with only the top 16MB
+	  memory-mapped below 4GB.
+
 endchoice
 
 # Map the config names to an integer (KB).
@@ -318,6 +329,7 @@ config UBOOT_ROMSIZE_KB
 	default 4096 if UBOOT_ROMSIZE_KB_4096
 	default 8192 if UBOOT_ROMSIZE_KB_8192
 	default 16384 if UBOOT_ROMSIZE_KB_16384
+	default 32768 if UBOOT_ROMSIZE_KB_32768
 
 # Map the config names to a hex value (bytes).
 config ROM_SIZE
@@ -328,6 +340,7 @@ config ROM_SIZE
 	default 0x400000 if UBOOT_ROMSIZE_KB_4096
 	default 0x800000 if UBOOT_ROMSIZE_KB_8192
 	default 0x1000000 if UBOOT_ROMSIZE_KB_16384
+	default 0x2000000 if UBOOT_ROMSIZE_KB_32768
 
 config HAVE_INTEL_ME
 	bool "Platform requires Intel Management Engine"
@@ -394,7 +407,7 @@ config USE_CAR
 choice
 	prompt "FSP version"
 	depends on HAVE_FSP
-	default FSP_VERSION2 if INTEL_APOLLOLAKE
+	default FSP_VERSION2 if INTEL_APOLLOLAKE || INTEL_ALDERLAKE
 	default FSP_VERSION1
 	help
 	  Selects the FSP version to use. Intel has published several versions
@@ -422,6 +435,17 @@ config SPL_FSP_VERSION2
 	help
 	  This covers versions 2.0 and 2.1. See here for details:
 	  https://github.com/IntelFsp/fsp/wiki
+
+config FSP2_PWRM_BASE
+	hex
+	depends on FSP_VERSION2
+	default 0
+	help
+	  MMIO base of the PMC's PWRM register space, used to reach the ETR
+	  register which makes a CF9 reset global. This differs between SoCs,
+	  so each one must provide it; the default of zero means it is not
+	  known, in which case a reset requested by the FSP is performed as a
+	  plain host reset without touching ETR.
 
 config FSP_FILE
 	string "Firmware Support Package binary filename"

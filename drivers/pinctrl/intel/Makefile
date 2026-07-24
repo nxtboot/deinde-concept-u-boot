@@ -3,4 +3,5 @@
 # Copyright 2019 Google LLC
 
 obj-y += pinctrl.o
+obj-$(CONFIG_PINCTRL_INTEL_ALDERLAKE) += pinctrl_alderlake.o
 obj-$(CONFIG_PINCTRL_INTEL_APL) += pinctrl_apl.o

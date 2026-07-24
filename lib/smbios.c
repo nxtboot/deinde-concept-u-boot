@@ -488,13 +488,13 @@ static int smbios_write_type0(ulong *current, int *handle,
 						  SYSID_SM_BIOS_REL_DATE,
 						  U_BOOT_DMI_DATE);
 #ifdef CONFIG_ROM_SIZE
-	if (CONFIG_ROM_SIZE < SZ_16M) {
-		t->bios_rom_size = (CONFIG_ROM_SIZE / 65536) - 1;
-	} else {
-		/* CONFIG_ROM_SIZE < 8 GiB */
-		t->bios_rom_size = 0xff;
+	/*
+	 * The size is in 64KB blocks, less one, saturating at 0xff, which
+	 * means that the true size is in the extended field, in MB
+	 */
+	t->bios_rom_size = min_t(ulong, CONFIG_ROM_SIZE / 65536 - 1, 0xff);
+	if (CONFIG_ROM_SIZE >= SZ_16M)		/* must be less than 8GB */
 		t->extended_bios_rom_size = CONFIG_ROM_SIZE >> 20;
-	}
 #endif
 	t->bios_characteristics = BIOS_CHARACTERISTICS_PCI_SUPPORTED |
 				  BIOS_CHARACTERISTICS_SELECTABLE_BOOT |

@@ -40,7 +40,12 @@ static struct pci_bar {
 } barinfo[] = {
 	{ PCI_BASE_ADDRESS_SPACE_IO, 1 },
 	{ PCI_BASE_ADDRESS_MEM_TYPE_32, MEM_TEXT_SIZE },
-	{ 0, 0 },
+	/*
+	 * A 64-bit BAR (low half in BAR2, high half in BAR3) with no size, as
+	 * a disabled device reports: the low half reads back its type bits but
+	 * the size works out as zero. Used to check that auto-config skips it
+	 */
+	{ PCI_BASE_ADDRESS_MEM_TYPE_64, 0 },
 	{ 0, 0 },
 	{ 0, 0 },
 	{ 0, 0 },
@@ -209,7 +214,9 @@ static int sandbox_swap_case_write_config(struct udevice *emul, uint offset,
 		plat->command = value;
 		break;
 	case PCI_BASE_ADDRESS_0:
-	case PCI_BASE_ADDRESS_1: {
+	case PCI_BASE_ADDRESS_1:
+	case PCI_BASE_ADDRESS_2:
+	case PCI_BASE_ADDRESS_3: {
 		int barnum;
 		u32 *bar;
 
@@ -308,6 +315,7 @@ static int pci_ea_bar2_magic = PCI_EA_BAR2_MAGIC;
 static int sandbox_swap_case_map_physmem(struct udevice *dev,
 		phys_addr_t addr, unsigned long *lenp, void **ptrp)
 {
+	struct swap_case_plat *plat = dev_get_plat(dev);
 	struct swap_case_priv *priv = dev_get_priv(dev);
 	unsigned int offset, avail;
 	int barnum;
@@ -354,6 +362,14 @@ static int sandbox_swap_case_map_physmem(struct udevice *dev,
 		}
 		return 0;
 	}
+
+	/*
+	 * The device does not respond to memory cycles until memory decoding
+	 * is enabled; without this check, an unconfigured device's zero BARs
+	 * would claim low sysmem addresses
+	 */
+	if (!(plat->command & PCI_COMMAND_MEMORY))
+		return -ENOENT;
 
 	ret = sandbox_swap_case_find_bar(dev, addr, &barnum, &offset);
 	if (ret)

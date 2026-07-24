@@ -21,6 +21,14 @@ int fspm_update_config(struct udevice *dev, struct fspm_upd *upd)
 
 	arch->nvs_buffer_ptr = NULL;
 	cache_ret = prepare_mrc_cache(upd);
+	if (!cache_ret) {
+		struct mrc_data_container *cache;
+
+		/* Apollo Lake also has variable data, in its own region */
+		cache_ret = prepare_mrc_cache_type(MRC_TYPE_VAR, &cache);
+		if (!cache_ret)
+			cfg->variable_nvs_buffer_ptr = cache->data;
+	}
 	if (cache_ret && cache_ret != -ENOENT)
 		return log_msg_ret("mrc", cache_ret);
 	arch->stack_base = (void *)(CONFIG_SYS_CAR_ADDR + CONFIG_SYS_CAR_SIZE -

@@ -8,6 +8,8 @@
 #ifndef __ASM_CPU_COMMON_H
 #define __ASM_CPU_COMMON_H
 
+#include <linux/compiler.h>
+
 /* Standard Intel bus clock is fixed at 100MHz */
 enum {
 	INTEL_BCLK_MHZ		= 100
@@ -193,5 +195,38 @@ int cpu_get_cores_per_package(void);
  * https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/machine-check-exceptions-debug-paper.pdf
  */
 void cpu_mca_configure(void);
+
+/**
+ * x86_cf9_reset() - Issue a reset via the CF9 reset-control port
+ *
+ * Write @code to the reset-control port to trigger a reset. Depending on
+ * @code and the chipset this may or may not return.
+ *
+ * @code: Reset-control value (a combination of SYS_RST, RST_CPU and FULL_RST)
+ */
+void x86_cf9_reset(uint code);
+
+/**
+ * intel_global_reset() - Reset the platform, including the CSE (ME)
+ *
+ * Set the CF9 global-reset bit in the PMC, so that the CF9 reset which
+ * follows resets the whole platform (the CSE included), then issue that
+ * reset. This does not return.
+ *
+ * @pwrmbase: Base address of the PMC's PWRM MMIO region (must be decoding)
+ */
+void __noreturn intel_global_reset(ulong pwrmbase);
+
+/**
+ * intel_host_reset() - Reset the platform but leave the CSE (ME) running
+ *
+ * Clear the CF9 global-reset bit in the PMC, so the CF9 reset which follows
+ * is a host reset which does not reset the CSE, then issue that reset. This
+ * does not return.
+ *
+ * @pwrmbase: Base address of the PMC's PWRM MMIO region (must be decoding)
+ * @cold: true for a cold (full power-cycle) reset, false for a warm one
+ */
+void __noreturn intel_host_reset(ulong pwrmbase, bool cold);
 
 #endif

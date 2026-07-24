@@ -10,6 +10,7 @@
 #include <pch.h>
 #include <sysreset.h>
 #include <acpi/acpi_s3.h>
+#include <asm/cpu_common.h>
 #include <asm/io.h>
 #include <asm/processor.h>
 #include <asm/sysreset.h>
@@ -89,7 +90,7 @@ static int x86_sysreset_request(struct udevice *dev, enum sysreset_t type)
 		return -EPROTONOSUPPORT;
 	}
 
-	outb(value, IO_PORT_RESET);
+	x86_cf9_reset(value);
 
 	return -EINPROGRESS;
 }

@@ -1104,6 +1104,16 @@ bpif3:
 felwinter-cb:
   variables:
     ROLE: felwinter-cb
+  # Shares the physical board with the 'felwinter' job, so serialise them
+  resource_group: felwinter-board
+  <<: *sjg_lab_dfn
+
+# Felwinter Chromebook (brya, Alder Lake), running U-Boot natively from
+# an EM100 flash emulator, with no coreboot
+felwinter:
+  variables:
+    ROLE: felwinter
+  resource_group: felwinter-board
   <<: *sjg_lab_dfn
 
 jetson-nano:

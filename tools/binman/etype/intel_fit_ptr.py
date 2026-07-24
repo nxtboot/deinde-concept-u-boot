@@ -2,7 +2,7 @@
 # Copyright (c) 2016 Google, Inc
 # Written by Simon Glass <sjg@chromium.org>
 #
-# Entry-type module for a pointer to an Intel Firmware Image Table
+# Entry-type module for a pointer to an Intel Firmware Interface Table
 #
 
 import struct
@@ -10,7 +10,7 @@ import struct
 from binman.etype.blob_ext import Entry_blob_ext
 
 class Entry_intel_fit_ptr(Entry_blob_ext):
-    """Intel Firmware Image Table (FIT) pointer
+    """Intel Firmware Interface Table (FIT) pointer
 
     This entry contains a pointer to the FIT. It is required to be at address
     0xffffffc0 in the image.

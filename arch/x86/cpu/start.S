@@ -161,7 +161,7 @@ car_init_ret:
 	jz	skip_hob
 	movl	%esi, GD_HOB_LIST(%edx)
 
-#ifdef CONFIG_HAVE_FSP
+#ifdef CONFIG_FSP_VERSION1
 	/*
 	 * After fsp_init() returns, the stack has already been switched to a
 	 * place within system memory as defined by CONFIG_FSP_TEMP_RAM_ADDR.

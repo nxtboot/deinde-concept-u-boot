@@ -620,6 +620,10 @@ extern void pci_cfgfunc_config_device(struct pci_controller* hose, pci_dev_t dev
  *
  * With driver model this is dev_get_uclass_priv(bus)
  *
+ * @skip_enumeration_until_reloc: true to avoid scanning the bus until U-Boot
+ *	has relocated. Some platforms cannot access the PCI devices until the
+ *	silicon has been set up, which happens later in boot; the devices in
+ *	the devicetree are still bound
  * @skip_auto_config_until_reloc: true to avoid auto-config until U-Boot has
  *	relocated. Normally if PCI is used before relocation, this happens
  *	before relocation also. Some platforms set up static configuration in
@@ -630,6 +634,7 @@ struct pci_controller {
 	struct udevice *bus;
 	struct udevice *ctlr;
 	bool skip_auto_config_until_reloc;
+	bool skip_enumeration_until_reloc;
 
 	int first_busno;
 	int last_busno;

@@ -24,6 +24,13 @@ int fsp_setup_pinctrl(void)
 	ofnode node;
 	int ret;
 
+	/*
+	 * Not all SoCs have an Intel pinctrl driver yet; those set up their
+	 * pads another way
+	 */
+	if (!IS_ENABLED(CONFIG_PINCTRL_INTEL))
+		return 0;
+
 	/* Make sure pads are set up early in U-Boot */
 	if (!ll_boot_init() || xpl_phase() != PHASE_BOARD_F)
 		return 0;
@@ -33,8 +40,11 @@ int fsp_setup_pinctrl(void)
 	if (ret)
 		return log_msg_ret("no fsp pinctrl", ret);
 	node = ofnode_path("fsp");
-	if (!ofnode_valid(node))
-		return log_msg_ret("no fsp params", -EINVAL);
+	if (!ofnode_valid(node)) {
+		/* The board's own pinctrl config is enough */
+		log_debug("No fsp node; skipping pad config\n");
+		return 0;
+	}
 	ret = pinctrl_config_pads_for_node(dev, node);
 	if (ret)
 		return log_msg_ret("pad config", ret);
