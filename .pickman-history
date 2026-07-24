@@ -89461,3 +89461,48 @@ All done. Summary:
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-2ea4d3f8a54
+
+Commits:
+- 2ea4d3f8a54 watchdog: orion_wdt: Add support for armada-xp
+- d98e11bcbcb watchdog: Correct dependencies for WDT_MAX6370
+- d62801d0944 watchdog: designware: Fix probe when clk_enable return ENOSYS
+- 1a489a1a437 watchdog: sbsa_gwdt: clamp WOR value to hw max
+- 9124bf185ba watchdog: octeontx_wdt: fix DT matches to Marvell compatibles
+- 3abd953da8c doc: wdt: fix typo for expire
+- 3c3ba75c852 watchdog: orion_wdt: use dev_read_addr_size_index()
+- b9b27c875f6 watchdog: rti: Use dev_read_addr_ptr()
+- 5843db9dada watchdog: mpc8xxx_wdt: Use dev_remap_addr()
+- 17f7334c952 drivers: watchdog: Fix dev_read_addr error check
+- 06b57c9876d Merge tag 'u-boot-watchdog-next-20260609' of https://source.denx.de/u-boot/custodians/u-boot-watchdog into next
+
+### Conversation log
+All done. Final status:
+
+**Branch:** `cherry-2ea4d3f8a54` (based on ci/master), 11 commits applied, ready for pushing.
+
+**Cherry-picks (all clean, no conflicts):**
+| Original | New | Subject |
+|---|---|---|
+| 2ea4d3f8a54 | 4e45db9a8c9 | watchdog: orion_wdt: Add support for armada-xp |
+| d98e11bcbcb | 4564e947f39 | watchdog: Correct dependencies for WDT_MAX6370 |
+| d62801d0944 | 32e926588b5 | watchdog: designware: Fix probe when clk_enable return ENOSYS |
+| 1a489a1a437 | 5699a51fe7b | watchdog: sbsa_gwdt: clamp WOR value to hw max |
+| 9124bf185ba | d75fd39cc8e | watchdog: octeontx_wdt: fix DT matches to Marvell compatibles |
+| 3abd953da8c | f2302989d77 | doc: wdt: fix typo for expire |
+| 3c3ba75c852 | 462acedf621 | watchdog: orion_wdt: use dev_read_addr_size_index() |
+| b9b27c875f6 | 2719f4deb07 | watchdog: rti: Use dev_read_addr_ptr() |
+| 5843db9dada | be018356322 | watchdog: mpc8xxx_wdt: Use dev_remap_addr() |
+| 17f7334c952 | ac0961dd346 | drivers: watchdog: Fix dev_read_addr error check |
+| 06b57c9876d | 95290217d1c | Merge tag 'u-boot-watchdog-next-20260609' (empty, as expected) |
+
+- **Build result:** OK — sandbox built cleanly with buildman after every cherry-pick and at the end (no warnings or errors)
+- **Fix-ups:** None needed. The merge commit became empty (its content was carried by the 10 preceding picks) and was committed with `--allow-empty` to preserve the merge message and the `(cherry picked from ...)` trailer
+- **Delta checks:** Every cherry-picked commit matched its original exactly (same files, same insertion/deletion counts)
+
+The branch has not been merged anywhere, per your instructions.
+
+---
+
