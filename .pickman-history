@@ -88617,3 +88617,145 @@ All done. Here's the report:
 
 ---
 
+## 2026-07-23: us/master
+
+Branch: cherry-3ab8ea4a444
+
+Commits:
+- 3ab8ea4a444 sandbox: Drop special link order treatment of start.o and sdl.o
+- 4355a9a5f00 linker_lists: Do not set "unused" attribute
+- 6e73890c739 event: Remove obsolete comment and __used attributes
+- cceccea3a99 Merge patch series "Cleanup some linker list usage issues"
+
+### Conversation log
+The first cherry-pick has conflicts. Per instructions, let me first check whether these commits are already present in ci/master:
+
+Now let me see the full original commit (it also touches arch/sandbox/Makefile) and the conflicted file:
+
+Now amend to note the conflict resolution, then verify the delta:
+
+Delta matches exactly. Build test:
+
+All changes are already applied, so the merge commit will be empty as expected. Continue:
+
+All done. Final status:
+
+## Result: Success
+
+Branch `cherry-3ab8ea4a444` (based on `ci/master`) now has all 4 commits:
+
+| Commit | Original | Status |
+|---|---|---|
+| `9a56870e888` | 3ab8ea4a444 sandbox: Drop special link order treatment of start.o and sdl.o | Applied with fix-up |
+| `5f9313d17cf` | 4355a9a5f00 linker_lists: Do not set "unused" attribute | Clean |
+| `a47ff7474ea` | 6e73890c739 event: Remove obsolete comment and __used attributes | Clean |
+| `f8cc8200229` | cceccea3a99 Merge patch series "Cleanup some linker list usage issues" | Empty (preserved) |
+
+**Build result:** ok — sandbox built cleanly with buildman after each cherry-pick and at the end (no warnings or errors).
+
+**Fix-ups made:**
+- **Commit 1** had a conflict in `arch/sandbox/cpu/Makefile`: ci/master's `obj-y` line has extra objects (mem.o, tty.o, fuzz.o/main.o conditional block) not in the upstream parent. Resolved by moving `start.o` to the front of `obj-y` and converting sdl.o from `extra-` to `obj-`, keeping all ci/master objects. A note describing this was appended to the commit message. Resulting delta matches the original exactly (2 files, +2/−12).
+- **Merge commit** conflicted the same way (it replays the series against its first parent); resolved by keeping our already-applied HEAD content, which made the commit empty. It was committed with `--allow-empty` reusing the original merge message plus the `(cherry picked from ...)` line.
+
+**Concerning deltas:** none — commits 1–3 all match their originals' file lists and line counts exactly.
+
+The branch is left ready for pushing; nothing was merged elsewhere.
+
+---
+
+### Pipeline fix: 2026-07-23 (attempt 1)
+
+Branch: cherry-3ab8ea4a444
+
+Failed jobs:
+- edison (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- rock5b (sjg-lab)
+- colibrimx8 (sjg-lab)
+
+### Conversation log
+## Report: All four failures are infrastructure/transient — no code changes made
+
+I diagnosed each failed job and none of them is caused by the branch's commits (which only remove `unused`/`__maybe_unused`/`__used` attribute markers from linker-list entries and adjust sandbox link order):
+
+### Per-job diagnosis
+
+- **edison** (567150): labgrid place-acquisition failure — `place edison is not acquired by your user, acquired by labgrid`. The job failed in `pytest_configure` before any U-Boot code ran. Pure lab infrastructure issue.
+- **rock5b** (567137): `dd: error writing '/dev/sdp': Input/output error` while flashing u-boot-rockchip.bin to the SD mux. Hardware/storage failure on the lab host.
+- **colibrimx8** (567134): `Lab timeout: Marking connection bad` during board bootstrap — lab infrastructure timeout, no test even ran.
+- **qemu-x86_64** (567144): a single flaky test, `test_efi_selftest_text_input_ex` (47 passed, 1 failed). All earlier key checks in the same test passed (EOT, BS, TAB, 'a', UP, Euro sign); only the final multi-byte escape sequence `ESC [ 1 5 ; 4 ~` (SHIFT+ALT+FN 5) timed out. This is a known timing flake: if the escape-sequence bytes arrive over the serial console with a gap, the EFI console parser mis-decodes them. The branch touches nothing in console/input handling, and the selftest's linker-list entry demonstrably works since the test itself ran.
+
+### Ruling out the linker-list changes
+
+The one plausible concern was that dropping attributes could cause linker-list entries to be discarded. I checked: `ll_entry_declare()` entries are non-static globals in named `__u_boot_list_2_*` sections, kept by `KEEP()` in the linker scripts, so removing the warning-suppression attributes cannot drop them — and the EFI selftests on qemu-x86_64 all registered and ran correctly, confirming this.
+
+### Verification
+
+- `um build sandbox` — clean, no output
+- `buildman -o /tmp/pickman` for colibrimx8, edison, qemu-x86_64, rock5b, sandbox (14 boards via fuzzy match) — all 14 built; only pre-existing warnings (rockchip missing-blob notes, sandbox dtc `ranges` warnings)
+
+### Result
+
+Branch `cherry-3ab8ea4a444-fix1` created, identical to `cherry-3ab8ea4a444` (HEAD `57be1e9d3d4`) — no commits amended or added. The recommended action is simply to retry the pipeline; the edison/rock5b/colibrimx8 lab issues may need the lab operator's attention (particularly the rock5b SD-card I/O error, which may recur).
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-3ab8ea4a444
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, qemu-x86_64, rock5b, colibrimx8.
+
+## Report: A...
+
+### Conversation log
+Build is clean. Now create the -v2 branch and push:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is not a human review request — it is the bot's own "Pipeline fix (attempt 1)" report. Its conclusion is that all four failed jobs are infrastructure/transient (edison labgrid place-acquisition, rock5b SD-mux I/O error, colibrimx8 lab timeout, qemu-x86_64 flaky `test_efi_selftest_text_input_ex`) and that **no code changes are required** — the pipeline just needs a retry. There is therefore nothing actionable to change in the code.
+
+**Actions taken:**
+- Checked out `cherry-3ab8ea4a444`; it already contains the fix1 analysis outcome plus a `.pickman-history` record commit (`1edfe49338a`) on top of what the remote had (`57be1e9d3d4`). No commits were amended or added.
+- Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly, no warnings or errors.
+- Created local branch `cherry-3ab8ea4a444-v2` (identical to HEAD `1edfe49338a`).
+- Pushed to the original remote branch via `./tools/pickman/pickman push-branch cherry-3ab8ea4a444 -r ci -f` (`57be1e9d3d4..1edfe49338a`), which updates MR !1179 and automatically triggers a fresh pipeline — the retry that the diagnosis called for.
+
+**Suggested MR reply:**
+
+> The review comment is the pipeline-fix diagnosis itself, which found all four failures (edison, rock5b, colibrimx8, qemu-x86_64) to be lab-infrastructure issues or a known flaky EFI console test, unrelated to this series' linker-list changes. No code changes are needed; the branch has been re-pushed unchanged (code-wise) to trigger a new pipeline run. The rock5b SD-card I/O error and the edison/colibrimx8 lab issues may need the lab operator's attention if they recur.
+
+---
+
+### Review: 2026-07-23
+
+Branch: cherry-3ab8ea4a444
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase of MR !1179 (`cherry-3ab8ea4a444`) onto latest `ci/master` — success**
+
+**What was done:**
+1. Fetched `ci` and checked out `cherry-3ab8ea4a444`; ci/master had moved forward by 45 commits (all x86 alderlake/brya work, unrelated to this series)
+2. Ran `git rebase --keep-empty ci/master` — completed cleanly with **no conflicts**; all 7 commits replayed:
+   - `6b7488b5414` sandbox: Drop special link order treatment of start.o and sdl.o
+   - `8c7d8353950` linker_lists: Do not set "unused" attribute
+   - `cab904efa1d` event: Remove obsolete comment and __used attributes
+   - `d819c17c339` Merge patch series (empty merge commit, preserved)
+   - plus the 3 `.pickman-history` record commits
+3. **Delta verification:** `git show --stat` before/after matches exactly for every commit (same files, same +/− counts), and `git range-diff` shows all 7 commits as `=` (identical patches)
+4. **Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+5. Created local branch `cherry-3ab8ea4a444-v3` (v2 already existed from the previous round) at `c041aba226f`
+6. Force-pushed via `./tools/pickman/pickman push-branch cherry-3ab8ea4a444 -r ci -f` (`1edfe49338a...c041aba226f`), which updates MR !1179 and triggers a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto the latest ci/master (45 new commits, all x86 alderlake/brya work). The rebase applied cleanly with no conflicts; range-diff confirms all commits are unchanged, and the empty merge commit is preserved with --keep-empty. Sandbox builds cleanly with buildman (no warnings or errors). Branch force-pushed to trigger a new pipeline.
+
+---
+
