@@ -90611,3 +90611,45 @@ Notably, three of the failures reference the lab host **kea** (place holder, ref
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-e7332861253
+
+Commits:
+- e7332861253 image-fit-sig: Validate hashed-strings region size
+- 7304d569e61 fdt_region: Check return value of fdt_get_property_by_offset() calls
+- 9e0d2fb4296 image-fit: Limit recursion depth in fdt_check_no_at()
+- 69f6272b24a image-fit: Validate external data offset and size
+- f3d2ff3f5c3 fdt: Check return value of fdt_get_name() calls
+- 7c290d20cd8 Merge branch 'assorted-fit-validation-fixes' into next
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+All 6 commits are present. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete — branch `cherry-e7332861253`
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after each commit and at the end).
+
+**Commits applied (6/6):**
+
+| New hash | Original | Subject | Delta check |
+|---|---|---|---|
+| cbbaa5912a7 | e7332861253 | image-fit-sig: Validate hashed-strings region size | exact match (2 files, +43/-2) |
+| 71a9728577b | 7304d569e61 | fdt_region: Check return value of fdt_get_property_by_offset() calls | exact match (+10) |
+| 4ca5d6ee343 | 9e0d2fb4296 | image-fit: Limit recursion depth in fdt_check_no_at() | exact match (+9/-4) |
+| 08503e72791 | 69f6272b24a | image-fit: Validate external data offset and size | exact match (+216/-2) |
+| bf6c7f7e3a6 | f3d2ff3f5c3 | fdt: Check return value of fdt_get_name() calls | exact match (3 files, +11) |
+| 7fcdc1762fb | 7c290d20cd8 | Merge branch 'assorted-fit-validation-fixes' into next | empty (as expected), message preserved with -x reference |
+
+**Fix-ups made:** none — all cherry-picks applied cleanly with no conflicts and identical diffstats to the originals.
+
+**Concerning deltas:** none. The merge commit resolved to empty (its content was already carried by the five preceding picks), so it was committed with `--allow-empty` to preserve the merge message in history.
+
+The branch is ready for pushing and has not been merged anywhere.
+
+---
+
