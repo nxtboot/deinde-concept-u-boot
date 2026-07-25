@@ -90325,3 +90325,54 @@ All done. Final status:
 
 ---
 
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-45eec051cef
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- tk1 (sjg-lab)
+- felwinter-cb (sjg-lab)
+- snow (sjg-lab)
+- bbb (sjg-lab)
+- pcduino3_nano (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs to diagnose the failures.
+
+Pure reorders. Let me check the full file footprint of the series to confirm nothing overlaps the snow (Exynos) build.
+
+Sandbox builds cleanly (no output = success). Now the full board set:
+
+## Report: All failures are infrastructure/transient — no code changes made
+
+**Branch**: `cherry-45eec051cef-fix1` created, pointing at the unchanged tip of `cherry-45eec051cef` (no fixes were needed).
+
+### Analysis
+
+The series touches only mediatek/airoha files: `drivers/net/` (dwc_eth_qos, airoha PHYs, Kconfig/Makefile reorder), `drivers/pinctrl/mediatek/`, mt8189/mt8371 device trees, mt81xx configs and MAINTAINERS. The Kconfig and Makefile "alphabetical ordering" commits are provably semantic no-ops (same symbols, same dependencies, same defaults). **None of the seven failing boards compiles a single file this series modifies** — they are am335x, x86, sunxi, TI am62x, Exynos and Tegra platforms.
+
+### Per-job diagnosis
+
+| Job | Failure | Cause |
+|---|---|---|
+| edison | `place edison is not acquired by your user, acquired by labgrid` | Infra: labgrid place contention |
+| bbb | `rfc2217://kea:37167: Connection refused` | Infra: serial exporter on host `kea` down |
+| felwinter-cb | `rfc2217://kea:60955: Connection refused` | Infra: same `kea` exporter outage |
+| play | No U-Boot prompt after flashing (timeout 20s) | Board/lab flake; series doesn't touch TI am62x |
+| pcduino3_nano | SPL `mmc block read error` -38 in SPL itself | Board/SD flake; series doesn't touch sunxi/mmc |
+| tk1 | `test_sleep`: 3.71s vs 3.25s limit | Classic timing flake (only failure in 39 passed tests) |
+| snow | Data abort during `dm uclass` | Pre-existing/board issue — no file in the snow build changed, so it cannot originate from this MR |
+
+Three of the failures point at the same exporter host `kea`, suggesting it was down or restarting during the pipeline window (12:52–13:04).
+
+### Verification
+
+- `um build sandbox`: clean
+- `buildman -o /tmp/pickman am335x_evm edison chromebook_brya Linksprite_pcDuino3_Nano am62x_beagleplay_a53 sandbox snow jetson-tk1`: 21 boards built, 0 errors (only pre-existing warnings: missing Intel binary blobs, sandbox dtsi `ranges`)
+
+**Recommendation**: retry the pipeline once the `kea` exporter is back up; no changes to the MR are required. If the snow `dm uclass` data abort reproduces on master, it warrants a separate investigation unrelated to this series.
+
+---
+
