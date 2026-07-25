@@ -90132,3 +90132,158 @@ The push actually updated the remote: the previous attempt's record commit (`4ed
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-1cc0442ede5
+
+Commits:
+- 1cc0442ede5 bootmenu: fix incorrect menu quitting logic
+- 6c636eabbde treewide: prefer __func__ over __FUNCTION__ and __PRETTY_FUNCTION__
+- e65a87e9591 serial: lpuart: Fix RX FIFO Enable bitmask
+- 4e249b94af9 clk: enhance clk-gpio to also handle gated-fixed-clock
+- 7a06f03e575 arm64: dts: axiado: Add AX3005 SCM3005 device tree
+- 3f182116263 grm: axiado: Add AX3005 based SCM3005 board support
+- 53305a02a76 MAINTAINERS: Replace ASpeed with N:
+- 3bd18683549 Merge patch series "This series introduces initial U-Boot support for mach-axiado AX3005 SCM3005 board, a quad-core ARM Cortex-A53 (ARMv8/ARM64) platform."
+
+### Conversation log
+All 8 cherry-picks completed successfully on branch `cherry-1cc0442ede5`.
+
+## Summary
+
+| Commit | Subject | Result |
+|--------|---------|--------|
+| 1cc0442ede5 | bootmenu: fix incorrect menu quitting logic | Clean pick, delta matches |
+| 6c636eabbde | treewide: prefer \_\_func\_\_ over \_\_FUNCTION\_\_... | Clean pick (auto-merge in fdt_support.c), 20 files / 57+/57- matches |
+| e65a87e9591 | serial: lpuart: Fix RX FIFO Enable bitmask | Clean pick, delta matches |
+| 4e249b94af9 | clk: enhance clk-gpio to also handle gated-fixed-clock | Clean pick, delta matches |
+| 7a06f03e575 | arm64: dts: axiado: Add AX3005 SCM3005 device tree | Clean pick, delta matches |
+| 3f182116263 | grm: axiado: Add AX3005 based SCM3005 board support | Clean pick, delta matches |
+| 53305a02a76 | MAINTAINERS: Replace ASpeed with N: | Clean pick, delta matches |
+| 3bd18683549 | Merge patch series (axiado AX3005 SCM3005) | Picked with `-m 1`; resulted in empty commit as expected, committed with `--allow-empty` to preserve the merge message |
+
+## Status
+
+- **Build result**: OK — sandbox built cleanly with buildman after each cherry-pick and in the final verification (no warnings or errors)
+- **Fix-ups**: None needed — no conflicts required manual resolution
+- **Concerning deltas**: None — every commit's file list and line counts matched the original exactly
+
+The branch `cherry-1cc0442ede5` is ready for pushing (7 content commits + 1 empty merge-marker commit, all with `cherry picked from` annotations).
+
+---
+
+### Review: 2026-07-25
+
+Branch: cherry-1cc0442ede5
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed. Now compare post-rebase deltas against the saved pre-rebase stats.
+
+All 9 commits rebased with identical diffstats. Verify the empty merge commit is preserved, then build.
+
+Build passed cleanly. Now create the -v2 local branch and force-push to update the MR.
+
+## Report
+
+**Rebase of MR !1193 (cherry-1cc0442ede5) onto ci/master — complete**
+
+### What was done
+
+1. Checked out `cherry-1cc0442ede5`, fetched `ci`, and ran `git rebase --keep-empty ci/master` (master had gained two merges: cherry-001f7e5f4c0 and cherry-81f4946d8c4)
+2. **One conflict**, only in the `.pickman-history` bookkeeping file: both sides appended a log entry under the same `## 2026-07-25: us/master` heading. Resolved by keeping both entries — the cherry-001f7e5f4c0 entry from master, then a separator and repeated heading for this branch's entry. No source files conflicted.
+3. **Delta verification**: compared `git show --stat` for all 9 commits before vs after the rebase (hashes stripped) — identical file lists and line counts throughout
+4. **Empty merge-marker commit** (axiado patch-series merge, now `bc2a52e46ba`) preserved by `--keep-empty`, with its message and `(cherry picked from ...)` annotation intact
+5. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+6. Created local branch `cherry-1cc0442ede5-v2` at the new head `b6b9cfc2a29`
+7. Force-pushed to `ci/cherry-1cc0442ede5` (`f3855a0cbb5` → `b6b9cfc2a29`), updating MR !1193 and triggering a fresh pipeline
+
+### Suggested reply to post on the MR
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history bookkeeping file, where both sides added a log entry at the same point; it was resolved by keeping both entries. All 8 series commits applied cleanly with diffstats identical to before the rebase, the empty axiado patch-series merge commit is preserved, and sandbox builds with no warnings or errors.
+
+---
+
+### Review: 2026-07-25
+
+Branch: cherry-1cc0442ede5
+
+Comments addressed:
+- [sjg]: pickman: please check this failure:  +   ax3005_scm3005
++arch/arm/cpu/armv8/spin_table.c: In functio...
+
+### Conversation log
+Upstream has a dedicated fix: `3bf5e4411ac "spin_table: add missing header for ENODEV and ENOSPC symbols"`. The right response is to cherry-pick that fix rather than invent our own.
+
+Both boards build cleanly. Now create the versioned local branch (`-v2` already exists, so `-v3`) and force-push:
+
+## Report
+
+**Review comment on MR !1193 addressed — build failure for ax3005_scm3005 fixed**
+
+### Diagnosis
+
+The new axiado board enables `CONFIG_ARMV8_SPIN_TABLE=y`, pulling `arch/arm/cpu/armv8/spin_table.c` into the build for the first time on this branch. That file uses `ENODEV` and `ENOSPC` but does not include an errno header, so compilation fails.
+
+### Fix
+
+Upstream already has a dedicated fix for exactly this: **3bf5e4411ac "spin_table: add missing header for ENODEV and ENOSPC symbols"** (adds `#include <errno.h>`). Rather than inventing a local fix, I cherry-picked that commit with `-x` onto the branch — it applied cleanly as `53e744ccb64`.
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+- `buildman -L --board ax3005_scm3005 -w -o /tmp/pickman-ax3005` — 1/1 built, no warnings or errors (the previously failing board)
+
+### Branch state
+
+- Local branch `cherry-1cc0442ede5-v3` created at the new head `53e744ccb64`
+- Force-pushed to `ci/cherry-1cc0442ede5` (`b6b9cfc2a29` → `53e744ccb64`), which updates MR !1193 and triggers a fresh pipeline
+
+### Suggested reply to post on the MR
+
+> The ax3005_scm3005 build failure is caused by spin_table.c using ENODEV and ENOSPC without including an errno header; the new board is the first on this branch to enable CONFIG_ARMV8_SPIN_TABLE, so the file was not previously being compiled. Upstream already fixes this in commit 3bf5e4411ac ("spin_table: add missing header for ENODEV and ENOSPC symbols"), so that commit is now cherry-picked onto the branch. Both sandbox and ax3005_scm3005 now build with no warnings or errors.
+
+---
+
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-1cc0442ede5
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- pcduino3_nano (sjg-lab)
+
+### Conversation log
+## Report: infrastructure/transient failures — no code changes needed
+
+All five failing jobs are lab-infrastructure problems, not regressions from the branch. I made no changes and did not create a fix branch.
+
+### Per-job diagnosis
+
+| Job | Failure | Cause |
+|-----|---------|-------|
+| edison | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` | Labgrid place-acquisition conflict — pytest never even started |
+| felwinter | `place felwinter is not acquired by your user, acquired by sglass` | Same — place held by another user (ellesmere/sglass) |
+| felwinter-cb | Same message (shares the felwinter place) | Same acquisition conflict |
+| play | Board produced no console output at all after flashing; 20s prompt timeout | Board/lab failure — nothing on the branch touches TI K3/am62x |
+| pcduino3_nano | SPL boots, DRAM OK, then `mmc_load_image_raw_sector: mmc block read error, Error: -38` on both attempts | SD/mux hardware issue — nothing on the branch touches sunxi, MMC, or SPL |
+
+### Why the branch is not responsible
+
+The branch (vs ci/master) changes only: the new axiado AX3005 board (own arch/board/defconfig files, plus the spin_table.c errno fix), cosmetic treewide `__FUNCTION__` → `__func__` replacements (kirkwood, mpc85xx, fpga, rtl8169, etc — none in the sunxi or K3 boot paths), `cmd/bootmenu.c` quitting logic, `drivers/serial/serial_lpuart.c` (NXP-only), and `drivers/clk/clk-gpio.c`. I verified that neither `am62x_beagleplay` nor `pcduino3_nano` enables `CONFIG_CLK_GPIO` and no relevant DT uses `gpio-gate-clock`/`gated-fixed-clock`, so the clk-gpio enhancement cannot affect them.
+
+Three of the five jobs failed instantly on labgrid place-acquisition conflicts on the ellesmere-lab runner at 15:43, which indicates the lab was in a contended/stale state when the pipeline ran. The two boards that did run failed at boot in ways unrelated to any changed file (sunxi SPL MMC read error -38; beagleplay totally silent).
+
+Sanity check: `um build sandbox` on the branch head builds cleanly.
+
+### Recommendation
+
+Retry the pipeline once the labgrid places (edison, felwinter) are released — e.g. `labgrid-client -p felwinter release` for the stale sglass acquisition — and check the pcduino3_nano SD mux/card, which is failing to read in SPL on consecutive resets.
+
+---
+
