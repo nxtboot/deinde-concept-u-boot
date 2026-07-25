@@ -90247,3 +90247,43 @@ Upstream already has a dedicated fix for exactly this: **3bf5e4411ac "spin_table
 
 ---
 
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-1cc0442ede5
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- pcduino3_nano (sjg-lab)
+
+### Conversation log
+## Report: infrastructure/transient failures — no code changes needed
+
+All five failing jobs are lab-infrastructure problems, not regressions from the branch. I made no changes and did not create a fix branch.
+
+### Per-job diagnosis
+
+| Job | Failure | Cause |
+|-----|---------|-------|
+| edison | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` | Labgrid place-acquisition conflict — pytest never even started |
+| felwinter | `place felwinter is not acquired by your user, acquired by sglass` | Same — place held by another user (ellesmere/sglass) |
+| felwinter-cb | Same message (shares the felwinter place) | Same acquisition conflict |
+| play | Board produced no console output at all after flashing; 20s prompt timeout | Board/lab failure — nothing on the branch touches TI K3/am62x |
+| pcduino3_nano | SPL boots, DRAM OK, then `mmc_load_image_raw_sector: mmc block read error, Error: -38` on both attempts | SD/mux hardware issue — nothing on the branch touches sunxi, MMC, or SPL |
+
+### Why the branch is not responsible
+
+The branch (vs ci/master) changes only: the new axiado AX3005 board (own arch/board/defconfig files, plus the spin_table.c errno fix), cosmetic treewide `__FUNCTION__` → `__func__` replacements (kirkwood, mpc85xx, fpga, rtl8169, etc — none in the sunxi or K3 boot paths), `cmd/bootmenu.c` quitting logic, `drivers/serial/serial_lpuart.c` (NXP-only), and `drivers/clk/clk-gpio.c`. I verified that neither `am62x_beagleplay` nor `pcduino3_nano` enables `CONFIG_CLK_GPIO` and no relevant DT uses `gpio-gate-clock`/`gated-fixed-clock`, so the clk-gpio enhancement cannot affect them.
+
+Three of the five jobs failed instantly on labgrid place-acquisition conflicts on the ellesmere-lab runner at 15:43, which indicates the lab was in a contended/stale state when the pipeline ran. The two boards that did run failed at boot in ways unrelated to any changed file (sunxi SPL MMC read error -38; beagleplay totally silent).
+
+Sanity check: `um build sandbox` on the branch head builds cleanly.
+
+### Recommendation
+
+Retry the pipeline once the labgrid places (edison, felwinter) are released — e.g. `labgrid-client -p felwinter release` for the stale sglass acquisition — and check the pcduino3_nano SD mux/card, which is failing to read in SPL on consecutive resets.
+
+---
+
