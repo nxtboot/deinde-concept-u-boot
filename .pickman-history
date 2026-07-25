@@ -89878,3 +89878,47 @@ If you'd like, I can instead force-push to re-trigger the pipeline anyway, or re
 
 ---
 
+### Pipeline fix: 2026-07-24 (attempt 3)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+Let me read the remaining job logs.
+
+## Report: no code fix needed — all six failures are lab/infrastructure or flaky-test issues
+
+**No commit is responsible; no source change was made.** Branch `cherry-81f4946d8c4-fix3` has been created locally at the current head (82fd3f59244, working tree clean).
+
+### Why the series cannot be at fault
+
+The series diffstat (excluding `.pickman-history` bookkeeping) touches only `arch/arm/` fsl-layerscape and i.MX9 code, NXP i.MX9x EVK boards, thermal drivers and MAINTAINERS. All six failing jobs are x86 (edison, felwinter-cb, qemu-x86_64, both efi-x86_64 jobs) or TI AM62x (play) — none builds a single line of this code. No build was run since no source changed; the tree is identical to what already built cleanly.
+
+### Per-job diagnosis
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `place edison is not acquired by your user, acquired by labgrid` (held by **kea**/labgrid) — pytest died in `pytest_configure`, identical to attempts 1 and 2 | Stale labgrid place — persistent across all 3 attempts |
+| **felwinter-cb** | Coreboot boots, then serial `rfc2217://kea:43615 ... Connection refused` — the **kea** exporter died mid-job (same as attempt 2, different port) | kea lab host down/unstable |
+| **play** | U-Boot written via ti,am625 method, DUT never reaches prompt, 20s timeout on both attempts — identical to attempts 1 and 2 | DUT boot/flash failure |
+| **qemu-x86_64** | 47 passed, 662 skipped; single failure `test_efi_selftest_text_input_ex` console timeout waiting for a SHIFT+ALT+FN 5 keypress echo | Known-flaky EFI selftest keyboard-input test; the image itself ran a full 4-minute suite fine |
+| **efi-x86_64-uboot-iso** | U-Boot (this exact tree, `2026.04-g354874338712`) booted, found the bls bootflow, loaded kernel + initrd from the Ubuntu ISO; kernel started but `Initramfs unpacking failed: invalid magic at start of compressed archive` | Corrupt initrd content from the lab-hosted ISO asset — U-Boot's boot path succeeded |
+| **efi-x86_64-uboot-iso-install** | Kernel booted well into userspace init, then `Initramfs unpacking failed: ZSTD-compressed data is corrupt`; never reached `login:`, job hit the 10-minute hard timeout | Same corrupt ISO/initrd asset problem |
+
+### Common threads
+
+1. The **kea** lab host remains broken across attempts 2 and 3 (holds the edison place, drops rfc2217 connections for felwinter-cb). Until its exporter is restarted and the edison place kicked (`labgrid-client -p edison kick`), these two jobs will fail on every retry.
+2. **New this attempt**: both efi-x86_64-uboot-iso jobs report initramfs corruption inside the booted Linux kernel. U-Boot loads and starts the kernel correctly, so this points at a corrupt/truncated Ubuntu ISO image (or its serving cache) on the lab side, worth re-fetching that asset before retrying.
+3. play remains the same DUT flash/boot failure seen in attempts 1 and 2; qemu-x86_64 is ordinary single-test flakiness.
+
+**Recommendation:** fix the kea exporter, kick the edison place, verify/re-download the Ubuntu ISO asset used by the efi-x86_64 roles, then retry the failed jobs. The branch itself needs no update.
+
+---
+
