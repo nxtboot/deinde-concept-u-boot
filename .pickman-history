@@ -89728,3 +89728,42 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-07-24 (attempt 1)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+No changes needed — this is not a code problem. All four failures are lab/infrastructure issues, and the series cannot affect any of the failing boards.
+
+## Diagnosis
+
+The branch contains 9 cherry-picked commits touching only:
+- fsl-layerscape / LX2160A device trees and CPU code
+- i.MX9 SCMI code and NXP i.MX95/94/952 EVK boards
+- thermal drivers (imx_tmu, gated to `ARCH_IMX8M || IMX93 || FSL_LAYERSCAPE`; new jc42 driver, opt-in `DM_THERMAL_JC42`, not enabled in any defconfig outside the series' targets)
+
+None of the failing boards (edison = Intel x86, play = TI AM62x BeaglePlay, felwinter-cb = Intel Brya Chromebook, bpif3 = SpacemiT K1 RISC-V) build or run any of this code.
+
+## Per-job root cause
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid) — pytest died in `pytest_configure` before any test ran | Lab place-acquisition conflict |
+| **play** | Board loops repeatedly in vendor SPL 2021.01 firmware, never reaches the freshly-built U-Boot; 20s prompt timeout | Lab boot/flash failure on the DUT |
+| **felwinter-cb** | U-Boot written via em100, then 180s timeout waiting for prompt, on both attempts | Lab hardware (em100/board) failure |
+| **bpif3** | `USB loader not ready` on all 5 attempts, then lab timeout | Lab USB recovery-mode failure |
+
+All four are classic transient lab failures (place contention, boards not coming up), unrelated to the code changes in the MR. Notably, edison failed before even building or booting anything.
+
+## Recommendation
+
+No fix commit was made and no `cherry-81f4946d8c4-fix1` branch was created, since there is nothing to fix in the source — creating a "fix" branch would misleadingly imply a code change. The appropriate action is to retry the failed jobs (and for edison, release/kick the stale labgrid place acquisition first: `labgrid-client -p edison allow ellesmere/gitlab-runner` or kick the holder).
+
+---
+
