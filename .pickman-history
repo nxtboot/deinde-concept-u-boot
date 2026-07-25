@@ -90031,3 +90031,104 @@ All done. Here's the summary:
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-001f7e5f4c0
+
+Commits:
+- 001f7e5f4c0 arm: kirkwood: Remove unnecessary watchdog GPIO for ZyXEL NSA325 board
+- 50b3c87e0e2 net: mvpp2: fix NULL pointer dereference in mvpp2_phy_connect
+- a9cc75a25eb mtd: nand: pxa3xx: Pass valid dev to dev_err()
+- c444ff30e18 arm: mvebu: db-xc3-24g4xg: Remove marvell, nand-keep-config
+- 59e13ed8f6d arm: mvebu: Add Allied Telesis x220
+- f64593af3d9 board: Synology: legacy.c: Include asm/io.h
+- b2306246ddb board: Synology: common: Fix typo in Makefile
+- bd75c262403 serial: serial_octeon_bootcmd.c: use correct Kconfig symbol
+- 9b432691dce arm: mvebu: Drop unnecessary BOARD_EARLY_INIT_F usage
+- dd1084ed2e9 pinctrl: armada-38x: Staticize and constify driver ops
+- a721ac0da77 arm: mach-mvebu: armada8k: cpuinfo and SAR
+- 3457acc0146 board: freebox: add Nodebox 10G board support
+- 3db9d9abc10 board: freebox: nbx10g: add emmcboot for dual-bank eMMC boot
+- 35ae4491bf7 board: freebox: nbx10g: add device serial and MAC address initialization
+- 7e931291736 arm: dts: armada-8040-nbx: add U-Boot dtsi for conditional OP-TEE
+- eab66c3a908 timer: orion: Use dev_remap_addr_index()
+- 953653936cf Merge tag 'u-boot-marvell-next-20260610' of https://source.denx.de/u-boot/custodians/u-boot-marvell into next
+
+### Conversation log
+All 17 commits cherry-picked successfully. Final status:
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every commit and at the end)
+
+**Commits applied (16 regular + 1 merge):**
+- All 16 regular commits applied cleanly with `git cherry-pick -x`
+- The merge commit 953653936cf resolved to empty (as expected, since all its content came from the individual commits) and was preserved with `--allow-empty`, keeping the merge message and the `(cherry picked from ...)` reference
+
+**Fix-ups:** None needed — no conflicts occurred (a few files auto-merged: `arch/arm/dts/Makefile`, `arch/arm/mach-mvebu/Kconfig`, `doc/board/index.rst`, `drivers/serial/Kconfig`)
+
+**Delta check:** Every cherry-picked commit matched its original exactly (same files, same line counts). No concerning deltas.
+
+The branch `cherry-001f7e5f4c0` is ready for pushing, sitting 17 commits ahead of `ci/master`.
+
+---
+
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-001f7e5f4c0
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+## Report: All failures are lab/infrastructure issues — no code changes made
+
+**Diagnosis per job:**
+
+| Job | Failure | Root cause |
+|---|---|---|
+| edison | `place edison is not acquired by your user, acquired by labgrid` (kea/labgrid) | Labgrid place reservation conflict — another user/session held the board. Pure lab infra; the test never even started |
+| felwinter-cb | `SerialException: Could not open port rfc2217://kea:54107 ... Connection refused` | The rfc2217 serial exporter on host 'kea' was down/unreachable. Lab infra |
+| bpif3 | `BootROM did not start the FSBL (gadget devnum still 102)` after 5 USB-loader retries | SpacemiT K1 BootROM/USB recovery flake needing a board reset. Lab hardware |
+| play | `No U-Boot prompt` then labgrid 20s login timeout after flashing | AM625 BeaglePlay produced no console output at all after flash — board/console flake, not a build issue (the build itself succeeded) |
+| efi-x86_64-uboot-iso-install | `console_base.Timeout` in test_distro_ubuntu_iso_install, then `Job failed: execution took longer than 10m0s` | The QEMU guest's kernel boot log shows a ~10-minute stall (07:45:58 → 07:55:57) mid-boot; the job then hit the 10-minute GitLab timeout. Runner load/timeout issue |
+
+**Why the branch is not responsible:** the 17 cherry-picked commits touch only Marvell/mvebu/kirkwood code — boards under board/Marvell, Synology, alliedtelesis, freebox, zyxel; mvebu defconfigs; and Marvell drivers (mvpp2, pxa3xx NAND, armada-38x pinctrl, orion timer, octeon serial Kconfig). None of the five failing boards (x86 QEMU/EFI, Intel Edison, TI AM625, Alder Lake Chromebook, SpacemiT K1 RISC-V) compile any of the changed files, so no commit on the branch can cause these failures. Notably, three of the failures (edison, felwinter-cb, bpif3) occur before or during board bring-up, entirely outside U-Boot code.
+
+**Actions taken:**
+- No source changes (per instructions for infrastructure/transient failures)
+- Verified 'um build sandbox' passes cleanly on the branch
+- Created local branch 'cherry-001f7e5f4c0-fix1' pointing at the unchanged branch head, ready for the caller to push/retry
+
+**Recommendation:** retry the failed jobs; check the labgrid exporter on 'kea' (serial port refused, place held by stale reservation) and reset the bpif3 board.
+
+---
+
+### Review: 2026-07-25
+
+Branch: cherry-001f7e5f4c0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, play, felwinter-...
+
+### Conversation log
+The push actually updated the remote: the previous attempt's record commit (`4ed77010062`) had not been pushed, so the MR branch moved from `40933fdc55e` to `4ed77010062`, which will trigger a fresh MR pipeline.
+
+## Report
+
+**Comment assessment:** The single review comment is not an actionable change request — it is the pickman bot's own pipeline-fix report from attempt 1, restating that all five failed jobs (efi-x86_64-uboot-iso-install, edison, play, felwinter-cb, bpif3) were lab/infrastructure failures and that no code changes were made. There is nothing in it asking for modifications to the 17 cherry-picked commits.
+
+**Actions taken:**
+- Checked out `cherry-001f7e5f4c0` — working tree clean, no code changes needed or made
+- Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+- Created local branch `cherry-001f7e5f4c0-v2` at the current head
+- Pushed to the original remote branch with pickman; this brought the remote up to date with the previously unpushed record commit (`40933fdc55e..4ed77010062`), triggering a new MR pipeline
+
+**Suggested reply to post on the MR:**
+
+> The review comment is the pipeline-fix report itself and requests no code changes. All five job failures (edison, felwinter-cb, bpif3, play, efi-x86_64-uboot-iso-install) were diagnosed as lab/infrastructure flakes — labgrid reservation conflict, dead rfc2217 exporter on kea, BootROM/USB recovery flake, console flake, and a runner timeout — none touching the Marvell/mvebu-only code in this series. Sandbox builds cleanly. The branch has been re-pushed unchanged (now including the pipeline-fix record commit), which re-triggers the pipeline; the failed jobs should be retried once the kea exporter and bpif3 board are reset.
+
+---
+
