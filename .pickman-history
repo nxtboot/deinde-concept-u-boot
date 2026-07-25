@@ -89678,3 +89678,356 @@ The branch `cherry-b996053fcb8` is ready for pushing; nothing was merged back an
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-81f4946d8c4
+
+Commits:
+- 81f4946d8c4 arm: dts: fsl-lx2160a: wdt0 for watchdog node
+- c91cd48ba72 arm: dts: fsl-lx2162a-qds: drop &dspi{0,1,2} block
+- 903e861b719 thermal: jc42: add JEDEC JC-42.4/TSE2004av SPD
+- 846f5fd2d17 thermal: imx_tmu: extend with QorIQ/Layerscape TMU
+- 5a9512fb38d imx9: scmi: Fix temperature range for Extended industrial parts
+- d62b91463b3 imx9: scmi: Print CPU part number name
+- 18da44b40e5 iMX9: scmi: Disable fused modules for iMX95/94/952
+- ec217322301 nxp: imx[95,94,952]_evk: Implement board_fix_fdt
+- 45cfba58dba Merge tag 'fsl-qoriq-next-2026-06-09' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq into next
+
+### Conversation log
+Simple conflict — both branches added an entry at the same spot in MAINTAINERS. Keep both in alphabetical order.
+
+The merge is empty as expected — commit it to preserve the message:
+
+All 9 commits cherry-picked successfully onto `cherry-81f4946d8c4` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every pick and at the end).
+
+**Commits applied (oldest first):**
+
+| Original | New | Subject |
+|---|---|---|
+| 81f4946d8c4 | 2972f588f7f | arm: dts: fsl-lx2160a: wdt0 for watchdog node |
+| c91cd48ba72 | 9c647f5b0ea | arm: dts: fsl-lx2162a-qds: drop &dspi{0,1,2} block |
+| 903e861b719 | 3f1ebfae0f8 | thermal: jc42: add JEDEC JC-42.4/TSE2004av SPD |
+| 846f5fd2d17 | 433fab93de0 | thermal: imx_tmu: extend with QorIQ/Layerscape TMU |
+| 5a9512fb38d | bb6d23e04f2 | imx9: scmi: Fix temperature range for Extended industrial parts |
+| d62b91463b3 | bdd45b9791a | imx9: scmi: Print CPU part number name |
+| 18da44b40e5 | e3acfcf6d6c | iMX9: scmi: Disable fused modules for iMX95/94/952 |
+| ec217322301 | 7db6a8e41a8 | nxp: imx[95,94,952]_evk: Implement board_fix_fdt |
+| 45cfba58dba | 8f6e4abb7ff | Merge tag 'fsl-qoriq-next-2026-06-09' (empty, message preserved) |
+
+**Fix-ups made:**
+- **3f1ebfae0f8 (jc42)**: context conflict in MAINTAINERS — ci/master has an INPUT entry at the same insertion point. Kept both entries in alphabetical order; a note was added to the commit message.
+- **8f6e4abb7ff (merge)**: the same MAINTAINERS conflict recurred; resolved by keeping HEAD. The merge became empty (all content already picked), so it was committed with `--allow-empty` to preserve the merge message for history tracking.
+
+**Delta checks:** every cherry-pick matched the original commit's diffstat exactly (same files, same line counts) — no concerning deltas.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 1)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+No changes needed — this is not a code problem. All four failures are lab/infrastructure issues, and the series cannot affect any of the failing boards.
+
+## Diagnosis
+
+The branch contains 9 cherry-picked commits touching only:
+- fsl-layerscape / LX2160A device trees and CPU code
+- i.MX9 SCMI code and NXP i.MX95/94/952 EVK boards
+- thermal drivers (imx_tmu, gated to `ARCH_IMX8M || IMX93 || FSL_LAYERSCAPE`; new jc42 driver, opt-in `DM_THERMAL_JC42`, not enabled in any defconfig outside the series' targets)
+
+None of the failing boards (edison = Intel x86, play = TI AM62x BeaglePlay, felwinter-cb = Intel Brya Chromebook, bpif3 = SpacemiT K1 RISC-V) build or run any of this code.
+
+## Per-job root cause
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid) — pytest died in `pytest_configure` before any test ran | Lab place-acquisition conflict |
+| **play** | Board loops repeatedly in vendor SPL 2021.01 firmware, never reaches the freshly-built U-Boot; 20s prompt timeout | Lab boot/flash failure on the DUT |
+| **felwinter-cb** | U-Boot written via em100, then 180s timeout waiting for prompt, on both attempts | Lab hardware (em100/board) failure |
+| **bpif3** | `USB loader not ready` on all 5 attempts, then lab timeout | Lab USB recovery-mode failure |
+
+All four are classic transient lab failures (place contention, boards not coming up), unrelated to the code changes in the MR. Notably, edison failed before even building or booting anything.
+
+## Recommendation
+
+No fix commit was made and no `cherry-81f4946d8c4-fix1` branch was created, since there is nothing to fix in the source — creating a "fix" branch would misleadingly imply a code change. The appropriate action is to retry the failed jobs (and for edison, release/kick the stale labgrid place acquisition first: `labgrid-client -p edison allow ellesmere/gitlab-runner` or kick the holder).
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play, felwinter-cb, bpif3.
+
+No changes needed ...
+
+### Conversation log
+The branch is clean and matches what was previously reported. Here's my assessment and report:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is not a code-review request — it is the bot's own pipeline-fix report from attempt 1, echoed back into the review queue. It explicitly concludes "No changes needed" and diagnoses all four failed jobs (edison, play, felwinter-cb, bpif3) as lab/infrastructure failures unrelated to the series. There is nothing actionable in it.
+
+**What I did:**
+- Checked out `cherry-81f4946d8c4` and verified its state: working tree clean, 11 commits ahead of ci/master (the 9 cherry-picked commits plus 2 local pickman bookkeeping commits touching only `.pickman-history`)
+- Re-confirmed the comment's reasoning holds: the series touches only fsl-layerscape/LX2160A DTs, i.MX9 SCMI, NXP i.MX95/94/952 EVK boards and gated/opt-in thermal drivers — none of which are built or run by the failing boards (x86 edison, TI AM62x play, Intel Brya felwinter-cb, RISC-V bpif3)
+
+**What I did NOT do (deliberately):**
+- No code changes — none were requested
+- No build run — no source changed since the last verified-clean sandbox build
+- No `-v2` branch and no force-push — the source tree on the remote is already correct, and a force-push with identical content would only re-trigger a full pipeline without any fix attached. The only local difference from the remote is a 39-line `.pickman-history` bookkeeping commit
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix report from attempt 1, not an actionable review request, so no code changes have been made. The diagnosis stands: all four job failures (edison, play, felwinter-cb, bpif3) are lab/infrastructure issues — place-acquisition conflict, DUT boot/flash failures, and USB recovery-mode failure — on boards that do not build any code touched by this series. The appropriate action is to retry the failed jobs from the GitLab UI (for edison, first release the stale labgrid place acquisition held by kea/labgrid). The branch itself is ready and needs no update.
+
+If you'd instead like me to force-push the branch anyway purely to re-trigger the pipeline (which retries all jobs, not just the failed four), or to retry the specific failed jobs via `glab`/the GitLab API, let me know and I'll do that.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 2)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- colibrimx8 (sjg-lab)
+- nyan-big (sjg-lab)
+
+### Conversation log
+## Report: no code fix needed — all five failures are lab/infrastructure issues
+
+**No commit is responsible; no source change was made.** Branch `cherry-81f4946d8c4-fix2` has been created locally pointing at the current branch head (working tree clean, no new commits), so the caller's flow can proceed.
+
+### Why the series cannot be at fault
+
+The 9 cherry-picked commits touch only fsl-layerscape/LX2160A DTs, i.MX9 SCMI code, NXP i.MX95/94/952 EVK boards and thermal drivers. I re-verified the two files with any cross-board reach:
+
+- **drivers/cpu/imx8_cpu.c** (commit bdd45b9791a) — adds a `__weak get_cpu_variant_type_name()` that returns NULL; the strong override lives in i.MX9 SCMI code, so behaviour on colibrimx8 (iMX8X) is unchanged
+- **drivers/thermal/Kconfig** — `IMX_TMU` only widens `depends on` (still needs a defconfig to enable it) and `DM_THERMAL_JC42` is a new opt-in bool with no default. None of the failing boards enables either
+
+### Per-job diagnosis
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `place edison is not acquired by your user, acquired by labgrid` (held by **kea**/labgrid) — pytest died in `pytest_configure` before building anything. Identical to attempt 1 | Stale labgrid place acquisition — persistent |
+| **felwinter-cb** | `rfc2217://kea:37835 ... Connection refused` while trying to power off via GSC driver | The **kea** exporter host is down/unreachable |
+| **play** | U-Boot written via ti,am625 method, then lab timeout waiting for boot prompt (same as attempt 1) | DUT boot/flash failure |
+| **nyan-big** | Flashed, then lab timeout — board never reached the prompt | DUT boot failure |
+| **colibrimx8** | The new U-Boot **booted fine** and ran 41 tests successfully; a single failure (`test_distro_script`) hit a console timeout when `restart_uboot()` reset the board late in the run | Board reset flakiness — clearly not the image, which had been running for 6 minutes |
+
+### Common thread
+
+Two of the five failures point at the **kea** lab host (it holds the edison place and refuses rfc2217 connections for felwinter-cb). The recommended infra actions before retrying:
+
+1. Restart/check the labgrid exporter on kea
+2. Kick the stale edison place: `labgrid-client -p edison kick` (or `allow ellesmere/gitlab-runner`)
+3. Retry the failed jobs — colibrimx8, play and nyan-big look like ordinary DUT flakiness
+
+No build was run since no source changed; the tree is identical to what already built cleanly (sandbox verified after every pick, and colibrimx8's own job built and booted this exact tree successfully).
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, play, felwinter-cb, colibrimx8, nyan-big.
+
+## ...
+
+### Conversation log
+The working tree is clean and the branch matches the previously reported state. Let me confirm the only local-vs-remote difference is pickman bookkeeping:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is not an actionable code-review request — it is the bot's own pipeline-fix report from attempt 2, echoed back into the review queue. It explicitly states "**No commit is responsible; no source change was made**" and diagnoses all five failed jobs (edison, play, felwinter-cb, colibrimx8, nyan-big) as lab/infrastructure failures, with two of them traced to the **kea** exporter host being down. There is nothing in it to act on.
+
+**What I did:**
+- Checked out `cherry-81f4946d8c4` — working tree clean, history exactly as reported in the previous rounds (9 cherry-picked commits plus pickman bookkeeping commits)
+- Verified against the remote: `git diff ci/cherry-81f4946d8c4..HEAD` shows the **only** difference is 45 lines of `.pickman-history` bookkeeping — the source tree on the remote MR branch is byte-identical to local
+
+**What I deliberately did NOT do:**
+- **No code changes** — none were requested; the comment itself concludes no fix is needed
+- **No build** — no source has changed since the last verified-clean sandbox build (and colibrimx8's own job built and booted this exact tree for 6 minutes before a reset-flake)
+- **No `-v2` branch, no force-push** — pushing identical source would only re-trigger a full pipeline with no fix attached, wasting lab time on the same broken infrastructure (the kea host issue is persistent across attempts 1 and 2 and will fail again until fixed)
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix report from attempt 2, not an actionable review request, so no code changes have been made. The diagnosis stands and has now persisted across two pipeline attempts: edison and felwinter-cb both fail because the kea lab host is down (stale labgrid place acquisition and rfc2217 connection refused respectively), while play, nyan-big and colibrimx8 are DUT boot/reset flakiness on boards that build none of the code touched by this series — colibrimx8 in fact booted this exact image and passed 41 tests before a late reset timeout. Retrying the pipeline before the kea exporter is restarted and the edison place is kicked (`labgrid-client -p edison kick`) will reproduce the same failures. The branch itself is ready and needs no update.
+
+If you'd like, I can instead force-push to re-trigger the pipeline anyway, or retry only the failed jobs via the GitLab API — but I'd recommend waiting until the kea host is back up first.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 3)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+Let me read the remaining job logs.
+
+## Report: no code fix needed — all six failures are lab/infrastructure or flaky-test issues
+
+**No commit is responsible; no source change was made.** Branch `cherry-81f4946d8c4-fix3` has been created locally at the current head (82fd3f59244, working tree clean).
+
+### Why the series cannot be at fault
+
+The series diffstat (excluding `.pickman-history` bookkeeping) touches only `arch/arm/` fsl-layerscape and i.MX9 code, NXP i.MX9x EVK boards, thermal drivers and MAINTAINERS. All six failing jobs are x86 (edison, felwinter-cb, qemu-x86_64, both efi-x86_64 jobs) or TI AM62x (play) — none builds a single line of this code. No build was run since no source changed; the tree is identical to what already built cleanly.
+
+### Per-job diagnosis
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `place edison is not acquired by your user, acquired by labgrid` (held by **kea**/labgrid) — pytest died in `pytest_configure`, identical to attempts 1 and 2 | Stale labgrid place — persistent across all 3 attempts |
+| **felwinter-cb** | Coreboot boots, then serial `rfc2217://kea:43615 ... Connection refused` — the **kea** exporter died mid-job (same as attempt 2, different port) | kea lab host down/unstable |
+| **play** | U-Boot written via ti,am625 method, DUT never reaches prompt, 20s timeout on both attempts — identical to attempts 1 and 2 | DUT boot/flash failure |
+| **qemu-x86_64** | 47 passed, 662 skipped; single failure `test_efi_selftest_text_input_ex` console timeout waiting for a SHIFT+ALT+FN 5 keypress echo | Known-flaky EFI selftest keyboard-input test; the image itself ran a full 4-minute suite fine |
+| **efi-x86_64-uboot-iso** | U-Boot (this exact tree, `2026.04-g354874338712`) booted, found the bls bootflow, loaded kernel + initrd from the Ubuntu ISO; kernel started but `Initramfs unpacking failed: invalid magic at start of compressed archive` | Corrupt initrd content from the lab-hosted ISO asset — U-Boot's boot path succeeded |
+| **efi-x86_64-uboot-iso-install** | Kernel booted well into userspace init, then `Initramfs unpacking failed: ZSTD-compressed data is corrupt`; never reached `login:`, job hit the 10-minute hard timeout | Same corrupt ISO/initrd asset problem |
+
+### Common threads
+
+1. The **kea** lab host remains broken across attempts 2 and 3 (holds the edison place, drops rfc2217 connections for felwinter-cb). Until its exporter is restarted and the edison place kicked (`labgrid-client -p edison kick`), these two jobs will fail on every retry.
+2. **New this attempt**: both efi-x86_64-uboot-iso jobs report initramfs corruption inside the booted Linux kernel. U-Boot loads and starts the kernel correctly, so this points at a corrupt/truncated Ubuntu ISO image (or its serving cache) on the lab side, worth re-fetching that asset before retrying.
+3. play remains the same DUT flash/boot failure seen in attempts 1 and 2; qemu-x86_64 is ordinary single-test flakiness.
+
+**Recommendation:** fix the kea exporter, kick the edison place, verify/re-download the Ubuntu ISO asset used by the efi-x86_64 roles, then retry the failed jobs. The branch itself needs no update.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, play, efi-x86_64...
+
+### Conversation log
+The branch is clean and, as in the previous rounds, the only local-vs-remote difference is 44 lines of `.pickman-history` bookkeeping — the source tree on the remote MR branch is identical to local.
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is not an actionable code-review request — it is the bot's own pipeline-fix report from attempt 3, echoed back into the review queue. It explicitly states "**No commit is responsible; no source change was made**" and diagnoses all six failed jobs (edison, play, felwinter-cb, qemu-x86_64, efi-x86_64-uboot-iso, efi-x86_64-uboot-iso-install) as lab/infrastructure or flaky-test issues. There is nothing in it to act on.
+
+**What I did:**
+- Checked out `cherry-81f4946d8c4` — working tree clean, history exactly as reported previously (9 cherry-picked commits plus pickman bookkeeping commits, HEAD at 33ec5fb89f5)
+- Verified against the remote: `git diff ci/cherry-81f4946d8c4..HEAD` shows only `.pickman-history` bookkeeping (44 lines) — no source difference whatsoever
+
+**What I deliberately did NOT do:**
+- **No code changes** — none were requested; the comment itself concludes no fix is needed
+- **No build** — no source has changed since the last verified-clean sandbox build (the efi-x86_64 jobs even booted this exact tree successfully into Linux)
+- **No `-v2` branch, no force-push** — pushing identical source would only re-trigger a full pipeline with no fix attached. The kea host failure has now persisted across attempts 1–3 and will reproduce edison/felwinter-cb failures on every retry until fixed on the lab side
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix report from attempt 3, not an actionable review request, so no code changes have been made. The diagnosis stands and has now persisted across three pipeline attempts: edison and felwinter-cb both fail because the kea lab host is down (stale labgrid place acquisition and rfc2217 connection refused respectively), play remains the same DUT flash/boot failure, qemu-x86_64 hit the known-flaky EFI text-input selftest, and both efi-x86_64-uboot-iso jobs failed on initramfs corruption inside the booted kernel — U-Boot's own boot path succeeded, pointing at a corrupt Ubuntu ISO asset on the lab side. Before retrying, please restart the kea exporter, kick the edison place (`labgrid-client -p edison kick`) and re-fetch the Ubuntu ISO asset. The branch itself is ready and needs no update; none of the failing boards builds any code touched by this series.
+
+If you'd instead like me to force-push anyway purely to re-trigger the pipeline, or to retry only the failed jobs via the GitLab API, say the word — but I'd recommend waiting until the kea host and the ISO asset are fixed first, since a retry now will reproduce the same failures.
+
+---
+
+### Review: 2026-07-25
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The branch is clean and, as in all previous rounds, the only local-vs-remote difference is `.pickman-history` bookkeeping (75 lines) — the source tree on the remote MR branch is identical to local.
+
+## Report
+
+**Comment analysis:** The single review comment is:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is not a code-review request — it is the bot signalling that its automated retry loop has been exhausted. It confirms exactly what the three previous fix attempts diagnosed: the failures are not fixable from this branch, because they are lab/infrastructure problems, and the bot has (correctly) stopped retrying.
+
+**What I did:**
+- Checked out `cherry-81f4946d8c4` — working tree clean, HEAD at 93e482f31d1, history exactly as previously reported (9 cherry-picked commits plus pickman bookkeeping)
+- Verified against the remote: the only difference from `ci/cherry-81f4946d8c4` is `.pickman-history` — no source difference whatsoever
+
+**What I deliberately did NOT do:**
+- **No code changes** — there is nothing to change; across three attempts every failure was diagnosed as lab-side (kea host down, stale edison labgrid place, play/nyan-big DUT flakiness, flaky EFI selftest, corrupt Ubuntu ISO asset), on boards that build none of the code in this series
+- **No build** — no source has changed since the last verified-clean sandbox build
+- **No `-v2` branch, no force-push** — pushing identical source would trigger yet another pipeline that will reproduce the same failures until the lab is fixed. That would burn a fourth pipeline for nothing and reset nothing; the retry limit exists precisely to stop this loop
+
+**Manual intervention required (lab side, not this MR):**
+1. Restart/check the labgrid exporter on the **kea** host (breaks edison and felwinter-cb on every attempt)
+2. Kick the stale edison place: `labgrid-client -p edison kick`
+3. Re-fetch/verify the Ubuntu ISO asset used by the efi-x86_64-uboot-iso jobs (initramfs corruption inside the booted kernel)
+4. Investigate the play DUT — it has failed to boot past vendor SPL on all three attempts
+5. Then retry the failed jobs from the GitLab UI (or re-run the pipeline)
+
+**Suggested reply to post on the MR:**
+
+> The retry limit has been reached without a code fix because there is nothing to fix in this series: across all three attempts, every failing job was a lab or asset problem on boards that build none of the code touched here. Persistent issues needing manual attention: the kea lab host is down or unstable (causing the edison stale-place failure and felwinter-cb rfc2217 connection refusals on every attempt), the play DUT never boots past its vendor SPL, and the Ubuntu ISO asset used by the efi-x86_64-uboot-iso jobs produces initramfs corruption inside the booted kernel even though U-Boot's boot path succeeds. Please restart the kea exporter, kick the edison place with 'labgrid-client -p edison kick', check the play board, and re-fetch the ISO asset, then retry the failed jobs. The branch itself is ready to merge once the pipeline is green; it needs no update.
+
+If you'd like, I can force-push anyway to trigger a fresh pipeline once you confirm the kea host is back up — just say so and I'll create the `-v2` branch and push.
+
+---
+
+### Review: 2026-07-25
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+
+
+### Conversation log
+Resolve by keeping both entries — ci/master's block first, then ours with its own separator and heading:
+
+Build passes cleanly. Now create the `-v2` local branch and force-push to the original remote branch:
+
+All done. Here's the summary:
+
+## Report
+
+**Rebase result: success.** `cherry-81f4946d8c4` rebased onto the current ci/master (5eeae45a718, which gained 19 commits including the merged `cherry-b996053fcb8` MMC/power series) using `git rebase --keep-empty ci/master`.
+
+**Conflict resolved (1):**
+- `.pickman-history` only — both sides added a bookkeeping entry under the same `## 2026-07-24: us/master` heading (ci/master's merged cherry-b996053fcb8 log vs this branch's cherry-81f4946d8c4 log). Resolved by keeping both entries in order, giving the second its own heading. No source code was involved in the conflict.
+
+**Verification:**
+- All 17 commits present after rebase: the 9 series commits (now 96bc5c60754..86fc4a6c8f4), the empty fsl-qoriq merge commit preserved by `--keep-empty`, plus the 8 pickman bookkeeping commits
+- Delta check: pre- vs post-rebase `git show --stat` for every commit compared — **byte-identical**, no deltas at all
+- Build: `buildman -L --board sandbox -w -o /tmp/pickman` — **OK**, no warnings or errors
+
+**Branches:**
+- Local `cherry-81f4946d8c4-v2` created at the new head (79add649e54)
+- Force-pushed to `ci/cherry-81f4946d8c4` (82fd3f59244 → 79add649e54), which updates MR !1191 and triggers a fresh pipeline
+
+**Suggested reply to post on the MR:**
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history bookkeeping file, where both sides added a log entry at the same point; it was resolved by keeping both entries. All 9 series commits applied cleanly with diffstats identical to before the rebase, the empty fsl-qoriq merge commit is preserved, and sandbox builds with no warnings or errors. Note that the previously diagnosed lab issues (kea exporter down affecting edison and felwinter-cb, the play DUT not booting past vendor SPL, and the corrupt Ubuntu ISO asset for the efi-x86_64-uboot-iso jobs) are infrastructure problems that will recur in the new pipeline unless they have been fixed on the lab side.
+
+---
+
