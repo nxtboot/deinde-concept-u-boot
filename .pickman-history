@@ -90491,3 +90491,51 @@ The branch `cherry-7779540f093` is ready for pushing.
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-a566d326936
+
+Commits:
+- a566d326936 Revert "clk: enhance clk-gpio to also handle gated-fixed-clock"
+- 53e9c41847c dm: core: use DT region size when mapping device addresses
+- 38c49e01a01 arm: dts: add/fix I2C controllers for sc5xx
+- 379e74323d3 board: ti: am62ax: tifs-rm-cfg/rm-cfg: Update DMA resource sharing for CPSW
+- 9d551d78f74 drivers: gpio: Fix dev_read_addr error check
+- 103b1e7ce8c bootm: bound-check OS index in bootm_os_get_boot_func()
+- 759968136d6 tools: mkimage: fix get_basename crash on paths with dotted directories
+- 4a4452a0391 test/py: cover get_basename crash on paths with dotted directories
+- c6fe911d58e Merge patch series "tools: mkimage: fix get_basename crash on paths with dotted directories"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+All 9 commits are present. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete — branch `cherry-a566d326936`
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**Commits applied (9/9):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| 15d1c6d0d08 | a566d326936 | Revert "clk: enhance clk-gpio to also handle gated-fixed-clock" |
+| 02688a53715 | 53e9c41847c | dm: core: use DT region size when mapping device addresses |
+| 597920cfb60 | 38c49e01a01 | arm: dts: add/fix I2C controllers for sc5xx |
+| 11e1a4442db | 379e74323d3 | board: ti: am62ax: tifs-rm-cfg/rm-cfg: Update DMA resource sharing for CPSW |
+| fcf4e16290c | 9d551d78f74 | drivers: gpio: Fix dev_read_addr error check |
+| c40fb8da1d6 | 103b1e7ce8c | bootm: bound-check OS index in bootm_os_get_boot_func() |
+| b4292c64b13 | 759968136d6 | tools: mkimage: fix get_basename crash on paths with dotted directories |
+| 7c0fcc969a2 | 4a4452a0391 | test/py: cover get_basename crash (dotted directories) |
+| 8f9fe018842 | c6fe911d58e | Merge patch series "tools: mkimage: fix get_basename crash..." (empty, preserved with --allow-empty) |
+
+**Fix-ups made:** None — no conflicts required manual resolution. Two picks needed only automatic merging (rock-5-itx-rk3588_defconfig, drivers/core/read.c, tools/fit_image.c) which git handled cleanly.
+
+**Delta check:** Every cherry-picked commit matched its original exactly (same files, same line counts). The merge commit came in empty as expected since its content was already applied by the two preceding patches.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
