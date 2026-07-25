@@ -90729,3 +90729,47 @@ These should resolve on retry once the lab places are free.
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-380d8e38874
+
+Commits:
+- 380d8e38874 arm: dts: am335x-evm: Add backlight to the panel
+- d50fd4e4ad6 configs: am335x_evm_defconfig: Enable panel
+- b941dc47398 include: configs: am335x_evm: Enable vidconsole
+- 6e01c9435ee configs: am335x_evm: Enable SPL_OPTIMIZE_INLINING
+- cc1c6632b64 configs: am335x_evm: Unify evm board defconfigs
+- 44d86f9194a am33xx: Avoid hard failure on USB probe issue
+- 0ecacc52f4e arm: dts: am335x-*-u-boot: Add chosen tick-timer
+- 515a20d7ee2 arm: dts: am335x-boneblack-u-boot: Add lcdc to all boot phases
+- 9e54b0e9861 am33xx: Fix comment about config symbols
+- 39762783b12 am33xx: Support upstream devicetree USB device
+- 0c57d71f4ef dm: core: Split SIMPLE_PM_BUS into phases
+- d21db0e6afb configs: am335x_evm_defconfig: Switch to upstream devicetree
+- 1cf2fb7bce4 arm: dts: am335x: Remove unused uboot devicetrees
+- 5c3741f1355 dm: core: Remove dependency on CLK
+- 9c1a0f7b455 Makefile: Move dt_dir definition
+- 484dacfcf18 arm: mach-omap2: Use dt_dir for devicetree paths
+- 1bded011586 arm: dts: Move remaining am335x-bone* to OF_UPSTREAM
+- 7e47c37adf5 Merge patch series "arm: am335x: Switch to upstream devicetree"
+
+### Conversation log
+All six files exactly match the original post-state. Continuing with a note about the resolution:
+
+All 18 commits cherry-picked successfully onto `cherry-380d8e38874` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every pick and at the end).
+
+**Fix-ups made:**
+- `cc1c6632b64` (configs: am335x_evm: Unify evm board defconfigs) conflicted in `am335x_hs_evm_defconfig` and `am335x_hs_evm_uart_defconfig`. The pre-states differed only trivially from upstream (a moved CONFIG_SPL_MAX_SIZE line, and ci/master's hs_evm defconfig already carrying CONFIG_SPL_OPTIMIZE_INLINING=y). Resolved by taking the upstream post-state for both files — the new shared `am335x_evm.config` already contains SPL_OPTIMIZE_INLINING=y, so nothing is lost. I verified all six resulting files are byte-identical to the original commit's post-state, and added a note to the commit message. Stat shows 350 deletions vs 349 upstream (the one extra line ci/master had).
+
+**Commit deltas:** All other 16 non-merge picks matched their originals exactly (same files, same line counts).
+
+**Merge commit:** `7e47c37adf5` was picked with `-m 1` and came out empty (as expected since all content was already applied); committed with `--allow-empty` to preserve the merge message and Link tag.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
