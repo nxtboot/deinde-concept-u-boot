@@ -90284,6 +90284,44 @@ Sanity check: `um build sandbox` on the branch head builds cleanly.
 ### Recommendation
 
 Retry the pipeline once the labgrid places (edison, felwinter) are released — e.g. `labgrid-client -p felwinter release` for the stale sglass acquisition — and check the pcduino3_nano SD mux/card, which is failing to read in SPL on consecutive resets.
+---
+
+## 2026-07-25: us/master
+
+Branch: cherry-45eec051cef
+
+Commits:
+- 45eec051cef MAINTAINERS: remove trailing colons from section titles
+- 57b382e6093 MAINTAINERS: add maintainer entry for air_en8811 driver
+- 379e9ab2d08 net: Fix alphabetical ordering in drivers/net/Makefile
+- 2287b573dff net: Fix alphabetical ordering in drivers/net/Kconfig
+- 751af7d98f0 net: phy: air_phy_lib: Factorize BuckPBus register
+- 227243b67e6 net: phy: Add airoha AN8801 ethernet phy driver
+- 44f7d5945b3 net: dwc_eth_qos: Add mediatek support
+- 6a0804c87e6 arm: dts: mt8189: Add ethernet support for Genio 520/720 boards
+- b581ec125a9 configs: mt8189: Enable ethernet support
+- 2258b6419a9 pinctrl: mediatek: use scnprintf() instead of snprintf()
+- b016f0bb46e configs/mt8188: enable bootstd, FIT and DT overlays
+- 10ae95703b8 configs/mt8195: enable bootstd, FIT and DT overlays
+- f30d2dbedb6 configs/mt8365: enable bootstd, FIT and DT overlays
+- d5dd2ebb5af Merge tag 'mediatek-for-next-2026-06-10' of https://source.denx.de/u-boot/custodians/u-boot-mediatek into next
+
+### Conversation log
+Delta matches. Running build test:
+
+All done. Final status:
+
+**Branch**: `cherry-45eec051cef` (based on ci/master), ready for pushing.
+
+**Cherry-picks**: All 14 commits applied cleanly in order with `-x`:
+- 13 regular commits applied without conflicts
+- The merge commit `d5dd2ebb5af` (mediatek-for-next-2026-06-10) resolved to empty, as expected since all its content was already picked; committed with `--allow-empty` to preserve the merge message
+
+**Delta checks**: Every cherry-picked commit's stat exactly matches its original (same files, same line counts). No concerning deltas.
+
+**Build result**: sandbox built cleanly with buildman after each commit and at the end — no warnings or errors.
+
+**Fix-ups**: None needed.
 
 ---
 
