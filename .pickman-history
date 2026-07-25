@@ -89607,3 +89607,74 @@ No fix-ups, no failed commits, no manual conflict resolution needed.
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-b996053fcb8
+
+Commits:
+- b996053fcb8 mmc: xenon_sdhci: Use livetree API
+- 185e4f27c89 mmc: cv1800b_sdhci: Use dev_read_addr_ptr()
+- cf3f7e03ff9 mmc: fsl_esdhc_imx: convert ofnode API to dev_read API
+- 80aa5cbd553 mmc: msm_sdhci: convert ofnode API to dev_read API
+- 162772d59f8 mmc: octeontx_hsmmc: convert ofnode API to dev_read API
+- aec9a167b25 cmd: mmc: fix help and parameter verification with MMC_SPEED_MODE_SET not set
+- 7ab0a58e865 power: regulator: Fix power on/off delay issue
+- be9ded78034 power: regulator: tps6287x: Use dev_read_addr_index()
+- 8e873d7ad3e power: domain: meson-ee-pwrc: use dev_read_phandle_with_args for ao-sysctrl
+- 788259b6c96 power: domain: meson-gx-pwrc-vpu: use dev_read_phandle_with_args for hhi-sysctrl
+- 2d6b735f5a9 power: domain: imx8m: convert ofnode API to dev_read API
+- ddbfee1ec09 power: pmic: pca9450: convert ofnode API to dev_read API
+- 9be04779061 power: pmic: qcom: convert ofnode API to dev_read API
+- 0c9b8e07fd9 power: regulator: anatop: convert ofnode API to dev_read API
+- fa3544f39f3 power: regulator: qcom-rpmh: convert ofnode API to dev_read API
+- 39dd6607cd8 power: regulator: scmi: convert ofnode API to dev_read API
+- 8ef5312bbaf Merge tag 'mmc-next-2026-06-10' of https://source.denx.de/u-boot/custodians/u-boot-mmc into next
+
+### Conversation log
+Build passed. Continuing with the next commits (build only takes ~10s, so I'll run it in the foreground).
+
+The merge commit's changes to regulator_common.c are already applied via the earlier cherry-pick, so resolve by keeping our version:
+
+The merge resolves to empty (all changes already present). I'll commit it as an empty commit to preserve the merge message:
+
+All 17 commits applied. Final verification:
+
+The merge commit message retained the "# Conflicts:" comment lines. Let me check and clean up the full message:
+
+All done. Final status:
+
+## Cherry-pick complete: `cherry-b996053fcb8` (17 commits on ci/master)
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (built after every commit and again at the end).
+
+**Commits applied (oldest first):**
+| Original | New | Subject |
+|---|---|---|
+| b996053fcb8 | 388cab6c1e3 | mmc: xenon_sdhci: Use livetree API |
+| 185e4f27c89 | 465e6d63578 | mmc: cv1800b_sdhci: Use dev_read_addr_ptr() |
+| cf3f7e03ff9 | a03beec229e | mmc: fsl_esdhc_imx: convert ofnode API to dev_read API |
+| 80aa5cbd553 | 49e33d15ea1 | mmc: msm_sdhci: convert ofnode API to dev_read API |
+| 162772d59f8 | 795807f3f7e | mmc: octeontx_hsmmc: convert ofnode API to dev_read API |
+| aec9a167b25 | 28a1ed2f271 | cmd: mmc: fix help and parameter verification... |
+| 7ab0a58e865 | c5a7e747c7f | power: regulator: Fix power on/off delay issue ⚠️ |
+| be9ded78034 | 555d685df03 | power: regulator: tps6287x: Use dev_read_addr_index() |
+| 8e873d7ad3e | 03df2605886 | power: domain: meson-ee-pwrc: use dev_read_phandle_with_args |
+| 788259b6c96 | b6a3989f57d | power: domain: meson-gx-pwrc-vpu: use dev_read_phandle_with_args |
+| 2d6b735f5a9 | cb591657a88 | power: domain: imx8m: convert ofnode API to dev_read API |
+| ddbfee1ec09 | ac798452568 | power: pmic: pca9450: convert ofnode API to dev_read API |
+| 9be04779061 | 7e275baec4b | power: pmic: qcom: convert ofnode API to dev_read API |
+| 0c9b8e07fd9 | 845233db31c | power: regulator: anatop: convert ofnode API to dev_read API |
+| fa3544f39f3 | cae044839d5 | power: regulator: qcom-rpmh: convert ofnode API to dev_read API |
+| 39dd6607cd8 | 736c1dc327c | power: regulator: scmi: convert ofnode API to dev_read API |
+| 8ef5312bbaf | 8ecfdd2e777 | Merge tag 'mmc-next-2026-06-10' (empty) ⚠️ |
+
+**Fix-ups made:**
+1. **7ab0a58e865 (power on/off delay fix)** — conflicted because ci/master has a restructured `regulator_common_set_enable()` (early return for missing GPIO instead of if/else nesting). I applied the intent of the change to the local structure: moved the `off_on_delay_us` delay from after-disable to before-enable, ahead of `dm_gpio_set_value()`. Resulting delta matches the original exactly (3+/3-, same file). A note was added to the commit message.
+2. **8ef5312bbaf (merge commit)** — conflicted in the same file for the same reason; resolved by keeping our version since all the merge's changes were already present from the preceding picks. Preserved as an empty commit with the original merge message plus a note.
+
+**Concerning deltas:** none — every non-merge commit's stat matches its original exactly.
+
+The branch `cherry-b996053fcb8` is ready for pushing; nothing was merged back anywhere.
+
+---
+
