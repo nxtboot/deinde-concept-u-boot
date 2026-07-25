@@ -90132,3 +90132,43 @@ The push actually updated the remote: the previous attempt's record commit (`4ed
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-1cc0442ede5
+
+Commits:
+- 1cc0442ede5 bootmenu: fix incorrect menu quitting logic
+- 6c636eabbde treewide: prefer __func__ over __FUNCTION__ and __PRETTY_FUNCTION__
+- e65a87e9591 serial: lpuart: Fix RX FIFO Enable bitmask
+- 4e249b94af9 clk: enhance clk-gpio to also handle gated-fixed-clock
+- 7a06f03e575 arm64: dts: axiado: Add AX3005 SCM3005 device tree
+- 3f182116263 grm: axiado: Add AX3005 based SCM3005 board support
+- 53305a02a76 MAINTAINERS: Replace ASpeed with N:
+- 3bd18683549 Merge patch series "This series introduces initial U-Boot support for mach-axiado AX3005 SCM3005 board, a quad-core ARM Cortex-A53 (ARMv8/ARM64) platform."
+
+### Conversation log
+All 8 cherry-picks completed successfully on branch `cherry-1cc0442ede5`.
+
+## Summary
+
+| Commit | Subject | Result |
+|--------|---------|--------|
+| 1cc0442ede5 | bootmenu: fix incorrect menu quitting logic | Clean pick, delta matches |
+| 6c636eabbde | treewide: prefer \_\_func\_\_ over \_\_FUNCTION\_\_... | Clean pick (auto-merge in fdt_support.c), 20 files / 57+/57- matches |
+| e65a87e9591 | serial: lpuart: Fix RX FIFO Enable bitmask | Clean pick, delta matches |
+| 4e249b94af9 | clk: enhance clk-gpio to also handle gated-fixed-clock | Clean pick, delta matches |
+| 7a06f03e575 | arm64: dts: axiado: Add AX3005 SCM3005 device tree | Clean pick, delta matches |
+| 3f182116263 | grm: axiado: Add AX3005 based SCM3005 board support | Clean pick, delta matches |
+| 53305a02a76 | MAINTAINERS: Replace ASpeed with N: | Clean pick, delta matches |
+| 3bd18683549 | Merge patch series (axiado AX3005 SCM3005) | Picked with `-m 1`; resulted in empty commit as expected, committed with `--allow-empty` to preserve the merge message |
+
+## Status
+
+- **Build result**: OK — sandbox built cleanly with buildman after each cherry-pick and in the final verification (no warnings or errors)
+- **Fix-ups**: None needed — no conflicts required manual resolution
+- **Concerning deltas**: None — every commit's file list and line counts matched the original exactly
+
+The branch `cherry-1cc0442ede5` is ready for pushing (7 content commits + 1 empty merge-marker commit, all with `cherry picked from` annotations).
+
+---
+
