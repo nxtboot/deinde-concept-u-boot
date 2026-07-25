@@ -90403,3 +90403,48 @@ Build passes cleanly. Now create the -v2 branch and push to the original remote 
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-45eec051cef
+
+Comments addressed:
+- [sjg]: pickman: What about the failure here? https://concept.u-boot.org/u-boot/u-boot/-/jobs/575840...
+
+### Conversation log
+Now let me fetch the failed job log:
+
+Exit code 102. Let me find the actual build errors:
+
+Exit code 102 means buildman hit internal exceptions (`excs`). Let me find the traceback:
+
+Confirmed the full picture. Now verify the build and push:
+
+Build passes cleanly. Create the versioned branch and push to retrigger the pipeline:
+
+## Report
+
+**Comment analysis** ([sjg]: "What about the failure here? .../jobs/575840")
+
+I fetched the full log for job 575840 (*build all 64bit ARM platforms*, pipeline 8731). The diagnosis is unambiguous:
+
+- The world build progressed through **355 of 545 boards with 0 errors** (the error column stays at 0 in every progress line)
+- It then died with **18 thread exceptions, all `[Errno 28] No space left on device`** on `/tmp/current/<board>` — the CI runner's disk filled up mid-build
+- Buildman exits with code 102 precisely when thread exceptions occur (see `tools/buildman/control.py` line 842), matching the job's `ERROR: Job failed: exit code 102`
+- The boards whose builds were killed (xilinx_versal*/zynqmp*, amd_versal2*, tegra p2371/p2571/p3450) are unrelated to this mediatek/airoha series, and the summary shows only the long-standing pre-existing warnings (rpi ASL, qemu dtc phandle, missing blobs, OF_EMBED notes)
+
+**Conclusion:** infrastructure failure (runner disk exhaustion), not a defect in the series. No code change is needed.
+
+**What was done:**
+- Checked out `cherry-45eec051cef`; series unchanged, working tree clean
+- Verified `buildman -L --board sandbox -w -o /tmp/pickman`: 1 board built, 0 errors/warnings
+- Created local branch `cherry-45eec051cef-v3` at 9079f613883
+- Pushed `6ebeb313f3a..9079f613883` (fast-forward, includes only the pickman `.pickman-history` record commit) to `ci/cherry-45eec051cef`, which retriggers the MR pipeline
+
+**Suggested MR reply:**
+
+> The job 575840 failure is runner disk exhaustion, not a build error: the world build reached 355/545 boards with zero errors, then 18 build threads died with '[Errno 28] No space left on device' on /tmp/current, giving buildman's exit code 102 (thread exceptions). The killed builds (xilinx versal/zynqmp, versal2, tegra) do not compile any file touched by this series, and the only warnings in the summary are pre-existing ones. The runner's disk needs cleaning or enlarging; the branch has been re-pushed to retrigger the pipeline.
+
+**Note:** the runner disk-space problem will likely recur for other MRs until the runner is cleaned up — worth flagging to whoever administers the CI runners.
+
+---
+
