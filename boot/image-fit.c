@@ -1234,6 +1234,16 @@ static int fdt_check_no_at(const void *fit, int parent)
 	return 0;
 }
 
+static int fit_check_images_node(const void *fit)
+{
+	if (fdt_path_offset(fit, FIT_IMAGES_PATH) < 0) {
+		log_debug("Wrong FIT format: no images parent node\n");
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 int fit_check_format(const void *fit, ulong size)
 {
 	int ret;
@@ -1245,6 +1255,13 @@ int fit_check_format(const void *fit, ulong size)
 			  ret);
 		return -ENOEXEC;
 	}
+
+	/*
+	 * For the control DTB to act as a FIT image, we only require
+	 * an /images node.
+	 */
+	if (CONFIG_IS_ENABLED(CONTROL_DTB_AS_FIT) && fit == gd_fdt_blob())
+		return fit_check_images_node(fit);
 
 	if (CONFIG_IS_ENABLED(FIT_FULL_CHECK)) {
 		/*
@@ -1294,12 +1311,7 @@ int fit_check_format(const void *fit, ulong size)
 	}
 
 	/* mandatory subimages parent '/images' node */
-	if (fdt_path_offset(fit, FIT_IMAGES_PATH) < 0) {
-		log_debug("Wrong FIT format: no images parent node\n");
-		return -ENOENT;
-	}
-
-	return 0;
+	return fit_check_images_node(fit);
 }
 
 int fit_conf_find_compat(const void *fit, const void *fdt)

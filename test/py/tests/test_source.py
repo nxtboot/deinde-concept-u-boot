@@ -44,3 +44,34 @@ def test_source(ubman):
     # Restore the control FDT and clean up
     ubman.run_command('fdt addr $fdtcontroladdr')
     ubman.run_command('setenv loadaddr')
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_echo')
+@pytest.mark.buildconfigspec('cmd_source')
+@pytest.mark.buildconfigspec('fit')
+@pytest.mark.buildconfigspec('control_dtb_as_fit')
+def test_source_control_dtb(ubman):
+    output = ubman.run_command('source ${fdtcontroladdr}')
+    assert '* default script' in output
+
+    output = ubman.run_command('source ${fdtcontroladdr}:boot')
+    assert '* default script' in output
+
+    output = ubman.run_command('source ${fdtcontroladdr}:outer')
+    assert '* outer 1' in output
+    assert '* inner' in output
+    assert '* outer 2' in output
+
+    output = ubman.run_command('source ${fdtcontroladdr}:inner')
+    assert '* outer' not in output
+    assert '* inner' in output
+
+    assert 'Fail' in ubman.run_command('source ${fdtcontroladdr}:no-such-script || echo Fail')
+
+@pytest.mark.buildconfigspec('cmd_echo')
+@pytest.mark.buildconfigspec('cmd_source')
+@pytest.mark.buildconfigspec('fit')
+@pytest.mark.notbuildconfigspec('control_dtb_as_fit')
+def test_source_reject_control_dtb(ubman):
+    assert 'Fail' in ubman.run_command('source ${fdtcontroladdr} || echo Fail')
+    assert 'Fail' in ubman.run_command('source ${fdtcontroladdr}:boot || echo Fail')

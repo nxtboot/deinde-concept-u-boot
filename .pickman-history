@@ -90448,3 +90448,46 @@ I fetched the full log for job 575840 (*build all 64bit ARM platforms*, pipeline
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-7779540f093
+
+Commits:
+- 7779540f093 image-fit.c: introduce CONTROL_DTB_AS_FIT config knob
+- a6369b8bb29 doc: develop: add section on embedding scripts inside control DTB
+- c8a636af67c test: hook up test of allowing control DTB to act as FIT image
+- 69491eb60a8 Merge patch series "allow control DTB to double as "FIT image""
+
+### Conversation log
+Stats match exactly. Running build test:
+
+Stats identical. Adding a fix-up note about the conflict resolution:
+
+Same conflict — the merge's tree lacks the restore lines present in ci/master. Keep the HEAD side:
+
+The merge commit is preserved (empty, with full message and cherry-pick note). Verifying and running the final build:
+
+All 4 commits cherry-picked successfully onto `cherry-7779540f093`.
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after each cherry-pick and at the end).
+
+**Commits on the branch:**
+| Original | New | Subject |
+|---|---|---|
+| 7779540f093 | a1f4b447511 | image-fit.c: introduce CONTROL_DTB_AS_FIT config knob |
+| a6369b8bb29 | 2065a5f5aee | doc: develop: add section on embedding scripts inside control DTB |
+| c8a636af67c | f845b2a7570 | test: hook up test of allowing control DTB to act as FIT image |
+| 69491eb60a8 | 2ceac15987b | Merge patch series "allow control DTB to double as "FIT image"" (empty, preserved with `--allow-empty`) |
+
+**Fix-ups made:**
+- **f845b2a7570** (test commit): context conflict in `test/py/tests/test_source.py` — ci/master has control-FDT restore/cleanup lines at the end of `test_source()` that upstream lacks. Resolved by keeping both the cleanup lines and the new `test_source_control_dtb` / `test_source_reject_control_dtb` functions. A note was added to the commit message.
+- **2ceac15987b** (merge commit): the same conflict recurred; resolved by keeping the ci/master side, which made the commit empty as expected. Committed with `--allow-empty` to preserve the merge message for history tracking.
+
+**Deltas:** all cherry-picked commits match their originals exactly (same files, same line counts) — no concerning deltas.
+
+The branch `cherry-7779540f093` is ready for pushing.
+
+---
+
