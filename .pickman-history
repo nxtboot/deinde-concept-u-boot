@@ -89800,3 +89800,48 @@ If you'd instead like me to force-push the branch anyway purely to re-trigger th
 
 ---
 
+### Pipeline fix: 2026-07-24 (attempt 2)
+
+Branch: cherry-81f4946d8c4
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- colibrimx8 (sjg-lab)
+- nyan-big (sjg-lab)
+
+### Conversation log
+## Report: no code fix needed — all five failures are lab/infrastructure issues
+
+**No commit is responsible; no source change was made.** Branch `cherry-81f4946d8c4-fix2` has been created locally pointing at the current branch head (working tree clean, no new commits), so the caller's flow can proceed.
+
+### Why the series cannot be at fault
+
+The 9 cherry-picked commits touch only fsl-layerscape/LX2160A DTs, i.MX9 SCMI code, NXP i.MX95/94/952 EVK boards and thermal drivers. I re-verified the two files with any cross-board reach:
+
+- **drivers/cpu/imx8_cpu.c** (commit bdd45b9791a) — adds a `__weak get_cpu_variant_type_name()` that returns NULL; the strong override lives in i.MX9 SCMI code, so behaviour on colibrimx8 (iMX8X) is unchanged
+- **drivers/thermal/Kconfig** — `IMX_TMU` only widens `depends on` (still needs a defconfig to enable it) and `DM_THERMAL_JC42` is a new opt-in bool with no default. None of the failing boards enables either
+
+### Per-job diagnosis
+
+| Job | Failure | Nature |
+|---|---|---|
+| **edison** | `place edison is not acquired by your user, acquired by labgrid` (held by **kea**/labgrid) — pytest died in `pytest_configure` before building anything. Identical to attempt 1 | Stale labgrid place acquisition — persistent |
+| **felwinter-cb** | `rfc2217://kea:37835 ... Connection refused` while trying to power off via GSC driver | The **kea** exporter host is down/unreachable |
+| **play** | U-Boot written via ti,am625 method, then lab timeout waiting for boot prompt (same as attempt 1) | DUT boot/flash failure |
+| **nyan-big** | Flashed, then lab timeout — board never reached the prompt | DUT boot failure |
+| **colibrimx8** | The new U-Boot **booted fine** and ran 41 tests successfully; a single failure (`test_distro_script`) hit a console timeout when `restart_uboot()` reset the board late in the run | Board reset flakiness — clearly not the image, which had been running for 6 minutes |
+
+### Common thread
+
+Two of the five failures point at the **kea** lab host (it holds the edison place and refuses rfc2217 connections for felwinter-cb). The recommended infra actions before retrying:
+
+1. Restart/check the labgrid exporter on kea
+2. Kick the stale edison place: `labgrid-client -p edison kick` (or `allow ellesmere/gitlab-runner`)
+3. Retry the failed jobs — colibrimx8, play and nyan-big look like ordinary DUT flakiness
+
+No build was run since no source changed; the tree is identical to what already built cleanly (sandbox verified after every pick, and colibrimx8's own job built and booted this exact tree successfully).
+
+---
+
