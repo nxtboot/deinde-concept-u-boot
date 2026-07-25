@@ -90539,3 +90539,31 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-ca774b94d66
+
+Commits:
+- ca774b94d66 fdt_support: bound serialN alias length before copying to stack
+- 84e250c0a85 fdt_support: validate dma-ranges length in fdt_get_dma_range
+- b89b7bb0842 Merge patch series "fdt_support: validate property lengths in chosen and dma-range fixups"
+
+### Conversation log
+All 3 commits cherry-picked successfully onto `cherry-ca774b94d66` (based on ci/master).
+
+**Final status:**
+
+| Commit | Result |
+|---|---|
+| ca774b94d66 → b44c5f68ee1 | Clean pick, delta matches (6 insertions in boot/fdt_support.c) |
+| 84e250c0a85 → aac507a904c | Clean pick, delta matches (7 insertions in boot/fdt_support.c) |
+| b89b7bb0842 → d05dc3effb5 | Merge commit preserved as empty commit (expected — content already applied by the two picks) |
+
+- **Build result:** OK — sandbox built cleanly with buildman after each pick and at the end (no warnings or errors)
+- **Fix-ups made:** none required
+- **Concerning deltas:** none — both content commits match their originals exactly
+
+The branch `cherry-ca774b94d66` is ready for pushing.
+
+---
+
