@@ -90773,3 +90773,51 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-380d8e38874
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- bpif3 (sjg-lab)
+- rpi (sjg-lab)
+- pcduino3_nano (sjg-lab)
+
+### Conversation log
+The logs show a mix of lab-infrastructure failures and two boards actually failing to boot. Let me check out the branch and examine the commits that touch core code (which could affect non-am335x boards).
+
+The Makefile change is a pure relocation of identical logic. Let me check the full diff footprint of the branch against its base to confirm nothing touches the failing boards.
+
+Done. Sandbox builds cleanly and branch `cherry-380d8e38874-fix1` is created at the unchanged HEAD (753b354271b).
+
+## Verdict: all 8 failures are lab/infrastructure issues — no code changes made
+
+The branch's entire footprint is am335x DTs and defconfigs, mach-omap2, `drivers/core` (SIMPLE_PM_BUS Kconfig/Makefile) and a pure-relocation `dt_dir` move in the top Makefile. None of the failing boards is an am335x board, and I verified none of them could be affected:
+
+- **SIMPLE_PM_BUS phase split** (the only change that could silently alter other boards' SPL) — only `am335x_evm.config`, xilinx virt boards and sandbox set `CONFIG_SIMPLE_PM_BUS`; no K3 (play), sunxi (pcduino3_nano), spacemit (bpif3), rpi or x86 board uses it
+- **Makefile dt_dir move** — byte-identical logic, just relocated above the arch include; only mach-omap2 consumes it
+
+Per-job diagnosis:
+
+| Job | Failure | Cause |
+|---|---|---|
+| edison | labgrid: "place edison is not acquired by your user, acquired by labgrid/kea" | Place-ownership conflict — pure infra |
+| bpif3 | BootROM never started the FSBL over USB, 5 retries | Board/USB loader flakiness; U-Boot never ran |
+| rpi | "Lab timeout" 3 s after "Writing U-Boot using method rpi3" | Flash/write timeout — infra |
+| efi-x86_64-uboot-iso | "Lab timeout" during bootstrap write | Infra; series doesn't touch x86 |
+| efi-x86_64-uboot-iso-install | U-Boot banner appeared, then `OSError: [Errno 5]` on the console fd | QEMU/pty died mid-test — infra/flaky |
+| qemu-x86_64 | `test_efi_selftest_text_input_ex` timeout (48 passed otherwise) | Known-flaky EFI keyboard-input selftest, unrelated |
+| play (am62x) | Flashed OK, no U-Boot prompt after 2 attempts | Board flakiness; K3 untouched by the series |
+| pcduino3_nano | SPL loaded fine from MMC but then hit "mmc block read error" -38 | SD/board flakiness; sunxi untouched |
+
+Notably, all jobs ran on the same `ellesmere-lab` runner and no am335x board (the only hardware the series affects) is among the failures. Recommendation: retry the pipeline; the edison place conflict in particular suggests the lab was contended at the time.
+
+- Responsible commit: none — infrastructure/transient failures
+- Changes made: none; `um build sandbox` passes; branch `cherry-380d8e38874-fix1` points at the existing HEAD
+
+---
+
