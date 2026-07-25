@@ -89348,3 +89348,116 @@ Build passes cleanly. The comment is terminal — no code changes are possible o
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-e81bb069a41
+
+Commits:
+- e81bb069a41 configs: zynqmp: Enable USB gadget download support
+- 38831cce709 board: zynqmp: Remove hardcoded USB ethernet initialization
+- 62a49635b01 xilinx: mbv: Disable AVAILABLE_HARTS
+- 472ea8b621e xilinx: mbv: Allow compiler to optimize inlining in SPL
+- 7188742e7e9 arm64: xilinx: Add PMC PGGS3 and PGGS4 registers
+- f2390069d45 firmware: zynqmp: Add PMC PGGS register read API
+- 371a6c1744f board: xilinx: Add capsule and FWU support
+- 818c06faa11 board: amd: Add capsule and FWU support
+- edccbc53afb board: xilinx: Add FWU boot index support
+- de6b77c22f5 configs: xilinx: Enable DFU MTD support
+- 4706bd02088 configs: amd: Enable capsule update and DFU support
+- 19f7def2646 reset: Add reset_reset() and reset_reset_bulk() API
+- 724d3cafe3b reset: Add sandbox tests for reset_reset() and reset_reset_bulk()
+- 4e3f64c7cc0 reset: sandbox: Cover reset_reset() fallback with second sandbox provider
+- f59b7a010e2 spi: cadence: Use reset_reset_bulk() for proper reset cycling
+- 8efa173b389 reset: zynqmp: Implement rst_reset using PM_RESET_ACTION_PULSE
+- 5d4d6e331d3 Merge tag 'xilinx-for-v2026.10-rc1-v2' of https://source.denx.de/u-boot/custodians/u-boot-microblaze into next
+
+### Conversation log
+Simple conflict — the original just adds a line, and ci/master has an extra `CONFIG_SPL_MAX_SIZE` line at that spot. I'll keep both.
+
+The merge conflict is just the ci/master-specific `CONFIG_SPL_MAX_SIZE` line again — keep it.
+
+All 17 commits present. Verify the merge commit message and run the final build:
+
+All done. Final status:
+
+## Cherry-pick complete: `cherry-e81bb069a41` (17/17 commits)
+
+**Build result:** OK — sandbox built cleanly after every commit and in the final verification (no warnings or errors).
+
+**Fix-ups made:**
+1. **`xilinx: mbv: Disable AVAILABLE_HARTS`** — context conflict in `configs/xilinx_mbv32_defconfig` with the ci/master-specific `CONFIG_SPL_MAX_SIZE=0x40000` line. Kept both lines; note added to the commit message.
+2. **`xilinx: mbv: Allow compiler to optimize inlining in SPL`** — same context conflict at the same spot. Kept both lines; note added to the commit message.
+3. **Merge commit `5d4d6e331d3`** — conflicted on the same `CONFIG_SPL_MAX_SIZE` line; resolved by keeping the ci/master line. The merge became empty (expected, since all content was already picked) and was committed with `--allow-empty` to preserve the merge message. I also stripped the `# Conflicts:` comment that leaked into the message.
+
+**Deltas:** Every cherry-picked commit matched its original exactly in files and line counts (the two conflicted defconfig commits are still 1 file, 1 insertion, identical to the originals). No concerning deltas.
+
+The branch is left checked out and ready for pushing; it has not been merged anywhere.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e81bb069a41
+
+Comments addressed:
+
+
+### Conversation log
+All 17 code commits applied cleanly; only the `.pickman-history` record file conflicted. Let me resolve it.
+
+Both sides append a record under the same `## 2026-07-24: us/master` heading — HEAD (ci/master) has a record for another branch, ours has this branch's record. I'll keep both, with a separator between them.
+
+Rebase complete. Now comparing per-commit deltas before/after:
+
+All done. Summary:
+
+## Rebase complete: `cherry-e81bb069a41` → ci/master
+
+**Actions taken:**
+1. `git rebase --keep-empty ci/master` — rebased all 18 commits (17 cherry-picks + 1 pickman record) over the 36 new commits on ci/master.
+2. **One conflict**, in `.pickman-history` only (the pickman record commit): ci/master had gained a record for another branch (`cherry-0ba428236ea`) under the same date heading. Resolved by keeping both records with a `---` separator. No code files conflicted.
+3. **Delta check:** per-commit `git show --stat` diffstats before and after the rebase are byte-identical for all 18 commits — no drift.
+4. **Empty merge record preserved:** `fb881f7481f` (Merge tag 'xilinx-for-v2026.10-rc1-v2', cherry-picked from `5d4d6e331d3`) survived via `--keep-empty`.
+5. `buildman -L --board sandbox -w -o /tmp/pickman` — **build OK**, no warnings or errors.
+6. Created local branch `cherry-e81bb069a41-v2` at `dca3c4dbbe1`.
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-e81bb069a41 -r ci -f` — remote updated `0f2788ecc42` → `dca3c4dbbe1`; GitLab will trigger a new MR pipeline.
+
+### Suggested reply to post on the MR
+
+> The branch has been rebased onto the current ci/master with `git rebase --keep-empty ci/master`. All 17 cherry-picked commits applied cleanly with per-commit diffstats identical to before the rebase, and the empty merge record for 'xilinx-for-v2026.10-rc1-v2' is preserved. The only conflict was in the .pickman-history log file (overlapping records from another branch) and was resolved by keeping both entries. Sandbox builds cleanly with no warnings; the new tip is `dca3c4dbbe1` and a fresh MR pipeline has been triggered.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-e81bb069a41
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly with no conflicts. Now verify the deltas and the empty merge record:
+
+Build passes. Create the versioned local branch and force-push:
+
+All done. Summary:
+
+## Rebase complete: `cherry-e81bb069a41` → ci/master (MR !1183)
+
+**Actions taken:**
+1. Checked out `cherry-e81bb069a41` and fetched `ci` — the branch was 19 commits behind ci/master (base had moved past the merge of `cherry-0ba428236ea` and others).
+2. `git rebase --keep-empty ci/master` — **all 19 commits rebased cleanly with no conflicts** (17 cherry-picks + the empty merge record + 2 pickman record commits).
+3. **Delta check:** per-commit `git show --stat` diffstats captured before and after the rebase are byte-identical for all 19 commits — no drift.
+4. **Empty merge record preserved:** `d934ab4087f` (Merge tag 'xilinx-for-v2026.10-rc1-v2', from `5d4d6e331d3`) survived via `--keep-empty`.
+5. `buildman -L --board sandbox -w -o /tmp/pickman` — **build OK**, no warnings or errors.
+6. Created local branch `cherry-e81bb069a41-v3` at `f96d0dd9566` (`-v2` already existed from the previous rebase).
+7. Force-pushed via `./tools/pickman/pickman push-branch cherry-e81bb069a41 -r ci -f` — remote updated `dca3c4dbbe1` → `f96d0dd9566`; GitLab will trigger a fresh MR pipeline.
+
+**No issues encountered** — this was a clean rebase with nothing to resolve.
+
+### Suggested reply to post on the MR
+
+> The branch has been rebased onto the current ci/master with `git rebase --keep-empty ci/master`. All 19 commits applied cleanly with no conflicts, per-commit diffstats are identical to before the rebase, and the empty merge record for 'xilinx-for-v2026.10-rc1-v2' is preserved. Sandbox builds cleanly with no warnings; the new tip is `f96d0dd9566` and a fresh MR pipeline has been triggered.
+
+---
+
