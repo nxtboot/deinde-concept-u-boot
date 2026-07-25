@@ -89678,3 +89678,53 @@ The branch `cherry-b996053fcb8` is ready for pushing; nothing was merged back an
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-81f4946d8c4
+
+Commits:
+- 81f4946d8c4 arm: dts: fsl-lx2160a: wdt0 for watchdog node
+- c91cd48ba72 arm: dts: fsl-lx2162a-qds: drop &dspi{0,1,2} block
+- 903e861b719 thermal: jc42: add JEDEC JC-42.4/TSE2004av SPD
+- 846f5fd2d17 thermal: imx_tmu: extend with QorIQ/Layerscape TMU
+- 5a9512fb38d imx9: scmi: Fix temperature range for Extended industrial parts
+- d62b91463b3 imx9: scmi: Print CPU part number name
+- 18da44b40e5 iMX9: scmi: Disable fused modules for iMX95/94/952
+- ec217322301 nxp: imx[95,94,952]_evk: Implement board_fix_fdt
+- 45cfba58dba Merge tag 'fsl-qoriq-next-2026-06-09' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq into next
+
+### Conversation log
+Simple conflict — both branches added an entry at the same spot in MAINTAINERS. Keep both in alphabetical order.
+
+The merge is empty as expected — commit it to preserve the message:
+
+All 9 commits cherry-picked successfully onto `cherry-81f4946d8c4` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every pick and at the end).
+
+**Commits applied (oldest first):**
+
+| Original | New | Subject |
+|---|---|---|
+| 81f4946d8c4 | 2972f588f7f | arm: dts: fsl-lx2160a: wdt0 for watchdog node |
+| c91cd48ba72 | 9c647f5b0ea | arm: dts: fsl-lx2162a-qds: drop &dspi{0,1,2} block |
+| 903e861b719 | 3f1ebfae0f8 | thermal: jc42: add JEDEC JC-42.4/TSE2004av SPD |
+| 846f5fd2d17 | 433fab93de0 | thermal: imx_tmu: extend with QorIQ/Layerscape TMU |
+| 5a9512fb38d | bb6d23e04f2 | imx9: scmi: Fix temperature range for Extended industrial parts |
+| d62b91463b3 | bdd45b9791a | imx9: scmi: Print CPU part number name |
+| 18da44b40e5 | e3acfcf6d6c | iMX9: scmi: Disable fused modules for iMX95/94/952 |
+| ec217322301 | 7db6a8e41a8 | nxp: imx[95,94,952]_evk: Implement board_fix_fdt |
+| 45cfba58dba | 8f6e4abb7ff | Merge tag 'fsl-qoriq-next-2026-06-09' (empty, message preserved) |
+
+**Fix-ups made:**
+- **3f1ebfae0f8 (jc42)**: context conflict in MAINTAINERS — ci/master has an INPUT entry at the same insertion point. Kept both entries in alphabetical order; a note was added to the commit message.
+- **8f6e4abb7ff (merge)**: the same MAINTAINERS conflict recurred; resolved by keeping HEAD. The merge became empty (all content already picked), so it was committed with `--allow-empty` to preserve the merge message for history tracking.
+
+**Delta checks:** every cherry-pick matched the original commit's diffstat exactly (same files, same line counts) — no concerning deltas.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
