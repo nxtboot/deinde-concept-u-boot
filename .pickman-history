@@ -89461,3 +89461,104 @@ All done. Summary:
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-2ea4d3f8a54
+
+Commits:
+- 2ea4d3f8a54 watchdog: orion_wdt: Add support for armada-xp
+- d98e11bcbcb watchdog: Correct dependencies for WDT_MAX6370
+- d62801d0944 watchdog: designware: Fix probe when clk_enable return ENOSYS
+- 1a489a1a437 watchdog: sbsa_gwdt: clamp WOR value to hw max
+- 9124bf185ba watchdog: octeontx_wdt: fix DT matches to Marvell compatibles
+- 3abd953da8c doc: wdt: fix typo for expire
+- 3c3ba75c852 watchdog: orion_wdt: use dev_read_addr_size_index()
+- b9b27c875f6 watchdog: rti: Use dev_read_addr_ptr()
+- 5843db9dada watchdog: mpc8xxx_wdt: Use dev_remap_addr()
+- 17f7334c952 drivers: watchdog: Fix dev_read_addr error check
+- 06b57c9876d Merge tag 'u-boot-watchdog-next-20260609' of https://source.denx.de/u-boot/custodians/u-boot-watchdog into next
+
+### Conversation log
+All done. Final status:
+
+**Branch:** `cherry-2ea4d3f8a54` (based on ci/master), 11 commits applied, ready for pushing.
+
+**Cherry-picks (all clean, no conflicts):**
+| Original | New | Subject |
+|---|---|---|
+| 2ea4d3f8a54 | 4e45db9a8c9 | watchdog: orion_wdt: Add support for armada-xp |
+| d98e11bcbcb | 4564e947f39 | watchdog: Correct dependencies for WDT_MAX6370 |
+| d62801d0944 | 32e926588b5 | watchdog: designware: Fix probe when clk_enable return ENOSYS |
+| 1a489a1a437 | 5699a51fe7b | watchdog: sbsa_gwdt: clamp WOR value to hw max |
+| 9124bf185ba | d75fd39cc8e | watchdog: octeontx_wdt: fix DT matches to Marvell compatibles |
+| 3abd953da8c | f2302989d77 | doc: wdt: fix typo for expire |
+| 3c3ba75c852 | 462acedf621 | watchdog: orion_wdt: use dev_read_addr_size_index() |
+| b9b27c875f6 | 2719f4deb07 | watchdog: rti: Use dev_read_addr_ptr() |
+| 5843db9dada | be018356322 | watchdog: mpc8xxx_wdt: Use dev_remap_addr() |
+| 17f7334c952 | ac0961dd346 | drivers: watchdog: Fix dev_read_addr error check |
+| 06b57c9876d | 95290217d1c | Merge tag 'u-boot-watchdog-next-20260609' (empty, as expected) |
+
+- **Build result:** OK — sandbox built cleanly with buildman after every cherry-pick and at the end (no warnings or errors)
+- **Fix-ups:** None needed. The merge commit became empty (its content was carried by the 10 preceding picks) and was committed with `--allow-empty` to preserve the merge message and the `(cherry picked from ...)` trailer
+- **Delta checks:** Every cherry-picked commit matched its original exactly (same files, same insertion/deletion counts)
+
+The branch has not been merged anywhere, per your instructions.
+
+---
+
+### Pipeline fix: 2026-07-24 (attempt 1)
+
+Branch: cherry-2ea4d3f8a54
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+## Report: infrastructure failures — no code changes made
+
+**Branch**: `cherry-2ea4d3f8a54-fix1` created, identical to `cherry-2ea4d3f8a54` (no fix commits needed).
+
+**Analysis**: All 11 commits in this MR touch only watchdog drivers (orion, designware, mpc8xxx, octeontx, rti, sbsa, starfive, max6370 Kconfig) plus one doc file. None of these are built for the failing boards: edison uses `WDT_TANGIER` (untouched), and chromebook_brya enables no watchdog at all. The series cannot have caused these failures, and each log confirms a lab problem:
+
+1. **edison (571639)**: labgrid place acquisition failure — `place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid). pytest aborted during configuration; U-Boot never ran.
+
+2. **felwinter (571630)**: serial exporter unreachable — `Could not open port rfc2217://kea:35559: Connection refused`. The rfc2217 exporter on host kea was down; the strategy could not even power the board off.
+
+3. **felwinter-cb (571629)**: coreboot boot loop on the board — romstage's cse_lite repeatedly switches the boot partition RO→RW and issues a HECI Global Reset, cycling bootblock→romstage forever (also `SF: Detected 00 0000` suggests flash detect issues via em100). U-Boot is never reached; the job then hit the 10-minute timeout.
+
+All three point at the same lab host (ellesmere runner / kea exporter) having problems around 22:54–23:06. **Recommendation**: retry the pipeline once the labgrid exporter on kea is healthy and the edison place is released.
+
+---
+
+### Review: 2026-07-24
+
+Branch: cherry-2ea4d3f8a54
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, felwinter, felwinter-cb.
+
+## Report: infrastru...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push to the original remote branch:
+
+Done. Summary of what happened:
+
+## Report
+
+**Comment assessment**: The single review comment is the attempt-1 pipeline-fix report itself (posted by the bot). It contains **no actionable code-change request** — it concludes that the edison, felwinter and felwinter-cb failures are lab-infrastructure problems (labgrid place held, rfc2217 exporter on kea down, coreboot cse_lite boot loop) unrelated to the watchdog series, and recommends retrying the pipeline.
+
+**Actions taken**:
+- No code changes made — none were requested and none are warranted; the 11 cherry-picked commits are untouched
+- Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — sandbox built cleanly, no warnings or errors
+- Created local branch `cherry-2ea4d3f8a54-v2` at the current tip (`fa9afc61245`)
+- Force-pushed to `ci/cherry-2ea4d3f8a54` (`2e25e08a203..fa9afc61245`), which updates MR !1187 and triggers a fresh pipeline — effectively the retry the comment recommends. The only new commit on the remote is the pickman metadata commit recording the attempt-1 analysis
+
+**Suggested MR reply**:
+
+> The review comment is the attempt-1 infrastructure report and requests no code changes. All three job failures (edison, felwinter, felwinter-cb) trace to lab problems on the ellesmere/kea host, not to this watchdog series, which touches no code built for those boards. The branch has been re-pushed unchanged (plus the pickman record commit) to trigger a fresh pipeline as recommended. Sandbox builds cleanly with buildman. If the new pipeline still fails on the same jobs, the labgrid exporter on kea and the edison place acquisition should be checked before any further retries.
+
+---
+
