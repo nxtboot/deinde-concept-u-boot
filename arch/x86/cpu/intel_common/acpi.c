@@ -193,12 +193,6 @@ int intel_southbridge_write_acpi_tables(const struct udevice *dev,
 	return 0;
 }
 
-__weak u32 acpi_fill_soc_wake(u32 generic_pm1_en,
-			      const struct chipset_power_state *ps)
-{
-	return generic_pm1_en;
-}
-
 __weak int acpi_create_gnvs(struct acpi_global_nvs *gnvs)
 {
 	return 0;

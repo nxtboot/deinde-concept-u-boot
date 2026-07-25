@@ -355,11 +355,19 @@ static int load_sipi_vector(atomic_t **ap_countp, int num_cpus)
 	if (!stack)
 		return -ENOMEM;
 	params->stack_top = (u32)(stack + size);
-#if !defined(CONFIG_ARCH_QEMU_X86) && !defined(CONFIG_HAVE_FSP) && \
-	!defined(CONFIG_INTEL_MID)
-	params->microcode_ptr = ucode_base;
-	debug("Microcode at %x\n", params->microcode_ptr);
-#endif
+	/*
+	 * If the board has located a microcode update (e.g. in its image),
+	 * have each AP load it; the SIPI code skips this when the pointer
+	 * is NULL. On FSP boards nothing sets this up by default, since
+	 * the boot processor's microcode comes from the FIT. QEMU and
+	 * Intel MID do not build the microcode code, so ucode_base does
+	 * not exist there; the constant condition removes the reference
+	 */
+	if (!IS_ENABLED(CONFIG_ARCH_QEMU_X86) &&
+	    !IS_ENABLED(CONFIG_INTEL_MID)) {
+		params->microcode_ptr = ucode_base;
+		debug("Microcode at %x\n", params->microcode_ptr);
+	}
 	params->msr_table_ptr = (u32)msr_save;
 	ret = save_bsp_msrs(msr_save, sizeof(msr_save));
 	if (ret < 0)
@@ -853,6 +861,17 @@ int mp_init(void)
 		debug("Cannot init boot CPU: err=%d\n", ret);
 		return ret;
 	}
+
+	/*
+	 * Probe the boot CPU now so its driver can find the microcode for
+	 * the APs (setting ucode_base) before load_sipi_vector() records
+	 * it. The flight plan probes each CPU as well, but that is too
+	 * late: the APs load microcode as soon as they start, before the
+	 * flight plan runs
+	 */
+	ret = device_probe(cpu);
+	if (ret)
+		return log_msg_ret("probe", ret);
 
 	if (num_cpus < 2)
 		debug("Warning: Only 1 CPU is detected\n");

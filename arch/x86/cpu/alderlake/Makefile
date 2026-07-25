@@ -9,6 +9,8 @@ obj-$(CONFIG_XPL_BUILD) += cpu_spl.o
 obj-$(CONFIG_SPL_BUILD) += fsp_m.o
 ifndef CONFIG_XPL_BUILD
 obj-y += fsp_s.o
+obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
+obj-$(CONFIG_CPU) += cpu.o
 endif
 obj-y += early_uart.o
 obj-y += hostbridge.o
