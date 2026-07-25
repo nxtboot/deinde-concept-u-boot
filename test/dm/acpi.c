@@ -1028,11 +1028,13 @@ static int dm_test_acpi_fpdt(struct unit_test_state *uts)
 	ut_asserteq(1234, rec->reset_end);
 
 	/*
-	 * Update timing fields - use 0 since we know the original values are
-	 * non-zero
+	 * Update a timing field. Incrementing always changes the table's
+	 * byte-sum (a carry chain of k bytes changes it by 1 - 255k, which
+	 * is never a multiple of 256 for a u64), unlike zeroing the field,
+	 * which leaves the checksum valid in the unlucky case where the
+	 * timestamps' bytes summed to a multiple of 256
 	 */
-	rec->ebs_entry = 0;
-	rec->ebs_exit = 0;
+	rec->ebs_entry++;
 
 	/* Checksum should now be invalid */
 	ut_assert(table_compute_checksum(fpdt, fpdt->header.length) != 0);
@@ -1043,9 +1045,8 @@ static int dm_test_acpi_fpdt(struct unit_test_state *uts)
 	/* Checksum should now be valid again */
 	ut_asserteq(0, table_compute_checksum(fpdt, fpdt->header.length));
 
-	/* Verify the updated values are still there */
-	ut_asserteq(0, rec->ebs_entry);
-	ut_asserteq(0, rec->ebs_exit);
+	/* Verify the updated value is still there */
+	ut_assert(rec->ebs_entry != 0);
 
 	unmap_sysmem(buf);
 
