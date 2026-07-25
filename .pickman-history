@@ -90848,3 +90848,40 @@ Accordingly:
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-380d8e38874
+
+Comments addressed:
+
+
+### Conversation log
+All 18 code commits applied cleanly — the only conflict is in the `.pickman-history` record file.
+
+The conflict is purely in the append-only log file — both sides added an entry under the same date header. I'll keep both, giving the incoming entry its own header:
+
+All 21 commits are present with identical deltas, and the empty merge commit is preserved. Now building:
+
+Done. Summary of the work:
+
+## What was done
+
+**Rebase:** `cherry-380d8e38874` rebased onto the updated `ci/master` (now at 6f16b46c909) with `git rebase --keep-empty`. The branch was 6 commits behind, carrying 21 commits (18 cherry-picks + 3 pickman record commits).
+
+**Conflicts:** Exactly one, and it was trivial — `.pickman-history` (the append-only pickman log), where both this branch and the newly-merged `cherry-ca774b94d66` MR added an entry under the same "## 2026-07-25: us/master" heading. Resolved by keeping both entries, giving the incoming one its own date header and `---` separator. No source code conflicted at all — all 18 code commits replayed cleanly.
+
+**Verification:**
+- Per-commit delta check: `git show --stat` output for all 21 commits before vs after the rebase is **byte-identical** (including the conflicted pickman commit, which came out at the same 44 insertions)
+- The empty merge commit "Merge patch series \"arm: am335x: Switch to upstream devicetree\"" (now 3ad0e5f2e93) was preserved by `--keep-empty` with its Link tag intact
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1 board built, **no warnings or errors**
+
+**Branches/push:**
+- Local branch `cherry-380d8e38874-v3` created at the new HEAD (3be8740f44f) — `-v2` already existed from the previous round
+- Force-pushed to `ci/cherry-380d8e38874` (617a2d5319b → 3be8740f44f), updating MR !1199 and triggering a fresh pipeline
+
+## Suggested MR reply
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history log file (both this branch and the just-merged cherry-ca774b94d66 appended an entry at the same spot); resolved by keeping both entries. All 18 code commits replayed cleanly with per-commit deltas identical to the pre-rebase state, the empty series-merge commit is preserved, and sandbox builds with no warnings or errors.
+
+---
+
