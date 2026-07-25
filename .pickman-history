@@ -90031,3 +90031,43 @@ All done. Here's the summary:
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-001f7e5f4c0
+
+Commits:
+- 001f7e5f4c0 arm: kirkwood: Remove unnecessary watchdog GPIO for ZyXEL NSA325 board
+- 50b3c87e0e2 net: mvpp2: fix NULL pointer dereference in mvpp2_phy_connect
+- a9cc75a25eb mtd: nand: pxa3xx: Pass valid dev to dev_err()
+- c444ff30e18 arm: mvebu: db-xc3-24g4xg: Remove marvell, nand-keep-config
+- 59e13ed8f6d arm: mvebu: Add Allied Telesis x220
+- f64593af3d9 board: Synology: legacy.c: Include asm/io.h
+- b2306246ddb board: Synology: common: Fix typo in Makefile
+- bd75c262403 serial: serial_octeon_bootcmd.c: use correct Kconfig symbol
+- 9b432691dce arm: mvebu: Drop unnecessary BOARD_EARLY_INIT_F usage
+- dd1084ed2e9 pinctrl: armada-38x: Staticize and constify driver ops
+- a721ac0da77 arm: mach-mvebu: armada8k: cpuinfo and SAR
+- 3457acc0146 board: freebox: add Nodebox 10G board support
+- 3db9d9abc10 board: freebox: nbx10g: add emmcboot for dual-bank eMMC boot
+- 35ae4491bf7 board: freebox: nbx10g: add device serial and MAC address initialization
+- 7e931291736 arm: dts: armada-8040-nbx: add U-Boot dtsi for conditional OP-TEE
+- eab66c3a908 timer: orion: Use dev_remap_addr_index()
+- 953653936cf Merge tag 'u-boot-marvell-next-20260610' of https://source.denx.de/u-boot/custodians/u-boot-marvell into next
+
+### Conversation log
+All 17 commits cherry-picked successfully. Final status:
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every commit and at the end)
+
+**Commits applied (16 regular + 1 merge):**
+- All 16 regular commits applied cleanly with `git cherry-pick -x`
+- The merge commit 953653936cf resolved to empty (as expected, since all its content came from the individual commits) and was preserved with `--allow-empty`, keeping the merge message and the `(cherry picked from ...)` reference
+
+**Fix-ups:** None needed — no conflicts occurred (a few files auto-merged: `arch/arm/dts/Makefile`, `arch/arm/mach-mvebu/Kconfig`, `doc/board/index.rst`, `drivers/serial/Kconfig`)
+
+**Delta check:** Every cherry-picked commit matched its original exactly (same files, same line counts). No concerning deltas.
+
+The branch `cherry-001f7e5f4c0` is ready for pushing, sitting 17 commits ahead of `ci/master`.
+
+---
+
