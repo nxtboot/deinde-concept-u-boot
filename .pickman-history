@@ -90539,3 +90539,75 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-ca774b94d66
+
+Commits:
+- ca774b94d66 fdt_support: bound serialN alias length before copying to stack
+- 84e250c0a85 fdt_support: validate dma-ranges length in fdt_get_dma_range
+- b89b7bb0842 Merge patch series "fdt_support: validate property lengths in chosen and dma-range fixups"
+
+### Conversation log
+All 3 commits cherry-picked successfully onto `cherry-ca774b94d66` (based on ci/master).
+
+**Final status:**
+
+| Commit | Result |
+|---|---|
+| ca774b94d66 → b44c5f68ee1 | Clean pick, delta matches (6 insertions in boot/fdt_support.c) |
+| 84e250c0a85 → aac507a904c | Clean pick, delta matches (7 insertions in boot/fdt_support.c) |
+| b89b7bb0842 → d05dc3effb5 | Merge commit preserved as empty commit (expected — content already applied by the two picks) |
+
+- **Build result:** OK — sandbox built cleanly with buildman after each pick and at the end (no warnings or errors)
+- **Fix-ups made:** none required
+- **Concerning deltas:** none — both content commits match their originals exactly
+
+The branch `cherry-ca774b94d66` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-ca774b94d66
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- pcduino3_nano (sjg-lab)
+
+### Conversation log
+All the logs point to lab/board issues, but I need to check the actual code changes before concluding. Let me check out the branch and inspect the diffs.
+
+## Report: infrastructure failures — no code changes made
+
+**Conclusion:** All 7 sjg-lab job failures are lab/board infrastructure problems, not caused by the MR. The branch content is fine; `cherry-ca774b94d66-fix1` has been created pointing at the unchanged head (ef6033134c5).
+
+### Why the MR is not at fault
+
+The MR contains two tiny hardening checks in `boot/fdt_support.c`:
+- **b44c5f68ee1** — rejects an oversized `/aliases/serialN` path in `fdt_fixup_stdout()` (runs only during kernel-boot fixup, after the U-Boot prompt)
+- **aac507a904c** — rejects a `dma-ranges` property shorter than one entry in `fdt_get_dma_range()`, returning -EINVAL (-22). Empty (`len == 0`) properties are still handled by the earlier "no translation required" path, so valid devicetrees are unaffected
+
+Sandbox builds cleanly (`um build sandbox` — no warnings/errors), and every lab job that got as far as building U-Boot built it successfully.
+
+### Per-job diagnosis
+
+| Job | Failure | Cause |
+|---|---|---|
+| edison | `place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid) | labgrid place contention |
+| felwinter | `rfc2217://kea:59079 ... Connection refused` opening the serial console | serial exporter on host kea down |
+| felwinter-cb | coreboot loops at romstage (cse_lite RW switch/HECI reset), job killed at 10-min limit before the U-Boot payload ever ran | firmware/board issue, upstream of U-Boot |
+| play | Flash OK, then zero console output, prompt timeout — not even the SPL banner appeared | board/console issue; the fdt checks cannot suppress the banner |
+| bpif3 | `BootROM did not start the FSBL` after 5 USB-loader retries (deploy via ssh to kea) | BootROM/USB loader issue |
+| colibrimx8 | `Lab timeout` during the build/bootstrap phase | lab timeout |
+| pcduino3_nano | SPL boots and prints its banner, then `mmc block read error, Error: -38` (ENOSYS) loading main U-Boot | SD/MMC hardware issue; the MR's new paths return -22, and sunxi SPL's raw-MMC load doesn't go through `fdt_get_dma_range()` |
+
+Notably, three of the failures reference the lab host **kea** (place holder, refused serial port, deploy ssh target), and all jobs ran on the same `ellesmere-lab` runner in the 19:56–20:15 window — this looks like a lab-wide exporter problem at that time. Recommend simply retrying the pipeline once the kea exporter is healthy.
+
+---
+
