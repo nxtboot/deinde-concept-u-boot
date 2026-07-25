@@ -90821,3 +90821,30 @@ Notably, all jobs ran on the same `ellesmere-lab` runner and no am335x board (th
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-380d8e38874
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, play, efi-x86_64...
+
+### Conversation log
+Done. Report:
+
+## What was done
+
+**The review comment is not an actionable code-review request.** It is the bot's own "Pipeline fix (attempt 1)" report, which already concluded that all 8 failed jobs (efi-x86_64-uboot-iso-install, edison, play, efi-x86_64-uboot-iso, qemu-x86_64, bpif3, rpi, pcduino3_nano) were lab/infrastructure or flaky-test failures, and that no code changes were needed — the series only touches am335x DTs/defconfigs, mach-omap2, the SIMPLE_PM_BUS Kconfig split (used by no failing board) and a pure-relocation `dt_dir` Makefile move.
+
+Accordingly:
+
+- **No code changes made** — there was nothing to change; the comment's own recommendation was to retry the pipeline
+- **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, no warnings/errors
+- **Branch `cherry-380d8e38874-v2`** created at HEAD (617a2d5319b)
+- **Pushed** to `ci/cherry-380d8e38874` (753b354271b → 617a2d5319b, the only delta being the `.pickman-history` record commit), which updates MR !1199 and triggers a fresh pipeline — effectively the recommended retry
+
+## Suggested MR reply
+
+> The previous comment is the pipeline-fix report itself, not a change request. Its analysis stands: all eight failures are lab/infrastructure or known-flaky tests (edison place-ownership conflict, lab write timeouts, QEMU pty error, the flaky EFI text-input selftest, and board/USB flakiness on bpif3, play and pcduino3_nano), and none of the failing boards is touched by this am335x series. No code changes are needed; the branch has been re-pushed to re-run the pipeline as recommended.
+
+---
+
