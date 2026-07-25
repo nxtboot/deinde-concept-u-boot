@@ -90653,3 +90653,79 @@ The branch is ready for pushing and has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-e7332861253
+
+Failed jobs:
+- sandbox with clang test.py (test.py)
+- sandbox test.py (test.py)
+- zybo (sjg-lab)
+- edison (sjg-lab)
+- play (sjg-lab)
+- tk1 (sjg-lab)
+- rpi5 (sjg-lab)
+- jetson-nano (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+The key failure is `test_vboot_ext_data_bounds` crashing with SIGSEGV. Let me check the other job logs to see whether they share this cause.
+
+The sjg-lab jobs are infrastructure failures (labgrid places acquired by another user). Let me check bpif3 and play more closely, plus confirm the check jobs fail on the same test.
+
+Now let me build sandbox and reproduce the failure locally.
+
+Same test upstream. Why does it pass there? Let me compare the relevant configs and the memory mapping behaviour.
+
+Let me check how sandbox RAM is allocated in each tree — the crash depends on what lies just past the RAM buffer.
+
+All single-parent commits; the empty "merge" is a regular commit. `08503e72791` is HEAD~3, so `rf 4`:
+
+Correct location. Amend the commit and finish the rebase:
+
+All commits preserved (including the empty merge). Now build and run the test:
+
+The test passes. Let me run the full vboot test file and buildman for the affected boards (the job-name-derived list contains non-board tokens like "clang", "make", "qcheck", "with", "test.py" — I'll use the real board names):
+
+All 31 vboot tests pass. Waiting for the buildman run to finish.
+
+Only 4 boards matched — some names were wrong. Let me find the correct board names:
+
+All boards build (warnings are only pre-existing missing-blob notices for TI/coreboot firmware, not errors). Create the fix branch:
+
+## Report
+
+**Fixed branch:** `cherry-e7332861253-fix1` (created locally, not pushed)
+
+### Root cause
+
+**Responsible commit:** `08503e72791` "image-fit: Validate external data offset and size" (now `374d4dd5e65`)
+
+The new `test_vboot_ext_data_bounds` test loads the FIT at address 0x100, then its final "in-bounds data-size" case sets `data-position=0, data-size=FIT_SIGNATURE_MAX_SIZE` (0x10000000 = 256 MiB) and expects 'Bad Data Hash'. The value passes the new bounds check, so U-Boot hashes 256 MiB starting at the FIT address — i.e. from RAM offset 0x100 to 0x10000100, which is 0x100 bytes past the end of sandbox's 256 MiB mmap'd RAM buffer → SIGSEGV. This caused the failures in all four test jobs (sandbox test.py, sandbox with clang test.py, Check make check, Check make qcheck). It passes on upstream master only by memory-layout luck (whether an adjacent host mapping happens to follow the RAM buffer); reproduced deterministically here.
+
+### Fix
+
+Amended the responsible commit to load the FIT at address 0 instead of 0x100 in the test's `run_bootm()` (with an explanatory comment), so the maximal in-bounds hash region ends exactly at the end of sandbox RAM. A `[pickman]` note was appended to the commit message. All 6 branch commits, including the empty merge commit, survived the rebase intact.
+
+### Verification
+
+- `um build sandbox` — clean
+- `test_vboot_ext_data_bounds` — passes (previously SIGSEGV)
+- Full `test_vboot` suite — 31 passed
+- buildman for the affected boards (spacemit_k1/bpif3, edison, chromebook_brya + _cb/felwinter, p3450-0000/jetson-nano, am62x_beagleplay_a53/play, rpi_arm64/rpi5, jetson-tk1, xilinx_zynq_virt/zybo, sandbox) — all build; only pre-existing missing-firmware-blob warnings
+
+### Infrastructure failures (no code change needed)
+
+All 9 sjg-lab jobs failed for lab reasons, not code:
+- **zybo, edison, tk1, rpi5, jetson-nano, felwinter, felwinter-cb**: labgrid "place is acquired by a different user (kea/labgrid)" — board reservation conflict
+- **bpif3**: "BootROM did not start the FSBL; board needs a reset" — lab hardware failure
+- **play**: "Lab failure: Marking connection bad" — lab connection failure
+
+These should resolve on retry once the lab places are free.
+
+---
+
