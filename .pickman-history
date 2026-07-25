@@ -89995,3 +89995,39 @@ If you'd like, I can force-push anyway to trigger a fresh pipeline once you conf
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+
+
+### Conversation log
+Resolve by keeping both entries — ci/master's block first, then ours with its own separator and heading:
+
+Build passes cleanly. Now create the `-v2` local branch and force-push to the original remote branch:
+
+All done. Here's the summary:
+
+## Report
+
+**Rebase result: success.** `cherry-81f4946d8c4` rebased onto the current ci/master (5eeae45a718, which gained 19 commits including the merged `cherry-b996053fcb8` MMC/power series) using `git rebase --keep-empty ci/master`.
+
+**Conflict resolved (1):**
+- `.pickman-history` only — both sides added a bookkeeping entry under the same `## 2026-07-24: us/master` heading (ci/master's merged cherry-b996053fcb8 log vs this branch's cherry-81f4946d8c4 log). Resolved by keeping both entries in order, giving the second its own heading. No source code was involved in the conflict.
+
+**Verification:**
+- All 17 commits present after rebase: the 9 series commits (now 96bc5c60754..86fc4a6c8f4), the empty fsl-qoriq merge commit preserved by `--keep-empty`, plus the 8 pickman bookkeeping commits
+- Delta check: pre- vs post-rebase `git show --stat` for every commit compared — **byte-identical**, no deltas at all
+- Build: `buildman -L --board sandbox -w -o /tmp/pickman` — **OK**, no warnings or errors
+
+**Branches:**
+- Local `cherry-81f4946d8c4-v2` created at the new head (79add649e54)
+- Force-pushed to `ci/cherry-81f4946d8c4` (82fd3f59244 → 79add649e54), which updates MR !1191 and triggers a fresh pipeline
+
+**Suggested reply to post on the MR:**
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history bookkeeping file, where both sides added a log entry at the same point; it was resolved by keeping both entries. All 9 series commits applied cleanly with diffstats identical to before the rebase, the empty fsl-qoriq merge commit is preserved, and sandbox builds with no warnings or errors. Note that the previously diagnosed lab issues (kea exporter down affecting edison and felwinter-cb, the play DUT not booting past vendor SPL, and the corrupt Ubuntu ISO asset for the efi-x86_64-uboot-iso jobs) are infrastructure problems that will recur in the new pipeline unless they have been fixed on the lab side.
+
+---
+
