@@ -90071,3 +90071,38 @@ The branch `cherry-001f7e5f4c0` is ready for pushing, sitting 17 commits ahead o
 
 ---
 
+### Pipeline fix: 2026-07-25 (attempt 1)
+
+Branch: cherry-001f7e5f4c0
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+## Report: All failures are lab/infrastructure issues — no code changes made
+
+**Diagnosis per job:**
+
+| Job | Failure | Root cause |
+|---|---|---|
+| edison | `place edison is not acquired by your user, acquired by labgrid` (kea/labgrid) | Labgrid place reservation conflict — another user/session held the board. Pure lab infra; the test never even started |
+| felwinter-cb | `SerialException: Could not open port rfc2217://kea:54107 ... Connection refused` | The rfc2217 serial exporter on host 'kea' was down/unreachable. Lab infra |
+| bpif3 | `BootROM did not start the FSBL (gadget devnum still 102)` after 5 USB-loader retries | SpacemiT K1 BootROM/USB recovery flake needing a board reset. Lab hardware |
+| play | `No U-Boot prompt` then labgrid 20s login timeout after flashing | AM625 BeaglePlay produced no console output at all after flash — board/console flake, not a build issue (the build itself succeeded) |
+| efi-x86_64-uboot-iso-install | `console_base.Timeout` in test_distro_ubuntu_iso_install, then `Job failed: execution took longer than 10m0s` | The QEMU guest's kernel boot log shows a ~10-minute stall (07:45:58 → 07:55:57) mid-boot; the job then hit the 10-minute GitLab timeout. Runner load/timeout issue |
+
+**Why the branch is not responsible:** the 17 cherry-picked commits touch only Marvell/mvebu/kirkwood code — boards under board/Marvell, Synology, alliedtelesis, freebox, zyxel; mvebu defconfigs; and Marvell drivers (mvpp2, pxa3xx NAND, armada-38x pinctrl, orion timer, octeon serial Kconfig). None of the five failing boards (x86 QEMU/EFI, Intel Edison, TI AM625, Alder Lake Chromebook, SpacemiT K1 RISC-V) compile any of the changed files, so no commit on the branch can cause these failures. Notably, three of the failures (edison, felwinter-cb, bpif3) occur before or during board bring-up, entirely outside U-Boot code.
+
+**Actions taken:**
+- No source changes (per instructions for infrastructure/transient failures)
+- Verified 'um build sandbox' passes cleanly on the branch
+- Created local branch 'cherry-001f7e5f4c0-fix1' pointing at the unchanged branch head, ready for the caller to push/retry
+
+**Recommendation:** retry the failed jobs; check the labgrid exporter on 'kea' (serial port refused, place held by stale reservation) and reset the bpif3 board.
+
+---
+
