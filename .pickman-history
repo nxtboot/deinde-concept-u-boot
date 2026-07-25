@@ -90172,3 +90172,37 @@ The branch `cherry-1cc0442ede5` is ready for pushing (7 content commits + 1 empt
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-1cc0442ede5
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed. Now compare post-rebase deltas against the saved pre-rebase stats.
+
+All 9 commits rebased with identical diffstats. Verify the empty merge commit is preserved, then build.
+
+Build passed cleanly. Now create the -v2 local branch and force-push to update the MR.
+
+## Report
+
+**Rebase of MR !1193 (cherry-1cc0442ede5) onto ci/master — complete**
+
+### What was done
+
+1. Checked out `cherry-1cc0442ede5`, fetched `ci`, and ran `git rebase --keep-empty ci/master` (master had gained two merges: cherry-001f7e5f4c0 and cherry-81f4946d8c4)
+2. **One conflict**, only in the `.pickman-history` bookkeeping file: both sides appended a log entry under the same `## 2026-07-25: us/master` heading. Resolved by keeping both entries — the cherry-001f7e5f4c0 entry from master, then a separator and repeated heading for this branch's entry. No source files conflicted.
+3. **Delta verification**: compared `git show --stat` for all 9 commits before vs after the rebase (hashes stripped) — identical file lists and line counts throughout
+4. **Empty merge-marker commit** (axiado patch-series merge, now `bc2a52e46ba`) preserved by `--keep-empty`, with its message and `(cherry picked from ...)` annotation intact
+5. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+6. Created local branch `cherry-1cc0442ede5-v2` at the new head `b6b9cfc2a29`
+7. Force-pushed to `ci/cherry-1cc0442ede5` (`f3855a0cbb5` → `b6b9cfc2a29`), updating MR !1193 and triggering a fresh pipeline
+
+### Suggested reply to post on the MR
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history bookkeeping file, where both sides added a log entry at the same point; it was resolved by keeping both entries. All 8 series commits applied cleanly with diffstats identical to before the rebase, the empty axiado patch-series merge commit is preserved, and sandbox builds with no warnings or errors.
+
+---
+
