@@ -89953,3 +89953,45 @@ If you'd instead like me to force-push anyway purely to re-trigger the pipeline,
 
 ---
 
+### Review: 2026-07-25
+
+Branch: cherry-81f4946d8c4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+The branch is clean and, as in all previous rounds, the only local-vs-remote difference is `.pickman-history` bookkeeping (75 lines) — the source tree on the remote MR branch is identical to local.
+
+## Report
+
+**Comment analysis:** The single review comment is:
+
+> Pipeline fix: reached retry limit (3 attempts). Manual intervention required.
+
+This is not a code-review request — it is the bot signalling that its automated retry loop has been exhausted. It confirms exactly what the three previous fix attempts diagnosed: the failures are not fixable from this branch, because they are lab/infrastructure problems, and the bot has (correctly) stopped retrying.
+
+**What I did:**
+- Checked out `cherry-81f4946d8c4` — working tree clean, HEAD at 93e482f31d1, history exactly as previously reported (9 cherry-picked commits plus pickman bookkeeping)
+- Verified against the remote: the only difference from `ci/cherry-81f4946d8c4` is `.pickman-history` — no source difference whatsoever
+
+**What I deliberately did NOT do:**
+- **No code changes** — there is nothing to change; across three attempts every failure was diagnosed as lab-side (kea host down, stale edison labgrid place, play/nyan-big DUT flakiness, flaky EFI selftest, corrupt Ubuntu ISO asset), on boards that build none of the code in this series
+- **No build** — no source has changed since the last verified-clean sandbox build
+- **No `-v2` branch, no force-push** — pushing identical source would trigger yet another pipeline that will reproduce the same failures until the lab is fixed. That would burn a fourth pipeline for nothing and reset nothing; the retry limit exists precisely to stop this loop
+
+**Manual intervention required (lab side, not this MR):**
+1. Restart/check the labgrid exporter on the **kea** host (breaks edison and felwinter-cb on every attempt)
+2. Kick the stale edison place: `labgrid-client -p edison kick`
+3. Re-fetch/verify the Ubuntu ISO asset used by the efi-x86_64-uboot-iso jobs (initramfs corruption inside the booted kernel)
+4. Investigate the play DUT — it has failed to boot past vendor SPL on all three attempts
+5. Then retry the failed jobs from the GitLab UI (or re-run the pipeline)
+
+**Suggested reply to post on the MR:**
+
+> The retry limit has been reached without a code fix because there is nothing to fix in this series: across all three attempts, every failing job was a lab or asset problem on boards that build none of the code touched here. Persistent issues needing manual attention: the kea lab host is down or unstable (causing the edison stale-place failure and felwinter-cb rfc2217 connection refusals on every attempt), the play DUT never boots past its vendor SPL, and the Ubuntu ISO asset used by the efi-x86_64-uboot-iso jobs produces initramfs corruption inside the booted kernel even though U-Boot's boot path succeeds. Please restart the kea exporter, kick the edison place with 'labgrid-client -p edison kick', check the play board, and re-fetch the ISO asset, then retry the failed jobs. The branch itself is ready to merge once the pipeline is green; it needs no update.
+
+If you'd like, I can force-push anyway to trigger a fresh pipeline once you confirm the kea host is back up — just say so and I'll create the `-v2` branch and push.
+
+---
+
