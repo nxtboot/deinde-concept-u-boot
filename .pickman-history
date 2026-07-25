@@ -89562,3 +89562,48 @@ Done. Summary of what happened:
 
 ---
 
+## 2026-07-24: us/master
+
+Branch: cherry-54ed5729a95
+
+Commits:
+- 54ed5729a95 clk: at91: Use dev_read_addr_ptr()
+- 179022b8e19 clk: altera: Use dev_read_addr_ptr()
+- 48d74f433e4 clk: aspeed: Use dev_read_addr_ptr()
+- f683a457b65 clk: hsdk-cgu: Use dev_read_addr_index_ptr()
+- 55550b42929 clk: sophgo: Use dev_read_addr_ptr()
+- ef6b3ccf598 pinctrl: at91: Use dev_read_addr_index()
+- b6d42b3fbf4 pinctrl: nexell: Use dev_read_addr()
+- bc988983d25 gpio: nx: Use dev_remap_addr()
+- a4e8d80c9d1 gpio: aspeed: Use dev_read_addr_ptr()
+- 8918af1c0ce remoteproc: pru: Use dev_read_addr_size_index()
+- 8e8e624abc1 remoteproc: ipu: Use dev_read_addr_x()
+- c305b8ac862 crypto: aspeed: Use dev_read_addr_x()
+- f2479b58aa7 crypto: tegra: Use dev_read_addr_x()
+- d26cbf4667c ram: aspeed: Use dev_read_addr_x() API
+- 305c014fdb7 reset: ast: Use dev_read_addr_ptr()
+- 8b5e2a25aba thermal: ti-bandgap: Use dev_read_addr_index()
+- 8e4414d1a98 misc: k3_avs: Use dev_read_addr_index()
+- ebb9ee6ef48 rng: rproc_rng200: Use dev_remap_addr()
+- ffbfe1cec38 ata: mtk_ahci: Use dev_remap_addr_index() and ofnode API
+- 8d1d86ff58b ata: dwc_ahci: Use dev_read_addr_index()
+- 511bd63db98 Merge assorted patches to use device API to replace devfdt_ helpers
+
+### Conversation log
+Delta matches. Running build test.
+
+All 21 commits present. Final build:
+
+All done. Final status:
+
+**Result: success** — branch `cherry-54ed5729a95` is ready for pushing, 21 commits ahead of ci/master.
+
+- **Build**: sandbox built cleanly (no warnings or errors) after every cherry-pick and in the final verification.
+- **Cherry-picks**: all 20 regular commits applied cleanly with `-x`. Three needed only automatic merging (gpio-aspeed-g7.c, ipu_rproc.c, ti-bandgap.c) with identical resulting diffs — no fix-ups required.
+- **Deltas**: every cherry-picked commit matched the original exactly in files changed and line counts. No concerning deltas.
+- **Merge commit** (511bd63db98): applied with `-x -m 1`; it resolved to empty (as expected, since all its changes came via the individual picks) and was committed with `--allow-empty` to preserve the merge message in history.
+
+No fix-ups, no failed commits, no manual conflict resolution needed.
+
+---
+
