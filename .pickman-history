@@ -90885,3 +90885,89 @@ Done. Summary of the work:
 
 ---
 
+## 2026-07-25: us/master
+
+Branch: cherry-623f6c5b6ab
+
+Commits:
+- 623f6c5b6ab boot: image-fdt: free old dtb reservations
+- 5a17d02223b test_ut: add a ut_ubman fixture to clean up tests
+- de12fa4df89 test: boot: add a fdt reserved region check
+- 48412f8f296 memory: reserve from start_addr_sp to initial_relocaddr
+- a0a1e9f2f1d Merge patch series "various memory related fixups"
+
+### Conversation log
+Not already applied — this is a genuine conflict. Let me examine it.
+
+Delta matches (22+/6- vs 21+/5-). Build check, then next commit.
+
+Commit 3 applied cleanly with identical stats. Next.
+
+The merge commit adds nothing new (as expected) — it will be an empty commit preserving the merge message.
+
+Build passes. As an extra sanity check, let me run the new unit test added by the series, since it exercises the code I had to adapt to the older LMB API.
+
+All done. Final report:
+
+## Cherry-pick complete: 5/5 commits on `cherry-623f6c5b6ab`
+
+```
+3a5426a44b9 Merge patch series "various memory related fixups"
+e88238e93eb memory: reserve from start_addr_sp to initial_relocaddr
+bad33af4c6b test: boot: add a fdt reserved region check
+b3e985a0451 test_ut: add a ut_ubman fixture to clean up tests
+9a682831fc9 boot: image-fdt: free old dtb reservations
+```
+
+### Build result
+**OK** — sandbox built cleanly with buildman after each pick and at the end (no warnings/errors). As an extra check I ran the newly added unit test with the fresh binary: `ut image_fdt` → 1 test, failures: 0.
+
+### Fix-ups made (noted in each commit message)
+1. **boot: image-fdt: free old dtb reservations** — conflict in `boot/image-fdt.c`: the upstream commit uses the newer `lmb_alloc_mem()`/3-arg `lmb_free()` API which is not in ci/master. Adapted to use `lmb_reserve()` and `lmb_free_flags()`, keeping the commit's behaviour (including reporting all errors now that old reservations are freed first).
+2. **test_ut: add a ut_ubman fixture** — conflict in `test_ut.py`: ci/master has local `-L` leak-check flag support in `test_ut()`. Kept that while switching to the new `ut_ubman` fixture.
+3. **memory: reserve from start_addr_sp to initial_relocaddr** — conflict in `efi_memory.c`: ci/master wraps the U-Boot region in an `if (!IS_ENABLED(CONFIG_SANDBOX))` guard. Kept the guard and applied the `ram_top` → `initial_relocaddr` change inside it.
+4. **Merge commit** — conflicted only where my fix-ups differed from the raw series diff; resolved by keeping the already-resolved versions, resulting in an empty commit (as intended) preserving the merge message with a `(cherry picked from ...)` line.
+
+### Deltas
+All within tolerance: commit 1 (57+/21- vs 58+/21-, same files), commit 2 (22+/6- vs 21+/5-), commit 3 (identical), commit 4 (24+/5- vs 22+/5-, the extra 2 lines from re-wrapping inside the sandbox guard). No concerning deltas.
+
+The branch is ready for pushing; I have not merged it anywhere.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-623f6c5b6ab
+
+Comments addressed:
+
+
+### Conversation log
+All per-commit deltas are byte-identical to the pre-rebase stats, and the empty merge commit is preserved. Now the build:
+
+Done. The rebase is complete and the MR has been updated.
+
+## Report
+
+**Rebase of MR !1201 (`cherry-623f6c5b6ab`) onto ci/master: success**
+
+```
+400a6582cbc pickman: Record cherry-pick of 5 commits from us/master
+66c73a1dfbd Merge patch series "various memory related fixups"   (empty, preserved)
+b8a7e984918 memory: reserve from start_addr_sp to initial_relocaddr
+59d915d639b test: boot: add a fdt reserved region check
+c5e98c088d9 test_ut: add a ut_ubman fixture to clean up tests
+ee98f58efe8 boot: image-fdt: free old dtb reservations
+```
+
+- **Conflicts**: only one, in the `.pickman-history` log file — this branch and the just-merged `cherry-380d8e38874` both appended an entry at the same place. Resolved by keeping both entries (with a heading separator). All 5 code/series commits replayed cleanly with no conflicts.
+- **Deltas**: every rebased commit's `--stat` is identical to its pre-rebase counterpart (e.g. image-fdt 57+/21-, test_ut 22+/6-, image_fdt test 89+/1-, memory 24+/5-). The empty series-merge commit survived via `--keep-empty`.
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` → OK, no warnings or errors.
+- **Branches**: local `cherry-623f6c5b6ab-v2` created at the new HEAD; force-pushed to `ci/cherry-623f6c5b6ab` (3a5426a44b9 → 400a6582cbc), which updates MR !1201 and triggers a fresh pipeline.
+
+### Suggested MR reply
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history log file (this branch and the just-merged cherry-380d8e38874 both appended an entry at the same spot); resolved by keeping both entries. All five commits replayed cleanly with per-commit deltas identical to the pre-rebase state, the empty series-merge commit is preserved, and sandbox builds with no warnings or errors.
+
+---
+

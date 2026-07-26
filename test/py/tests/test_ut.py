@@ -133,7 +133,24 @@ def test_ut_dm_init_bootstd(u_boot_config, u_boot_log):
                        luks_kdf='argon2id', encrypt_keyfile=keyfile,
                        master_keyfile=master_keyfile)
 
-def test_ut(ubman, ut_subtest):
+@pytest.fixture(name="ut_ubman")
+def ut_ubman_fixture(ubman, ut_subtest):
+    """Fixture to restart the sandbox after known problematic tests.
+
+    Args:
+        ubman (ConsoleBase): U-Boot console
+        ut_subtest (str): test to be executed via command ut, e.g 'foo bar' to
+            execute command 'ut foo bar'
+    """
+
+    yield ubman
+
+    if ut_subtest in ("bootstd bootflow_cmd_boot", "bootstd bootflow_scan_boot",
+                      "bootstd bootflow_scan_extlinux"):
+        ubman.restart_uboot()
+
+
+def test_ut(ut_ubman, ut_subtest):
     """Execute a "ut" subtest.
 
     The subtests are collected in function generate_ut_subtest() from linker
@@ -146,20 +163,20 @@ def test_ut(ubman, ut_subtest):
     implemented in C function foo_test_bar().
 
     Args:
-        ubman (ConsoleBase): U-Boot console
+        ut_ubman (ConsoleBase): U-Boot console
         ut_subtest (str): test to be executed via command ut, e.g 'foo bar' to
             execute command 'ut foo bar'
     """
 
-    flags = '-L ' if ubman.config.leak_check else ''
+    flags = '-L ' if ut_ubman.config.leak_check else ''
 
     if ut_subtest == 'hush hush_test_simple_dollar':
         # ut hush hush_test_simple_dollar prints "Unknown command" on purpose.
-        with ubman.disable_check('unknown_command'):
-            output = ubman.run_command(f'ut {flags}' + ut_subtest)
+        with ut_ubman.disable_check('unknown_command'):
+            output = ut_ubman.run_command(f'ut {flags}' + ut_subtest)
         assert 'Unknown command \'quux\' - try \'help\'' in output
     else:
-        output = ubman.run_command(f'ut {flags}' + ut_subtest)
+        output = ut_ubman.run_command(f'ut {flags}' + ut_subtest)
     assert output.endswith('failures: 0')
     lastline = output.splitlines()[-1]
     if "skipped: 0," not in lastline:
