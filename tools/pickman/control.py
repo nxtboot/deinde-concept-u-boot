@@ -881,6 +881,13 @@ def drift_collect(dbs, source, branch, deep=False):
     diff = gitutil.diff(base, branch)
     fdiffs = drift.parse_diff(diff)
 
+    if deep:
+        to_blame = sum(1 for fd in fdiffs if fd.path in down_paths
+                       and not fd.binary and not fd.deleted)
+        if to_blame:
+            tout.info(f'Blaming {to_blame} file(s) touched downstream '
+                      '(this may take a while)...')
+
     verdicts = {}
     binary = []
     for fdiff in fdiffs:
@@ -924,6 +931,43 @@ def drift_paths(info):
     return sorted(out, key=lambda item: (-item[1], item[0]))
 
 
+def drift_state_counts(info):
+    """Count the hunks in each classification across all files
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+
+    Return:
+        dict: Maps state (WANTED, ACCEPTED, DRIFT) to the number of hunks
+    """
+    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}
+    for verdicts in info.verdicts.values():
+        for vdt in verdicts:
+            states[vdt.state] += 1
+    return states
+
+
+def drift_percent(states):
+    """Work out what fraction of the divergence from upstream is drift
+
+    This measures how much of what makes the downstream branch differ from
+    upstream is spurious rather than intended: the drift hunks as a share of
+    every hunk which differs.  Binary files are not counted, since they have
+    no hunks.
+
+    Args:
+        states (dict): Hunk counts by state from drift_state_counts()
+
+    Return:
+        float: Drift as a percentage of all differing hunks, 0.0 if there are
+            no hunks at all
+    """
+    total = sum(states.values())
+    if not total:
+        return 0.0
+    return 100.0 * states[drift.DRIFT] / total
+
+
 def drift_show_report(info, show_list, show_diff):
     """Show what the comparison with upstream found
 
@@ -935,10 +979,7 @@ def drift_show_report(info, show_list, show_diff):
     Return:
         int: 0 if the tree has no drift, 1 if it has
     """
-    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}
-    for verdicts in info.verdicts.values():
-        for vdt in verdicts:
-            states[vdt.state] += 1
+    states = drift_state_counts(info)
 
     bad = drift_paths(info)
     total = len(info.fdiffs)
@@ -948,7 +989,8 @@ def drift_show_report(info, show_list, show_diff):
               'downstream commits')
     tout.info(f'  {states[drift.ACCEPTED]} hunk(s) accepted by '
               f'{drift.ACCEPT_FILE}')
-    tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} file(s)')
+    tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} '
+              f'file(s), {drift_percent(states):.0f}% of divergence')
 
     if not bad:
         tout.info('')
@@ -975,14 +1017,14 @@ def do_drift(args, dbs):
     """Report deltas from upstream which no downstream commit accounts for
 
     Args:
-        args (Namespace): Parsed arguments with 'source', 'branch', 'deep',
+        args (Namespace): Parsed arguments with 'source', 'branch', 'shallow',
             'list' and 'diff' attributes
         dbs (Database): Database instance
 
     Return:
         int: 0 if the tree has no drift, 1 if it has or on error
     """
-    info = drift_collect(dbs, args.source, args.branch, args.deep)
+    info = drift_collect(dbs, args.source, args.branch, not args.shallow)
     if not info:
         return 1
     return drift_show_report(info, args.list, args.diff)
@@ -1111,7 +1153,7 @@ def do_drift_fix(args, dbs):
                    'them first')
         return 1
 
-    info = drift_collect(dbs, args.source, args.branch, args.deep)
+    info = drift_collect(dbs, args.source, args.branch, not args.shallow)
     if not info:
         return 1
 
@@ -1147,6 +1189,80 @@ def do_drift_fix(args, dbs):
             gitutil.checkout_branch(orig)
 
     return ret
+
+
+def status_backlog(last_commit, source):
+    """Count the upstream work not yet brought into the downstream branch
+
+    Args:
+        last_commit (str): Last commit cherry-picked from the source
+        source (str): Source branch name, e.g. 'us/master'
+
+    Return:
+        tuple:
+            int: Number of series (first-parent merges) remaining
+            int: Number of non-merge commits remaining
+    """
+    rng = f'{last_commit}..{source}'
+    merges = gitutil.count_revs(None, rng, first_parent=True, merges=True)
+    commits = gitutil.count_revs(None, rng, merges=False)
+    return merges, commits
+
+
+def do_status(args, dbs):
+    """Summarise the downstream branch against the upstream source
+
+    Reports two backlogs: the upstream series not yet brought in, and the
+    drift in the downstream branch which should be resynced to upstream.  The
+    refs are read as they are; run a fetch first for an up-to-date picture.
+
+    Args:
+        args (Namespace): Parsed arguments with 'source', 'branch' and
+            'shallow'
+        dbs (Database): Database instance
+
+    Return:
+        int: 0 on success, 1 if the source is unknown
+    """
+    source = args.source
+    branch = args.branch
+    deep = not args.shallow
+
+    last_commit = dbs.source_get(source)
+    if not last_commit:
+        tout.error(f"Source '{source}' not found - use 'pickman add-source'")
+        return 1
+
+    tout.info(f'Pickman status: {branch} vs {source}')
+    tout.info('')
+
+    # Forward backlog: what upstream has that has not been cherry-picked yet
+    merges, commits = status_backlog(last_commit, source)
+    pos = gitutil.commit_summary(last_commit)
+    tip = gitutil.commit_summary(source)
+    tout.info('Upstream backlog (to bring in):')
+    tout.info(f'  source position: {pos}')
+    tout.info(f'  upstream tip:    {tip}')
+    tout.info(f'  {merges} series remaining ({commits} non-merge commits)')
+    tout.info('')
+
+    # Cleanup backlog: drift in the downstream branch, to resync to upstream
+    info = drift_collect(dbs, source, branch, deep)
+    if not info:
+        return 1
+    states = drift_state_counts(info)
+    bad = drift_paths(info)
+    depth = 'deep' if deep else 'shallow estimate, drop -s for the full count'
+    tout.info('Drift (to resync to upstream):')
+    tout.info(f'  {len(info.fdiffs)} file(s) differ from upstream '
+              f'{info.base[:12]}')
+    tout.info(f'  {states[drift.DRIFT]} spurious hunk(s) in {len(bad)} '
+              f'file(s) ({depth})')
+    tout.info(f'  {drift_percent(states):.0f}% of the divergence is drift')
+    if bad:
+        tout.info(f"  run 'pickman drift {source}' for detail")
+
+    return 0
 
 
 def _check_subtree_merge(merge_hash):
@@ -3476,6 +3592,7 @@ COMMANDS = {
     'push-branch': do_push_branch,
     'review': do_review,
     'rewind': do_rewind,
+    'status': do_status,
     'step': do_step,
     'switch-source': do_switch_source,
     'test': do_test,

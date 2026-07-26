@@ -7271,9 +7271,13 @@ class TestDriftCommands(unittest.TestCase):
 
     @staticmethod
     def _drift_args(**kwargs):
-        """Build the arguments for the drift command"""
+        """Build the arguments for the drift command
+
+        The fixtures below check the shallow classification, so the helper
+        defaults to shallow even though the command line defaults to deep.
+        """
         args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
-                'deep': False, 'diff': False, 'list': False}
+                'shallow': True, 'diff': False, 'list': False}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7306,18 +7310,22 @@ class TestDriftCommands(unittest.TestCase):
         # README and tools/old.c are drift; the video driver is not looked
         # inside, so its 2 hunks are taken as wanted
         self.assertIn('2 hunk(s) wanted', out)
-        self.assertIn('2 hunk(s) of drift in 3 file(s)', out)
+        # 2 of the 4 classified hunks are drift
+        self.assertIn('2 hunk(s) of drift in 3 file(s), 50% of divergence',
+                      out)
 
     def test_report_deep(self):
         """Test that a deep report finds drift inside a downstream file"""
         with terminal.capture() as (stdout, _):
-            ret = control.do_pickman(self._drift_args(deep=True))
+            ret = control.do_pickman(self._drift_args(shallow=False))
         out = stdout.getvalue()
         self.assertEqual(ret, 1)
         # Blame shows the downstream commit wrote only the first hunk, so the
         # second one is drift
         self.assertIn('1 hunk(s) wanted', out)
-        self.assertIn('3 hunk(s) of drift in 4 file(s)', out)
+        # 3 of the 4 classified hunks are drift
+        self.assertIn('3 hunk(s) of drift in 4 file(s), 75% of divergence',
+                      out)
 
     def test_report_list(self):
         """Test that the list shows each drifted file, worst first"""
@@ -7419,6 +7427,135 @@ class TestDriftCommands(unittest.TestCase):
         dbs.start()
         self.addCleanup(dbs.close)
         return dbs
+
+
+class TestStatus(unittest.TestCase):
+    """Tests for the status command"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+
+        self.tmpdir = tempfile.mkdtemp()
+        self.old_accept = drift.ACCEPT_FILE
+        drift.ACCEPT_FILE = os.path.join(self.tmpdir, '.pickman-diverge')
+
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'a' * 40)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        command.TEST_RESULT = self._handle_git
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+        control.DB_FNAME = self.old_db_fname
+        drift.ACCEPT_FILE = self.old_accept
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        shutil.rmtree(self.tmpdir)
+        database.Database.instances.clear()
+
+    def _handle_git(self, pipe_list=None, **_):
+        """Answer the git commands which status and drift run"""
+        args = list(pipe_list[0])[1:]
+        if args[0] == 'rev-list':
+            # First-parent merges give the series count, non-merges the commits
+            return command.CommandResult(
+                stdout='7\n' if '--merges' in args else '123\n')
+        if args[0] == 'merge-base':
+            return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'log':
+            if '-1' in args:
+                return command.CommandResult(stdout='abc1234 A subject')
+            if '--grep' in args:
+                return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
+            return command.CommandResult(stdout=DRIFT_LOG)
+        if args[0] == 'diff':
+            return command.CommandResult(stdout=DRIFT_DIFF.encode('utf-8'))
+        if args[0] == 'blame':
+            return command.CommandResult(stdout=DRIFT_BLAME.encode('utf-8'))
+        raise ValueError(f'Unexpected git command: {args}')
+
+    @staticmethod
+    def _args(**kwargs):
+        """Build the arguments for the status command
+
+        Defaults to shallow so the fixtures below check the shallow output,
+        even though the command line defaults to deep.
+        """
+        args = {'cmd': 'status', 'source': 'us/master', 'branch': 'ci/master',
+                'shallow': True}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def test_backlog_counts(self):
+        """Test the series and commit counts from status_backlog()"""
+        with terminal.capture():
+            merges, commits = control.status_backlog('a' * 40, 'us/master')
+        self.assertEqual(merges, 7)
+        self.assertEqual(commits, 123)
+
+    def test_status(self):
+        """Test that status reports both the backlog and the drift"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('Pickman status: ci/master vs us/master', out)
+        self.assertIn('7 series remaining (123 non-merge commits)', out)
+        # Shallow: README and tools/old.c drift, plus the binary logo.bmp
+        self.assertIn('4 file(s) differ from upstream', out)
+        self.assertIn('2 spurious hunk(s) in 3 file(s) (shallow', out)
+        # 2 of the 4 classified hunks are drift
+        self.assertIn('50% of the divergence is drift', out)
+
+    def test_status_deep_default(self):
+        """Test that the deep count is used when -s is not given
+
+        Blame finds the second hunk of the video driver as drift, which the
+        shallow run takes as wanted, so the deep count is higher.
+        """
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args(shallow=False))
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('(this may take a while)', out)
+        self.assertIn('3 spurious hunk(s) in 4 file(s) (deep)', out)
+        self.assertIn('75% of the divergence is drift', out)
+
+    def test_parse_default_is_deep(self):
+        """Test that drift and status default to deep, with -s for shallow"""
+        for cmd in ('drift', 'status'):
+            self.assertFalse(pickman.parse_args([cmd, 'us/master']).shallow)
+            self.assertTrue(
+                pickman.parse_args([cmd, 'us/master', '-s']).shallow)
+
+    def test_drift_percent(self):
+        """Test the drift percentage of the divergence"""
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 3, drift.ACCEPTED: 0, drift.DRIFT: 1}), 25.0)
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 1, drift.ACCEPTED: 1, drift.DRIFT: 2}), 50.0)
+        # No hunks at all must not divide by zero
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}), 0.0)
+
+    def test_status_unknown_source(self):
+        """Test that an unknown source is reported"""
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._args(source='us/nope'))
+        self.assertEqual(ret, 1)
+        self.assertIn("Source 'us/nope' not found", stderr.getvalue())
 
 
 if __name__ == '__main__':

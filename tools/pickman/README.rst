@@ -242,12 +242,15 @@ To see what has crept in::
       3162 file(s) differ from upstream
       6629 hunk(s) wanted, explained by downstream commits
       0 hunk(s) accepted by .pickman-diverge
-      665 hunk(s) of drift in 466 file(s)
+      665 hunk(s) of drift in 466 file(s), 9% of divergence
 
-By default a file which any downstream-original commit has touched is taken as
-wanted in full, since telling one of its hunks from another means blaming it.
-Adding ``-D`` does that blame, which finds drift inside files with genuine
-downstream changes in them, at the cost of a few minutes on a large tree.
+The percentage is the drift as a share of every hunk which differs from
+upstream: how much of the divergence is spurious rather than intended.
+
+By default pickman blames the files which a downstream commit has touched, so
+that it can tell drift inside them from the genuine downstream changes.  This
+is accurate but takes a few minutes on a large tree; pass ``-s`` / ``--shallow``
+for a quick estimate which instead takes any touched file as wanted in full.
 
 A hunk which only removes lines is never called drift in a deep run. Blame can
 say who wrote a line but not who deleted one, so reverting such a hunk might
@@ -614,6 +617,21 @@ Options for the push-branch command:
 - ``-r, --remote``: Git remote (default: ci)
 - ``-f, --force``: Force push (overwrite remote branch)
 
+Checking Status
+~~~~~~~~~~~~~~~
+
+To see, at a glance, how far behind upstream the downstream branch is and how
+much drift it carries::
+
+    ./tools/pickman/pickman status us/master
+
+This reports two backlogs: the upstream series (first-parent merges) not yet
+cherry-picked, and the drift which should be resynced to upstream, including
+what fraction of the divergence from upstream that drift represents.  It reads
+the refs as they are, so fetch first for an up-to-date picture.  The drift
+count is the accurate, slower one by default (see below); pass ``-s`` for a
+quick estimate, or ``-b`` to name a different downstream branch.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -625,11 +643,13 @@ Options:
 
 - ``-l`` list each file which has drift, worst first
 - ``-d`` show the drift as a patch
-- ``-D`` look inside files which downstream commits have touched, by blaming
-  them (slower)
+- ``-s`` skip blaming the files which downstream commits have touched; faster
+  but misses drift inside them
 - ``-b`` downstream branch to examine (default: ci/master)
 
-The exit code is 1 if there is any drift, so this can be used as a check.
+By default pickman blames those touched files, which finds drift inside them
+but takes a few minutes on a large tree.  The exit code is 1 if there is any
+drift, so this can be used as a check.
 
 To record a delta as intentional, exempting it from the above::
 
@@ -648,7 +668,7 @@ Options:
 
 - ``-c`` number of areas of the tree to fix at once (default: 1)
 - ``-p`` push each branch and open an MR for it
-- ``-D`` as above, also revert drift inside files with downstream changes
+- ``-s`` skip blaming touched files, matching a shallow ``drift`` run
 - ``-r`` git remote for the push (default: ci)
 - ``-t`` target branch for the MR (default: master)
 
