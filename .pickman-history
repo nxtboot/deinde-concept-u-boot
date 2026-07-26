@@ -91169,3 +91169,48 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-07-26 (attempt 1)
+
+Branch: cherry-2ff26c1e378
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- felwinter-cb (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All five failures look lab/infrastructure-related at first glance, but let me verify the code changes can't be responsible, particularly for the qemu-x86_64 EFI selftest failure.
+
+The sandbox build passes cleanly. I've analysed all five job logs, and every failure is a lab/infrastructure issue — none is caused by the code in this MR. No changes were made and no fix branch was created.
+
+## Analysis
+
+The series (`facc60fdae2`, `69ededa2b4b`, `e9af334a49e` + empty merge commit) only touches:
+- `boot/bootm.c` — the compressed `IH_TYPE_KERNEL_NOLOAD` path in `bootm_load_os()` and `resolve_os_comp_buf()` (buffer sizing 4x→8x, bounding `decomp_len` to the allocated buffer). This code only executes when `bootm` decompresses a noload kernel.
+- `test/py/tests/test_fit.py` — new sandbox-only tests.
+
+None of the failing jobs ever reached that code path:
+
+| Job | Failure | Root cause |
+|---|---|---|
+| **edison** | `ValueError` before any test ran | labgrid place conflict: "place edison is not acquired by your user, acquired by labgrid" — runner could not acquire the board |
+| **play** | No U-Boot prompt after flashing, 20s timeout | Board bring-up failure on am62x; U-Boot proper is loaded by SPL, not `bootm`, so the series cannot affect reaching the prompt |
+| **qemu-x86_64** | `test_efi_selftest_base` failed (48 passed) | EFI selftest runs via `bootefi selftest`, which does not use the bootm noload decompression path — unrelated flaky selftest |
+| **felwinter-cb** | `SerialException: Could not open port rfc2217://kea:32861 ... Connection refused` | Serial exporter on host 'kea' died (reader thread died, then connection refused) — pure infrastructure |
+| **minnowmax** | Console timeout during `time sleep 10` after 39 tests passed | Serial console went unresponsive mid-run — lab flake, and the sleep test has nothing to do with the series |
+
+Notably, two of the failures (felwinter-cb and edison) are on the same lab infrastructure involving host 'kea'/labgrid, which suggests a lab-wide hiccup at the time of the run.
+
+## Verification
+
+- `um build sandbox` — builds cleanly on the branch (BUILD-OK)
+- Diff inspection confirms the changed code is only reachable through `bootm` with a compressed noload kernel; the new tests only run on sandbox, which is not among the failed jobs
+
+## Recommendation
+
+Retry the failed jobs — no code fix is needed for attempt 1. The `edison` labgrid place may need to be released/kicked (`labgrid-client -p edison allow ellesmere/gitlab-runner` per the log hint), and the serial exporter on 'kea' may need attention before the felwinter-cb retry.
+
+---
+
