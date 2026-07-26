@@ -10,9 +10,13 @@
 #include <clk-uclass.h>
 #include <asm/ti-common/omap_clock.h>
 #include <asm/io.h>
-#include <linux/iopoll.h>
 
-#define TRANSITION_TIMEOUT_US	10000
+/*
+ * Iterations to wait for a module to reach the requested idle state. This
+ * cannot use readl_poll_timeout(), since that needs the timer, whose own
+ * module clock is enabled through here
+ */
+#define TRANSITION_RETRIES	1000000
 
 struct clk_ti_ctrl_offs {
 	fdt_addr_t start;
@@ -39,30 +43,52 @@ static int clk_ti_ctrl_check_offs(struct clk *clk, fdt_addr_t offs)
 
 #define IDLEST_DISABLED		(MODULE_CLKCTRL_IDLEST_DISABLED << MODULE_CLKCTRL_IDLEST_SHIFT)
 #define IDLEST_TRANSITION	(MODULE_CLKCTRL_IDLEST_TRANSITIONING << MODULE_CLKCTRL_IDLEST_SHIFT)
+
+/**
+ * clk_ti_ctrl_wait_idlest() - Wait for a module to settle in an idle state
+ *
+ * Polls the module's CLKCTRL register with a plain read loop, since the
+ * timer is not usable here
+ *
+ * @addr: Address of the module's CLKCTRL register
+ * @disabled: true to wait for the disabled state, false to wait for any
+ *	state other than disabled and transitioning
+ * Return: 0 if the state was reached, -ETIMEDOUT if not
+ */
+static int clk_ti_ctrl_wait_idlest(u32 addr, bool disabled)
+{
+	uint i;
+
+	for (i = 0; i < TRANSITION_RETRIES; i++) {
+		u32 idlest = readl(addr) & MODULE_CLKCTRL_IDLEST_MASK;
+
+		if (disabled) {
+			if (idlest == IDLEST_DISABLED)
+				return 0;
+		} else if (idlest != IDLEST_DISABLED &&
+			   idlest != IDLEST_TRANSITION) {
+			return 0;
+		}
+	}
+
+	return -ETIMEDOUT;
+}
+
 static int clk_ti_ctrl_disable_clock_module(u32 addr)
 {
-	int val;
-
 	clrsetbits_le32(addr, MODULE_CLKCTRL_MODULEMODE_MASK,
 			MODULE_CLKCTRL_MODULEMODE_SW_DISABLE <<
 			MODULE_CLKCTRL_MODULEMODE_SHIFT);
 
-	return readl_relaxed_poll_timeout(addr, val,
-					  (val & MODULE_CLKCTRL_IDLEST_MASK) == IDLEST_DISABLED,
-					  TRANSITION_TIMEOUT_US);
+	return clk_ti_ctrl_wait_idlest(addr, true);
 }
 
 static int clk_ti_ctrl_enable_clock_module(u32 addr)
 {
-	int val;
-
 	clrsetbits_le32(addr, MODULE_CLKCTRL_MODULEMODE_MASK,
 			MODULE_CLKCTRL_MODULEMODE_SW_EXPLICIT_EN <<
 			MODULE_CLKCTRL_MODULEMODE_SHIFT);
-	return readl_relaxed_poll_timeout(addr, val,
-					  ((val & MODULE_CLKCTRL_IDLEST_MASK) != IDLEST_DISABLED) &&
-					  ((val & MODULE_CLKCTRL_IDLEST_MASK) != IDLEST_TRANSITION),
-					  TRANSITION_TIMEOUT_US);
+	return clk_ti_ctrl_wait_idlest(addr, false);
 }
 
 static int clk_ti_ctrl_disable(struct clk *clk)
