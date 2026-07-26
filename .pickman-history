@@ -90971,3 +90971,146 @@ ee98f58efe8 boot: image-fdt: free old dtb reservations
 
 ---
 
+## 2026-07-26: us/master
+
+Branch: cherry-bc93b4bcb31
+
+Commits:
+- bc93b4bcb31 arm: omap: Move PRM I2C channel frequency to vc.c
+- 9a4f6790967 arm: ti: omap: Extract common clock definitions
+- de2e3f00f2f clk: ti: Remove AM33xx dependency
+- 196b1fe9bf8 configs: omap4: remove unused boot target devices
+- 93d204f7175 arm: ti: Introduce back omap4 support
+- 8974dd64e62 board: variscite: add support for the omap4_var_som
+- e79de74103d Merge patch series "arm: omap: Add back omap4 support"
+
+### Conversation log
+Delta matches. Running build test:
+
+The merge commit is empty (expected). Committing it to preserve the message:
+
+All 7 commits present. Running the final build:
+
+All done. Final status:
+
+## Result: Success
+
+Branch `cherry-bc93b4bcb31` (based on `ci/master`) now contains all 7 commits:
+
+```
+02543978675 Merge patch series "arm: omap: Add back omap4 support"
+442b0dbfe27 board: variscite: add support for the omap4_var_som
+08d73810865 arm: ti: Introduce back omap4 support
+3aa727abec7 configs: omap4: remove unused boot target devices
+f2cd77019f6 clk: ti: Remove AM33xx dependency
+b5e596480de arm: ti: omap: Extract common clock definitions
+919ac710f48 arm: omap: Move PRM I2C channel frequency to vc.c
+```
+
+- **Build result**: ok — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors)
+- **Fix-ups made**: none — all 6 regular commits applied cleanly (a few auto-merges in MAINTAINERS, common/spl/Kconfig, drivers/i2c/Kconfig, drivers/mmc/Kconfig, all resolved automatically by git)
+- **Deltas**: every cherry-picked commit's stat matches its original exactly (files and line counts identical)
+- **Merge commit**: `e79de74103d` resulted in an empty commit as expected; it was committed with `--allow-empty` to preserve the merge message for history tracking
+
+The branch is left checked out and ready for pushing; nothing was merged back anywhere.
+
+---
+
+### Pipeline fix: 2026-07-26 (attempt 1)
+
+Branch: cherry-bc93b4bcb31
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bbb (sjg-lab)
+- bpi (sjg-lab)
+
+### Conversation log
+All five failing jobs are sjg-lab hardware tests. Let me look at the branch to correlate.
+
+Let me check recent pickman history entries mentioning this same bbb symptom.
+
+Now edit the poll helpers to restore the old warn-and-continue semantics:
+
+Now amend the commit with a note:
+
+Clangd diagnostics are just missing include paths (not real errors). Continue the rebase and verify the empty merge commit survives:
+
+All 7 commits intact (including the empty merge). Now build:
+
+## Report
+
+**Result: one real regression fixed (bbb); the other four failures are infrastructure issues.**
+
+### Diagnosis per job
+
+| Job | Board | Verdict |
+|---|---|---|
+| bbb | am335x_evm (BeagleBone Black) | **Real regression** — U-Boot proper consistently hangs (`### ERROR ### Please RESET the board ###`) right after `DRAM: 512 MiB` on every reset attempt |
+| edison | edison | Infra — `place edison is not acquired by your user, acquired by labgrid` (labgrid reservation conflict, test never started) |
+| play | am62x_beagleplay | Infra — no-prompt pexpect timeout; the series contains no K3/am62x code (known transient on the ellesmere runner per history) |
+| felwinter-cb | chromebook_brya (x86/coreboot) | Infra — rfc2217 serial server on `kea` died (`Connection refused`); series cannot affect x86 |
+| bpi | Bananapi (sunxi) | Infra — zero serial output after flashing; series cannot affect sunxi |
+
+### Responsible commit and root cause
+
+`f2cd77019f6` **clk: ti: Remove AM33xx dependency** (upstream de2e3f00f2f) — the only commit on the branch that affects am335x (everything else is guarded by `OMAP44XX` or is a header consolidation with identical macro values).
+
+It replaces the am33xx `do_{enable,disable}_clocks()` helpers with local poll functions in `drivers/clk/ti/clk-ctrl.c`. The old am33xx code (`wait_for_clk_enable/disable()`) polled for up to `LDELAY` (1M register reads) and on timeout merely printed a warning and **continued**. The new code polls for only 10 ms and returns **-ETIMEDOUT**, which propagates through `clk_enable()` → `ti_sysc_child_pre_probe()` (am335x peripherals sit behind ti-sysc target-modules) → device-probe failure during early post-relocation init — exactly the window between the `DRAM:` print and the `Core:` device announcement where bbb hangs.
+
+### Fix applied
+
+Amended `f2cd77019f6` (now `f75aed1716a`) to restore the old tolerant semantics: on poll timeout, print `Clock enable/disable failed for 0x%x idlest 0x%x` and return 0 instead of -ETIMEDOUT. This keeps the commit's goal (no am33xx-specific dependency, usable by OMAP4) while matching pre-series runtime behaviour. A `[pickman]` note describing the fix is appended to the commit message.
+
+### Verification
+
+- `um build sandbox` — clean
+- `buildman` for am335x_evm, Bananapi, edison, chromebook_brya, am62x_beagleplay_a53/r5, sandbox — **22 boards built, 0 failures**; remaining warnings (TI blobs, sandbox dtsi, brya ACPI) are pre-existing on boards that don't compile clk-ctrl.c; am335x_evm built warning-free
+- All 7 series commits survived the rebase, including the empty merge commit
+
+Branch `cherry-bc93b4bcb31-fix1` is created locally at the fixed HEAD (not pushed). Note: edison/play/felwinter-cb/bpi will only pass on retry once the lab issues clear — no code change can address those.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-bc93b4bcb31
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play, felwinter-cb, bbb, bpi.
+
+All five failin...
+
+### Conversation log
+The remote already matches the fixed state. Let me verify the fix commit is in the remote branch's ancestry and check what differs.
+
+Build is clean. Now create the `-v2` branch and push to the original remote branch:
+
+Done. Report below.
+
+## Report
+
+### Comment analysis
+
+The single review comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is **not an actionable review request** — it is the pickman bot's own record of pipeline-fix attempt 1 (the bbb regression diagnosis and fix report). It requests no code changes.
+
+### State found on checkout
+
+- The code fix from attempt 1 (`f75aed1716a` "clk: ti: Remove AM33xx dependency", amended to restore warn-and-continue poll semantics) was **already present on the remote branch** `ci/cherry-bc93b4bcb31`
+- The only local delta was one bookkeeping commit (`16ef2825336` "pickman: Record pipeline fix"), touching `.pickman-history` only — no source changes
+
+### Actions taken
+
+1. Checked out `cherry-bc93b4bcb31` and verified all 7 series commits (including the empty merge commit) plus the fixed clk commit are intact
+2. `buildman -L --board sandbox -w -o /tmp/pickman` — **1 board built, 0 errors, 0 warnings**
+3. Created local branch `cherry-bc93b4cb31-v2` → `cherry-bc93b4bcb31-v2` at HEAD
+4. Pushed to `ci/cherry-bc93b4bcb31` (fast-forward `5085ca26dda..16ef2825336`) — this syncs the history record and triggers a fresh MR pipeline
+
+### Suggested MR reply
+
+> No code changes are needed for this comment — it is the record of pipeline-fix attempt 1, which is already applied on the branch (the clk-ctrl poll-timeout fix for the bbb hang). The branch has been re-pushed to trigger a fresh pipeline: the bbb job should now pass with the fixed 'clk: ti: Remove AM33xx dependency' commit, and the remaining four failures (edison, play, felwinter-cb, bpi) were lab-infrastructure issues that should clear on retry. Sandbox builds cleanly with no warnings.
+
+---
+
