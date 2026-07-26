@@ -91111,6 +91111,61 @@ The single review comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is 
 ### Suggested MR reply
 
 > No code changes are needed for this comment — it is the record of pipeline-fix attempt 1, which is already applied on the branch (the clk-ctrl poll-timeout fix for the bbb hang). The branch has been re-pushed to trigger a fresh pipeline: the bbb job should now pass with the fixed 'clk: ti: Remove AM33xx dependency' commit, and the remaining four failures (edison, play, felwinter-cb, bpi) were lab-infrastructure issues that should clear on retry. Sandbox builds cleanly with no warnings.
+---
+
+## 2026-07-26: us/master
+
+Branch: cherry-2ff26c1e378
+
+Commits:
+- 2ff26c1e378 bootm: fix overflow of the noload kernel decompression buffer
+- 4956f108539 bootm: increase kernel_noload decompression headroom from 4x to 8x
+- a7ea33e3a35 test/py: test kernel_noload decompression buffer overflow
+- a57f2a31a7c Merge patch series "bootm: bound noload kernel decompression to the allocated buffer"
+
+### Conversation log
+Not already applied. Let me examine the conflict.
+
+The build fails because the patch added a duplicate `decomp_len` declaration. Let me fix that.
+
+Commit 1 done and builds. Now cherry-pick the second commit.
+
+Build passes. Now the third commit (test):
+
+Delta matches (125 insertions, same file). Now build and run the two new tests against it:
+
+The merge commit's diff is the whole series, already applied in adapted form. Resolve by keeping our versions so it becomes an empty commit (preserving the merge message):
+
+All 4 commits are in place. Final build verification:
+
+All done. Final status report:
+
+## Cherry-pick complete: branch `cherry-2ff26c1e378` (4 commits on ci/master)
+
+```
+6ff35e48057 Merge patch series "bootm: bound noload kernel decompression to the allocated buffer"
+e9af334a49e test/py: test kernel_noload decompression buffer overflow
+69ededa2b4b bootm: increase kernel_noload decompression headroom from 4x to 8x
+facc60fdae2 bootm: fix overflow of the noload kernel decompression buffer
+```
+
+**Build result:** OK — `buildman -L --board sandbox` passes cleanly after each commit and at the end (no warnings or errors).
+
+**Test result:** Both new py-tests pass, and all 25 FIT tests (`-k test_fit`) pass against the final build.
+
+**Fix-ups made** (all noted in the amended commit messages):
+
+1. **`2ff26c1e378` (overflow fix)** — ci/master has refactored the noload allocation into `resolve_os_comp_buf()` with the size in `bmi->kern_comp_size`, plus a newer `ignore_bootm_len` path. Adapted the fix to set `decomp_len = bmi->kern_comp_size` for compressed noload kernels, keeping the `ignore_bootm_len`/`bootm_len()` logic for other paths, and dropped the patch's duplicate `decomp_len` declaration (which initially broke the build).
+
+2. **`4956f108539` (4x→8x headroom)** — the sizing formula lives in `resolve_os_comp_buf()` on ci/master, so the 8x factor (and the 1G guard, now `SZ_1G / 8`) was applied there. I also restored two upstream behaviours that ci/master's refactoring had lost, without which the series is inert on the `bootm` subcommand path: fall back to the compressed image length when `bmi->os_size` is unset (otherwise `bootm loados` fails with "Kernel size is zero"), and align the buffer with `ALIGN(..., SZ_1M)` as upstream does (required by the boundary test).
+
+3. **`a7ea33e3a35` (tests)** — simple add/add conflict with ci/master's own new load-only tests at the end of the class; kept both. Delta matches the original exactly (125 insertions).
+
+4. **Merge commit** — preserved as an empty commit with the full original merge message and cherry-pick reference.
+
+**Delta notes:** commits 1 and 2 differ from the originals (7+/1- vs 9+/5-, and 6+/4- vs 3+/3-) because the surrounding code was refactored on ci/master; the intent was verified by running the series' own tests, which fail without the fix-ups and pass with them.
+
+The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
