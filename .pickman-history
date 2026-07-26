@@ -91601,6 +91601,31 @@ No unexpected delta drift; the rebase only re-based onto newer upstream, no cont
 
 ### Suggested reply to post on the MR
 > Rebased onto the latest target branch (`ci/master` `439bfa30f6d`). The rebase applied cleanly with no conflicts, the empty merge commit was preserved, and all three real commits kept identical deltas (Resync 106/95, can_assume +2, merge empty). Sandbox builds cleanly with buildman. Force-pushed to re-trigger the pipeline.
+Branch: cherry-647990c5284
+
+Commits:
+- 647990c5284 armv8: mmu: add a function to help debug TLB lookups
+- 41b6b904b58 armv8: mmu: teach the pagetable dumper to show explicit FAULT maps
+- 76c90926087 armv8: mmu: commonize the set_one_region() loop
+- 6468ca13ffd armv8: mmu: fix and optimise explicitly unmapping regions
+- 7636a15a54f Merge patch series "armv8: mmu: fix region unmapping and optimise set_one_region()"
+
+### Conversation log
+All 5 commits cherry-picked successfully onto branch `cherry-647990c5284`.
+
+**Final Status:**
+- **Build**: OK (sandbox build clean, no warnings/errors)
+- **Commits present** (in order):
+  1. `468f05dae96` armv8: mmu: add a function to help debug TLB lookups
+  2. `d32f04cf188` armv8: mmu: teach the pagetable dumper to show explicit FAULT maps
+  3. `1acfac4a465` armv8: mmu: commonize the set_one_region() loop
+  4. `3eb6650b863` armv8: mmu: fix and optimise explicitly unmapping regions
+  5. `502cd89cc73` Merge patch series "armv8: mmu: fix region unmapping and optimise set_one_region()" (empty merge, preserved with --allow-empty)
+- **Deltas**: All 4 non-merge commits matched the originals exactly (same files, same line counts).
+- **Fix-ups**: None required.
+- **Concerning deltas**: None.
+
+Branch is ready for pushing.
 
 ---
 
