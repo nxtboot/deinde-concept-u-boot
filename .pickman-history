@@ -90971,3 +90971,48 @@ ee98f58efe8 boot: image-fdt: free old dtb reservations
 
 ---
 
+## 2026-07-26: us/master
+
+Branch: cherry-bc93b4bcb31
+
+Commits:
+- bc93b4bcb31 arm: omap: Move PRM I2C channel frequency to vc.c
+- 9a4f6790967 arm: ti: omap: Extract common clock definitions
+- de2e3f00f2f clk: ti: Remove AM33xx dependency
+- 196b1fe9bf8 configs: omap4: remove unused boot target devices
+- 93d204f7175 arm: ti: Introduce back omap4 support
+- 8974dd64e62 board: variscite: add support for the omap4_var_som
+- e79de74103d Merge patch series "arm: omap: Add back omap4 support"
+
+### Conversation log
+Delta matches. Running build test:
+
+The merge commit is empty (expected). Committing it to preserve the message:
+
+All 7 commits present. Running the final build:
+
+All done. Final status:
+
+## Result: Success
+
+Branch `cherry-bc93b4bcb31` (based on `ci/master`) now contains all 7 commits:
+
+```
+02543978675 Merge patch series "arm: omap: Add back omap4 support"
+442b0dbfe27 board: variscite: add support for the omap4_var_som
+08d73810865 arm: ti: Introduce back omap4 support
+3aa727abec7 configs: omap4: remove unused boot target devices
+f2cd77019f6 clk: ti: Remove AM33xx dependency
+b5e596480de arm: ti: omap: Extract common clock definitions
+919ac710f48 arm: omap: Move PRM I2C channel frequency to vc.c
+```
+
+- **Build result**: ok — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors)
+- **Fix-ups made**: none — all 6 regular commits applied cleanly (a few auto-merges in MAINTAINERS, common/spl/Kconfig, drivers/i2c/Kconfig, drivers/mmc/Kconfig, all resolved automatically by git)
+- **Deltas**: every cherry-picked commit's stat matches its original exactly (files and line counts identical)
+- **Merge commit**: `e79de74103d` resulted in an empty commit as expected; it was committed with `--allow-empty` to preserve the merge message for history tracking
+
+The branch is left checked out and ready for pushing; nothing was merged back anywhere.
+
+---
+
