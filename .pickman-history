@@ -90935,3 +90935,39 @@ The branch is ready for pushing; I have not merged it anywhere.
 
 ---
 
+### Review: 2026-07-26
+
+Branch: cherry-623f6c5b6ab
+
+Comments addressed:
+
+
+### Conversation log
+All per-commit deltas are byte-identical to the pre-rebase stats, and the empty merge commit is preserved. Now the build:
+
+Done. The rebase is complete and the MR has been updated.
+
+## Report
+
+**Rebase of MR !1201 (`cherry-623f6c5b6ab`) onto ci/master: success**
+
+```
+400a6582cbc pickman: Record cherry-pick of 5 commits from us/master
+66c73a1dfbd Merge patch series "various memory related fixups"   (empty, preserved)
+b8a7e984918 memory: reserve from start_addr_sp to initial_relocaddr
+59d915d639b test: boot: add a fdt reserved region check
+c5e98c088d9 test_ut: add a ut_ubman fixture to clean up tests
+ee98f58efe8 boot: image-fdt: free old dtb reservations
+```
+
+- **Conflicts**: only one, in the `.pickman-history` log file — this branch and the just-merged `cherry-380d8e38874` both appended an entry at the same place. Resolved by keeping both entries (with a heading separator). All 5 code/series commits replayed cleanly with no conflicts.
+- **Deltas**: every rebased commit's `--stat` is identical to its pre-rebase counterpart (e.g. image-fdt 57+/21-, test_ut 22+/6-, image_fdt test 89+/1-, memory 24+/5-). The empty series-merge commit survived via `--keep-empty`.
+- **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` → OK, no warnings or errors.
+- **Branches**: local `cherry-623f6c5b6ab-v2` created at the new HEAD; force-pushed to `ci/cherry-623f6c5b6ab` (3a5426a44b9 → 400a6582cbc), which updates MR !1201 and triggers a fresh pipeline.
+
+### Suggested MR reply
+
+> Rebased onto the current master with 'git rebase --keep-empty'. The only conflict was in the .pickman-history log file (this branch and the just-merged cherry-380d8e38874 both appended an entry at the same spot); resolved by keeping both entries. All five commits replayed cleanly with per-commit deltas identical to the pre-rebase state, the empty series-merge commit is preserved, and sandbox builds with no warnings or errors.
+
+---
+
