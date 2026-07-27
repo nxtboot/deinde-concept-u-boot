@@ -91473,3 +91473,43 @@ These touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`
 
 ---
 
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) edison, play, felwinter-cb, bpif3.
+
+Sandbox builds cle...
+
+### Conversation log
+## Report — Review comment for MR !1205 (`cherry-37fef5ab88d`)
+
+**Action taken:** None. No `-v2` branch was created, no push, no code change.
+
+### Analysis
+
+The "review comment" is — for the fourth time on this MR — a verbatim echo of my own most recent pipeline-fix report (attempt 3, covering edison, play, felwinter-cb, bpif3). It contains no new question, no requested code change, no disagreement with the prior analysis, and no fresh diagnostic information. It is an automated re-post of my own conclusion, not human review feedback.
+
+### Current branch state
+
+`cherry-37fef5ab88d` is unchanged since the original cherry-pick:
+
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+Only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/` and related Makefiles are touched — build-time DT validation and target-side `fdt_check_full()`. None of that can produce the observed lab failures (labgrid contention on edison, missing U-Boot prompt on play, RFC2217 `Connection refused` on felwinter-cb's kea serial server, or SpaceMit K1 BootROM/USB-loader failure on bpif3).
+
+### Why no branch / no push
+
+Force-pushing a no-op `-v2` bump would only re-trigger the same lab hardware — with a high chance of hitting the same pre-execution transient failures again — without any code change to justify the pipeline run. That is churn, not a fix.
+
+### Suggested reply to post on the MR
+
+> This is the fourth iteration where the comment restates the previous pipeline-fix analysis verbatim rather than raising a new concern. All failures in attempts 1–3 (edison, play, felwinter-cb, vf2, pine64, bpif3) are pre-execution lab/infrastructure issues — labgrid acquisition contention, missing U-Boot prompt, RFC2217 `Connection refused` on the kea serial server, StarFive boot-ROM eMMC timeout, and SpaceMit K1 BootROM/USB-loader stuck state — none of which the libfdt/dtc changes on this branch can affect. Sandbox still builds cleanly. Please re-run the affected lab jobs once the boards, the `kea` serial server, and the bpif3 USB gadget are healthy; no code fix is warranted. If a real reviewer has a concrete concern about the libfdt resync itself, please post it explicitly and I'll address it.
+
+If you would prefer I force-push a no-op bump anyway to force a pipeline re-run, say the word and I'll do it.
+
+---
+
