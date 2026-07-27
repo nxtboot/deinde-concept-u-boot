@@ -91708,6 +91708,7 @@ The branch is ready for pushing and has **not** been merged into any other branc
 ---
 
 ### Review: 2026-07-28
+### Review: 2026-07-26
 
 Branch: cherry-647990c5284
 
@@ -92052,6 +92053,37 @@ note appended to its message. `boot/image-fit.c | 3 ++-`.
 ### Deliverable
 Branch **`cherry-e50ee1acd4a-fix1`** (HEAD `522605afe4a`), created in worktree
 `/tmp/uboot-fix1` and visible in the main repo. **Not pushed**, per instructions.
+
+
+### Conversation log
+Deltas match originals. Now build check.
+
+Build clean. Now create v-suffix branch and push.
+
+Push succeeded. Rebase complete.
+
+## Report
+
+**MR:** !1204 (branch `cherry-647990c5284`) — rebased onto latest `ci/master`.
+
+### Actions
+1. Checked out `cherry-647990c5284` (was at `6744bda7058`, 6 commits ahead of the old base, 8 behind `ci/master`).
+2. `git rebase --keep-empty ci/master` — succeeded cleanly, no conflicts. All 6 commits (5 cherry-picks + pickman record) replayed.
+3. Verified per-commit deltas match originals exactly:
+   - `ed8193cb371` "add TLB debug helper" — `cache_v8.c +60`, `mmu.h +7` ✓
+   - `42ab8962a7d` "dumper shows FAULT maps" — `cache_v8.c ±4` ✓
+   - `bd4b9166fae` "commonize set_one_region() loop" — `cache_v8.c +28/-66` ✓
+   - `60325319287` "fix and optimise unmapping regions" — `cache_v8.c ±18` ✓
+   - Merge `4fab57afbf0` — empty merge preserved by `--keep-empty` ✓
+4. Build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings/errors.
+5. Created local branch `cherry-647990c5284-v3` at rebased tip `de11ef45d01`.
+6. Force-pushed to remote `cherry-647990c5284`: `6744bda7058…de11ef45d01` — GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. No conflicts; all 5 cherry-picks (plus the empty merge, preserved via `--keep-empty`) replayed byte-identical to before. Sandbox build clean.
+>
+> Note the standing diagnosis on the ARM64 boot failures (jetson-nano, play, rock5b) is unchanged — those are the real upstream regression from `6468ca13ffd` (this MR's `60325319287`), not a rebase-fidelity issue. Group-A infra failures should hopefully clear on this pipeline run.
 
 ---
 
