@@ -91249,3 +91249,31 @@ The comment (`project_1_bot_...`) is the bot's own **"Pipeline fix (attempt 1)" 
 
 ---
 
+## 2026-07-26: us/master
+
+Branch: cherry-37fef5ab88d
+
+Commits:
+- 37fef5ab88d dtc: Resync fdt_check_full() with upstream version v1.7.2-35-g52f07dcca47c
+- 487994d65cf dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- 3838059689b Merge patch series "dtc: Resync fdt_check_full function"
+
+### Conversation log
+All 3 cherry-picks complete. Final status:
+
+**Branch:** `cherry-37fef5ab88d` (based on ci/master)
+
+**Commits applied:**
+- `3fffb7cbe10` — dtc: Resync fdt_check_full() with upstream version v1.7.2-35-g52f07dcca47c
+- `faa975ff19e` — dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` — Merge patch series "dtc: Resync fdt_check_full function" (empty, preserved)
+
+**Build result:** OK (sandbox built cleanly, no warnings/errors)
+
+**Fix-ups made:**
+- First cherry-pick had a conflict in `scripts/dtc/libfdt/fdt_ro.c`. HEAD already contained commit `70f42e720c9` ("scripts: dtc: libfdt: fdt_ro.c: always define fdt_check_full") which had added a `#else` wrapper providing an always-defined stub. The cherry-pick removes the entire `fdt_check_full` function (moved to new `fdt_check.c`), so the resolution was to remove the whole block including that wrapper. A one-line fix-up note was appended to the commit message. Result: 106 insertions / 95 deletions vs. original 106/92 — a 3-line difference from the removed wrapper, which is expected.
+
+**Concerning deltas:** None. Second commit matched exactly (1 file, +2 lines). Merge commit was empty as expected.
+
+---
+
