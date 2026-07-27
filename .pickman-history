@@ -91513,3 +91513,43 @@ If you would prefer I force-push a no-op bump anyway to force a pipeline re-run,
 
 ---
 
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report — MR !1205 (`cherry-37fef5ab88d`)
+
+**Review comment:** `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.`
+
+**Action taken:** None. No `-v2` branch was created, no push, no code change.
+
+### Analysis
+
+This comment is a terminal signal from the automation, not a request for a code change. It says the pipeline-fix bot has exhausted its 3-attempt retry budget on this MR and is handing off to a human. Automated re-pushing is exactly what the bot was doing itself, and the previous three attempts already established the cause:
+
+- **edison / play** — labgrid `place is acquired by a different user` (scheduling contention)
+- **felwinter-cb** — `TIMEOUT` waiting for U-Boot prompt, then RFC2217 `Connection refused` to the `kea` serial server (serial-server infra)
+- **vf2** — StarFive boot ROM `dwmci_s: Response Timeout` / `BOOT fail 0xffffffff` before U-Boot runs (eMMC read at ROM stage)
+- **pine64** — UART line noise corrupting one test's output
+- **bpif3** — SpaceMit K1 BootROM never re-enumerated after FSBL upload (USB gadget stuck)
+
+All are pre-execution lab/hardware/scheduling issues. The branch touches only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/` and related Makefiles — build-time DT validation and target-side `fdt_check_full()`. None of that can affect boot ROMs, labgrid, serial servers, or USB gadget re-enumeration. Sandbox was already confirmed to build cleanly in attempt 1 and the code has not changed since.
+
+### Why no branch / no push
+
+- The bot itself has declared "manual intervention required" — that's the opposite of "auto-push a v4".
+- Force-pushing a no-op bump would re-trigger the same still-flaky boards with a high probability of the same transient failures, adding pipeline churn without a fix.
+- There is nothing on the branch to change.
+
+### Suggested reply to post on the MR
+
+> The pipeline-fix bot has exhausted its 3-attempt budget and asked for manual intervention. Across attempts 1–3 the failing jobs (edison, play, felwinter-cb, vf2, pine64, bpif3) were all pre-execution lab/infrastructure issues — labgrid acquisition contention, missing U-Boot prompt, RFC2217 `Connection refused` on the `kea` serial server, StarFive boot-ROM eMMC timeout, UART line noise, and SpaceMit K1 BootROM/USB-loader stuck state. This branch only touches build-time DT validation and target-side `fdt_check_full()` (`scripts/dtc/libfdt/`, `lib/libfdt/`, `tools/libfdt/`), which cannot affect any of those. Sandbox builds cleanly. Manual intervention requested here is: once the `kea` serial server, the SpaceMit K1 USB gadget, and the shared lab boards are healthy, please re-trigger the pipeline. No code fix is warranted; if a real reviewer sees a concern with the libfdt resync itself, please state it explicitly and I'll address it.
+
+If you'd prefer I force-push a no-op bump anyway to re-trigger the pipeline, say the word and I'll do it — but I don't recommend it given the bot's own hand-off signal.
+
+---
+
