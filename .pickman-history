@@ -91433,3 +91433,43 @@ If you'd like me to force-push a no-op bump anyway just to re-trigger the pipeli
 
 ---
 
+### Pipeline fix: 2026-07-26 (attempt 3)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+Sandbox builds cleanly (silent = OK per CLAUDE.md).
+
+## Report — pipeline fix attempt 3 for MR !1205 (`cherry-37fef5ab88d`)
+
+**Action taken:** None. All four failures are pre-execution lab/infrastructure issues, matching the same pattern seen in attempts 1 and 2. No `-fix3` branch was created; the workspace stays on `cherry-37fef5ab88d` unchanged.
+
+**Branch commits (dtc/libfdt only, unchanged since attempt 1):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+These touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` — build-time DT validation and target-side `fdt_check_full()`. None of it can affect boot-ROM behaviour, labgrid scheduling, serial-server connectivity, or on-board flashing.
+
+**Root cause of each failure:**
+
+1. **edison** (581812) — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Pytest exited during `pytest_configure` at `get_details` — never ran a test. Lab-scheduling contention.
+
+2. **play** (581810) — After successful flash on `am62x_beagleplay_a53`, `ubootdriver._await_prompt()` raised `pexpect.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login`. Two attempts, both timed out. `Lab failure: Marking connection bad`. Board did not emit the U-Boot prompt — hardware/lab-side.
+
+3. **felwinter-cb** (581802) — Flashing succeeded, coreboot booted through romstage, but the U-Boot prompt never came within 180 s. `_reconnect` then failed with `ConnectionRefusedError: [Errno 111] Connection refused` to `rfc2217://kea:35075` — the RFC2217 serial server on `kea` was down. `Lab failure: Marking connection bad`. Serial-server infrastructure issue.
+
+4. **bpif3** (581801) — SpaceMit K1 USB loader failed 5 consecutive attempts: `BootROM did not start the FSBL (gadget devnum still 106…110); board needs a reset`. FSBL was staged (`DATA0002d2e0` sent, `OKAY` returned) but the BootROM never re-enumerated. `Lab failure: Marking connection bad`. USB/BootROM stuck state — hardware/lab-side, before any of the branch's code runs.
+
+**Verification:** `um build sandbox` completes cleanly (silent output). The libfdt/dtc resync compiles fine; nothing on this branch touches board-boot, USB-loader, serial, or scheduling code.
+
+**Recommendation:** Re-run the four jobs once the boards are free, the `kea` serial server is back, and the SpaceMit K1 USB gadget is reset. No code fix is warranted; force-pushing a no-op bump would just re-trigger the same transient lab failures.
+
+---
+
