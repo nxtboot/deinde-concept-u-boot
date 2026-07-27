@@ -91111,6 +91111,141 @@ The single review comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is 
 ### Suggested MR reply
 
 > No code changes are needed for this comment — it is the record of pipeline-fix attempt 1, which is already applied on the branch (the clk-ctrl poll-timeout fix for the bbb hang). The branch has been re-pushed to trigger a fresh pipeline: the bbb job should now pass with the fixed 'clk: ti: Remove AM33xx dependency' commit, and the remaining four failures (edison, play, felwinter-cb, bpi) were lab-infrastructure issues that should clear on retry. Sandbox builds cleanly with no warnings.
+---
+
+## 2026-07-26: us/master
+
+Branch: cherry-2ff26c1e378
+
+Commits:
+- 2ff26c1e378 bootm: fix overflow of the noload kernel decompression buffer
+- 4956f108539 bootm: increase kernel_noload decompression headroom from 4x to 8x
+- a7ea33e3a35 test/py: test kernel_noload decompression buffer overflow
+- a57f2a31a7c Merge patch series "bootm: bound noload kernel decompression to the allocated buffer"
+
+### Conversation log
+Not already applied. Let me examine the conflict.
+
+The build fails because the patch added a duplicate `decomp_len` declaration. Let me fix that.
+
+Commit 1 done and builds. Now cherry-pick the second commit.
+
+Build passes. Now the third commit (test):
+
+Delta matches (125 insertions, same file). Now build and run the two new tests against it:
+
+The merge commit's diff is the whole series, already applied in adapted form. Resolve by keeping our versions so it becomes an empty commit (preserving the merge message):
+
+All 4 commits are in place. Final build verification:
+
+All done. Final status report:
+
+## Cherry-pick complete: branch `cherry-2ff26c1e378` (4 commits on ci/master)
+
+```
+6ff35e48057 Merge patch series "bootm: bound noload kernel decompression to the allocated buffer"
+e9af334a49e test/py: test kernel_noload decompression buffer overflow
+69ededa2b4b bootm: increase kernel_noload decompression headroom from 4x to 8x
+facc60fdae2 bootm: fix overflow of the noload kernel decompression buffer
+```
+
+**Build result:** OK — `buildman -L --board sandbox` passes cleanly after each commit and at the end (no warnings or errors).
+
+**Test result:** Both new py-tests pass, and all 25 FIT tests (`-k test_fit`) pass against the final build.
+
+**Fix-ups made** (all noted in the amended commit messages):
+
+1. **`2ff26c1e378` (overflow fix)** — ci/master has refactored the noload allocation into `resolve_os_comp_buf()` with the size in `bmi->kern_comp_size`, plus a newer `ignore_bootm_len` path. Adapted the fix to set `decomp_len = bmi->kern_comp_size` for compressed noload kernels, keeping the `ignore_bootm_len`/`bootm_len()` logic for other paths, and dropped the patch's duplicate `decomp_len` declaration (which initially broke the build).
+
+2. **`4956f108539` (4x→8x headroom)** — the sizing formula lives in `resolve_os_comp_buf()` on ci/master, so the 8x factor (and the 1G guard, now `SZ_1G / 8`) was applied there. I also restored two upstream behaviours that ci/master's refactoring had lost, without which the series is inert on the `bootm` subcommand path: fall back to the compressed image length when `bmi->os_size` is unset (otherwise `bootm loados` fails with "Kernel size is zero"), and align the buffer with `ALIGN(..., SZ_1M)` as upstream does (required by the boundary test).
+
+3. **`a7ea33e3a35` (tests)** — simple add/add conflict with ci/master's own new load-only tests at the end of the class; kept both. Delta matches the original exactly (125 insertions).
+
+4. **Merge commit** — preserved as an empty commit with the full original merge message and cherry-pick reference.
+
+**Delta notes:** commits 1 and 2 differ from the originals (7+/1- vs 9+/5-, and 6+/4- vs 3+/3-) because the surrounding code was refactored on ci/master; the intent was verified by running the series' own tests, which fail without the fix-ups and pass with them.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-07-26 (attempt 1)
+
+Branch: cherry-2ff26c1e378
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- qemu-x86_64 (sjg-lab)
+- felwinter-cb (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All five failures look lab/infrastructure-related at first glance, but let me verify the code changes can't be responsible, particularly for the qemu-x86_64 EFI selftest failure.
+
+The sandbox build passes cleanly. I've analysed all five job logs, and every failure is a lab/infrastructure issue — none is caused by the code in this MR. No changes were made and no fix branch was created.
+
+## Analysis
+
+The series (`facc60fdae2`, `69ededa2b4b`, `e9af334a49e` + empty merge commit) only touches:
+- `boot/bootm.c` — the compressed `IH_TYPE_KERNEL_NOLOAD` path in `bootm_load_os()` and `resolve_os_comp_buf()` (buffer sizing 4x→8x, bounding `decomp_len` to the allocated buffer). This code only executes when `bootm` decompresses a noload kernel.
+- `test/py/tests/test_fit.py` — new sandbox-only tests.
+
+None of the failing jobs ever reached that code path:
+
+| Job | Failure | Root cause |
+|---|---|---|
+| **edison** | `ValueError` before any test ran | labgrid place conflict: "place edison is not acquired by your user, acquired by labgrid" — runner could not acquire the board |
+| **play** | No U-Boot prompt after flashing, 20s timeout | Board bring-up failure on am62x; U-Boot proper is loaded by SPL, not `bootm`, so the series cannot affect reaching the prompt |
+| **qemu-x86_64** | `test_efi_selftest_base` failed (48 passed) | EFI selftest runs via `bootefi selftest`, which does not use the bootm noload decompression path — unrelated flaky selftest |
+| **felwinter-cb** | `SerialException: Could not open port rfc2217://kea:32861 ... Connection refused` | Serial exporter on host 'kea' died (reader thread died, then connection refused) — pure infrastructure |
+| **minnowmax** | Console timeout during `time sleep 10` after 39 tests passed | Serial console went unresponsive mid-run — lab flake, and the sleep test has nothing to do with the series |
+
+Notably, two of the failures (felwinter-cb and edison) are on the same lab infrastructure involving host 'kea'/labgrid, which suggests a lab-wide hiccup at the time of the run.
+
+## Verification
+
+- `um build sandbox` — builds cleanly on the branch (BUILD-OK)
+- Diff inspection confirms the changed code is only reachable through `bootm` with a compressed noload kernel; the new tests only run on sandbox, which is not among the failed jobs
+
+## Recommendation
+
+Retry the failed jobs — no code fix is needed for attempt 1. The `edison` labgrid place may need to be released/kicked (`labgrid-client -p edison allow ellesmere/gitlab-runner` per the log hint), and the serial exporter on 'kea' may need attention before the felwinter-cb retry.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-2ff26c1e378
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play, qemu-x86_64, felwinter-cb, minnowmax.
+
+A...
+
+### Conversation log
+## Report
+
+**No changes were made** — the single review comment is not actionable.
+
+### Analysis of the comment
+
+The comment (`project_1_bot_...`) is the bot's own **"Pipeline fix (attempt 1)" status report**, i.e. the analysis already recorded on this MR. It states its own conclusion: all five failed jobs (edison, play, qemu-x86_64, felwinter-cb, minnowmax) are lab/infrastructure failures, none caused by this series, and "no code fix is needed — retry the failed jobs". It contains no request for code changes, so there is nothing to address.
+
+### Verification
+
+- Checked out `cherry-2ff26c1e378`; the branch is intact:
+  - `6ff35e48057` merge commit + the 3 series commits (`e9af334a49e`, `69ededa2b4b`, `facc60fdae2`), plus the two pickman record commits on top
+- `buildman -L --board sandbox -w -o /tmp/pickman` — passes cleanly (1 built, 0 warnings/errors)
+
+### Actions not taken (and why)
+
+- **No fixup/amend** — nothing requested
+- **No `-v2` branch, no force push** — the tree is unchanged; pushing the identical SHA would not update the MR or trigger a new pipeline
+
+### Suggested reply to post on the MR
+
+> This comment is the pipeline-analysis report from attempt 1, not a change request, so no code changes are needed. Its conclusion stands: all five failures (edison, play, qemu-x86_64, felwinter-cb, minnowmax) are lab/infrastructure issues unrelated to this series, which only touches the bootm noload decompression path and sandbox-only tests. The branch still builds cleanly with buildman. Please retry the failed jobs; the edison labgrid place may need releasing (`labgrid-client -p edison allow ellesmere/gitlab-runner`) and the serial exporter on host 'kea' should be checked before retrying felwinter-cb.
 
 ---
 
