@@ -91357,3 +91357,43 @@ If you'd rather I force-push a no-op branch bump anyway to re-trigger the pipeli
 
 ---
 
+### Pipeline fix: 2026-07-26 (attempt 2)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+
+### Conversation log
+All four failures are infrastructure/lab issues, not code issues. No branch changes are warranted.
+
+## Report
+
+**Branch:** `cherry-37fef5ab88d` (unchanged; no `-fix2` branch created)
+
+**Branch commits (dtc/libfdt only):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+These touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` — build-time DT validation and target-side `fdt_check_full()`. None of it can plausibly affect lab hardware behaviour.
+
+**Root cause of each failure (all pre-execution, before U-Boot runs):**
+
+1. **edison** (581553) — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Pytest couldn't even start (`INTERNALERROR` in `pytest_configure` at `get_details`). Lab-scheduling contention.
+
+2. **play** (581551) — `labgrid-client: Error: place play is acquired by a different user (ellesmere/sglass)`. Same class of failure as edison — pytest exited before running any test.
+
+3. **felwinter-cb** (581543) — Flashing succeeded and coreboot began booting, but the labgrid strategy hit `TIMEOUT` waiting for the U-Boot prompt, then the RFC2217 serial to `kea:56611` came back `Connection refused` (`serialdriver.py` `_reconnect` failed). Reported as `Lab failure: Marking connection bad`. Serial-server / hardware-side issue.
+
+4. **vf2** (581535) — `dwmci_s: Response Timeout` and `BOOT fail, Error is 0xffffffff` from the StarFive boot ROM before U-Boot ever runs. eMMC read failure at the ROM stage; also ended with `Lab failure: Marking connection bad`.
+
+**Verification:** Sandbox still builds cleanly (already confirmed in attempt 1); the code on this branch is unchanged since then. Failure signatures are the same category (all lab-side) as attempt 1's edison/play/felwinter-cb/vf2 failures.
+
+**Action taken:** None. Per the task's guidance for infrastructure/transient failures, no fix branch was created. Recommend simply re-triggering these four jobs once the boards are free and the serial server for kea is healthy.
+
+---
+
