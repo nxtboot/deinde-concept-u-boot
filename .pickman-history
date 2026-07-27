@@ -91277,3 +91277,48 @@ All 3 cherry-picks complete. Final status:
 
 ---
 
+### Pipeline fix: 2026-07-26 (attempt 1)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+All 5 job failures appear to be infrastructure/lab issues, not code issues. Let me confirm this by examining the branch commits.
+
+The failures are all infrastructure/transient lab issues, unrelated to the branch's dtc/libfdt code changes. Let me verify with a quick sandbox build to confirm the code itself is clean.
+
+Sandbox builds cleanly. No code fix is needed — all 5 failures are infrastructure/transient lab issues unrelated to the branch's code changes.
+
+## Report
+
+**Branch commits (excluding pickman record):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+All three touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/`, and related Makefiles — build-time DT validation code and target libfdt's `fdt_check_full()`. None of this could plausibly cause the observed lab-side failures.
+
+**Analysis of each failure:**
+
+1. **edison** — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Board locked by another session before the runner could acquire it. Pure lab-scheduling contention.
+
+2. **play** — `labgrid-client: Error: place play is acquired by a different user (ellesmere/sglass)`. Same class of issue: board acquired by another user.
+
+3. **felwinter-cb** — Board didn't reach the U-Boot prompt after flashing ("No U-Boot prompt; resetting for one more attempt"), then the job hit the 10-minute runner timeout. Lab/hardware unresponsive — nothing in the flashed U-Boot output to indicate a code failure.
+
+4. **vf2** — `dwmci_s: Response Timeout` / `BOOT fail,Error is 0xffffffff` from the boot ROM before U-Boot runs. eMMC/SD read failure at the ROM stage; U-Boot code was never executed.
+
+5. **pine64** — Only test failure was `test_dm_drivers` due to corrupted serial output (`'bo��std_drv'` instead of `'bootstd_drv'`). Serial line noise / UART corruption, not a real driver-model discrepancy. 41 tests otherwise passed.
+
+**Verification:** `um build sandbox` completes cleanly — no compile-time issues from the libfdt resync.
+
+**Action taken:** None. Per instructions, infrastructure/transient failures are reported without changes, so no `cherry-37fef5ab88d-fix1` branch was created. The workspace is left on `cherry-37fef5ab88d` unchanged. Recommend re-running the lab jobs once the boards are free.
+
+---
+
