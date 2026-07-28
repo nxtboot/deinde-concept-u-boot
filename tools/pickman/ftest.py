@@ -7557,6 +7557,81 @@ class TestStatus(unittest.TestCase):
         self.assertEqual(ret, 1)
         self.assertIn("Source 'us/nope' not found", stderr.getvalue())
 
+    def _open_db(self):
+        """Open the test database, ready for use"""
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        return dbs
+
+    def _add_conflicts(self, rows):
+        """Add parked-conflict commits to the test database
+
+        Args:
+            rows (list of tuple): (chash, subject) pairs, inserted in order so
+                the first gets the lowest id
+        """
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        sid = dbs.source_get_id('us/master')
+        for chash, subject in rows:
+            dbs.commit_add(chash, sid, subject, 'Me', status='conflict')
+        dbs.commit()
+        dbs.close()
+        database.Database.instances.clear()
+
+    def test_status_parked_oldest_first(self):
+        """Test that status_parked returns parked conflicts oldest first"""
+        self._add_conflicts([('a' * 40, 'First commit'),
+                             ('b' * 40, 'Merge a series'),
+                             ('c' * 40, 'Third commit')])
+        dbs = self._open_db()
+        parked = control.status_parked(dbs, dbs.source_get_id('us/master'))
+        self.assertEqual([p[1] for p in parked],
+                         ['a' * 40, 'b' * 40, 'c' * 40])
+        self.assertEqual(parked[0][2], 'First commit')
+
+    def test_parked_warning(self):
+        """Test the one-line parked-conflict warning"""
+        self.assertIsNone(control.parked_warning('us/next', []))
+        warn = control.parked_warning(
+            'us/next', [(1, 'a', 'A fix'), (2, 'b', 'Merge a series')])
+        self.assertIn('2 parked conflict(s) for us/next', warn)
+        self.assertIn('1 merges', warn)
+        self.assertIn("run 'pickman status us/next'", warn)
+
+    def test_status_shows_parked(self):
+        """Test that status makes the parked-conflict backlog loud"""
+        self._add_conflicts([('a' * 40, 'An old fix'),
+                             ('b' * 40, 'Merge a series')])
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('Parked conflicts (tried, not landed):', out)
+        self.assertIn('2 commit(s) parked as conflict, 1 of them merges', out)
+        self.assertIn('An old fix', out)
+
+    def test_status_no_parked(self):
+        """Test that the parked section is absent when nothing is parked"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        self.assertEqual(ret, 0)
+        self.assertNotIn('Parked conflicts', stdout.getvalue())
+
+    def test_step_warns_parked(self):
+        """Test that a step run ends with the parked-conflict warning"""
+        self._add_conflicts([('a' * 40, 'A fix'), ('b' * 40, 'Merge series')])
+        dbs = self._open_db()
+        args = argparse.Namespace(cmd='step', source='us/master')
+        with mock.patch.object(control, '_do_step', return_value=0):
+            with terminal.capture() as (_, stderr):
+                ret = control.do_step(args, dbs)
+        self.assertEqual(ret, 0)
+        self.assertIn('2 parked conflict(s) for us/master', stderr.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()

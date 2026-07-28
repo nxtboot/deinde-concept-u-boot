@@ -1209,12 +1209,52 @@ def status_backlog(last_commit, source):
     return merges, commits
 
 
+def status_parked(dbs, source_id):
+    """Get the commits parked as conflicts for a source, oldest first
+
+    A parked conflict is a commit which pickman tried to cherry-pick, hit a
+    conflict on and moved past.  Its change is then missing from the
+    downstream branch until something else applies it - silently, with no
+    merge request and no CI failure - so the backlog is worth surfacing.  The
+    commit id stands in for age, since there is no timestamp: a lower id was
+    added earlier.
+
+    Args:
+        dbs (Database): Database instance
+        source_id (int): Source branch id
+
+    Return:
+        list of tuple: (id, chash, subject) for each parked commit, oldest
+            (lowest id) first
+    """
+    recs = dbs.commit_get_by_source(source_id, 'conflict')
+    return sorted((rec[0], rec[1], rec[4]) for rec in recs)
+
+
+def parked_warning(source, parked):
+    """Build a one-line warning about parked conflicts
+
+    Args:
+        source (str): Source branch name
+        parked (list): Result from status_parked()
+
+    Return:
+        str: A short warning, or None if nothing is parked
+    """
+    if not parked:
+        return None
+    merges = sum(1 for _, _, subj in parked if subj.startswith('Merge'))
+    return (f'{len(parked)} parked conflict(s) for {source} ({merges} '
+            f"merges) not landed - run 'pickman status {source}' to review")
+
+
 def do_status(args, dbs):
     """Summarise the downstream branch against the upstream source
 
-    Reports two backlogs: the upstream series not yet brought in, and the
-    drift in the downstream branch which should be resynced to upstream.  The
-    refs are read as they are; run a fetch first for an up-to-date picture.
+    Reports the upstream series not yet brought in, the commits parked as
+    conflicts and so silently missing, and the drift in the downstream branch
+    which should be resynced to upstream.  The refs are read as they are; run
+    a fetch first for an up-to-date picture.
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch' and
@@ -1245,6 +1285,27 @@ def do_status(args, dbs):
     tout.info(f'  upstream tip:    {tip}')
     tout.info(f'  {merges} series remaining ({commits} non-merge commits)')
     tout.info('')
+
+    # Parked conflicts: commits pickman tried, conflicted on and moved past.
+    # Each one's change is missing until something applies it, so make the
+    # backlog loud rather than let it sit silently in the database.  This is
+    # shown before the drift scan, which can take minutes
+    source_id = dbs.source_get_id(source)
+    parked = status_parked(dbs, source_id) if source_id else []
+    if parked:
+        parked_merges = sum(1 for _, _, subj in parked
+                            if subj.startswith('Merge'))
+        tout.info('Parked conflicts (tried, not landed):')
+        tout.info(f'  {len(parked)} commit(s) parked as conflict, '
+                  f'{parked_merges} of them merges')
+        tout.info('  each parked change is silently missing until something '
+                  'applies it')
+        tout.info('  oldest still outstanding:')
+        for cid, chash, subj in parked[:5]:
+            tout.info(f'    #{cid} {chash[:11]} {subj[:55]}')
+        if len(parked) > 5:
+            tout.info(f'    ... and {len(parked) - 5} more')
+        tout.info('')
 
     # Cleanup backlog: drift in the downstream branch, to resync to upstream
     info = drift_collect(dbs, source, branch, deep)
@@ -3448,10 +3509,20 @@ def do_step(args, dbs):
         int: 0 on success, 1 on failure
     """
     try:
-        return _do_step(args, dbs)
+        ret = _do_step(args, dbs)
     except requests.exceptions.ConnectionError as exc:
         tout.error(f'step failed with connection error: {exc}')
         return 1
+
+    # Surface the parked-conflict backlog at the end of every run, so it does
+    # not sit silently in the database.  This is a nicety, so it must never
+    # break the step itself
+    source_id = dbs.source_get_id(args.source) if dbs else None
+    if source_id:
+        warn = parked_warning(args.source, status_parked(dbs, source_id))
+        if warn:
+            tout.warning(warn)
+    return ret
 
 
 def _do_step(args, dbs):

@@ -625,12 +625,20 @@ much drift it carries::
 
     ./tools/pickman/pickman status us/master
 
-This reports two backlogs: the upstream series (first-parent merges) not yet
-cherry-picked, and the drift which should be resynced to upstream, including
-what fraction of the divergence from upstream that drift represents.  It reads
-the refs as they are, so fetch first for an up-to-date picture.  The drift
-count is the accurate, slower one by default (see below); pass ``-s`` for a
-quick estimate, or ``-b`` to name a different downstream branch.
+This reports three things: the upstream series (first-parent merges) not yet
+cherry-picked; the commits parked as conflicts; and the drift which should be
+resynced to upstream, including what fraction of the divergence from upstream
+that drift represents.  It reads the refs as they are, so fetch first for an
+up-to-date picture.  The drift count is the accurate, slower one by default
+(see below); pass ``-s`` for a quick estimate, or ``-b`` to name a different
+downstream branch.
+
+A parked conflict is a commit which pickman tried to cherry-pick, hit a
+conflict on and moved past.  Its change is then missing from the downstream
+branch until something else applies it - with no merge request and no CI
+failure - so a later commit which merely adjusts that change can land without
+it, leaving the branch subtly wrong.  Because this is easy to miss, the parked
+backlog is also printed at the end of every ``step`` and ``poll`` run.
 
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
