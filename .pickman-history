@@ -91604,3 +91604,81 @@ No unexpected delta drift; the rebase only re-based onto newer upstream, no cont
 
 ---
 
+## 2026-07-28: us/master
+
+Branch: cherry-e50ee1acd4a
+
+Commits:
+- e50ee1acd4a boot: fit: fix FIT verification in SPL
+- 2a70a7e2252 spl: fit: fix loadables load under sandbox
+- fffbb6f428f spl: fit: rework the FDT load hack
+- cd9c7bc3b4d spl: fit: drop the 'standalone' load attempt
+- 99b9223948a spl: fit: use CONFIG_IS_ENABLED whenever possible
+- e41a770f380 test: spl: add unit test for the "full" FIT loader
+- 298d44464dc Merge patch series "Fixes, cleanup and a test for the SPL FIT "full" loader"
+
+### Conversation log
+I'll start by checking the repository state and then proceed with the cherry-picks.
+
+Repository is clean (only an untracked file). Let me verify the commits exist in us/master and create the branch.
+
+All commits exist. Now let me create the branch.
+
+There's a leftover rebase in progress from a previous session. I need to abort it to get to a clean state before my task.
+
+Clean now. Let me create the branch.
+
+This is a leftover working-tree change from the aborted rebase. Let me discard it to get a clean state.
+
+Branch created on ci/master. Now let me cherry-pick the first commit.
+
+Identical delta. Now commit 2.
+
+Identical. Commit 3.
+
+Identical. Commit 4.
+
+Identical. Commit 5.
+
+Identical. Commit 6.
+
+Identical. Now the merge commit (7) using -m 1 --allow-empty.
+
+The merge commit is empty (all content already applied). I'll commit it with --allow-empty to preserve history.
+
+All 7 cherry-picks complete. Let me verify the log and run the build.
+
+All 7 commits present. Now the final build.
+
+All cherry-picks completed successfully. Here's the final status.
+
+## Summary
+
+**Branch:** `cherry-e50ee1acd4a` (based on `ci/master` at `cdda8cb8580`)
+
+All 7 commits were cherry-picked in order:
+
+| # | Hash | Subject | Delta |
+|---|------|---------|-------|
+| 1 | 8153029ca69 | boot: fit: fix FIT verification in SPL | ✅ identical |
+| 2 | aba1754ec3a | spl: fit: fix loadables load under sandbox | ✅ identical |
+| 3 | 5a06f319be3 | spl: fit: rework the FDT load hack | ✅ identical |
+| 4 | 89cbbedb0f1 | spl: fit: drop the 'standalone' load attempt | ✅ identical |
+| 5 | 030d60de2b9 | spl: fit: use CONFIG_IS_ENABLED whenever possible | ✅ identical |
+| 6 | 99f79f7ce49 | test: spl: add unit test for the "full" FIT loader | ✅ identical |
+| 7 | 02642662690 | Merge patch series "...SPL FIT 'full' loader" | empty (expected) |
+
+**Build result:** OK — `buildman -L --board sandbox` completed cleanly, no warnings or errors.
+
+**Fix-ups made:** None to the cherry-picks themselves. Every regular commit's file/line delta matched the original exactly.
+
+**Concerning deltas:** None. All 6 content commits were byte-for-byte equivalent to the originals.
+
+**Notes:**
+- Commit 7 (the merge commit) came out empty because all its content was already applied by commits 1–6. Per instructions I preserved it with `git commit --allow-empty --no-edit` to keep the merge message/history.
+- Before starting I had to clean up a leftover interactive rebase and an uncommitted `.pickman-history` change from a prior session (`git rebase --abort` + `git checkout -- .pickman-history`) to reach a clean state. This did not affect the cherry-picks.
+
+The branch is ready for pushing and has **not** been merged into any other branch.
+
+---
+
