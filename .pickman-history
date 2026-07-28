@@ -92087,3 +92087,52 @@ Push succeeded. Rebase complete.
 
 ---
 
+### Review: 2026-07-28
+
+Branch: cherry-647990c5284
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the current state of the branch and the target.
+
+The branch is 7 ahead, 12 behind. Let me checkout and rebase.
+
+Now rebase onto ci/master:
+
+Rebase succeeded cleanly. Now verify per-commit deltas match:
+
+The grep matched the pickman-history commit. Let me compare against the actual hashes:
+
+All four deltas match the pre-rebase stats exactly. The merge commit is preserved. Now build:
+
+Build clean (1/1 built, no warnings/errors). Now create the local `-v4` branch and push:
+
+Push succeeded. Rebase complete.
+
+## Report
+
+**MR:** !1204 (branch `cherry-647990c5284`) — rebased onto latest `ci/master`.
+
+### Actions
+1. Checked out `cherry-647990c5284` (was at `de11ef45d01`/`ec00ee37768`, 7 ahead / 12 behind `ci/master` at `439bfa30f6d`).
+2. `git rebase --keep-empty ci/master` — succeeded cleanly, no conflicts. All 7 commits (5 cherry-picks/merge + 2 pickman records) replayed.
+3. Verified per-commit deltas match originals exactly:
+   - `0bf2933c3f6` "add TLB debug helper" — `cache_v8.c +60`, `mmu.h +7` ✓
+   - `d020eee70dc` "dumper shows FAULT maps" — `cache_v8.c ±2` ✓
+   - `c02a8490924` "commonize set_one_region() loop" — `cache_v8.c +28/-66` ✓
+   - `56b0cff10df` "fix and optimise unmapping regions" — `cache_v8.c +14/-4` ✓
+   - Merge `8f65ae374d6` — empty merge preserved by `--keep-empty` ✓
+4. Build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings/errors.
+5. Created local branch `cherry-647990c5284-v4` at rebased tip `dff676b77ca`.
+6. Force-pushed to remote `cherry-647990c5284`: `de11ef45d01…dff676b77ca` — GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`439bfa30f6d`). No conflicts; all 5 cherry-picks (plus the empty merge, preserved via `--keep-empty`) replayed byte-identical to before. Sandbox build clean.
+>
+> Note the standing diagnosis on the ARM64 boot failures (jetson-nano, play, rock5b) is unchanged — those are the real upstream regression from `6468ca13ffd` (this MR's `56b0cff10df`), not a rebase-fidelity issue. Group-A infra failures should hopefully clear on this pipeline run.
+
+---
+
