@@ -91553,3 +91553,54 @@ If you'd prefer I force-push a no-op bump anyway to re-trigger the pipeline, say
 
 ---
 
+### Review: 2026-07-28
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the current state of the repository and the branch.
+
+The branch is behind ci/master (merge-base 0dadb009 vs ci/master 439bfa30). Let me record the pre-rebase deltas for the real commits, then rebase.
+
+The rebase completed cleanly with no conflicts. Let me verify the deltas match.
+
+Deltas match exactly (106/95, +2, empty merge). Now let me verify the build.
+
+Build passed (1 built, no errors/warnings). Now let me create the local -v2 branch and force-push to the remote.
+
+The rebase and push are complete. Here is my report.
+
+## Report — MR !1205 rebase (`cherry-37fef5ab88d`)
+
+**Action taken:** Rebased the branch onto latest `ci/master`, verified deltas and build, and force-pushed to update the MR.
+
+### Rebase
+- Rebased `cherry-37fef5ab88d` onto `ci/master` (`439bfa30f6d`) with `git rebase --keep-empty`.
+- **No conflicts** — all 11 commits (3 real + 8 pickman records) replayed cleanly.
+- The empty merge commit `15dc870df15` ("Merge patch series") was preserved as expected.
+
+### Delta verification (pre- vs post-rebase — identical)
+| Commit | Change |
+|--------|--------|
+| Resync `fdt_check_full()` | 106 insertions / 95 deletions (9 files) — unchanged |
+| Introduce `can_assume` check | +2 in `fdt_check.c` — unchanged |
+| Merge patch series | empty — unchanged |
+
+No unexpected delta drift; the rebase only re-based onto newer upstream, no content changes.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 errors, 0 warnings**.
+
+### Branches / push
+- Local `-v2` branch created: `cherry-37fef5ab88d-v2` (post-rebase HEAD `3b36d6a0b77`).
+- Force-pushed to the original remote branch `cherry-37fef5ab88d` on `ci` (`36ad07d16dc…3b36d6a0b77`), which auto-triggers a fresh MR pipeline.
+- MR title unchanged.
+
+### Suggested reply to post on the MR
+> Rebased onto the latest target branch (`ci/master` `439bfa30f6d`). The rebase applied cleanly with no conflicts, the empty merge commit was preserved, and all three real commits kept identical deltas (Resync 106/95, can_assume +2, merge empty). Sandbox builds cleanly with buildman. Force-pushed to re-trigger the pipeline.
+
+---
+
