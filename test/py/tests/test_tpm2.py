@@ -60,6 +60,15 @@ def force_init(ubman, force=False):
             ubman.run_command('tpm2 clear TPM2_RH_PLATFORM')
         ubman.run_command('echo --- end of init ---')
 
+def reset_tpm(ubman):
+    """Reset the TPM so that the next test starts from a clean slate.
+
+    There is no way to reset the TPM other than restarting the board, so a
+    test which leaves a PCR extended must do that before it finishes.
+    """
+    ubman.restart_uboot()
+    force_init(ubman)
+
 @pytest.mark.buildconfigspec('cmd_tpm_v2')
 def test_tpm2_autostart(ubman):
     """Init the software stack to use TPMv2 commands."""
@@ -250,6 +259,9 @@ def test_tpm2_pcr_extend(ubman):
     str = re.findall(r'\d+ known updates', read_pcr)[0]
     new_updates = int(re.findall(r'\d+', str)[0])
     assert (updates + 2) == new_updates
+
+    # PCR 10 is no longer zero, which the tests above rely on
+    reset_tpm(ubman)
 
 @pytest.mark.buildconfigspec('cmd_tpm_v2')
 def test_tpm2_cleanup(ubman):
