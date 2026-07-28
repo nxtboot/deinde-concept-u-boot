@@ -80,6 +80,9 @@ def add_main_commands(subparsers):
     drift_cmd.add_argument('-s', '--shallow', action='store_true',
                            help='Skip blaming files which downstream commits '
                                 'touch; faster but misses drift inside them')
+    drift_cmd.add_argument('--upstream', metavar='COMMIT',
+                           help='Compare against this upstream commit instead '
+                                'of the tracked source position (read-only)')
     drift_cmd.add_argument('-d', '--diff', action='store_true',
                            help='Show the drift as a patch')
     drift_cmd.add_argument('-l', '--list', action='store_true',
@@ -171,6 +174,9 @@ def add_main_commands(subparsers):
                             help='Quick drift estimate: skip blaming files '
                                  'which downstream commits touch (less '
                                  'accurate)')
+    status_cmd.add_argument('--upstream', metavar='COMMIT',
+                            help='Compare against this upstream commit instead '
+                                 'of the tracked source position (read-only)')
 
     step_cmd = subparsers.add_parser('step',
                                      help='Create MR if none pending')

@@ -857,7 +857,7 @@ def drift_blame(branch, path, down_hashes):
     return blame
 
 
-def drift_collect(dbs, source, branch, deep=False):
+def drift_collect(dbs, source, branch, deep=False, base=None):
     """Compare the downstream tree with upstream and classify every delta
 
     Args:
@@ -866,14 +866,20 @@ def drift_collect(dbs, source, branch, deep=False):
         branch (str): Downstream branch to examine, e.g. 'ci/master'
         deep (bool): Blame the files which downstream commits touch, to find
             drift inside them; otherwise assume such files are wholly intended
+        base (str): Upstream commit to compare against, overriding the tracked
+            source position; None to use the position from the database.  An
+            override lets drift be computed for a past point, since it makes
+            the result a pure function of (branch, base)
 
     Return:
         DriftInfo: Result of the comparison, or None if the source is unknown
     """
-    base = dbs.source_get(source)
-    if not base:
-        tout.error(f"Source '{source}' not found - use 'pickman add-source'")
-        return None
+    if base is None:
+        base = dbs.source_get(source)
+        if not base:
+            tout.error(f"Source '{source}' not found - use "
+                       "'pickman add-source'")
+            return None
 
     accepts = drift_read_accepts()
     down_hashes, down_paths = drift_downstream_commits(source, branch)
@@ -1013,18 +1019,48 @@ def drift_show_report(info, show_list, show_diff):
     return 1
 
 
+def resolve_compare(args):
+    """Work out the downstream branch and upstream base for a comparison
+
+    Applies the --upstream override, which is read-only and does not touch the
+    database.  It lets drift be computed against a chosen upstream commit - for
+    example a reconstructed historical position - rather than the tracked one.
+
+    Args:
+        args (Namespace): Parsed arguments, read for 'branch' and 'upstream'
+
+    Return:
+        tuple:
+            str: Downstream branch to examine
+            str: Upstream commit to compare against, or None to use the
+                tracked source position
+
+    Raises:
+        ValueError: If an upstream commit is given which does not resolve
+    """
+    base = getattr(args, 'upstream', None)
+    if base and not gitutil.ref_exists(f'{base}^{{commit}}'):
+        raise ValueError(f"Upstream commit '{base}' not found")
+    return args.branch, base
+
+
 def do_drift(args, dbs):
     """Report deltas from upstream which no downstream commit accounts for
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'shallow',
-            'list' and 'diff' attributes
+            'list', 'diff' and 'upstream' attributes
         dbs (Database): Database instance
 
     Return:
         int: 0 if the tree has no drift, 1 if it has or on error
     """
-    info = drift_collect(dbs, args.source, args.branch, not args.shallow)
+    try:
+        branch, base = resolve_compare(args)
+    except ValueError as exc:
+        tout.error(str(exc))
+        return 1
+    info = drift_collect(dbs, args.source, branch, not args.shallow, base=base)
     if not info:
         return 1
     return drift_show_report(info, args.list, args.diff)
@@ -1257,18 +1293,25 @@ def do_status(args, dbs):
     a fetch first for an up-to-date picture.
 
     Args:
-        args (Namespace): Parsed arguments with 'source', 'branch' and
-            'shallow'
+        args (Namespace): Parsed arguments with 'source', 'branch', 'shallow'
+            and 'upstream'
         dbs (Database): Database instance
 
     Return:
         int: 0 on success, 1 if the source is unknown
     """
     source = args.source
-    branch = args.branch
     deep = not args.shallow
 
-    last_commit = dbs.source_get(source)
+    try:
+        branch, base = resolve_compare(args)
+    except ValueError as exc:
+        tout.error(str(exc))
+        return 1
+
+    # An override supplies the base directly; otherwise use the tracked
+    # position.  Everything below compares against this same base
+    last_commit = base or dbs.source_get(source)
     if not last_commit:
         tout.error(f"Source '{source}' not found - use 'pickman add-source'")
         return 1
@@ -1308,7 +1351,7 @@ def do_status(args, dbs):
         tout.info('')
 
     # Cleanup backlog: drift in the downstream branch, to resync to upstream
-    info = drift_collect(dbs, source, branch, deep)
+    info = drift_collect(dbs, source, branch, deep, base=last_commit)
     if not info:
         return 1
     states = drift_state_counts(info)

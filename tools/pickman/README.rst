@@ -640,6 +640,20 @@ failure - so a later commit which merely adjusts that change can land without
 it, leaving the branch subtly wrong.  Because this is easy to miss, the parked
 backlog is also printed at the end of every ``step`` and ``poll`` run.
 
+By default the comparison uses the tracked source position as the upstream
+side.  ``--upstream COMMIT`` overrides it, read-only, so drift becomes a
+function of the (branch, upstream) pair and can be evaluated for a past point
+by pairing it with a rewound ``-b``::
+
+    ./tools/pickman/pickman status us/master \
+        -b $(git rev-list -1 --before=2026-04-27 ci/master) \
+        --upstream <position on 2026-04-27> -s
+
+The upstream position for a past date is not derivable from cherry-pick
+trailers alone - picks are not a clean prefix of upstream, so the trailers do
+not pin the frontier - so supply the historical position from wherever it is
+reconstructed (e.g. the ``cherry-<hash>`` merge history).
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -654,6 +668,8 @@ Options:
 - ``-s`` skip blaming the files which downstream commits have touched; faster
   but misses drift inside them
 - ``-b`` downstream branch to examine (default: ci/master)
+- ``--upstream COMMIT`` compare against this upstream commit rather than the
+  tracked source position (read-only), e.g. to back-fill historical drift
 
 By default pickman blames those touched files, which finds drift inside them
 but takes a few minutes on a large tree.  The exit code is 1 if there is any

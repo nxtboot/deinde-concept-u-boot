@@ -7259,6 +7259,9 @@ class TestDriftCommands(unittest.TestCase):
         args = list(pipe_list[0])[1:]
         if args[0] == 'merge-base':
             return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'rev-parse':
+            # An explicit --upstream commit is validated with rev-parse
+            return command.CommandResult(return_code=0)
         if args[0] == 'log':
             if '--grep' in args:
                 return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
@@ -7277,7 +7280,8 @@ class TestDriftCommands(unittest.TestCase):
         defaults to shallow even though the command line defaults to deep.
         """
         args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
-                'shallow': True, 'diff': False, 'list': False}
+                'shallow': True, 'diff': False, 'list': False,
+                'upstream': None}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7299,6 +7303,28 @@ class TestDriftCommands(unittest.TestCase):
             blame = control.drift_blame('ci/master', 'drivers/video/vid.c',
                                         {DRIFT_DOWN})
         self.assertEqual(blame, {13: DRIFT_DOWN})
+
+    def test_collect_base_from_db(self):
+        """Test that with no override the tracked position is the base"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        self.assertEqual(info.base, 'a' * 40)
+
+    def test_collect_base_override(self):
+        """Test that an explicit base overrides the tracked position"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master', base='b' * 40)
+        self.assertEqual(info.base, 'b' * 40)
+
+    def test_report_upstream_override(self):
+        """Test that --upstream sets the comparison base in the report"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args(upstream='b' * 40))
+        self.assertEqual(ret, 1)
+        self.assertIn('Comparing with upstream ' + 'b' * 12,
+                      stdout.getvalue())
 
     def test_report(self):
         """Test the report: a file no downstream commit touched is drift"""
@@ -7494,7 +7520,7 @@ class TestStatus(unittest.TestCase):
         even though the command line defaults to deep.
         """
         args = {'cmd': 'status', 'source': 'us/master', 'branch': 'ci/master',
-                'shallow': True}
+                'shallow': True, 'upstream': None}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7539,6 +7565,35 @@ class TestStatus(unittest.TestCase):
             self.assertFalse(pickman.parse_args([cmd, 'us/master']).shallow)
             self.assertTrue(
                 pickman.parse_args([cmd, 'us/master', '-s']).shallow)
+
+    def test_parse_upstream(self):
+        """Test that --upstream parses on drift and status"""
+        for cmd in ('drift', 'status'):
+            args = pickman.parse_args([cmd, 'us/master', '--upstream', 'abc'])
+            self.assertEqual(args.upstream, 'abc')
+            self.assertIsNone(pickman.parse_args([cmd, 'us/master']).upstream)
+
+    def test_resolve_compare_none(self):
+        """Test that with no override the base is None (use the database)"""
+        with terminal.capture():
+            branch, base = control.resolve_compare(self._args())
+        self.assertEqual(branch, 'ci/master')
+        self.assertIsNone(base)
+
+    def test_resolve_compare_upstream(self):
+        """Test that a valid --upstream is passed through"""
+        command.TEST_RESULT = command.CommandResult(return_code=0)
+        with terminal.capture():
+            branch, base = control.resolve_compare(self._args(upstream='abc1'))
+        self.assertEqual(base, 'abc1')
+        self.assertEqual(branch, 'ci/master')
+
+    def test_resolve_compare_bad_upstream(self):
+        """Test that an unresolvable --upstream is an error"""
+        command.TEST_RESULT = command.CommandResult(return_code=1)
+        with terminal.capture():
+            with self.assertRaises(ValueError):
+                control.resolve_compare(self._args(upstream='nope'))
 
     def test_drift_percent(self):
         """Test the drift percentage of the divergence"""
