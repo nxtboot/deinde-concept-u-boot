@@ -11,6 +11,9 @@
 #ifndef _DT_BINDINGS_INTEL_ADL_GPIO_H
 #define _DT_BINDINGS_INTEL_ADL_GPIO_H
 
+/* Sideband port ID of GPIO community 0 (GPP_B, T, A) */
+#define PID_GPIOCOM0	0x6e
+
 /* Sideband port ID of GPIO community 4 (GPP_C, F, E) */
 #define PID_GPIOCOM4	0x6a
 

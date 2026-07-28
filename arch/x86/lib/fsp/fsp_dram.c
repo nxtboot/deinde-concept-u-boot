@@ -13,8 +13,36 @@
 #include <asm/mtrr.h>
 #include <asm/post.h>
 #include <dm/ofnode.h>
+#include <linux/log2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+/**
+ * add_bank_mtrr() - Request write-back caching for a memory bank
+ *
+ * The variable MTRRs are a scarce resource: programming an exact
+ * covering of an arbitrary bank size can consume all of them (a bank of
+ * 6GB - 4MB needs nine entries), leaving none for the rest of the boot,
+ * in particular for the FSP's flash-caching setup during silicon init.
+ * So cover the bank with at most two entries: the largest power of two
+ * that fits, then the remainder rounded up to a power of two. Any
+ * overshoot lands in the address hole above the bank, where nothing
+ * decodes, so marking it cacheable is harmless
+ *
+ * @start: Bank start address, aligned to the largest chunk used
+ * @size: Bank size
+ */
+static void add_bank_mtrr(u64 start, u64 size)
+{
+	u64 chunk;
+
+	chunk = 1ULL << (fls64(size) - 1);
+	mtrr_add_request(MTRR_TYPE_WRBACK, start, chunk);
+	size -= chunk;
+	if (size)
+		mtrr_add_request(MTRR_TYPE_WRBACK, start + chunk,
+				 roundup_pow_of_two(size));
+}
 
 int fsp_scan_for_ram_size(void)
 {
@@ -86,15 +114,23 @@ int dram_init_banksize(void)
 		    res_desc->type != RES_MEM_RESERVED)
 			continue;
 		if (res_desc->phys_start < (1ULL << 32)) {
-			mtrr_top = max(mtrr_top,
-				       res_desc->phys_start + res_desc->len);
+			/*
+			 * Only count DRAM (which sits below the PCI ECAM
+			 * region): the HOBs also describe reserved device
+			 * ranges near the top of the 32-bit space, and
+			 * including those would extend the cacheable
+			 * region over the PCI ECAM and MMIO windows
+			 */
+			if (res_desc->phys_start < CONFIG_PCIE_ECAM_BASE)
+				mtrr_top = max(mtrr_top,
+					       res_desc->phys_start +
+						       res_desc->len);
 		} else {
 			gd->bd->bi_dram[bank].start = res_desc->phys_start;
 			gd->bd->bi_dram[bank].size = res_desc->len;
 			if (update_mtrr)
-				mtrr_add_request(MTRR_TYPE_WRBACK,
-						 res_desc->phys_start,
-						 res_desc->len);
+				add_bank_mtrr(res_desc->phys_start,
+					      res_desc->len);
 			log_debug("ram %llx %llx\n",
 				  gd->bd->bi_dram[bank].start,
 				  gd->bd->bi_dram[bank].size);
@@ -107,10 +143,16 @@ int dram_init_banksize(void)
 
 	/*
 	 * Set up an MTRR to the top of low, reserved memory. This is necessary
-	 * for graphics to run at full speed in U-Boot.
+	 * for graphics to run at full speed in U-Boot. On Alder Lake this
+	 * must be left out: with low memory marked write-back the FSP's
+	 * TempRamExit hangs during its cache reconfiguration, whatever the
+	 * exact coverage (a 2GB clamp and an uncached carve of the legacy
+	 * VGA hole were tried). Low memory was never actually covered there
+	 * anyway: the high banks used to consume every request slot, so
+	 * this request was silently dropped
 	 */
-	if (update_mtrr)
-		mtrr_add_request(MTRR_TYPE_WRBACK, 0, mtrr_top);
+	if (update_mtrr && !IS_ENABLED(CONFIG_INTEL_ALDERLAKE))
+		add_bank_mtrr(0, mtrr_top);
 
 	return 0;
 }
@@ -147,6 +189,24 @@ unsigned int install_e820_map(unsigned int max_entries,
 	entries[num_entries].size = CONFIG_PCIE_ECAM_SIZE;
 	entries[num_entries].type = E820_RESERVED;
 	num_entries++;
+
+	/*
+	 * Mark the ACPI tables. Without this they sit in usable RAM: the
+	 * kernel parses them early, then allocates over them, and by the
+	 * time it loads the namespace the DSDT is corrupted, failing with
+	 * AE_NO_ACPI_TABLES. The kernel resolves the overlap with the
+	 * system-memory entry by taking the higher type
+	 */
+	if (IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE) &&
+	    gd->arch.table_end_high > gd->arch.table_start_high) {
+		struct e820_entry *entry = &entries[num_entries];
+
+		entry->addr = gd->arch.table_start_high;
+		entry->size = gd->arch.table_end_high -
+			gd->arch.table_start_high;
+		entry->type = E820_ACPI;
+		num_entries++;
+	}
 
 	if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)) {
 		ulong stack_size;

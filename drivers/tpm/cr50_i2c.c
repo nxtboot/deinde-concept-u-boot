@@ -835,8 +835,8 @@ static int cr50_i2c_of_to_plat(struct udevice *dev)
 	upriv->duration_ms[TPM_LONG] = LONG_TIMEOUT_MS;
 	upriv->retry_time_ms = TPM_TIMEOUT_MS;
 
-	upriv->pcr_count = 32;
-	upriv->pcr_select_min = 2;
+	upriv->pcr_count = 24;
+	upriv->pcr_select_min = 3;
 
 	/* Optional GPIO to track when cr50 is ready */
 	ret = irq_get_by_index(dev, 0, &irq);

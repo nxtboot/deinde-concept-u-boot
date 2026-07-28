@@ -19,12 +19,17 @@
  * struct acpi_gpe_priv - private driver information
  *
  * @acpi_base: Base I/O address of ACPI registers
+ * @gpe0_sts: Offset of the GPE0 status registers within the ACPI block
  */
 struct acpi_gpe_priv {
 	ulong acpi_base;
+	uint gpe0_sts;
 };
 
-#define GPE0_STS(x)		(0x20 + ((x) * 4))
+/* Default offset of the GPE0 status registers, used by most SoCs */
+#define GPE0_STS_DEFAULT	0x20
+
+#define GPE0_STS(priv, x)	((priv)->gpe0_sts + ((x) * 4))
 
 static int acpi_gpe_read_and_clear(struct irq *irq)
 {
@@ -43,9 +48,9 @@ static int acpi_gpe_read_and_clear(struct irq *irq)
 		if (get_timer(start) > 1)
 			return ret;
 
-		sts = inl(priv->acpi_base + GPE0_STS(bank));
+		sts = inl(priv->acpi_base + GPE0_STS(priv, bank));
 		if (sts & mask) {
-			outl(mask, priv->acpi_base + GPE0_STS(bank));
+			outl(mask, priv->acpi_base + GPE0_STS(priv, bank));
 			ret = 1;
 		}
 	} while (sts & mask);
@@ -60,6 +65,8 @@ static int acpi_gpe_of_to_plat(struct udevice *dev)
 	priv->acpi_base = dev_read_addr(dev);
 	if (!priv->acpi_base || priv->acpi_base == FDT_ADDR_T_NONE)
 		return log_msg_ret("acpi_base", -EINVAL);
+	priv->gpe0_sts = dev_read_u32_default(dev, "gpe0-sts",
+					      GPE0_STS_DEFAULT);
 
 	return 0;
 }

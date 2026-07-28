@@ -80,6 +80,26 @@ int __weak x86_cleanup_before_linux(void)
 	return 0;
 }
 
+/*
+ * Nothing on x86 calls cleanup_before_linux(), where other architectures park
+ * their APs, so do it from the final handover event instead. That covers every
+ * path to the OS: zboot, bootm and the EFI loader's ExitBootServices. With
+ * SMP_AP_WORK the APs sit polling for work and would otherwise still be
+ * running U-Boot code when the OS takes over the memory
+ */
+static int park_aps_for_os(void)
+{
+	int ret;
+
+	ret = mp_park_aps();
+	if (ret)
+		return log_msg_ret("park", ret);
+
+	return 0;
+}
+
+EVENT_SPY_SIMPLE(EVT_BOOTM_FINAL, park_aps_for_os);
+
 int cleanup_before_linux(void)
 {
 	return x86_cleanup_before_linux();
@@ -265,8 +285,11 @@ EVENT_SPY_SIMPLE(EVT_LAST_STAGE_INIT, last_stage_init);
 static int x86_init_cpus(void)
 {
 	if (IS_ENABLED(CONFIG_SMP)) {
-		debug("Init additional CPUs\n");
-		x86_mp_init();
+		/* The board may have run MP init early, for the FSP */
+		if (!(gd->flags & GD_FLG_SMP_READY)) {
+			debug("Init additional CPUs\n");
+			x86_mp_init();
+		}
 	} else {
 		struct udevice *dev;
 
