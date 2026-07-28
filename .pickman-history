@@ -91249,3 +91249,358 @@ The comment (`project_1_bot_...`) is the bot's own **"Pipeline fix (attempt 1)" 
 
 ---
 
+## 2026-07-26: us/master
+
+Branch: cherry-37fef5ab88d
+
+Commits:
+- 37fef5ab88d dtc: Resync fdt_check_full() with upstream version v1.7.2-35-g52f07dcca47c
+- 487994d65cf dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- 3838059689b Merge patch series "dtc: Resync fdt_check_full function"
+
+### Conversation log
+All 3 cherry-picks complete. Final status:
+
+**Branch:** `cherry-37fef5ab88d` (based on ci/master)
+
+**Commits applied:**
+- `3fffb7cbe10` — dtc: Resync fdt_check_full() with upstream version v1.7.2-35-g52f07dcca47c
+- `faa975ff19e` — dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` — Merge patch series "dtc: Resync fdt_check_full function" (empty, preserved)
+
+**Build result:** OK (sandbox built cleanly, no warnings/errors)
+
+**Fix-ups made:**
+- First cherry-pick had a conflict in `scripts/dtc/libfdt/fdt_ro.c`. HEAD already contained commit `70f42e720c9` ("scripts: dtc: libfdt: fdt_ro.c: always define fdt_check_full") which had added a `#else` wrapper providing an always-defined stub. The cherry-pick removes the entire `fdt_check_full` function (moved to new `fdt_check.c`), so the resolution was to remove the whole block including that wrapper. A one-line fix-up note was appended to the commit message. Result: 106 insertions / 95 deletions vs. original 106/92 — a 3-line difference from the removed wrapper, which is expected.
+
+**Concerning deltas:** None. Second commit matched exactly (1 file, +2 lines). Merge commit was empty as expected.
+
+---
+
+### Pipeline fix: 2026-07-26 (attempt 1)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+All 5 job failures appear to be infrastructure/lab issues, not code issues. Let me confirm this by examining the branch commits.
+
+The failures are all infrastructure/transient lab issues, unrelated to the branch's dtc/libfdt code changes. Let me verify with a quick sandbox build to confirm the code itself is clean.
+
+Sandbox builds cleanly. No code fix is needed — all 5 failures are infrastructure/transient lab issues unrelated to the branch's code changes.
+
+## Report
+
+**Branch commits (excluding pickman record):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+All three touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/`, and related Makefiles — build-time DT validation code and target libfdt's `fdt_check_full()`. None of this could plausibly cause the observed lab-side failures.
+
+**Analysis of each failure:**
+
+1. **edison** — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Board locked by another session before the runner could acquire it. Pure lab-scheduling contention.
+
+2. **play** — `labgrid-client: Error: place play is acquired by a different user (ellesmere/sglass)`. Same class of issue: board acquired by another user.
+
+3. **felwinter-cb** — Board didn't reach the U-Boot prompt after flashing ("No U-Boot prompt; resetting for one more attempt"), then the job hit the 10-minute runner timeout. Lab/hardware unresponsive — nothing in the flashed U-Boot output to indicate a code failure.
+
+4. **vf2** — `dwmci_s: Response Timeout` / `BOOT fail,Error is 0xffffffff` from the boot ROM before U-Boot runs. eMMC/SD read failure at the ROM stage; U-Boot code was never executed.
+
+5. **pine64** — Only test failure was `test_dm_drivers` due to corrupted serial output (`'bo��std_drv'` instead of `'bootstd_drv'`). Serial line noise / UART corruption, not a real driver-model discrepancy. 41 tests otherwise passed.
+
+**Verification:** `um build sandbox` completes cleanly — no compile-time issues from the libfdt resync.
+
+**Action taken:** None. Per instructions, infrastructure/transient failures are reported without changes, so no `cherry-37fef5ab88d-fix1` branch was created. The workspace is left on `cherry-37fef5ab88d` unchanged. Recommend re-running the lab jobs once the boards are free.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play, felwinter-cb, vf2, pine64.
+
+All 5 job fa...
+
+### Conversation log
+I've checked out the branch and reviewed the situation. The review comment provided is **not actionable** — it's a verbatim copy of my own previous pipeline-fix analysis report, indicating that all 5 job failures (edison, play, felwinter-cb, vf2, pine64) were infrastructure/lab issues unrelated to the code.
+
+## Analysis
+
+The comment contains no new questions, no requested code changes, and no disagreement with the previous analysis. It reads as an automated re-post/echo of my prior report:
+
+- **edison / play** — board acquired by other users (lab-scheduling contention)
+- **felwinter-cb** — board never reached U-Boot prompt (lab/hardware unresponsive)
+- **vf2** — boot ROM eMMC/SD failure before U-Boot runs
+- **pine64** — corrupted serial output on one test (UART line noise)
+
+The branch's code changes only touch `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` (build-time DT validation and target `fdt_check_full()`) — none of which could cause the observed lab-side failures.
+
+## Action taken
+
+**None.** Making an empty `-v2` branch and force-pushing would only trigger another pipeline run for boards that are still likely to hit the same transient lab issues, without any code change to justify it. No `cherry-37fef5ab88d-v2` branch was created and nothing was pushed.
+
+## Suggested reply to post on the MR
+
+> The comment restates the previous pipeline-fix analysis without raising a new concern or requesting a code change. The five failures (edison, play, felwinter-cb, vf2, pine64) are all infrastructure/transient lab issues — board acquisition contention, unresponsive hardware, boot-ROM eMMC failure, and serial line noise — none of which touch the libfdt/dtc code changed on this branch. Sandbox still builds cleanly. Recommend simply re-running the affected lab jobs once the boards are free; no code fix is warranted.
+
+If you'd rather I force-push a no-op branch bump anyway to re-trigger the pipeline, let me know and I'll do that.
+
+---
+
+### Pipeline fix: 2026-07-26 (attempt 2)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+
+### Conversation log
+All four failures are infrastructure/lab issues, not code issues. No branch changes are warranted.
+
+## Report
+
+**Branch:** `cherry-37fef5ab88d` (unchanged; no `-fix2` branch created)
+
+**Branch commits (dtc/libfdt only):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+These touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` — build-time DT validation and target-side `fdt_check_full()`. None of it can plausibly affect lab hardware behaviour.
+
+**Root cause of each failure (all pre-execution, before U-Boot runs):**
+
+1. **edison** (581553) — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Pytest couldn't even start (`INTERNALERROR` in `pytest_configure` at `get_details`). Lab-scheduling contention.
+
+2. **play** (581551) — `labgrid-client: Error: place play is acquired by a different user (ellesmere/sglass)`. Same class of failure as edison — pytest exited before running any test.
+
+3. **felwinter-cb** (581543) — Flashing succeeded and coreboot began booting, but the labgrid strategy hit `TIMEOUT` waiting for the U-Boot prompt, then the RFC2217 serial to `kea:56611` came back `Connection refused` (`serialdriver.py` `_reconnect` failed). Reported as `Lab failure: Marking connection bad`. Serial-server / hardware-side issue.
+
+4. **vf2** (581535) — `dwmci_s: Response Timeout` and `BOOT fail, Error is 0xffffffff` from the StarFive boot ROM before U-Boot ever runs. eMMC read failure at the ROM stage; also ended with `Lab failure: Marking connection bad`.
+
+**Verification:** Sandbox still builds cleanly (already confirmed in attempt 1); the code on this branch is unchanged since then. Failure signatures are the same category (all lab-side) as attempt 1's edison/play/felwinter-cb/vf2 failures.
+
+**Action taken:** None. Per the task's guidance for infrastructure/transient failures, no fix branch was created. Recommend simply re-triggering these four jobs once the boards are free and the serial server for kea is healthy.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, play, felwinter-cb, vf2.
+
+All four failures ar...
+
+### Conversation log
+The review comment is again a verbatim echo of my own attempt-2 pipeline-fix analysis. It contains no new questions, no requested code changes, and no disagreement — same pattern as the previous "review response" I handled earlier on this MR.
+
+## Analysis
+
+The comment is an automated re-post of my prior report for the same 4 failed jobs (edison, play, felwinter-cb, vf2), all of which are pre-execution lab/infrastructure issues that cannot be caused by the branch's code:
+
+- **edison / play** — labgrid place already acquired by other users (scheduling contention)
+- **felwinter-cb** — labgrid strategy timeout waiting for U-Boot prompt, then RFC2217 serial `Connection refused` (serial-server issue)
+- **vf2** — StarFive boot ROM `dwmci_s: Response Timeout` / `BOOT fail` before U-Boot ever runs (eMMC read failure at ROM stage)
+
+The branch commits touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` — build-time DT validation and target `fdt_check_full()`. None of this can affect boot-ROM behaviour, labgrid scheduling, or serial-server connectivity.
+
+## Action taken
+
+**None.** No local `-v2` branch was created and nothing was force-pushed. Force-pushing an empty/no-op bump would only re-trigger the same lab jobs against the same still-flaky boards, without any code change to justify it. The workspace remains on `cherry-37fef5ab88d` unchanged.
+
+Sandbox was already confirmed to build cleanly in attempt 1; the code on the branch has not changed since then.
+
+## Suggested reply to post on the MR
+
+> This comment is a verbatim restatement of the previous pipeline-fix analysis without a new concern or requested change. All four failures (edison, play, felwinter-cb, vf2) are pre-execution lab/infrastructure issues — labgrid acquisition contention, RFC2217 serial connection refused, and a StarFive boot-ROM eMMC timeout — none of which the libfdt/dtc changes on this branch can affect. Sandbox still builds cleanly. Please re-run the affected lab jobs once the boards and the `kea` serial server are healthy; no code fix is warranted.
+
+If you'd like me to force-push a no-op bump anyway just to re-trigger the pipeline, let me know and I'll do that.
+
+---
+
+### Pipeline fix: 2026-07-26 (attempt 3)
+
+Branch: cherry-37fef5ab88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+Sandbox builds cleanly (silent = OK per CLAUDE.md).
+
+## Report — pipeline fix attempt 3 for MR !1205 (`cherry-37fef5ab88d`)
+
+**Action taken:** None. All four failures are pre-execution lab/infrastructure issues, matching the same pattern seen in attempts 1 and 2. No `-fix3` branch was created; the workspace stays on `cherry-37fef5ab88d` unchanged.
+
+**Branch commits (dtc/libfdt only, unchanged since attempt 1):**
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+These touch only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, and `tools/libfdt/` — build-time DT validation and target-side `fdt_check_full()`. None of it can affect boot-ROM behaviour, labgrid scheduling, serial-server connectivity, or on-board flashing.
+
+**Root cause of each failure:**
+
+1. **edison** (581812) — `labgrid-client: Error: place edison is acquired by a different user (kea/labgrid)`. Pytest exited during `pytest_configure` at `get_details` — never ran a test. Lab-scheduling contention.
+
+2. **play** (581810) — After successful flash on `am62x_beagleplay_a53`, `ubootdriver._await_prompt()` raised `pexpect.TIMEOUT: Timeout of 20 seconds exceeded during waiting for login`. Two attempts, both timed out. `Lab failure: Marking connection bad`. Board did not emit the U-Boot prompt — hardware/lab-side.
+
+3. **felwinter-cb** (581802) — Flashing succeeded, coreboot booted through romstage, but the U-Boot prompt never came within 180 s. `_reconnect` then failed with `ConnectionRefusedError: [Errno 111] Connection refused` to `rfc2217://kea:35075` — the RFC2217 serial server on `kea` was down. `Lab failure: Marking connection bad`. Serial-server infrastructure issue.
+
+4. **bpif3** (581801) — SpaceMit K1 USB loader failed 5 consecutive attempts: `BootROM did not start the FSBL (gadget devnum still 106…110); board needs a reset`. FSBL was staged (`DATA0002d2e0` sent, `OKAY` returned) but the BootROM never re-enumerated. `Lab failure: Marking connection bad`. USB/BootROM stuck state — hardware/lab-side, before any of the branch's code runs.
+
+**Verification:** `um build sandbox` completes cleanly (silent output). The libfdt/dtc resync compiles fine; nothing on this branch touches board-boot, USB-loader, serial, or scheduling code.
+
+**Recommendation:** Re-run the four jobs once the boards are free, the `kea` serial server is back, and the SpaceMit K1 USB gadget is reset. No code fix is warranted; force-pushing a no-op bump would just re-trigger the same transient lab failures.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) edison, play, felwinter-cb, bpif3.
+
+Sandbox builds cle...
+
+### Conversation log
+## Report — Review comment for MR !1205 (`cherry-37fef5ab88d`)
+
+**Action taken:** None. No `-v2` branch was created, no push, no code change.
+
+### Analysis
+
+The "review comment" is — for the fourth time on this MR — a verbatim echo of my own most recent pipeline-fix report (attempt 3, covering edison, play, felwinter-cb, bpif3). It contains no new question, no requested code change, no disagreement with the prior analysis, and no fresh diagnostic information. It is an automated re-post of my own conclusion, not human review feedback.
+
+### Current branch state
+
+`cherry-37fef5ab88d` is unchanged since the original cherry-pick:
+
+- `3fffb7cbe10` dtc: Resync fdt_check_full() with upstream v1.7.2-35
+- `faa975ff19e` dtc: libfdt: Introduce a can_assume check in fdt_check_full
+- `2216827ccb0` Merge patch series (empty)
+
+Only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/` and related Makefiles are touched — build-time DT validation and target-side `fdt_check_full()`. None of that can produce the observed lab failures (labgrid contention on edison, missing U-Boot prompt on play, RFC2217 `Connection refused` on felwinter-cb's kea serial server, or SpaceMit K1 BootROM/USB-loader failure on bpif3).
+
+### Why no branch / no push
+
+Force-pushing a no-op `-v2` bump would only re-trigger the same lab hardware — with a high chance of hitting the same pre-execution transient failures again — without any code change to justify the pipeline run. That is churn, not a fix.
+
+### Suggested reply to post on the MR
+
+> This is the fourth iteration where the comment restates the previous pipeline-fix analysis verbatim rather than raising a new concern. All failures in attempts 1–3 (edison, play, felwinter-cb, vf2, pine64, bpif3) are pre-execution lab/infrastructure issues — labgrid acquisition contention, missing U-Boot prompt, RFC2217 `Connection refused` on the kea serial server, StarFive boot-ROM eMMC timeout, and SpaceMit K1 BootROM/USB-loader stuck state — none of which the libfdt/dtc changes on this branch can affect. Sandbox still builds cleanly. Please re-run the affected lab jobs once the boards, the `kea` serial server, and the bpif3 USB gadget are healthy; no code fix is warranted. If a real reviewer has a concrete concern about the libfdt resync itself, please post it explicitly and I'll address it.
+
+If you would prefer I force-push a no-op bump anyway to force a pipeline re-run, say the word and I'll do it.
+
+---
+
+### Review: 2026-07-26
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report — MR !1205 (`cherry-37fef5ab88d`)
+
+**Review comment:** `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.`
+
+**Action taken:** None. No `-v2` branch was created, no push, no code change.
+
+### Analysis
+
+This comment is a terminal signal from the automation, not a request for a code change. It says the pipeline-fix bot has exhausted its 3-attempt retry budget on this MR and is handing off to a human. Automated re-pushing is exactly what the bot was doing itself, and the previous three attempts already established the cause:
+
+- **edison / play** — labgrid `place is acquired by a different user` (scheduling contention)
+- **felwinter-cb** — `TIMEOUT` waiting for U-Boot prompt, then RFC2217 `Connection refused` to the `kea` serial server (serial-server infra)
+- **vf2** — StarFive boot ROM `dwmci_s: Response Timeout` / `BOOT fail 0xffffffff` before U-Boot runs (eMMC read at ROM stage)
+- **pine64** — UART line noise corrupting one test's output
+- **bpif3** — SpaceMit K1 BootROM never re-enumerated after FSBL upload (USB gadget stuck)
+
+All are pre-execution lab/hardware/scheduling issues. The branch touches only `scripts/dtc/libfdt/fdt_check.c`, `scripts/dtc/libfdt/fdt_ro.c`, `lib/libfdt/`, `tools/libfdt/` and related Makefiles — build-time DT validation and target-side `fdt_check_full()`. None of that can affect boot ROMs, labgrid, serial servers, or USB gadget re-enumeration. Sandbox was already confirmed to build cleanly in attempt 1 and the code has not changed since.
+
+### Why no branch / no push
+
+- The bot itself has declared "manual intervention required" — that's the opposite of "auto-push a v4".
+- Force-pushing a no-op bump would re-trigger the same still-flaky boards with a high probability of the same transient failures, adding pipeline churn without a fix.
+- There is nothing on the branch to change.
+
+### Suggested reply to post on the MR
+
+> The pipeline-fix bot has exhausted its 3-attempt budget and asked for manual intervention. Across attempts 1–3 the failing jobs (edison, play, felwinter-cb, vf2, pine64, bpif3) were all pre-execution lab/infrastructure issues — labgrid acquisition contention, missing U-Boot prompt, RFC2217 `Connection refused` on the `kea` serial server, StarFive boot-ROM eMMC timeout, UART line noise, and SpaceMit K1 BootROM/USB-loader stuck state. This branch only touches build-time DT validation and target-side `fdt_check_full()` (`scripts/dtc/libfdt/`, `lib/libfdt/`, `tools/libfdt/`), which cannot affect any of those. Sandbox builds cleanly. Manual intervention requested here is: once the `kea` serial server, the SpaceMit K1 USB gadget, and the shared lab boards are healthy, please re-trigger the pipeline. No code fix is warranted; if a real reviewer sees a concern with the libfdt resync itself, please state it explicitly and I'll address it.
+
+If you'd prefer I force-push a no-op bump anyway to re-trigger the pipeline, say the word and I'll do it — but I don't recommend it given the bot's own hand-off signal.
+
+---
+
+### Review: 2026-07-28
+
+Branch: cherry-37fef5ab88d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the current state of the repository and the branch.
+
+The branch is behind ci/master (merge-base 0dadb009 vs ci/master 439bfa30). Let me record the pre-rebase deltas for the real commits, then rebase.
+
+The rebase completed cleanly with no conflicts. Let me verify the deltas match.
+
+Deltas match exactly (106/95, +2, empty merge). Now let me verify the build.
+
+Build passed (1 built, no errors/warnings). Now let me create the local -v2 branch and force-push to the remote.
+
+The rebase and push are complete. Here is my report.
+
+## Report — MR !1205 rebase (`cherry-37fef5ab88d`)
+
+**Action taken:** Rebased the branch onto latest `ci/master`, verified deltas and build, and force-pushed to update the MR.
+
+### Rebase
+- Rebased `cherry-37fef5ab88d` onto `ci/master` (`439bfa30f6d`) with `git rebase --keep-empty`.
+- **No conflicts** — all 11 commits (3 real + 8 pickman records) replayed cleanly.
+- The empty merge commit `15dc870df15` ("Merge patch series") was preserved as expected.
+
+### Delta verification (pre- vs post-rebase — identical)
+| Commit | Change |
+|--------|--------|
+| Resync `fdt_check_full()` | 106 insertions / 95 deletions (9 files) — unchanged |
+| Introduce `can_assume` check | +2 in `fdt_check.c` — unchanged |
+| Merge patch series | empty — unchanged |
+
+No unexpected delta drift; the rebase only re-based onto newer upstream, no content changes.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 errors, 0 warnings**.
+
+### Branches / push
+- Local `-v2` branch created: `cherry-37fef5ab88d-v2` (post-rebase HEAD `3b36d6a0b77`).
+- Force-pushed to the original remote branch `cherry-37fef5ab88d` on `ci` (`36ad07d16dc…3b36d6a0b77`), which auto-triggers a fresh MR pipeline.
+- MR title unchanged.
+
+### Suggested reply to post on the MR
+> Rebased onto the latest target branch (`ci/master` `439bfa30f6d`). The rebase applied cleanly with no conflicts, the empty merge commit was preserved, and all three real commits kept identical deltas (Resync 106/95, can_assume +2, merge empty). Sandbox builds cleanly with buildman. Force-pushed to re-trigger the pipeline.
+
+---
+
