@@ -944,9 +944,19 @@ pcduino3_nano:
     ROLE: pcduino3_nano
   <<: *sjg_lab_dfn
 
+# Chromebook Pixel (link), running the 32-bit build
 link:
   variables:
     ROLE: link
+  # Shares the physical board with the 'link64' job, so serialise them
+  resource_group: link-board
+  <<: *sjg_lab_dfn
+
+# The same board, running the 64-bit build
+link64:
+  variables:
+    ROLE: link64
+  resource_group: link-board
   <<: *sjg_lab_dfn
 
 jerry:
