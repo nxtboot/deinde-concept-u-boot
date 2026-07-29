@@ -91682,3 +91682,62 @@ The branch is ready for pushing and has **not** been merged into any other branc
 
 ---
 
+### Review: 2026-07-28
+
+Branch: cherry-647990c5284
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, edison, jetson-nano, fel...
+
+### Conversation log
+I'll check the current state of the branch and re-verify whether anything has changed upstream since the last analysis.
+
+The branch is checked out in a leftover worktree. Let me work there and re-check upstream for any newly-landed MMU fix since the last attempt.
+
+The offending commit `6468ca13ffd` is **no longer in upstream master** — it was force-updated. This is major new information. Let me investigate whether the whole cherry-picked series was dropped upstream.
+
+This is a remote-mirror artifact, not an upstream revert: the `us` remote's master pointer was reset back to the v2026.07 release-prep point (July 6), which simply predates the MMU series merge (June 17 went into post-v2026.07 development, was in the old master of July 10). The series still exists upstream; **no follow-up fix has landed**, so the standing diagnosis is unchanged.
+
+Let me check whether the MR branch needs rebasing onto ci/master and clean up the stale worktree.
+
+The remote MR tip changed during my session (was `4cb477fbd34`, now `6a6d86fd378`) — and that matches the `felwf` HEAD in the main tree. A concurrent job may have mis-pushed. Let me verify what's actually on the remote MR branch before doing anything.
+
+Confirmed: the remote MR branch was **clobbered with wrong content** — it now holds an x86 series (from `felwf`), not the ARM64 MMU cherry-picks. This is the concurrent-job collision noted previously. My local `cherry-647990c5284` at `4cb477fbd34` still has the correct MMU content. Let me verify that and its rebase status.
+
+My local `cherry-647990c5284` (`4cb477fbd34`) has the **correct MMU content and is already on latest ci/master** — no rebase needed. The remote, however, was corrupted by a concurrent x86 job. The key action is to restore correct content to the remote MR branch. 
+
+To avoid colliding with the concurrent job on `felwf` in the main tree, I'll build and push from an isolated worktree.
+
+Build clean. Now create the `-v7` branch and restore correct content to the remote MR branch using an explicit refspec (the `pickman push-branch` helper mis-pushed the main tree's HEAD in a prior attempt, so I'll push the exact ref).
+
+Remote restored to correct MMU content. Let me verify and clean up.
+
+The remote MR branch is restored to the correct MMU content (`4cb477fbd34`) and a fresh pipeline will trigger.
+
+## Report
+
+### Key finding this round: the remote MR branch had been corrupted
+During my checks I found the remote `cherry-647990c5284` no longer held the ARM64 MMU series — a concurrent pickman job (working on the `felwf` x86 series in the shared main working tree) had force-pushed its own HEAD (`6a6d86fd378`, "x86: mp/fsp/brya…") over the MR branch. This is the same shared-working-tree collision flagged in the v6 notes. I restored the correct content by pushing the proper MMU tip via an explicit refspec from an isolated worktree.
+
+### Actions
+1. Fetched `us` and re-checked upstream. `6468ca13ffd` momentarily appeared "dropped" only because the `us` remote pointer was reset back to the **v2026.07 release-prep commit** (2026-07-06), which predates the series merge (2026-06-17 landed in post-v2026.07 development, present in the old master of 2026-07-10). Not a revert — the series still exists upstream, and **no follow-up fix to `cache_v8.c`/`mmu.h` has landed**.
+2. Verified my local `cherry-647990c5284` (`4cb477fbd34`) has the correct 4 MMU cherry-picks + empty merge and is already on latest `ci/master` (`cdda8cb8580`) — no rebase needed.
+3. Built sandbox in an isolated worktree: `buildman -L --board sandbox -w` → 1/1 built, no warnings/errors.
+4. Created local `cherry-647990c5284-v7` at `4cb477fbd34`.
+5. Force-pushed `4cb477fbd34 → ci/cherry-647990c5284`, replacing the x86 corruption (`6a6d86fd378…4cb477fbd34`). Verified remote now at `4cb477fbd34` with the MMU series present. Worktree removed.
+
+### Diagnosis (unchanged, but now the MR actually reflects it again)
+The review comment is the bot echoing the attempt-3 report; no new actionable information. Standing split:
+- **Group A** (efi-x86_64, edison, felwinter, felwinter-cb, colibrimx8): transient lab infra (labgrid contention, serial exporter offline, build-step timeout) — retry when infra frees.
+- **Group B** (jetson-nano, rock5b): genuine ARM64 regression from `a4964b1b230` (upstream `6468ca13ffd`), which makes reserved-memory unmapping actually take effect; a subsequent `dc civac` translation-faults on the now-unmapped VA. No cherry-pick-fidelity or missing-prerequisite issue, and no in-scope fix without dropping the very commit this MR exists to bring.
+
+### Suggested MR reply
+> Heads-up: the MR branch had been overwritten with an unrelated x86 series by a concurrent job sharing the working tree — I've restored the correct ARM64 MMU content (`4cb477fbd34`) and re-pushed, so this pipeline run is now testing the right code again. Sandbox build clean; already on latest `ci/master`.
+>
+> The ARM64 boot failures (jetson-nano, rock5b) remain the standing upstream regression from `6468ca13ffd` (this MR's `a4964b1b230`), not a fidelity issue. The Group-A failures (efi-x86_64, edison, felwinter*, colibrimx8) are transient lab infra and should clear on retry.
+
+### Operator note
+Two pickman jobs are again sharing `/home/sglass/dev/u-boot` as their working tree, and one clobbered this MR's remote branch with its own content. This needs serialising or per-job worktrees — otherwise MR branches will keep getting cross-contaminated.
+
+---
+
