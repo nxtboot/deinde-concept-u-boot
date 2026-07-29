@@ -92280,3 +92280,51 @@ The branch is left checked out and ready for pushing. It was **not** merged into
 
 ---
 
+### Review: 2026-07-29
+
+Branch: cherry-9f16b258e56
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state and understanding the current situation.
+
+The pre-rebase delta is 2 lines (CONFIG_PCI_INIT_R=y in both imx95 defconfigs). Now let me checkout the branch and rebase.
+
+The merge commit applied cleanly. Conflict is only in `.pickman-history` (the pickman record commit). Let me resolve it.
+
+This is an append-only history log. Both ci/master and my commit added records. Let me see the full conflict structure.
+
+I'll resolve by keeping both records (append-only history). Let me use a precise line-based edit.
+
+Minor: add a blank line after the header for consistency.
+
+Now let me stage and continue the rebase.
+
+Rebase succeeded, now on top of ci/master (c6b287e17ca). Let me verify the merge commit's delta is unchanged.
+
+Delta identical (2 lines). Now let me run the build.
+
+Build passed (1 built, 0 errors). Now let me create the versioned local branch.
+
+The rebase is complete and pushed. Here's my report.
+
+## Summary
+
+**MR !1208** (branch `cherry-9f16b258e56`) successfully rebased onto the latest `ci/master` and force-pushed.
+
+### What was done
+1. **Rebased** `cherry-9f16b258e56` onto `ci/master` (`cdda8cb8580` → `c6b287e17ca`) with `git rebase --keep-empty`.
+2. **Merge commit applied cleanly** — `Merge tag 'v2026.07-rc5' into next` (now `eafd0e6e6ad`) rebased with **no conflicts** and an **identical delta**: still +2 lines (`CONFIG_PCI_INIT_R=y` in `configs/toradex-smarc-imx95_defconfig` and `configs/verdin-imx95_defconfig`), confirming those additions are still net-new against the newer target.
+3. **One conflict**, only in the `.pickman-history` bookkeeping file (the trailing pickman record commit). ci/master had gained the `cherry-e50ee1acd4a` history record in the same append region. Resolved by **keeping both records** — the append-only log now contains ci/master's `cherry-e50ee1acd4a` entry followed by this MR's `cherry-9f16b258e56` entry under its own `## 2026-07-28: us/master` header.
+4. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 errors/warnings**.
+5. Created local branch **`cherry-9f16b258e56-v2`**, then force-pushed to the original remote branch `cherry-9f16b258e56` (updating the MR pipeline).
+
+### Suggested reply to post on the MR
+> Rebased onto the latest target branch (`ci/master` `c6b287e17ca`). The real merge commit (`Merge tag 'v2026.07-rc5' into next`) rebased cleanly with an identical +2-line delta (`CONFIG_PCI_INIT_R=y` in the two imx95 defconfigs). The only conflict was in the `.pickman-history` log, resolved by keeping both records (append-only). Sandbox builds cleanly with buildman (1 built, 0 errors). Force-pushed to re-trigger the pipeline. MR title unchanged.
+
+No issues encountered; nothing was left unaddressed.
+
+---
+
