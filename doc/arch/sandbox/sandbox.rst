@@ -840,6 +840,9 @@ Addr       Config                     Usage
   180000   CONFIG_SYS_FDT_LOAD_ADDR   Device tree
   200000   CONFIG_TRACE_EARLY_ADDR    Early trace buffer (if enabled). Also used
   400000   CONFIG_TEXT_BASE           Load buffer for U-Boot (sandbox_spl only)
+ 4000000   SANDBOX_SPL_FIT_ADDR       FIT read by the "full" FIT-loader test
+                                      (sandbox_spl only)
+ 8000000                              nvmxip devices (see test.dts)
 10000000                              PCI address space (see test.dts)
 20000000                              PCI EA space (see PCI_CAP_EA_BASE_LO0)
 

@@ -46,4 +46,30 @@ int sandbox_find_next_phase(char *fname, int maxlen, bool use_img);
  */
 int sandbox_spl_load_fit(char *fname, int maxlen, struct spl_image_info *image);
 
+/*
+ * Address at which sandbox_spl_load_fit_full() stages the FIT it reads.
+ *
+ * This must sit above everything the FIT's own images are loaded to, since
+ * loading an image would otherwise overwrite the FIT still being read from.
+ * The U-Boot image goes to CONFIG_TEXT_BASE (400000) and is several MB, so
+ * CONFIG_SYS_LOAD_ADDR (0 for sandbox_spl) will not do. It must also stay
+ * clear of the nvmxip devices at 8000000. See the memory map in
+ * doc/arch/sandbox/sandbox.rst
+ */
+#define SANDBOX_SPL_FIT_ADDR	0x4000000
+
+/**
+ * sandbox_spl_load_fit_full() - Load the next phase from a FIT with the "full" loader
+ *
+ * Loads a FIT containing the next phase and sets it up for booting, using the
+ * "full" FIT loader
+ *
+ * @fname: Returns filename loaded
+ * @maxlen: Maximum length for @fname including \0
+ * @image: Place to put SPL-image information
+ * Return: 0 if OK, -ve on error
+ */
+int sandbox_spl_load_fit_full(char *fname, int maxlen,
+			      struct spl_image_info *image);
+
 #endif
