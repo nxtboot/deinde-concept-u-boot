@@ -91741,3 +91741,292 @@ Two pickman jobs are again sharing `/home/sglass/dev/u-boot` as their working tr
 
 ---
 
+### Pipeline fix: 2026-07-28 (attempt 1)
+
+Branch: cherry-e50ee1acd4a
+
+Failed jobs:
+- sandbox_noinst with LOAD_FIT_FULL test.py (test.py)
+- sandbox_spl test.py (test.py)
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- play (sjg-lab)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+I'll start by reading the context files and checking out the branch.
+
+The core failure is a SIGSEGV in `spl_test_load_fit_full`. Let me check the other job logs and the branch.
+
+The lab jobs (edison, play, efi-x86_64) are all infrastructure failures (place not acquired, lab timeout, qemu I/O error) unrelated to the code. The real bug is the SIGSEGV in `spl_test_load_fit_full`, which fails in sandbox_spl, sandbox_noinst, qcheck, and make check. Let me check out the branch and investigate.
+
+There's a leftover `#define DEBUG` from a prior session. Let me discard it and check out the branch.
+
+Let me first reproduce the segfault locally. Let me build sandbox_spl and run the failing test.
+
+It passed locally. Let me run it the way CI does, directly with the binary, and multiple times to check for flakiness.
+
+Reproduced the SIGSEGV. Let me get a backtrace with gdb.
+
+gdb has toolchain issues. Let me examine the code directly. First the test and the FIT loader.
+
+The direct binary run segfaults but pytest passed. Let me re-check pytest and also test the "simple" loader for comparison.
+
+The `ut spl` framework runs all tests and the crash in `spl_test_load_fit_full` kills the process. Let me instrument to find the exact crash point.
+
+`images` is only partially initialized. Let me instrument to find the crash location.
+
+No DBG output—crash is before/at the start. Let me instrument `sandbox_spl_load_fit_full` too.
+
+No SBX output either. Output may be buffered and lost on crash. Let me see full raw output.
+
+Output is buffered and lost on crash. Let me disable buffering with stdbuf.
+
+Let me look at the diff of the whole series on `spl_load_fit_image` to understand what changed vs the working baseline.
+
+The debug prints aren't flushing. Let me check how sandbox SPL console output works and force a flush by modifying os_printf temporarily.
+
+Now replace my printf debug calls with os_printf. Let me update spl.c:
+
+Build succeeded. Let me run.
+
+We enter `spl_load_fit_image` (SBX:5) but crash before DBG:A (the first line). This suggests a stack issue with the large `struct bootm_headers images`. Let me verify.
+
+Something changed my instrumentation. Let me re-read the region and check what's there.
+
+The file has detailed `fprintf(stderr)` tracing (added concurrently). Let me build and run to see the trace.
+
+TRACE:A prints but not TRACE:B — the crash is inside `fit_image_load()` for the firmware image. Let me look at that function.
+
+Let me see the full output including the "## Loading" line and where exactly it dies.
+
+The "## Loading" printf executed but was lost to buffering; crash is inside `select_image`/`obtain_data`/`handle_load_op`. Let me look at these with the uninitialized `images` in mind.
+
+`CONFIG_SPL_LOAD_FIT_FULL` is not set for sandbox_spl, yet the test runs. Let me check how the test and `spl_load_fit_image` are guarded.
+
+fprintf works in the sandbox SPL build. Let me add traces inside `fit_image_load` to pinpoint the crash.
+
+TRACE:A now shows extra info (concurrent instrumentation). Crash is between entry and `select_image`. Let me check if another process is editing these files.
+
+There's another Claude session (PID 208916) concurrently editing these same files, which is corrupting my debugging. Let me check where it's working.
+
+Neither is in my repo. Let me check the actual current state of my files directly.
+
+The state is confusing—let me verify the actual current content of the key functions.
+
+My instrumentation keeps getting reverted—another process is actively working in this same checkout. I'll isolate my work in a separate worktree with its own build dir. First, clean up.
+
+Now let me create an isolated worktree to work without interference.
+
+Reproduced cleanly in isolation. Now let me instrument in the worktree.
+
+No ZZZ output—crash is before `select_image`. Let me trace the entry of `fit_image_load`.
+
+Still nothing. Let me instrument the caller chain in the worktree to confirm where we are.
+
+The trace strings are compiled in but produce no output at runtime—stderr may be redirected during the SPL unit-test run. Let me capture stderr separately.
+
+A core was dumped. Let me analyze it with gdb.
+
+Let me switch traces to stdout (which works in sandbox) since stderr is swallowed.
+
+Let me add a trace at the very start of `sandbox_spl_load_fit_full` to confirm fprintf works and locate the crash.
+
+No output even at function entry—sandbox console/stdio buffering is swallowing it. Let me use raw `os_write(2,...)` which bypasses buffering, and check for a working gdb.
+
+gdb-multiarch 15.1 is available. Let me get a backtrace.
+
+The `fprintf`/`fputs` I added is actually U-Boot's own (console.c), which crashes in SPL because stdio isn't set up—my traces were the crash! Let me revert all instrumentation and get a clean backtrace.
+
+Now clean. Let me get the real backtrace with gdb-multiarch.
+
+Real crash found: `fit_conf_find_compat()` is called with `fdt=NULL` (from `gd_fdt_blob()`) at image-fit.c:1746/1387, dereferencing NULL in libfdt. Let me examine that code.
+
+The crash: `select_from_config` calls `fit_conf_find_compat(fit, gd_fdt_blob())` when `CONFIG_FIT_BEST_MATCH` is enabled, but `gd_fdt_blob()` is NULL in this SPL context, so `fdt_getprop(NULL,...)` crashes. Let me check the config difference.
+
+`CONFIG_FIT_BEST_MATCH=y` triggers the crash: `select_from_config` calls `fit_conf_find_compat(fit, gd_fdt_blob())` but `gd_fdt_blob()` is NULL in SPL, and `fdt_getprop(NULL,...)` dereferences NULL. Let me look at the start of `fit_conf_find_compat` to decide the best fix.
+
+I'll fix at the call site: best-match requires a control FDT, so skip it (and fall back to the default config) when `gd_fdt_blob()` is NULL. Let me verify this resolves the crash in the worktree first.
+
+No crash now. Let me capture the full output to confirm the SPL test passed.
+
+The SPL test now passes (20 tests, 0 failures). Let me run the pytest the way CI does, from the worktree.
+
+All 22 tests pass. The fix is correct. Let me examine the branch structure to decide how to place the fix.
+
+The fix is a 2-line change. Best home is the test commit (99f79f7ce49) so it stays bisect-safe. Let me save the patch, then fold it into that commit via rebase.
+
+Now let me fold the fix into the test commit (HEAD~3 = 99f79f7ce49) using the rebase helper.
+
+Rebase succeeded. Let me verify the branch state and the fix placement.
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+   The user (via pickman automation) requested fixing CI pipeline failures for merge request !1207, branch `cherry-e50ee1acd4a` (attempt 1) in the U-Boot repo at /home/sglass/dev/u-boot. Explicit steps required:
+   - Checkout branch cherry-e50ee1acd4a
+   - Diagnose root cause from job logs (7 failing jobs provided with log files in /tmp/pickman-logs-afgdjo_r/)
+   - Identify the commit that introduced the problem (correlate failing symbol with commit)
+   - Prefer AMENDING the responsible commit using uman rebase helpers (rf N, rn), appending a 1-2 line `[pickman] Fix ...` note to the commit message. If cause can't be pinpointed to a series commit, add a new fixup commit on top.
+   - Build/verify: `um build sandbox` quick check, then `buildman -o /tmp/pickman LOAD_FIT_FULL,edison,efi-x86_64-uboot-iso-install,make,play,qcheck,sandbox,sandbox_noinst,sandbox_spl,test.py,with`
+   - Create local branch `cherry-e50ee1acd4a-fix1`
+   - Report: which commit was responsible, root cause, what changed. Do NOT push.
+   - Keep changes minimal/focused; report infrastructure/transient failures without making changes; use `um build sandbox` and `buildman -o /tmp/pickman`.
+
+2. Key Technical Concepts:
+   - U-Boot SPL (Secondary Program Loader) FIT image loading
+   - "full" FIT loader (spl_load_fit_image) vs "simple" FIT loader (spl_load_simple_fit)
+   - CONFIG_FIT_BEST_MATCH, CONFIG_SPL_LOAD_FIT, CONFIG_SPL_LOAD_FIT_FULL
+   - gd_fdt_blob() (control device tree, NULL in SPL context)
+   - libfdt fdt_getprop NULL-pointer dereference
+   - Sandbox architecture, map_sysmem/virt_to_phys, unit test framework (`ut spl`, SPL_TEST macro)
+   - uman rebase helpers (rf, rn, rp, rb) and CLAUDE.md git conventions (British spelling, present tense, Co-developed-by, [pickman] note)
+   - git worktrees for isolation
+   - gdb-multiarch (15.1) vs old gdb (7.9.1)
+   - Key insight: U-Boot redefines printf/fprintf/fputs/stdout (common/console.c) — these are NOT host libc; using them in SPL before stdio_devices init causes NULL deref. os_printf (arch/sandbox/cpu/os.c) uses real host vfprintf.
+
+3. Files and Code Sections:
+   - `/tmp/pickman-logs-afgdjo_r/mr-description.txt` — listed the 7 commits and prior cherry-pick session log.
+   - `/tmp/pickman-logs-afgdjo_r/job-583060-Check make check.log` and `job-583061-Check make qcheck.log` — showed `FAILED test/py/tests/test_spl.py::test_spl[ut_spl_test_spl_test_load_fit_full] - ValueError: U-Boot exited with signal 11 (SIGSEGV)`.
+   - `job-583173-edison.log` — lab failure "place edison is not acquired by your user" (infrastructure).
+   - `job-583171-play.log` — lab timeout on `setenv foo2 "test2"` (infrastructure).
+   - `job-583175-efi-x86_64-uboot-iso-install.log` — OSError Errno 5 / qemu closed (infrastructure).
+   - `boot/image-fit.c` — THE FIX. In function `select_from_config()` (~line 1729-1793), the crash site at line 1746. Original:
+     ```c
+     	if (IS_ENABLED(CONFIG_FIT_BEST_MATCH) && !fit_uname_config)
+     		ret = fit_conf_find_compat(fit, gd_fdt_blob());
+     ```
+     Fixed to:
+     ```c
+     	if (IS_ENABLED(CONFIG_FIT_BEST_MATCH) && !fit_uname_config &&
+     	    gd_fdt_blob())
+     		ret = fit_conf_find_compat(fit, gd_fdt_blob());
+     ```
+     `fit_conf_find_compat()` (line 1371) calls `fdt_getprop(fdt, 0, FIT_COMPATIBLE_PROP, ...)` at line 1387 which crashes when fdt is NULL.
+   - `common/spl/spl_fit.c` — `spl_load_fit_image()` (line 926) is the full FIT loader; calls `fit_image_load(&images, ...)` with `struct bootm_headers images` (only .verify set). Not modified in final fix.
+   - `arch/sandbox/cpu/spl.c` — `sandbox_spl_load_fit_full()` (line 269) test helper that calls spl_load_fit_image. Not modified in final fix.
+   - `test/image/spl_load_os.c` — contains `spl_test_load_fit_full` test (line ~29).
+   - `arch/sandbox/cpu/os.c` — `os_printf()` uses host vfprintf (line 70); used for reliable debug output during investigation.
+
+4. Errors and fixes:
+   - Checkout blocked by leftover `#define DEBUG` in spl_fit.c and untracked `console_bbb`: discarded with `git checkout -- common/spl/spl_fit.c` and `rm -f console_bbb`.
+   - Default gdb (7.9.1) failed with "BFD internal error, aborting": switched to `gdb-multiarch` (15.1) which worked.
+   - printf/os_printf debug output lost due to U-Boot console buffering / crash: eventually solved by using gdb-multiarch backtrace instead of runtime tracing.
+   - fprintf(stderr)/fprintf(stdout) traces produced NO output and appeared to be part of the crash: KEY DISCOVERY — U-Boot redefines fprintf/fputs/stdout; `fprintf(stdout,...)` calls U-Boot's console_puts_pager which dereferences NULL stdio_devices[1] in SPL. My debug traces were crashing. Fixed by removing all instrumentation and relying on gdb.
+   - Concurrent file reverts: my edits to spl_fit.c/spl.c/os.c in the main tree kept getting reverted by an unknown concurrent process. Fixed by creating an isolated git worktree at /tmp/uboot-fix1 with separate build dir /tmp/b/fix1_spl.
+
+5. Problem Solving:
+   Solved: Identified SIGSEGV root cause as NULL control-FDT dereference in select_from_config→fit_conf_find_compat→fdt_getprop when CONFIG_FIT_BEST_MATCH=y and gd_fdt_blob()==NULL in SPL. Applied minimal 1-line guard. Verified: `ut spl` = 20 tests 0 failures; pytest test_spl = 22 passed. Determined the 3 lab jobs (edison, play, efi-x86_64) are infrastructure failures requiring no code change. Folded fix into the test commit (99f79f7ce49 → now f199dfba856) so it stays bisect-safe. Rebase succeeded; branch cherry-e50ee1acd4a-fix1 HEAD is now 522605afe4a.
+   Ongoing: Have NOT yet run the final broad buildman verification.
+
+6. All user messages:
+   - Single large initial task message: "Fix pipeline failures for merge request !1207 (branch: cherry-e50ee1acd4a, attempt 1)..." with full instructions, list of 7 failed jobs, log file paths, and 7 numbered steps.
+   - Final message: instruction to produce this summary with TEXT ONLY, no tool calls.
+
+7. Pending Tasks:
+   - Run the broad build verification: `buildman -o /tmp/pickman LOAD_FIT_FULL,edison,efi-x86_64-uboot-iso-install,make,play,qcheck,sandbox,sandbox_noinst,sandbox_spl,test.py,with` (task step 5b) and fix any build errors.
+   - Optionally run `um build sandbox` quick check (step 5a).
+   - Ensure branch cherry-e50ee1acd4a-fix1 is the final deliverable and produce the final report (which commit responsible, root cause, change made). Do NOT push.
+   - Consider cleanup of the worktree /tmp/uboot-fix1 (the branch lives there; verify accessibility).
+
+8. Current Work:
+   Immediately before this summary, I successfully folded the fix into the test commit via interactive rebase in the worktree /tmp/uboot-fix1. The last commands: saved `/tmp/fix.patch`, cleaned worktree, ran `rf 4` (stopped at 99f79f7ce49), `git apply /tmp/fix.patch`, `git add boot/image-fit.c`, `git commit --amend` appending:
+   ```
+   [pickman] Fix NULL control-FDT crash in the full FIT loader test:
+   select_from_config() called fit_conf_find_compat() with gd_fdt_blob()
+   which is NULL in SPL, so guard the FIT_BEST_MATCH path on a non-NULL
+   control FDT and fall back to the default configuration.
+   ```
+   Then `git rebase --continue` → "Successfully rebased and updated refs/heads/cherry-e50ee1acd4a-fix1". Verified: `git log --oneline` shows HEAD 522605afe4a, test commit now f199dfba856 with the note and `boot/image-fit.c | 3 ++-` in its stat. The fix is confirmed in the test commit (HEAD~3). The branch cherry-e50ee1acd4a-fix1 exists in the worktree.
+
+9. Optional Next Step:
+   Run the final broad build verification per task step 5b (from the worktree /tmp/uboot-fix1 or with the fix branch): `buildman -o /tmp/pickman LOAD_FIT_FULL,edison,efi-x86_64-uboot-iso-install,make,play,qcheck,sandbox,sandbox_noinst,sandbox_spl,test.py,with` and fix any build errors, since the task states: "b) Build all affected boards: buildman -o /tmp/pickman LOAD_FIT_FULL,edison,efi-x86_64-uboot-iso-install,make,play,qcheck,sandbox,sandbox_noinst,sandbox_spl,test.py,with ... Fix any build errors before proceeding." After that, deliver the final report per step 7 without pushing.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/sglass/.claude/projects/-home-sglass-dev-u-boot/977418a8-c38d-4691-95bf-7362ee0562a2.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+Branch state is confirmed. Let me run the quick sandbox build check and confirm the fix is present.
+
+The fix is confirmed in the test commit. Now let me run the quick sandbox build check and the broad buildman verification.
+
+Sandbox builds clean. Now the broad buildman verification across all affected boards. This will take a while, so I'll run it in the background.
+
+I'll wait for the background buildman to complete rather than polling.
+
+"No matching boards found" — buildman treats that comma-list as board-name filters, but most of those tokens are CI job names, not board names. Let me build the actual affected boards individually.
+
+The build is still in progress. I'll wait for the completion notification.
+
+Builds are running in the background. I'll continue once the build completes (I'll be notified).
+
+Build completed: 10 boards built, 0 errors. The only warnings are pre-existing `sandbox.dtsi` ranges_format warnings unrelated to the fix. Let me confirm there are no error entries in the buildman output.
+
+Only pre-existing DTS warnings, no errors. Now let me re-run the exact test that was failing in CI to definitively confirm the fix.
+
+The plain sandbox build skips SPL tests. Let me build sandbox_spl and run the actual `ut spl` test that exercises the fixed code path.
+
+I'll wait for the build+test to complete.
+
+Build and test running; I'll continue when the sandbox_spl build and `ut spl` complete.
+
+Waiting for the sandbox_spl build and `ut spl` test to finish.
+
+Build succeeded but the `ut spl` output wasn't captured. Let me run the test directly.
+
+All verification passes. The previously crashing `spl_test_load_fit_full` test now runs cleanly (20 tests, 0 failures, no SIGSEGV). Let me confirm the deliverable branch is present and record final commit hashes.
+
+All checks pass. Here is the final report.
+
+## Pickman fix report — MR !1207 (branch `cherry-e50ee1acd4a`, attempt 1)
+
+### Root cause
+The failing CI jobs (`make check`, `make qcheck`) crashed with **SIGSEGV** in
+`test_spl[ut_spl_test_spl_test_load_fit_full]`. The new "full" FIT loader test
+(`spl_test_load_fit_full`) exercises `spl_load_fit_image()`, whose config-
+selection path reaches `select_from_config()` in `boot/image-fit.c`. With
+`CONFIG_FIT_BEST_MATCH=y` it calls `fit_conf_find_compat(fit, gd_fdt_blob())`,
+which does `fdt_getprop(fdt, 0, ...)`. In the SPL context `gd_fdt_blob()` is
+**NULL** (no control DTB), so libfdt dereferences a NULL pointer and the
+process dies with signal 11. The "simple" FIT loader never hit this, which is
+why the crash only surfaced once the "full"-loader test was added.
+
+### Responsible commit
+`test: spl: add unit test for the "full" FIT loader` (cherry-picked
+`e41a770f3800`). It is the commit that first drives the full loader through
+this path, so the fix belongs here to keep the series bisect-safe.
+
+### Change made
+A one-line guard in `select_from_config()` (`boot/image-fit.c`), so the
+best-match lookup only runs when a control FDT actually exists, otherwise it
+falls back to the default configuration:
+
+```c
+if (IS_ENABLED(CONFIG_FIT_BEST_MATCH) && !fit_uname_config &&
+    gd_fdt_blob())
+        ret = fit_conf_find_compat(fit, gd_fdt_blob());
+```
+
+The change was folded into that commit (now `f199dfba856`) with a `[pickman]`
+note appended to its message. `boot/image-fit.c | 3 ++-`.
+
+### Verification
+- `um build sandbox` — clean (exit 0)
+- `buildman -o /tmp/pickman sandbox sandbox_noinst sandbox_spl edison` (10
+  boards incl. sandbox variants) — **0 errors**; only pre-existing, unrelated
+  `arch/sandbox/dts/sandbox.dtsi` ranges_format warnings
+- `ut spl` on `sandbox_spl` — **20 tests, 0 failures**; `spl_test_load_fit_full`
+  now runs to completion, no SIGSEGV
+
+### Infrastructure-only failures (no code change)
+- **edison** — "place edison is not acquired by your user" (lab acquisition)
+- **play** — lab timeout on `setenv foo2 "test2"` (lab flake)
+- **efi-x86_64-uboot-iso-install** — OSError Errno 5 / qemu closed (transient)
+
+### Deliverable
+Branch **`cherry-e50ee1acd4a-fix1`** (HEAD `522605afe4a`), created in worktree
+`/tmp/uboot-fix1` and visible in the main repo. **Not pushed**, per instructions.
+
+---
+
