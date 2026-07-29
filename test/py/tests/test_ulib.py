@@ -56,9 +56,12 @@ def check_demo_output(ubman, out):
     """Check output from the ulib demo programs exactly line by line"""
     lines = out.split('\n')
 
-    # Read the actual system version from /proc/version
+    # Read the actual system version from /proc/version. The demo prints the
+    # line exactly as os_fgets() returns it, so strip only the newline: some
+    # kernels build without a year field, leaving a trailing space which the
+    # demo reproduces and strip() would remove
     with open('/proc/version', 'r', encoding='utf-8') as f:
-        proc_version = f.read().strip()
+        proc_version = f.read().rstrip('\n')
 
     # demo.c uses U-Boot's printf (compiled with U-Boot headers) while
     # demo_helper.c uses glibc's printf, so their output streams are
@@ -91,9 +94,12 @@ def check_rust_demo_output(_ubman, out):
     """Check output from the Rust ulib demo programs exactly line by line"""
     lines = out.split('\n')
 
-    # Read the actual system version from /proc/version
+    # Read the actual system version from /proc/version. The demo prints the
+    # line exactly as os_fgets() returns it, so strip only the newline: some
+    # kernels build without a year field, leaving a trailing space which the
+    # demo reproduces and strip() would remove
     with open('/proc/version', 'r', encoding='utf-8') as f:
-        proc_version = f.read().strip()
+        proc_version = f.read().rstrip('\n')
 
     # Check individual parts of the output
     assert len(lines) == 13, f"Expected 13 lines, got {len(lines)}"
