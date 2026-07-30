@@ -92328,3 +92328,33 @@ No issues encountered; nothing was left unaddressed.
 
 ---
 
+### Review: 2026-07-30
+
+Branch: cherry-9f16b258e56
+
+Comments addressed:
+
+
+### Conversation log
+Delta is identical (+2 lines). Let me verify the build.
+
+Build clean. Now create the -v2 branch and push.
+
+Push succeeded. Rebase complete.
+
+## Summary
+
+**MR !1208** (branch `cherry-9f16b258e56`) rebased onto latest `ci/master` and force-pushed.
+
+### What was done
+1. **Rebased** `cherry-9f16b258e56` onto `ci/master` (`c6b287e17ca` → `a78f2b25f84`) with `git rebase --keep-empty`.
+2. **Clean rebase — no conflicts.** ci/master's new commits (lab-resgroup merge, gitlab-ci EFI-ISO/link64 tweaks, ulib test fix) don't touch any files the MR touches, so all 3 commits replayed cleanly.
+3. **Merge commit delta unchanged** — still +2 lines (`CONFIG_PCI_INIT_R=y` in `configs/toradex-smarc-imx95_defconfig` and `configs/verdin-imx95_defconfig`), confirming the resolution is still valid against the new target.
+4. **Build verified**: `buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 errors/warnings**.
+5. Created local branch **`cherry-9f16b258e56-v3`** (v2 already existed from prior rebase), then force-pushed to remote `cherry-9f16b258e56` to update the MR pipeline.
+
+### Suggested reply to post on the MR
+> Rebased onto the latest target branch (`ci/master` `a78f2b25f84`). Clean rebase with no conflicts this time — ci/master's new commits don't overlap with this MR's files. The merge commit still applies with the same +2-line delta (`CONFIG_PCI_INIT_R=y` in the two imx95 defconfigs). Sandbox builds cleanly with buildman (1 built, 0 errors). Force-pushed to re-trigger the pipeline.
+
+---
+
