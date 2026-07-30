@@ -89,7 +89,7 @@ static int env_ext4_save_buffer(env_t *env_new)
 			   sizeof(env_t), FILETYPE_REG);
 	ext4fs_close();
 
-	if (err == -1) {
+	if (err < 0) {
 		printf("\n** Unable to write \"%s\" from %s%d:%d **\n",
 			CONFIG_ENV_EXT4_FILE, ifname, dev, part);
 		return 1;
