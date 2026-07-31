@@ -91601,6 +91601,31 @@ No unexpected delta drift; the rebase only re-based onto newer upstream, no cont
 
 ### Suggested reply to post on the MR
 > Rebased onto the latest target branch (`ci/master` `439bfa30f6d`). The rebase applied cleanly with no conflicts, the empty merge commit was preserved, and all three real commits kept identical deltas (Resync 106/95, can_assume +2, merge empty). Sandbox builds cleanly with buildman. Force-pushed to re-trigger the pipeline.
+Branch: cherry-647990c5284
+
+Commits:
+- 647990c5284 armv8: mmu: add a function to help debug TLB lookups
+- 41b6b904b58 armv8: mmu: teach the pagetable dumper to show explicit FAULT maps
+- 76c90926087 armv8: mmu: commonize the set_one_region() loop
+- 6468ca13ffd armv8: mmu: fix and optimise explicitly unmapping regions
+- 7636a15a54f Merge patch series "armv8: mmu: fix region unmapping and optimise set_one_region()"
+
+### Conversation log
+All 5 commits cherry-picked successfully onto branch `cherry-647990c5284`.
+
+**Final Status:**
+- **Build**: OK (sandbox build clean, no warnings/errors)
+- **Commits present** (in order):
+  1. `468f05dae96` armv8: mmu: add a function to help debug TLB lookups
+  2. `d32f04cf188` armv8: mmu: teach the pagetable dumper to show explicit FAULT maps
+  3. `1acfac4a465` armv8: mmu: commonize the set_one_region() loop
+  4. `3eb6650b863` armv8: mmu: fix and optimise explicitly unmapping regions
+  5. `502cd89cc73` Merge patch series "armv8: mmu: fix region unmapping and optimise set_one_region()" (empty merge, preserved with --allow-empty)
+- **Deltas**: All 4 non-merge commits matched the originals exactly (same files, same line counts).
+- **Fix-ups**: None required.
+- **Concerning deltas**: None.
+
+Branch is ready for pushing.
 
 ---
 
@@ -91683,6 +91708,7 @@ The branch is ready for pushing and has **not** been merged into any other branc
 ---
 
 ### Review: 2026-07-28
+### Review: 2026-07-26
 
 Branch: cherry-647990c5284
 
@@ -92027,6 +92053,131 @@ note appended to its message. `boot/image-fit.c | 3 ++-`.
 ### Deliverable
 Branch **`cherry-e50ee1acd4a-fix1`** (HEAD `522605afe4a`), created in worktree
 `/tmp/uboot-fix1` and visible in the main repo. **Not pushed**, per instructions.
+
+
+### Conversation log
+Deltas match originals. Now build check.
+
+Build clean. Now create v-suffix branch and push.
+
+Push succeeded. Rebase complete.
+
+## Report
+
+**MR:** !1204 (branch `cherry-647990c5284`) — rebased onto latest `ci/master`.
+
+### Actions
+1. Checked out `cherry-647990c5284` (was at `6744bda7058`, 6 commits ahead of the old base, 8 behind `ci/master`).
+2. `git rebase --keep-empty ci/master` — succeeded cleanly, no conflicts. All 6 commits (5 cherry-picks + pickman record) replayed.
+3. Verified per-commit deltas match originals exactly:
+   - `ed8193cb371` "add TLB debug helper" — `cache_v8.c +60`, `mmu.h +7` ✓
+   - `42ab8962a7d` "dumper shows FAULT maps" — `cache_v8.c ±4` ✓
+   - `bd4b9166fae` "commonize set_one_region() loop" — `cache_v8.c +28/-66` ✓
+   - `60325319287` "fix and optimise unmapping regions" — `cache_v8.c ±18` ✓
+   - Merge `4fab57afbf0` — empty merge preserved by `--keep-empty` ✓
+4. Build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings/errors.
+5. Created local branch `cherry-647990c5284-v3` at rebased tip `de11ef45d01`.
+6. Force-pushed to remote `cherry-647990c5284`: `6744bda7058…de11ef45d01` — GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master`. No conflicts; all 5 cherry-picks (plus the empty merge, preserved via `--keep-empty`) replayed byte-identical to before. Sandbox build clean.
+>
+> Note the standing diagnosis on the ARM64 boot failures (jetson-nano, play, rock5b) is unchanged — those are the real upstream regression from `6468ca13ffd` (this MR's `60325319287`), not a rebase-fidelity issue. Group-A infra failures should hopefully clear on this pipeline run.
+
+---
+
+### Review: 2026-07-28
+
+Branch: cherry-647990c5284
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the current state of the branch and the target.
+
+The branch is 7 ahead, 12 behind. Let me checkout and rebase.
+
+Now rebase onto ci/master:
+
+Rebase succeeded cleanly. Now verify per-commit deltas match:
+
+The grep matched the pickman-history commit. Let me compare against the actual hashes:
+
+All four deltas match the pre-rebase stats exactly. The merge commit is preserved. Now build:
+
+Build clean (1/1 built, no warnings/errors). Now create the local `-v4` branch and push:
+
+Push succeeded. Rebase complete.
+
+## Report
+
+**MR:** !1204 (branch `cherry-647990c5284`) — rebased onto latest `ci/master`.
+
+### Actions
+1. Checked out `cherry-647990c5284` (was at `de11ef45d01`/`ec00ee37768`, 7 ahead / 12 behind `ci/master` at `439bfa30f6d`).
+2. `git rebase --keep-empty ci/master` — succeeded cleanly, no conflicts. All 7 commits (5 cherry-picks/merge + 2 pickman records) replayed.
+3. Verified per-commit deltas match originals exactly:
+   - `0bf2933c3f6` "add TLB debug helper" — `cache_v8.c +60`, `mmu.h +7` ✓
+   - `d020eee70dc` "dumper shows FAULT maps" — `cache_v8.c ±2` ✓
+   - `c02a8490924` "commonize set_one_region() loop" — `cache_v8.c +28/-66` ✓
+   - `56b0cff10df` "fix and optimise unmapping regions" — `cache_v8.c +14/-4` ✓
+   - Merge `8f65ae374d6` — empty merge preserved by `--keep-empty` ✓
+4. Build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings/errors.
+5. Created local branch `cherry-647990c5284-v4` at rebased tip `dff676b77ca`.
+6. Force-pushed to remote `cherry-647990c5284`: `de11ef45d01…dff676b77ca` — GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`439bfa30f6d`). No conflicts; all 5 cherry-picks (plus the empty merge, preserved via `--keep-empty`) replayed byte-identical to before. Sandbox build clean.
+>
+> Note the standing diagnosis on the ARM64 boot failures (jetson-nano, play, rock5b) is unchanged — those are the real upstream regression from `6468ca13ffd` (this MR's `56b0cff10df`), not a rebase-fidelity issue. Group-A infra failures should hopefully clear on this pipeline run.
+
+---
+
+### Review: 2026-07-28
+
+Branch: cherry-647990c5284
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the current state of the branch and target branch.
+
+Now rebase onto ci/master:
+
+Rebase succeeded cleanly. Now verify per-commit deltas match originals:
+
+All four deltas match the pre-rebase stats exactly, and the empty merge is preserved. Now build:
+
+Build clean (1/1 built, no warnings/errors). Now create the `-v5` local branch and push:
+
+Push succeeded. Rebase complete.
+
+## Report
+
+**MR:** !1204 (branch `cherry-647990c5284`) — rebased onto latest `ci/master`.
+
+### Actions
+1. Checked out `cherry-647990c5284` (was at `dff676b77ca`/`50cd3f26511`, 8 ahead / 15 behind `ci/master` at `35cbdb15899`).
+2. `git rebase --keep-empty ci/master` — succeeded cleanly, no conflicts. All 8 commits (5 cherry-picks/merge + 3 pickman records) replayed.
+3. Verified per-commit deltas match originals exactly:
+   - `a4166e19168` "add TLB debug helper" — `cache_v8.c +60`, `mmu.h +7` ✓
+   - `3842fed0d60` "dumper shows FAULT maps" — `cache_v8.c ±2` ✓
+   - `71cab5fd945` "commonize set_one_region() loop" — `cache_v8.c +28/-66` ✓
+   - `a8c30a6e9bd` "fix and optimise unmapping regions" — `cache_v8.c +14/-4` ✓
+   - Merge `f2056cf927e` — empty merge preserved by `--keep-empty` ✓
+4. Build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings/errors.
+5. Created local branch `cherry-647990c5284-v5` at rebased tip `504e6c8569e`.
+6. Force-pushed to remote `cherry-647990c5284`: `dff676b77ca…504e6c8569e` — GitLab will auto-trigger a fresh MR pipeline.
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (`35cbdb15899`). No conflicts; all 5 cherry-picks (plus the empty merge, preserved via `--keep-empty`) replayed byte-identical to before. Sandbox build clean.
+>
+> Note the standing diagnosis on the ARM64 boot failures (jetson-nano, play, rock5b) is unchanged — those are the real upstream regression from `6468ca13ffd` (this MR's `a8c30a6e9bd`), not a rebase-fidelity issue. Group-A infra failures should hopefully clear on this pipeline run.
 
 ---
 
