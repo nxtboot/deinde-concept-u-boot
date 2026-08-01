@@ -92358,3 +92358,125 @@ Push succeeded. Rebase complete.
 
 ---
 
+## 2026-07-31: us/main
+
+Branch: cherry-0c0074f983c
+
+Commits:
+- 0c0074f983c Kconfig: armv7: fix typo
+- 4b199a549fc Kconfig: powerpc: mpc85xx: fix typo
+- 08fc979a61a Kconfig: power: pmic: fix typo
+- d20d285cf0b Kconfig: themal: fix typo
+- 2ffe9687013 Kconfig: misc: add empty line
+- 0caac78a06f Kconfig: arm: restyle
+- f952ddb7ece Kconfig: arch: restyle
+- df3d87bd695 Kconfig: board: restyle
+- 39e98063031 Merge patch series "Kconfig restyle"
+
+### Conversation log
+Stats match (rk3399/Kconfig has 4 extra lines from the VPL restyle, as intended). Building:
+
+The upstream restyle re-indents the old help text, but ci/master has locally rewritten this help text with correct tab indentation already. Resolution: keep the HEAD version.
+
+Delta matches (40→39 files, exactly the dropped aquila hunk). Now the merge commit:
+
+Same three conflicts as before, since the merge diff replays the whole series. Resolve all in favour of our already-resolved state:
+
+All 9 commits applied. Final verification:
+
+All 9 commits cherry-picked onto `cherry-0c0074f983c` (based on ci/master). Final status:
+
+**Build result:** OK — sandbox builds cleanly after every commit and at the end (no warnings or errors).
+
+**Commits applied (9/9):**
+```
+b1c10e77246 Merge patch series "Kconfig restyle"      (empty, message preserved)
+82d896744fe Kconfig: board: restyle
+ea1d43fb63f Kconfig: arch: restyle
+2158a4c3827 Kconfig: arm: restyle
+6120b968ec8 Kconfig: misc: add empty line
+b2911c2dcc5 Kconfig: themal: fix typo
+409a8ef9d3d Kconfig: power: pmic: fix typo
+5177c064948 Kconfig: powerpc: mpc85xx: fix typo
+03b9ea97def Kconfig: armv7: fix typo
+```
+
+**Fix-ups made** (each noted in the amended commit message):
+
+1. **Kconfig: arm: restyle** — conflict in arch/arm/mach-rockchip/rk3399/Kconfig: ci/master carries a different TPL_STACK value (0xff8eff00 vs upstream 0xff8effff) plus local VPL entries. Kept the local value with tab indentation and restyled the local VPL_STACK/VPL_TEXT_BASE entries to match the series style.
+
+2. **Kconfig: arch: restyle** — conflict in arch/x86/Kconfig: ci/master has a locally rewritten X86_RUN_64BIT_NO_SPL help text that is already tab-indented; kept the local text and dropped the upstream re-indent of the old text.
+
+3. **Kconfig: board: restyle** — modify/delete conflict on board/toradex/aquila-am69/Kconfig: that board does not exist on ci/master, so the hunk was dropped.
+
+4. **Merge commit** — replayed the same three conflicts; resolved in favour of the already-applied state, leaving it empty (committed with --allow-empty, original merge message and cherry-pick reference preserved).
+
+**Delta check:** all commits match their originals exactly except the three above, where differences are precisely the documented fix-ups (arm restyle: +4 lines for VPL restyle; arch restyle: −6 lines for kept help text; board restyle: 39 vs 40 files for the dropped aquila hunk). Nothing concerning.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-07-31 (attempt 1)
+
+Branch: cherry-0c0074f983c
+
+Failed jobs:
+- zybo (sjg-lab)
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+All four boards produce identical configs. Let me confirm the branch touches nothing but Kconfig files (i.e. no code changes at all), then do the sanity build.
+
+## Report: Infrastructure failures — no code changes needed
+
+**Diagnosis:** All three job failures on MR !1211 are lab/runner issues, not caused by the branch.
+
+**Evidence that the branch cannot be at fault:**
+- The series changes only Kconfig files (whitespace restyle and typo fixes) — `git diff` against the base (63746e0a413) shows no source code changes whatsoever
+- Generated `.config` files for xilinx_zynq_virt (zybo), edison, chromebook_brya_cb (felwinter-cb) and sandbox are **bit-identical** between the base commit and the branch HEAD, so the built binaries are functionally unchanged
+- `um build sandbox` passes cleanly
+
+**Per-job root causes:**
+
+| Job | Failure | Cause |
+|-----|---------|-------|
+| edison | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid) | Board-reservation conflict — another user/host holds the labgrid place. Pure infrastructure; the test never even started |
+| zybo | Flashed OK, then "No U-Boot prompt" → lab timeout after 180s | Board failed to come up on serial — lab flake |
+| felwinter-cb | coreboot bootblock/romstage run, then cse_lite issues a HECI global reset and no U-Boot prompt appears; labgrid then hits a `SerialDriver ... state "bound"` StateError during retry | Board/labgrid flake during the boot-partition switch reset — not related to the (identical) U-Boot image |
+
+**Action taken:** None on the code, per the transient-failure rule. The local branch `cherry-0c0074f983c-fix1` has been created pointing at the unchanged branch HEAD (6e59d178139) so the caller can retry the pipeline. Recommendation: release/kick the stale edison labgrid reservation and re-run the three jobs.
+
+---
+
+### Review: 2026-07-31
+
+Branch: cherry-0c0074f983c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) zybo, edison, felwinter-cb.
+
+All four boards produce i...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push to the original remote branch:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is the bot's own pipeline-fix report from attempt 1, not a request for code changes. Its conclusion stands: the three failed jobs (zybo, edison, felwinter-cb) were infrastructure/lab flakes — the branch touches only Kconfig files and the generated configs for all affected boards are bit-identical to the base. No code change is required or was made.
+
+**Actions taken:**
+1. Checked out `cherry-0c0074f983c` — no source changes needed; the branch was one metadata commit ahead of the remote (`f9de0f4640a` "pickman: Record pipeline fix", which only adds to `.pickman-history`)
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+3. Created local branch `cherry-0c0074f983c-v2`
+4. Force-pushed to `ci/cherry-0c0074f983c` (`6e59d178139` → `f9de0f4640a`), which updates MR !1211 and triggers a fresh pipeline to retry the failed jobs
+
+**Suggested MR reply:**
+
+> The failures on zybo, edison and felwinter-cb are infrastructure issues, not caused by this series: the branch changes only Kconfig files and the generated configs for all affected boards are bit-identical to the base, so the built images are unchanged. Per-job causes: edison — stale labgrid place reservation (held by kea/labgrid); zybo — board failed to come up on serial (lab flake); felwinter-cb — labgrid SerialDriver StateError during the cse_lite boot-partition reset. No code changes are needed. The branch has been re-pushed to trigger a fresh pipeline; if edison fails again, the stale labgrid reservation needs to be released on the lab side.
+
+**Note:** if the edison labgrid place is still held by another user, that job will fail again regardless of the retry — that reservation needs clearing on the lab host.
+
+---
+
