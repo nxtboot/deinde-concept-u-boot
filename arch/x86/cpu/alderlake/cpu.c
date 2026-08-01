@@ -112,16 +112,7 @@ static bool ucode_matches(ulong pos, ulong sig, uint pfid)
 	return false;
 }
 
-/**
- * find_microcode() - Point ucode_base at this CPU's microcode update
- *
- * The FIT gives the boot processor its microcode, but the application
- * processors start with none, which makes them unreliable, so mp_init
- * has each one load the update at ucode_base. Find the update matching
- * this CPU in the image's microcode collection, which may hold several
- * (e.g. for different steppings)
- */
-static void find_microcode(void)
+void adl_find_microcode(void)
 {
 	struct binman_entry mcu;
 	ulong base, size, pos, sig;
@@ -265,7 +256,7 @@ static void adl_core_init(void)
 static int cpu_x86_adl_probe(struct udevice *dev)
 {
 	if (gd->flags & GD_FLG_RELOC) {
-		find_microcode();
+		adl_find_microcode();
 		adl_core_init();
 
 		/*

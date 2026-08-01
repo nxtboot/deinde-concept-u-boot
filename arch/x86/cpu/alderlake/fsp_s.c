@@ -6,7 +6,6 @@
  */
 
 #include <binman.h>
-#include <binman_sym.h>
 #include <dm.h>
 #include <efi.h>
 #include <init.h>
@@ -16,19 +15,17 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/lapic.h>
+#include <asm/microcode.h>
 #include <asm/mp.h>
 #include <asm/msr.h>
 #include <asm/mrccache.h>
 #include <asm/pci.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/gpio.h>
 #include <asm/arch/iomap.h>
 #include <asm/fsp2/fsp_api.h>
 #include <asm/fsp2/fsp_internal.h>
 #include <asm/arch/fsp/fsp_s_upd.h>
-
-/* The microcode collection, which the FSP loads on the APs */
-binman_sym_declare(ulong, microcode, image_pos);
-binman_sym_declare(ulong, microcode, size);
 
 /* The system agent's fixed BARs, which PCI enumeration can disturb */
 #define SA_DEV_ROOT		PCI_BDF(0, 0, 0)
@@ -249,8 +246,33 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	 */
 	cfg->skip_mp_init = 1;
 	cfg->cpu_mp_ppi = (ulong)&mp_services_noop;
-	cfg->microcode_region_base = binman_sym(ulong, microcode, image_pos);
-	cfg->microcode_region_size = binman_sym(ulong, microcode, size);
+
+	/*
+	 * The FSP reloads the microcode from this region on every core
+	 * (ReloadMicrocodePatch) and runs its MCHECK against it.
+	 * binman_sym() cannot provide it, since binman symbols are not
+	 * filled in for U-Boot proper: the accessor expands to
+	 * BINMAN_SYM_MISSING and the region silently ends up unset.
+	 *
+	 * adl_find_microcode() locates this CPU's matching update and
+	 * leaves its flash address in ucode_base. It must be called here,
+	 * since the CPU driver probes after silicon init and so ucode_base
+	 * is still zero at this point.
+	 *
+	 * That address is in the cached execute-in-place region, so the FSP
+	 * reads it without the uncached-SPI crawl a lower address would
+	 * cause, and it is the single matching update rather than the whole
+	 * collection, whose other updates the FSP's matcher might pick
+	 * instead
+	 */
+	adl_find_microcode();
+	if (ucode_base && ucode_size) {
+		cfg->microcode_region_base = ucode_base;
+		cfg->microcode_region_size = ucode_size;
+	} else {
+		log_warning("No microcode located (base=%x size=%x)\n",
+			    ucode_base, ucode_size);
+	}
 
 	/*
 	 * Keep the PCH ACPI PM timer running: left at zero, this makes the
