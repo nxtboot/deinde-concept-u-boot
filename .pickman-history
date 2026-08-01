@@ -92450,3 +92450,33 @@ All four boards produce identical configs. Let me confirm the branch touches not
 
 ---
 
+### Review: 2026-07-31
+
+Branch: cherry-0c0074f983c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) zybo, edison, felwinter-cb.
+
+All four boards produce i...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push to the original remote branch:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is the bot's own pipeline-fix report from attempt 1, not a request for code changes. Its conclusion stands: the three failed jobs (zybo, edison, felwinter-cb) were infrastructure/lab flakes — the branch touches only Kconfig files and the generated configs for all affected boards are bit-identical to the base. No code change is required or was made.
+
+**Actions taken:**
+1. Checked out `cherry-0c0074f983c` — no source changes needed; the branch was one metadata commit ahead of the remote (`f9de0f4640a` "pickman: Record pipeline fix", which only adds to `.pickman-history`)
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+3. Created local branch `cherry-0c0074f983c-v2`
+4. Force-pushed to `ci/cherry-0c0074f983c` (`6e59d178139` → `f9de0f4640a`), which updates MR !1211 and triggers a fresh pipeline to retry the failed jobs
+
+**Suggested MR reply:**
+
+> The failures on zybo, edison and felwinter-cb are infrastructure issues, not caused by this series: the branch changes only Kconfig files and the generated configs for all affected boards are bit-identical to the base, so the built images are unchanged. Per-job causes: edison — stale labgrid place reservation (held by kea/labgrid); zybo — board failed to come up on serial (lab flake); felwinter-cb — labgrid SerialDriver StateError during the cse_lite boot-partition reset. No code changes are needed. The branch has been re-pushed to trigger a fresh pipeline; if edison fails again, the stale labgrid reservation needs to be released on the lab side.
+
+**Note:** if the edison labgrid place is still held by another user, that job will fail again regardless of the retry — that reservation needs clearing on the lab host.
+
+---
+
