@@ -92534,3 +92534,48 @@ The branch has not been merged anywhere, as instructed.
 
 ---
 
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-c28e57164d7
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+The rebase completed and the commit now shows 597/597 lines (matching the original upstream stats). Let me verify no semantic changes remain and build:
+
+Only help-text typo fixes remain — no semantic changes. Now build:
+
+Done. Here's the report:
+
+## Root cause
+
+Commit `1f07bf89165` ("Kconfig: power: restyle") — one of the three cherry-picks with conflicts — accidentally dropped the entire `PMIC_SPACEMIT_P1` entry from `drivers/power/pmic/Kconfig` when resolving the conflict around the neighbouring TPS80031 entry. Since `spacemit_k1_defconfig` (the bpif3 board) enables `CONFIG_PMIC_SPACEMIT_P1=y` and `CONFIG_DM_REGULATOR_SPACEMIT_P1=y` (which depends on it), both options were silently dropped from the build, leaving the board without its PMIC/regulator drivers. This matches the **bpif3** failure, where the FSBL (SPL) is sent but never comes up ("BootROM did not start the FSBL").
+
+## Fix
+
+Restored the `PMIC_SPACEMIT_P1` block (already in new-style `help` form) in its original position and amended the responsible commit via `rf 8`, appending a `[pickman]` note to the commit message. The commit's diffstat is back to 597 insertions/597 deletions, matching the original upstream commit exactly. I verified with `git diff -w` against the base that the branch now contains only non-semantic changes (`---help---` → `help`, blank lines, and two help-text typo fixes).
+
+## Verification
+
+- `um build sandbox` — clean
+- `buildman` for spacemit_k1, edison, efi-x86_app64, chromebook_brya, chromebook_brya_cb, sandbox, rk3399-generic-ddr3 — all 15 variants built, only pre-existing missing-blob warnings
+- `spacemit_k1/.config` now contains both `CONFIG_PMIC_SPACEMIT_P1=y` and `CONFIG_DM_REGULATOR_SPACEMIT_P1=y`
+
+## The other five failures are infrastructure issues (no code change made)
+
+- **edison**: labgrid place already acquired by another user (`kea/labgrid`) — lock contention
+- **vbe**: serial console output heavily garbled/interleaved, then `dm tree` timeout — console corruption on the runner
+- **felwinter**: all 49 tests **passed**, but the job exceeded the 10-minute GitLab timeout (a mid-run re-flash took 223s)
+- **felwinter-cb**: no U-Boot prompt after em100 flash (coreboot HECI reset loop) — board-side flakiness; note the same code booted and passed on felwinter
+- **efi-x86_64-uboot-iso-install**: Ubuntu installer kernel panic (no root device) plus 10-minute job timeout — test-environment issue, unrelated to a whitespace-only series
+
+The result is on local branch `cherry-c28e57164d7-fix1` (not pushed), with `cherry-c28e57164d7` pointing at the same commit.
+
+---
+
