@@ -171,8 +171,8 @@ int dram_init_banksize_from_efi(void)
 		if (!efi_mem_type_is_usable(desc->type) ||
 		    (desc->num_pages << EFI_PAGE_SHIFT) < 1 << 20)
 			continue;
-		gd->bd->bi_dram[num_banks].start = desc->physical_start;
-		gd->bd->bi_dram[num_banks].size = desc->num_pages <<
+		gd->dram[num_banks].start = desc->physical_start;
+		gd->dram[num_banks].size = desc->num_pages <<
 			EFI_PAGE_SHIFT;
 		num_banks++;
 	}

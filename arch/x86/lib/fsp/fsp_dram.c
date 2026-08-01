@@ -92,8 +92,8 @@ int dram_init_banksize(void)
 	update_mtrr = CONFIG_IS_ENABLED(FSP_VERSION2);
 
 	if (!ll_boot_init()) {
-		gd->bd->bi_dram[0].start = 0;
-		gd->bd->bi_dram[0].size = gd->ram_size;
+		gd->dram[0].start = 0;
+		gd->dram[0].size = gd->ram_size;
 
 		if (update_mtrr)
 			mtrr_add_request(MTRR_TYPE_WRBACK, 0, gd->ram_size);
@@ -126,20 +126,20 @@ int dram_init_banksize(void)
 					       res_desc->phys_start +
 						       res_desc->len);
 		} else {
-			gd->bd->bi_dram[bank].start = res_desc->phys_start;
-			gd->bd->bi_dram[bank].size = res_desc->len;
+			gd->dram[bank].start = res_desc->phys_start;
+			gd->dram[bank].size = res_desc->len;
 			if (update_mtrr)
 				add_bank_mtrr(res_desc->phys_start,
 					      res_desc->len);
 			log_debug("ram %llx %llx\n",
-				  gd->bd->bi_dram[bank].start,
-				  gd->bd->bi_dram[bank].size);
+				  gd->dram[bank].start,
+				  gd->dram[bank].size);
 		}
 	}
 
 	/* Add the memory below 4GB */
-	gd->bd->bi_dram[0].start = 0;
-	gd->bd->bi_dram[0].size = low_end;
+	gd->dram[0].start = 0;
+	gd->dram[0].size = low_end;
 
 	/*
 	 * Set up an MTRR to the top of low, reserved memory. This is necessary
@@ -244,7 +244,7 @@ unsigned int install_e820_map(unsigned int max_entries,
 #if CONFIG_IS_ENABLED(HANDOFF) && IS_ENABLED(CONFIG_USE_HOB)
 int handoff_arch_save(struct spl_handoff *ho)
 {
-	ho->arch.usable_ram_top = gd->bd->bi_dram[0].size;
+	ho->arch.usable_ram_top = gd->dram[0].size;
 	ho->arch.hob_list = gd->arch.hob_list;
 
 	return 0;

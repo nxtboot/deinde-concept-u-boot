@@ -58,15 +58,15 @@ void lprint_mhz(const char *name, unsigned long hz)
 	printf("%-12s= %6s MHz\n", name, strmhz(buf, hz));
 }
 
-static void print_bi_dram(const struct bd_info *bd)
+static void print_dram(const struct bd_info *bd)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; ++i) {
-		if (bd->bi_dram[i].size) {
+		if (gd->dram[i].size) {
 			lprint_num_l("DRAM bank",	i);
-			lprint_num_ll("-> start",	bd->bi_dram[i].start);
-			lprint_num_ll("-> size",	bd->bi_dram[i].size);
+			lprint_num_ll("-> start",	gd->dram[i].start);
+			lprint_num_ll("-> size",	gd->dram[i].size);
 		}
 	}
 }
@@ -125,7 +125,7 @@ static int bdinfo_print_all(struct bd_info *bd)
 	lprint_num_l("bd address", (ulong)bd);
 #endif
 	lprint_num_l("boot_params", (ulong)bd->bi_boot_params);
-	print_bi_dram(bd);
+	print_dram(bd);
 	lprint_num_l("flashstart", (ulong)bd->bi_flashstart);
 	lprint_num_l("flashsize", (ulong)bd->bi_flashsize);
 	lprint_num_l("flashoffset", (ulong)bd->bi_flashoffset);
@@ -183,7 +183,7 @@ int do_bdinfo(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 			print_eth();
 			return CMD_RET_SUCCESS;
 		case 'm':
-			print_bi_dram(bd);
+			print_dram(bd);
 			return CMD_RET_SUCCESS;
 		default:
 			return CMD_RET_USAGE;

@@ -82,7 +82,7 @@ int booti_setup(ulong image, ulong *relocated_addr, ulong *size,
 			dst = image - text_offset;
 		}
 	} else {
-		dst = gd->bd->bi_dram[0].start;
+		dst = gd->dram[0].start;
 	}
 
 	*relocated_addr = ALIGN(dst, SZ_2M) + text_offset;
