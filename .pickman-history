@@ -92417,3 +92417,36 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-07-31 (attempt 1)
+
+Branch: cherry-0c0074f983c
+
+Failed jobs:
+- zybo (sjg-lab)
+- edison (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+All four boards produce identical configs. Let me confirm the branch touches nothing but Kconfig files (i.e. no code changes at all), then do the sanity build.
+
+## Report: Infrastructure failures — no code changes needed
+
+**Diagnosis:** All three job failures on MR !1211 are lab/runner issues, not caused by the branch.
+
+**Evidence that the branch cannot be at fault:**
+- The series changes only Kconfig files (whitespace restyle and typo fixes) — `git diff` against the base (63746e0a413) shows no source code changes whatsoever
+- Generated `.config` files for xilinx_zynq_virt (zybo), edison, chromebook_brya_cb (felwinter-cb) and sandbox are **bit-identical** between the base commit and the branch HEAD, so the built binaries are functionally unchanged
+- `um build sandbox` passes cleanly
+
+**Per-job root causes:**
+
+| Job | Failure | Cause |
+|-----|---------|-------|
+| edison | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid) | Board-reservation conflict — another user/host holds the labgrid place. Pure infrastructure; the test never even started |
+| zybo | Flashed OK, then "No U-Boot prompt" → lab timeout after 180s | Board failed to come up on serial — lab flake |
+| felwinter-cb | coreboot bootblock/romstage run, then cse_lite issues a HECI global reset and no U-Boot prompt appears; labgrid then hits a `SerialDriver ... state "bound"` StateError during retry | Board/labgrid flake during the boot-partition switch reset — not related to the (identical) U-Boot image |
+
+**Action taken:** None on the code, per the transient-failure rule. The local branch `cherry-0c0074f983c-fix1` has been created pointing at the unchanged branch HEAD (6e59d178139) so the caller can retry the pipeline. Recommendation: release/kick the stale edison labgrid reservation and re-run the three jobs.
+
+---
+
