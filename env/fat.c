@@ -94,7 +94,7 @@ static int env_fat_save(void)
 #endif
 
 	err = file_fat_write(file, (void *)&env_new, 0, sizeof(env_t), &size);
-	if (err == -1) {
+	if (err < 0) {
 		/*
 		 * This printf is embedded in the messages from env_save that
 		 * will calling it. The missing \n is intentional.
