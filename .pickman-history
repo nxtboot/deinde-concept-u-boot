@@ -92653,3 +92653,40 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-e0fa78b2151
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+All 12 matched boards built. Let me confirm there are no errors (warnings shown are pre-existing DT/blob notices):
+
+## Report: Infrastructure failures — no code changes made
+
+Both job failures on MR !1214 (branch `cherry-e0fa78b2151`) are lab/infrastructure issues, not caused by the branch:
+
+### Job edison (588948)
+Failed before any test ran, during `u-boot-test-getrole edison --configure`:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+This is a labgrid place-acquisition conflict — the place was held by `kea/labgrid`. Pure lab resource contention.
+
+### Job play (588946)
+30 host-side tool tests passed, then the first test needing the board console (`test_help`) timed out. The console showed only the TI ROM boot-info string (`616d363278` = "am62x", `GP`) followed by `CCCCCCC` — the ROM's UART-boot fallback prompt, meaning the board never loaded an image from its boot media. The framework itself classified it as `Lab failure: Timeout ... Marking connection bad`. This is a board/boot-media flake, not a firmware regression.
+
+### Why the branch cannot be responsible
+- All 38 cherry-picked commits are i.MX/NXP-specific except `drivers/clk/clk-divider.c` and `include/linux/clk-provider.h`
+- That generic change is a pure refactor: `clk_register_divider()` now delegates to a new `clk_register_divider_table()` with a NULL table — behaviourally identical for existing callers (the beagleplay R5 SPL builds this file via `SPL_CLK_CCF`)
+- Edison (x86) uses none of the touched code, and its job failed before even building
+- Verified locally: `um build sandbox` clean; `buildman` built edison, am62x_beagleplay_a53, am62x_beagleplay_r5 and all sandbox variants with 0 errors (only pre-existing warnings)
+
+### Result
+Branch `cherry-e0fa78b2151-fix1` created, pointing at the same HEAD (a116526edf8) with no changes. Recommendation: simply retry both jobs; the edison place conflict may need `labgrid-client -p edison allow ellesmere/gitlab-runner` or a release of the stale acquisition.
+
+---
+
