@@ -92724,3 +92724,60 @@ No code change is requested or needed, so none was made.
 
 ---
 
+## 2026-08-01: us/main
+
+Branch: cherry-3fa1b49c940
+
+Commits:
+- 3fa1b49c940 spi: aspeed: add AST2700 support
+- b62b55ba4b2 arm: aspeed: add ASPEED AST2700 SoC family support
+- 40bf1417bab arm: dts: aspeed: Add initial AST27xx SoC device tree
+- 0758fddb372 clk: ast2700: add clock driver support
+- 6fb40812ddb reset: ast2700: add reset driver support
+- 4a72fd9fb09 ram: aspeed: add SDRAM controller driver for AST2700
+- 1537ec5ceb7 rtc: mcfrtc: fix leap year calculation using wrong variable
+- a51f24ac31f env: Avoid mixing of environment and driver prints on env load
+- 4a0990218aa cros_ec: Convert dm_cros_ec_get_ops into an inline function and constify dm_cros_ec_ops
+- d5046398433 treewide: Staticize and constify acpi ops
+- 0d8e33717d7 Merge patch series "arm: aspeed: add initial AST2700 SoC support"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+Simple conflict — the incoming commit adds `N: ast2700` where ci/master has `N: ast2500` plus a new Axiado section. Resolving by keeping both:
+
+Stats identical (17 files, +1274/-1). The conflict was context-only. Build test:
+
+Identical stats. Build test:
+
+The original changes `reset-ast2500.c` → `reset-ast*.c`, but ci/master removed those F: lines (covered by the N: patterns). Resolving by keeping HEAD:
+
+This one dropped the MAINTAINERS hunk (redundant in ci/master), so I'll amend with a note:
+
+Identical stats. Build test:
+
+All 11 commits present. Final build:
+
+All done. Final status:
+
+## Result: success
+
+Branch `cherry-3fa1b49c940` is ready with all 11 commits on top of ci/master.
+
+**Build**: sandbox builds cleanly (buildman, no warnings/errors) — verified after every cherry-pick and at the end.
+
+**Fix-ups made** (all in MAINTAINERS; ci/master has restructured the ARM ASPEED entry to use `N:` patterns, so every patch touching that entry conflicted):
+
+1. **arm: aspeed: add ASPEED AST2700 SoC family support** — context-only conflict; added `N: ast2700` after `N: ast2500`, keeping the new Axiado section. Final stats identical to original (17 files, +1274/-1), so no note added.
+2. **arm: dts: aspeed: Add initial AST27xx SoC device tree** — added the one new line `F: arch/arm/dts/ast*` into the restructured entry. Stats identical to original.
+3. **reset: ast2700: add reset driver support** — dropped the MAINTAINERS hunk (it edited `F: drivers/reset/reset-ast2500.c`, which no longer exists in ci/master; covered by `N:` patterns). Amended with a note in the commit message.
+4. **ram: aspeed: add SDRAM controller driver for AST2700** — added the new line `F: arch/riscv/include/asm/arch-ast2700/` into the restructured entry. Stats identical to original.
+
+**Merge commit** (0d8e33717d7) — picked with `-m 1`, resolved to an empty commit keeping our MAINTAINERS, message preserved with cherry-pick reference.
+
+**Concerning finding worth noting**: the upstream merge commit 0d8e33717d7 on us/main contains **leftover conflict markers** (`=======`, `>>>>>>> 4a72fd9fb09...`) in its MAINTAINERS file — a botched merge resolution upstream. I did not replicate that breakage; our branch keeps the clean resolution. You may want to report this upstream.
+
+No commits had concerning deltas — all matched their originals exactly apart from the intentional MAINTAINERS adaptations above.
+
+---
+
