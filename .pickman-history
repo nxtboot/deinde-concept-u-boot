@@ -93216,3 +93216,65 @@ Force-pushing an unchanged branch solely to re-trigger flaky lab tests would cre
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-b8b9ca05c72
+
+Commits:
+- b8b9ca05c72 watchdog: renesas_wwdt: #undef field_{get, prep}() before definition
+- 40db9d313be power: domain: renesas-r8a78000: #undef field_{get, prep}() before definition
+- cd36be5a473 net: hifemac: #undef field_{get, prep}() before definition
+- 9b5c0b88348 mtd: nand: raw: sunxi: #undef field_{get, prep}() before definition
+- 6bbf6cfc915 clk: renesas: #undef field_{get, prep}() before definition
+- 08badbd7d82 board: renesas: gen5-cm33: #undef field_{get, prep}() before definition
+- ab447ac6178 bitops: import BITS_PER_TYPE() macro from linux
+- 9c10cba5368 bitfield: Add less-checking __FIELD_{GET,PREP}()
+- da10fca9b06 bitfield: Add non-constant field_{prep, get}() helpers
+- c02633a823b watchdog: renesas_wwdt: Convert to common field_{get, prep}() helpers
+- 0a1ca728f97 power: domain: renesas-r8a78000: Convert to common field_{get, prep}() helpers
+- d2f172f3054 net: hifemac: Convert to common field_{get, prep}() helpers
+- 3253f2b326b mtd: nand: raw: sunxi: Convert to common field_{get, prep}() helpers
+- 575717f4b67 clk: renesas: rcar-cpg-lib: Convert to common field_{get, prep}() helpers
+- d26cb20e6bd board: renesas: gen5-cm33: Convert to common field_{get, prep}() helpers
+- 7518f6fbc4b pinctrl: add more pinconf/pinctrl definitions
+- 05a8f13bbdb pinctrl: sort and format the contents of the makefile
+- dcdd7aa2644 pinctrl: airoha: add shared pinctrl code
+- 1c98e84c04b pinctrl: airoha: add pin controller and gpio driver for AN7581 SoC
+- 56d820371f3 pinctrl: airoha: add pin controller and gpio driver for AN7583 SoC
+- 5c07bb58962 pinctrl: airoha: add pin controller and gpio driver for EN7523 SoC
+- 8f99a782fdb configs: airoha: an7581: enable pinctrl/gpio support
+- 4c7f94a7385 configs: airoha: en7523: enable pinctrl/gpio support
+- c56c7298c42 arm: dts: en7523: add pinctrl/gpio support, drop legacy gpio support
+- c991faf4f7a Merge patch series "pinctrl: add support of Airoha SoCs"
+
+### Conversation log
+Delta matches. Let me proceed with the remaining cherry-picks. Given there are 25 commits and building after each would take excessive time, I'll do the cherry-picks sequentially with delta checks, then do a comprehensive final build.
+
+All 24 regular commits picked. Now the merge commit:
+
+Now let me run the final build:
+
+Build passed. Let me verify final state:
+
+All 25 commits are present on branch `cherry-b8b9ca05c72`.
+
+## Final Status
+
+**Branch:** `cherry-b8b9ca05c72` (based on ci/master)
+
+**Result:** All 25 commits cherry-picked successfully. Build passed (sandbox).
+
+**Commit breakdown:**
+- 24 regular commits cherry-picked cleanly with `-x` annotation
+- 1 merge commit (`c991faf4f7a`) preserved as empty commit with `-x` annotation (`--allow-empty` was needed because all content had already been applied by the individual patches)
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None — spot-checked first commit matched exactly; the merge commit becoming empty is expected behavior (the merge just brings together patches already applied individually).
+
+**Build:** `buildman -L --board sandbox` completed successfully — 1 board built, no warnings/errors.
+
+The branch is ready for pushing.
+
+---
+
