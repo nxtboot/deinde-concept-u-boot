@@ -92817,3 +92817,42 @@ The branch is ready for pushing (4 content commits + 1 empty merge commit ahead 
 
 ---
 
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-eec819b9843
+
+Failed jobs:
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+I've reviewed all three job logs. Let me check out the branch and investigate.
+
+Now let me check what the branch commits actually touch, to see if they could plausibly cause these failures:
+
+## Report: all three failures are infrastructure/transient — no code changes made
+
+I diagnosed each job log and found no failure attributable to the branch. The branch's five commits touch only 'drivers/usb/gadget/f_sdp.c', 'drivers/usb/gadget/f_mass_storage.c', the fastboot command loop in 'cmd/fastboot.c' (plus Kconfig/doc), and Qualcomm phone board config files.
+
+### Job-by-job diagnosis
+
+**edison (589726)** — Pure lab infrastructure. The job died at pytest configure time, before any test ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid
+```
+A labgrid place-reservation conflict (place held by 'kea/labgrid'). Nothing to do with the code.
+
+**vbe (589723, rk3399-generic-ddr3)** — Test flake. 45 tests passed; only 'test_dm_compat' failed with 'IndexError: list index out of range' while parsing 'dm tree' output in test/py/tests/test_dm.py:12. That happens when a serial console line is truncated/garbled so a line is shorter than the Driver column offset. None of the branch commits can alter 'dm tree' output on rk3399 — the fastboot change only affects the interactive 'fastboot' command loop, and the gadget changes only affect USB disconnect paths, none exercised by this test.
+
+**felwinter-cb (589716, chromebook_brya)** — Hardware/firmware issue. The log shows coreboot repeatedly restarting in romstage: 'cse_lite: Set Boot Partition Info Command (RW)' followed by 'HECI: Global Reset(Type:1)' in a loop. The U-Boot payload never even started, so U-Boot code cannot be at fault; the labgrid driver then timed out after 180s waiting for the prompt. The branch touches no x86/coreboot code in any case.
+
+### Verification
+- 'um build sandbox' passes cleanly on the branch
+- Since no source change is warranted, I skipped the multi-board buildman run
+
+### Result
+Branch **cherry-eec819b9843-fix1** created, pointing at the same commit as cherry-eec819b9843 (53e5f7b3a73) with no modifications. Recommendation: retry the pipeline; the edison place conflict and felwinter-cb CSE reset loop may need lab attention (e.g. releasing the edison place, power-cycling/recovering the felwinter device).
+
+---
+
