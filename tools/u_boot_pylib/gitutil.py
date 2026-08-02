@@ -14,6 +14,234 @@ from u_boot_pylib import terminal
 USE_NO_DECORATE = True
 
 
+def merge_base(*refs, git_dir=None):
+    """Find the best common ancestor of some commits
+
+    Args:
+        *refs (str): Two or more commits/refs
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        str: The merge-base commit hash, or '' if there is none
+    """
+    return command.output('git', 'merge-base', *refs, cwd=git_dir).strip()
+
+
+def diff(old, new, git_dir=None):
+    """Get the diff between two commits
+
+    The output is decoded with surrogateescape, so a diff which touches a file
+    that is not UTF-8 does not raise; the bytes survive a round trip back into
+    a patch which git can apply.
+
+    Args:
+        old (str): Old commit/ref
+        new (str): New commit/ref
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        str: The diff
+    """
+    raw = command.output('git', 'diff', '--no-color', '--no-ext-diff', old,
+                         new, cwd=git_dir, binary=True)
+    return raw.decode('utf-8', errors='surrogateescape')
+
+
+def blame(rev, path, git_dir=None):
+    """Get 'git blame --porcelain' output for a file
+
+    Decoded with surrogateescape, so a file which is not UTF-8 does not raise.
+
+    Args:
+        rev (str): Commit/ref to blame
+        path (str): File to blame
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        str: The porcelain blame output
+    """
+    raw = command.output('git', 'blame', '--porcelain', rev, '--', path,
+                         cwd=git_dir, binary=True)
+    return raw.decode('utf-8', errors='surrogateescape')
+
+
+def log_hashes(commit_range, grep=None, no_merges=False, git_dir=None):
+    """List the commit hashes in a range
+
+    Args:
+        commit_range (str): Range to list, e.g. 'base..branch'
+        grep (str): Only list commits whose message matches this, or None
+        no_merges (bool): True to exclude merge commits
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of str: Commit hashes, newest first
+    """
+    cmd = ['git', 'log', '--format=%H']
+    if no_merges:
+        cmd.append('--no-merges')
+    if grep:
+        cmd += ['--grep', grep]
+    cmd.append(commit_range)
+    return command.output(*cmd, cwd=git_dir).split()
+
+
+def log_commits_with_files(commit_range, no_merges=False, git_dir=None):
+    """List commits in a range together with the files each one touches
+
+    Args:
+        commit_range (str): Range to list, e.g. 'base..branch'
+        no_merges (bool): True to exclude merge commits
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of tuple: (hash, list of paths) for each commit, newest first
+    """
+    cmd = ['git', 'log', '--format=@%H', '--name-only']
+    if no_merges:
+        cmd.append('--no-merges')
+    cmd.append(commit_range)
+    commits = []
+    for line in command.output(*cmd, cwd=git_dir).splitlines():
+        if line.startswith('@'):
+            commits.append((line[1:], []))
+        elif line and commits:
+            commits[-1][1].append(line)
+    return commits
+
+
+def commit_summary(ref, git_dir=None):
+    """Get a one-line summary of a commit
+
+    Args:
+        ref (str): Commit/ref
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        str: The abbreviated hash and subject, e.g. 'abc1234 Fix the thing'
+    """
+    return command.output('git', 'log', '-1', '--format=%h %s', ref,
+                          cwd=git_dir).strip()
+
+
+def branch_exists(name, git_dir=None):
+    """Check whether a local branch exists
+
+    Args:
+        name (str): Branch name
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        bool: True if the branch exists
+    """
+    return ref_exists(f'refs/heads/{name}', git_dir)
+
+
+def delete_branch(name, git_dir=None):
+    """Delete a local branch, even if it is not merged
+
+    Args:
+        name (str): Branch name
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    command.output('git', 'branch', '-D', name, cwd=git_dir)
+
+
+def create_branch(name, start=None, git_dir=None):
+    """Create a branch and check it out
+
+    Args:
+        name (str): Branch name to create
+        start (str): Commit/ref to start from, or None for HEAD
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    cmd = ['git', 'checkout', '-b', name]
+    if start:
+        cmd.append(start)
+    command.output(*cmd, cwd=git_dir)
+
+
+def apply_patch(fname, reverse=False, whitespace=None, git_dir=None):
+    """Apply a patch file to the working tree
+
+    Args:
+        fname (str): Patch file to apply
+        reverse (bool): True to apply in reverse ('git apply -R')
+        whitespace (str): Value for --whitespace (e.g. 'nowarn'), or None
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    cmd = ['git', 'apply']
+    if reverse:
+        cmd.append('-R')
+    if whitespace:
+        cmd.append(f'--whitespace={whitespace}')
+    cmd.append(fname)
+    command.output(*cmd, cwd=git_dir)
+
+
+def checkout_paths(ref, paths, git_dir=None):
+    """Check some paths out of a commit into the working tree
+
+    Args:
+        ref (str): Commit/ref to take the paths from
+        paths (list of str): Paths to check out
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    command.output('git', 'checkout', ref, '--', *paths, cwd=git_dir)
+
+
+def add(paths, git_dir=None):
+    """Stage some paths
+
+    Args:
+        paths (list of str): Paths to stage
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    command.output('git', 'add', '--', *paths, cwd=git_dir)
+
+
+def commit_paths(message, paths=None, git_dir=None):
+    """Create a commit
+
+    Args:
+        message (str): Commit message
+        paths (list of str): Paths to commit, or None to commit what is staged
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+    """
+    cmd = ['git', 'commit', '-m', message]
+    if paths:
+        cmd += ['--'] + list(paths)
+    command.output(*cmd, cwd=git_dir)
+
+
+def has_uncommitted_changes(git_dir=None):
+    """Check whether tracked files have uncommitted changes
+
+    Args:
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        bool: True if there are staged or unstaged changes to tracked files
+    """
+    out = command.output('git', 'status', '--porcelain',
+                         '--untracked-files=no', cwd=git_dir)
+    return bool(out.strip())
+
+
 def log_cmd(commit_range, git_dir=None, oneline=False, reverse=False,
             count=None, decorate=False):
     """Create a command to perform a 'git log'
@@ -206,19 +434,29 @@ def count_commits_in_range(git_dir, range_expr):
     return patch_count, None
 
 
-def count_revs(git_dir, range_expr):
+def count_revs(git_dir, range_expr, first_parent=False, merges=None):
     """Count revisions in a range using 'git rev-list --count'.
 
     Args:
         git_dir (str): Directory containing git repo, or None for the
             current working directory
         range_expr (str): Range to count, e.g. 'upstream..branch'
+        first_parent (bool): True to follow only the first parent
+        merges (bool): True to count only merges, False to exclude merges,
+            None to count all commits
     Return:
         int: Number of revisions in the range, or None if the range is
         invalid (e.g. one of the refs does not exist).
     """
-    result = command.run_one('git', 'rev-list', '--count', range_expr,
-                             cwd=git_dir, capture=True,
+    cmd = ['git', 'rev-list', '--count']
+    if first_parent:
+        cmd.append('--first-parent')
+    if merges is True:
+        cmd.append('--merges')
+    elif merges is False:
+        cmd.append('--no-merges')
+    cmd.append(range_expr)
+    result = command.run_one(*cmd, cwd=git_dir, capture=True,
                              capture_stderr=True, raise_on_error=False)
     if result.return_code:
         return None
