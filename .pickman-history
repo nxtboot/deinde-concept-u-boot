@@ -92856,3 +92856,51 @@ Branch **cherry-eec819b9843-fix1** created, pointing at the same commit as cherr
 
 ---
 
+## 2026-08-01: us/main
+
+Branch: cherry-85a35bcd635
+
+Commits:
+- 85a35bcd635 MAINTAINERS: Replace Cortina with N:
+- 5a49a1dd557 Makefile.lib: remove stale migrate_xxx logic from fdtgrep logic
+- 5602e89a834 rockchip: sdram: Fix initialization of DRAM banks
+- 6f949abb3c9 MAINTAINERS: Add myself as core PCI maintainer
+- f657eab9bed pci: rcar: Use dev_read_addr_index()
+- 9b6f2786aaf pci: mpc85xx: Simplfy code with dev_remap_addr()
+- 06fdccbcd8b pci: dw_mvebu: Use dev_read_addr_x APIs
+- fc1016d6838 pci: imx: Use dev_read_addr_index_ptr()
+- 57abbbcc945 pci: layerscape: ep: Use dev APIs
+- ae169744cf6 Merge tag 'u-boot-pci-next-20260701' of https://source.denx.de/u-boot/custodians/u-boot-ufs into next
+
+### Conversation log
+The rockchip sdram commit (5602e89a834) is verified identical to f02b23c59d4 already in ci/master — skipping it.
+
+All cherry-picks are complete. Branch `cherry-85a35bcd635` is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every commit and in the final verification (no warnings or errors).
+
+**Commits applied (9 of 10):**
+
+| Original | New | Subject |
+|---|---|---|
+| 85a35bcd635 | 9f5bcb0aa2d | MAINTAINERS: Replace Cortina with N: |
+| 5a49a1dd557 | 5a5bdd517f7 | Makefile.lib: remove stale migrate_xxx logic from fdtgrep logic |
+| 6f949abb3c9 | ed34b242f08 | MAINTAINERS: Add myself as core PCI maintainer |
+| f657eab9bed | 5c9ebd8c237 | pci: rcar: Use dev_read_addr_index() |
+| 9b6f2786aaf | b0f647378e2 | pci: mpc85xx: Simplfy code with dev_remap_addr() |
+| 06fdccbcd8b | a60e96758d9 | pci: dw_mvebu: Use dev_read_addr_x APIs |
+| fc1016d6838 | e2d4e021d1c | pci: imx: Use dev_read_addr_index_ptr() |
+| 57abbbcc945 | 5309b5e9d85 | pci: layerscape: ep: Use dev APIs |
+| ae169744cf6 | 5b4007c97ad | Merge tag 'u-boot-pci-next-20260701' (empty, preserved with --allow-empty) |
+
+**Skipped as already applied:**
+- 5602e89a834 (rockchip: sdram: Fix initialization of DRAM banks) — verified identical to f02b23c59d4 already in ci/master; the patch diff showed only the hash and the "cherry picked from" line differing.
+
+**Fix-ups:** None needed — every pick applied cleanly.
+
+**Deltas:** All commit stats matched the originals exactly (same files, same line counts). The merge commit came in empty as expected, since all its content arrived via the individual picks.
+
+---
+
