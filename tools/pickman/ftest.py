@@ -31,6 +31,7 @@ from pickman import __main__ as pickman
 from pickman import agent
 from pickman import control
 from pickman import database
+from pickman import drift
 from pickman import gitlab_api as gitlab
 
 # Test URL constants
@@ -261,7 +262,7 @@ class TestMain(unittest.TestCase):
                             if not l.startswith(('Update database',
                                                 'Creating'))]
             lines = iter(output_lines)
-            self.assertEqual('Commits in us/next not in ci/master: 10',
+            self.assertEqual('Commits in us/main not in ci/master: 10',
                              next(lines))
             self.assertEqual('', next(lines))
             self.assertEqual('Last common commit:', next(lines))
@@ -1517,6 +1518,114 @@ class TestApply(unittest.TestCase):
             ret = control.do_pickman(args)
         self.assertEqual(ret, 0)
         self.assertIn('No new commits to cherry-pick', stdout.getvalue())
+
+    def test_apply_unresolved_conflict(self):
+        """Test that a conflict left by the agent is not pushed as an MR
+
+        If the agent returns while a cherry-pick is still in progress - say
+        it was blocked partway through - pickman must not push the branch,
+        create an MR or commit the history on top of the conflict.
+        """
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'abc123')
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+
+        commits = [control.CommitInfo('h' * 40, 'hhhhhhh', 'A commit',
+                                      'Me <me@example.com>')]
+        args = argparse.Namespace(cmd='apply', source='us/master',
+                                  branch='cherry-hhhhhhh', remote='ci',
+                                  target='master', push=True)
+
+        # The branch --list check must see the branch as existing
+        command.TEST_RESULT = command.CommandResult(stdout='cherry-hhhhhhh')
+
+        with mock.patch.object(control, 'build_applied_map', return_value={}), \
+             mock.patch.object(agent, 'cherry_pick_commits',
+                               return_value=(True, 'log')), \
+             mock.patch.object(agent, 'read_signal_file',
+                               return_value=(None, None)), \
+             mock.patch.object(control, '_has_unresolved_conflict',
+                               return_value=True), \
+             mock.patch.object(control, '_abort_in_progress') as mock_abort, \
+             mock.patch.object(control, 'push_mr') as mock_push:
+            with terminal.capture() as (_, stderr):
+                ret, success, _ = control.execute_apply(
+                    dbs, 'us/master', commits, 'cherry-hhhhhhh', args)
+
+        self.assertEqual(ret, 1)
+        self.assertFalse(success)
+        mock_abort.assert_called_once()
+        mock_push.assert_not_called()
+        self.assertIn('unresolved conflicts', stderr.getvalue())
+
+
+class TestInProgressOps(unittest.TestCase):
+    """Tests for detecting and aborting an in-progress git operation"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    def test_conflict_from_in_progress_ref(self):
+        """Test that a cherry-pick in progress is detected"""
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            # rev-parse of CHERRY_PICK_HEAD succeeds, meaning it exists
+            if 'CHERRY_PICK_HEAD' in args:
+                return command.CommandResult(stdout='deadbeef', return_code=0)
+            return command.CommandResult(return_code=1)
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            self.assertTrue(control._has_unresolved_conflict())
+
+    def test_conflict_from_unmerged_path(self):
+        """Test that an unmerged path is detected with no ref present"""
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            if 'ls-files' in args:
+                return command.CommandResult(stdout='100644 abc 1\tfoo.c\n')
+            return command.CommandResult(return_code=1)
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            self.assertTrue(control._has_unresolved_conflict())
+
+    def test_no_conflict(self):
+        """Test that a clean tree reports no conflict"""
+        command.TEST_RESULT = command.CommandResult(stdout='', return_code=1)
+        with terminal.capture():
+            self.assertFalse(control._has_unresolved_conflict())
+
+    def test_abort_runs_matching_command(self):
+        """Test that abort runs the command for the operation in progress"""
+        seen = []
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])
+            seen.append(args)
+            # Only a merge is in progress
+            if 'rev-parse' in args:
+                return command.CommandResult(
+                    return_code=0 if 'MERGE_HEAD' in args else 1)
+            return command.CommandResult()
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            control._abort_in_progress()
+
+        aborts = [a for a in seen if a[:2] == ['git', 'merge']]
+        self.assertEqual(aborts, [['git', 'merge', '--abort']])
+        # A cherry-pick was not in progress, so it must not be aborted
+        self.assertFalse([a for a in seen if a[:2] == ['git', 'cherry-pick']])
 
 
 class TestCommitSource(unittest.TestCase):
@@ -2961,7 +3070,9 @@ class TestExecuteApply(unittest.TestCase):
             args = argparse.Namespace(push=False)
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'conversation log')):
+                                   return_value=(True, 'conversation log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     ret, success, conv_log = control.execute_apply(
@@ -3016,7 +3127,9 @@ class TestExecuteApply(unittest.TestCase):
                                       target='main')
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'log')):
+                                   return_value=(True, 'log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     with mock.patch.object(gitlab, 'push_and_create_mr',
@@ -3042,7 +3155,9 @@ class TestExecuteApply(unittest.TestCase):
                                       target='main')
 
             with mock.patch.object(control.agent, 'cherry_pick_commits',
-                                   return_value=(True, 'log')):
+                                   return_value=(True, 'log')), \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False):
                 with mock.patch.object(control, 'run_git',
                                        return_value='abc123'):
                     with mock.patch.object(gitlab, 'push_and_create_mr',
@@ -6847,6 +6962,844 @@ class TestResolveSubtreeConflicts(unittest.TestCase):
                     'dts', 'v6.15-dts', 'dts/upstream', '/tmp/test')
         self.assertFalse(success)
         self.assertEqual(log, '')
+
+
+# A diff covering the cases which matter: a change, a file with two hunks, a
+# file deleted downstream and a binary file
+#
+# The lines are joined rather than written as one string, since a diff has
+# leading spaces and tabs which are not welcome in a source file
+DRIFT_DIFF = '\n'.join([
+    'diff --git a/README b/README',
+    'index 5653f68..f43d956 100644',
+    '--- a/README',
+    '+++ b/README',
+    '@@ -1,4 +1,4 @@',
+    '- # SPDX-License-Identifier: GPL-2.0+',
+    '+# SPDX-License-Identifier: GPL-2.0+',
+    ' #',
+    ' # (C) Copyright 2000',
+    ' #',
+    'diff --git a/drivers/video/vid.c b/drivers/video/vid.c',
+    'index 1111111..2222222 100644',
+    '--- a/drivers/video/vid.c',
+    '+++ b/drivers/video/vid.c',
+    '@@ -10,6 +10,7 @@ static int probe(void)',
+    ' {',
+    ' \tint ret;',
+    ' ',
+    '+\tdebug("hello\\n");',
+    ' \tret = init();',
+    ' \tif (ret)',
+    ' \t\treturn ret;',
+    '@@ -30,3 +31,4 @@ int remove(void)',
+    ' \tfree(priv);',
+    ' \treturn 0;',
+    ' }',
+    '+/* end */',
+    'diff --git a/tools/old.c b/tools/old.c',
+    'deleted file mode 100644',
+    'index 3333333..0000000',
+    '--- a/tools/old.c',
+    '+++ /dev/null',
+    '@@ -1,3 +0,0 @@',
+    '-int main(void)',
+    '-{',
+    '-}',
+    'diff --git a/logo.bmp b/logo.bmp',
+    'index 4444444..5555555 100644',
+    'Binary files a/logo.bmp and b/logo.bmp differ',
+    '',
+])
+
+
+class TestDriftFingerprint(unittest.TestCase):
+    """Tests for hunk fingerprinting"""
+
+    def test_ignores_context(self):
+        """Test that only added and removed lines affect the fingerprint"""
+        first = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+new', ' ctx'])
+        second = drift.fingerprint(
+            ['@@ -99,2 +99,2 @@ func()', '-old', '+new', ' different ctx'])
+        self.assertEqual(first, second)
+
+    def test_content_change(self):
+        """Test that a change to the delta changes the fingerprint"""
+        first = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+new'])
+        second = drift.fingerprint(['@@ -1,2 +1,2 @@', '-old', '+other'])
+        self.assertNotEqual(first, second)
+
+    def test_length(self):
+        """Test that a fingerprint is the expected length"""
+        fprint = drift.fingerprint(['@@ -1 +1 @@', '+x'])
+        self.assertEqual(len(fprint), drift.FP_LEN)
+
+    def test_non_utf8(self):
+        """Test that a line which is not valid UTF-8 can be fingerprinted"""
+        raw = b'+caf\xf3'.decode('utf-8', errors='surrogateescape')
+        fprint = drift.fingerprint(['@@ -1 +1 @@', raw])
+        self.assertEqual(len(fprint), drift.FP_LEN)
+
+
+class TestDriftAddedLines(unittest.TestCase):
+    """Tests for working out which downstream lines a hunk adds"""
+
+    def test_added(self):
+        """Test that added lines get the correct downstream line numbers"""
+        lines = ['@@ -10,3 +10,4 @@', ' ctx', '+one', ' ctx', '+two']
+        self.assertEqual(drift.added_lines(10, lines), [11, 13])
+
+    def test_removed_takes_no_space(self):
+        """Test that a removed line does not advance the line number"""
+        lines = ['@@ -10,3 +10,2 @@', ' ctx', '-gone', '+new']
+        self.assertEqual(drift.added_lines(10, lines), [11])
+
+    def test_no_newline_marker(self):
+        """Test that the 'no newline at end of file' note is not a line"""
+        lines = ['@@ -1,1 +1,1 @@', '-old', '\\ No newline at end of file',
+                 '+new']
+        self.assertEqual(drift.added_lines(1, lines), [1])
+
+    def test_deletion_only(self):
+        """Test that a hunk which only removes lines adds nothing"""
+        lines = ['@@ -1,3 +0,0 @@', '-one', '-two', '-three']
+        self.assertEqual(drift.added_lines(0, lines), [])
+
+
+class TestDriftParseDiff(unittest.TestCase):
+    """Tests for parsing git diff output"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.fdiffs = drift.parse_diff(DRIFT_DIFF)
+        self.by_path = {fdiff.path: fdiff for fdiff in self.fdiffs}
+
+    def test_empty(self):
+        """Test that an empty diff produces nothing"""
+        self.assertEqual(drift.parse_diff(''), [])
+
+    def test_files_found(self):
+        """Test that every file in the diff is found"""
+        self.assertEqual(
+            [fdiff.path for fdiff in self.fdiffs],
+            ['README', 'drivers/video/vid.c', 'tools/old.c', 'logo.bmp'])
+
+    def test_hunks(self):
+        """Test that a file with two hunks yields both"""
+        fdiff = self.by_path['drivers/video/vid.c']
+        self.assertEqual(len(fdiff.hunks), 2)
+        self.assertEqual(fdiff.hunks[0].start, 10)
+        self.assertEqual(fdiff.hunks[0].count, 7)
+        self.assertEqual(fdiff.hunks[0].added, [13])
+        self.assertEqual(fdiff.hunks[1].added, [34])
+
+    def test_hunk_without_count(self):
+        """Test a hunk header which gives no line count, meaning one line"""
+        diff = ('diff --git a/f b/f\n--- a/f\n+++ b/f\n'
+                '@@ -1 +1 @@\n-old\n+new\n')
+        hunk = drift.parse_diff(diff)[0].hunks[0]
+        self.assertEqual(hunk.start, 1)
+        self.assertEqual(hunk.count, 1)
+
+    def test_header_kept(self):
+        """Test that the header is kept, so a patch can be rebuilt"""
+        fdiff = self.by_path['README']
+        self.assertEqual(fdiff.header[0], 'diff --git a/README b/README')
+        self.assertIn('--- a/README', fdiff.header)
+        self.assertIn('+++ b/README', fdiff.header)
+
+    def test_binary(self):
+        """Test that a binary difference is flagged and has no hunks"""
+        fdiff = self.by_path['logo.bmp']
+        self.assertTrue(fdiff.binary)
+        self.assertEqual(fdiff.hunks, [])
+
+    def test_deleted(self):
+        """Test that a file deleted downstream is flagged"""
+        self.assertTrue(self.by_path['tools/old.c'].deleted)
+        self.assertFalse(self.by_path['README'].deleted)
+
+    def test_preamble_ignored(self):
+        """Test that anything before the first file is ignored"""
+        fdiffs = drift.parse_diff('some noise\n' + DRIFT_DIFF)
+        self.assertEqual(len(fdiffs), 4)
+
+
+class TestDriftAccepts(unittest.TestCase):
+    """Tests for the accept file"""
+
+    def test_read(self):
+        """Test reading entries, skipping comments and blank lines"""
+        text = ('# a comment\n'
+                '\n'
+                'README                 *        Our fix for line 1\n'
+                'drivers/video/vid.c    a1b2c3d  Needed by bootstd\n')
+        accepts = drift.read_accepts(text)
+        self.assertEqual(len(accepts), 2)
+        self.assertEqual(accepts[0],
+                         drift.Accept('README', '*', 'Our fix for line 1'))
+        self.assertEqual(accepts[1].fingerprint, 'a1b2c3d')
+        self.assertEqual(accepts[1].reason, 'Needed by bootstd')
+
+    def test_read_empty(self):
+        """Test that an empty accept file yields no entries"""
+        self.assertEqual(drift.read_accepts(''), [])
+
+    def test_read_malformed(self):
+        """Test that a line with too few fields is reported"""
+        with self.assertRaises(ValueError) as exc:
+            drift.read_accepts('README *\n')
+        self.assertIn('README *', str(exc.exception))
+        self.assertIn(':1:', str(exc.exception))
+
+    def test_round_trip(self):
+        """Test that entries survive being written and read back"""
+        accepts = [drift.Accept('README', '*', 'Our fix'),
+                   drift.Accept('a/b.c', 'abc123def456', 'Downstream tweak')]
+        again = drift.read_accepts(drift.format_accepts(accepts))
+        self.assertEqual(sorted(accepts), again)
+
+    def test_format_sorted(self):
+        """Test that entries are sorted, to keep the diff small"""
+        accepts = [drift.Accept('zzz', '*', 'Last'),
+                   drift.Accept('aaa', '*', 'First')]
+        out = drift.format_accepts(accepts)
+        self.assertLess(out.index('First'), out.index('Last'))
+
+    def test_format_header(self):
+        """Test that the file explains itself"""
+        out = drift.format_accepts([])
+        self.assertIn('deltas from upstream which are intentional', out)
+        self.assertTrue(out.endswith('\n'))
+
+
+class TestDriftMatchAccept(unittest.TestCase):
+    """Tests for matching a hunk against the accept file"""
+
+    def test_whole_file(self):
+        """Test that '*' covers every hunk in a file"""
+        accepts = [drift.Accept('README', '*', 'Our fix')]
+        self.assertEqual(
+            drift.match_accept(accepts, 'README', 'abc123').reason, 'Our fix')
+
+    def test_one_hunk(self):
+        """Test that a fingerprint covers only that hunk"""
+        accepts = [drift.Accept('a/b.c', 'abc123', 'Wanted')]
+        self.assertIsNotNone(drift.match_accept(accepts, 'a/b.c', 'abc123'))
+        self.assertIsNone(drift.match_accept(accepts, 'a/b.c', 'other1'))
+
+    def test_glob(self):
+        """Test that a glob covers the files it matches"""
+        accepts = [drift.Accept('arch/arm/dts/*.dtsi', '*', 'Ours')]
+        self.assertIsNotNone(
+            drift.match_accept(accepts, 'arch/arm/dts/k3.dtsi', 'abc123'))
+        self.assertIsNone(
+            drift.match_accept(accepts, 'arch/arm/dts/k3.dts', 'abc123'))
+
+    def test_directory(self):
+        """Test that a pattern ending in '/' covers everything below it"""
+        accepts = [drift.Accept('test/hooks/', '*', 'Downstream hooks')]
+        self.assertIsNotNone(
+            drift.match_accept(accepts, 'test/hooks/deep/f.py', 'abc123'))
+        self.assertIsNone(
+            drift.match_accept(accepts, 'test/other/f.py', 'abc123'))
+
+    def test_no_match(self):
+        """Test that an unrelated file does not match"""
+        accepts = [drift.Accept('README', '*', 'Our fix')]
+        self.assertIsNone(drift.match_accept(accepts, 'Makefile', 'abc123'))
+
+
+class TestDriftClassify(unittest.TestCase):
+    """Tests for classifying hunks as wanted, accepted or drift"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.by_path = {fdiff.path: fdiff
+                        for fdiff in drift.parse_diff(DRIFT_DIFF)}
+        self.vid = self.by_path['drivers/video/vid.c']
+
+    def test_no_downstream_commit(self):
+        """Test that every hunk is drift when nothing touched the file"""
+        verdicts = drift.classify(self.vid, [], None)
+        self.assertEqual([vdt.state for vdt in verdicts],
+                         [drift.DRIFT, drift.DRIFT])
+
+    def test_accepted(self):
+        """Test that the accept file exempts a hunk"""
+        fprint = self.vid.hunks[0].fingerprint
+        accepts = [drift.Accept('drivers/video/vid.c', fprint, 'Wanted')]
+        verdicts = drift.classify(self.vid, accepts, None)
+        self.assertEqual(verdicts[0].state, drift.ACCEPTED)
+        self.assertEqual(verdicts[0].reason, 'Wanted')
+        self.assertEqual(verdicts[1].state, drift.DRIFT)
+
+    def test_blame_wanted(self):
+        """Test that a hunk a downstream commit wrote is wanted"""
+        # The first hunk adds line 13, the second adds line 34
+        blame = {13: 'abc123'}
+        verdicts = drift.classify(self.vid, [], blame)
+        self.assertEqual(verdicts[0].state, drift.WANTED)
+        self.assertEqual(verdicts[0].reason, 'abc123')
+        self.assertEqual(verdicts[1].state, drift.DRIFT)
+
+    def test_blame_no_owner(self):
+        """Test that a hunk no downstream commit wrote is drift"""
+        verdicts = drift.classify(self.vid, [], {999: 'abc123'})
+        self.assertEqual([vdt.state for vdt in verdicts],
+                         [drift.DRIFT, drift.DRIFT])
+
+    def test_deletion_kept_when_blamed(self):
+        """Test that a deletion is left alone when blame is in use
+
+        Blame can say who wrote a line but not who deleted one, so reverting
+        it might resurrect code a downstream commit meant to remove.
+        """
+        old = self.by_path['tools/old.c']
+        verdicts = drift.classify(old, [], {})
+        self.assertEqual(verdicts[0].state, drift.WANTED)
+        self.assertEqual(verdicts[0].reason, 'deletion')
+
+    def test_deletion_is_drift_without_blame(self):
+        """Test that a deletion is drift when no commit touched the file"""
+        old = self.by_path['tools/old.c']
+        verdicts = drift.classify(old, [], None)
+        self.assertEqual(verdicts[0].state, drift.DRIFT)
+
+
+class TestDriftBuildPatch(unittest.TestCase):
+    """Tests for building the patch which reverts drift"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.fdiffs = drift.parse_diff(DRIFT_DIFF)
+
+    def test_nothing_to_do(self):
+        """Test that a tree with no drift produces no patch"""
+        verdicts = {fdiff.path: [drift.Verdict(hunk, drift.WANTED, 'x')
+                                 for hunk in fdiff.hunks]
+                    for fdiff in self.fdiffs}
+        self.assertEqual(drift.build_patch(self.fdiffs, verdicts), '')
+
+    def test_only_drift_hunks(self):
+        """Test that only the drift hunks appear in the patch"""
+        verdicts = {}
+        for fdiff in self.fdiffs:
+            verdicts[fdiff.path] = [
+                drift.Verdict(hunk, drift.WANTED, 'x')
+                for hunk in fdiff.hunks]
+        vid = 'drivers/video/vid.c'
+        hunk = self.fdiffs[1].hunks[1]
+        verdicts[vid][1] = drift.Verdict(hunk, drift.DRIFT, None)
+
+        patch = drift.build_patch(self.fdiffs, verdicts)
+        self.assertIn('diff --git a/drivers/video/vid.c', patch)
+        self.assertIn('/* end */', patch)
+        # The wanted hunk in the same file must not be reverted
+        self.assertNotIn('debug("hello', patch)
+        self.assertNotIn('README', patch)
+        self.assertTrue(patch.endswith('\n'))
+
+
+class TestDriftGroupByArea(unittest.TestCase):
+    """Tests for grouping drifted files by area of the tree"""
+
+    def test_group(self):
+        """Test that files are grouped by a sensible area"""
+        areas = drift.group_by_area([
+            'README', 'arch/arm/dts/k3.dtsi', 'arch/arm/cpu/cpu.c',
+            'arch/riscv/lib/boot.c', 'lib/efi_loader/efi.c', 'cmd/gpt.c'])
+        self.assertEqual(list(areas), [
+            'README', 'arch/arm', 'arch/riscv', 'cmd', 'lib'])
+        self.assertEqual(areas['arch/arm'],
+                         ['arch/arm/cpu/cpu.c', 'arch/arm/dts/k3.dtsi'])
+        self.assertEqual(areas['lib'], ['lib/efi_loader/efi.c'])
+
+
+# Hashes for the mocked history: one commit cherry-picked from upstream and
+# one written downstream
+DRIFT_CHERRY = 'c' * 40
+DRIFT_DOWN = 'd' * 40
+
+# 'git log --format=@%H --name-only': the cherry-pick touched README, the
+# downstream commit touched the video driver
+DRIFT_LOG = f'@{DRIFT_CHERRY}\nREADME\n\n@{DRIFT_DOWN}\ndrivers/video/vid.c\n'
+
+# 'git blame --porcelain': the downstream commit wrote line 13, the
+# cherry-pick left line 34
+DRIFT_BLAME = (f'{DRIFT_DOWN} 13 13 1\n\tdebug("hello");\n'
+               f'{DRIFT_CHERRY} 34 34 1\n\t/* end */\n')
+
+
+class TestDriftCommands(unittest.TestCase):
+    """Tests for the drift, drift-accept and drift-fix commands"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+
+        self.tmpdir = tempfile.mkdtemp()
+        self.accept_file = os.path.join(self.tmpdir, '.pickman-diverge')
+        self.old_accept = drift.ACCEPT_FILE
+        drift.ACCEPT_FILE = self.accept_file
+
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'a' * 40)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        command.TEST_RESULT = self._handle_git
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+        control.DB_FNAME = self.old_db_fname
+        drift.ACCEPT_FILE = self.old_accept
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        shutil.rmtree(self.tmpdir)
+        database.Database.instances.clear()
+
+    def _handle_git(self, pipe_list=None, **_):
+        """Answer the git commands which the drift code runs"""
+        args = list(pipe_list[0])[1:]
+        if args[0] == 'merge-base':
+            return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'rev-parse':
+            # An explicit --upstream commit is validated with rev-parse
+            return command.CommandResult(return_code=0)
+        if args[0] == 'log':
+            if '--grep' in args:
+                return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
+            return command.CommandResult(stdout=DRIFT_LOG)
+        if args[0] == 'diff':
+            return command.CommandResult(stdout=DRIFT_DIFF.encode('utf-8'))
+        if args[0] == 'blame':
+            return command.CommandResult(stdout=DRIFT_BLAME.encode('utf-8'))
+        raise ValueError(f'Unexpected git command: {args}')
+
+    @staticmethod
+    def _drift_args(**kwargs):
+        """Build the arguments for the drift command
+
+        The fixtures below check the shallow classification, so the helper
+        defaults to shallow even though the command line defaults to deep.
+        """
+        args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
+                'shallow': True, 'diff': False, 'list': False,
+                'upstream': None}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def test_downstream_commits(self):
+        """Test finding the commits written downstream, not cherry-picked"""
+        with terminal.capture():
+            hashes, paths = control.drift_downstream_commits(
+                'us/master', 'ci/master')
+        self.assertEqual(hashes, {DRIFT_DOWN})
+        self.assertEqual(paths, {'drivers/video/vid.c'})
+
+    def test_blame(self):
+        """Test that blame maps a line to the downstream commit which wrote it
+
+        The line left by the cherry-pick must not appear, since it is not a
+        reason for the tree to differ from upstream.
+        """
+        with terminal.capture():
+            blame = control.drift_blame('ci/master', 'drivers/video/vid.c',
+                                        {DRIFT_DOWN})
+        self.assertEqual(blame, {13: DRIFT_DOWN})
+
+    def test_collect_base_from_db(self):
+        """Test that with no override the tracked position is the base"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        self.assertEqual(info.base, 'a' * 40)
+
+    def test_collect_base_override(self):
+        """Test that an explicit base overrides the tracked position"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master', base='b' * 40)
+        self.assertEqual(info.base, 'b' * 40)
+
+    def test_report_upstream_override(self):
+        """Test that --upstream sets the comparison base in the report"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args(upstream='b' * 40))
+        self.assertEqual(ret, 1)
+        self.assertIn('Comparing with upstream ' + 'b' * 12,
+                      stdout.getvalue())
+
+    def test_report(self):
+        """Test the report: a file no downstream commit touched is drift"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)
+        self.assertIn('4 file(s) differ from upstream', out)
+        # README and tools/old.c are drift; the video driver is not looked
+        # inside, so its 2 hunks are taken as wanted
+        self.assertIn('2 hunk(s) wanted', out)
+        # 2 of the 4 classified hunks are drift
+        self.assertIn('2 hunk(s) of drift in 3 file(s), 50% of divergence',
+                      out)
+
+    def test_report_deep(self):
+        """Test that a deep report finds drift inside a downstream file"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args(shallow=False))
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)
+        # Blame shows the downstream commit wrote only the first hunk, so the
+        # second one is drift
+        self.assertIn('1 hunk(s) wanted', out)
+        # 3 of the 4 classified hunks are drift
+        self.assertIn('3 hunk(s) of drift in 4 file(s), 75% of divergence',
+                      out)
+
+    def test_report_list(self):
+        """Test that the list shows each drifted file, worst first"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(list=True))
+        out = stdout.getvalue()
+        self.assertIn('README', out)
+        self.assertIn('tools/old.c', out)
+        self.assertIn('binary', out)
+        self.assertLess(out.index('1 hunk(s)  README'), out.index('binary'))
+
+    def test_report_diff(self):
+        """Test that the patch shows the drift hunks"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(diff=True))
+        out = stdout.getvalue()
+        self.assertIn('diff --git a/README b/README', out)
+        self.assertIn('+# SPDX-License-Identifier', out)
+
+    def test_unknown_source(self):
+        """Test that an unknown source is reported"""
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._drift_args(source='us/nope'))
+        self.assertEqual(ret, 1)
+        self.assertIn("Source 'us/nope' not found", stderr.getvalue())
+
+    def test_accept(self):
+        """Test recording a delta as intentional"""
+        args = argparse.Namespace(cmd='drift-accept', path='README', hunk='*',
+                                  message='Our fix for line 1')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 0)
+        self.assertIn('Accepted every hunk', stdout.getvalue())
+
+        accepts = drift.read_accepts(tools.read_file(self.accept_file,
+                                                     binary=False))
+        self.assertEqual(accepts,
+                         [drift.Accept('README', '*', 'Our fix for line 1')])
+
+    def test_accept_hunk(self):
+        """Test recording a single hunk as intentional"""
+        args = argparse.Namespace(cmd='drift-accept', path='a/b.c',
+                                  hunk='abc123def456', message='Wanted')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 0)
+        self.assertIn('Accepted hunk abc123def456', stdout.getvalue())
+
+    def test_accept_twice(self):
+        """Test that accepting the same delta again is refused"""
+        args = argparse.Namespace(cmd='drift-accept', path='README', hunk='*',
+                                  message='Our fix')
+        with terminal.capture():
+            control.do_pickman(args)
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 1)
+        self.assertIn('is already accepted', stderr.getvalue())
+
+    def test_accept_removes_drift(self):
+        """Test that an accepted delta no longer counts as drift"""
+        with terminal.capture():
+            control.do_pickman(argparse.Namespace(
+                cmd='drift-accept', path='README', hunk='*',
+                message='Our fix'))
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args())
+        out = stdout.getvalue()
+        self.assertIn('1 hunk(s) accepted', out)
+        self.assertIn('1 hunk(s) of drift in 2 file(s)', out)
+
+    def test_accept_binary(self):
+        """Test that an accepted binary file no longer counts as drift"""
+        with terminal.capture():
+            control.do_pickman(argparse.Namespace(
+                cmd='drift-accept', path='logo.bmp', hunk='*',
+                message='Our logo'))
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(list=True))
+        self.assertNotIn('logo.bmp', stdout.getvalue())
+
+    def test_commit_msg(self):
+        """Test the commit message which explains a revert"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        msg = control.drift_commit_msg('tools', ['tools/old.c'], info)
+        self.assertTrue(msg.startswith(
+            'tools: Drop unintended deltas from upstream\n'))
+        self.assertIn('no downstream commit accounts', msg)
+        self.assertIn('This reverts 1 hunk(s) in 1 file(s):', msg)
+        self.assertIn(' - tools/old.c', msg)
+
+    def _open_db(self):
+        """Open the test database, ready for use"""
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        return dbs
+
+
+class TestStatus(unittest.TestCase):
+    """Tests for the status command"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+
+        self.tmpdir = tempfile.mkdtemp()
+        self.old_accept = drift.ACCEPT_FILE
+        drift.ACCEPT_FILE = os.path.join(self.tmpdir, '.pickman-diverge')
+
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'a' * 40)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        command.TEST_RESULT = self._handle_git
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+        control.DB_FNAME = self.old_db_fname
+        drift.ACCEPT_FILE = self.old_accept
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        shutil.rmtree(self.tmpdir)
+        database.Database.instances.clear()
+
+    def _handle_git(self, pipe_list=None, **_):
+        """Answer the git commands which status and drift run"""
+        args = list(pipe_list[0])[1:]
+        if args[0] == 'rev-list':
+            # First-parent merges give the series count, non-merges the commits
+            return command.CommandResult(
+                stdout='7\n' if '--merges' in args else '123\n')
+        if args[0] == 'merge-base':
+            return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'log':
+            if '-1' in args:
+                return command.CommandResult(stdout='abc1234 A subject')
+            if '--grep' in args:
+                return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
+            return command.CommandResult(stdout=DRIFT_LOG)
+        if args[0] == 'diff':
+            return command.CommandResult(stdout=DRIFT_DIFF.encode('utf-8'))
+        if args[0] == 'blame':
+            return command.CommandResult(stdout=DRIFT_BLAME.encode('utf-8'))
+        raise ValueError(f'Unexpected git command: {args}')
+
+    @staticmethod
+    def _args(**kwargs):
+        """Build the arguments for the status command
+
+        Defaults to shallow so the fixtures below check the shallow output,
+        even though the command line defaults to deep.
+        """
+        args = {'cmd': 'status', 'source': 'us/master', 'branch': 'ci/master',
+                'shallow': True, 'upstream': None}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def test_backlog_counts(self):
+        """Test the series and commit counts from status_backlog()"""
+        with terminal.capture():
+            merges, commits = control.status_backlog('a' * 40, 'us/master')
+        self.assertEqual(merges, 7)
+        self.assertEqual(commits, 123)
+
+    def test_status(self):
+        """Test that status reports both the backlog and the drift"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('Pickman status: ci/master vs us/master', out)
+        self.assertIn('7 series remaining (123 non-merge commits)', out)
+        # Shallow: README and tools/old.c drift, plus the binary logo.bmp
+        self.assertIn('4 file(s) differ from upstream', out)
+        self.assertIn('2 spurious hunk(s) in 3 file(s) (shallow', out)
+        # 2 of the 4 classified hunks are drift
+        self.assertIn('50% of the divergence is drift', out)
+
+    def test_status_deep_default(self):
+        """Test that the deep count is used when -s is not given
+
+        Blame finds the second hunk of the video driver as drift, which the
+        shallow run takes as wanted, so the deep count is higher.
+        """
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args(shallow=False))
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('(this may take a while)', out)
+        self.assertIn('3 spurious hunk(s) in 4 file(s) (deep)', out)
+        self.assertIn('75% of the divergence is drift', out)
+
+    def test_parse_default_is_deep(self):
+        """Test that drift and status default to deep, with -s for shallow"""
+        for cmd in ('drift', 'status'):
+            self.assertFalse(pickman.parse_args([cmd, 'us/master']).shallow)
+            self.assertTrue(
+                pickman.parse_args([cmd, 'us/master', '-s']).shallow)
+
+    def test_parse_upstream(self):
+        """Test that --upstream parses on drift and status"""
+        for cmd in ('drift', 'status'):
+            args = pickman.parse_args([cmd, 'us/master', '--upstream', 'abc'])
+            self.assertEqual(args.upstream, 'abc')
+            self.assertIsNone(pickman.parse_args([cmd, 'us/master']).upstream)
+
+    def test_resolve_compare_none(self):
+        """Test that with no override the base is None (use the database)"""
+        with terminal.capture():
+            branch, base = control.resolve_compare(self._args())
+        self.assertEqual(branch, 'ci/master')
+        self.assertIsNone(base)
+
+    def test_resolve_compare_upstream(self):
+        """Test that a valid --upstream is passed through"""
+        command.TEST_RESULT = command.CommandResult(return_code=0)
+        with terminal.capture():
+            branch, base = control.resolve_compare(self._args(upstream='abc1'))
+        self.assertEqual(base, 'abc1')
+        self.assertEqual(branch, 'ci/master')
+
+    def test_resolve_compare_bad_upstream(self):
+        """Test that an unresolvable --upstream is an error"""
+        command.TEST_RESULT = command.CommandResult(return_code=1)
+        with terminal.capture():
+            with self.assertRaises(ValueError):
+                control.resolve_compare(self._args(upstream='nope'))
+
+    def test_drift_percent(self):
+        """Test the drift percentage of the divergence"""
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 3, drift.ACCEPTED: 0, drift.DRIFT: 1}), 25.0)
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 1, drift.ACCEPTED: 1, drift.DRIFT: 2}), 50.0)
+        # No hunks at all must not divide by zero
+        self.assertEqual(control.drift_percent(
+            {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}), 0.0)
+
+    def test_status_unknown_source(self):
+        """Test that an unknown source is reported"""
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._args(source='us/nope'))
+        self.assertEqual(ret, 1)
+        self.assertIn("Source 'us/nope' not found", stderr.getvalue())
+
+    def _open_db(self):
+        """Open the test database, ready for use"""
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        return dbs
+
+    def _add_conflicts(self, rows):
+        """Add parked-conflict commits to the test database
+
+        Args:
+            rows (list of tuple): (chash, subject) pairs, inserted in order so
+                the first gets the lowest id
+        """
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        sid = dbs.source_get_id('us/master')
+        for chash, subject in rows:
+            dbs.commit_add(chash, sid, subject, 'Me', status='conflict')
+        dbs.commit()
+        dbs.close()
+        database.Database.instances.clear()
+
+    def test_status_parked_oldest_first(self):
+        """Test that status_parked returns parked conflicts oldest first"""
+        self._add_conflicts([('a' * 40, 'First commit'),
+                             ('b' * 40, 'Merge a series'),
+                             ('c' * 40, 'Third commit')])
+        dbs = self._open_db()
+        parked = control.status_parked(dbs, dbs.source_get_id('us/master'))
+        self.assertEqual([p[1] for p in parked],
+                         ['a' * 40, 'b' * 40, 'c' * 40])
+        self.assertEqual(parked[0][2], 'First commit')
+
+    def test_parked_warning(self):
+        """Test the one-line parked-conflict warning"""
+        self.assertIsNone(control.parked_warning('us/next', []))
+        warn = control.parked_warning(
+            'us/next', [(1, 'a', 'A fix'), (2, 'b', 'Merge a series')])
+        self.assertIn('2 parked conflict(s) for us/next', warn)
+        self.assertIn('1 merges', warn)
+        self.assertIn("run 'pickman status us/next'", warn)
+
+    def test_status_shows_parked(self):
+        """Test that status makes the parked-conflict backlog loud"""
+        self._add_conflicts([('a' * 40, 'An old fix'),
+                             ('b' * 40, 'Merge a series')])
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 0)
+        self.assertIn('Parked conflicts (tried, not landed):', out)
+        self.assertIn('2 commit(s) parked as conflict, 1 of them merges', out)
+        self.assertIn('An old fix', out)
+
+    def test_status_no_parked(self):
+        """Test that the parked section is absent when nothing is parked"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        self.assertEqual(ret, 0)
+        self.assertNotIn('Parked conflicts', stdout.getvalue())
+
+    def test_step_warns_parked(self):
+        """Test that a step run ends with the parked-conflict warning"""
+        self._add_conflicts([('a' * 40, 'A fix'), ('b' * 40, 'Merge series')])
+        dbs = self._open_db()
+        args = argparse.Namespace(cmd='step', source='us/master')
+        with mock.patch.object(control, '_do_step', return_value=0):
+            with terminal.capture() as (_, stderr):
+                ret = control.do_step(args, dbs)
+        self.assertEqual(ret, 0)
+        self.assertIn('2 parked conflict(s) for us/master', stderr.getvalue())
 
 
 if __name__ == '__main__':

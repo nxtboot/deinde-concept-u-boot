@@ -6,6 +6,12 @@ include:
 
 workflow:
   rules:
+    # A push to a branch which already has an open merge request would
+    # otherwise start a branch pipeline as well as the merge-request one; skip
+    # the branch pipeline, since the merge-request pipeline covers it.  Manual
+    # 'Run pipeline' on the MR is a merge_request_event and still runs
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_OPEN_MERGE_REQUESTS
+      when: never
     - if: $CI_PIPELINE_SOURCE == "push"
       when: always
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"

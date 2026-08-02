@@ -72,6 +72,48 @@ def add_main_commands(subparsers):
         'count-merges', help='Count remaining merges to process')
     count_merges.add_argument('source', help='Source branch name')
 
+    drift_cmd = subparsers.add_parser(
+        'drift', help='Report deltas from upstream which are not wanted')
+    drift_cmd.add_argument('source', help='Source branch name')
+    drift_cmd.add_argument('-b', '--branch', default='ci/master',
+                           help='Downstream branch (default: ci/master)')
+    drift_cmd.add_argument('-s', '--shallow', action='store_true',
+                           help='Skip blaming files which downstream commits '
+                                'touch; faster but misses drift inside them')
+    drift_cmd.add_argument('--upstream', metavar='COMMIT',
+                           help='Compare against this upstream commit instead '
+                                'of the tracked source position (read-only)')
+    drift_cmd.add_argument('-d', '--diff', action='store_true',
+                           help='Show the drift as a patch')
+    drift_cmd.add_argument('-l', '--list', action='store_true',
+                           help='List each file which has drift')
+
+    drift_acc = subparsers.add_parser(
+        'drift-accept', help='Record a delta from upstream as intentional')
+    drift_acc.add_argument('path', help='File path, or glob to cover several')
+    drift_acc.add_argument('-m', '--message', required=True, dest='message',
+                           help='Reason the delta is wanted')
+    drift_acc.add_argument('-u', '--hunk', default='*',
+                           help="Hunk fingerprint (default: '*', the whole "
+                                'file)')
+
+    drift_fix = subparsers.add_parser(
+        'drift-fix', help='Revert drift back to upstream and create MRs')
+    drift_fix.add_argument('source', help='Source branch name')
+    drift_fix.add_argument('-b', '--branch', default='ci/master',
+                           help='Downstream branch (default: ci/master)')
+    drift_fix.add_argument('-c', '--count', type=int, default=1,
+                           help='Number of areas to fix at once (default: 1)')
+    drift_fix.add_argument('-s', '--shallow', action='store_true',
+                           help='Skip blaming files which downstream commits '
+                                'touch; faster but misses drift inside them')
+    drift_fix.add_argument('-p', '--push', action='store_true',
+                           help='Push branch and create GitLab MR')
+    drift_fix.add_argument('-r', '--remote', default='ci',
+                           help='Git remote for push (default: ci)')
+    drift_fix.add_argument('-t', '--target', default='master',
+                           help='Target branch for MR (default: master)')
+
     subparsers.add_parser('list-sources', help='List tracked source branches')
 
     next_merges = subparsers.add_parser(
@@ -121,6 +163,20 @@ def add_main_commands(subparsers):
                                  'from old source)')
     switch_src.add_argument('-f', '--force', action='store_true',
                             help='Overwrite an existing new-source entry')
+
+    status_cmd = subparsers.add_parser(
+        'status',
+        help='Summarise upstream backlog and drift for a source')
+    status_cmd.add_argument('source', help='Source branch name')
+    status_cmd.add_argument('-b', '--branch', default='ci/master',
+                            help='Downstream branch (default: ci/master)')
+    status_cmd.add_argument('-s', '--shallow', action='store_true',
+                            help='Quick drift estimate: skip blaming files '
+                                 'which downstream commits touch (less '
+                                 'accurate)')
+    status_cmd.add_argument('--upstream', metavar='COMMIT',
+                            help='Compare against this upstream commit instead '
+                                 'of the tracked source position (read-only)')
 
     step_cmd = subparsers.add_parser('step',
                                      help='Create MR if none pending')

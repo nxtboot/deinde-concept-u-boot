@@ -209,7 +209,7 @@ this means the series was already applied via a different path. In this case:
 """
 
     options = ClaudeAgentOptions(
-        allowed_tools=['Bash', 'Read', 'Grep'],
+        allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
         cwd=repo_path,
         max_buffer_size=MAX_BUFFER_SIZE,
     )
@@ -777,7 +777,7 @@ async def run_subtree_conflict_agent(name, tag, subtree_path,
     prompt = build_subtree_conflict_prompt(name, tag, subtree_path)
 
     options = ClaudeAgentOptions(
-        allowed_tools=['Bash', 'Read', 'Grep'],
+        allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
         cwd=repo_path,
         max_buffer_size=MAX_BUFFER_SIZE,
     )

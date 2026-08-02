@@ -212,6 +212,91 @@ This ensures:
 - No manual intervention is required to continue
 - False positives are minimized by comparing actual patch content
 
+Drift from Upstream
+-------------------
+
+The downstream tree should differ from upstream only where a downstream commit
+deliberately makes it so. Everything else which accumulates - a hunk mangled
+while resolving a conflict, a hunk dropped from a cherry-pick, a hand-edit
+which never made it into a commit of its own - is drift, and pickman can find
+it and put it back.
+
+Provenance provides the ground truth, so there is no list to maintain by hand.
+Every commit added downstream since the trees diverged is one of two things:
+
+- a cherry-pick, carrying a ``(cherry picked from commit ...)`` line, which
+  should leave the tree matching upstream
+- a downstream-original commit, which is the whole reason the tree is allowed
+  to differ
+
+A delta which no downstream-original commit accounts for is therefore drift.
+The comparison is made against the upstream commit which the source is sitting
+at, not the tip of upstream, since commits which have not been cherry-picked
+yet are not drift.
+
+To see what has crept in::
+
+    ./tools/pickman/pickman drift us/master
+
+    Comparing with upstream 5c7ff1b54071
+      3162 file(s) differ from upstream
+      6629 hunk(s) wanted, explained by downstream commits
+      0 hunk(s) accepted by .pickman-diverge
+      665 hunk(s) of drift in 466 file(s), 9% of divergence
+
+The percentage is the drift as a share of every hunk which differs from
+upstream: how much of the divergence is spurious rather than intended.
+
+By default pickman blames the files which a downstream commit has touched, so
+that it can tell drift inside them from the genuine downstream changes.  This
+is accurate but takes a few minutes on a large tree; pass ``-s`` / ``--shallow``
+for a quick estimate which instead takes any touched file as wanted in full.
+
+A hunk which only removes lines is never called drift in a deep run. Blame can
+say who wrote a line but not who deleted one, so reverting such a hunk might
+resurrect code which a downstream commit meant to remove. Nothing is missed:
+no downstream commit has touched a file classified without blame, so a deletion
+there cannot be deliberate and is still caught.
+
+The changes a merge commit makes belong to the commits it merges, so merges are
+not counted as downstream-original. A conflict resolved in a merge rather than
+in a commit therefore shows up as drift, which is usually the right answer.
+Where it is not, record it in the accept file.
+
+Accepting a Delta
+~~~~~~~~~~~~~~~~~
+
+Some deltas are intentional but have no commit to point to: an adaptation made
+while resolving a conflict, say. These go in ``.pickman-diverge``, which is a
+list of exceptions rather than an inventory of the whole divergence, so it
+stays short::
+
+    ./tools/pickman/pickman drift-accept README -m 'Keep our fix for line 1'
+
+    README                            *             Keep our fix for line 1
+
+The file is committed to the downstream tree, so the record travels with it and
+a reviewer can see it. A delta may be accepted a whole file at a time (``*``),
+a glob at a time (``arch/arm/dts/*.dtsi``), a directory at a time
+(``test/hooks/``) or one hunk at a time, by passing the hunk's fingerprint to
+``-u``. A fingerprint covers the content of a hunk and not its position, so it
+survives the churn upstream causes; if the delta itself is later reworked, the
+fingerprint changes and the hunk comes back for review, which is intended.
+
+Reverting Drift
+~~~~~~~~~~~~~~~
+
+To put drift back to what upstream has::
+
+    ./tools/pickman/pickman drift-fix us/master -c 3 -p
+
+Pickman groups the drifted files by area of the tree, reverts the drift hunks
+in each area (leaving alone any hunk in the same file which is wanted), commits
+the result on a branch of its own and, with ``-p``, opens an MR for it. Working
+an area at a time keeps each MR small enough to review and stops a CI failure
+in one area from holding up the rest; ``-c`` says how many areas to do at once,
+and running it again picks up where it left off.
+
 Pipeline Fix
 ------------
 
@@ -531,6 +616,89 @@ Options for the push-branch command:
 
 - ``-r, --remote``: Git remote (default: ci)
 - ``-f, --force``: Force push (overwrite remote branch)
+
+Checking Status
+~~~~~~~~~~~~~~~
+
+To see, at a glance, how far behind upstream the downstream branch is and how
+much drift it carries::
+
+    ./tools/pickman/pickman status us/master
+
+This reports three things: the upstream series (first-parent merges) not yet
+cherry-picked; the commits parked as conflicts; and the drift which should be
+resynced to upstream, including what fraction of the divergence from upstream
+that drift represents.  It reads the refs as they are, so fetch first for an
+up-to-date picture.  The drift count is the accurate, slower one by default
+(see below); pass ``-s`` for a quick estimate, or ``-b`` to name a different
+downstream branch.
+
+A parked conflict is a commit which pickman tried to cherry-pick, hit a
+conflict on and moved past.  Its change is then missing from the downstream
+branch until something else applies it - with no merge request and no CI
+failure - so a later commit which merely adjusts that change can land without
+it, leaving the branch subtly wrong.  Because this is easy to miss, the parked
+backlog is also printed at the end of every ``step`` and ``poll`` run.
+
+By default the comparison uses the tracked source position as the upstream
+side.  ``--upstream COMMIT`` overrides it, read-only, so drift becomes a
+function of the (branch, upstream) pair and can be evaluated for a past point
+by pairing it with a rewound ``-b``::
+
+    ./tools/pickman/pickman status us/master \
+        -b $(git rev-list -1 --before=2026-04-27 ci/master) \
+        --upstream <position on 2026-04-27> -s
+
+The upstream position for a past date is not derivable from cherry-pick
+trailers alone - picks are not a clean prefix of upstream, so the trailers do
+not pin the frontier - so supply the historical position from wherever it is
+reconstructed (e.g. the ``cherry-<hash>`` merge history).
+
+Checking Drift from Upstream
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To report deltas from upstream which no downstream commit accounts for::
+
+    ./tools/pickman/pickman drift us/master
+
+Options:
+
+- ``-l`` list each file which has drift, worst first
+- ``-d`` show the drift as a patch
+- ``-s`` skip blaming the files which downstream commits have touched; faster
+  but misses drift inside them
+- ``-b`` downstream branch to examine (default: ci/master)
+- ``--upstream COMMIT`` compare against this upstream commit rather than the
+  tracked source position (read-only), e.g. to back-fill historical drift
+
+By default pickman blames those touched files, which finds drift inside them
+but takes a few minutes on a large tree.  The exit code is 1 if there is any
+drift, so this can be used as a check.
+
+To record a delta as intentional, exempting it from the above::
+
+    ./tools/pickman/pickman drift-accept .gitlab-ci.yml -m 'Downstream CI'
+    ./tools/pickman/pickman drift-accept 'test/hooks/' -m 'Downstream hooks'
+    ./tools/pickman/pickman drift-accept lib/efi.c -u a3f19c2b8d41 -m 'Ours'
+
+This writes ``.pickman-diverge``, which should be committed. Without ``-u`` the
+whole file is accepted; with it, only the hunk with that fingerprint.
+
+To revert drift back to upstream::
+
+    ./tools/pickman/pickman drift-fix us/master
+
+Options:
+
+- ``-c`` number of areas of the tree to fix at once (default: 1)
+- ``-p`` push each branch and open an MR for it
+- ``-s`` skip blaming touched files, matching a shallow ``drift`` run
+- ``-r`` git remote for the push (default: ci)
+- ``-t`` target branch for the MR (default: master)
+
+Each area gets its own branch and MR, so run it again to work through the rest.
+
+See `Drift from Upstream`_ for what counts as drift and why.
 
 Requirements
 ------------
