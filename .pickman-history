@@ -93435,3 +93435,51 @@ Branch `cherry-199a088b96c` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 1)
+
+Branch: cherry-199a088b96c
+
+Failed jobs:
+- edison (sjg-lab)
+- link (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/transient issues unrelated to the code changes in this branch. Let me verify by inspecting the branch commits.
+
+Both failures are infrastructure/transient issues, unrelated to the code in this branch. Reporting without changes.
+
+## Report
+
+**No code changes made.** Both failures are infrastructure/transient issues unrelated to the commits on `cherry-199a088b96c`.
+
+### edison (job 593610) — lab infrastructure issue
+
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid. To work simultaneously, labgrid can execute
+labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+
+The edison lab place is currently held by another user (`kea/labgrid`). The job failed during pytest configure (`u-boot-test-getrole edison --configure` returned error 1) before any code was even exercised. This is a lab reservation collision — retry once the place is released, or run the suggested `labgrid-client -p edison allow ellesmere/gitlab-runner`.
+
+### link (job 593571) — flaky timing test
+
+```
+test/py/tests/test_sleep.py:44: in test_sleep
+    assert elapsed < (sleep_time + sleep_margin)
+E   assert 3.2889771461486816 < (3 + 0.25)
+====== 1 failed, 39 passed, 681 skipped ======
+```
+
+A 3-second `sleep` on the chromebook_link target took 3.289s, exceeding the 250 ms tolerance by 39 ms. This is a well-known transient flake — it depends on lab load and host scheduling, not on U-Boot code. The branch does not touch `cmd/sleep.c`, the `test_sleep.py` harness, or anything on the sleep path.
+
+### Branch commits (none plausibly related)
+
+The 10 cherry-picks on this branch are: treewide Kconfig `tristate`→`bool`; remoteproc k3-r5 crash fix; cmd/clone dest-block report; cmd/host unbind fix; cmd/ini NULL deref; cmd/upl off-by-one argc; cmd/x86 zboot duplicate call removal; btrfs opendir/readdir/closedir (+ generic `fs_ls`); and the associated merge. None touch labgrid infrastructure or sleep timing.
+
+### Recommendation
+
+Retry both jobs. No branch `cherry-199a088b96c-fix1` was created because there is nothing to fix.
+
+---
+
