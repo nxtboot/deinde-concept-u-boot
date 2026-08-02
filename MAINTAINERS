@@ -881,72 +881,24 @@ T:	git git://github.com/ARM-software/u-boot.git
 F:	drivers/misc/vexpress_config.c
 N:	vexpress
 
-ARM ZYNQ
+ARM ZYNQ and ZYNQMP
 M:	Michal Simek <monstr@monstr.eu>
-S:	Maintained
-T:	git https://source.denx.de/u-boot/custodians/u-boot-microblaze.git
-F:	arch/arm/mach-zynq/
-F:	doc/board/xilinx/
-F:	doc/device-tree-bindings/video/syncoam,seps525.txt
-F:	drivers/clk/clk_zynq.c
-F:	drivers/fpga/zynqpl.c
-F:	drivers/gpio/zynq_gpio.c
-F:	drivers/i2c/i2c-cdns.c
-F:	drivers/i2c/muxes/pca954x.c
-F:	drivers/i2c/zynq_i2c.c
-F:	drivers/mmc/zynq_sdhci.c
-F:	drivers/mtd/nand/raw/zynq_nand.c
-F:	drivers/net/phy/ethernet_id.c
-F:	drivers/net/phy/xilinx_phy.c
-F:	drivers/net/zynq_gem.c
-F:	drivers/pinctrl/pinctrl-zynqmp.c
-F:	drivers/serial/serial_zynq.c
-F:	drivers/spi/zynq_qspi.c
-F:	drivers/spi/zynq_spi.c
-F:	drivers/usb/host/ehci-zynq.c
-F:	drivers/watchdog/cdns_wdt.c
-F:	include/zynqpl.h
-F:	tools/zynqimage.c
-N:	zynq
-
-ARM ZYNQMP
 M:	Michal Simek <michal.simek@amd.com>
 S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-microblaze.git
-F:	arch/arm/mach-zynqmp/
-F:	drivers/bootcount/bootcount_zynqmp.c
-F:	drivers/clk/clk_zynqmp.c
-F:	driver/firmware/firmware-zynqmp.c
-F:	drivers/fpga/zynqpl.c
+F:	doc/board/xilinx/
+F:	doc/device-tree-bindings/video/syncoam,seps525.txt
 F:	drivers/gpio/gpio_slg7xl45106.c
-F:	drivers/gpio/zynq_gpio.c
-F:	drivers/gpio/zynqmp_gpio_modepin.c
 F:	drivers/i2c/i2c-cdns.c
 F:	drivers/i2c/muxes/pca954x.c
-F:	drivers/i2c/zynq_i2c.c
-F:	drivers/mailbox/zynqmp-ipi.c
-F:	drivers/mmc/zynq_sdhci.c
-F:	drivers/mtd/nand/raw/zynq_nand.c
+F:	drivers/net/phy/ethernet_id.c
 F:	drivers/net/phy/xilinx_phy.c
-F:	drivers/net/zynq_gem.c
-F:	drivers/phy/phy-zynqmp.c
-F:	drivers/power/domain/zynqmp-power-domain.c
 F:	drivers/pwm/pwm-cadence-ttc.c
-F:	drivers/serial/serial_zynq.c
-F:	drivers/reset/reset-zynqmp.c
-F:	drivers/rtc/zynqmp_rtc.c
-F:	drivers/soc/soc_xilinx_zynqmp.c
-F:	drivers/spi/zynq_qspi.c
-F:	drivers/spi/zynq_spi.c
 F:	drivers/timer/cadence-ttc.c
 F:	drivers/video/seps525.c
-F:	drivers/video/zynqmp/
 F:	drivers/watchdog/cdns_wdt.c
-F:	include/zynqmppl.h
-F:	include/zynqmp_firmware.h
-F:	tools/zynqmp*
 N:	ultra96
-N:	zynqmp
+N:	zynq
 
 ARM ZYNQMP R5
 M:	Michal Simek <michal.simek@amd.com>
