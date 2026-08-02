@@ -93323,3 +93323,31 @@ The branch is ready for pushing. No merge back was performed.
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-f6ba7d26fe5
+
+Commits:
+- f6ba7d26fe5 i2c: nx: Use dev_read_addr_ptr()
+- a8d40f922d1 i2c: nx: Add License
+- b8487e7e2d1 i2c: designware: fix i2c probe error
+- 0ded0297353 cmd: kconfig: i2c: add missing I2C API dependency
+- 5a7117b0a2e Merge tag 'i2c-updates-for-2026.10-rc1' of https://git.u-boot-project.org/u-boot/custodians/hs/u-boot-i2c
+
+### Conversation log
+All 5 commits cherry-picked successfully on branch `cherry-f6ba7d26fe5`.
+
+**Final Status:**
+- Build result: **OK** (sandbox builds cleanly)
+- All 5 commits present in order:
+  - `6fb8155af7e` i2c: nx: Use dev_read_addr_ptr()
+  - `2d19f5e407f` i2c: nx: Add License
+  - `e82d93c9881` i2c: designware: fix i2c probe error
+  - `285c7a56d1d` cmd: kconfig: i2c: add missing I2C API dependency
+  - `fc956a25af4` Merge tag 'i2c-updates-for-2026.10-rc1' (empty, preserved via --allow-empty)
+- Fix-ups: none needed
+- Deltas: all commits match originals exactly (same files, same line counts)
+- Notes: The merge commit became empty (all changes already applied via individual cherry-picks) and was preserved as an empty commit per instructions. Commit 4 had a trivial auto-merge in cmd/Kconfig with no conflicts.
+
+---
+
