@@ -739,6 +739,26 @@ config ENV_UBI_VOLUME_REDUND
 	help
 	  Name of the redundant volume that you want to store the environment in.
 
+config ENV_UBI_VOLUME_CREATE
+	bool "Create UBI volume if it does not exist"
+	depends on ENV_IS_IN_UBI
+	help
+	  This option is useful if U-Boot will be booted from a fresh device
+	  where the environment volume has not been created.
+	  This is a common case where factory UBI image contains only volumes
+	  with valid data.
+	  By enabling this option, any missing environment volumes will be
+	  created before loading.
+	  If ENV_UBI_VOLUME_REDUND is also enabled, both volumes will be
+	  created.
+
+config ENV_UBI_VOLUME_STATIC
+	bool "Create static UBI volume"
+	depends on ENV_UBI_VOLUME_CREATE
+	help
+	  By default environment volume will be dynamic.
+	  Enable this option to create static volume.
+
 config ENV_UBI_VID_OFFSET
 	int "ubi environment VID offset"
 	depends on ENV_IS_IN_UBI

@@ -93278,3 +93278,48 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-4c600f98134
+
+Commits:
+- 4c600f98134 fs: ubifs: fix ubifs_finddir() result check
+- a7d690cf3a7 ubi: remove unnecessary extern directive from function prototypes
+- 065b0ba3b14 cmd: ubi: mark read-only function parameters with const
+- b63af5e2c20 cmd: ubi: use void * for buf parameter in ubi_volume_read
+- d9a9d72e45c cmd: ubifs: mark string parameters with const
+- 2818e678214 cmd: ubi: change the type of parameter dynamic to bool
+- b452246c8d3 cmd: ubi: change all positive error return value to negative
+- 75d8b453ab2 cmd: ubi: reorganize command messages
+- 14fe02ac5e5 cmd: ubi: export more APIs to public
+- c719d2627ae cmd: ubi: allow creating volume with all free spaces in ubi_create_vol
+- 93ae75361f1 env: ubi: add support to create environment volume if it does not exist
+- 964a26cc6d1 Merge tag 'ubi-updates-for-2026.10-rc1' of https://source.denx.de/u-boot/custodians/u-boot-ubi
+
+### Conversation log
+All 11 non-merge commits applied cleanly. Now the merge commit:
+
+All 12 commits present. Now let me quickly verify deltas on the ones that had auto-merging, then run the final build:
+
+Deltas match perfectly. Now running the final build:
+
+Build passed cleanly. 
+
+## Summary
+
+**Status: SUCCESS** — all 12 commits cherry-picked cleanly onto `ci/master` in branch `cherry-4c600f98134`.
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Cherry-pick details:**
+- 11 regular commits applied cleanly (two required trivial auto-merging in `fs/ubifs/super.c` and `env/Kconfig`, no conflicts)
+- Merge commit `964a26cc6d1` resolved to empty (all content already applied via the individual picks) — preserved with `--allow-empty` as instructed
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None — all file lists and line counts match the originals exactly.
+
+The branch is ready for pushing. No merge back was performed.
+
+---
+
