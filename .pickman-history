@@ -93089,3 +93089,89 @@ Branch `cherry-8d3963a0971` is ready for pushing.
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-6cc155fb439
+
+Commits:
+- 6cc155fb439 arm64: zynqmp-dlc21-revA: Update GPIO line names mapping
+- 336ac148172 arm64: zynqmp-dlc21-revA: add mac nvmem cell for gem0
+- fc7640cbde1 arm64: zynqmp: Drop incorrect #phy-cells from ethernet-phy nodes
+- d110d588676 arm64: zynqmp: Use fixed-partitions for MTD
+- 085a5acd9d1 arm64: zynqmp: Add CMA reserved-memory for runtime FPGA loading
+- af7a1a6f244 arm64: zynqmp: add USB hub supply regulators
+- ed507e78666 arm64: zynqmp: dts: Fix file descriptions to match actual filenames
+- 262eed54261 arm64: dts: xilinx: Drop "label" property on dlg, slg7xl45106
+- 0659f97f187 arm64: zynqmp: Sync compatible string format
+- d6e7db8f11f amd: versal2: detect spi env bus from boot mode
+- cea8f9407c5 arm64: versal2: Drop static DDR MMU mappings
+- 71c54b9769b arm64: versal: Drop static DDR and PCIe MMU mappings
+- cc0d3f54606 mkimage: allow zynqmpbif to use a register initialization file
+- e1c01da69fb MAINTAINERS: Replace Zynq/ZynqMP with N:
+- f436398f469 ufs: amd-versal2: Fix missing .priv_auto in driver registration
+- 7edbbfca632 drivers: fpga: Use FPGA_INTEL_SDM_MAILBOX conditional instead of Agilex/Stratix10
+- 1d24edabfed soc: xilinx: zynqmp: Add TCG variant detection for ZU3TCG
+- 5979d3d44e5 arm: xilinx: Guard mach sys_proto.h against multiple inclusion
+- da4783f7835 arm64: versal2: Decouple multiboot register access from firmware
+- 789a4871948 arm64: versal2: Move bootmode decoding out of board code
+- b444110e51f arm64: versal: Decouple multiboot register access from firmware
+- 70236dca329 arm64: versal: Move bootmode decoding out of board code
+- 8a2586c3ef8 arm64: versal: Move board_early_init_r clock setup to mach code
+- ae8f2474fe6 arm64: versal2: Move board_early_init_r clock setup to mach code
+- d885e802ce8 arm64: versal-net: Move board_early_init_r clock setup to mach code
+- 722cd61c354 arm64: zynqmp: Move board_early_init_r clock setup to mach code
+- ad911ccef01 arm64: versal2: Move SoC detection out of board code
+- 4b3ead85ddf arm64: versal-net: Move SoC detection out of board code
+- 9048a9c44d5 arm64: versal-net: Move bootmode decoding out of board code
+- 4b62fc1b7e9 arm64: zynqmp: Decouple MMIO accessors from firmware
+- fb3801be128 arm64: versal-net: Deduplicate SPI bootmode handling
+- d9938274747 arm64: versal-net: Simplify spi_get_bootseq() bootmode switch
+- e8f4248fc34 arm64: versal-net: Do not print bootmode from spi_get_env_dev()
+- d18ebbf3395 arm64: versal-net: Look up eMMC device in boot_targets_setup()
+- bbc71f8c28c arm64: versal-net: Add mmc_get_env_dev() and deduplicate MMC handling
+- f717b9cf391 arch: arm: dts: Add RTC clock nodes for ZynqMP platform
+- fa1a638e7dc arm64: zynqmp: Disable ina226 iio-hwmon nodes
+- ad1d2c9d20f arm64: xilinx: Add missing newline in kr260-revA
+- 34c89c840c3 arm: dts: zynqmp: Fix space indentation to use tabs
+- 913fedc8165 Merge tag 'xilinx-for-v2026.10-rc1-v3' of https://git.u-boot-project.org/u-boot/custodians/u-boot-amd
+
+### Conversation log
+Good, deltas match. Let me proceed with the remaining cherry-picks. I'll cherry-pick each one and verify deltas, then run the build at the end to be efficient with time.
+
+The diagnostics are pre-existing standalone-header issues, not caused by my change. Let me verify commit and continue.
+
+Delta matches. Now let me amend to add a fix-up note and continue.
+
+All non-merge commits picked cleanly. Now the final merge commit:
+
+All 40 commits (39 regular + 1 merge) are present. Now run the final build:
+
+Build succeeded cleanly.
+
+## Final Status
+
+**Branch:** `cherry-6cc155fb439` (based on `ci/master`)
+
+**Cherry-picks:** All 40 commits applied successfully (39 regular + 1 merge)
+
+**Build:** OK — sandbox built cleanly with no warnings or errors
+
+**Fix-ups (2 commits):**
+
+1. **`9f200075b3e` — mkimage: allow zynqmpbif to use a register initialization file** (from `cc0d3f54606`)
+   - Conflict in `tools/zynqmpimage.h`: incoming commit expected the old `struct image_tool_params *params` signature for `zynqmpimage_print_header`, but `ci/master` already renamed it to `struct imgtool *itl`.
+   - Resolved by keeping the HEAD signature and adding the new `zynqmpimage_parse_initparams` declaration.
+   - Delta matches original (3 files, 16 insertions, 2 deletions).
+   - Fix-up note appended to commit message.
+
+2. **`2dabb566723` — Merge tag 'xilinx-for-v2026.10-rc1-v3'** (from `913fedc8165`)
+   - Same `tools/zynqmpimage.h` conflict; resolved the same way.
+   - After resolution the merge became empty (all content already applied by prior cherry-picks). Committed with `--allow-empty` to preserve history.
+   - Fix-up note appended.
+
+**Concerning deltas:** None — every non-conflict cherry-pick matched the original file/line counts exactly.
+
+Branch is ready to push.
+
+---
+
