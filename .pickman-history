@@ -93056,3 +93056,36 @@ No fix branch is needed — no code change would help. These jobs should simply 
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-8d3963a0971
+
+Commits:
+- 8d3963a0971 ls1028ardb: Move environment variables to .env file
+- d74dea04e3a gpio: mpc8xxx: add set_flags/get_flags ops
+- 69879030f70 crypto: fsl: Hide CAAM_64BIT symbol behind FSL_CAAM
+- c9beb84a376 power: domain: scmi: Allow failure in getting power domain attribute
+- a18265f1ccb Merge tag 'fsl-qoriq-next-2026-07-06' of https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq into next
+
+### Conversation log
+All 5 commits successfully cherry-picked to branch `cherry-8d3963a0971`.
+
+## Final Status
+
+**Build result:** OK (sandbox build passed after each cherry-pick and final verification)
+
+**Cherry-picked commits (in order):**
+1. `298ba5eb7ec` — ls1028ardb: Move environment variables to .env file (4 files, 71+/79-)
+2. `bc32af42e71` — gpio: mpc8xxx: add set_flags/get_flags ops (1 file, 54+)
+3. `bdf27a87a83` — crypto: fsl: Hide CAAM_64BIT symbol behind FSL_CAAM (1 file, 1+)
+4. `3794abf1fba` — power: domain: scmi: Allow failure in getting power domain attribute (1 file, 1+/7-)
+5. `88e42cec523` — Merge tag 'fsl-qoriq-next-2026-07-06' (empty, preserved with --allow-empty)
+
+**Fix-ups made:** None — all cherry-picks applied cleanly.
+
+**Concerning deltas:** None — every cherry-pick matched the original commit's file list and line counts exactly.
+
+Branch `cherry-8d3963a0971` is ready for pushing.
+
+---
+
