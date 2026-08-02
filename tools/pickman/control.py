@@ -38,7 +38,7 @@ DB_FNAME = '.pickman.db'
 
 # Branch names to compare
 BRANCH_MASTER = 'ci/master'
-BRANCH_SOURCE = 'us/next'
+BRANCH_SOURCE = 'us/main'
 
 # Git stat output parsing patterns
 RE_GIT_STAT_SUMMARY = re.compile(

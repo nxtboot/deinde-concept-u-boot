@@ -262,7 +262,7 @@ class TestMain(unittest.TestCase):
                             if not l.startswith(('Update database',
                                                 'Creating'))]
             lines = iter(output_lines)
-            self.assertEqual('Commits in us/next not in ci/master: 10',
+            self.assertEqual('Commits in us/main not in ci/master: 10',
                              next(lines))
             self.assertEqual('', next(lines))
             self.assertEqual('Last common commit:', next(lines))
