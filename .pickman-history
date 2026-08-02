@@ -93514,3 +93514,64 @@ None of the 10 commits (treewide Kconfig `tristate`→`bool`; remoteproc k3-r5 c
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 2)
+
+Branch: cherry-199a088b96c
+
+Failed jobs:
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+## Report
+
+**No code changes made. No `cherry-199a088b96c-fix2` branch created.**
+
+All three failing jobs are infrastructure/transient issues or pre-existing test fragility, none traceable to the 10 cherry-picks on `cherry-199a088b96c`.
+
+### edison (job 593740) — lab reservation collision
+
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid.
+...
+Error 1 running ['u-boot-test-getrole', 'edison', '--configure']
+```
+
+The `edison` labgrid place is currently held by another user (`kea/labgrid`), so the runner failed to acquire it during `u-boot-test-getrole edison --configure`. The job aborted before any U-Boot code was exercised. Same class of failure as attempt 1 for this same board. Retry once the place is released, or run `labgrid-client -p edison allow ellesmere/gitlab-runner`.
+
+### bpif3 (job 593729) — BootROM/USB hardware issue
+
+```
+USB loader not ready (attempt 1/5): BootROM did not start the FSBL
+(gadget devnum still 098); board needs a reset; resetting and retrying
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The SpacemiT K1 BootROM refused to accept the FSBL over USB for 5 consecutive attempts; the connection was then marked bad. The branch touches none of `board/spacemit`, `arch/riscv`, `drivers/usb`, or the k1-deploy.py deploy script. This is a hardware/USB gadget issue in the lab. Retry.
+
+### vbe (job 593737) — pre-existing `test_dm_compat` fragility
+
+```
+test/py/tests/test_dm.py:12: in <genexpr>
+    drivers = (line[driver_index:].split()[0]
+E   IndexError: list index out of range
+```
+
+The failing test iterates over lines of `dm tree` output starting at index 2 and calls `.split()[0]` on each; if a line is empty or shorter than `driver_index`, `.split()` returns `[]` and `[0]` raises `IndexError`. This is a fragility in `test/py/tests/test_dm.py` triggered by transient shell noise in the captured output on rk3399-generic-ddr3.
+
+None of the 10 cherry-picks on this branch touch:
+- `cmd/dm.c` or `drivers/core/*` (DM tree output logic)
+- `test/py/tests/test_dm.py` or its harness
+- the `rk3399` platform, `sandbox`, or the `vbe` role
+
+The 10 commits are: treewide Kconfig `tristate`→`bool` (19 files, cosmetic); remoteproc k3-r5 crash fix; cmd/clone dest-block report; cmd/host unbind fix; cmd/ini NULL deref; cmd/upl off-by-one argc; cmd/x86 zboot duplicate-call removal; btrfs opendir/readdir/closedir (+ generic `fs_ls`); and the merge. None can plausibly change the `dm tree` output on rk3399.
+
+### Recommendation
+
+Retry all three jobs. No fix branch was created because there is nothing on this branch to fix.
+
+---
+
