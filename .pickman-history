@@ -93020,3 +93020,39 @@ The branch is left ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 1)
+
+Branch: cherry-264ba13f147
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/lab issues, not code problems. The pytest INTERNALERROR shows:
+
+**edison job (591521):**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'edison', '--configure']:
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+```
+
+**felwinter job (591512):**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'felwinter', '--configure']:
+labgrid-client: Error: place felwinter is not acquired by your user, acquired by sglass.
+```
+
+Both jobs failed before running any U-Boot code — pytest never even started collecting tests. The labgrid places (physical board reservations) were held by other users (`labgrid` for edison, `sglass` for felwinter) at the time the CI job tried to acquire them. No source file, test, or build artefact was involved.
+
+**Diagnosis: transient labgrid resource contention (infrastructure issue).**
+
+Per the instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes.
+
+No fix branch is needed — no code change would help. These jobs should simply be retried after the boards are released. I have not created `cherry-264ba13f147-fix1`, and no commits have been amended or added.
+
+**Recommendation:** Retry the pipeline once the `edison` and `felwinter` labgrid places are free (labgrid-client -p edison / felwinter show / release), or ask the current holders to run `labgrid-client -p <place> allow ellesmere/gitlab-runner` for co-use.
+
+---
+
