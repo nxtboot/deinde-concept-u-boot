@@ -549,6 +549,8 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	 * unless a debug FSP is used; the postcodes on the EC console are
 	 * the usable trace
 	 */
+	cfg->fsp_event_handler = (ulong)fsps_event_handler;
+
 	/*
 	 * Run the FSP's CPU feature pass: the FSP does the per-CPU
 	 * programming itself on the APs (which arch_fsp_init_r() starts)
@@ -556,7 +558,7 @@ int fsps_update_config(struct udevice *dev, ulong rom_offset,
 	 * and the GT pcode, without which the kernel is limited to C1E
 	 * idle and the GPU hangs on forcewake
 	 */
-	cfg->skip_mp_init = 1;
+	cfg->skip_mp_init = 0;
 	cfg->cpu_mp_ppi = (ulong)&mp_services;
 
 	/*
@@ -727,6 +729,10 @@ int arch_fsp_init_r(void)
 	 * MCHECK, which pcode depends on, never ran, so pcode crashed
 	 * during power-management bring-up. Running this same FSP-S on top
 	 */
+	ret = x86_mp_init();
+	if (ret)
+		return log_msg_ret("mp", ret);
+	mps_prepare();
 
 	/* This must be called before any devices are probed */
 	ret = fsp_silicon_init(s3wake, false);
