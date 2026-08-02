@@ -92579,3 +92579,148 @@ The result is on local branch `cherry-c28e57164d7-fix1` (not pushed), with `cher
 
 ---
 
+## 2026-08-01: us/main
+
+Branch: cherry-e0fa78b2151
+
+Commits:
+- e0fa78b2151 imx8m: Imply DM_THERMAL
+- f59da150c9a imx952: Update gpio node regs
+- 0f09e834acf imx8ulp: cleanup get_imx_type
+- 2571e319c57 imx7ulp: cleanup get_imx_type
+- 902cf2bf676 imx: Guard print_cpuinfo with !CONFIG_IS_ENABLED(CPU)
+- fd1072d0d59 imx8m: dts: Update ddr firmware name
+- b4610c7177c serial: lpuart: Use livetree API for fdt access
+- 8db4311b4b2 gpio: imx_rgpio2p: Use dev_read_addr_index
+- 170291f0426 misc: ele: Use dev_read_addr
+- 94b5e618c70 imx9: soc: Use livetree API for fdt access
+- e0dc9f254f3 imx8m_evk: Select OF_LIVE
+- 6f145162780 imx9: Select OF_LIVE
+- 599fd74e0c5 mx7ulp_evk: Move environment variables to .env file
+- 4377bd764ca mx6ullevk: Move environment variables to .env file
+- 8d21d74bdf1 mx6sabre: Move environment variables to .env files
+- 223d0f0de8b binman: Add optee binary to i.MX9 platform types
+- 807b17928a0 imx93: Add support for OPTEE
+- 3ac3708d168 board: toradex: add initial support for aquila imx95
+- c7515d64625 imx: fdt: Allow users to inhibit trip point setup
+- 7353fadd381 imx93_frdm: Add support for 2CS 2GB DRAM support
+- 450d9eaf5e6 clk: imx6q: cosmetic: keep pll definitions together
+- d6331d465d8 clk: imx6q: guard video clocks behind config
+- 73394a3cdce clk: imx6q: add missing pll bypasses
+- e3c70d44ff4 imx6: clock: allow different clock sources for ldb
+- db4aa457188 clk: imx6q: configure ldb clock selectors
+- d8673fd3b59 video: imx: ipuv3: enable ipu clk before writing registers in CCF
+- 3c9cb48b475 clk: clk-divider: add clk_register_divider_table()
+- 40c9ef1e77a clk: imx6q: use clk_divider_table instead of fixed factor for pll5 divs
+- b61c4f2a322 imx: kontron-sl-mx8mm: Enable the watchdog at boot
+- c295bc7c15b imx8mp_evk: enable booting Image.gz and avoid extra memcpy
+- 77c8ba88263 imx8mq_evk: enable booting Image.gz and avoid extra memcpy
+- 2619f50f725 imx8mm/n_evk: enable booting Image.gz and avoid extra memcpy
+- 5c4a371c94a imx93_evk/qsb/frdm: enable booting Image.gz and avoid extra memcpy
+- 8c751d48210 imx95/952/94_evk/: enable booting Image.gz
+- bd4be85a4af imx952_evk: Correct CONFIG_DEFAULT_FDT_FILE
+- 00bba5a3587 misc: ele_api: Add V2X Get State API
+- 8757c242825 imx9: Add v2x_status and ele_info commands
+- 835a18f80f2 Merge tag 'u-boot-imx-next-20260627' of https://gitlab.denx.de/u-boot/custodians/u-boot-imx into next
+
+### Conversation log
+10/38 done. Continuing.
+
+18/38 done (one small conflict resolved and noted in the commit message). Continuing.
+
+Minor delta difference in imx93_evk.env (original: 5 changes with 1 deletion; ours: 4 insertions). Let me inspect:
+
+The end-state blob is identical (76fadc00eeb) to upstream — the base file simply lacked the misplaced `kernel_addr_r` line, so no deletion was needed. No concern. Continuing.
+
+All 38 cherry-picks are done. Now verifying the full sequence and running the final build:
+
+All done. Final status:
+
+## Summary
+
+**Branch:** `cherry-e0fa78b2151` (based on `ci/master`), all 38 commits cherry-picked in order and present in `git log`.
+
+**Build result:** OK — sandbox built cleanly with buildman after every single cherry-pick and in the final verification (no warnings or errors).
+
+**Fix-ups made:**
+1. **`board: toradex: add initial support for aquila imx95`** (ff2337f15a8) — conflict in `doc/board/toradex/index.rst`: the upstream context includes an `aquila-am69` entry that does not exist in ci/master. Resolved by adding only the new `aquila-imx95` line; a note was appended to the commit message.
+2. **Merge commit `835a18f80f2`** (135432ed9a7) — same `aquila-am69` conflict in `index.rst`; resolved by keeping our version, after which the pick became empty (expected, since all content was already applied). Committed with `--allow-empty` to preserve the merge message and history, per the required process.
+
+**Delta checks:** All commits matched their originals exactly, with one benign difference:
+- `imx93_evk/qsb/frdm: enable booting Image.gz` (d3d582794c1): original shows 12(+)/2(−), ours 12(+)/1(−) because ci/master's `imx93_evk.env` lacks the misplaced `kernel_addr_r` line that upstream had to move. The resulting file blob (76fadc00eeb) is byte-identical to upstream, so this is not a concern.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-e0fa78b2151
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+
+### Conversation log
+All 12 matched boards built. Let me confirm there are no errors (warnings shown are pre-existing DT/blob notices):
+
+## Report: Infrastructure failures — no code changes made
+
+Both job failures on MR !1214 (branch `cherry-e0fa78b2151`) are lab/infrastructure issues, not caused by the branch:
+
+### Job edison (588948)
+Failed before any test ran, during `u-boot-test-getrole edison --configure`:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+This is a labgrid place-acquisition conflict — the place was held by `kea/labgrid`. Pure lab resource contention.
+
+### Job play (588946)
+30 host-side tool tests passed, then the first test needing the board console (`test_help`) timed out. The console showed only the TI ROM boot-info string (`616d363278` = "am62x", `GP`) followed by `CCCCCCC` — the ROM's UART-boot fallback prompt, meaning the board never loaded an image from its boot media. The framework itself classified it as `Lab failure: Timeout ... Marking connection bad`. This is a board/boot-media flake, not a firmware regression.
+
+### Why the branch cannot be responsible
+- All 38 cherry-picked commits are i.MX/NXP-specific except `drivers/clk/clk-divider.c` and `include/linux/clk-provider.h`
+- That generic change is a pure refactor: `clk_register_divider()` now delegates to a new `clk_register_divider_table()` with a NULL table — behaviourally identical for existing callers (the beagleplay R5 SPL builds this file via `SPL_CLK_CCF`)
+- Edison (x86) uses none of the touched code, and its job failed before even building
+- Verified locally: `um build sandbox` clean; `buildman` built edison, am62x_beagleplay_a53, am62x_beagleplay_r5 and all sandbox variants with 0 errors (only pre-existing warnings)
+
+### Result
+Branch `cherry-e0fa78b2151-fix1` created, pointing at the same HEAD (a116526edf8) with no changes. Recommendation: simply retry both jobs; the edison place conflict may need `labgrid-client -p edison allow ellesmere/gitlab-runner` or a release of the stale acquisition.
+
+---
+
+### Review: 2026-08-01
+
+Branch: cherry-e0fa78b2151
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, play.
+
+All 12 matched boards built. Let me con...
+
+### Conversation log
+Build passes cleanly. Now create the -v2 branch and push to the original remote branch:
+
+Done. Summary of what was done:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is the bot's own pipeline-fix report from attempt 1, not a human review requesting changes. It concludes that both failed jobs are infrastructure issues:
+- **edison**: labgrid place-acquisition conflict (`place edison is not acquired by your user, acquired by labgrid`) — failed before any test ran
+- **play**: am62x board never booted from its media (ROM `CCCCCCC` UART fallback), classified by the framework itself as a lab failure
+
+No code change is requested or needed, so none was made.
+
+**Actions taken:**
+1. Checked out `cherry-e0fa78b2151` (HEAD 779e3f661c5, which is the previous MR content plus the `.pickman-history` pipeline-fix record commit)
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 warnings/errors
+3. Created local branch `cherry-e0fa78b2151-v2`
+4. Force-pushed to `ci/cherry-e0fa78b2151` (a116526edf8 → 779e3f661c5), which triggers a fresh MR pipeline — this is the retry the report recommended
+
+**Suggested reply to post on the MR:**
+
+> The comment is the pipeline-fix report from attempt 1, which identified both job failures as lab infrastructure issues (edison: labgrid place held by another user; play: am62x board failed to boot from its media). No code changes are required. The branch has been re-pushed unchanged apart from the pipeline-fix history record, triggering a new pipeline to retry the failed jobs. Sandbox builds cleanly with buildman. If edison fails again with the same acquisition error, the lab-side fix is `labgrid-client -p edison allow ellesmere/gitlab-runner` or releasing the stale acquisition.
+
+---
+
