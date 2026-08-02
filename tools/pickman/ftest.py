@@ -7202,5 +7202,224 @@ class TestDriftGroupByArea(unittest.TestCase):
         self.assertEqual(areas['lib'], ['lib/efi_loader/efi.c'])
 
 
+# Hashes for the mocked history: one commit cherry-picked from upstream and
+# one written downstream
+DRIFT_CHERRY = 'c' * 40
+DRIFT_DOWN = 'd' * 40
+
+# 'git log --format=@%H --name-only': the cherry-pick touched README, the
+# downstream commit touched the video driver
+DRIFT_LOG = f'@{DRIFT_CHERRY}\nREADME\n\n@{DRIFT_DOWN}\ndrivers/video/vid.c\n'
+
+# 'git blame --porcelain': the downstream commit wrote line 13, the
+# cherry-pick left line 34
+DRIFT_BLAME = (f'{DRIFT_DOWN} 13 13 1\n\tdebug("hello");\n'
+               f'{DRIFT_CHERRY} 34 34 1\n\t/* end */\n')
+
+
+class TestDriftCommands(unittest.TestCase):
+    """Tests for the drift, drift-accept and drift-fix commands"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+
+        self.tmpdir = tempfile.mkdtemp()
+        self.accept_file = os.path.join(self.tmpdir, '.pickman-diverge')
+        self.old_accept = drift.ACCEPT_FILE
+        drift.ACCEPT_FILE = self.accept_file
+
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'a' * 40)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+        command.TEST_RESULT = self._handle_git
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+        control.DB_FNAME = self.old_db_fname
+        drift.ACCEPT_FILE = self.old_accept
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        shutil.rmtree(self.tmpdir)
+        database.Database.instances.clear()
+
+    def _handle_git(self, pipe_list=None, **_):
+        """Answer the git commands which the drift code runs"""
+        args = list(pipe_list[0])[1:]
+        if args[0] == 'merge-base':
+            return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'log':
+            if '--grep' in args:
+                return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
+            return command.CommandResult(stdout=DRIFT_LOG)
+        if args[0] == 'diff':
+            return command.CommandResult(stdout=DRIFT_DIFF.encode('utf-8'))
+        if args[0] == 'blame':
+            return command.CommandResult(stdout=DRIFT_BLAME.encode('utf-8'))
+        raise ValueError(f'Unexpected git command: {args}')
+
+    @staticmethod
+    def _drift_args(**kwargs):
+        """Build the arguments for the drift command"""
+        args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
+                'deep': False, 'diff': False, 'list': False}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def test_downstream_commits(self):
+        """Test finding the commits written downstream, not cherry-picked"""
+        with terminal.capture():
+            hashes, paths = control.drift_downstream_commits(
+                'us/master', 'ci/master')
+        self.assertEqual(hashes, {DRIFT_DOWN})
+        self.assertEqual(paths, {'drivers/video/vid.c'})
+
+    def test_blame(self):
+        """Test that blame maps a line to the downstream commit which wrote it
+
+        The line left by the cherry-pick must not appear, since it is not a
+        reason for the tree to differ from upstream.
+        """
+        with terminal.capture():
+            blame = control.drift_blame('ci/master', 'drivers/video/vid.c',
+                                        {DRIFT_DOWN})
+        self.assertEqual(blame, {13: DRIFT_DOWN})
+
+    def test_report(self):
+        """Test the report: a file no downstream commit touched is drift"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)
+        self.assertIn('4 file(s) differ from upstream', out)
+        # README and tools/old.c are drift; the video driver is not looked
+        # inside, so its 2 hunks are taken as wanted
+        self.assertIn('2 hunk(s) wanted', out)
+        self.assertIn('2 hunk(s) of drift in 3 file(s)', out)
+
+    def test_report_deep(self):
+        """Test that a deep report finds drift inside a downstream file"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._drift_args(deep=True))
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)
+        # Blame shows the downstream commit wrote only the first hunk, so the
+        # second one is drift
+        self.assertIn('1 hunk(s) wanted', out)
+        self.assertIn('3 hunk(s) of drift in 4 file(s)', out)
+
+    def test_report_list(self):
+        """Test that the list shows each drifted file, worst first"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(list=True))
+        out = stdout.getvalue()
+        self.assertIn('README', out)
+        self.assertIn('tools/old.c', out)
+        self.assertIn('binary', out)
+        self.assertLess(out.index('1 hunk(s)  README'), out.index('binary'))
+
+    def test_report_diff(self):
+        """Test that the patch shows the drift hunks"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(diff=True))
+        out = stdout.getvalue()
+        self.assertIn('diff --git a/README b/README', out)
+        self.assertIn('+# SPDX-License-Identifier', out)
+
+    def test_unknown_source(self):
+        """Test that an unknown source is reported"""
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._drift_args(source='us/nope'))
+        self.assertEqual(ret, 1)
+        self.assertIn("Source 'us/nope' not found", stderr.getvalue())
+
+    def test_accept(self):
+        """Test recording a delta as intentional"""
+        args = argparse.Namespace(cmd='drift-accept', path='README', hunk='*',
+                                  message='Our fix for line 1')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 0)
+        self.assertIn('Accepted every hunk', stdout.getvalue())
+
+        accepts = drift.read_accepts(tools.read_file(self.accept_file,
+                                                     binary=False))
+        self.assertEqual(accepts,
+                         [drift.Accept('README', '*', 'Our fix for line 1')])
+
+    def test_accept_hunk(self):
+        """Test recording a single hunk as intentional"""
+        args = argparse.Namespace(cmd='drift-accept', path='a/b.c',
+                                  hunk='abc123def456', message='Wanted')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 0)
+        self.assertIn('Accepted hunk abc123def456', stdout.getvalue())
+
+    def test_accept_twice(self):
+        """Test that accepting the same delta again is refused"""
+        args = argparse.Namespace(cmd='drift-accept', path='README', hunk='*',
+                                  message='Our fix')
+        with terminal.capture():
+            control.do_pickman(args)
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(args)
+        self.assertEqual(ret, 1)
+        self.assertIn('is already accepted', stderr.getvalue())
+
+    def test_accept_removes_drift(self):
+        """Test that an accepted delta no longer counts as drift"""
+        with terminal.capture():
+            control.do_pickman(argparse.Namespace(
+                cmd='drift-accept', path='README', hunk='*',
+                message='Our fix'))
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args())
+        out = stdout.getvalue()
+        self.assertIn('1 hunk(s) accepted', out)
+        self.assertIn('1 hunk(s) of drift in 2 file(s)', out)
+
+    def test_accept_binary(self):
+        """Test that an accepted binary file no longer counts as drift"""
+        with terminal.capture():
+            control.do_pickman(argparse.Namespace(
+                cmd='drift-accept', path='logo.bmp', hunk='*',
+                message='Our logo'))
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(list=True))
+        self.assertNotIn('logo.bmp', stdout.getvalue())
+
+    def test_commit_msg(self):
+        """Test the commit message which explains a revert"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        msg = control.drift_commit_msg('tools', ['tools/old.c'], info)
+        self.assertTrue(msg.startswith(
+            'tools: Drop unintended deltas from upstream\n'))
+        self.assertIn('no downstream commit accounts', msg)
+        self.assertIn('This reverts 1 hunk(s) in 1 file(s):', msg)
+        self.assertIn(' - tools/old.c', msg)
+
+    def _open_db(self):
+        """Open the test database, ready for use"""
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        return dbs
+
+
 if __name__ == '__main__':
     unittest.main()

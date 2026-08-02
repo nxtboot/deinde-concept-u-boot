@@ -8,6 +8,7 @@
 .*
 !.claude
 !.checkpatch.conf
+!.pickman-diverge
 !.pickman-history
 *.a
 *.asn1.[ch]
