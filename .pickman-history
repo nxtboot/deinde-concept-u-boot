@@ -92904,3 +92904,42 @@ All cherry-picks are complete. Branch `cherry-85a35bcd635` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-85a35bcd635
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+## Report: infrastructure failures — no code changes made
+
+All three failed jobs are lab/infrastructure issues, not caused by the branch. I made no code changes; branch `cherry-85a35bcd635-fix1` is created pointing at the unchanged branch head (1f269b0083a).
+
+### Diagnosis per job
+
+**edison (590244)** — labgrid place-reservation conflict, failed in ~1 second before any U-Boot code ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid
+```
+Pure lab scheduling issue (the place was held by kea/labgrid).
+
+**felwinter (590235)** — the branch's U-Boot actually built and booted fine on this board (`{lab ready in 17.8s: U-Boot Concept 2026.04-g5b4007c97ad2}`) and 48 tests passed. The failure was in test_tpm2_pcr_extend during a board restart: the reset attempt hit "MRC: no saved training data" (slow memory retraining), a 180s prompt timeout, then a serial `OSError: [Errno 5] Input/output error`, and finally the job exceeded its 10-minute limit ("Session terminated, killing shell"). Transient board/serial flakiness plus job timeout.
+
+**felwinter-cb (590234)** — the board never reached U-Boot: it hung in coreboot romstage during a CSE firmware sync (`cse_lite: Set Boot Partition Info Command (RW)` → `HECI: Global Reset`), then the serial driver could not be activated ("state bound"). This happens before any code from this branch executes, so it cannot be caused by the MR.
+
+### Why the branch is not implicated
+
+The diff touches only MAINTAINERS, non-x86 PCI drivers (rcar, mpc85xx, dw_mvebu, imx, layerscape — none used by edison/felwinter), and a scripts/Makefile.lib cleanup that removes references to `migrate_*` variables which are already undefined (a functional no-op, confirmed by inspection). The felwinter job booting the branch image successfully further confirms this.
+
+### Verification
+
+- `um build sandbox` — clean, no warnings or errors
+- Skipped the full buildman run since no changes were made and the pipeline build stages all passed (failures were all in the sjg-lab test stage)
+
+**Recommendation:** retry the pipeline; the edison place conflict and the felwinter-cb coreboot/CSE hang should clear on a re-run.
+
+---
+
