@@ -92856,3 +92856,123 @@ Branch **cherry-eec819b9843-fix1** created, pointing at the same commit as cherr
 
 ---
 
+## 2026-08-01: us/main
+
+Branch: cherry-85a35bcd635
+
+Commits:
+- 85a35bcd635 MAINTAINERS: Replace Cortina with N:
+- 5a49a1dd557 Makefile.lib: remove stale migrate_xxx logic from fdtgrep logic
+- 5602e89a834 rockchip: sdram: Fix initialization of DRAM banks
+- 6f949abb3c9 MAINTAINERS: Add myself as core PCI maintainer
+- f657eab9bed pci: rcar: Use dev_read_addr_index()
+- 9b6f2786aaf pci: mpc85xx: Simplfy code with dev_remap_addr()
+- 06fdccbcd8b pci: dw_mvebu: Use dev_read_addr_x APIs
+- fc1016d6838 pci: imx: Use dev_read_addr_index_ptr()
+- 57abbbcc945 pci: layerscape: ep: Use dev APIs
+- ae169744cf6 Merge tag 'u-boot-pci-next-20260701' of https://source.denx.de/u-boot/custodians/u-boot-ufs into next
+
+### Conversation log
+The rockchip sdram commit (5602e89a834) is verified identical to f02b23c59d4 already in ci/master — skipping it.
+
+All cherry-picks are complete. Branch `cherry-85a35bcd635` is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every commit and in the final verification (no warnings or errors).
+
+**Commits applied (9 of 10):**
+
+| Original | New | Subject |
+|---|---|---|
+| 85a35bcd635 | 9f5bcb0aa2d | MAINTAINERS: Replace Cortina with N: |
+| 5a49a1dd557 | 5a5bdd517f7 | Makefile.lib: remove stale migrate_xxx logic from fdtgrep logic |
+| 6f949abb3c9 | ed34b242f08 | MAINTAINERS: Add myself as core PCI maintainer |
+| f657eab9bed | 5c9ebd8c237 | pci: rcar: Use dev_read_addr_index() |
+| 9b6f2786aaf | b0f647378e2 | pci: mpc85xx: Simplfy code with dev_remap_addr() |
+| 06fdccbcd8b | a60e96758d9 | pci: dw_mvebu: Use dev_read_addr_x APIs |
+| fc1016d6838 | e2d4e021d1c | pci: imx: Use dev_read_addr_index_ptr() |
+| 57abbbcc945 | 5309b5e9d85 | pci: layerscape: ep: Use dev APIs |
+| ae169744cf6 | 5b4007c97ad | Merge tag 'u-boot-pci-next-20260701' (empty, preserved with --allow-empty) |
+
+**Skipped as already applied:**
+- 5602e89a834 (rockchip: sdram: Fix initialization of DRAM banks) — verified identical to f02b23c59d4 already in ci/master; the patch diff showed only the hash and the "cherry picked from" line differing.
+
+**Fix-ups:** None needed — every pick applied cleanly.
+
+**Deltas:** All commit stats matched the originals exactly (same files, same line counts). The merge commit came in empty as expected, since all its content arrived via the individual picks.
+
+---
+
+### Pipeline fix: 2026-08-01 (attempt 1)
+
+Branch: cherry-85a35bcd635
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+
+### Conversation log
+## Report: infrastructure failures — no code changes made
+
+All three failed jobs are lab/infrastructure issues, not caused by the branch. I made no code changes; branch `cherry-85a35bcd635-fix1` is created pointing at the unchanged branch head (1f269b0083a).
+
+### Diagnosis per job
+
+**edison (590244)** — labgrid place-reservation conflict, failed in ~1 second before any U-Boot code ran:
+```
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid
+```
+Pure lab scheduling issue (the place was held by kea/labgrid).
+
+**felwinter (590235)** — the branch's U-Boot actually built and booted fine on this board (`{lab ready in 17.8s: U-Boot Concept 2026.04-g5b4007c97ad2}`) and 48 tests passed. The failure was in test_tpm2_pcr_extend during a board restart: the reset attempt hit "MRC: no saved training data" (slow memory retraining), a 180s prompt timeout, then a serial `OSError: [Errno 5] Input/output error`, and finally the job exceeded its 10-minute limit ("Session terminated, killing shell"). Transient board/serial flakiness plus job timeout.
+
+**felwinter-cb (590234)** — the board never reached U-Boot: it hung in coreboot romstage during a CSE firmware sync (`cse_lite: Set Boot Partition Info Command (RW)` → `HECI: Global Reset`), then the serial driver could not be activated ("state bound"). This happens before any code from this branch executes, so it cannot be caused by the MR.
+
+### Why the branch is not implicated
+
+The diff touches only MAINTAINERS, non-x86 PCI drivers (rcar, mpc85xx, dw_mvebu, imx, layerscape — none used by edison/felwinter), and a scripts/Makefile.lib cleanup that removes references to `migrate_*` variables which are already undefined (a functional no-op, confirmed by inspection). The felwinter job booting the branch image successfully further confirms this.
+
+### Verification
+
+- `um build sandbox` — clean, no warnings or errors
+- Skipped the full buildman run since no changes were made and the pipeline build stages all passed (failures were all in the sjg-lab test stage)
+
+**Recommendation:** retry the pipeline; the edison place conflict and the felwinter-cb coreboot/CSE hang should clear on a re-run.
+
+---
+
+### Review: 2026-08-01
+
+Branch: cherry-85a35bcd635
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, felwinter, felwinter-cb.
+
+## Report: infrastru...
+
+### Conversation log
+The local branch has one commit (84671c44f6c, the pickman pipeline-fix record) that isn't on the remote yet. Let me inspect it and check out the branch.
+
+Build passes cleanly. Now create the `-v2` branch and push to the original remote branch.
+
+Done. Here's the summary:
+
+## Report
+
+**Comment analysis:** The single review comment is the bot's own pipeline-fix report (attempt 1), which concluded that all three failed jobs — edison, felwinter, felwinter-cb — were lab/infrastructure failures (labgrid place conflict, transient serial/MRC flakiness plus job timeout, and a coreboot CSE-sync hang before U-Boot ever ran). It explicitly states no code changes were made and recommends retrying the pipeline. **There is no actionable code change in this comment.**
+
+**Actions taken:**
+1. Checked out `cherry-85a35bcd635` — no code changes needed or made
+2. The branch already carried one local commit not yet on the remote: `84671c44f6c` ("pickman: Record pipeline fix for cherry-85a35bcd635"), which only adds the `.pickman-history` record of the fix attempt
+3. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, no warnings or errors
+4. Created local branch `cherry-85a35bcd635-v2` at the tip (84671c44f6c)
+5. Force-pushed to `ci/cherry-85a35bcd635` (1f269b0083a → 84671c44f6c), which updates MR !1217 and triggers a fresh pipeline — fulfilling the comment's "retry the pipeline" recommendation
+
+**Suggested MR reply:**
+
+> No code changes are required for this comment — it is the pipeline-fix report itself, which found all three job failures (edison, felwinter, felwinter-cb) to be lab/infrastructure issues unrelated to this branch. The branch has been re-pushed (now including the pickman fix record) to trigger a fresh pipeline, as the report recommends. Sandbox builds cleanly with buildman (no warnings or errors). If the same jobs fail again in the same way, that would point to a persistent lab problem (particularly the felwinter-cb coreboot/CSE hang) rather than this MR.
+
+---
+
