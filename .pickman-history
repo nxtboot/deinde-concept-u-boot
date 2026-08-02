@@ -93398,3 +93398,40 @@ All 20 commits cherry-picked successfully onto branch `cherry-9b619dfaafd` (base
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-199a088b96c
+
+Commits:
+- 199a088b96c treewide: Kconfig: use bool instead of tristate
+- b1d083e4447 remoteproc: k3-r5: Fix crash when issuing rproc init
+- dc3606a961f cmd: clone: report destination block number on dest write error
+- 9df08fb181d cmd: host: fix duplicate device_unbind and wrong error message in unbind
+- b81e716b263 cmd: ini: avoid NULL deref when loadaddr/filesize env vars are unset
+- bd93d8ea10e cmd: upl: fix off-by-one argc check in do_upl_read
+- e0d10a4b85c cmd: x86: zboot: remove duplicate zboot_setup() call in do_zboot_setup
+- 5f064aef5d7 fs: btrfs: implement opendir(), readdir() and closedir()
+- 31cf3f17782 fs: btrfs: use fs_ls_generic() and drop custom implementation
+- 6741b0dfb41 Merge patch series "fs: btrfs: add support for readdir"
+
+### Conversation log
+Match. Let's run the build test and continue with the next cherry-picks.
+
+I need to amend the commit to note the fix-up (argument change from `zboot_setup()` to `zboot_setup(&bmi)`).
+
+All 10 commits present. Now the final build.
+
+All 10 commits successfully cherry-picked to branch `cherry-199a088b96c`.
+
+**Final Status:**
+- **Build**: OK (sandbox build passes)
+- **Commits present**: All 10 (9 regular + 1 merge commit, which is empty as expected)
+- **Fix-ups made**:
+  - Commit 7 (`e0d10a4b85c` — cmd: x86: zboot): conflict resolved manually because ci/master's `zboot_setup()` now takes a `&bmi` argument. Removed the duplicate `if (zboot_setup(&bmi)) return CMD_RET_FAILURE;` block. Added note to commit message: `[sjg: adjust context for zboot_setup(&bmi) signature]`
+  - Commit 10 (`6741b0dfb41` — merge commit): committed with `--allow-empty` to preserve history, added `cherry picked from commit` reference
+- **Concerning deltas**: None — all diffstats matched originals exactly
+
+Branch `cherry-199a088b96c` is ready for pushing.
+
+---
+
