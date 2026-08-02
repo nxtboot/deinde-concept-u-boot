@@ -28,11 +28,12 @@ enum {
 	HUNTER_MMC,		/* ID of MMC hunter */
 	HUNTER_NVME,
 	HUNTER_QFW,
+	HUNTER_HOST,		/* ID of sandbox host hunter */
 	HUNTER_SCSI,		/* ID of SCSI hunter */
 	HUNTER_SF,
 	HUNTER_USB,		/* ID of USB hunter */
 	HUNTER_VIRTIO,
-	HUNTER_COUNT	= 10,
+	HUNTER_COUNT	= 11,
 	HUNTER_MAX	= HUNTER_COUNT - 1,
 };
 

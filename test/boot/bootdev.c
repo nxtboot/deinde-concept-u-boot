@@ -406,6 +406,7 @@ static int bootdev_test_hunter(struct unit_test_state *uts)
 	ut_assert_nextline("   2        mmc              mmc_bootdev");
 	ut_assert_nextline("   4        nvme             nvme_bootdev");
 	ut_assert_nextline("   4        qfw              qfw_bootdev");
+	ut_assert_nextline("   4        host             sandbox_bootdev");
 	ut_assert_nextline("   4        scsi             scsi_bootdev");
 	ut_assert_nextline("   4        spi_flash        sf_bootdev");
 	ut_assert_nextline("   5        usb              usb_bootdev");
@@ -461,6 +462,7 @@ static int bootdev_test_cmd_hunt(struct unit_test_state *uts)
 
 	ut_assert_nextline("Hunting with: nvme");
 	ut_assert_nextline("Hunting with: qfw");
+	ut_assert_nextline("Hunting with: host");
 	ut_assert_nextline("Hunting with: scsi");
 	ut_assert_nextline("scanning bus for devices...");
 	ut_assert_skip_to_line("Hunting with: spi_flash");
@@ -479,6 +481,7 @@ static int bootdev_test_cmd_hunt(struct unit_test_state *uts)
 	ut_assert_nextline("   2     *  mmc              mmc_bootdev");
 	ut_assert_nextline("   4     *  nvme             nvme_bootdev");
 	ut_assert_nextline("   4     *  qfw              qfw_bootdev");
+	ut_assert_nextline("   4     *  host             sandbox_bootdev");
 	ut_assert_nextline("   4     *  scsi             scsi_bootdev");
 	ut_assert_nextline("   4     *  spi_flash        sf_bootdev");
 	ut_assert_nextline("   5     *  usb              usb_bootdev");

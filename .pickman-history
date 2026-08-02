@@ -92976,3 +92976,83 @@ Done. Here's the summary:
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-264ba13f147
+
+Commits:
+- 264ba13f147 bootdev: scan boot devices at each priority level
+- 93e9af685fe test: bootdev: scan with a broken high-priority device
+- 2569e25ddd5 Merge patch series "bootdev: few fixes for automatic boot"
+
+### Conversation log
+Delta matches. Building now.
+
+Now let me check what includes are needed for host_create_device, HOST_FLAG_BROKEN, etc.
+
+Now update the enum in bootstd_common.h to add HUNTER_HOST:
+
+Build passes. Now amend the commit message to note the fix-up:
+
+Now the merge commit:
+
+All 3 commits are present and the final build passes.
+
+## Summary
+
+**Build result:** OK (final build succeeded with no warnings/errors)
+
+**Commits present on `cherry-264ba13f147`:**
+- `ec1d71f5a1c` bootdev: scan boot devices at each priority level (clean cherry-pick)
+- `feccaf1ce58` test: bootdev: scan with a broken high-priority device (conflict resolution required)
+- `9d9c5df939e` Merge patch series "bootdev: few fixes for automatic boot" (empty merge commit)
+
+**Fix-ups made:**
+- The current tree had already renamed the hunter enum from `MMC_HUNTER`/`HOST_HUNTER`/`SCSI_HUNTER`/`USB_HUNTER`/`MAX_HUNTER` to `HUNTER_MMC`/`HUNTER_SCSI`/`HUNTER_USB`/`HUNTER_MAX` (with `HUNTER_COUNT=10`) and added `HUNTER_FS`/`HUNTER_VIRTIO`. The cherry-picked test file used the old names.
+- Adapted the test resolution to use the current tree's `HUNTER_*` naming and inserted a new `HUNTER_HOST` slot between `HUNTER_QFW` and `HUNTER_SCSI` (alphabetical binding position), bumping `HUNTER_COUNT` to 11.
+- Extended the existing hunter-listing tests (`bootdev_test_hunter` and `bootdev_test_cmd_hunt`) to include the new `sandbox_bootdev` / `host` hunter lines.
+- In `bootflow.c`, kept all recent HEAD test additions (bootstd_adhoc, bootflow_scan_extlinux, bootflow_extlinux_localboot, bootflow_cmd_info_encrypted, bootflow_cmd_bls, bootflow_multi) and appended the new `bootdev_hunt_fallthrough` test, converting `HOST_HUNTER`/`USB_HUNTER` to `HUNTER_HOST`/`HUNTER_USB` and updating the expected USB device count from 5 to 6 to match HEAD.
+- Added a bracketed fix-up note to the second commit's message describing the enum rename adaptation.
+
+**Concerning deltas:** The second cherry-pick had a larger delta than the original (159 insertions vs 158 in original) due to the extra `HUNTER_HOST` enum slot and the additional test-output lines needed to match the current tree's expanded hunter list. This was necessary and expected given the intervening rename.
+
+The branch is left ready for pushing.
+
+---
+
+### Pipeline fix: 2026-08-02 (attempt 1)
+
+Branch: cherry-264ba13f147
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/lab issues, not code problems. The pytest INTERNALERROR shows:
+
+**edison job (591521):**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'edison', '--configure']:
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+```
+
+**felwinter job (591512):**
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'felwinter', '--configure']:
+labgrid-client: Error: place felwinter is not acquired by your user, acquired by sglass.
+```
+
+Both jobs failed before running any U-Boot code — pytest never even started collecting tests. The labgrid places (physical board reservations) were held by other users (`labgrid` for edison, `sglass` for felwinter) at the time the CI job tried to acquire them. No source file, test, or build artefact was involved.
+
+**Diagnosis: transient labgrid resource contention (infrastructure issue).**
+
+Per the instructions:
+> If the failure is an infrastructure or transient issue (network timeout, runner problem, etc.), report this without making changes.
+
+No fix branch is needed — no code change would help. These jobs should simply be retried after the boards are released. I have not created `cherry-264ba13f147-fix1`, and no commits have been amended or added.
+
+**Recommendation:** Retry the pipeline once the `edison` and `felwinter` labgrid places are free (labgrid-client -p edison / felwinter show / release), or ask the current holders to run `labgrid-client -p <place> allow ellesmere/gitlab-runner` for co-use.
+
+---
+
