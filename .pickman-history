@@ -94186,3 +94186,39 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-d3e287405f0
+
+Commits:
+- d3e287405f0 arm: mach-k3: Fix phandle corruption in fdt fixup
+- f16e4c80040 arm: mach-k3: am62ax: Enable OF_SYSTEM_SETUP for AM62D2
+- 5e2be9f5ccc arm: mack-k3: Kconfig: Add DM firmware reserved memory configs
+- 0cceea6e449 arm: mach-k3: Add DM reserved memory fixup
+- a5ef1849394 Merge patch series "Add DM firmware reserved memory support"
+
+### Conversation log
+All 5 commits are on branch `cherry-d3e287405f0` (based on ci/master). Final build passes.
+
+**Summary:**
+
+| Commit | Status | Notes |
+|--------|--------|-------|
+| d3e287405f0 – Fix phandle corruption | Applied with fix-up | Conflict resolved manually; applied to renamed `fdt_fixup_reserved` (not `fdt_fixup_reserved_memory`) and adapted around already-refactored carveout struct placement |
+| f16e4c80040 – Enable OF_SYSTEM_SETUP for AM62D2 | **[FAILED]** empty commit | Target `TARGET_AM62D2_A53_EVM` does not exist in this tree |
+| 5e2be9f5ccc – Add DM firmware reserved memory Kconfig | Clean cherry-pick | 21/21 insertions match original |
+| 0cceea6e449 – Add DM reserved memory fixup | Applied with fix-up | This tree lacks the upstream `fdt_fixup_reserved(blob)` wrapper; instead applied the `#ifdef`-guarded DM call to `am62a7_fdt.c` where the tfa/optee calls already live |
+| a5ef1849394 – Merge patch series | Empty merge commit | Preserved with `--allow-empty` and cherry-pick reference |
+
+**Build result:** OK (sandbox built clean, no warnings/errors).
+
+**Fix-ups made** (each documented in-commit with a bracketed note):
+- Commit 1: adapted to renamed function and existing carveout struct placement
+- Commit 2: empty [FAILED] — AM62D2 target absent from this tree
+- Commit 4: adapted from the upstream wrapper function to the per-SoC `am62a7_fdt.c` pattern used here
+- Commit 5: empty merge-commit placeholder
+
+**Concerning deltas:** Commit 2 was fully unappliable (target missing). Commit 4's file differs from the upstream diff (different file/function name) but the semantic change (guarded `dm` fixup call) is equivalent given this tree's structure. Branch is ready to push; no history modified.
+
+---
+
