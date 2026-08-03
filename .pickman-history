@@ -93860,3 +93860,51 @@ Per the run instructions ("If the failure is an infrastructure or transient issu
 
 ---
 
+### Review: 2026-08-03
+
+Branch: cherry-1b87385aacf
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report
+
+**No changes made.** The review comment "Pipeline fix: reached retry limit (3 attempts). Manual intervention required." is a system-generated notification that the automated pipeline retry loop has exhausted its 3 attempts. It is not a code review — it is a signal for a human to look at the situation.
+
+### Verification
+
+Branch `cherry-1b87385aacf` is on the correct HEAD (`5dc0691b1d2` pickman housekeeping commit; underlying MR content unchanged since the original cherry-pick at `d1dcfa1d67a`). The five functional commits (`6ccf16ca908` … `bc5200d5ed6`) touch only:
+
+- `drivers/pinctrl/aspeed/pinctrl_ast2700_soc0.c` (new)
+- `drivers/pinctrl/aspeed/pinctrl_ast2700_soc1.c` (new)
+- `drivers/pinctrl/aspeed/Makefile`
+- `drivers/pinctrl/Kconfig`
+
+### Summary of the 3 failed attempts (already documented on the MR)
+
+| Attempt | Failing jobs | Diagnosis |
+|---|---|---|
+| 1 | edison, play, bpif3, ff3399 | labgrid ownership conflict; serial timeouts; BootROM/USB enumeration failure; corrupted UART |
+| 2 | edison, vbe, nanopi-m5 | labgrid ownership conflict; corrupted UART on two Rockchip boards |
+| 3 | edison, bpif3 | labgrid ownership conflict; BootROM/USB enumeration failure |
+
+Every failing board is either x86 (edison), Rockchip (vbe / nanopi-m5 / ff3399), TI am62x (play), or SpaceMit K1 (bpif3). **None use aspeed pinctrl.** No AST2700 board was ever tested, and no AST2700 board could be affected by lab-side labgrid/BootROM/UART faults.
+
+The recurring failure signatures — `place edison is acquired by a different user (kea/labgrid)`, `BootROM did not start the FSBL`, `Marking connection bad` mid-command with garbled UART — are all environmental. There is no code fix that would resolve them.
+
+### Actions taken
+
+Per the run instructions ("If the failure is an infrastructure or transient issue … report this without making changes"):
+
+- No `cherry-1b87385aacf-v2` branch created
+- No commits amended, no fixup commits added
+- No build re-run (nothing changed)
+- No `pickman push-branch` executed
+
+### Recommended reply to post to the MR
+
+> Manual intervention: this MR is code-clean. All three automated pipeline attempts failed on lab-infrastructure issues (edison labgrid place held by another user across all three runs; BootROM/USB gadget enumeration failures on the SpaceMit K1 board; serial-console UART corruption/timeouts on Rockchip and TI boards). None of the failing boards use aspeed pinctrl, and this MR only adds AST2700 SoC0/SoC1 pinctrl drivers under `drivers/pinctrl/aspeed/`. Please retry the pipeline once the edison labgrid place is released and the flaky console/BootROM boards recover, or approve/merge based on the passing jobs if the failing ones are known-flaky.
+
+---
+
