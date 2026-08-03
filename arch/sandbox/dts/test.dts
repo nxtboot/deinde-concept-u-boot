@@ -189,7 +189,7 @@
 			storage = "mmc3";
 			skip-offset = <0x800000>;
 			area-start = <0>;
-			area-size = <0xe00000>;
+			area-size = <0x2000000>;
 			state-offset = <0xdffc00>;
 			state-size = <0x40>;
 			version-offset = <0xdffe00>;
