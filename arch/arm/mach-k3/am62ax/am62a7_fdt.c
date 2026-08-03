@@ -12,5 +12,10 @@ int ft_system_setup(void *blob, struct bd_info *bd)
 	fdt_fixup_reserved(blob, "tfa", CONFIG_K3_ATF_LOAD_ADDR, 0x80000);
 	fdt_fixup_reserved(blob, "optee", CONFIG_K3_OPTEE_LOAD_ADDR, 0x1800000);
 
+#if defined(CONFIG_K3_DM_FW_RESERVED_ADDR) && defined(CONFIG_K3_DM_FW_RESERVED_SIZE)
+	fdt_fixup_reserved(blob, "dm", CONFIG_K3_DM_FW_RESERVED_ADDR,
+			   CONFIG_K3_DM_FW_RESERVED_SIZE);
+#endif
+
 	return 0;
 }
