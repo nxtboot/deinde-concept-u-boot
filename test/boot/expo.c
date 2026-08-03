@@ -725,17 +725,17 @@ static int expo_render_image(struct unit_test_state *uts)
 	/* render it */
 	expo_set_scene_id(exp, SCENE1);
 	ut_assertok(expo_render(exp));
-	ut_asserteq(15711, video_compress_fb(uts, dev, false));
+	ut_asserteq(14714, video_compress_fb(uts, dev, false));
 
 	ut_asserteq(0, scn->highlight_id);
 	ut_assertok(scene_arrange(scn));
 	ut_asserteq(0, scn->highlight_id);
 	ut_assertok(expo_render(exp));
-	ut_asserteq(17342, video_compress_fb(uts, dev, false));
+	ut_asserteq(15533, video_compress_fb(uts, dev, false));
 
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(17342, video_compress_fb(uts, dev, false));
+	ut_asserteq(15533, video_compress_fb(uts, dev, false));
 
 	scene_set_highlight_id(scn, OBJ_MENU);
 	ut_asserteq(OBJ_MENU, scn->highlight_id);
@@ -747,7 +747,7 @@ static int expo_render_image(struct unit_test_state *uts)
 	ut_assert(!(obj->flags & SCENEOF_HIDE));
 
 	ut_assertok(expo_render(exp));
-	ut_asserteq(17342, video_compress_fb(uts, dev, false));
+	ut_asserteq(15533, video_compress_fb(uts, dev, false));
 
 	/* move down */
 	ut_assertok(expo_send_key(exp, BKEY_DOWN));
@@ -760,24 +760,24 @@ static int expo_render_image(struct unit_test_state *uts)
 	ut_asserteq(ITEM2, scene_menu_get_cur_item(scn, OBJ_MENU));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(16637, video_compress_fb(uts, dev, false));
+	ut_asserteq(15363, video_compress_fb(uts, dev, false));
 	ut_assertok(video_check_copy_fb(uts, dev));
 
 	/* do some alignment checks */
 	ut_assertok(scene_obj_set_halign(scn, OBJ_TEXT3, SCENEOA_CENTRE));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(16626, video_compress_fb(uts, dev, false));
+	ut_asserteq(15400, video_compress_fb(uts, dev, false));
 	ut_assertok(scene_obj_set_halign(scn, OBJ_TEXT3, SCENEOA_RIGHT));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(16634, video_compress_fb(uts, dev, false));
+	ut_asserteq(15369, video_compress_fb(uts, dev, false));
 
 	ut_assertok(scene_obj_set_halign(scn, OBJ_TEXT3, SCENEOA_LEFT));
 	ut_assertok(scene_obj_set_valign(scn, OBJ_TEXT3, SCENEOA_CENTRE));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19056, video_compress_fb(uts, dev, false));
+	ut_asserteq(17821, video_compress_fb(uts, dev, false));
 	ut_assertok(scene_obj_set_valign(scn, OBJ_TEXT3, SCENEOA_BOTTOM));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19024, video_compress_fb(uts, dev, false));
+	ut_asserteq(17802, video_compress_fb(uts, dev, false));
 
 	/* make sure only the preview for the second item is shown */
 	obj = scene_obj_find(scn, ITEM1_PREVIEW, SCENEOBJT_NONE);
@@ -803,7 +803,7 @@ static int expo_render_image(struct unit_test_state *uts)
 	exp->show_highlight = true;
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19181, video_compress_fb(uts, dev, false));
+	ut_asserteq(17948, video_compress_fb(uts, dev, false));
 
 	/* now try in text mode */
 	expo_set_text_mode(exp, true);
@@ -1458,13 +1458,13 @@ static int expo_render_textline(struct unit_test_state *uts)
 	expo_set_scene_id(exp, SCENE1);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(17714, video_compress_fb(uts, dev, false));
+	ut_asserteq(16751, video_compress_fb(uts, dev, false));
 
 	/* highlight the textline and re-render */
 	scene_set_highlight_id(scn, OBJ_TEXTLINE);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19382, video_compress_fb(uts, dev, false));
+	ut_asserteq(17560, video_compress_fb(uts, dev, false));
 
 	/* open the textline and re-render */
 	ut_assertok(scene_set_open(scn, OBJ_TEXTLINE, true));
@@ -1472,13 +1472,13 @@ static int expo_render_textline(struct unit_test_state *uts)
 	ut_assertok(expo_render(exp));
 
 	/* the cursor should be at the end */
-	ut_asserteq(19347, video_compress_fb(uts, dev, false));
+	ut_asserteq(17556, video_compress_fb(uts, dev, false));
 
 	/* send a keypress to add a character */
 	ut_assertok(expo_send_key(exp, 'a'));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19524, video_compress_fb(uts, dev, false));
+	ut_asserteq(17725, video_compress_fb(uts, dev, false));
 
 	/* move cursor left 3 times */
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
@@ -1489,7 +1489,7 @@ static int expo_render_textline(struct unit_test_state *uts)
 	ut_asserteq_str("sample hopwinda", abuf_data(&tline->tin.buf));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19552, video_compress_fb(uts, dev, false));
+	ut_asserteq(17809, video_compress_fb(uts, dev, false));
 
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
@@ -1501,7 +1501,7 @@ static int expo_render_textline(struct unit_test_state *uts)
 	ut_asserteq_str("sample hopwinda", abuf_data(&tline->tin.buf));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19570, video_compress_fb(uts, dev, false));
+	ut_asserteq(17809, video_compress_fb(uts, dev, false));
 
 	/* delete a character at the cursor */
 	ut_assertok(expo_send_key(exp, CTL_CH('d')));
@@ -1512,7 +1512,7 @@ static int expo_render_textline(struct unit_test_state *uts)
 	ut_asserteq_str("sample hopwnda", abuf_data(&tline->tin.buf));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19505, video_compress_fb(uts, dev, false));
+	ut_asserteq(17756, video_compress_fb(uts, dev, false));
 
 	/* close the textline with Enter (BKEY_SELECT) */
 	ut_assertok(expo_send_key(exp, BKEY_SELECT));
@@ -1526,7 +1526,7 @@ static int expo_render_textline(struct unit_test_state *uts)
 	ut_asserteq_str("sample hopwnda", abuf_data(&tline->tin.buf));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19543, video_compress_fb(uts, dev, false));
+	ut_asserteq(17757, video_compress_fb(uts, dev, false));
 
 	abuf_uninit(&buf);
 	abuf_uninit(&logo_copy);
@@ -1577,13 +1577,13 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	expo_set_scene_id(exp, SCENE1);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(19841, video_compress_fb(uts, dev, false));
+	ut_asserteq(18932, video_compress_fb(uts, dev, false));
 
 	/* highlight the textedit and re-render */
 	scene_set_highlight_id(scn, OBJ_TEXTED);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21662, video_compress_fb(uts, dev, false));
+	ut_asserteq(19851, video_compress_fb(uts, dev, false));
 
 	/* open the textedit and re-render */
 	ut_assertok(scene_set_open(scn, OBJ_TEXTED, true));
@@ -1596,7 +1596,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ctx = ted->tin.ctx;
 	ut_asserteq(343, VID_TO_PIXEL(ctx->xcur_frac));
 	ut_asserteq(260, ctx->ycur);
-	ut_asserteq(21526, video_compress_fb(uts, dev, false));
+	ut_asserteq(19713, video_compress_fb(uts, dev, false));
 
 	/* send a keypress to add a character */
 	ut_assertok(expo_send_key(exp, 'X'));
@@ -1606,7 +1606,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(260, ctx->ycur);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21612, video_compress_fb(uts, dev, false));
+	ut_asserteq(19776, video_compress_fb(uts, dev, false));
 
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
@@ -1620,7 +1620,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	/* check cursor position after render (render_deps corrects it) */
 	ut_asserteq(329, VID_TO_PIXEL(ctx->xcur_frac));
 	ut_asserteq(260, ctx->ycur);
-	ut_asserteq(21623, video_compress_fb(uts, dev, false));
+	ut_asserteq(19811, video_compress_fb(uts, dev, false));
 
 	/* delete a character at the cursor (removes 'e') */
 	ut_assertok(expo_send_key(exp, CTL_CH('d')));
@@ -1633,7 +1633,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	/* check cursor position after render (render_deps corrects it) */
 	ut_asserteq(329, VID_TO_PIXEL(ctx->xcur_frac));
 	ut_asserteq(260, ctx->ycur);
-	ut_asserteq(21541, video_compress_fb(uts, dev, false));
+	ut_asserteq(19742, video_compress_fb(uts, dev, false));
 
 	/* move cursor to previous visual line at same x position */
 	ut_assertok(expo_send_key(exp, CTL_CH('p')));
@@ -1645,7 +1645,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_assertok(expo_render(exp));
 	ut_asserteq(327, VID_TO_PIXEL(ctx->xcur_frac));
 	ut_asserteq(240, ctx->ycur);
-	ut_asserteq(21538, video_compress_fb(uts, dev, false));
+	ut_asserteq(19764, video_compress_fb(uts, dev, false));
 
 	/* delete the word before cursor (deletes "lik" from "likely") */
 	ut_assertok(expo_send_key(exp, CTL_CH('w')));
@@ -1653,7 +1653,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(97, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21462, video_compress_fb(uts, dev, false));
+	ut_asserteq(19673, video_compress_fb(uts, dev, false));
 
 	/* delete another word (deletes "quite ") */
 	ut_assertok(expo_send_key(exp, CTL_CH('w')));
@@ -1661,7 +1661,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(91, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21241, video_compress_fb(uts, dev, false));
+	ut_asserteq(19419, video_compress_fb(uts, dev, false));
 
 	/* go back 4 characters */
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
@@ -1672,7 +1672,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(91, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21225, video_compress_fb(uts, dev, false));
+	ut_asserteq(19406, video_compress_fb(uts, dev, false));
 
 	/* move cursor to next visual line at same x position */
 	ut_assertok(expo_send_key(exp, CTL_CH('n')));
@@ -1680,7 +1680,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(91, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21211, video_compress_fb(uts, dev, false));
+	ut_asserteq(19427, video_compress_fb(uts, dev, false));
 
 	/* go to start of line (multiline Home goes to start of current line) */
 	ut_assertok(expo_send_key(exp, CTL_CH('a')));
@@ -1691,7 +1691,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(90, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21174, video_compress_fb(uts, dev, false));
+	ut_asserteq(19374, video_compress_fb(uts, dev, false));
 
 	/* go to end of buffer and backspace */
 	ut_assertok(expo_send_key(exp, CTL_CH('e')));
@@ -1702,7 +1702,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq(89, ted->tin.cls.eol_num);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21079, video_compress_fb(uts, dev, false));
+	ut_asserteq(19270, video_compress_fb(uts, dev, false));
 
 	/* set multiline mode and check Enter inserts newline */
 	ted->obj.flags |= SCENEOF_MULTILINE;
@@ -1713,7 +1713,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 	ut_asserteq('\n', ((char *)abuf_data(&ted->tin.buf))[89]);
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21109, video_compress_fb(uts, dev, false));
+	ut_asserteq(19318, video_compress_fb(uts, dev, false));
 
 	/* go back 5 characters (before the newline) and use Ctrl+K */
 	ut_assertok(expo_send_key(exp, CTL_CH('b')));
@@ -1761,7 +1761,7 @@ static int expo_render_textedit(struct unit_test_state *uts)
 		abuf_data(&ted->tin.buf));
 	ut_assertok(scene_arrange(scn));
 	ut_assertok(expo_render(exp));
-	ut_asserteq(21251, video_compress_fb(uts, dev, false));
+	ut_asserteq(19428, video_compress_fb(uts, dev, false));
 
 	abuf_uninit(&buf);
 	abuf_uninit(&logo_copy);

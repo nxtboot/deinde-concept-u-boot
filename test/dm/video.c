@@ -1438,13 +1438,13 @@ static int dm_test_video_images(struct unit_test_state *uts)
 	ut_assert_nextline("-------------------- ----------");
 	ut_assert_nextline("bgrt                      43926");
 	ut_assert_nextline("canonical                 14258");
+	ut_assert_nextline("deinde                     6354");
 	ut_assert_nextline("help                       1782");
 	ut_assert_nextline("lock                       2454");
 	ut_assert_nextline("multipass                  4378");
 	ut_assert_nextline("riscos_arrow               3798");
 	ut_assert_nextline("settings                   1782");
 	ut_assert_nextline("tick                        822");
-	ut_assert_nextline("u_boot                     6932");
 	ut_assert_skip_to_line("");
 	ut_assert_nextline("Total images: 9");
 	ut_assert_console_end();

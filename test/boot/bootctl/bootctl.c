@@ -478,7 +478,7 @@ static int check_multiboot_ui(struct unit_test_state *uts,
 	ut_assertok(bc_ui_add(ui_dev, &info[1]));
 	ut_assertok(bc_ui_render(ui_dev));
 	ut_assertok(uclass_first_device_err(UCLASS_VIDEO, &vid_dev));
-	ut_asserteq(22656, video_compress_fb(uts, vid_dev, false));
+	ut_asserteq(21748, video_compress_fb(uts, vid_dev, false));
 
 	/* dump the simple_ui expo - buf1 is golden for simple_ui */
 	uc_priv = dev_get_uclass_priv(ui_dev);
@@ -503,7 +503,7 @@ static int check_multiboot_ui(struct unit_test_state *uts,
 	ut_assertok(bc_ui_add(ui_dev, &info[0]));
 	ut_assertok(bc_ui_add(ui_dev, &info[1]));
 	ut_assertok(bc_ui_render(ui_dev));
-	ut_asserteq(17279, video_compress_fb(uts, vid_dev, false));
+	ut_asserteq(16324, video_compress_fb(uts, vid_dev, false));
 
 	/* dump after render - buf2 is golden for multiboot_ui */
 	uc_priv = dev_get_uclass_priv(ui_dev);
@@ -517,7 +517,7 @@ static int check_multiboot_ui(struct unit_test_state *uts,
 	/* switch to simple_ui layout and check against buf1 */
 	ut_assertok(bc_ui_switch_layout(ui_dev));
 	ut_assertok(bc_ui_render(ui_dev));
-	ut_asserteq(22656, video_compress_fb(uts, vid_dev, false));
+	ut_asserteq(21748, video_compress_fb(uts, vid_dev, false));
 
 	/* dump after switch to simple_ui - buf3 should match buf1 */
 	ut_assertok(membuf_new(&buf3, 4096));
@@ -542,7 +542,7 @@ static int check_multiboot_ui(struct unit_test_state *uts,
 	/* switch back to multiboot UI style and check against buf2 */
 	ut_assertok(bc_ui_switch_layout(ui_dev));
 	ut_assertok(bc_ui_render(ui_dev));
-	ut_asserteq(17279, video_compress_fb(uts, vid_dev, false));
+	ut_asserteq(16324, video_compress_fb(uts, vid_dev, false));
 
 	/* dump after switch back to multiboot - buf4 should match buf2 */
 	ut_assertok(membuf_new(&buf4, 4096));

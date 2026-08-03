@@ -1,0 +1,60 @@
+<svg width="160" height="190" viewBox="0 0 160 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- circuit-trace branches -->
+  <g stroke="#A1836A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 158 L80 116"/>
+    <path d="M80 116 L56 92 L56 64"/>
+    <path d="M80 116 L104 92 L104 64"/>
+    <path d="M80 116 L80 84"/>
+    <path d="M80 84 L62 66 L62 44"/>
+    <path d="M80 84 L98 66 L98 44"/>
+    <path d="M80 84 L80 50"/>
+  </g>
+  <g stroke="#A1836A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M56 82 L40 66"/>
+    <path d="M104 82 L120 66"/>
+  </g>
+
+  <!-- junction nodes -->
+  <g fill="#A1836A">
+    <circle cx="80" cy="116" r="3.5"/>
+    <circle cx="80" cy="84" r="3.5"/>
+    <circle cx="56" cy="82" r="3"/>
+    <circle cx="104" cy="82" r="3"/>
+  </g>
+
+  <!-- green via-pad "leaves" -->
+  <g fill="#5BB24A" stroke="#A1836A" stroke-width="1.5">
+    <circle cx="56" cy="60" r="6"/>
+    <circle cx="104" cy="60" r="6"/>
+    <circle cx="62" cy="40" r="6"/>
+    <circle cx="98" cy="40" r="6"/>
+    <circle cx="40" cy="62" r="5.5"/>
+    <circle cx="120" cy="62" r="5.5"/>
+  </g>
+  <g fill="#5BB24A">
+    <circle cx="70" cy="74" r="3.5"/>
+    <circle cx="90" cy="74" r="3.5"/>
+    <circle cx="48" cy="50" r="3"/>
+    <circle cx="112" cy="50" r="3"/>
+  </g>
+
+  <!-- boot / power glyph at the crown -->
+  <g stroke="#F6C56B" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M84 36.3 A7 7 0 1 1 76 36.3"/>
+    <path d="M80 31 L80 43"/>
+  </g>
+
+  <!-- IC chip at the base, 8 legs -->
+  <rect x="58" y="158" width="44" height="22" rx="3" fill="#A1836A"/>
+  <g fill="#F6C56B">
+    <rect x="52" y="161" width="6" height="3" rx="1"/>
+    <rect x="52" y="166.5" width="6" height="3" rx="1"/>
+    <rect x="52" y="172" width="6" height="3" rx="1"/>
+    <rect x="52" y="177.5" width="6" height="3" rx="1"/>
+    <rect x="102" y="161" width="6" height="3" rx="1"/>
+    <rect x="102" y="166.5" width="6" height="3" rx="1"/>
+    <rect x="102" y="172" width="6" height="3" rx="1"/>
+    <rect x="102" y="177.5" width="6" height="3" rx="1"/>
+    <circle cx="64" cy="163" r="1.6"/>
+  </g>
+</svg>

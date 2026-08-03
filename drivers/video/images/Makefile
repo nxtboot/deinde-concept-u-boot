@@ -2,7 +2,7 @@
 #
 # Copyright 2025 Simon Glass <sjg@chromium.org>
 
-obj-$(CONFIG_VIDEO_LOGO) += u_boot.o
+obj-$(CONFIG_VIDEO_LOGO) += deinde.o
 ifdef CONFIG_MOUSE
 obj-$(CONFIG_EXPO) += riscos_arrow.o
 endif
