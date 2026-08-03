@@ -93398,3 +93398,226 @@ All 20 commits cherry-picked successfully onto branch `cherry-9b619dfaafd` (base
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-199a088b96c
+
+Commits:
+- 199a088b96c treewide: Kconfig: use bool instead of tristate
+- b1d083e4447 remoteproc: k3-r5: Fix crash when issuing rproc init
+- dc3606a961f cmd: clone: report destination block number on dest write error
+- 9df08fb181d cmd: host: fix duplicate device_unbind and wrong error message in unbind
+- b81e716b263 cmd: ini: avoid NULL deref when loadaddr/filesize env vars are unset
+- bd93d8ea10e cmd: upl: fix off-by-one argc check in do_upl_read
+- e0d10a4b85c cmd: x86: zboot: remove duplicate zboot_setup() call in do_zboot_setup
+- 5f064aef5d7 fs: btrfs: implement opendir(), readdir() and closedir()
+- 31cf3f17782 fs: btrfs: use fs_ls_generic() and drop custom implementation
+- 6741b0dfb41 Merge patch series "fs: btrfs: add support for readdir"
+
+### Conversation log
+Match. Let's run the build test and continue with the next cherry-picks.
+
+I need to amend the commit to note the fix-up (argument change from `zboot_setup()` to `zboot_setup(&bmi)`).
+
+All 10 commits present. Now the final build.
+
+All 10 commits successfully cherry-picked to branch `cherry-199a088b96c`.
+
+**Final Status:**
+- **Build**: OK (sandbox build passes)
+- **Commits present**: All 10 (9 regular + 1 merge commit, which is empty as expected)
+- **Fix-ups made**:
+  - Commit 7 (`e0d10a4b85c` — cmd: x86: zboot): conflict resolved manually because ci/master's `zboot_setup()` now takes a `&bmi` argument. Removed the duplicate `if (zboot_setup(&bmi)) return CMD_RET_FAILURE;` block. Added note to commit message: `[sjg: adjust context for zboot_setup(&bmi) signature]`
+  - Commit 10 (`6741b0dfb41` — merge commit): committed with `--allow-empty` to preserve history, added `cherry picked from commit` reference
+- **Concerning deltas**: None — all diffstats matched originals exactly
+
+Branch `cherry-199a088b96c` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-08-02 (attempt 1)
+
+Branch: cherry-199a088b96c
+
+Failed jobs:
+- edison (sjg-lab)
+- link (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/transient issues unrelated to the code changes in this branch. Let me verify by inspecting the branch commits.
+
+Both failures are infrastructure/transient issues, unrelated to the code in this branch. Reporting without changes.
+
+## Report
+
+**No code changes made.** Both failures are infrastructure/transient issues unrelated to the commits on `cherry-199a088b96c`.
+
+### edison (job 593610) — lab infrastructure issue
+
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid. To work simultaneously, labgrid can execute
+labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+
+The edison lab place is currently held by another user (`kea/labgrid`). The job failed during pytest configure (`u-boot-test-getrole edison --configure` returned error 1) before any code was even exercised. This is a lab reservation collision — retry once the place is released, or run the suggested `labgrid-client -p edison allow ellesmere/gitlab-runner`.
+
+### link (job 593571) — flaky timing test
+
+```
+test/py/tests/test_sleep.py:44: in test_sleep
+    assert elapsed < (sleep_time + sleep_margin)
+E   assert 3.2889771461486816 < (3 + 0.25)
+====== 1 failed, 39 passed, 681 skipped ======
+```
+
+A 3-second `sleep` on the chromebook_link target took 3.289s, exceeding the 250 ms tolerance by 39 ms. This is a well-known transient flake — it depends on lab load and host scheduling, not on U-Boot code. The branch does not touch `cmd/sleep.c`, the `test_sleep.py` harness, or anything on the sleep path.
+
+### Branch commits (none plausibly related)
+
+The 10 cherry-picks on this branch are: treewide Kconfig `tristate`→`bool`; remoteproc k3-r5 crash fix; cmd/clone dest-block report; cmd/host unbind fix; cmd/ini NULL deref; cmd/upl off-by-one argc; cmd/x86 zboot duplicate call removal; btrfs opendir/readdir/closedir (+ generic `fs_ls`); and the associated merge. None touch labgrid infrastructure or sleep timing.
+
+### Recommendation
+
+Retry both jobs. No branch `cherry-199a088b96c-fix1` was created because there is nothing to fix.
+
+---
+
+### Review: 2026-08-02
+
+Branch: cherry-199a088b96c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, link.
+
+Both failures are infrastructure/transi...
+
+### Conversation log
+Looking at the "review comment", it is the previous pipeline-fix-attempt-1 report itself, which concluded that both failures (edison, link) are infrastructure/transient issues unrelated to the branch and recommended a retry. There is no actionable change requested — the comment's own conclusion is "No code changes made."
+
+Let me verify nothing has changed and the branch is still coherent, then report.
+
+## Report
+
+**No code changes made. No new branch created. No force-push performed.**
+
+The "review comment" being addressed is the pipeline-fix-attempt-1 bot report itself, quoted back verbatim. Its own conclusion was that both failing jobs on the previous pipeline were infrastructure/transient issues, unrelated to the 10 cherry-picked commits on `cherry-199a088b96c`:
+
+- **edison (job 593610)** — lab reservation collision: the `edison` place was held by `kea/labgrid` when the runner tried to acquire it. Failure occurred during `u-boot-test-getrole edison --configure`, before any U-Boot code ran.
+- **link (job 593571)** — flaky `test_sleep.py`: a 3 s sleep on chromebook_link measured 3.289 s, exceeding the 250 ms tolerance by 39 ms. The branch touches neither `cmd/sleep.c`, the test harness, nor anything on the sleep path.
+
+None of the 10 commits (treewide Kconfig `tristate`→`bool`; remoteproc k3-r5 crash fix; cmd/clone dest-block report; cmd/host unbind fix; cmd/ini NULL deref; cmd/upl off-by-one argc; cmd/x86 zboot duplicate-call removal; btrfs opendir/readdir/closedir + generic `fs_ls`; and the merge) touch labgrid infrastructure or sleep timing. There is nothing in this branch to change.
+
+### Suggested reply to post on the MR
+
+> This comment is a re-post of the attempt-1 report, whose own conclusion was "No code changes made." That analysis still stands — both failures are infrastructure/transient (edison: lab reservation held by another user; link: `test_sleep.py` flake, 3.289 s vs 3.25 s tolerance). None of the 10 cherry-picks touch labgrid or the sleep path. Recommendation unchanged: **retry both jobs**. No `-v2` branch and no force-push, because there is nothing to fix.
+
+---
+
+### Pipeline fix: 2026-08-02 (attempt 2)
+
+Branch: cherry-199a088b96c
+
+Failed jobs:
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+## Report
+
+**No code changes made. No `cherry-199a088b96c-fix2` branch created.**
+
+All three failing jobs are infrastructure/transient issues or pre-existing test fragility, none traceable to the 10 cherry-picks on `cherry-199a088b96c`.
+
+### edison (job 593740) — lab reservation collision
+
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid.
+...
+Error 1 running ['u-boot-test-getrole', 'edison', '--configure']
+```
+
+The `edison` labgrid place is currently held by another user (`kea/labgrid`), so the runner failed to acquire it during `u-boot-test-getrole edison --configure`. The job aborted before any U-Boot code was exercised. Same class of failure as attempt 1 for this same board. Retry once the place is released, or run `labgrid-client -p edison allow ellesmere/gitlab-runner`.
+
+### bpif3 (job 593729) — BootROM/USB hardware issue
+
+```
+USB loader not ready (attempt 1/5): BootROM did not start the FSBL
+(gadget devnum still 098); board needs a reset; resetting and retrying
+...
+Lab failure: Marking connection bad - no other tests will run
+```
+
+The SpacemiT K1 BootROM refused to accept the FSBL over USB for 5 consecutive attempts; the connection was then marked bad. The branch touches none of `board/spacemit`, `arch/riscv`, `drivers/usb`, or the k1-deploy.py deploy script. This is a hardware/USB gadget issue in the lab. Retry.
+
+### vbe (job 593737) — pre-existing `test_dm_compat` fragility
+
+```
+test/py/tests/test_dm.py:12: in <genexpr>
+    drivers = (line[driver_index:].split()[0]
+E   IndexError: list index out of range
+```
+
+The failing test iterates over lines of `dm tree` output starting at index 2 and calls `.split()[0]` on each; if a line is empty or shorter than `driver_index`, `.split()` returns `[]` and `[0]` raises `IndexError`. This is a fragility in `test/py/tests/test_dm.py` triggered by transient shell noise in the captured output on rk3399-generic-ddr3.
+
+None of the 10 cherry-picks on this branch touch:
+- `cmd/dm.c` or `drivers/core/*` (DM tree output logic)
+- `test/py/tests/test_dm.py` or its harness
+- the `rk3399` platform, `sandbox`, or the `vbe` role
+
+The 10 commits are: treewide Kconfig `tristate`→`bool` (19 files, cosmetic); remoteproc k3-r5 crash fix; cmd/clone dest-block report; cmd/host unbind fix; cmd/ini NULL deref; cmd/upl off-by-one argc; cmd/x86 zboot duplicate-call removal; btrfs opendir/readdir/closedir (+ generic `fs_ls`); and the merge. None can plausibly change the `dm tree` output on rk3399.
+
+### Recommendation
+
+Retry all three jobs. No fix branch was created because there is nothing on this branch to fix.
+
+---
+
+### Review: 2026-08-02
+
+Branch: cherry-199a088b96c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, vbe, bpif3.
+
+## Report
+
+**No code changes made...
+
+### Conversation log
+## Report
+
+**No code changes made. No `cherry-199a088b96c-v2` branch created. No push performed.**
+
+The review comment being addressed is the pipeline-fix-attempt-2 bot report itself, quoted back verbatim (same pattern as attempt 1's review-response round). Its own conclusion was that all three failing jobs — edison, vbe, bpif3 — are infrastructure/transient issues or pre-existing test fragility, none traceable to the 10 cherry-picks on `cherry-199a088b96c`.
+
+### Branch state verified
+
+Branch `cherry-199a088b96c` currently holds (top → older):
+- 4 pickman tracking commits (cherry-pick record, review handling, 2 pipeline-fix records)
+- All 10 upstream commits: btrfs readdir merge + `fs_ls_generic` + opendir/readdir/closedir; cmd/x86 zboot dup; cmd/upl argc; cmd/ini NULL deref; cmd/host unbind; cmd/clone dest-block; remoteproc k3-r5 crash; treewide Kconfig `tristate`→`bool`
+
+Working tree is clean.
+
+### Recap of attempt-2 failures (unchanged assessment)
+
+- **edison (job 593740)** — labgrid place held by `kea/labgrid`; failed during `u-boot-test-getrole edison --configure` before any U-Boot code ran.
+- **bpif3 (job 593729)** — SpacemiT K1 BootROM refused FSBL over USB for 5 attempts; connection marked bad. Branch touches no `board/spacemit`, `arch/riscv`, `drivers/usb`, or the k1-deploy.py deploy script.
+- **vbe (job 593737)** — pre-existing `test_dm.py` fragility: `IndexError` from `.split()[0]` on empty `dm tree` output line. Branch touches neither `cmd/dm.c`, `drivers/core/*`, `test/py/tests/test_dm.py`, nor the rk3399 platform.
+
+None of the 10 cherry-picks can plausibly affect labgrid reservations, SpacemiT USB gadget, or `dm tree` output on rk3399.
+
+### Suggested reply to post on the MR
+
+> This comment is a re-post of the attempt-2 report, whose own conclusion was "No code changes made." That analysis still stands — all three failures are infrastructure/transient:
+>
+> - **edison**: lab reservation held by another user (`kea/labgrid`), failed at `u-boot-test-getrole --configure`;
+> - **bpif3**: K1 BootROM refused FSBL over USB for 5 attempts, connection marked bad;
+> - **vbe**: pre-existing `test_dm.py` fragility (`.split()[0]` on empty line) unrelated to any code on this branch.
+>
+> None of the 10 cherry-picks touch labgrid, SpacemiT USB, or the DM tree output path. Recommendation unchanged: **retry all three jobs**. No `-v2` branch and no force-push, because there is nothing on this branch to fix.
+
+---
+

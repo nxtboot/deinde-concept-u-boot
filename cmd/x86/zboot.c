@@ -73,9 +73,6 @@ static int do_zboot_setup(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_FAILURE;
 	}
 
-	if (zboot_setup(&bmi))
-		return CMD_RET_FAILURE;
-
 	return 0;
 }
 
