@@ -93779,3 +93779,37 @@ No local `-v2` branch was created and no push was performed, because there are n
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 2)
+
+Branch: cherry-1b87385aacf
+
+Failed jobs:
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- nanopi-m5 (sjg-lab)
+
+### Conversation log
+All three failures look like lab infrastructure issues, not code regressions. Let me verify by checking the branch commits.
+
+## Report: All three failures are lab infrastructure issues — no code changes made
+
+The MR (`cherry-1b87385aacf`) adds only AST2700 aspeed pinctrl drivers (5 commits touching `drivers/pinctrl/aspeed/pinctrl_ast2700_soc[01].c`, `drivers/pinctrl/aspeed/Makefile`, and `drivers/pinctrl/Kconfig`). None of the failing boards use aspeed pinctrl:
+
+- **edison** — Intel Edison (x86)
+- **vbe** — Rockchip RK3399-generic (VBE test target)
+- **nanopi-m5** — Rockchip RK3576
+
+### Failure root causes
+
+| Job | Root cause |
+|---|---|
+| edison (594523) | `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid` — labgrid place ownership conflict; also fought with a different user (kea/labgrid) during release. Test never ran. |
+| vbe (594520) | `Lab failure: Timeout executing 'dm compat': Marking connection bad` — serial timeout mid-`dm compat` output; log shows heavily corrupted, garbled UART stream (misaligned columns, character dropouts). 4 tests passed + 24 skipped before the connection went bad. |
+| nanopi-m5 (594510) | `Lab failure: Timeout executing 'dm tree': Marking connection bad` — serial timeout mid-`dm tree` output; log shows heavily corrupted, garbled UART stream. 3 tests passed + 25 skipped before the connection went bad. |
+
+Both vbe and nanopi-m5 log tails clearly show corrupted serial output (interleaved lines, missing characters, out-of-order fragments) — classic symptoms of a flaky serial link or lab console-server hiccup, not something a pinctrl driver in a different subsystem for a different SoC family could cause.
+
+Per the run instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), **no branch `cherry-1b87385aacf-fix2` was created and no commits were amended**. The MR should be retried unchanged.
+
+---
+
