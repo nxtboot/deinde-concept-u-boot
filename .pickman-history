@@ -93351,3 +93351,50 @@ All 5 commits cherry-picked successfully on branch `cherry-f6ba7d26fe5`.
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-9b619dfaafd
+
+Commits:
+- 9b619dfaafd MAINTAINERS: remove redundant entries for ARM ROCKCHIP
+- 3dcb974e359 MAINTAINERS: add rkmux.py to ARM ROCKCHIP
+- ff378e80465 MAINTAINERS: add N: px30 regex to ARM ROCKCHIP
+- 7c5ba3733c2 MAINTAINERS: add N: px5 regex to ARM ROCKCHIP
+- 85aacacfbf4 MAINTAINERS: add N: rk3 regex to ARM ROCKCHIP
+- a961c893955 MAINTAINERS: add N: rk8 regex to ARM ROCKCHIP
+- 4582dc53b80 MAINTAINERS: add N: rv11 regex to ARM ROCKCHIP
+- d801fcc7b24 MAINTAINERS: add N: rkmtd regex to ARM ROCKCHIP
+- 412f8f812a1 MAINTAINERS: add more Rockchip drivers to ARM ROCKCHIP
+- 377c3631279 MAINTAINERS: add rockusb to ARM ROCKCHIP
+- 9e3e58df50e MAINTAINERS: remove Philipp Tomsich from ARM ROCKCHIP maintainers
+- 275e9e48275 MAINTAINERS: add myself as ARM ROCKCHIP maintainer
+- d4140de41eb arm: dts: rockchip: Align OTP nodes for RK3528/RK356x with Linux v7.1
+- 9b238123825 rockchip: doc: fix typo evb-rk3288-rk808_defconfig
+- 3f6d1416a89 mtd: nand: raw: rockchip_nfc: fix oobfree length calculation
+- 3a8b3cdd83a rockchip: rk3568: Add support for LinkEase EasePi R1
+- 07ab38e11f5 rockchip: fix asm-operand-widths clang warning
+- 6037673a10f board: rockchip: set M.2 NVMe PERSTN low in spl_board_init on Jaguar
+- b5deaa71fbe board: rockchip: Add support for 9Tripod X3568 v4
+- 9652e00aaa7 Merge tag 'u-boot-rockchip-2026.10-20260710' of https://git.u-boot-project.org/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+All 20 commits present. Now the final build test.
+
+All 20 commits cherry-picked successfully onto branch `cherry-9b619dfaafd` (based on `ci/master`).
+
+## Final Status
+
+**Build result:** OK — sandbox build completed successfully with no warnings/errors (1 total built, duration 10s).
+
+**Cherry-pick summary:**
+- 19 regular commits: applied cleanly (MAINTAINERS entries auto-merged without issues on several).
+- 1 merge commit (`9652e00aaa7`): resulted in empty commit — committed with `--allow-empty` to preserve the tag/merge message per instructions.
+
+**Fix-ups:** None required. No conflicts needed manual resolution.
+
+**Concerning deltas:** None. Spot-checked stats on early and later commits — file counts and line counts match the originals.
+
+**Final log (top 21 commits):** All 20 target commits are present in reverse-chronological order ending at the merge commit `32703e66be7`. The branch is ready to push. No merge back to any other branch performed.
+
+---
+
