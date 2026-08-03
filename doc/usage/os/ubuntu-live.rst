@@ -117,7 +117,7 @@ Testing under QEMU + OVMF
 
 The expected boot trace on the serial console is roughly::
 
-    U-Boot Concept 2026.02
+    Deinde Concept U-Boot 2026.02
     ...
     Scanning bootdev 'efi_media_0.bootdev':
       0  bls    ready   pci  1  0  efi_media_0.bootdev.part_ /loader/entry.conf
