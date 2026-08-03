@@ -93673,3 +93673,35 @@ All 20 cherry-picks complete. Summary:
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-1b87385aacf
+
+Commits:
+- 1b87385aacf pinctrl: aspeed: Add AST2700 SoC0 pinctrl driver
+- ada5d0e7e2c pinctrl: aspeed: Add AST2700 SoC0 pinconf support
+- c0e2aeb9dfe pinctrl: aspeed: Add AST2700 SoC1 pinctrl driver
+- 02d74afe94a pinctrl: aspeed: Add AST2700 SoC1 pinconf support
+- 21ee6442ed1 Merge patch series "pinctrl: aspeed: Add AST2700 pinctrl drivers"
+
+### Conversation log
+Delta matches. Now build test.
+
+All 5 commits successfully cherry-picked to branch `cherry-1b87385aacf`.
+
+**Final Status:**
+- **Build result**: OK (sandbox builds cleanly)
+- **Fix-ups**: None required — all cherry-picks applied cleanly with Auto-merging on `drivers/pinctrl/Kconfig`
+- **Concerning deltas**: None — all commits match originals exactly (same files, same line counts)
+
+**Commits on branch:**
+- `6ccf16ca908` — pinctrl: aspeed: Add AST2700 SoC0 pinctrl driver
+- `b88ed25c97a` — pinctrl: aspeed: Add AST2700 SoC0 pinconf support
+- `5b517d29cd1` — pinctrl: aspeed: Add AST2700 SoC1 pinctrl driver
+- `9694364c988` — pinctrl: aspeed: Add AST2700 SoC1 pinconf support
+- `bc5200d5ed6` — Merge patch series "pinctrl: aspeed: Add AST2700 pinctrl drivers" (empty, preserved with `--allow-empty`)
+
+Branch is ready for pushing.
+
+---
+
