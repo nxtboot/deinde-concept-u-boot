@@ -94527,6 +94527,32 @@ None of these files can affect labgrid coordinator behaviour, `u-boot-test-getro
 - **No code changes**, **no build run** (no diff to validate), **no `cherry-a66e02d219b-fix3` branch created** — an empty branch would only churn the pipeline with nothing new to test, exactly as concluded in attempts 1 and 2.
 
 **Recommendation:** re-run the `sjg-lab` stage after the labgrid coordinator recovers / stale place grants are cleaned up. If any job then fails with a non-lab error, that needs investigation; the current run gives no such signal.
+---
+
+## 2026-08-03: us/main
+
+Branch: cherry-08af4faa0f0
+
+Commits:
+- 08af4faa0f0 cyclic: replace uint64_t by u64 suggested by b4
+- 9c1b13b3fd2 cyclic: reduce get_timer_us() calls inside hlist_for_each_entry_safe()
+- 96c308b8d2a Merge patch series "cyclic: update and optimization"
+
+### Conversation log
+All 3 commits cherry-picked successfully onto branch `cherry-08af4faa0f0`.
+
+**Final status:**
+- `e2d5500d1bc` — cyclic: replace uint64_t by u64 suggested by b4 (1 file, 2+/2-, matches original)
+- `33a7956f428` — cyclic: reduce get_timer_us() calls inside hlist_for_each_entry_safe() (1 file, 5+/3-, matches original)
+- `e9806232615` — Merge patch series "cyclic: update and optimization" (empty merge commit, preserved with --allow-empty)
+
+**Build result:** OK — sandbox builds cleanly after each cherry-pick and the final state.
+
+**Fix-ups:** None required. All auto-merges succeeded cleanly; deltas match the originals exactly.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
 
 ---
 
