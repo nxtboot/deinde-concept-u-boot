@@ -93975,3 +93975,39 @@ Rebase and force-push completed successfully.
 
 ---
 
+Branch: cherry-d23b9d4f6ac
+
+Commits:
+- d23b9d4f6ac clk: ti: Use CPU ticks to count timeout
+- b158ef7c445 arm: mach-omap2: am33xx: ddr: ensure proper reset->cke delay
+- 3ddd0f9bc87 arm: mach-omap2: am33xx: check VTP before reinitalizing
+- 8163dab2e55 Merge patch series "mach-omap2: am33xx: ddr JEDEC spec fixups"
+
+### Conversation log
+Cherry-pick complete. All 4 commits are on branch `cherry-d23b9d4f6ac`.
+
+## Final Status
+
+**Build result:** OK — sandbox build passes.
+
+**Commits on branch (in order):**
+1. `7bc21be0084` — `clk: ti: Use CPU ticks to count timeout [SKIPPED]` (empty commit)
+2. `70fcc34db5b` — `arm: mach-omap2: am33xx: ddr: ensure proper reset->cke delay`
+3. `b988276af7d` — `arm: mach-omap2: am33xx: check VTP before reinitalizing`
+4. `e5181f2d899` — `Merge patch series "mach-omap2: am33xx: ddr JEDEC spec fixups"` (empty merge)
+
+**Fix-ups / concerning deltas:**
+
+- **d23b9d4f6ac** (`clk: ti: Use CPU ticks to count timeout`) conflicted on `drivers/clk/ti/clk-ctrl.c`. The same underlying fix (avoiding the timer circular dependency in the ti clkctrl driver) is already present in `ci/master` via a different implementation:
+  - `822b90e0514` "clk: ti: Do not use the timer when polling for a clock transition" (uses `TRANSITION_RETRIES` + a helper function instead of `LDELAY` + `wait_for_clk_{enable,disable}`).
+  - The base file the upstream commit was diffed against (`readl_relaxed_poll_timeout` with `TRANSITION_TIMEOUT_US`) does not exist in ci/master, so a clean cherry-pick isn't possible and isn't needed.
+  - Recorded as an empty `[SKIPPED]` commit with a note explaining the equivalence to preserve series ordering.
+
+- **b158ef7c445** and **3ddd0f9bc87** cherry-picked cleanly with identical file/line deltas to the originals.
+
+- **8163dab2e55** (merge commit) applied empty (no diff on ci/master), committed with `--allow-empty` to preserve history.
+
+Branch `cherry-d23b9d4f6ac` is left ready for pushing; not merged anywhere.
+
+---
+
