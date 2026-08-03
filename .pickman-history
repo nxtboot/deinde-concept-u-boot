@@ -93908,3 +93908,29 @@ Per the run instructions ("If the failure is an infrastructure or transient issu
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-e24624017f4
+
+Commits:
+- e24624017f4 tools: qconfig: print a proper error when database is missing
+- ab106a85648 qconfig: Rename the doc link in help text
+- 8dbe57ba648 Merge patch series "tools: qconfig: print a proper error when database is missing"
+
+### Conversation log
+All 3 commits successfully cherry-picked to branch `cherry-e24624017f4`.
+
+**Final Status:**
+- **Build result:** OK (sandbox build passed, no warnings/errors)
+- **Commits on branch:**
+  - `85899fbe186` tools: qconfig: print a proper error when database is missing (1 file, +4)
+  - `715d95052c3` qconfig: Rename the doc link in help text (1 file, +1/-1)
+  - `07c79412c18` Merge patch series ... (empty merge commit, preserved via `--allow-empty`)
+- **Deltas:** All non-merge cherry-picks match the originals exactly (same files, same line counts)
+- **Fix-ups:** The merge commit came through as empty (its content was already in the two individual patches). Committed with `--allow-empty` and amended to add the `(cherry picked from commit 8dbe57ba648...)` reference line, since the failed `-x` did not add it.
+- **Concerning deltas:** None
+
+Branch left ready for pushing; not merged.
+
+---
+
