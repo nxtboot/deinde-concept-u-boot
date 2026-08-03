@@ -93908,3 +93908,70 @@ Per the run instructions ("If the failure is an infrastructure or transient issu
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-e24624017f4
+
+Commits:
+- e24624017f4 tools: qconfig: print a proper error when database is missing
+- ab106a85648 qconfig: Rename the doc link in help text
+- 8dbe57ba648 Merge patch series "tools: qconfig: print a proper error when database is missing"
+
+### Conversation log
+All 3 commits successfully cherry-picked to branch `cherry-e24624017f4`.
+
+**Final Status:**
+- **Build result:** OK (sandbox build passed, no warnings/errors)
+- **Commits on branch:**
+  - `85899fbe186` tools: qconfig: print a proper error when database is missing (1 file, +4)
+  - `715d95052c3` qconfig: Rename the doc link in help text (1 file, +1/-1)
+  - `07c79412c18` Merge patch series ... (empty merge commit, preserved via `--allow-empty`)
+- **Deltas:** All non-merge cherry-picks match the originals exactly (same files, same line counts)
+- **Fix-ups:** The merge commit came through as empty (its content was already in the two individual patches). Committed with `--allow-empty` and amended to add the `(cherry picked from commit 8dbe57ba648...)` reference line, since the failed `-x` did not add it.
+- **Concerning deltas:** None
+
+Branch left ready for pushing; not merged.
+
+---
+
+### Review: 2026-08-03
+
+Branch: cherry-e24624017f4
+
+Comments addressed:
+
+
+### Conversation log
+Now let me verify the deltas match the pre-rebase commits:
+
+All deltas match exactly. Now let me run the build test:
+
+Build passes. Now create the -v2 branch and force push:
+
+Rebase and force-push completed successfully.
+
+## Summary
+
+**Rebase for MR !1232 (branch `cherry-e24624017f4`) completed.**
+
+### What was done
+1. Checked out `cherry-e24624017f4` and fetched latest `ci/master`.
+2. Ran `git rebase --keep-empty ci/master` — 4 commits to replay.
+3. Conflict in `.pickman-history` on the housekeeping commit (`76c174c40e6`): both sides appended a new dated section. Resolved by keeping both entries in chronological order (2026-08-02 cherry-1b87385aacf section from ci/master, then 2026-08-03 cherry-e24624017f4 section from this MR), separated by the usual `---` divider.
+4. `git rebase --continue` succeeded.
+5. Delta check: all four commits match their pre-rebase counterparts exactly (`tools/qconfig.py | 4 ++++`, `tools/qconfig.py | 2 +-`, empty merge, `.pickman-history | 26 ++++++++++++++++++++++++++`).
+6. `buildman -L --board sandbox -w -o /tmp/pickman` → **1 built, 0 failed**.
+7. Created local branch `cherry-e24624017f4-v2` at the rebased HEAD.
+8. Force-pushed to `ci/cherry-e24624017f4` (old `07c79412c18` → new `5c31eba9aa0`); GitLab pipeline auto-triggered.
+
+### Post-rebase commits (ci/master..HEAD)
+- `daef71b7011` tools: qconfig: print a proper error when database is missing
+- `44c03499f17` qconfig: Rename the doc link in help text
+- `8c1a878f8f9` Merge patch series "tools: qconfig: print a proper error when database is missing" (empty)
+- `5c31eba9aa0` pickman: Record cherry-pick of 3 commits from us/main
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. Only conflict was in `.pickman-history` (both branches appended dated sections — resolved by keeping both in chronological order). All three functional commits and the empty merge replayed with identical deltas to the pre-rebase versions; sandbox build clean. Force-pushed as `cherry-e24624017f4` (was `07c79412c18`, now `5c31eba9aa0`); pipeline re-triggered.
+
+---
+
