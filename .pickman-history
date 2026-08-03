@@ -93813,3 +93813,50 @@ Per the run instructions ("If the failure is an infrastructure or transient issu
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 3)
+
+Branch: cherry-1b87385aacf
+
+Failed jobs:
+- edison (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+Both failures are lab infrastructure issues (same pattern as prior attempts). Let me verify the branch state briefly.
+
+## Report: Both failures are lab infrastructure issues — no code changes made
+
+Attempt 3 shows the same pattern as attempts 1 and 2. Both failing jobs are lab / hardware transient problems, not code regressions.
+
+### Failure root causes
+
+| Job | Root cause |
+|---|---|
+| **edison (594654)** | `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid. To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner`. Also `place edison is acquired by a different user (kea/labgrid)`. Test never ran — pytest hit `INTERNALERROR` at configure time in `test/py/conftest.py:215` because `u-boot-test-getrole edison --configure` failed. |
+| **bpif3 (594643)** | `BootROM did not start the FSBL (gadget devnum still 084/086/087/088/089); board needs a reset` — SpaceMit K1 BootROM/USB gadget failed to enumerate across all 5 flash retries. Only 1 test was deselected, 0 tests ran. Hardware/USB issue on the SpaceMit K1 board. |
+
+### Why these cannot be code regressions
+
+The MR (`cherry-1b87385aacf`) touches only:
+- `drivers/pinctrl/aspeed/pinctrl_ast2700_soc0.c` (new)
+- `drivers/pinctrl/aspeed/pinctrl_ast2700_soc1.c` (new)
+- `drivers/pinctrl/aspeed/Makefile`
+- `drivers/pinctrl/Kconfig`
+
+Neither board uses aspeed pinctrl:
+- **edison** — Intel Edison (x86) — never even reached the U-Boot binary; failure is at labgrid client stage before pytest could invoke anything
+- **bpif3** — SpaceMit K1 (RISC-V) — failure is at BootROM stage before any U-Boot code runs on the board
+
+### Actions taken
+
+Per the run instructions ("If the failure is an infrastructure or transient issue … report this without making changes"):
+
+- No `cherry-1b87385aacf-fix3` branch created
+- No commits amended
+- No new fixup commits
+- No build re-run (nothing changed to build)
+
+**Recommendation:** Retry the MR unchanged when lab capacity allows and the edison labgrid place is released.
+
+---
+
