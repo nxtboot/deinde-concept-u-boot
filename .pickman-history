@@ -94011,3 +94011,45 @@ Branch `cherry-d23b9d4f6ac` is left ready for pushing; not merged anywhere.
 
 ---
 
+### Review: 2026-08-03
+
+Branch: cherry-d23b9d4f6ac
+
+Comments addressed:
+
+
+### Conversation log
+Now let's do the rebase:
+
+Rebase succeeded cleanly. Let me verify:
+
+Deltas match the original commits. Now let me build:
+
+Build passes. Now create v-suffix branch and push:
+
+Rebase and push complete.
+
+## Summary
+
+**Rebased branch `cherry-d23b9d4f6ac` onto latest `ci/master`** — clean rebase, no conflicts.
+
+**Commits (after rebase):**
+1. `93538fa2215` — clk: ti: Use CPU ticks to count timeout [SKIPPED] (empty)
+2. `b62374b384a` — arm: mach-omap2: am33xx: ddr: ensure proper reset->cke delay
+3. `e47158b8375` — arm: mach-omap2: am33xx: check VTP before reinitalizing
+4. `e50567e59ae` — Merge patch series "mach-omap2: am33xx: ddr JEDEC spec fixups" (empty)
+5. `6c7b9bbede3` — pickman: Record cherry-pick of 4 commits from us/main
+
+**Delta check:** identical to pre-rebase (1 line change in `ddr.c`, 15+/6- in `emif4.c`, empty commits stay empty).
+
+**Build:** sandbox build passes (`buildman -L --board sandbox -w -o /tmp/pickman` → 1 built, 0 errors).
+
+**Local branch created:** `cherry-d23b9d4f6ac-v2`
+**Force pushed to:** `ci/cherry-d23b9d4f6ac` (MR !1233 pipeline will auto-trigger)
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. Clean rebase, no conflicts. Sandbox build passes. Deltas of the non-empty commits are unchanged from the previous version.
+
+---
+
