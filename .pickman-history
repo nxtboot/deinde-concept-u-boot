@@ -94107,3 +94107,35 @@ Branch is left ready for pushing; not merged anywhere.
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-28d09d6ab68
+
+Commits:
+- 28d09d6ab68 mach-k3: am64x: clear MCU_RST_SRC before reset
+- e871bb2463f dm: core: free fdt when fdt_create_empty_tree failure
+- 65e1e66a3a3 dm: core: fix wrong strlen check in of_add_subnode
+- 0af2ed57a3e dm: core: Correct calloc arguments
+- e1f345abf4c dm: core: free old name in device_set_name to prevent leak
+- 1708f49de9c Merge patch series "dm: core: misc fixes"
+
+### Conversation log
+All 6 cherry-picks completed successfully on branch `cherry-28d09d6ab68`.
+
+**Final status:**
+- **Build result:** OK (all builds passed, no warnings/errors)
+- **Fix-ups needed:** None
+- **Concerning deltas:** None — all commits have identical file lists and line counts vs originals
+
+**Commits on branch (in order):**
+1. `7d12e86b076` mach-k3: am64x: clear MCU_RST_SRC before reset
+2. `2365bf9022b` dm: core: free fdt when fdt_create_empty_tree failure
+3. `d015aabe77b` dm: core: fix wrong strlen check in of_add_subnode
+4. `7c411e732ea` dm: core: Correct calloc arguments
+5. `2715c4345c8` dm: core: free old name in device_set_name to prevent leak
+6. `4650949e1d6` Merge patch series "dm: core: misc fixes" (empty, preserved with --allow-empty)
+
+Branch is ready for pushing.
+
+---
+
