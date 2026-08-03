@@ -94053,3 +94053,57 @@ Rebase and push complete.
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-da91be14c13
+
+Commits:
+- da91be14c13 qfw: fix RSDP ext_checksum recomputation
+- b96d3bbb6d8 doc: boards: amlogic: update documentation for Beelink GT1 Ultimate
+- 4df21944bd0 efi_loader: fix missing EFI_EXIT in efi_disconnect_controller
+- bbc19c6bcf0 doc: board: renesas: Document SH/Aarch32/Aarch64 toolchain setup
+- 3debe4140ee doc: board: renesas: Document Aarch32 toolchain setup in RZ/N1
+- cda3dec066b doc: board: renesas: Document Renesas R-Car Gen3 H3/M3-W/M3-N Salvator-X(S) board
+- 1054a3172ee doc: board: renesas: Document Renesas R-Car Gen3 H3/M3-W/M3-N ULCB board
+- fd3fafe0a7c doc: board: renesas: Document Renesas R-Car Gen3 M3Le Geist board
+- 8f790fcfa84 doc: board: renesas: Document Renesas R-Car Gen3 E3 Ebisu board
+- f6585506eb8 doc: board: renesas: Document Renesas R-Car Gen3 D3 Draak board
+- 314847d16f7 doc: board: renesas: Document Retronix R-Car Gen4 V4H Sparrow Hawk board
+- 994de839a29 doc: board: renesas: Document Renesas R-Car Gen5 X5H Ironhide board
+- f6999c9cb07 doc: board: renesas: Update Renesas generic build section
+- dfa9a68ab75 doc: board: renesas: Convert Renesas board support table to grid table
+- 9a695a5fe9b efi_loader: fix building with CONFIG_EFI_VARIABLES_PRESEED=y
+- 226a73bf1b0 efi_selftest: free handles on teardown()
+- 650dcf4520a efi_selftest: test block io revision and pointers
+- 8611cbc7916 efi_loader: fix buffer overrun in efi_sigstore_parse_siglist
+- 650c2e6203b efi_loader: Correctly count the size on DTB measurements
+- 1f4c391428e efi_loader: Change the return values if a TPM is missing during GetEventLog
+- e39e67c436e efi_loader: Measure secure boot variables in the correct PCR if DeployedMode is set
+- 0a2ad17254a doc: CONTRIBUTE: use internal link instead of hardcoded external URL
+- 06f01439459 doc: CONTRIBUTE: tell people reviewing *is* contributing
+- cb4c530f7f2 doc: CONTRIBUTE: explicitly list tests and documentation as welcome contributions
+- 246631bdc55 Merge tag 'efi-2026-10-rc1' of https://git.u-boot-project.org/u-boot/custodians/u-boot-efi
+
+### Conversation log
+Now the merge commit:
+
+All 25 commits present. Now the final build:
+
+Build passed successfully.
+
+## Final Status
+
+**Branch:** `cherry-da91be14c13` (based on `ci/master`, 25 commits ahead)
+
+**Build result:** OK — sandbox built cleanly in 9s, no warnings or errors.
+
+**Fix-ups made:**
+- `da91be14c13` (qfw: fix RSDP ext_checksum recomputation) — the target file `drivers/misc/qfw_acpi.c` was moved to `drivers/qfw/qfw_acpi.c` on ci/master and the code block being patched (which reused `ctx->rsdp` and did `rsdp->ext_checksum = table_compute_checksum(...)` without zeroing) has been refactored away. The current `acpi_write_rsdp()` calls `memset(rsdp, 0, ...)` before computing the checksum, so the fix is a no-op. Recorded as an **empty `[FAILED]` commit** to preserve sequence, with a note explaining why.
+- `246631bdc55` (Merge tag 'efi-2026-10-rc1') — hit the same conflict in `drivers/qfw/qfw_acpi.c` since it re-introduces the da91be14c13 change. Resolved by keeping HEAD; committed as **empty merge commit** with a note.
+
+**Concerning deltas:** None among the applied commits. Only the two above were treated as empty (both flagged in commit messages).
+
+Branch is left ready for pushing; not merged anywhere.
+
+---
+
