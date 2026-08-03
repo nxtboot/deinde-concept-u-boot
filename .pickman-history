@@ -93705,3 +93705,40 @@ Branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-02 (attempt 1)
+
+Branch: cherry-1b87385aacf
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- bpif3 (sjg-lab)
+- ff3399 (sjg-lab)
+
+### Conversation log
+All four failures are lab infrastructure issues, not code problems introduced by this MR.
+
+Let me verify the branch commits are indeed unrelated to these boards:
+
+## Report: Infrastructure failures — no code changes made
+
+The MR (`cherry-1b87385aacf`) contains only AST2700 aspeed pinctrl driver additions (`drivers/pinctrl/aspeed/pinctrl_ast2700_soc[01].c` and `drivers/pinctrl/Kconfig`, `drivers/pinctrl/aspeed/Makefile`). None of the failing boards use aspeed pinctrl:
+
+- **edison** — Intel Edison
+- **play** — TI am62x BeaglePlay
+- **bpif3** — SpaceMit K1 (RISC-V)
+- **ff3399** — Rockchip RK3399 Firefly
+
+All four failures are lab / hardware transient issues, not code regressions:
+
+| Job | Root cause |
+|---|---|
+| edison (594394) | `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid` — labgrid place ownership conflict. Test never ran. |
+| play (594392) | `Lab failure: Timeout executing 'help': Marking connection bad` — serial timeout while running `help` command; 30 tests passed prior. |
+| bpif3 (594383) | `BootROM did not start the FSBL (gadget devnum still 046); board needs a reset` — SpaceMit K1 BootROM/USB gadget failed to enumerate across all 5 flash retries; hardware/USB issue. |
+| ff3399 (594363) | `Lab failure: Timeout executing 'dm drivers': Marking connection bad` — serial timeout mid-output with heavily corrupted UART stream (garbled characters visible in log); 4 tests passed prior. |
+
+Per the run instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), **no branch `cherry-1b87385aacf-fix1` was created and no commits were amended**. The MR should be retried unchanged.
+
+---
+
