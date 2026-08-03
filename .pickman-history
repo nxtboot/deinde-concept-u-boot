@@ -94135,6 +94135,53 @@ All 6 cherry-picks completed successfully on branch `cherry-28d09d6ab68`.
 5. `2715c4345c8` dm: core: free old name in device_set_name to prevent leak
 6. `4650949e1d6` Merge patch series "dm: core: misc fixes" (empty, preserved with --allow-empty)
 
+---
+
+## 2026-08-03: us/main
+
+Branch: cherry-c85bf61b14f
+
+Commits:
+- c85bf61b14f arm: k3: select tifsstub via board_fit_config_name_match
+- 857c2151ca8 board: phytec: phycore-am62: select tifsstub via FIT config
+- feb2b133775 board: toradex: verdin-am62: select tifsstub via FIT config
+- a5567f46697 arm: k3: drop redundant tifsstub runtime filter
+- 4e7a9bb0885 Merge patch series "arm: k3: replace tifsstub runtime filter with per-state FIT configurations"
+
+### Conversation log
+Now let's verify the delta between original and cherry-picked commit:
+
+Stats match exactly. Now build test:
+
+Build passes. Now cherry-pick commit 2:
+
+Stats match. Build test:
+
+Now the merge commit:
+
+All 5 commits are present. Final build test:
+
+## Summary
+
+**Branch:** `cherry-c85bf61b14f` (based on `ci/master`)
+
+**Cherry-pick status:** All 5 commits applied successfully.
+
+| # | Original hash | New hash | Notes |
+|---|---|---|---|
+| 1 | c85bf61b14f | ed69ecc595a | Conflict resolved (see fix-up) |
+| 2 | 857c2151ca8 | 3355b5a2cca | Auto-merged cleanly |
+| 3 | feb2b133775 | 5179e53b3c5 | Auto-merged cleanly |
+| 4 | a5567f46697 | 4f33d8ace1c | Auto-merged cleanly |
+| 5 | 4e7a9bb0885 | 92df979eaf3 | Merge commit (empty, preserved with --allow-empty) |
+
+**Fix-ups:**
+- Commit 1 (`ed69ecc595a`): resolved conflict in `arch/arm/dts/k3-am62a-sk-binman.dtsi` — the ti-spl configuration on ci/master had `conf-0` without the `ti_spl_conf_0:` label. Took the patch version (`ti_spl_conf_0: conf-hs-fs` with description `k3-am62a7-sk-hs-fs`). A note was appended to the commit message. Stats after amend match the original exactly (9 files, 140 insertions, 43 deletions).
+
+**Deltas:** All commit stats (files/lines) match the originals exactly.
+
+**Build:** Sandbox build passed cleanly after every cherry-pick, including the final combined state (no warnings, no errors).
+
 Branch is ready for pushing.
 
 ---
