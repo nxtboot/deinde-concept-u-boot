@@ -11,6 +11,8 @@
 #ifndef __BINMAN_SYM_H
 #define __BINMAN_SYM_H
 
+#include <linux/build_bug.h>
+
 /* BSYM in little endian, keep in sync with tools/binman/elf.py */
 #define BINMAN_SYM_MAGIC_VALUE	(0x4d595342UL)
 #define BINMAN_SYM_MISSING	(-1UL)
@@ -129,5 +131,23 @@ extern unsigned long _binman_sym_magic;
 #define binman_sym(_type, _entry_name, _prop_name) BINMAN_SYM_MISSING
 
 #endif /* CONFIG_IS_ENABLED(BINMAN_SYMBOLS) */
+
+/**
+ * binman_sym_assert() - Fail the build if binman symbols are unusable here
+ *
+ * When BINMAN_SYMBOLS is not enabled for the phase a translation unit is
+ * built for, binman_sym() expands to the constant BINMAN_SYM_MISSING and
+ * the compiler discards any code guarded on the value, with no diagnostic
+ * (only SPL and TPL enable it by default, not U-Boot proper). Place this
+ * next to a binman_sym() whose value the code genuinely requires, so that
+ * using it in a phase without symbol support is a build error rather than
+ * a silent run-time failure. Use binman_entry_find() at run-time instead
+ * where the symbol is needed in a phase that has no symbol support.
+ *
+ * @_entry_name: Name of the entry the code relies on (for the message)
+ */
+#define binman_sym_assert(_entry_name) \
+	static_assert(CONFIG_IS_ENABLED(BINMAN_SYMBOLS), \
+		"binman symbol '" #_entry_name "' is unavailable in this build phase")
 
 #endif

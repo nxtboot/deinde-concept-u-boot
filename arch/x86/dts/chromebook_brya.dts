@@ -11,6 +11,17 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/intel-adl-gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <asm/arch-alderlake/gpio.h>
+#include <asm/intel_pinctrl_defs.h>
+
+/*
+ * The Alder Lake pinctrl uses four config words per pad, while the
+ * shared pad macros emit two; the remaining two are zero
+ */
+#undef _PAD_CFG_STRUCT
+#define _PAD_CFG_STRUCT(__pad, __config0, __config1) \
+	__pad (__config0) (__config1) 0 0
+
 
 /include/ "skeleton.dtsi"
 /include/ "rtc.dtsi"
@@ -30,6 +41,8 @@
 		 */
 		i2c1 = &i2c_1;
 		serial0 = &serial;
+		/* fsp_setup_pinctrl() applies the pads list found here */
+		fsp = &fsp_pads;
 	};
 
 	chosen {
@@ -195,6 +208,17 @@
 			pci,no-autoconfig;
 		};
 
+		/*
+		 * Integrated graphics: the FSP's GOP initialises the display
+		 * and reports the framebuffer in a HOB, which this driver
+		 * picks up
+		 */
+		gma@2,0 {
+			bootph-some-ram;
+			reg = <0x00001000 0 0 0 0>;
+			compatible = "fsp-fb";
+		};
+
 		i2c_1: i2c@15,1 {
 			compatible = "intel,apl-i2c", "snps,designware-i2c-pci";
 			reg = <0x0200a910 0 0 0 0>;
@@ -247,8 +271,45 @@
 			/* GPIO community 0 holds GPP_B, T, A */
 			pinctrl_com0 {
 				compatible = "intel,alderlake-pinctrl";
+				bootph-some-ram;
 				intel,p2sb-port-id = <PID_GPIOCOM0>;
 				gpio_a: gpio-com0 {
+					compatible = "intel,gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
+
+			/* GPIO community 1 holds GPP_S, H, D and the vGPIOs */
+			pinctrl_com1 {
+				compatible = "intel,alderlake-pinctrl";
+				bootph-some-ram;
+				intel,p2sb-port-id = <PID_GPIOCOM1>;
+				gpio_s: gpio-com1 {
+					compatible = "intel,gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
+
+			/* GPIO community 2 holds the GPD pads */
+			pinctrl_com2 {
+				compatible = "intel,alderlake-pinctrl";
+				bootph-some-ram;
+				intel,p2sb-port-id = <PID_GPIOCOM2>;
+				gpio_gpd: gpio-com2 {
+					compatible = "intel,gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
+
+			/* GPIO community 3 holds the PCIe vGPIOs */
+			pinctrl_com3 {
+				compatible = "intel,alderlake-pinctrl";
+				bootph-some-ram;
+				intel,p2sb-port-id = <PID_GPIOCOM3>;
+				gpio_vgpio: gpio-com3 {
 					compatible = "intel,gpio";
 					gpio-controller;
 					#gpio-cells = <2>;
@@ -263,6 +324,18 @@
 				gpio_e: gpio-com4 {
 					compatible = "intel,gpio";
 					bootph-all;
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
+
+			/* GPIO community 5 holds GPP_R and the SPI pads */
+			pinctrl_com5 {
+				compatible = "intel,alderlake-pinctrl";
+				bootph-some-ram;
+				intel,p2sb-port-id = <PID_GPIOCOM5>;
+				gpio_r: gpio-com5 {
+					compatible = "intel,gpio";
 					gpio-controller;
 					#gpio-cells = <2>;
 				};
@@ -303,4 +376,405 @@
 			};
 		};
 	};
+	/*
+	 * The full brya + felwinter GPIO pad configuration, generated from
+	 * coreboot's baseboard and variant tables (the variant overriding
+	 * the baseboard, as coreboot merges them). Applied before FSP-S by
+	 * fsp_setup_pinctrl() via the 'fsp' alias. Differences from
+	 * coreboot: the _LOCK variants map to their plain equivalents (the
+	 * pad lock is a separate sideband write, not pad state) and GPP_A13
+	 * (the GSC interrupt) is left out, since U-Boot routes it to SCI
+	 * with edge-invert (see setup_gsc_pads()) rather than to the APIC
+	 */
+	fsp_pads: fsp-pads {
+		pads = <
+		/*
+		 * A0 thru A5, A9 and A10 come configured out of reset,
+		 * do not touch
+		 */
+		/* A0  : ESPI_IO0 ==> ESPI_IO_0 */
+		/* A1  : ESPI_IO1 ==> ESPI_IO_1 */
+		/* A2  : ESPI_IO2 ==> ESPI_IO_2 */
+		/* A3  : ESPI_IO3 ==> ESPI_IO_3 */
+		/* A4  : ESPI_CS# ==> ESPI_CS_L */
+		/* A5  : ESPI_ALERT0# ==> NC */
+		PAD_NC(GPP_A5, NONE)
+		/* A6  : ESPI_ALERT1# ==> SPKR_INT_L */
+		PAD_CFG_GPI(GPP_A6, NONE, DEEP)
+		/* A7  : SRCCLK_OE7# ==> PEN_DET_ODL */
+		PAD_CFG_GPI_GPIO_DRIVER(GPP_A7, NONE, DEEP)
+		/* A8  : SRCCLKREQ7# ==> PEN_DET_ODL */
+		PAD_CFG_GPI_SCI_HIGH(GPP_A8, NONE, DEEP, EDGE_SINGLE)
+		/* A9  : ESPI_CLK ==> ESPI_CLK */
+		/* A10 : ESPI_RESET# ==> ESPI_PCH_RST_EC_L */
+		/* A11 : PMC_I2C_SDA ==> EN_SPKR_PA */
+		PAD_CFG_GPO(GPP_A11, 1, DEEP)
+		/* A12 : SATAXPCIE1 ==> EN_PP3300_WWAN */
+		PAD_CFG_GPO(GPP_A12, 1, DEEP)
+		/* A14 : USB_OC1# ==> USB_C1_OC_ODL */
+		PAD_CFG_NF(GPP_A14, NONE, DEEP, NF1)
+		/* A15 : USB_OC2# ==> USB_C2_OC_ODL */
+		PAD_CFG_NF(GPP_A15, NONE, DEEP, NF1)
+		/* A16 : USB_OC3# ==> USB_A0_OC_ODL */
+		PAD_CFG_NF(GPP_A16, NONE, PWROK, NF1)
+		/* A17 : DISP_MISCC ==> EN_FCAM_PWR */
+		PAD_CFG_GPO(GPP_A17, 1, DEEP)
+		/* A18 : DDSP_HPDB ==> HDMI_HPD */
+		PAD_CFG_NF(GPP_A18, NONE, DEEP, NF1)
+		/* A19 : DDSP_HPD1 ==> USB_C2_AUX_DC_P */
+		PAD_CFG_NF(GPP_A19, NONE, DEEP, NF6)
+		/* A20 : DDSP_HPD2 ==> USB_C2_AUX_DC_N */
+		PAD_CFG_NF(GPP_A20, NONE, DEEP, NF6)
+		/* A21 : DDPC_CTRCLK ==> USB_C1_AUX_DC_P */
+		PAD_CFG_NF(GPP_A21, NONE, DEEP, NF6)
+		/* A22 : DDPC_CTRLDATA ==> USB_C1_AUX_DC_N */
+		PAD_CFG_NF(GPP_A22, NONE, DEEP, NF6)
+		/* A23 : ESPI_CS1# ==> AUD_HP_INT_L */
+		PAD_CFG_GPI_INT(GPP_A23, NONE, PLTRST, EDGE_BOTH)
+		/* B0  : SOC_VID0 */
+		PAD_CFG_NF(GPP_B0, NONE, DEEP, NF1)
+		/* B1  : SOC_VID1 */
+		PAD_CFG_NF(GPP_B1, NONE, DEEP, NF1)
+		/* B2  : VRALERT# ==> M2_SSD_PLA_L */
+		PAD_CFG_GPO(GPP_B2, 1, PWROK)
+		/* B3  : PROC_GP2 ==> NC */
+		PAD_NC(GPP_B3, NONE)
+		/* B4  : PROC_GP3 ==> SSD_PERST_L */
+		PAD_CFG_GPO(GPP_B4, 1, PWROK)
+		/* B5  : ISH_I2C0_SDA ==> NC */
+		PAD_NC(GPP_B5, NONE)
+		/* B6  : ISH_I2C0_SCL ==> NC */
+		PAD_NC(GPP_B6, NONE)
+		/* B7  : ISH_12C1_SDA ==> PCH_I2C_TPM_SDA */
+		PAD_CFG_NF(GPP_B7, NONE, PWROK, NF2)
+		/* B8  : ISH_I2C1_SCL ==> PCH_I2C_TPM_SCL */
+		PAD_CFG_NF(GPP_B8, NONE, PWROK, NF2)
+		/* B9  : NC */
+		PAD_NC(GPP_B9, NONE)
+		/* B10 : NC */
+		PAD_NC(GPP_B10, NONE)
+		/* B11 : PMCALERT# ==> EN_PP3300_WLAN */
+		PAD_CFG_GPO(GPP_B11, 1, DEEP)
+		/* B12 : SLP_S0# ==> SLP_S0_L */
+		PAD_CFG_NF(GPP_B12, NONE, DEEP, NF1)
+		/* B13 : PLTRST# ==> PLT_RST_L */
+		PAD_CFG_NF(GPP_B13, NONE, DEEP, NF1)
+		/* B14 : SPKR ==> GPP_B14_STRAP */
+		PAD_NC(GPP_B14, NONE)
+		/* B6  : TIME_SYNC0 ==> NC */
+		PAD_NC(GPP_B15, NONE)
+		/* B16 : I2C5_SDA ==> PCH_I2C_TCHPAD_SDA */
+		PAD_CFG_NF(GPP_B16, NONE, PWROK, NF2)
+		/* B17 : I2C5_SCL ==> PCH_I2C_TCHPAD_SCL */
+		PAD_CFG_NF(GPP_B17, NONE, PWROK, NF2)
+		/* B18 : ADR_COMPLETE ==> GPP_B18_STRAP */
+		PAD_NC(GPP_B18, NONE)
+		/* B19 : NC */
+		PAD_NC(GPP_B19, NONE)
+		/* B20 : NC */
+		PAD_NC(GPP_B20, NONE)
+		/* B21 : NC */
+		PAD_NC(GPP_B21, NONE)
+		/* B22 : NC */
+		PAD_NC(GPP_B22, NONE)
+		/* B23 : SML1ALERT# ==> PCHHOT_ODL_STRAP */
+		PAD_NC(GPP_B23, NONE)
+		/* C0  : SMBCLK ==> EN_PP3300_TCHSCR */
+		PAD_CFG_GPO(GPP_C0, 1, DEEP)
+		/* C1  : SMBDATA ==> USI_RST_L */
+		PAD_CFG_GPO(GPP_C1, 1, DEEP)
+		/* C2  : SMBALERT# ==> GPP_C2_STRAP */
+		PAD_NC(GPP_C2, NONE)
+		/* C3 : SML0CLK ==> NC */
+		PAD_NC(GPP_C3, NONE)
+		/* C4 : SML0DATA ==> EN_PP5000_PEN */
+		PAD_CFG_GPO(GPP_C4, 1, DEEP)
+		/* C5  : SML0ALERT# ==> GPP_C5_BOOT_STRAP0 */
+		PAD_NC(GPP_C5, NONE)
+		/* C6  : SML1CLK ==> USI_REPORT_EN */
+		PAD_CFG_GPO(GPP_C6, 0, DEEP)
+		/* C7  : SML1DATA ==> USI_INT */
+		PAD_CFG_GPI_APIC(GPP_C7, NONE, PLTRST, LEVEL, NONE)
+		/* D0  : ISH_GP0 ==> NC */
+		PAD_NC(GPP_D0, NONE)
+		/* D1  : ISH_GP1 ==> NC */
+		PAD_NC(GPP_D1, NONE)
+		/* D2  : ISH_GP2 ==> NC */
+		PAD_NC(GPP_D2, NONE)
+		/* D3  : ISH_GP3 ==> NC */
+		PAD_NC(GPP_D3, NONE)
+		/* D4  : IMGCLKOUT0 ==> BT_DISABLE_L */
+		PAD_CFG_GPO(GPP_D4, 1, DEEP)
+		/* D5  : SRCCLKREQ0# ==> NC */
+		PAD_NC(GPP_D5, NONE)
+		/* D6  : SRCCLKREQ1# ==> SSD_CLKREQ_ODL */
+		PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1)
+		/* D7  : SRCCLKREQ2# ==> WLAN_CLKREQ_ODL */
+		PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1)
+		/* D8  : SRCCLKREQ3# ==> SD_CLKREQ_ODL */
+		PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1)
+		/* D9  : ISH_SPI_CS# ==> USB_C2_LSX_TX */
+		PAD_CFG_NF(GPP_D9, NONE, PWROK, NF4)
+		/* D10 : ISH_SPI_CLK ==> USB_C2_LSX_RX_STRAP */
+		PAD_CFG_NF(GPP_D10, NONE, PWROK, NF4)
+		/* D11 : ISH_SPI_MISO ==> EN_PP3300_SSD */
+		PAD_CFG_GPO(GPP_D11, 1, PWROK)
+		/* D12 : ISH_SPI_MOSI ==> GPP_D12_STRAP */
+		PAD_NC(GPP_D12, NONE)
+		/* D13 : ISH_UART0_RXD ==> CAM_PSW_L */
+		PAD_CFG_GPI_INT(GPP_D13, NONE, PWROK, EDGE_BOTH)
+		/* D14 : ISH_UART0_TXD ==> SPKR_INT_L */
+		PAD_CFG_GPI(GPP_D14, NONE, PWROK)
+		/* D15 : ISH_UART0_RTS# ==> NC */
+		PAD_NC(GPP_D15, NONE)
+		/* D16 : ISH_UART0_CTS# ==> NC */
+		PAD_NC(GPP_D16, NONE)
+		/* D17 : UART1_RXD ==> SD_PE_PRSNT_L */
+		PAD_CFG_GPI(GPP_D17, NONE, PWROK)
+		/* D18 : UART1_TXD ==> SD_PE_RST_L */
+		PAD_CFG_GPO(GPP_D18, 1, PWROK)
+		/* D19 : I2S_MCLK1_OUT ==> I2S_MCLK_R */
+		PAD_CFG_NF(GPP_D19, NONE, DEEP, NF1)
+		/* E0  : see end of E group */
+		/* E1  : THC0_SPI1_IO2 ==> MEM_STRAP_2 */
+		PAD_CFG_GPI(GPP_E1, NONE, PWROK)
+		/* E2  : THC0_SPI1_IO3 ==> MEM_STRAP_1 */
+		PAD_CFG_GPI(GPP_E2, NONE, PWROK)
+		/* E3  : PROC_GP0 ==> NC */
+		PAD_NC(GPP_E3, NONE)
+		/* E4  : SATA_DEVSLP0 ==> USB4_BB_RT_FORCE_PWR */
+		PAD_CFG_GPO(GPP_E4, 0, DEEP)
+		/* E5  : SATA_DEVSLP1 ==> USB_A0_RT_RST_ODL */
+		PAD_CFG_GPO(GPP_E5, 1, DEEP)
+		/* E6  : THC0_SPI1_RST# ==> GPPE6_STRAP */
+		PAD_NC(GPP_E6, NONE)
+		/* E7  : PROC_GP1 ==> NC */
+		PAD_NC(GPP_E7, NONE)
+		/* E8  : SLP_DRAM# ==> WIFI_DISABLE_L */
+		PAD_CFG_GPO(GPP_E8, 1, DEEP)
+		/* E9  : USB_OC0# ==> NC */
+		PAD_NC(GPP_E9, NONE)
+		/* E10 : THC0_SPI1_CS# ==> NC */
+		PAD_NC(GPP_E10, NONE)
+		/* E11 : THC0_SPI1_CLK ==> MEM_STRAP_0 */
+		PAD_CFG_GPI(GPP_E11, NONE, PWROK)
+		/* E12 : THC0_SPI1_IO1 ==> MEM_STRAP_3 */
+		PAD_CFG_GPI(GPP_E12, NONE, PWROK)
+		/* E13 : THC0_SPI1_IO2 ==> MEM_CH_SEL */
+		PAD_CFG_GPI(GPP_E13, NONE, PWROK)
+		/* E14 : DDSP_HPDA ==> SOC_EDP_HPD */
+		PAD_CFG_NF(GPP_E14, NONE, DEEP, NF1)
+		/* E15 : RSVD_TP ==> PCH_WP_OD */
+		PAD_CFG_GPI_GPIO_DRIVER(GPP_E15, NONE, PWROK)
+		/* E16 : RSVD_TP ==> NC */
+		PAD_NC(GPP_E16, NONE)
+		/* E17 : THC0_SPI1_INT# ==> NC */
+		PAD_NC(GPP_E17, NONE)
+		/* E18 : DDP1_CTRLCLK ==> NC */
+		PAD_NC(GPP_E18, NONE)
+		/* E19 : DDP1_CTRLDATA ==> GPP_E19_STRAP */
+		PAD_NC(GPP_E19, NONE)
+		/* E20 : DDP2_CTRLCLK ==> USB_C1_LSX_SOC_TX */
+		PAD_CFG_NF(GPP_E20, NONE, DEEP, NF4)
+		/* E21 : DDP2_CTRLDATA ==> USB_C1_LSX_SOC_RX_STRAP */
+		PAD_CFG_NF(GPP_E21, NONE, DEEP, NF4)
+		/* E22 : DDPA_CTRLCLK ==> NC */
+		PAD_NC(GPP_E22, NONE)
+		/* E23 : DDPA_CTRLDATA ==> NC */
+		PAD_NC(GPP_E23, NONE)
+		/* E0  : SATAXPCIE0 ==> NC */
+		PAD_NC(GPP_E0, NONE)
+		/* F0  : CNV_BRI_DT ==> CNV_BRI_DT_STRAP */
+		PAD_CFG_NF(GPP_F0, NONE, DEEP, NF1)
+		/* F1  : CNV_BRI_RSP ==> CNV_BRI_RSP */
+		PAD_CFG_NF(GPP_F1, UP_20K, DEEP, NF1)
+		/* F2  : CNV_RGI_DT ==> CNV_RGI_DT_STRAP */
+		PAD_CFG_NF(GPP_F2, NONE, DEEP, NF1)
+		/* F3  : CNV_RGI_RSP ==> CNV_RGI_RSP */
+		PAD_CFG_NF(GPP_F3, UP_20K, DEEP, NF1)
+		/* F4  : CNV_RF_RESET# ==> CNV_RF_RST_L */
+		PAD_CFG_NF(GPP_F4, NONE, DEEP, NF1)
+		/* F5  : MODEM_CLKREQ ==> CNV_CLKREQ0 */
+		PAD_CFG_NF(GPP_F5, NONE, DEEP, NF3)
+		/* F6  : CNV_PA_BLANKING ==> NC */
+		PAD_NC(GPP_F6, NONE)
+		/* F7  : GPPF7_STRAP */
+		PAD_NC(GPP_F7, NONE)
+		/* F8  : NC */
+		PAD_NC(GPP_F8, NONE)
+		/* F9  : BOOTMPC ==> SLP_S0_GATE_R */
+		PAD_CFG_GPO(GPP_F9, 1, PLTRST)
+		/* F10 : GPPF10_STRAP */
+		PAD_NC(GPP_F10, DN_20K)
+		/* F11 : THC1_SPI2_CLK ==> NC */
+		PAD_NC(GPP_F11, NONE)
+		/* F12 : GSXDOUT ==> NC */
+		PAD_NC(GPP_F12, NONE)
+		/* F13 : GSXDOUT ==> NC */
+		PAD_NC(GPP_F13, NONE)
+		/* F14 : GSXDIN ==> TCHPAD_INT_ODL */
+		PAD_CFG_GPI_IRQ_WAKE(GPP_F14, NONE, PWROK, LEVEL, INVERT)
+		/* F15 : GSXSRESET# ==> NC */
+		PAD_NC(GPP_F15, NONE)
+		/* F16 : GSXCLK ==> NC */
+		PAD_NC(GPP_F16, NONE)
+		/* F17 : THC1_SPI2_RST# ==> EC_PCH_INT_ODL */
+		PAD_CFG_GPI_APIC(GPP_F17, NONE, PWROK, LEVEL, INVERT)
+		/* F18 : THC1_SPI2_INT# ==> EC_IN_RW_OD */
+		PAD_CFG_GPI(GPP_F18, NONE, PWROK)
+		/* F19 : SRCCLKREQ6# ==> M2_SSD_PLN_L */
+		PAD_CFG_GPO(GPP_F19, 1, PLTRST)
+		/* F20 : EXT_PWR_GATE# ==> NC */
+		PAD_NC(GPP_F20, NONE)
+		/* F21 : EXT_PWR_GATE2# ==> NC */
+		PAD_NC(GPP_F21, NONE)
+		/* F22 : NC */
+		PAD_NC(GPP_F22, NONE)
+		/* F23 : NC */
+		PAD_NC(GPP_F23, NONE)
+		/* H0  : GPPH0_BOOT_STRAP1 */
+		PAD_NC(GPP_H0, NONE)
+		/* H1  : GPPH1_BOOT_STRAP2 */
+		PAD_NC(GPP_H1, NONE)
+		/* H2  : GPPH2_BOOT_STRAP3 */
+		PAD_NC(GPP_H2, NONE)
+		/* H3  : SX_EXIT_HOLDOFF# ==> WLAN_PCIE_WAKE_ODL */
+		PAD_CFG_GPI(GPP_H3, NONE, PWROK)
+		/* H4  : I2C0_SDA ==> PCH_I2C_AUD_SDA */
+		PAD_CFG_NF(GPP_H4, NONE, DEEP, NF1)
+		/* H5  : I2C0_SCL ==> PCH_I2C_AUD_SCL */
+		PAD_CFG_NF(GPP_H5, NONE, DEEP, NF1)
+		/* H6  : I2C1_SDA ==> PCH_I2C_TPM_SDA */
+		PAD_CFG_NF(GPP_H6, NONE, PWROK, NF1)
+		/* H7  : I2C1_SCL ==> PCH_I2C_TPM_SCL */
+		PAD_CFG_NF(GPP_H7, NONE, PWROK, NF1)
+		/* H8  : I2C4_SDA ==> NC */
+		PAD_NC(GPP_H8, NONE)
+		/* H9  : I2C4_SCL ==> NC */
+		PAD_NC(GPP_H9, NONE)
+		/* H10 : UART0_RXD ==> UART_PCH_RX_DBG_TX */
+		PAD_CFG_NF(GPP_H10, NONE, DEEP, NF2)
+		/* H11 : UART0_TXD ==> UART_PCH_TX_DBG_RX */
+		PAD_CFG_NF(GPP_H11, NONE, DEEP, NF2)
+		/* H12 : I2C7_SDA ==> SD_PE_WAKE_ODL */
+		PAD_CFG_GPI(GPP_H12, NONE, PWROK)
+		/* H13 : I2C7_SCL ==> EN_PP3300_SD */
+		PAD_NC(GPP_H13, UP_20K)
+		/* H14 : NC */
+		PAD_NC(GPP_H14, NONE)
+		/* H15 : DDPB_CTRLCLK ==> DDIB_HDMI_CTRLCLK */
+		PAD_CFG_NF(GPP_H15, NONE, DEEP, NF1)
+		/* H16 : NC */
+		PAD_NC(GPP_H16, NONE)
+		/* H17 : DDPB_CTRLDATA ==> DDIB_HDMI_CTRLDATA */
+		PAD_CFG_NF(GPP_H17, NONE, DEEP, NF1)
+		/* H18 : PROC_C10_GATE# ==> CPU_C10_GATE_L */
+		PAD_CFG_NF(GPP_H18, NONE, DEEP, NF1)
+		/* H19 : SRCCLKREQ4# ==> NC */
+		PAD_NC(GPP_H19, NONE)
+		/* H20 : IMGCLKOUT1 ==> WLAN_PERST_L */
+		PAD_CFG_GPO(GPP_H20, 1, DEEP)
+		/* H21 : IMGCLKOUT2 ==>  NC */
+		PAD_NC(GPP_H21, NONE)
+		/* H22 : IMGCLKOUT3 ==> NC */
+		PAD_NC(GPP_H22, NONE)
+		/* H23 : SRCCLKREQ5# ==> NC */
+		PAD_NC(GPP_H23, NONE)
+		/* R0 : HDA_BCLK ==> I2S_HP_SCLK_R */
+		PAD_CFG_NF(GPP_R0, NONE, DEEP, NF2)
+		/* R1 : HDA_SYNC ==> I2S_HP_SFRM_R */
+		PAD_CFG_NF(GPP_R1, NONE, DEEP, NF2)
+		/* R2 : HDA_SDO ==> I2S_PCH_TX_HP_RX_STRAP */
+		PAD_CFG_NF(GPP_R2, DN_20K, DEEP, NF2)
+		/* R3 : HDA_SDIO ==> I2S_PCH_RX_HP_TX */
+		PAD_CFG_NF(GPP_R3, NONE, DEEP, NF2)
+		/* R4 : HDA_RST# ==> DMIC_CLK0 */
+		PAD_CFG_NF(GPP_R4, NONE, DEEP, NF3)
+		/* R5 : HDA_SDI1 ==> DMIC_DATA0 */
+		PAD_CFG_NF(GPP_R5, NONE, DEEP, NF3)
+		/* R6 : I2S2_TXD ==> NC */
+		PAD_NC(GPP_R6, NONE)
+		/* R7 : I2S2_RXD ==> NC */
+		PAD_NC(GPP_R7, NONE)
+		/* S0 : SNDW0_CLK ==> I2S_SPKR_SCLK_R */
+		PAD_CFG_NF(GPP_S0, NONE, DEEP, NF4)
+		/* S1 : SNDW0_DATA ==> I2S_SPKR_SFRM_R */
+		PAD_CFG_NF(GPP_S1, NONE, DEEP, NF4)
+		/* S2 : SNDW1_CLK ==> I2S_PCH_TX_SPKR_RX_R */
+		PAD_CFG_NF(GPP_S2, NONE, DEEP, NF4)
+		/* S3 : SNDW1_DATA ==> I2S_PCH_RX_SPKR_TX */
+		PAD_CFG_NF(GPP_S3, NONE, DEEP, NF4)
+		/* S4 : SNDW2_CLK ==> NC */
+		PAD_NC(GPP_S4, NONE)
+		/* S5 : SNDW2_DATA ==> NC */
+		PAD_NC(GPP_S5, NONE)
+		/* S6 : SNDW3_CLK ==> DMIC_CLK1_R */
+		PAD_CFG_NF(GPP_S6, NONE, DEEP, NF2)
+		/* S7 : SNDW3_DATA ==> DMIC_DATA1_R */
+		PAD_CFG_NF(GPP_S7, NONE, DEEP, NF2)
+		/* GPD0: BATLOW# ==> BATLOW_L */
+		PAD_CFG_NF(GPD0, NONE, DEEP, NF1)
+		/* GPD1: ACPRESENT ==> PCH_ACPRESENT */
+		PAD_CFG_NF(GPD1, NONE, DEEP, NF1)
+		/* GPD2 : LAN_WAKE# ==> EC_PCH_WAKE_ODL */
+		PAD_CFG_NF(GPD2, NONE, DEEP, NF1)
+		/* GPD3: PWRBTN# ==> EC_PCH_PWR_BTN_ODL */
+		PAD_CFG_NF(GPD3, NONE, DEEP, NF1)
+		/* GPD4: SLP_S3# ==> SLP_S3_L */
+		PAD_CFG_NF(GPD4, NONE, DEEP, NF1)
+		/* GPD5: SLP_S4# ==> SLP_S4_L */
+		PAD_CFG_NF(GPD5, NONE, DEEP, NF1)
+		/* GPD6: SLP_A# ==> SLP_A_L */
+		PAD_CFG_NF(GPD6, NONE, DEEP, NF1)
+		/* GPD7: GPD7_STRAP */
+		PAD_NC(GPD7, NONE)
+		/* GPD8: SUSCLK ==> PCH_SUSCLK */
+		PAD_CFG_NF(GPD8, NONE, DEEP, NF1)
+		/* GPD9: SLP_WLAN# ==> SLP_WLAN_L */
+		PAD_CFG_NF(GPD9, NONE, DEEP, NF1)
+		/* GPD10: SLP_S5# ==> SLP_S5_L */
+		PAD_CFG_NF(GPD10, NONE, DEEP, NF1)
+		/* GPD11: LANPHYC ==> WWAN_CONFIG1 */
+		PAD_CFG_GPI(GPD11, NONE, DEEP)
+		/* Virtual GPIO */
+		/*
+		 * Put unused Cnvi BT UART lines in NC mode since we use
+		 * USB mode
+		 */
+		PAD_NC(GPP_VGPIO_6, NONE)
+		PAD_NC(GPP_VGPIO_7, NONE)
+		PAD_NC(GPP_VGPIO_8, NONE)
+		PAD_NC(GPP_VGPIO_9, NONE)
+		/*
+		 * Put unused Cnvi UART0 lines in NC mode since we use USB
+		 * mode
+		 */
+		PAD_NC(GPP_VGPIO_18, NONE)
+		PAD_NC(GPP_VGPIO_19, NONE)
+		PAD_NC(GPP_VGPIO_20, NONE)
+		PAD_NC(GPP_VGPIO_21, NONE)
+		/*
+		 * Put the optional BT_I2S and SoC SSP2 pins in NC mode, so
+		 * that each variant's override table can set the relevant
+		 * VGPIOs as it needs
+		 */
+		/* BT_I2S_BCLK */
+		PAD_NC(GPP_VGPIO_30, NONE)
+		/* BT_I2S_SYNC */
+		PAD_NC(GPP_VGPIO_31, NONE)
+		/* BT_I2S_SDO */
+		PAD_NC(GPP_VGPIO_32, NONE)
+		/* BT_I2S_SDI */
+		PAD_NC(GPP_VGPIO_33, NONE)
+		/* SSP2_SCLK */
+		PAD_NC(GPP_VGPIO_34, NONE)
+		/* SSP2_SFRM */
+		PAD_NC(GPP_VGPIO_35, NONE)
+		/* SSP2_TXD */
+		PAD_NC(GPP_VGPIO_36, NONE)
+		/* SSP2_RXD */
+		PAD_NC(GPP_VGPIO_37, NONE)
+		>;
+	};
+
 };

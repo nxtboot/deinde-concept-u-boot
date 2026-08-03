@@ -112,16 +112,7 @@ static bool ucode_matches(ulong pos, ulong sig, uint pfid)
 	return false;
 }
 
-/**
- * find_microcode() - Point ucode_base at this CPU's microcode update
- *
- * The FIT gives the boot processor its microcode, but the application
- * processors start with none, which makes them unreliable, so mp_init
- * has each one load the update at ucode_base. Find the update matching
- * this CPU in the image's microcode collection, which may hold several
- * (e.g. for different steppings)
- */
-static void find_microcode(void)
+void adl_find_microcode(void)
 {
 	struct binman_entry mcu;
 	ulong base, size, pos, sig;
@@ -200,6 +191,32 @@ static void adl_cstate_init(void)
 	       IRTL_VALID | IRTL_1024_NS | C_STATE_LATENCY_CONTROL_5_LIMIT);
 }
 
+/* TCC activation offset for brya (degrees C), from its devicetree */
+#define TCC_OFFSET		10
+
+/* MSR_TEMPERATURE_TARGET fields: offset bits 27:24, time window 6:0 */
+#define TCC_OFFSET_MASK		(0xfULL << 24)
+#define TCC_OFFSET_SHIFT	24
+#define TCC_TIME_WINDOW_MASK	0x7fULL
+#define TCC_TIME_WINDOW_100MS	0xe6
+
+/* MSR_PLATFORM_INFO bit: the TCC activation offset is programmable */
+#define PLATFORM_INFO_PROG_TCC	BIT_ULL(30)
+
+/*
+ * Set the thermal-control-circuit activation offset and time window
+ * on every core before silicon init. This feeds the throttling machinery pcode uses
+ * for its voltage and frequency limits
+ */
+static void adl_tcc_init(void)
+{
+	if (msr_read(MSR_PLATFORM_INFO).lo & PLATFORM_INFO_PROG_TCC)
+		msr_clrsetbits_64(MSR_TEMPERATURE_TARGET, TCC_OFFSET_MASK,
+				  (u64)TCC_OFFSET << TCC_OFFSET_SHIFT);
+	msr_clrsetbits_64(MSR_TEMPERATURE_TARGET, TCC_TIME_WINDOW_MASK,
+			  TCC_TIME_WINDOW_100MS);
+}
+
 static void adl_core_init(void)
 {
 	/* Clear out pending MCEs and enable the machine-check banks */
@@ -208,12 +225,19 @@ static void adl_core_init(void)
 	/* Set up C-states, which the skipped FSP CPU init would do */
 	adl_cstate_init();
 
+	/* Set the thermal-control offset and time window */
+	adl_tcc_init();
+
 	/* Allow the local APIC to send TPR updates */
 	msr_clrsetbits_64(MSR_PIC_MSG_CONTROL, TPR_UPDATES_DISABLE, 0);
 
-	/* Enable Fast Strings and thermal monitoring */
+	/*
+	 * Enable Fast Strings, thermal monitoring and SpeedStep (EIST):
+	 * pcode's performance-state machinery expects EIST enabled
+	 */
 	msr_setbits_64(MSR_IA32_MISC_ENABLE,
-		       MISC_ENABLE_FAST_STRING | MISC_ENABLE_TM1);
+		       MISC_ENABLE_FAST_STRING | MISC_ENABLE_TM1 |
+		       MISC_ENABLE_ENHANCED_SPEEDSTEP);
 
 	/* Disable thermal interrupts, keeping the package critical one */
 	wrmsrl(MSR_IA32_THERM_INTERRUPT, 0);
@@ -232,7 +256,7 @@ static void adl_core_init(void)
 static int cpu_x86_adl_probe(struct udevice *dev)
 {
 	if (gd->flags & GD_FLG_RELOC) {
-		find_microcode();
+		adl_find_microcode();
 		adl_core_init();
 
 		/*

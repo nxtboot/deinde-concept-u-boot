@@ -299,21 +299,23 @@ static uint pad_config_offset(struct intel_pinctrl_priv *priv, uint pad)
 }
 
 static int pinctrl_pad_reset_config_override(const struct pad_community *comm,
-					     u32 config_value)
+					     u32 *config_valuep)
 {
 	const struct reset_mapping *rst_map = comm->reset_map;
+	u32 config_value = *config_valuep;
 	int i;
 
 	/* Logical reset values equal chipset values */
 	if (!rst_map || !comm->num_reset_vals)
-		return config_value;
+		return 0;
 
 	for (i = 0; i < comm->num_reset_vals; i++, rst_map++) {
 		if ((config_value & PAD_CFG0_RESET_MASK) == rst_map->logical) {
 			config_value &= ~PAD_CFG0_RESET_MASK;
 			config_value |= rst_map->chipset;
+			*config_valuep = config_value;
 
-			return config_value;
+			return 0;
 		}
 	}
 	if (xpl_phase() > PHASE_TPL)
@@ -367,10 +369,9 @@ static int pinctrl_configure_pad(struct udevice *dev,
 		soc_pad_conf = cfg->pad_config[i];
 		if (i == 0) {
 			ret = pinctrl_pad_reset_config_override(comm,
-								soc_pad_conf);
-			if (ret < 0)
+								&soc_pad_conf);
+			if (ret)
 				return ret;
-			soc_pad_conf = ret;
 		}
 		soc_pad_conf &= mask[i];
 		soc_pad_conf |= pad_conf & ~mask[i];
@@ -537,11 +538,17 @@ int pinctrl_config_pads(struct udevice *dev, u32 *pads, int pads_count)
 
 		cfg = (struct pad_config *)ptr;
 		ret = pinctrl_get_device(cfg->pad, &pad_dev);
-		if (ret)
+		if (ret) {
+			log_warning("pad %d: no device (err=%d)\n", cfg->pad,
+				    ret);
 			return ret;
+		}
 		ret = pinctrl_configure_pad(pad_dev, cfg);
-		if (ret)
+		if (ret) {
+			log_warning("pad %d: config failed (err=%d)\n",
+				    cfg->pad, ret);
 			return ret;
+		}
 	}
 
 	return 0;

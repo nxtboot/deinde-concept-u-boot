@@ -2,7 +2,6 @@
 
 dtb-y += bayleybay.dtb \
 	cherryhill.dtb \
-	chromebook_brya.dtb \
 	chromebook_brya_cb.dtb \
 	chromebook_coral.dtb \
 	chromebook_link.dtb \
@@ -27,3 +26,5 @@ dtb-y += bayleybay.dtb \
 include $(srctree)/scripts/Makefile.dts
 
 DTC_FLAGS += -R 4
+
+dtb-$(CONFIG_TARGET_CHROMEBOOK_BRYA) += chromebook_brya.dtb

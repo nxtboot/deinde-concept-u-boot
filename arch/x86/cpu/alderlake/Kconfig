@@ -6,8 +6,11 @@ config INTEL_ALDERLAKE
 	bool
 	select HAVE_FSP
 	select ARCH_MISC_INIT
+	select SMP_AP_WORK
 	imply MRC_CACHE_SAVE
 	imply SPL_MRC_CACHE_SAVE
+	imply HAVE_VBT
+	imply VIDEO_FSP
 	imply PINCTRL_INTEL
 	imply PINCTRL_INTEL_ALDERLAKE
 	imply INTEL_GPIO
@@ -89,7 +92,11 @@ config FSP_CODE_REGION_SIZE
 	help
 	  Size of the execute-in-place code region (see FSP_CODE_REGION_BASE).
 	  The FSP's own default for this is zero, which makes TempRamInit
-	  fail, so a real size must be provided
+	  fail, so a real size must be provided. It must cover everything
+	  that executes in place, including FSP-M at FSP_M_ADDR, or those
+	  fetches run uncached from the SPI flash. Sizes beyond 4MB break
+	  FSP-T's cache-as-RAM setup, so keep the execute-in-place binaries
+	  within the top 4MB instead
 
 config FSP_M_ADDR
 	hex

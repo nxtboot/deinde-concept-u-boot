@@ -28,6 +28,8 @@ struct __packed fsp_header {
 	u32	fsp_mem_init;		/* fsp_mem_init offset */
 	u32	fsp_tempram_exit;	/* fsp_tempram_exit offset */
 	u32	fsp_silicon_init;	/* fsp_silicon_init offset */
+	/* Present only when hdr_len covers it (FSP 2.2, header rev 5+) */
+	u32	fsp_multi_phase_si_init; /* fsp_multi_phase_si_init offset */
 };
 
 #define FSP_HEADER_REVISION_1		1
