@@ -58,6 +58,7 @@ obj-$(CONFIG_RBTREE)	+= rbtree.o
 obj-$(CONFIG_BITREVERSE) += bitrev.o
 obj-$(CONFIG_SANDBOX) += find_bit.o
 obj-y += list_sort.o
+obj-$(CONFIG_PMBUS) += pmbus.o
 endif
 
 obj-$(CONFIG_$(PHASE_)TPM) += tpm-common.o

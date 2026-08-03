@@ -93621,3 +93621,55 @@ None of the 10 cherry-picks can plausibly affect labgrid reservations, SpacemiT 
 
 ---
 
+## 2026-08-02: us/main
+
+Branch: cherry-5badf4e82a5
+
+Commits:
+- 5badf4e82a5 MAINTAINERS: add entry for SDHCI Cadence driver
+- 0663b4f5537 power: regulator: Add helper to set voltage within an acceptable range
+- 10acd5bc9a6 test: dm: regulator: Add regulator_set_value_clamp() tests
+- 9118fc77f08 mmc: dw_mmc: Allow use of in-spec voltage range for vqmmc-supply
+- 35c3e733fe4 mmc: sdhci: Use CONFIG_IS_ENABLED for MMC_IO_VOLTAGE
+- 0f04bbf9ab3 power: regulator: Fix regulator_enable/disable() macros
+- b17e6419ad9 serial: lpuart: Clear the OR STAT in tstc to prevent hang
+- cfb42725528 pmbus: add PMBus 1.x framework, CLI, and binding
+- 350b7c83b6d power: regulator: add generic PMBus UCLASS_REGULATOR adapter
+- a5491e9f0a4 power: regulator: add MPS MPQ8785 PMBus regulator driver
+- 073bc87752f board: nxp: vid: introduce PMBus framework support
+- a5639a4d7bc thermal: pmbus: add PMBus die-temp driver
+- 995cc3383b7 test: dm: pmbus: add a sandbox PMBus chip emulator
+- 722a8227875 test: dm: pmbus: test pmbus command and framework
+- 02f8b8ab6d6 Gitlab CI: Switch to git.u-boot-project.org
+- 58c2284a1a9 cmd: fdt: keep control FDT during checksign
+- ab2266aff36 tools: binman: ti_board_cfg: Add configurable sw-rev support
+- 8d50a5ce721 test: cmd: part: fix integer handling in setup_gpt_partitions()
+- 83f6cbb8717 get_maintainer.pl: tighten up git contributors cc list
+- 501d76ca801 Merge tag 'mmc-for-2026.10-rc1' of https://git.u-boot-project.org/u-boot/custodians/u-boot-mmc
+
+### Conversation log
+Deltas match. Continue:
+
+Now the merge commit:
+
+All 20 commits applied. Let me verify and run the final build:
+
+All 20 commits are present. Final build:
+
+All 20 cherry-picks complete. Summary:
+
+**Build result:** OK — sandbox builds cleanly.
+
+**Fix-ups made (each amended into the commit message):**
+
+1. `pmbus: add PMBus 1.x framework, CLI, and binding` (b5bb810d2c0) — resolved `lib/Kconfig` conflict by keeping local `PANIC_POWEROFF` alongside the new `PMBUS` entry.
+2. `power: regulator: add generic PMBus UCLASS_REGULATOR adapter` (fc1f433eb28) — resolved `drivers/power/regulator/Kconfig` conflict by keeping local `DM_REGULATOR_SPACEMIT_P1` alongside the new `DM_REGULATOR_PMBUS_*` entries.
+3. `Gitlab CI: Switch to git.u-boot-project.org` (67b259d7fab) — the branch already migrated `.gitlab-ci.yml` to `test/hooks/` (dropping the `git clone` line), so the URL-substitution hunk no longer applies to that file. Only the `.gitlab-ci-sage-lab.yml` hunk landed; a note documents the dropped hunk.
+4. `Merge tag 'mmc-for-2026.10-rc1' ...` (2ac2a87ee08) — merge commit ended up empty after resolving the same `lib/Kconfig` and `drivers/power/regulator/Kconfig` collisions (content already applied by earlier cherry-picks). Committed with `--allow-empty` to preserve history.
+
+**Deltas:** All non-merge commits matched the originals in file count and line count. No concerning deltas.
+
+**Branch:** `cherry-5badf4e82a5` is ready and left in place (not merged anywhere).
+
+---
+

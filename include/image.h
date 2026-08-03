@@ -1630,8 +1630,17 @@ int fit_image_verify_with_data(const void *fit, int image_noffset,
 int fit_image_verify(const void *fit, int noffset);
 #if CONFIG_IS_ENABLED(FIT_SIGNATURE)
 int fit_config_verify(const void *fit, int conf_noffset);
+int fit_config_verify_with_key_blob(const void *fit, int conf_noffset,
+				    const void *key_blob);
 #else
 static inline int fit_config_verify(const void *fit, int conf_noffset)
+{
+	return 0;
+}
+
+static inline int fit_config_verify_with_key_blob(const void *fit,
+						  int conf_noffset,
+						  const void *key_blob)
 {
 	return 0;
 }
