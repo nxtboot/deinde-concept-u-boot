@@ -94222,3 +94222,36 @@ All 5 commits are on branch `cherry-d3e287405f0` (based on ci/master). Final bui
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-a8fc408cdfc
+
+Commits:
+- a8fc408cdfc sandbox: vbe: size firmware1 area to fit the binman fw-update section
+- a84c7670a69 vbe: bound FIT external-data offset and size before blk_read
+- 9fa00f563be test: vbe: cover vbe_read_fit() external-data bounds checks
+- 91303d8a663 Merge patch series "vbe: bound FIT external-data reads against the firmware area"
+
+### Conversation log
+Match. Now build test.
+
+Matches. Build test:
+
+All 4 commits present. Final build check:
+
+All 4 commits cherry-picked successfully onto branch `cherry-a8fc408cdfc`.
+
+**Final status:**
+- **Build result**: OK (sandbox builds clean, no warnings/errors)
+- **Commits present** (bottom → top):
+  - `d0fbe6058bb` — sandbox: vbe: size firmware1 area to fit the binman fw-update section
+  - `8d0282edfc9` — vbe: bound FIT external-data offset and size before blk_read
+  - `0be407fe7b0` — test: vbe: cover vbe_read_fit() external-data bounds checks
+  - `6803e61f115` — Merge patch series "vbe: bound FIT external-data reads against the firmware area"
+- **Fix-ups made** (both noted in the amended commit messages):
+  - Commits 3 and 4 conflicted in `test/boot/Makefile` because ci/master keeps a local `ifndef CONFIG_SPL_BUILD` guard around the `vbe_simple.o` line. Resolution: preserved the local guard and added `vbe_read_fit.o` alongside `vbe_simple.o`.
+  - The merge commit itself resolved to empty after conflict resolution, kept via `--allow-empty` to preserve history.
+- **Concerning deltas**: none — all non-merge commit stats match upstream exactly.
+
+---
+
