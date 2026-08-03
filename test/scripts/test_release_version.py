@@ -257,7 +257,7 @@ NAME = U-Boot
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 This document tracks all concept releases of U-Boot.
@@ -381,7 +381,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -430,7 +430,7 @@ class TestReleaseHistory(unittest.TestCase):
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -473,7 +473,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -511,7 +511,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -557,7 +557,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -597,7 +597,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Release History
@@ -642,7 +642,7 @@ Release History
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 Next Release
@@ -859,7 +859,7 @@ class TestMainFunction(unittest.TestCase):
         """Test main function successfully updating release docs"""
         docs_path = os.path.join(self.test_dir, 'concept_releases.rst')
         content = ('.. SPDX-License-Identifier: GPL-2.0+\n\n'
-                  'U-Boot Concept Releases\n=======================\n\n'
+                  'Deinde Concept Releases\n=======================\n\n'
                   'Release History\n---------------\n\n')
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -967,7 +967,7 @@ Test Document
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 This document tracks all concept releases of U-Boot.
