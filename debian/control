@@ -25,7 +25,7 @@ Build-Depends-Indep:
  gcc-powerpc-linux-gnu [!powerpc],
 Rules-Requires-Root: no
 Standards-Version: 4.6.2
-Homepage: https://concept.u-boot.org/
+Homepage: https://concept.deinde.dev/
 
 Package: u-boot-concept-qemu
 Architecture: all

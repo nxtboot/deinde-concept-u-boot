@@ -44,7 +44,7 @@ GitLab CI Pipelines
 are two separate instances:
 
   - `Denx <https://source.denx.de>`_ - main tree, including custodian trees
-  - `Concept <https://concept.u-boot.org/u-boot/u-boot>`_ - concept tree
+  - `Concept <https://concept.deinde.dev/u-boot/u-boot>`_ - concept tree
 
 This pipeline is defined in the top-level ``.gitlab-ci.yml`` file.
 
@@ -70,7 +70,7 @@ with our squashfs tests currently prevents this.
 Concept
 ~~~~~~~
 
-Contributors can request a login at `U-Boot Concept <concept.u-boot.org>`_
+Contributors can request a login at `U-Boot Concept <concept.deinde.dev>`_
 (after sending an email to Simon Glass <sjg@chromium.org> as shown there).
 Contributors are then able to push branches and trigger a CI run. The
 ``.gitlab-ci.yml`` is slightly different from the main tree and CI runs

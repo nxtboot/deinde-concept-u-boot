@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: U-Boot
-Source: https://concept.u-boot.org/u-boot/u-boot.git
+Source: https://concept.deinde.dev/u-boot/u-boot.git
 
 Files: *
 Copyright: 2000-2026 U-Boot contributors
