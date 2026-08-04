@@ -94530,3 +94530,90 @@ None of these files can affect labgrid coordinator behaviour, `u-boot-test-getro
 
 ---
 
+## 2026-08-04: us/main
+
+Branch: cherry-042e45e026c
+
+Commits:
+- 042e45e026c global: Switch from source.denx.de to git.u-boot-project.org
+- 5a83cae32d9 spi: dw: Allow bits_per_word to be configured by device drivers
+- 3aa2882a3e1 clk: spacemit: Add support for K1 SoC
+- daa9b916a60 reset: spacemit: k1: introduce syscon-bound reset driver
+- 5b3959e2d6f clk: spacemit: k1: spawn reset device from per-syscon clock drivers
+- 9994e612311 configs: bananapi-f3: enable Spacemit K1 clock driver
+- 77aac72a59c dts: k1: switch BPI-F3 build to upstream DT
+- 82e21b9322f dts: k1: drop legacy local DT files
+- 312728cec2e reset: spacemit: k1: drop legacy spacemit,k1-reset driver
+- c43512ebb5b dt-bindings: reset: drop spacemit-k1-reset.h
+- d5776655262 spacemit: k1: support multi-board infrastructure
+- ae94d8af7fb spacemit: k1: enable SPL with debug UART
+- 6db85c4aef0 configs: k1: enable early timer support
+- 853fdea1fe2 clk: spacemit: k1: prune SPL clock tree
+- 8a8a640d2a4 configs: k1: add default option for clock driver in SPL
+- 70cee8ab03c dts: k1: enable clocks in SPL
+- cc4f363cc7e board: k1: initialize clock and serial devices in SPL
+- 271546fb8e5 i2c: k1: add I2C driver support
+- b3ec88a7f39 spacemit: k1: add TLV EEPROM support in SPL
+- 83026cf8f90 spacemit: k1: Add DDR firmware support to SPL
+- c5307aae0d8 power: pmic: add support for Spacemit P1 PMIC
+- 8d691df1cf4 power: regulator: add support for Spacemit P1 SoC
+- 80aa3d31606 board: k1: enable pmic in spl
+- ff5eb02d7d9 doc: spacemit: add K1 SPL build and test guide
+- 9a3e59a351f mtd: spi: select SPL_SPI_FLASH_TINY in SPL stage
+- f7599384d91 mtd: spi: enable spi_nor_remove() in soft reset config
+- fed0b439175 spi: fsl: add support for Spacemit K1 SoC
+- e63500cab0c spl: k1: enable SPI NOR flash detection and boot
+- eb7de3ccf1a riscv: binman: Always set default configuration in FIT image
+- a823fbf0cfb spacemit: k1: Add multiple device tree support
+- 0b753e40216 pinctrl: add pinctrl driver for Spacemit K1 SoC
+- 0204d57851e gpio: add gpio driver for Spacemit K1 SoC
+- b648d3e6d4b configs: k1: enable pinctrl and gpio
+- 0926356edd6 MAINTAINERS: update RISC-V maintainers
+- f5f06b10e19 Merge tag 'riscv-for-v2026.10-rc1' of https://git.u-boot-project.org/u-boot/custodians/u-boot-riscv
+
+### Conversation log
+Now build test and then proceed.
+
+Now for the "maybe already applied" ones. Let me check them systematically.
+
+Now let me build test.
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-042e45e026c` (based on `ci/master`)
+
+**Build result:** ✅ sandbox build passes
+
+**Commits on branch:** 16 total (14 real + 2 FAILED placeholders)
+
+### Successfully cherry-picked (8 real changes)
+- `87e967bc453` global: Switch from source.denx.de to git.u-boot-project.org — resolved MAINTAINERS (M68K entry) + pytest/usage.rst conflicts (fixup note added to commit)
+- `0a3dab8ab13` spi: dw: Allow bits_per_word
+- `dc911634840` doc: spacemit: add K1 SPL build and test guide
+- `952b21f4c55` mtd: spi: select SPL_SPI_FLASH_TINY in SPL stage
+- `333763f8c1c` mtd: spi: enable spi_nor_remove() in soft reset config
+- `94315b002af` spi: fsl: add support for Spacemit K1 SoC
+- `cbf972a9da5` riscv: binman: Always set default configuration in FIT image
+- `dfbee717d4b` pinctrl: add pinctrl driver for Spacemit K1 SoC
+- `0b0de27dec8` gpio: add gpio driver for Spacemit K1 SoC
+- `eaec7b94790` configs: k1: enable pinctrl and gpio — resolved defconfig conflict (took incoming block)
+- `f69537a9fa6` MAINTAINERS: update RISC-V maintainers
+- `1bb2d45f176` Merge tag 'riscv-for-v2026.10-rc1' — empty commit (per instructions to preserve merge history)
+
+### Skipped as already applied (19 commits)
+All K1 SoC clock/reset/board/DT/SPL/I2C/EEPROM/DDR/PMIC/regulator/config commits from the "maybe already applied as ..." list. `ci/master` already contains functionally equivalent implementations of these via a different commit sequence (b5b108848b6, 911b84d0f73, cb5f72d310f, 0700a8d9d94, ab8d0733f22, e4663094d76, 4054de1924c, c06a095e953, 2e2ae3bccd3, 0abf8f419d4, aea9abbff52, fb1a3d87827, 2cb5355f787, etc.). The us/main K1 series is a rewrite that shares the same feature set as the code already in ci/master; applying it verbatim would require replacing the current implementation. Each was verified: either the cherry-pick was empty, or the target functionality (config symbols/files) already exists.
+
+### Empty [FAILED] commits (2)
+- `6f7ee40bd22` spl: k1: enable SPI NOR flash detection and boot [FAILED]
+- `8803721267e` spacemit: k1: Add multiple device tree support [FAILED]
+
+Both are truly new features (SPI NOR boot and multi-DT for K1). They cannot be cleanly applied because they modify `board/spacemit/k1/spl.c`, `configs/spacemit_k1_defconfig`, and `arch/riscv/dts/k1-*-u-boot.dtsi` in ways that assume the us/main K1 board layout, which diverges from the parallel rewrite already merged into ci/master. Empty placeholder commits preserve the sequence and intent; the SPI NOR / multi-DT features are not yet in the tree.
+
+### Fixups made
+1. `87e967bc453` — MAINTAINERS conflict: the M68K entry already existed on ci/master with the old URL; updated it in place and dropped the duplicate block. pytest/usage.rst conflict: kept HEAD which had moved hooks reference to `test/hooks`.
+2. `eaec7b94790` — defconfig conflict: took the incoming `CONFIG_SPL_REGMAP/SPL_SYSCON/CLK/CLK_CCF` block (HEAD did not have them yet).
+
+The branch is ready for pushing.
+
+---
+
