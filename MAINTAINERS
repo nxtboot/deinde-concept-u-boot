@@ -1297,7 +1297,7 @@ F:	drivers/i3c/
 INPUT
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
-T:	git https://concept.u-boot.org/u-boot/u-boot.git
+T:	git https://concept.deinde.dev/u-boot/u-boot.git
 F:	drivers/input
 F:	include/mouse.h
 
@@ -1331,7 +1331,7 @@ F:	test/py/tests/test_log.py
 LUKS
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
-T:	git https://concept.u-boot.org/u-boot/u-boot.git
+T:	git https://concept.deinde.dev/u-boot/u-boot.git
 F:	cmd/luks.c
 F:	doc/usage/cmd/luks.rst
 F:	doc/usage/luks.rst

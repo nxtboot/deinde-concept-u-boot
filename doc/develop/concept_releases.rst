@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 This document tracks all concept releases of U-Boot, including both final

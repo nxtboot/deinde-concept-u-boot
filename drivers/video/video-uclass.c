@@ -647,7 +647,7 @@ void *video_get_u_boot_logo(int *sizep)
 	void *ptr;
 	int size;
 
-	ptr = video_image_get(u_boot, &size);
+	ptr = video_image_get(deinde, &size);
 	if (sizep)
 		*sizep = size;
 
@@ -659,7 +659,7 @@ static int show_splash(struct udevice *dev)
 	u8 *data;
 	int ret;
 
-	data = video_image_getptr(u_boot);
+	data = video_image_getptr(deinde);
 	ret = video_bmp_display(dev, map_to_sysmem(data), -4, 4, true);
 	unmap_sysmem(data);
 

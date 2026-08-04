@@ -1,6 +1,6 @@
 
-Booting a qemu/kvm guest with U-Boot (Concept tree)
-====================================================
+Booting a qemu/kvm guest with U-Boot (Deinde Concept Tree)
+==========================================================
 
 To boot a qemu guest with U-Boot, start qemu-system with the '-bios'
 option. Use the full path to the file that corresponds with the
@@ -14,7 +14,7 @@ For other architectures, use the .bin file:
 
   qemu-system-aarch64 -bios /usr/lib/u-boot-concept/qemu_arm64/u-boot.bin ...
 
-This package is built from the U-Boot Concept tree, which may include
+This package is built from the Deinde Concept Tree, which may include
 features not yet available in the upstream U-Boot release.
 
 

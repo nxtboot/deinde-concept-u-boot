@@ -126,7 +126,7 @@ static int print_printf(struct unit_test_state *uts)
 	/* Test the banner function */
 	s = display_options_get_banner(true, str, sizeof(str));
 	ut_asserteq_ptr(str, s);
-	ut_assertok(strcmp("\n\nU-Boo\n\n", s));
+	ut_assertok(strcmp("\n\nDeind\n\n", s));
 
 	/* Assert that we do not overwrite memory before the buffer */
 	str[0] = '`';
@@ -142,7 +142,7 @@ static int print_printf(struct unit_test_state *uts)
 	/* The last two characters are set to \n\n for all buffer sizes > 2 */
 	s = display_options_get_banner(false, str, sizeof(str));
 	ut_asserteq_ptr(str, s);
-	ut_assertok(strcmp("U-Boot \n\n", s));
+	ut_assertok(strcmp("Deinde \n\n", s));
 
 	/* Give it enough space for some of the version */
 	big_str_len = strlen(version_string) - 5;

@@ -224,7 +224,7 @@ def update_docs(info: ReleaseInfo, commit_sha: str = '',
         with open(docs_path, 'w', encoding='utf-8') as f:
             f.write('''.. SPDX-License-Identifier: GPL-2.0+
 
-U-Boot Concept Releases
+Deinde Concept Releases
 =======================
 
 This document tracks all concept releases of U-Boot, including both final

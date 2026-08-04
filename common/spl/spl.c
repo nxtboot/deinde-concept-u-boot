@@ -924,7 +924,7 @@ void preloader_console_init(void)
 	gd->flags |= GD_FLG_HAVE_CONSOLE;
 
 #if CONFIG_IS_ENABLED(BANNER_PRINT)
-	puts("\nU-Boot Concept " PHASE_NAME " " PLAIN_VERSION " (" U_BOOT_DATE
+	puts("\nDeinde Concept U-Boot " PHASE_NAME " " PLAIN_VERSION " (" U_BOOT_DATE
 	     " - " U_BOOT_TIME " " U_BOOT_TZ ")\n");
 #endif
 #ifdef CONFIG_SPL_DISPLAY_PRINT

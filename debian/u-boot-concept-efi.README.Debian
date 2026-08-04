@@ -1,6 +1,6 @@
 
-U-Boot EFI applications and payloads (Concept tree)
-====================================================
+U-Boot EFI applications and payloads (Deinde Concept Tree)
+==========================================================
 
 This package provides U-Boot built as EFI applications and EFI payloads.
 These are PE32/PE32+ executables that can be loaded by UEFI firmware.
@@ -37,5 +37,5 @@ Available EFI payload builds:
   /usr/lib/u-boot-concept/efi-x86_payload32/u-boot-payload.efi  (x86 32-bit)
   /usr/lib/u-boot-concept/efi-x86_payload64/u-boot-payload.efi  (x86 64-bit)
 
-This package is built from the U-Boot Concept tree, which may include
+This package is built from the Deinde Concept Tree, which may include
 features not yet available in the upstream U-Boot release.
