@@ -134,7 +134,7 @@ General Patch Submission Rules
   patches is by using the ``git format-patch`` command. For a patch that is
   fixing a bug or regression of some sort, please use the ``master`` branch of
   the mainline U-Boot git repository located at
-  https://source.denx.de/u-boot/u-boot.git as reference. For new features, if
+  https://git.u-boot-project.org/u-boot/u-boot.git as reference. For new features, if
   the ``next`` branch has been opened (which happens with the release of
   ``-rc2``) that branch should be used, otherwise ``master`` is acceptable.
 

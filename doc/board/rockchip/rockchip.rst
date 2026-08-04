@@ -235,7 +235,7 @@ U-Boot
 
 .. code-block:: bash
 
-        git clone --depth 1 https://source.denx.de/u-boot/u-boot.git
+        git clone --depth 1 https://git.u-boot-project.org/u-boot/u-boot.git
         cd u-boot
 
 To build px30 boards:

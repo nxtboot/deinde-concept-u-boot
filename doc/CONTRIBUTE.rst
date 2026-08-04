@@ -19,7 +19,7 @@ projects available to review if you are unsure of expectations.
 Repository
 ----------
 
-The official U-Boot repository is located at https://source.denx.de/u-boot/u-boot
+The official U-Boot repository is located at https://git.u-boot-project.org/u-boot/u-boot
 
 Further more detailed documentation can be found at the following link: :doc:`/index`.
 
