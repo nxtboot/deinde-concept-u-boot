@@ -94643,3 +94643,40 @@ The branch is ready for pushing.
 
 ---
 
+### Review: 2026-08-03
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+All 3 cherry-picked commit stats match: 2+/2- and 5+/3- and empty merge. Now run the build:
+
+Build passes. Now create v2 branch and push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto `ci/master`**
+
+- Cherry-picked commits reapplied cleanly (deltas match originals exactly):
+  - `5db6cee0cd8` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `047962ef912` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `cc6d08a360d` — Merge patch series "cyclic: update and optimization" (empty merge, preserved)
+  - `424e0418b7e` — pickman: Record cherry-pick of 3 commits from us/main
+
+**Conflict resolved:** `.pickman-history` had a conflict where both HEAD (vbe entry from cherry-a8fc408cdfc) and the incoming pickman record shared the same `## 2026-08-03: us/main` heading. Resolution: kept both entries separated by `---` and a new date heading — no history was lost.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+
+**Local branch:** `cherry-08af4faa0f0-v2` created.
+**Remote:** force-pushed to `cherry-08af4faa0f0` on `ci` — MR pipeline will retrigger automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. Only conflict was in `.pickman-history` where the new pickman record shared the same date heading as an earlier vbe entry already on master; resolved by keeping both records under separate date sections. Cherry-picked commit deltas are unchanged (2+/2- and 5+/3-); sandbox builds clean.
+
+---
+
