@@ -94445,3 +94445,88 @@ Per the "infrastructure or transient issue → report without making changes" in
 
 ---
 
+### Pipeline fix: 2026-08-04 (attempt 3)
+
+Branch: cherry-a66e02d219b
+
+Failed jobs:
+- zybo (sjg-lab)
+- edison (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- rpi5 (sjg-lab)
+- jetson-nano (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- pico (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- vf2 (sjg-lab)
+- rpi (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- xu3 (sjg-lab)
+- snow (sjg-lab)
+- rpi0 (sjg-lab)
+- rpi4 (sjg-lab)
+- pine64 (sjg-lab)
+- kevin (sjg-lab)
+- bbb (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link64 (sjg-lab)
+- link (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All 41 failed jobs show the same failure mode as attempts 1 and 2. I'll not modify the branch.
+
+## Report
+
+**Root cause: Transient labgrid infrastructure failure (identical to attempts 1 and 2). No commit on the branch is responsible; no code fix is warranted.**
+
+### Failure breakdown
+
+All 41 failures aborted inside `test/py/conftest.py:215` in `pytest_configure`, before U-Boot ever built or booted. `u-boot-test-getrole <role> --configure` returned exit 1 with one of three lab-side errors:
+
+| Failure mode | Example jobs |
+|---|---|
+| `Server error: Failed to acquire resources for place X` (coordinator refused) | zybo, play, tk1, rpi5, jetson-nano, felwinter, bpif3, pico, nanopi-m5, rock5b, rock3a, rockpro64, colibrimx8, vf2, rpi, rpi0, kevin, bbb, rpi3z, bob, rpi2, bpi, opi_pc2, minnowmax, jerry, link (×2), pcduino3_nano, opi_pc, rpi3, pine64, rpi4, felwinter-cb |
+| `Matching resource '...' already acquired by place '<name>'` (place held / stale grant on ff3399, pcduino3, nyan-big, xu3, snow, coral, rpi4) | ff3399 (×2), pcduino3, nyan-big, xu3, snow, coral, rpi4 |
+| `place edison is not acquired by your user, acquired by labgrid` | edison |
+
+All 41 traces share the same stack frame (`conftest.py:303 → get_details → :215 raise ValueError`), and the timestamps cluster in a single 6-minute window (05:51–05:57 UTC) — a lab-wide contention event, not per-board code failure.
+
+### Why this is not code
+
+The branch touches only:
+- `MAINTAINERS`, `README`, `doc/*`, `tools/u_boot_pylib/gitutil.py`, `tools/patman/settings.py` — mailing-list URL rename
+- `drivers/clk/airoha/clk-airoha.c` — off-by-one (not built on any failing board)
+- `common/bloblist.c`, `include/asm-generic/global_data.h`, `include/bloblist.h` — `GD_FLG_BLOBLIST_READY` → `GD_FLG_BLOBLIST_HANDOFF` rename
+- `arch/arm/mach-k3/Kconfig` — removes two K3 DM-firmware Kconfigs (no failing board is a K3)
+
+None of these files can affect labgrid coordinator behaviour, `u-boot-test-getrole`, or `test/py/conftest.py`. The pattern (41 different places, all failing at resource-acquisition time within the same 6 minutes, with three distinct lab error messages that reproduce verbatim from attempts 1 and 2) is characteristic of a coordinator/lab-daemon problem on the concept/ellesmere runner side.
+
+### Actions taken
+
+- Checked out `cherry-a66e02d219b` and inspected the log tails (zybo sampled in full; the remaining 40 confirmed via grep to be identical labgrid failures).
+- **No code changes**, **no build run** (no diff to validate), **no `cherry-a66e02d219b-fix3` branch created** — an empty branch would only churn the pipeline with nothing new to test, exactly as concluded in attempts 1 and 2.
+
+**Recommendation:** re-run the `sjg-lab` stage after the labgrid coordinator recovers / stale place grants are cleaned up. If any job then fails with a non-lab error, that needs investigation; the current run gives no such signal.
+
+---
+
