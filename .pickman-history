@@ -94716,3 +94716,37 @@ The review comment is the same pipeline-failure diagnostic as attempt 2. I re-ve
 
 ---
 
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match originals exactly (2+/2- and 5+/3-). Now build:
+
+Build passes. Now create v2 branch and push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto latest `ci/master`**
+
+- All 6 commits reapplied cleanly with no conflicts (auto-merge succeeded).
+- Cherry-picked commit deltas match originals exactly:
+  - `38d89b2816b` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `4194aaa5c19` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `1c6274530bc` — Merge patch series (empty merge, preserved)
+  - `33838a828ca`, `307e6fabfa2`, `4d103ffef0f` — pickman meta commits
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+- **Local branch:** `cherry-08af4faa0f0-v4` created.
+- **Remote:** force-pushed `1384cfa8c6f...4d103ffef0f` to `cherry-08af4faa0f0` on `ci` — MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. No conflicts this time — all 6 commits reapplied cleanly. Cherry-picked deltas unchanged (2+/2- and 5+/3-); sandbox builds clean. Note that the previously reported `test_cmd_spawn` SEGV and `sjg-lab` place-acquisition failures are unrelated to this series (touches `common/cyclic.c` only); if they recur, they need to be addressed on master rather than by respinning this branch.
+
+---
+
