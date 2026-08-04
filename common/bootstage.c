@@ -545,14 +545,21 @@ int _bootstage_stash_default(void)
 {
 	void *stash;
 
-	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST)) {
+	stash = NULL;
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
+	    CONFIG_IS_ENABLED(BLOBLIST)) {
 		stash = bloblist_ensure(BLOBLISTT_U_BOOT_BOOTSTAGE,
 					CONFIG_BOOTSTAGE_STASH_SIZE);
+		/*
+		 * An early phase may run before the bloblist exists, e.g.
+		 * before memory is available. Fall back to the fixed address
+		 * so that its records are not simply dropped
+		 */
 		if (!stash)
-			return log_msg_ret("blob", -ENOSPC);
-	} else {
-		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR, 0);
+			log_warning("Bootstage: no bloblist, using stash addr\n");
 	}
+	if (!stash)
+		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR, 0);
 
 	return bootstage_stash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
 }
@@ -561,15 +568,18 @@ int _bootstage_unstash_default(void)
 {
 	const void *stash;
 
-	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST)) {
+	stash = NULL;
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
+	    CONFIG_IS_ENABLED(BLOBLIST))
 		stash = bloblist_find(BLOBLISTT_U_BOOT_BOOTSTAGE,
 				      CONFIG_BOOTSTAGE_STASH_SIZE);
-		if (!stash)
-			return log_msg_ret("blob", -ENOENT);
-	} else {
+	/*
+	 * The records may come from a phase which ran before the bloblist
+	 * existed and so used the fixed address instead
+	 */
+	if (!stash)
 		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR,
 				   CONFIG_BOOTSTAGE_STASH_SIZE);
-	}
 
 	return bootstage_unstash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
 }
