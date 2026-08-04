@@ -94680,3 +94680,39 @@ Rebase complete and pushed successfully.
 
 ---
 
+### Review: 2026-08-03
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) sandbox test.py, sandbox with clang test.py, zybo, edi...
+
+### Conversation log
+Build passes. Now let me create the v3 branch and push to retry the pipeline. Since the previous diagnosis found all failures were pre-existing SEGV in `test_cmd_spawn` (unrelated to `common/cyclic.c`) or labgrid infrastructure issues, no code changes are needed — we just retry.
+
+## Report
+
+**No code changes made — remote already has the identical commit; pushing again is a no-op.**
+
+### Situation
+
+The review comment is the same pipeline-failure diagnostic as attempt 2. I re-verified:
+
+- Local `cherry-08af4faa0f0` HEAD (`1384cfa8c6f`) is already the tip of the remote branch — `git push -f` reports `Everything up-to-date`.
+- Sandbox build still passes (`buildman -L --board sandbox -w`: 1/1 built, no warnings).
+- The two-part diagnosis from the previous attempt still stands:
+  1. `sandbox test.py`, `sandbox with clang test.py`, `Check make check/qcheck` — all fail on `test_ut[ut_cmd_test_cmd_spawn]` (SIGSEGV). Pre-existing on `ci/master`; reproduces on the base commit `e1e48bcc93d` with `common/cyclic.c` reverted. Unrelated to the cyclic changes in this branch.
+  2. All ~40 `sjg-lab` boards — labgrid `Failed to acquire resources for place` / `not acquired by your user`. Lab-runner scheduling, not code.
+
+### Action taken
+
+- Created local branch `cherry-08af4faa0f0-v3` (identical content to the current remote — no code diff to justify a functional change).
+- Did **not** rebase or amend: the branch is already on `ci/master` and there is nothing on this branch to fix.
+- Did **not** force-push a no-op change: remote is already at the same SHA.
+
+### Suggested MR reply
+
+> Same diagnosis as attempt 2 — the pipeline failures are not caused by this branch. `test_cmd_spawn` SEGV reproduces on the base commit with `common/cyclic.c` reverted (it's a hush/`spawn` bug, not a cyclic bug), and all `sjg-lab` failures are labgrid place-acquisition errors. This cherry-pick series only touches `common/cyclic.c` (2+/2- and 5+/3-) plus meta commits. Sandbox builds clean locally. Please retrigger the pipeline manually — the pre-existing `test_cmd_spawn` SEGV needs a separate fix on master and won't be resolved by respinning this branch.
+
+---
+
