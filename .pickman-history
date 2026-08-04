@@ -94837,3 +94837,32 @@ The bug pre-exists on master and needs to be fixed there, not on this cherry-pic
 
 ---
 
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) sandbox test.py, sandbox with clang test.py, Check mak...
+
+### Conversation log
+## Report — attempt 4
+
+**No code changes made.** Same diagnosis as attempts 1, 2 and 3: the `test_cmd_spawn` SEGV is pre-existing on master and unrelated to this branch.
+
+### Verification (re-run locally)
+- `um build sandbox` / `buildman -L --board sandbox -w`: 1/1 built, clean, no warnings.
+- `/tmp/pickman/u-boot -Tf -c "ut cmd test_cmd_spawn"` on this branch → SEGV (`monitored command dumped core`), output stops after `Test: test_cmd_spawn: spawn.c`. Same failure signature as reported by CI.
+- Base commit `2683639d464` (the merge before this series) already exhibits the same SEGV with `common/cyclic.c` reverted — verified in prior attempts.
+
+### Branch state
+- `cherry-08af4faa0f0` is already based on the current `ci/master` tip (`2683639d464`). No rebase needed.
+- Only 3 code commits: `20ed9b18449`, `30d61dadc00`, `4ef8283ec79` — all touch `common/cyclic.c` (2+/2− and 5+/3− + empty merge). None can affect the hush spawn/wait test.
+- Local branch `cherry-08af4faa0f0-fix4` created at the same SHA as `cherry-08af4faa0f0` — no code diff.
+- Pushed `706915a237d..3ca87b968af` to `ci/cherry-08af4faa0f0` (the new pickman fix-record commit `3ca87b968af`); MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Attempt 4 — same diagnosis as attempts 1–3, no code change possible on this branch. `ut cmd test_cmd_spawn` SEGVs identically on both this branch and the base commit `2683639d464` with `common/cyclic.c` reverted, so the crash is in the hush spawn/wait code (`common/cli_hush_upstream.c` / `test/cmd/spawn.c`) — completely unrelated to the cyclic changes here, which only touch `cyclic_run()` internals (2+/2− and 5+/3−). Sandbox builds clean. The `test_cmd_spawn` SEGV needs a separate fix on master; respinning this cherry-pick series cannot clear it. Requesting a manual retry only if intermittent, or please treat these four jobs as pre-existing until the master-side fix lands.
+
+---
+
