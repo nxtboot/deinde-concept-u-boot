@@ -94788,3 +94788,52 @@ Rebase complete and pushed successfully.
 
 ---
 
+### Pipeline fix: 2026-08-04 (attempt 3)
+
+Branch: cherry-08af4faa0f0
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+The failure is `test_ut[ut_cmd_test_cmd_spawn]` SIGSEGV in all four jobs. The cyclic changes only touch `common/cyclic.c`. The failing test exercises hush spawn/wait builtins. This is exactly the same failure diagnosed in attempts 1 and 2 as pre-existing on master. Let me verify locally.
+
+Reproduces locally. Let me check the base:
+
+Both the branch and the base (with cyclic.c reverted to base) SEGV at exactly the same point. Confirmed pre-existing. Restore:
+
+Build clean. Create the fix3 branch:
+
+## Report — attempt 3
+
+**No code changes made. Same diagnosis as attempts 1 and 2: pre-existing failure on master, unrelated to this branch.**
+
+### Failure
+All four failed jobs (`sandbox test.py`, `sandbox with clang test.py`, `Check make check`, `Check make qcheck`) fail on the same test:
+```
+FAILED test/py/tests/test_ut.py::test_ut[ut_cmd_test_cmd_spawn]
+    ValueError: U-Boot exited with signal 11 (SIGSEGV)
+```
+
+### Verification (re-run locally on this attempt)
+- `/tmp/b/sandbox/u-boot -Tf -c "ut cmd test_cmd_spawn"` on this branch → SEGV (output stops after `Test: test_cmd_spawn: spawn.c`, no `=>` prompt returns).
+- Same command with `common/cyclic.c` reverted to the pre-cherry-pick version (from `2683639d464`, the merge on master before this series) → **identical SEGV at the same point**.
+- Sandbox build (`um build sandbox`) is clean on this branch, no warnings.
+
+### Root cause
+`test_cmd_spawn` exercises the hush `spawn`/`wait` job builtins (`common/cli_hush_upstream.c`, `test/cmd/spawn.c`) which has nothing to do with `common/cyclic.c`. The two cherry-picked commits only touch `common/cyclic.c` (2+/2− and 5+/3−) inside `cyclic_run()`; they cannot cause a SEGV in the hush job-control test.
+
+The bug pre-exists on master and needs to be fixed there, not on this cherry-pick branch. Respinning this branch will not clear these four jobs.
+
+### Action
+- Created local branch `cherry-08af4faa0f0-fix3` at the same SHA as `cherry-08af4faa0f0` — no code changes.
+- Did not amend any cyclic commit; there is nothing to amend.
+
+### Suggested MR reply
+> Attempt 3 — same diagnosis as attempts 1 and 2. Re-verified locally: `ut cmd test_cmd_spawn` SEGVs identically on this branch and on the base commit with `common/cyclic.c` reverted, so the crash is in the hush spawn/wait code (unrelated to the cyclic changes here, which only tweak `cyclic_run()`). Sandbox builds clean. The `test_cmd_spawn` SEGV needs a separate fix on master; respinning this cherry-pick series won't clear it.
+
+---
+
