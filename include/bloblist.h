@@ -517,7 +517,7 @@ int bloblist_reloc(void *to, uint to_size);
  * standard passage. The size is detected automatically so CONFIG_BLOBLIST_SIZE
  * can be 0.
  *
- * Sets GD_FLG_BLOBLIST_READY in global_data flags on success
+ * Sets GD_FLG_BLOBLIST_HANDOFF in global_data flags on success
  *
  * Return: 0 if OK, -ve on error
  */

@@ -148,27 +148,6 @@ config K3_DM_FW
 	  bootloader, it makes RM and PM services not being available
 	  during R5 SPL execution time.
 
-config K3_DM_FW_RESERVED_ADDR
-	hex "Start address of DM firmware reserved memory region"
-	depends on !SOC_K3_AM642 && !SOC_K3_AM654
-	default 0x9c900000 if SOC_K3_AM62A7 || SOC_K3_AM62P5
-	default 0x9db00000 if SOC_K3_AM625
-	default 0xa0100000 if SOC_K3_J721E || SOC_K3_J7200 || SOC_K3_J721S2 || SOC_K3_J722S || SOC_K3_J784S4
-	help
-	  Start address of the DDR region reserved for DM firmware at runtime.
-	  Used only to fixup the kernel device-tree reserved-memory node.
-
-config K3_DM_FW_RESERVED_SIZE
-	hex "Reserved memory size for DM firmware"
-	depends on !SOC_K3_AM642 && !SOC_K3_AM654
-	default 0x1f00000 if SOC_K3_AM62A7
-	default 0xc00000 if SOC_K3_AM625
-	default 0x1e00000 if TARGET_VERDIN_AM62P_A53 || TARGET_VERDIN_AM62P_R5
-	default 0xf00000 if SOC_K3_AM62P5 || SOC_K3_J721E || SOC_K3_J7200 || SOC_K3_J721S2 || SOC_K3_J722S || SOC_K3_J784S4
-	help
-	  The runtime memory size reserved for DM firmware. This is the total
-	  DDR span needed for the DM firmware binary.
-
 config K3_X509_SWRV
 	int "SWRV for X509 certificate used for boot images"
 	default 1

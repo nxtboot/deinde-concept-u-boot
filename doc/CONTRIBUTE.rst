@@ -28,7 +28,7 @@ Contributions
 
 Contributions to the project are welcome. The U-Boot project uses a fairly
 traditional Linux style development work-flow using git and `a mailing list
-<https://lists.denx.de/listinfo/u-boot>`_.
+<https://lists.u-boot-project.org/listinfo/u-boot>`_.
 
 Patches should be sent to the mailing list using ``git send-email`` or the
 equivalent commands using ``b4`` or ``patman`` with appropriate sign-off and
@@ -41,7 +41,7 @@ The b4 tool automates a number of components mentioned above.
 Code is not the only thing you can contribute to the project. As most
 open-source projects, the U-Boot project suffers from a lack of reviewers.
 Consider spending some time reading patches on `the mailing list archive
-<https://lists.denx.de/pipermail/u-boot/>`_ and providing feedback to
+<https://lists.u-boot-project.org/pipermail/u-boot/>`_ and providing feedback to
 contributors when something could be improved or if you have questions. Contrary
 to what's most often believed, you do not need to be an expert to review patches
 and the project will benefit from people with different skillsets and experience
