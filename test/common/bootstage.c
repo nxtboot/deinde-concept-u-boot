@@ -6,6 +6,7 @@
  */
 
 #include <bootstage.h>
+#include <malloc.h>
 #include <linux/delay.h>
 #include <test/common.h>
 #include <test/test.h>
@@ -199,3 +200,55 @@ static int test_bootstage_get_rec(struct unit_test_state *uts)
 	return 0;
 }
 COMMON_TEST(test_bootstage_get_rec, 0);
+
+#if IS_ENABLED(CONFIG_BOOTSTAGE_STASH)
+/* Test that records survive a stash and unstash */
+static int test_bootstage_stash(struct unit_test_state *uts)
+{
+	const struct bootstage_record *rec;
+	int count;
+	void *buf;
+
+	count = bootstage_get_rec_count();
+	ut_assert(count > 0);
+	ut_assert(count * 2 <= CONFIG_BOOTSTAGE_RECORD_COUNT);
+
+	/*
+	 * Use a buffer of our own. The configured stash address may well hold
+	 * something else, since nothing reads it until a later phase starts
+	 */
+	buf = malloc(CONFIG_BOOTSTAGE_STASH_SIZE);
+	ut_assertnonnull(buf);
+
+	/*
+	 * Stash the records and read them back. Unstashing appends, so every
+	 * record which survives the round trip appears a second time
+	 */
+	ut_assertok(bootstage_stash(buf, CONFIG_BOOTSTAGE_STASH_SIZE));
+	ut_assertok(bootstage_unstash(buf, CONFIG_BOOTSTAGE_STASH_SIZE));
+	ut_asserteq(count * 2, bootstage_get_rec_count());
+
+	/* The copy must carry the names too, not just the timestamps */
+	rec = bootstage_get_rec(count);
+	ut_assertnonnull(rec);
+	ut_asserteq_str("reset", rec->name);
+
+	bootstage_set_rec_count(count);
+	free(buf);
+
+	/*
+	 * Check the default stash as well, but only when it is in the
+	 * bloblist, which has memory of its own. A fixed address cannot be
+	 * written here, since it may be in use until a later phase reads it
+	 */
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST)) {
+		ut_assertok(bootstage_stash_default());
+		ut_assertok(bootstage_unstash_default());
+		ut_asserteq(count * 2, bootstage_get_rec_count());
+		bootstage_set_rec_count(count);
+	}
+
+	return 0;
+}
+COMMON_TEST(test_bootstage_stash, 0);
+#endif /* BOOTSTAGE_STASH */
