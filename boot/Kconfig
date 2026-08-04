@@ -1556,15 +1556,32 @@ config BOOTSTAGE_STASH
 	  'bootstage stash' and 'bootstage unstash' commands to do this on
 	  the command line.
 
+config BOOTSTAGE_STASH_BLOBLIST
+	bool "Stash the boot timing information in the bloblist"
+	depends on BOOTSTAGE_STASH && BLOBLIST
+	help
+	  Put the stash in a bloblist record rather than at a fixed address.
+	  The bloblist is already passed from one phase to the next, so this
+	  avoids having to find an address which is free in every phase and
+	  is not overwritten in between.
+
+	  Note that the bloblist must be reachable in every phase which
+	  records boot timing, which may not be true of an early phase
+	  running before memory is available.
+
 config BOOTSTAGE_STASH_ADDR
 	hex "Address to stash boot timing information"
 	depends on BOOTSTAGE_STASH
 	default 0xC3000000 if STM32MP13X || STM32MP15X
 	default 0x87000000 if STM32MP25X
-	default 0x0 if SANDBOX
+	default 0x0
 	help
 	  Provide an address which will not be overwritten by the OS when it
 	  starts, so that it can read this information when ready.
+
+	  This is ignored when BOOTSTAGE_STASH_BLOBLIST is enabled, apart
+	  from providing the default base for the 'bootstage stash' and
+	  'bootstage unstash' commands.
 
 config BOOTSTAGE_STASH_SIZE
 	hex "Size of boot timing stash region"
