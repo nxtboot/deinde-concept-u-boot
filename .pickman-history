@@ -94255,3 +94255,63 @@ All 4 commits cherry-picked successfully onto branch `cherry-a8fc408cdfc`.
 
 ---
 
+## 2026-08-03: us/main
+
+Branch: cherry-a66e02d219b
+
+Commits:
+- a66e02d219b Revert "Merge patch series "Add DM firmware reserved memory support""
+- a1a944f25c1 bloblist: Rename GD_FLG_BLOBLIST_READY to GD_FLG_BLOBLIST_HANDOFF
+- fdfe2ec48d5 clk: airoha: fix off-by-one in clock ID boundary check
+- 6e316df3b7a tools/patman: Migrate mailing-list to lists.u-boot-project.org
+- 1a5b1ce0722 doc: Migrate mailing-list to lists.u-boot-project.org
+- 910385cacb8 MAINTAINERS/README: Migrate mailing-list to lists.u-boot-project.org
+- a312adbcf56 Merge patch series "treewide: migrate to the new mailing-list domain"
+
+### Conversation log
+Build ok. Continuing with the next cherry-picks.
+
+Delta matches. Continuing.
+
+Deltas match perfectly. Now the merge commit.
+
+All 7 commits are present. Now the final build.
+
+Build succeeded. Final report:
+
+## Cherry-pick Summary
+
+**Branch:** `cherry-a66e02d219b` (based on `ci/master`)
+**Build result:** OK (sandbox builds cleanly with no warnings/errors)
+
+**All 7 commits present:**
+```
+f0b49fcd73f Merge patch series "treewide: migrate to the new mailing-list domain"
+40c4a9e9a19 MAINTAINERS/README: Migrate mailing-list to lists.u-boot-project.org
+254220b3be1 doc: Migrate mailing-list to lists.u-boot-project.org
+32fc8d3730a tools/patman: Migrate mailing-list to lists.u-boot-project.org
+b1acf228011 clk: airoha: fix off-by-one in clock ID boundary check
+49da446b18f bloblist: Rename GD_FLG_BLOBLIST_READY to GD_FLG_BLOBLIST_HANDOFF
+bc994979e28 Revert "Merge patch series "Add DM firmware reserved memory support""
+```
+
+**Fix-ups made:**
+
+1. **`bc994979e28` (Revert DM firmware merge)** — Cherry-pick conflicted on 2 of 3 files. Applied only the `arch/arm/mach-k3/Kconfig` hunk (removed `K3_DM_FW_RESERVED_ADDR`/`K3_DM_FW_RESERVED_SIZE` Kconfigs). Skipped:
+   - `arch/arm/mach-k3/am62ax/Kconfig` — AM62D2 target doesn't exist in ci/master
+   - `arch/arm/mach-k3/common_fdt.c` — `fdt_fixup_reserved` has a different signature/callers in ci/master; the revert's rename to `fdt_fixup_reserved_memory` with a new wrapper would break all callers
+   
+   Note added to commit message. Delta is smaller than original (1 file vs 3) but the omitted parts are inapplicable to ci/master's state.
+
+2. **`49da446b18f` (BLOBLIST rename)** — Cherry-pick conflicted due to unrelated bloblist.c restructuring in ci/master. Applied the 4 single-line renames manually (`GD_FLG_BLOBLIST_READY` → `GD_FLG_BLOBLIST_HANDOFF`). Delta matches original (4 changes across 3 files).
+
+3. **`40c4a9e9a19` (MAINTAINERS/README migration)** — Conflict in `tools/u_boot_pylib/gitutil.py` due to a signature difference (ci/master returns `(None, 0)` vs upstream's `None`). Kept ci/master's `(None, 0)` signature and applied only the URL string update. Delta matches original exactly (4 changes across 3 files).
+
+4. **`f0b49fcd73f` (Merge commit)** — Same gitutil.py conflict as above; resolved the same way. Result was empty (all changes already picked up by the individual commits), committed with `--allow-empty` as instructed.
+
+**Concerning deltas:** Only the first revert commit (`bc994979e28`) — 21 deletions vs original 46 changes. This is expected because ci/master doesn't have the full state that the revert is undoing. The remaining commits match originals cleanly.
+
+Branch is ready for pushing; not merged into any other branch.
+
+---
+
