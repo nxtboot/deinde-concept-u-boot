@@ -157,6 +157,7 @@ enum bloblist_tag_t {
 	BLOBLISTT_U_BOOT_VIDEO		= 0xfff002, /* Video info from SPL */
 	BLOBLISTT_EFI_LOG		= 0xfff003, /* Log of EFI calls */
 	BLOBLISTT_U_BOOT_MMC_CLK	= 0xfff004, /* MMC clock rate */
+	BLOBLISTT_U_BOOT_BOOTSTAGE	= 0xfff005, /* Boot timing from xPL */
 };
 
 /**
