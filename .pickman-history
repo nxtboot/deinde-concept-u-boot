@@ -94315,3 +94315,46 @@ Branch is ready for pushing; not merged into any other branch.
 
 ---
 
+### Pipeline fix: 2026-08-03 (attempt 1)
+
+Branch: cherry-a66e02d219b
+
+Failed jobs:
+- edison (sjg-lab)
+- felwinter (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/lab issues, not code problems. No changes needed.
+
+## Report
+
+**Root cause: Transient lab infrastructure failure (resource contention on labgrid places).** Neither failure is caused by any commit on the branch.
+
+### Job: edison (598082)
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'edison', '--configure']:
+labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.
+To work simultaneously, labgrid can execute
+  labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+The labgrid place `edison` was held by a different user (`kea/labgrid`) at test time. The follow-up release attempt confirmed this: `place edison is acquired by a different user (kea/labgrid), use --kick if you are sure`.
+
+### Job: felwinter (598073)
+```
+ValueError: Error 1 running ['u-boot-test-getrole', 'felwinter', '--configure']:
+Server error: Error: Failed to acquire resources for place felwinter
+```
+Coordinator-side resource acquisition failure for place `felwinter`.
+
+### Analysis
+- Both jobs failed during `pytest_configure` before any U-Boot code was exercised — no build, no boot, no test ran against the branch.
+- The failure is purely at the labgrid resource-acquisition layer (place held by another user / coordinator refused to grant resources).
+- The branch's cherry-picks (bloblist rename, airoha clk, mailing-list migration, DM firmware revert) do not touch `test/py/conftest.py`, `u-boot-test-getrole`, or any labgrid glue.
+
+### Action taken
+None. This is a transient infrastructure issue — the jobs need to be retried once the lab places are free. No branch `cherry-a66e02d219b-fix1` was created because no code fix is warranted; creating an empty fix branch would just muddy the history.
+
+Recommend: re-run the two `sjg-lab` jobs.
+
+---
+
