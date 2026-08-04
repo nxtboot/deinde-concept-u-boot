@@ -94750,3 +94750,41 @@ Rebase complete and pushed successfully.
 
 ---
 
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match originals (2+/2-, 5+/3-, and empty merge). Now run the build:
+
+Build passes. Now create v5 branch and force-push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto latest `ci/master`**
+
+- All 7 commits reapplied. One conflict resolved (as in the prior v2 rebase).
+- Cherry-picked commit deltas match originals exactly:
+  - `20ed9b18449` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `30d61dadc00` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `4ef8283ec79` — Merge patch series (empty merge, preserved)
+  - `c2b4d7a50c3`, `9740dd6ff22`, `40bd2f686ea`, `da31e07c799` — pickman meta commits
+
+**Conflict resolved:** `.pickman-history` — both HEAD (from cherry-a66e02d219b, now on master) and the incoming pickman record share the `## 2026-08-03: us/main` heading. Same resolution as previous rebase: kept both entries, separated by `---` and a new duplicate date heading. No history was lost.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+
+**Local branch:** `cherry-08af4faa0f0-v5` created.
+**Remote:** force-pushed `4d103ffef0f...da31e07c799` to `cherry-08af4faa0f0` on `ci` — MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. Only conflict was in `.pickman-history` where an earlier cherry-a66e02d219b entry on master shared the `2026-08-03: us/main` heading with this branch's pickman record; resolved by keeping both under separate date sections. Cherry-picked deltas unchanged (2+/2- and 5+/3-); sandbox builds clean. Note the previously reported `test_cmd_spawn` SEGV and `sjg-lab` place-acquisition failures were pre-existing/infrastructure and unrelated to this series (touches `common/cyclic.c` only) — if they recur, they need to be addressed on master rather than by respinning this branch.
+
+---
+
