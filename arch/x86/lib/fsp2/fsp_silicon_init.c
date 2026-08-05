@@ -112,6 +112,12 @@ static int fsp_multi_phase_si_init(struct fsp_header *hdr)
 		log_debug("Phase %d...", i);
 		ret = func(&params);
 		log_debug("done (ret=%x)\n", ret);
+		if (IS_ENABLED(CONFIG_BOOTSTAGE)) {
+			char name[20];
+
+			snprintf(name, sizeof(name), "fsp-s-phase%d", i);
+			bootstage_mark_name(BOOTSTAGE_ID_ALLOC, strdup(name));
+		}
 		if (ret)
 			return log_msg_ret("phase", ret);
 	}
@@ -131,6 +137,7 @@ int fsp_silicon_init(bool s3wake, bool use_spi_flash)
 	u32 init_addr;
 	int ret;
 
+	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "fsp-s-start");
 	log_debug("Locating FSP\n");
 	ret = fsp_locate_fsp(FSP_S, &entry, use_spi_flash, &dev, &hdr,
 			     &rom_offset);
@@ -138,6 +145,7 @@ int fsp_silicon_init(bool s3wake, bool use_spi_flash)
 		return log_msg_ret("locate FSP", ret);
 	binman_set_rom_offset(rom_offset);
 	gd->arch.fsp_s_hdr = hdr;
+	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "fsp-s-locate");
 
 	/* Copy over the default config */
 	fsp_upd = (struct fsps_upd *)(hdr->img_base + hdr->cfg_region_off);
@@ -148,11 +156,13 @@ int fsp_silicon_init(bool s3wake, bool use_spi_flash)
 	ret = fsps_update_config(dev, rom_offset, &upd);
 	if (ret)
 		return log_msg_ret("Could not setup config", ret);
+	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "fsp-s-config");
 	log_debug("Silicon init @ %x...", init_addr);
 	bootstage_start(BOOTSTAGE_ID_ACCUM_FSP_S, "fsp-s");
 	func = (fsp_silicon_init_func)(hdr->img_base + hdr->fsp_silicon_init);
 	ret = func(&upd);
 	bootstage_accum(BOOTSTAGE_ID_ACCUM_FSP_S);
+	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "fsp-s-init");
 	if (ret)
 		return log_msg_ret("Silicon init fail\n", ret);
 	log_debug("done\n");

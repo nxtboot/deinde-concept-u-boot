@@ -953,11 +953,15 @@ static void initcall_run_f(void)
 	INITCALL(initf_malloc);
 	INITCALL(initf_upl);
 	INITCALL(log_init);
-	INITCALL(initf_bootstage); /* uses its own timer, so does not need DM */
-	INITCALL(event_init);
 #ifdef CONFIG_BLOBLIST
+	/*
+	 * This must come before initf_bootstage(), since the bootstage stash
+	 * may be in the bloblist, in which case it is read from there
+	 */
 	INITCALL(bloblist_init);
 #endif
+	INITCALL(initf_bootstage); /* uses its own timer, so does not need DM */
+	INITCALL(event_init);
 #if CONFIG_IS_ENABLED(OF_CONTROL)
 	INITCALL(fdtdec_apply_bloblist_dtos);
 #endif

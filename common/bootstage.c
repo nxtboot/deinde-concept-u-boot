@@ -10,6 +10,7 @@
 
 #define LOG_CATEGORY	LOGC_BOOT
 
+#include <bloblist.h>
 #include <bootstage.h>
 #include <hang.h>
 #include <log.h>
@@ -521,7 +522,7 @@ int bootstage_unstash(const void *base, int size)
 
 	/* Read the name strings */
 	ptr += rec_size;
-	for (rec = data->record + data->next_id, i = 0; i < hdr->count;
+	for (rec = data->record + data->rec_count, i = 0; i < hdr->count;
 	     i++, rec++) {
 		rec->name = ptr;
 		if (xpl_phase() == PHASE_SPL)
@@ -542,14 +543,43 @@ int bootstage_unstash(const void *base, int size)
 #if IS_ENABLED(CONFIG_BOOTSTAGE_STASH)
 int _bootstage_stash_default(void)
 {
-	return bootstage_stash(map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR, 0),
-			       CONFIG_BOOTSTAGE_STASH_SIZE);
+	void *stash;
+
+	stash = NULL;
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
+	    CONFIG_IS_ENABLED(BLOBLIST)) {
+		stash = bloblist_ensure(BLOBLISTT_U_BOOT_BOOTSTAGE,
+					CONFIG_BOOTSTAGE_STASH_SIZE);
+		/*
+		 * An early phase may run before the bloblist exists, e.g.
+		 * before memory is available. Fall back to the fixed address
+		 * so that its records are not simply dropped
+		 */
+		if (!stash)
+			log_warning("Bootstage: no bloblist, using stash addr\n");
+	}
+	if (!stash)
+		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR, 0);
+
+	return bootstage_stash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
 }
 
 int _bootstage_unstash_default(void)
 {
-	const void *stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR,
-				       CONFIG_BOOTSTAGE_STASH_SIZE);
+	const void *stash;
+
+	stash = NULL;
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
+	    CONFIG_IS_ENABLED(BLOBLIST))
+		stash = bloblist_find(BLOBLISTT_U_BOOT_BOOTSTAGE,
+				      CONFIG_BOOTSTAGE_STASH_SIZE);
+	/*
+	 * The records may come from a phase which ran before the bloblist
+	 * existed and so used the fixed address instead
+	 */
+	if (!stash)
+		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR,
+				   CONFIG_BOOTSTAGE_STASH_SIZE);
 
 	return bootstage_unstash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
 }

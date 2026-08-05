@@ -10,6 +10,7 @@ obj-$(CONFIG_SPL_BUILD) += fsp_m.o
 ifndef CONFIG_XPL_BUILD
 obj-y += fsp_s.o
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
+obj-y += smm.o smm_asm.o
 obj-$(CONFIG_CPU) += cpu.o
 endif
 obj-y += early_uart.o

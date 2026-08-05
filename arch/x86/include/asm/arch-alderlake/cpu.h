@@ -36,6 +36,20 @@ void adl_log_pm_state(const char *when);
 void adl_find_microcode(void);
 
 /**
+ * adl_smm_relocate() - Move each CPU's SMBASE out of the default area
+ *
+ * Relocates SMBASE for each CPU into a dedicated RAM buffer with a
+ * resident handler which acknowledges and resumes, then enables SMI
+ * delivery at the PCH. This is enough for the platform to survive an
+ * SMI; U-Boot has no real SMM handlers.
+ *
+ * @num_cpus: Number of CPUs to relocate (the boot CPU plus the APs,
+ *	which must already be running their wait loop)
+ * Return: 0 if OK, -ve on error
+ */
+int adl_smm_relocate(int num_cpus);
+
+/**
  * adl_release_ssd_reset() - Release the NVMe SSD's PERST# signal
  *
  * The SSD is powered up with its reset held when the pads are first set
