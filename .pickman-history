@@ -94920,3 +94920,38 @@ All 13 commits cherry-picked successfully onto branch `cherry-8f71d7170f5c`.
 
 ---
 
+## 2026-08-05: us/main
+
+Branch: cherry-1b8283bd3220
+
+Commits:
+- 1b8283bd3220 cmd: read: fix unsigned overflow bypassing range check
+- f077a6b07be1 i3c: dw: make resets optional in probe
+- b2062131b430 cmd: i3c: fix list and current needing pre-selected controller
+- 331d9b8cf634 configs: versal2: enable I3C support
+- 57b60ccd7979 i3c: dw: fix slave device setup after DAA
+- de02bc0eccb7 Merge patch series "i3c: dw: fix slave device setup and probe issues"
+
+### Conversation log
+All 6 cherry-picks completed successfully on branch `cherry-1b8283bd3220`.
+
+**Final status:**
+- Build result: **OK** (sandbox builds cleanly after each cherry-pick and after the full series)
+- Fix-ups: None needed — no conflicts encountered
+- Concerning deltas: None — file lists and line counts match originals exactly for all 5 non-merge commits
+- Merge commit `de02bc0eccb7` was preserved as an empty commit with `--allow-empty` (expected, since its children were cherry-picked individually)
+
+**Commit log (top of branch):**
+```
+24dfcd58dcd3 Merge patch series "i3c: dw: fix slave device setup and probe issues"
+cd307bee532e i3c: dw: fix slave device setup after DAA
+72a6cb4a2417 configs: versal2: enable I3C support
+955e34bb6f17 cmd: i3c: fix list and current needing pre-selected controller
+899bd17ab249 i3c: dw: make resets optional in probe
+7bda4d89bf37 cmd: read: fix unsigned overflow bypassing range check
+```
+
+Branch is ready for pushing.
+
+---
+
