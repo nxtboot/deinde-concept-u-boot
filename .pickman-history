@@ -94866,3 +94866,57 @@ Comments addressed:
 
 ---
 
+## 2026-08-04: us/main
+
+Branch: cherry-8f71d7170f5c
+
+Commits:
+- 8f71d7170f5c spl: fit: bound the external data size before reading it
+- 85667122fb5f test: spl: check load_simple_fit() rejects an oversized data-size
+- dabdb361633d sh: clean up asm/string.h
+- 210fedfcfc1a string: correct prototype of strchrnul()
+- 6b58f877bdd7 string: correct documentation for strstr and strnstr
+- a31d9375dfbd string: remove unused strswab() function
+- 07fcb18623b4 string: remove more pointless __HAVE_ARCH_STR*
+- 13822d7f4270 string: add strcasestr()
+- d589aa4417c5 test: string: add test of new strcasestr() function
+- 304e18c94375 cmd: config: allow simple filtering of output
+- a2daa32913e6 doc: document 'config' command
+- d408eb2bc5a4 test: add test of 'config' command
+- 72d780b5ccc0 Merge patch series "some string cleanup, and a tweak of the "config" command"
+
+### Conversation log
+Let me amend the commit with a fix-up note since we resolved a conflict:
+
+All 13 commits present. Now final build:
+
+All 13 commits cherry-picked successfully onto branch `cherry-8f71d7170f5c`.
+
+## Summary
+
+**Build result:** OK (sandbox build passes)
+
+**Commits (13/13 present):**
+- `4e940521542f` spl: fit: bound the external data size before reading it
+- `1bc51c25448c` test: spl: check load_simple_fit() rejects an oversized data-size
+- `ab3dfcdf85cb` sh: clean up asm/string.h
+- `94e4afa16579` string: correct prototype of strchrnul()
+- `dec7629ca553` string: correct documentation for strstr and strnstr
+- `94acce5367c0` string: remove unused strswab() function
+- `aad9ed34b353` string: remove more pointless __HAVE_ARCH_STR* *(fix-up)*
+- `5ce73749592e` string: add strcasestr()
+- `c68e32c3adf3` test: string: add test of new strcasestr() function
+- `d6566d3983de` cmd: config: allow simple filtering of output
+- `e23cac3e8a02` doc: document 'config' command
+- `091fe6ff47a3` test: add test of 'config' command *(fix-up)*
+- `3518ee832aba` Merge patch series "some string cleanup..." *(fix-up, empty)*
+
+**Fix-ups made:**
+1. `aad9ed34b353` — Conflict in `lib/string.c`: removed leftover `#ifndef __HAVE_ARCH_STRSPN` guard whose matching `#endif` had already been removed on this branch.
+2. `091fe6ff47a3` — Conflict in `test/cmd/Makefile`: kept both existing `BOOTSTAGE`/`CHID` lines and the new `CONFIG` line.
+3. `3518ee832aba` — Same Makefile conflict re-appeared during the merge; resolved identically. Commit became empty and was recorded with `--allow-empty`.
+
+**Deltas:** All non-conflicted picks matched original file/line counts exactly. No commits with concerning deltas.
+
+---
+
