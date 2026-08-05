@@ -6,6 +6,7 @@
 
 #define LOG_CATEGORY	LOGC_DT
 
+#include <bootstage.h>
 #include <dm.h>
 #include <fdtdec.h>
 #include <fdt_support.h>
@@ -825,8 +826,26 @@ ofnode oftree_get_by_phandle(oftree tree, uint phandle)
 	return node;
 }
 
+static fdt_addr_t ___ofnode_get_addr_size_index(ofnode node, int index,
+						fdt_size_t *size,
+						bool translate);
+
 static fdt_addr_t __ofnode_get_addr_size_index(ofnode node, int index,
 					       fdt_size_t *size, bool translate)
+{
+	fdt_addr_t addr;
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_start(BOOTSTAGE_ID_ACCUM_DT_ADDR, "dt_addr");
+	addr = ___ofnode_get_addr_size_index(node, index, size, translate);
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_accum(BOOTSTAGE_ID_ACCUM_DT_ADDR);
+
+	return addr;
+}
+
+static fdt_addr_t ___ofnode_get_addr_size_index(ofnode node, int index,
+						fdt_size_t *size, bool translate)
 {
 	int na, ns;
 

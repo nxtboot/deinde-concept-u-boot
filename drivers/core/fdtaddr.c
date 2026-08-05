@@ -8,6 +8,7 @@
  * Pavel Herrmann <morpheus.ibis@gmail.com>
  */
 
+#include <bootstage.h>
 #include <dm.h>
 #include <fdt_support.h>
 #include <log.h>
@@ -94,9 +95,18 @@ fdt_addr_t devfdt_get_addr_index_parent(const struct udevice *dev, int index,
 fdt_addr_t devfdt_get_addr_index(const struct udevice *dev, int index)
 {
 #if CONFIG_IS_ENABLED(OF_REAL)
-	int offset = dev_of_offset(dev);
-	int parent = fdt_parent_offset(gd->fdt_blob, offset);
-	return devfdt_get_addr_index_parent(dev, index, offset, parent);
+	fdt_addr_t addr;
+	int offset, parent;
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_start(BOOTSTAGE_ID_ACCUM_DT_ADDR, "dt_addr");
+	offset = dev_of_offset(dev);
+	parent = fdt_parent_offset(gd->fdt_blob, offset);
+	addr = devfdt_get_addr_index_parent(dev, index, offset, parent);
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_accum(BOOTSTAGE_ID_ACCUM_DT_ADDR);
+
+	return addr;
 #else
 	return FDT_ADDR_T_NONE;
 #endif

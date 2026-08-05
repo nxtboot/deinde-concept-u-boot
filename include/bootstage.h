@@ -215,13 +215,25 @@ enum bootstage_id {
 	BOOTSTAGE_ID_ACCUM_FSP_S,
 	BOOTSTAGE_ID_ACCUM_MMAP_SPI,
 	BOOTSTAGE_ID_ACCUM_DT_ADDR,
-	BOOTSTAGE_ID_ACCUM_DT_CELLS,
+	BOOTSTAGE_ID_ACCUM_DT_PARENT,
+	BOOTSTAGE_ID_ACCUM_DT_PARENT_R,
 	BOOTSTAGE_ID_ACCUM_SYSCON,
 
 	/* a few spare for the user, from here */
 	BOOTSTAGE_ID_USER,
 	BOOTSTAGE_ID_ALLOC,
 };
+
+/* Number of pre-relocation parent-lookup callers recorded for diagnosis */
+#define FDT_PARENT_CALLERS	16
+
+/**
+ * fdt_parent_report() - Show where pre-relocation parent lookups came from
+ *
+ * Prints the return address of each caller, so that they can be matched up
+ * with the symbol table. Does nothing if none were recorded
+ */
+void fdt_parent_report(void);
 
 /**
  * struct bootstage_record - information about a bootstage timing

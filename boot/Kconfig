@@ -1488,6 +1488,20 @@ config BOOTSTAGE_REPORT
 		 29,916,167 26,005,792  bootm_start
 		 30,361,327    445,160  start_kernel
 
+config BOOTSTAGE_ACCUM_DT
+	bool "Measure the cost of resolving devicetree addresses"
+	depends on BOOTSTAGE
+	help
+	  Add bootstage accumulators to the code which resolves a device's
+	  address from the devicetree, along with the syscon range lookups
+	  which use it. The report then shows how many times each is called
+	  and the average cost of a call.
+
+	  This is a diagnostic aid for boards where boot time is dominated by
+	  devicetree parsing. Reading the timer on every call has a cost of
+	  its own, so the totals are larger than without this option; use it
+	  to find where the calls come from, not to measure absolute time.
+
 config BOOTSTAGE_RECORD_COUNT
 	int "Number of boot stage records to store"
 	depends on BOOTSTAGE

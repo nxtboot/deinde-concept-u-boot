@@ -342,8 +342,9 @@ static uint32_t print_time_record(struct bootstage_record *rec, uint32_t prev)
 	 * For an accumulator, show how often it ran and the average cost of
 	 * each call, which is what indicates whether it is worth optimising
 	 */
-	if (prev == -1U && rec->run_cnt > 1)
-		printf(" (%u calls, %lu us/call)", rec->run_cnt,
+	if (prev == -1U && rec->run_cnt)
+		printf(" (%u call%s, %lu us each)", rec->run_cnt,
+		       rec->run_cnt == 1 ? "" : "s",
 		       rec->time_us / rec->run_cnt);
 	printf("\n");
 
@@ -445,6 +446,9 @@ void bootstage_report(void)
 		if (rec->start_us)
 			prev = print_time_record(rec, -1);
 	}
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		fdt_parent_report();
 }
 
 /**
