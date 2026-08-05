@@ -46,6 +46,22 @@ static struct {
 static void __attribute__((noinline, noreturn))
 coroutine_bootstrap(void (*entry)(void))
 {
+	/*
+	 * Tell the unwinder that there is no return address here, so that it
+	 * stops rather than walking off the top of this coroutine stack. The
+	 * frame below belongs to a signal handler which has already returned,
+	 * so following it faults
+	 */
+#if defined(__x86_64__)
+	asm volatile(".cfi_undefined rip");
+#elif defined(__i386__)
+	asm volatile(".cfi_undefined eip");
+#elif defined(__aarch64__)
+	asm volatile(".cfi_undefined x30");
+#elif defined(__riscv)
+	asm volatile(".cfi_undefined ra");
+#endif
+
 	for (;;)
 		entry();
 }
