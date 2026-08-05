@@ -94527,6 +94527,32 @@ None of these files can affect labgrid coordinator behaviour, `u-boot-test-getro
 - **No code changes**, **no build run** (no diff to validate), **no `cherry-a66e02d219b-fix3` branch created** — an empty branch would only churn the pipeline with nothing new to test, exactly as concluded in attempts 1 and 2.
 
 **Recommendation:** re-run the `sjg-lab` stage after the labgrid coordinator recovers / stale place grants are cleaned up. If any job then fails with a non-lab error, that needs investigation; the current run gives no such signal.
+---
+
+## 2026-08-03: us/main
+
+Branch: cherry-08af4faa0f0
+
+Commits:
+- 08af4faa0f0 cyclic: replace uint64_t by u64 suggested by b4
+- 9c1b13b3fd2 cyclic: reduce get_timer_us() calls inside hlist_for_each_entry_safe()
+- 96c308b8d2a Merge patch series "cyclic: update and optimization"
+
+### Conversation log
+All 3 commits cherry-picked successfully onto branch `cherry-08af4faa0f0`.
+
+**Final status:**
+- `e2d5500d1bc` — cyclic: replace uint64_t by u64 suggested by b4 (1 file, 2+/2-, matches original)
+- `33a7956f428` — cyclic: reduce get_timer_us() calls inside hlist_for_each_entry_safe() (1 file, 5+/3-, matches original)
+- `e9806232615` — Merge patch series "cyclic: update and optimization" (empty merge commit, preserved with --allow-empty)
+
+**Build result:** OK — sandbox builds cleanly after each cherry-pick and the final state.
+
+**Fix-ups:** None required. All auto-merges succeeded cleanly; deltas match the originals exactly.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
 
 ---
 
@@ -94614,6 +94640,229 @@ Both are truly new features (SPI NOR boot and multi-DT for K1). They cannot be c
 2. `eaec7b94790` — defconfig conflict: took the incoming `CONFIG_SPL_REGMAP/SPL_SYSCON/CLK/CLK_CCF` block (HEAD did not have them yet).
 
 The branch is ready for pushing.
+
+---
+
+### Review: 2026-08-03
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+All 3 cherry-picked commit stats match: 2+/2- and 5+/3- and empty merge. Now run the build:
+
+Build passes. Now create v2 branch and push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto `ci/master`**
+
+- Cherry-picked commits reapplied cleanly (deltas match originals exactly):
+  - `5db6cee0cd8` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `047962ef912` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `cc6d08a360d` — Merge patch series "cyclic: update and optimization" (empty merge, preserved)
+  - `424e0418b7e` — pickman: Record cherry-pick of 3 commits from us/main
+
+**Conflict resolved:** `.pickman-history` had a conflict where both HEAD (vbe entry from cherry-a8fc408cdfc) and the incoming pickman record shared the same `## 2026-08-03: us/main` heading. Resolution: kept both entries separated by `---` and a new date heading — no history was lost.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+
+**Local branch:** `cherry-08af4faa0f0-v2` created.
+**Remote:** force-pushed to `cherry-08af4faa0f0` on `ci` — MR pipeline will retrigger automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. Only conflict was in `.pickman-history` where the new pickman record shared the same date heading as an earlier vbe entry already on master; resolved by keeping both records under separate date sections. Cherry-picked commit deltas are unchanged (2+/2- and 5+/3-); sandbox builds clean.
+
+---
+
+### Review: 2026-08-03
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) sandbox test.py, sandbox with clang test.py, zybo, edi...
+
+### Conversation log
+Build passes. Now let me create the v3 branch and push to retry the pipeline. Since the previous diagnosis found all failures were pre-existing SEGV in `test_cmd_spawn` (unrelated to `common/cyclic.c`) or labgrid infrastructure issues, no code changes are needed — we just retry.
+
+## Report
+
+**No code changes made — remote already has the identical commit; pushing again is a no-op.**
+
+### Situation
+
+The review comment is the same pipeline-failure diagnostic as attempt 2. I re-verified:
+
+- Local `cherry-08af4faa0f0` HEAD (`1384cfa8c6f`) is already the tip of the remote branch — `git push -f` reports `Everything up-to-date`.
+- Sandbox build still passes (`buildman -L --board sandbox -w`: 1/1 built, no warnings).
+- The two-part diagnosis from the previous attempt still stands:
+  1. `sandbox test.py`, `sandbox with clang test.py`, `Check make check/qcheck` — all fail on `test_ut[ut_cmd_test_cmd_spawn]` (SIGSEGV). Pre-existing on `ci/master`; reproduces on the base commit `e1e48bcc93d` with `common/cyclic.c` reverted. Unrelated to the cyclic changes in this branch.
+  2. All ~40 `sjg-lab` boards — labgrid `Failed to acquire resources for place` / `not acquired by your user`. Lab-runner scheduling, not code.
+
+### Action taken
+
+- Created local branch `cherry-08af4faa0f0-v3` (identical content to the current remote — no code diff to justify a functional change).
+- Did **not** rebase or amend: the branch is already on `ci/master` and there is nothing on this branch to fix.
+- Did **not** force-push a no-op change: remote is already at the same SHA.
+
+### Suggested MR reply
+
+> Same diagnosis as attempt 2 — the pipeline failures are not caused by this branch. `test_cmd_spawn` SEGV reproduces on the base commit with `common/cyclic.c` reverted (it's a hush/`spawn` bug, not a cyclic bug), and all `sjg-lab` failures are labgrid place-acquisition errors. This cherry-pick series only touches `common/cyclic.c` (2+/2- and 5+/3-) plus meta commits. Sandbox builds clean locally. Please retrigger the pipeline manually — the pre-existing `test_cmd_spawn` SEGV needs a separate fix on master and won't be resolved by respinning this branch.
+
+---
+
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match originals exactly (2+/2- and 5+/3-). Now build:
+
+Build passes. Now create v2 branch and push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto latest `ci/master`**
+
+- All 6 commits reapplied cleanly with no conflicts (auto-merge succeeded).
+- Cherry-picked commit deltas match originals exactly:
+  - `38d89b2816b` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `4194aaa5c19` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `1c6274530bc` — Merge patch series (empty merge, preserved)
+  - `33838a828ca`, `307e6fabfa2`, `4d103ffef0f` — pickman meta commits
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+- **Local branch:** `cherry-08af4faa0f0-v4` created.
+- **Remote:** force-pushed `1384cfa8c6f...4d103ffef0f` to `cherry-08af4faa0f0` on `ci` — MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. No conflicts this time — all 6 commits reapplied cleanly. Cherry-picked deltas unchanged (2+/2- and 5+/3-); sandbox builds clean. Note that the previously reported `test_cmd_spawn` SEGV and `sjg-lab` place-acquisition failures are unrelated to this series (touches `common/cyclic.c` only); if they recur, they need to be addressed on master rather than by respinning this branch.
+
+---
+
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match originals (2+/2-, 5+/3-, and empty merge). Now run the build:
+
+Build passes. Now create v5 branch and force-push:
+
+Rebase complete and pushed successfully.
+
+## Summary
+
+**Rebased `cherry-08af4faa0f0` onto latest `ci/master`**
+
+- All 7 commits reapplied. One conflict resolved (as in the prior v2 rebase).
+- Cherry-picked commit deltas match originals exactly:
+  - `20ed9b18449` — cyclic: replace uint64_t by u64 (1 file, 2+/2-)
+  - `30d61dadc00` — cyclic: reduce get_timer_us() calls (1 file, 5+/3-)
+  - `4ef8283ec79` — Merge patch series (empty merge, preserved)
+  - `c2b4d7a50c3`, `9740dd6ff22`, `40bd2f686ea`, `da31e07c799` — pickman meta commits
+
+**Conflict resolved:** `.pickman-history` — both HEAD (from cherry-a66e02d219b, now on master) and the incoming pickman record share the `## 2026-08-03: us/main` heading. Same resolution as previous rebase: kept both entries, separated by `---` and a new duplicate date heading. No history was lost.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 passed, no warnings.
+
+**Local branch:** `cherry-08af4faa0f0-v5` created.
+**Remote:** force-pushed `4d103ffef0f...da31e07c799` to `cherry-08af4faa0f0` on `ci` — MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master. Only conflict was in `.pickman-history` where an earlier cherry-a66e02d219b entry on master shared the `2026-08-03: us/main` heading with this branch's pickman record; resolved by keeping both under separate date sections. Cherry-picked deltas unchanged (2+/2- and 5+/3-); sandbox builds clean. Note the previously reported `test_cmd_spawn` SEGV and `sjg-lab` place-acquisition failures were pre-existing/infrastructure and unrelated to this series (touches `common/cyclic.c` only) — if they recur, they need to be addressed on master rather than by respinning this branch.
+
+---
+
+### Pipeline fix: 2026-08-04 (attempt 3)
+
+Branch: cherry-08af4faa0f0
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- Check make qcheck (test.py)
+- Check make check (test.py)
+
+### Conversation log
+The failure is `test_ut[ut_cmd_test_cmd_spawn]` SIGSEGV in all four jobs. The cyclic changes only touch `common/cyclic.c`. The failing test exercises hush spawn/wait builtins. This is exactly the same failure diagnosed in attempts 1 and 2 as pre-existing on master. Let me verify locally.
+
+Reproduces locally. Let me check the base:
+
+Both the branch and the base (with cyclic.c reverted to base) SEGV at exactly the same point. Confirmed pre-existing. Restore:
+
+Build clean. Create the fix3 branch:
+
+## Report — attempt 3
+
+**No code changes made. Same diagnosis as attempts 1 and 2: pre-existing failure on master, unrelated to this branch.**
+
+### Failure
+All four failed jobs (`sandbox test.py`, `sandbox with clang test.py`, `Check make check`, `Check make qcheck`) fail on the same test:
+```
+FAILED test/py/tests/test_ut.py::test_ut[ut_cmd_test_cmd_spawn]
+    ValueError: U-Boot exited with signal 11 (SIGSEGV)
+```
+
+### Verification (re-run locally on this attempt)
+- `/tmp/b/sandbox/u-boot -Tf -c "ut cmd test_cmd_spawn"` on this branch → SEGV (output stops after `Test: test_cmd_spawn: spawn.c`, no `=>` prompt returns).
+- Same command with `common/cyclic.c` reverted to the pre-cherry-pick version (from `2683639d464`, the merge on master before this series) → **identical SEGV at the same point**.
+- Sandbox build (`um build sandbox`) is clean on this branch, no warnings.
+
+### Root cause
+`test_cmd_spawn` exercises the hush `spawn`/`wait` job builtins (`common/cli_hush_upstream.c`, `test/cmd/spawn.c`) which has nothing to do with `common/cyclic.c`. The two cherry-picked commits only touch `common/cyclic.c` (2+/2− and 5+/3−) inside `cyclic_run()`; they cannot cause a SEGV in the hush job-control test.
+
+The bug pre-exists on master and needs to be fixed there, not on this cherry-pick branch. Respinning this branch will not clear these four jobs.
+
+### Action
+- Created local branch `cherry-08af4faa0f0-fix3` at the same SHA as `cherry-08af4faa0f0` — no code changes.
+- Did not amend any cyclic commit; there is nothing to amend.
+
+### Suggested MR reply
+> Attempt 3 — same diagnosis as attempts 1 and 2. Re-verified locally: `ut cmd test_cmd_spawn` SEGVs identically on this branch and on the base commit with `common/cyclic.c` reverted, so the crash is in the hush spawn/wait code (unrelated to the cyclic changes here, which only tweak `cyclic_run()`). Sandbox builds clean. The `test_cmd_spawn` SEGV needs a separate fix on master; respinning this cherry-pick series won't clear it.
+
+---
+
+### Review: 2026-08-04
+
+Branch: cherry-08af4faa0f0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) sandbox test.py, sandbox with clang test.py, Check mak...
+
+### Conversation log
+## Report — attempt 4
+
+**No code changes made.** Same diagnosis as attempts 1, 2 and 3: the `test_cmd_spawn` SEGV is pre-existing on master and unrelated to this branch.
+
+### Verification (re-run locally)
+- `um build sandbox` / `buildman -L --board sandbox -w`: 1/1 built, clean, no warnings.
+- `/tmp/pickman/u-boot -Tf -c "ut cmd test_cmd_spawn"` on this branch → SEGV (`monitored command dumped core`), output stops after `Test: test_cmd_spawn: spawn.c`. Same failure signature as reported by CI.
+- Base commit `2683639d464` (the merge before this series) already exhibits the same SEGV with `common/cyclic.c` reverted — verified in prior attempts.
+
+### Branch state
+- `cherry-08af4faa0f0` is already based on the current `ci/master` tip (`2683639d464`). No rebase needed.
+- Only 3 code commits: `20ed9b18449`, `30d61dadc00`, `4ef8283ec79` — all touch `common/cyclic.c` (2+/2− and 5+/3− + empty merge). None can affect the hush spawn/wait test.
+- Local branch `cherry-08af4faa0f0-fix4` created at the same SHA as `cherry-08af4faa0f0` — no code diff.
+- Pushed `706915a237d..3ca87b968af` to `ci/cherry-08af4faa0f0` (the new pickman fix-record commit `3ca87b968af`); MR pipeline retriggers automatically.
+
+### Suggested MR reply
+
+> Attempt 4 — same diagnosis as attempts 1–3, no code change possible on this branch. `ut cmd test_cmd_spawn` SEGVs identically on both this branch and the base commit `2683639d464` with `common/cyclic.c` reverted, so the crash is in the hush spawn/wait code (`common/cli_hush_upstream.c` / `test/cmd/spawn.c`) — completely unrelated to the cyclic changes here, which only touch `cyclic_run()` internals (2+/2− and 5+/3−). Sandbox builds clean. The `test_cmd_spawn` SEGV needs a separate fix on master; respinning this cherry-pick series cannot clear it. Requesting a manual retry only if intermittent, or please treat these four jobs as pre-existing until the master-side fix lands.
 
 ---
 
