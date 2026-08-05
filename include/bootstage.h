@@ -214,6 +214,9 @@ enum bootstage_id {
 	BOOTSTAGE_ID_ACCUM_FSP_M,
 	BOOTSTAGE_ID_ACCUM_FSP_S,
 	BOOTSTAGE_ID_ACCUM_MMAP_SPI,
+	BOOTSTAGE_ID_ACCUM_DT_ADDR,
+	BOOTSTAGE_ID_ACCUM_DT_CELLS,
+	BOOTSTAGE_ID_ACCUM_SYSCON,
 
 	/* a few spare for the user, from here */
 	BOOTSTAGE_ID_USER,
@@ -223,19 +226,29 @@ enum bootstage_id {
 /**
  * struct bootstage_record - information about a bootstage timing
  *
+ * The fields are ordered, and @flags and @id narrowed, so that adding
+ * @run_cnt leaves the record the same size as before: 32 bytes on 64-bit
+ * systems and 20 on 32-bit ones. Records are held in an array of
+ * CONFIG_BOOTSTAGE_RECORD_COUNT and are copied whole when stashed, so the
+ * size is worth keeping down. Both narrowed fields have plenty of room, IDs
+ * being allocated from BOOTSTAGE_ID_USER upwards. They use __u16 since this
+ * header is built for the host tools too, where u16 is not defined
+ *
  * @time_us: time in microseconds, either the timestamp or the total accumlated
  * time for this ID
  * @start_us: timestamp of the current starting point for this ID
+ * @run_cnt: number of times this ID has been accumulated, 0 for a mark
  * @name: name of the timestamp
  * @flags: Flags (enum bootstage_flags)
- * @id: Bootstage ID
+ * @id: Bootstage ID (enum bootstage_id)
  */
 struct bootstage_record {
 	ulong time_us;
 	u32 start_us;
+	u32 run_cnt;
 	const char *name;
-	int flags;
-	enum bootstage_id id;
+	__u16 flags;
+	__u16 id;
 };
 
 /*

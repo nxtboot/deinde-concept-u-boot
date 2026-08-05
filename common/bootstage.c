@@ -34,7 +34,7 @@ struct bootstage_data {
 };
 
 enum {
-	BOOTSTAGE_VERSION	= 0,
+	BOOTSTAGE_VERSION	= 1,
 	BOOTSTAGE_MAGIC		= 0xb00757a3,
 	BOOTSTAGE_DIGITS	= 9,
 };
@@ -100,6 +100,7 @@ struct bootstage_record *ensure_id(struct bootstage_data *data,
 	if (!rec && data->rec_count < RECORD_COUNT) {
 		rec = &data->record[data->rec_count++];
 		rec->id = id;
+		rec->run_cnt = 0;
 		return rec;
 	}
 
@@ -131,6 +132,7 @@ ulong bootstage_add_record(enum bootstage_id id, const char *name,
 			rec->name = name;
 			rec->flags = flags;
 			rec->id = id;
+			rec->run_cnt = 0;
 		} else {
 			log_warning("Bootstage space exhausted\n");
 		}
@@ -188,9 +190,17 @@ ulong bootstage_mark_code(const char *file, const char *func, int linenum)
 uint32_t bootstage_start(enum bootstage_id id, const char *name)
 {
 	struct bootstage_data *data = gd->bootstage;
-	struct bootstage_record *rec = ensure_id(data, id);
 	ulong start_us = timer_get_boot_us();
+	struct bootstage_record *rec;
 
+	/*
+	 * This can be called before bootstage_init(), for example from code
+	 * which runs during early driver-model setup
+	 */
+	if (!data)
+		return start_us;
+
+	rec = ensure_id(data, id);
 	if (rec) {
 		rec->start_us = start_us;
 		rec->name = name;
@@ -202,13 +212,17 @@ uint32_t bootstage_start(enum bootstage_id id, const char *name)
 uint32_t bootstage_accum(enum bootstage_id id)
 {
 	struct bootstage_data *data = gd->bootstage;
-	struct bootstage_record *rec = ensure_id(data, id);
+	struct bootstage_record *rec;
 	uint32_t duration;
 
+	if (!data)
+		return 0;
+	rec = ensure_id(data, id);
 	if (!rec)
 		return 0;
 	duration = (uint32_t)timer_get_boot_us() - rec->start_us;
 	rec->time_us += duration;
+	rec->run_cnt++;
 
 	return duration;
 }
@@ -298,7 +312,16 @@ static uint32_t print_time_record(struct bootstage_record *rec, uint32_t prev)
 		print_grouped_ull(rec->time_us, BOOTSTAGE_DIGITS);
 		print_grouped_ull(rec->time_us - prev, BOOTSTAGE_DIGITS);
 	}
-	printf("  %s\n", get_record_name(buf, sizeof(buf), rec));
+	printf("  %s", get_record_name(buf, sizeof(buf), rec));
+
+	/*
+	 * For an accumulator, show how often it ran and the average cost of
+	 * each call, which is what indicates whether it is worth optimising
+	 */
+	if (prev == -1U && rec->run_cnt > 1)
+		printf(" (%u calls, %lu us/call)", rec->run_cnt,
+		       rec->time_us / rec->run_cnt);
+	printf("\n");
 
 	return rec->time_us;
 }
