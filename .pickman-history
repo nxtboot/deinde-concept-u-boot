@@ -95187,3 +95187,55 @@ Branch is ready to push.
 
 ---
 
+### Pipeline fix: 2026-08-06 (attempt 2)
+
+Branch: cherry-eecc4148fe61
+
+Failed jobs:
+- edison (sjg-lab)
+- vbe (sjg-lab)
+- bpif3 (sjg-lab)
+
+### Conversation log
+All three failures are infrastructure/hardware issues unrelated to the cherry-picked changes. Let me verify the current branch state and create the fix2 branch.
+
+Confirmed — the branch only touches `tools/fit_image.c` (host-only mkimage) and `test/py/tests/test_fit_import_data.py` (host-only pytest). Neither can affect target-board test outcomes.
+
+All three failures are infrastructure:
+
+1. **edison (603002)** — `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid. ... place edison is acquired by a different user (kea/labgrid)` — lab place conflict, pytest never started.
+
+2. **vbe (602999)** — `labgrid-client: Error: place ff3399 is not acquired by your user, acquired by sglass. ... place ff3399 is acquired by a different user (ellesmere/sglass)` — lab place conflict, pytest never started.
+
+3. **bpif3 (602991)** — Board hardware failure: 5 consecutive `BootROM did not start the FSBL (gadget devnum still N)` USB-loader attempts, ending with `Lab failure: Marking connection bad — no other tests will run`. Host tool `tools/fit_image.c` cannot affect BootROM behaviour on the target.
+
+Let me verify the sandbox build still passes and create the fix2 branch.
+
+Build passed silently. Creating the fix2 branch.
+
+## Report
+
+**No code fix warranted — all three failures are infrastructure/hardware issues unrelated to the cherry-picked series.**
+
+**Branch state:** `cherry-eecc4148fe61-fix2` created, identical to `cherry-eecc4148fe61` (no code deltas).
+
+**Cherry-picked commits only touch:**
+- `tools/fit_image.c` — host-only mkimage, never linked into any target U-Boot binary
+- `test/py/tests/test_fit_import_data.py` — new host-side pytest that runs mkimage directly
+
+Neither file can influence outcomes on lab-board test runs.
+
+**Per-job diagnosis (attempt 2):**
+
+1. **edison (603002)** — labgrid place conflict: `place edison is acquired by a different user (kea/labgrid)`. Pytest never started (INTERNALERROR during `pytest_configure` → `u-boot-test-getrole`). Pure infra.
+
+2. **vbe (602999)** — labgrid place conflict: `place ff3399 is acquired by a different user (ellesmere/sglass)`. Same failure mode as edison — pytest never started. Pure infra.
+
+3. **bpif3 (602991)** — Board hardware failure: 5 consecutive `BootROM did not start the FSBL (gadget devnum still NNN)` attempts through the spacemit-k1 USB loader (`k1-deploy.py`), followed by `Lab failure: Marking connection bad — no other tests will run`. The BootROM never accepted the FSBL, so no U-Boot code ever ran on the target. `tools/fit_image.c` is a host-side tool and cannot influence BootROM/USB gadget behaviour.
+
+**Sandbox build:** verified passing on `cherry-eecc4148fe61` (silent success from `um build sandbox`). No target board rebuilds needed since no source has changed since attempt 1.
+
+**Recommendation:** Retry the pipeline. All three are infra/hardware conditions (two labgrid ownership conflicts and one BootROM/USB flake on bpif3) that come and go independently of the MR content. Branch `cherry-eecc4148fe61-fix2` is left in place, unchanged relative to `cherry-eecc4148fe61`, to trigger a fresh run.
+
+---
+
