@@ -94955,3 +94955,88 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-08-06: us/main
+
+Branch: cherry-e7b59552d88d
+
+Commits:
+- e7b59552d88d MAINTAINERS: Replace Mediatek with N:
+- 3e9fa1d62e09 arm: dts: mediatek: add U-Boot dtsi overrides for Genio 510 and Genio 700
+- 729eadd987a6 clk: mediatek: mt8188: add missing clock in pericfg_ao
+- f309d23e3a17 configs: mediatek: do not autostart the watchdog on the Genio EVKs
+- dfde529a7806 clk: mediatek: mt8189: fix VLP_CK wrong parents
+- a29d3dd85b0a arm: dts: mt7623: remove duplicate topckgen override
+- 2c8577318ab8 clk: mediatek: mt7622: set parent flag for GATE_APMIXED()
+- 5d631beb2c21 clk: mediatek: add registration function for clock tree types
+- 269ba0588160 clk: mediaTek: mt7622: add clock tree type flags
+- f28ea3a26a39 clk: mediaTek: mt7623: add clock tree type flags
+- 72983e25535f clk: mediaTek: mt7629: add clock tree type flags
+- b1c0fb40d621 clk: mediaTek: mt7981: add clock tree type flags
+- de2cffba44c0 clk: mediaTek: mt7986: add clock tree type flags
+- 3bb8ad2397cd clk: mediaTek: mt7987: add clock tree type flags
+- eaeeab40b1ef clk: mediaTek: mt7988: add clock tree type flags
+- 7fb926c3cf9c clk: mediaTek: mt8183: add clock tree type flags
+- 8ae02df8a3d1 clk: mediaTek: mt8188: add clock tree type flags
+- 9ad117b8fce4 clk: mediaTek: mt8189: add clock tree type flags
+- 5c15fdc8e0b9 clk: mediaTek: mt8195: add clock tree type flags
+- 6795ecfb0a5d clk: mediaTek: mt8365: add clock tree type flags
+- ad5b38f0362f clk: mediaTek: mt8512: add clock tree type flags
+- 8a95973130ae clk: mediaTek: mt8516: add clock tree type flags
+- eac5696bb83c clk: mediaTek: mt8518: add clock tree type flags
+- 8ef0ad4c7a6d clk: mediatek: use registered provider for parent lookup
+- baf76de5958e clk: mediatek: drop parent udevice field
+- d50a79e8fc23 clk: mediatek: remove mtk_common_clk_infrasys_init()
+- c897d9f06e49 arm: dts: mt7981: remove clock-parent properties
+- 9a919ebebb0f arm: dts: mt7986: remove clock-parent properties
+- e3f5fd01d430 arm: dts: mt7988: remove clock-parent properties
+- f518796ffd86 clk: mediatek: mt7629: remove mt7629_peri_clk_tree
+- 9b52211d15d4 clk: mediatek: mt7622: unique driver names
+- e17d2af3c61b clk: mediatek: mt7623: unique driver names
+- 552431a59fb8 clk: mediatek: mt7629: unique driver names
+- 9b9ecfdba4c2 clk: mediatek: mt7981: unique driver names
+- ebe95d6a2782 clk: mediatek: mt7986: unique driver names
+- bd9bf2ad5eb2 clk: mediatek: mt7987: unique driver names
+- 9d111995f0e9 clk: mediatek: mt7988: unique driver names
+- aae6e3b156c6 clk: mediatek: mt8183: unique driver names
+- 9a441347791d clk: mediatek: mt8188: unique driver names
+- c99eaea4e9af clk: mediatek: mt8189: unique driver names
+- 82946f1797d6 clk: mediatek: mt8195: unique driver names
+- 98c458cd3220 clk: mediatek: mt8365: unique driver names
+- cc8cb613f4d0 clk: mediatek: mt8512: unique driver names
+- 3e69cd14e17a clk: mediatek: mt8516: unique driver names
+- f4f1287bd89d clk: mediatek: mt8518: unique driver names
+- 88364c9ebff3 power: domain: keep Makefile and Kconfig sorted
+- 76e2f6f221b6 configs: mediatek: drop unused CONFIG_MTK_POWER_DOMAIN
+- 0b4bfb0c9791 power: domain: mediatek: use MT7622 naming instead of MT7629
+- bd1621d61a79 power: domain: mediatek: use MT2701 naming instead of MT7623
+- 89e39800f5f5 power: domain: mediatek: remove enum scp_domain_type
+- f68a654213bf power: domain: mediatek: prefix internal identifiers with mtk_
+- e4f5c25c4307 power: domain: mediatek: constify scp_domain_data instances
+- 04175690d649 power: domain: mediatek: split into per-SoC drivers
+- 5543aafa390b power: domain: mediatek: wrap domain tables in struct scp_soc_data
+- 0d12605d9794 power: domain: mediatek: rename mtk_power_domain_probe to mtk_scpsys_probe
+- 7a82edf4c0f4 power: domain: mediatek: rename struct mtk_scp_domain to mtk_scpsys
+- a81e1f8a7cf2 power: domain: mediatek: add support for the power-controller model
+- 6c04714f5523 power: domain: mediatek: add MT8188 power domain driver
+- d0c49353a648 configs: mediatek: enable MT8188 power domain
+- 88226db737b2 Merge tag 'mediatek-for-main-2026-07-22' of https://git.u-boot-project.org/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+All non-merge cherry-picks succeeded cleanly. Now the merge commit:
+
+All 60 commits present (59 non-merge + 1 merge = 60). Final build test:
+
+All 60 cherry-picks complete on branch `cherry-e7b59552d88d`.
+
+**Final Status:**
+- ✅ Build: OK (sandbox builds clean)
+- ✅ All 60 commits present (59 regular + 1 merge)
+- ✅ No conflicts requiring manual resolution — all auto-merges succeeded cleanly
+- ✅ No fix-ups needed
+- ✅ No concerning deltas — every cherry-pick matched the original file/line counts
+- Note: The merge commit (`88226db737b2`) resulted in an empty commit as expected (its content was already captured by the individual cherry-picks that preceded it); preserved via `--allow-empty` per instructions.
+
+Branch is left ready for pushing (not merged anywhere).
+
+---
+
