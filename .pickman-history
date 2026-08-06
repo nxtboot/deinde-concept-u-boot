@@ -95040,3 +95040,48 @@ Branch is left ready for pushing (not merged anywhere).
 
 ---
 
+### Pipeline fix: 2026-08-06 (attempt 1)
+
+Branch: cherry-e7b59552d88d
+
+Failed jobs:
+- edison (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+
+### Conversation log
+All four failures are lab/infrastructure issues unrelated to the MR's code changes. No code fix is warranted.
+
+## Diagnosis
+
+**Job: edison** — `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid. To work simultaneously, labgrid can execute labgrid-client -p edison allow ellesmere/gitlab-runner`
+Lab-place contention: the physical board was already acquired by another labgrid user when the job started. This is an infrastructure state issue, not a code failure — the job never even built or ran U-Boot.
+
+**Job: vbe** — `labgrid-client: Error: place ff3399 is not acquired by your user, acquired by sglass. To work simultaneously, sglass can execute labgrid-client -p ff3399 allow ellesmere/gitlab-runner`
+Same class of failure as edison: the ff3399 place was held by another user (sglass) at job start. Job never ran.
+
+**Job: play** — Passed 22 tests, then hit `Lab failure: Timeout executing 'env import -d 80200000 - foo1 foo2 foo4': Marking connection bad`
+Serial/console timeout on the beagleplay during a mid-test `env import` command. Everything before the timeout ran normally; this is a lab flake (serial hang), not a functional regression.
+
+**Job: efi-x86_64-uboot-iso** — `Lab timeout: Marking connection bad — no other tests will run` during `Writing U-Boot using method qemu-efi-iso`
+Timed out while the flash/bootstrap step ran — transient lab timeout during QEMU EFI ISO writing. No sign of a code fault.
+
+## MR-code sanity check
+
+The MR is exclusively MediaTek clk/power-domain/dts changes (60 commits). None of the failing jobs test MediaTek boards:
+- edison → Intel Edison
+- play → TI AM62x beagleplay
+- vbe → sandbox VBE
+- efi-x86_64-uboot-iso → x86_64 EFI
+
+There is no plausible causal link between the MR's MediaTek-only changes and these lab failures. The prior fix (`select REGMAP`/`SYSCON` on `MTK_POWER_DOMAIN`) noted in the MR description remains in place.
+
+## Action taken
+
+No changes made. No `cherry-e7b59552d88d-fix1` branch created — these are transient lab-infrastructure failures (place contention on edison/vbe, serial timeouts on play/efi-x86_64-uboot-iso) that should be resolved by retrying the pipeline, not by amending commits.
+
+**Recommendation:** Retry the failing lab jobs. If they reproduce, escalate to lab admin (labgrid place ownership on edison/ff3399, serial-hang investigation on play/efi-x86_64-uboot-iso).
+
+---
+
