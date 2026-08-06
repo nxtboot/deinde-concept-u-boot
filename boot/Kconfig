@@ -1502,6 +1502,20 @@ config BOOTSTAGE_ACCUM_DT
 	  its own, so the totals are larger than without this option; use it
 	  to find where the calls come from, not to measure absolute time.
 
+config BOOTSTAGE_ACCUM_DM
+	bool "Measure the cost of binding devices from the devicetree"
+	depends on BOOTSTAGE
+	help
+	  Add bootstage accumulators to the code which binds a device for each
+	  devicetree node, splitting it into the compatible-string search and
+	  the bind itself. The report also shows how many nodes were scanned,
+	  how many asked to be bound before relocation and how many driver
+	  comparisons were needed.
+
+	  This is a diagnostic aid for boards where boot time is dominated by
+	  binding devices before relocation. Counting has a cost of its own,
+	  so use it to find where the work is, not to measure absolute time.
+
 config BOOTSTAGE_RECORD_COUNT
 	int "Number of boot stage records to store"
 	depends on BOOTSTAGE

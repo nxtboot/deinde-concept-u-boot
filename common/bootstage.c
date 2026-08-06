@@ -449,6 +449,8 @@ void bootstage_report(void)
 
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
 		fdt_parent_report();
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+		lists_bind_report();
 }
 
 /**

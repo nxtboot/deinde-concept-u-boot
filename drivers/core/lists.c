@@ -8,6 +8,7 @@
 
 #define LOG_CATEGORY LOGC_DM
 
+#include <bootstage.h>
 #include <debug_uart.h>
 #include <errno.h>
 #include <log.h>
@@ -196,6 +197,62 @@ static int driver_check_compatible(const struct udevice_id *of_match,
 	return -ENOENT;
 }
 
+/**
+ * enum dm_bind_stat - Things counted while binding devices
+ *
+ * @DM_BIND_NODES: Nodes considered for binding
+ * @DM_BIND_NOCOMPAT: Nodes which have no compatible string
+ * @DM_BIND_PRERELOC: Nodes which ask to be bound before relocation
+ * @DM_BIND_COMPATS: Compatible strings looked at
+ * @DM_BIND_CHECKS: Comparisons of a compatible string against a driver
+ * @DM_BIND_COUNT: Number of counts
+ */
+enum dm_bind_stat {
+	DM_BIND_NODES,
+	DM_BIND_NOCOMPAT,
+	DM_BIND_PRERELOC,
+	DM_BIND_COMPATS,
+	DM_BIND_CHECKS,
+
+	DM_BIND_COUNT,
+};
+
+#ifdef CONFIG_BOOTSTAGE_ACCUM_DM
+/**
+ * struct dm_bind_stats - Counts of the work done in binding devices
+ *
+ * These are for diagnosis only, to show where the time goes on a board which
+ * is slow to bind. Nothing in normal operation reads them, which is why they
+ * are behind BOOTSTAGE_ACCUM_DM
+ *
+ * @count: Number of times each thing happened, indexed by enum dm_bind_stat
+ */
+struct dm_bind_stats {
+	ulong count[DM_BIND_COUNT];
+};
+
+/* The counts live in .data since they are updated before relocation */
+static struct dm_bind_stats dm_bind __section(".data");
+
+static void dm_bind_inc(enum dm_bind_stat stat)
+{
+	dm_bind.count[stat]++;
+}
+
+void lists_bind_report(void)
+{
+	if (!dm_bind.count[DM_BIND_NODES])
+		return;
+	printf("\nBinding: %lu nodes (%lu without a compatible), %lu pre-reloc\n",
+	       dm_bind.count[DM_BIND_NODES], dm_bind.count[DM_BIND_NOCOMPAT],
+	       dm_bind.count[DM_BIND_PRERELOC]);
+	printf("         %lu compatible strings, %lu driver comparisons\n",
+	       dm_bind.count[DM_BIND_COMPATS], dm_bind.count[DM_BIND_CHECKS]);
+}
+#else
+static inline void dm_bind_inc(enum dm_bind_stat stat) {}
+#endif /* BOOTSTAGE_ACCUM_DM */
+
 int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 		   struct driver *drv, bool pre_reloc_only)
 {
@@ -208,6 +265,13 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 	int compat_length, i;
 	int ret = 0;
 
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM)) {
+		bootstage_start(BOOTSTAGE_ID_ACCUM_DM_BIND, "dm_bind");
+		dm_bind_inc(DM_BIND_NODES);
+		if (pre_reloc_only && ofnode_pre_reloc(node))
+			dm_bind_inc(DM_BIND_PRERELOC);
+	}
+
 	if (devp)
 		*devp = NULL;
 	name = ofnode_get_name(node);
@@ -215,6 +279,10 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 
 	compat_list = ofnode_get_property(node, "compatible", &compat_length);
 	if (!compat_list) {
+		if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM)) {
+			dm_bind_inc(DM_BIND_NOCOMPAT);
+			bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
+		}
 		if (compat_length == -FDT_ERR_NOTFOUND) {
 			log_debug("Device '%s' has no compatible string\n",
 				  name);
@@ -235,6 +303,8 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 		log_debug("   - attempt to match compatible string '%s'\n",
 			  compat);
 
+		dm_bind_inc(DM_BIND_COMPATS);
+
 		for (entry = driver; entry != driver + n_ents; entry++) {
 			/* Search for drivers with matching drv or existing of_match */
 			if (drv) {
@@ -246,6 +316,7 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 
 			id = NULL;
 			if (entry->of_match) {
+				dm_bind_inc(DM_BIND_CHECKS);
 				ret = driver_check_compatible(entry->of_match, &id,
 							      compat);
 				if (ret)
@@ -258,13 +329,20 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 				if (!ofnode_pre_reloc(node) &&
 				    !(entry->flags & DM_FLAG_PRE_RELOC)) {
 					log_debug("Skipping device pre-relocation\n");
+					if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+						bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
 					return 0;
 				}
 			}
 
+			if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+				bootstage_start(BOOTSTAGE_ID_ACCUM_DM_DEVBIND,
+						"dm_devbind");
 			ret = device_bind_with_driver_data(parent, entry, name,
 							   id ? id->data : 0, node,
 							   &dev);
+			if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+				bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_DEVBIND);
 			if (!drv && ret == -ENODEV) {
 				log_debug("   - Driver '%s' refuses to bind\n", entry->name);
 				continue;
@@ -272,11 +350,16 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 			if (ret) {
 				dm_warn("Error binding driver '%s': %d\n", entry->name,
 					ret);
+				if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+					bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
 				return log_msg_ret("bind", ret);
 			}
 
 			if (devp)
 				*devp = dev;
+
+			if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+				bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
 
 			return 0;
 		}
@@ -284,6 +367,9 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 
 	if (ret != -ENODEV)
 		log_debug("No match for node '%s'\n", name);
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+		bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
 
 	return 0;
 }

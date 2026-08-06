@@ -218,6 +218,9 @@ enum bootstage_id {
 	BOOTSTAGE_ID_ACCUM_DT_PARENT,
 	BOOTSTAGE_ID_ACCUM_DT_PARENT_R,
 	BOOTSTAGE_ID_ACCUM_SYSCON,
+	BOOTSTAGE_ID_ACCUM_DM_BIND,
+	BOOTSTAGE_ID_ACCUM_DM_MATCH,
+	BOOTSTAGE_ID_ACCUM_DM_DEVBIND,
 
 	/* a few spare for the user, from here */
 	BOOTSTAGE_ID_USER,
@@ -234,6 +237,14 @@ enum bootstage_id {
  * with the symbol table. Does nothing if none were recorded
  */
 void fdt_parent_report(void);
+
+/**
+ * lists_bind_report() - Show how much work binding devices needed
+ *
+ * Prints how many nodes were scanned, how many asked to be bound before
+ * relocation, and how many driver comparisons were done
+ */
+void lists_bind_report(void);
 
 /**
  * struct bootstage_record - information about a bootstage timing
