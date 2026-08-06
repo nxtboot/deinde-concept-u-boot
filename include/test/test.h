@@ -313,7 +313,17 @@ struct unit_test {
 /* Use ! and ~ so that all tests will be sorted between these two values */
 #define UNIT_TEST_ALL_START()	ll_entry_start(struct unit_test, ut_!)
 #define UNIT_TEST_ALL_END()	ll_entry_start(struct unit_test, ut_~)
-#define UNIT_TEST_ALL_COUNT()	(UNIT_TEST_ALL_END() - UNIT_TEST_ALL_START())
+/*
+ * Compute the count via byte arithmetic. Both boundary markers are aligned
+ * to CONFIG_LINKER_LIST_ALIGN, so the byte distance between them is not
+ * necessarily a multiple of sizeof(struct unit_test). Plain pointer
+ * subtraction is undefined behaviour in that case and, in practice, the
+ * compiler's exact-division helpers return garbage.
+ */
+#define UNIT_TEST_ALL_COUNT()						\
+	((unsigned int)((char *)UNIT_TEST_ALL_END() -			\
+			(char *)UNIT_TEST_ALL_START()) /		\
+	 sizeof(struct unit_test))
 
 /* Sizes for devres tests */
 enum {
