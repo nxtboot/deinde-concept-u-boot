@@ -239,6 +239,21 @@ enum bootstage_id {
 void fdt_parent_report(void);
 
 /**
+ * dt_addr_record() - Note that a node's address was resolved from a flat tree
+ *
+ * @offset: Offset of the node whose address was read
+ */
+void dt_addr_record(int offset);
+
+/**
+ * dt_addr_report() - Show how many flat-tree address reads were repeated
+ *
+ * Prints how many addresses were resolved and how many of those were for a
+ * node which had already been read. Does nothing if none were recorded
+ */
+void dt_addr_report(void);
+
+/**
  * lists_bind_report() - Show how much work binding devices needed
  *
  * Prints how many nodes were scanned, how many asked to be bound before

@@ -92,6 +92,42 @@ fdt_addr_t devfdt_get_addr_index_parent(const struct udevice *dev, int index,
 }
 #endif
 
+#if CONFIG_IS_ENABLED(OF_REAL)
+#ifdef CONFIG_BOOTSTAGE_ACCUM_DT
+/* Track which nodes had an address resolved, to show up repeated work */
+#define DT_ADDR_NODES	64
+static int dt_addr_node[DT_ADDR_NODES] __section(".data");
+static uint dt_addr_stored __section(".data");
+static ulong dt_addr_total __section(".data");
+static ulong dt_addr_repeat __section(".data");
+
+void dt_addr_record(int offset)
+{
+	uint i;
+
+	dt_addr_total++;
+	for (i = 0; i < dt_addr_stored; i++) {
+		if (dt_addr_node[i] == offset) {
+			dt_addr_repeat++;
+			return;
+		}
+	}
+	if (dt_addr_stored < DT_ADDR_NODES)
+		dt_addr_node[dt_addr_stored++] = offset;
+}
+
+void dt_addr_report(void)
+{
+	ulong distinct = dt_addr_total;
+
+	distinct -= dt_addr_repeat;
+	if (dt_addr_total)
+		printf("\nFlat address reads: %lu total, %lu distinct, %lu repeated\n",
+		       dt_addr_total, distinct, dt_addr_repeat);
+}
+#endif /* BOOTSTAGE_ACCUM_DT */
+#endif /* OF_REAL */
+
 fdt_addr_t devfdt_get_addr_index(const struct udevice *dev, int index)
 {
 #if CONFIG_IS_ENABLED(OF_REAL)
@@ -101,6 +137,8 @@ fdt_addr_t devfdt_get_addr_index(const struct udevice *dev, int index)
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
 		bootstage_start(BOOTSTAGE_ID_ACCUM_DT_ADDR, "dt_addr");
 	offset = dev_of_offset(dev);
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		dt_addr_record(offset);
 	parent = fdt_parent_offset(gd->fdt_blob, offset);
 	addr = devfdt_get_addr_index_parent(dev, index, offset, parent);
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))

@@ -835,8 +835,11 @@ static fdt_addr_t __ofnode_get_addr_size_index(ofnode node, int index,
 {
 	fdt_addr_t addr;
 
-	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT)) {
 		bootstage_start(BOOTSTAGE_ID_ACCUM_DT_ADDR, "dt_addr");
+		if (!ofnode_is_np(node))
+			dt_addr_record(ofnode_to_offset(node));
+	}
 	addr = ___ofnode_get_addr_size_index(node, index, size, translate);
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
 		bootstage_accum(BOOTSTAGE_ID_ACCUM_DT_ADDR);

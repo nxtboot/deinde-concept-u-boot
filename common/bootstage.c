@@ -447,8 +447,10 @@ void bootstage_report(void)
 			prev = print_time_record(rec, -1);
 	}
 
-	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT)) {
 		fdt_parent_report();
+		dt_addr_report();
+	}
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
 		lists_bind_report();
 }
