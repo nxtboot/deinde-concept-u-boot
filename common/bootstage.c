@@ -23,6 +23,12 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * Result of the last unstash, kept so that it can be shown once the console
+ * is up. This is set before relocation, so it must not live in bss
+ */
+int bootstage_unstash_err __section(".data");
+
 enum {
 	RECORD_COUNT = CONFIG_VAL(BOOTSTAGE_RECORD_COUNT),
 };
@@ -431,6 +437,9 @@ void bootstage_report(void)
 		       "Please increase CONFIG_(PHASE_)BOOTSTAGE_RECORD_COUNT\n",
 		       data->rec_count - RECORD_COUNT);
 
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH) && bootstage_unstash_err)
+		printf("Unstash failed: err=%d\n", bootstage_unstash_err);
+
 	puts("\nAccumulated time:\n");
 	for (i = 0, rec = data->record; i < data->rec_count; i++, rec++) {
 		if (rec->start_us)
@@ -622,7 +631,10 @@ int _bootstage_unstash_default(void)
 		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR,
 				   CONFIG_BOOTSTAGE_STASH_SIZE);
 
-	return bootstage_unstash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
+	bootstage_unstash_err = bootstage_unstash(stash,
+						 CONFIG_BOOTSTAGE_STASH_SIZE);
+
+	return bootstage_unstash_err;
 }
 #endif
 

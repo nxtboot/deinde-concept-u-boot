@@ -856,11 +856,14 @@ static int initf_bootstage(void)
 	if (ret)
 		return ret;
 	if (from_spl) {
+		/*
+		 * Losing the timing from an earlier phase is not a reason to
+		 * stop booting. This runs before the console is up, so failing
+		 * here would hang the board with no indication of why
+		 */
 		ret = bootstage_unstash_default();
-		if (ret && ret != -ENOENT) {
+		if (ret && ret != -ENOENT)
 			debug("Failed to unstash bootstage: err=%d\n", ret);
-			return ret;
-		}
 	}
 
 	bootstage_mark_name(BOOTSTAGE_ID_START_UBOOT_F, "board_init_f");
