@@ -1648,6 +1648,18 @@
 		status = "disabled";
 	};
 
+	/*
+	 * Used to check ofnode_pre_reloc(). Neither has a compatible string,
+	 * so that adding them does not change what binds
+	 */
+	pre-reloc-later {
+		bootph-pre-ram;
+	};
+
+	pre-reloc-none {
+		some-prop;
+	};
+
 	resetc_fb: reset-ctl-fallback {
 		compatible = "sandbox,reset-ctl-fallback-only";
 		#reset-cells = <1>;
