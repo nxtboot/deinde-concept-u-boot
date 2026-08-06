@@ -1704,10 +1704,17 @@ bool ofnode_pre_reloc(ofnode node)
 	/*
 	 * In regular builds individual spl and tpl handling both
 	 * count as handled pre-relocation for later second init.
+	 *
+	 * Before relocation these can only produce false, so skip reading
+	 * them. Each read scans the node's properties, which is expensive
+	 * while the caches are still off
 	 */
+	if (!(gd->flags & GD_FLG_RELOC))
+		return false;
+
 	if (ofnode_read_bool(node, "bootph-pre-ram") ||
 	    ofnode_read_bool(node, "bootph-pre-sram"))
-		return gd->flags & GD_FLG_RELOC;
+		return true;
 
 	return false;
 #endif
