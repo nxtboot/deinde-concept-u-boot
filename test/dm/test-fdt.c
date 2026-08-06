@@ -14,6 +14,7 @@
 #include <dm/read.h>
 #include <dm/root.h>
 #include <dm/device-internal.h>
+#include <dm/lists.h>
 #include <dm/devres.h>
 #include <dm/uclass-internal.h>
 #include <dm/util.h>
@@ -574,6 +575,41 @@ U_BOOT_DRIVER(fdt_dummy_drv) = {
 	.of_match	= fdt_dummy_ids,
 	.id	= UCLASS_TEST_DUMMY,
 };
+
+/*
+ * Check that binding before relocation considers every driver which
+ * matches, not just the first. The node here matches two drivers and only
+ * the second may be bound early, so the first must be passed over rather
+ * than the node being skipped altogether
+ */
+static int dm_test_fdt_pre_reloc_driver(struct unit_test_state *uts)
+{
+	struct udevice *dev;
+	ofnode node;
+
+	node = ofnode_path("/order-test");
+	ut_assert(ofnode_valid(node));
+
+	/* With no restriction the first matching driver is used */
+	dev = NULL;
+	ut_assertok(lists_bind_fdt(gd->dm_root, node, &dev, NULL, false));
+	ut_assertnonnull(dev);
+	ut_asserteq_str("testfdt_order1_drv", dev->driver->name);
+	ut_assertok(device_unbind(dev));
+
+	/*
+	 * The node does not ask to be bound before relocation, so only a
+	 * driver which does can be used. That is the second one
+	 */
+	dev = NULL;
+	ut_assertok(lists_bind_fdt(gd->dm_root, node, &dev, NULL, true));
+	ut_assertnonnull(dev);
+	ut_asserteq_str("testfdt_order2_drv", dev->driver->name);
+	ut_assertok(device_unbind(dev));
+
+	return 0;
+}
+DM_TEST(dm_test_fdt_pre_reloc_driver, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 static int dm_test_fdt_translation(struct unit_test_state *uts)
 {

@@ -195,6 +195,30 @@ U_BOOT_DRIVER(testfdt1_drv) = {
 	.flags = DM_FLAG_PRE_RELOC,
 };
 
+/*
+ * Two drivers matching the same compatible string, used to check that
+ * binding before relocation picks the one with DM_FLAG_PRE_RELOC rather
+ * than giving up at the first match. The linker list is ordered by driver
+ * name, so testfdt_order1_drv is seen first
+ */
+static const struct udevice_id testfdt_order_ids[] = {
+	{ .compatible = "denx,u-boot-order-test" },
+	{ }
+};
+
+U_BOOT_DRIVER(testfdt_order1_drv) = {
+	.name	= "testfdt_order1_drv",
+	.of_match	= testfdt_order_ids,
+	.id	= UCLASS_TEST_FDT,
+};
+
+U_BOOT_DRIVER(testfdt_order2_drv) = {
+	.name	= "testfdt_order2_drv",
+	.of_match	= testfdt_order_ids,
+	.id	= UCLASS_TEST_FDT,
+	.flags = DM_FLAG_PRE_RELOC,
+};
+
 /* From here is the testfdt uclass code */
 int testfdt_ping(struct udevice *dev, int pingval, int *pingret)
 {

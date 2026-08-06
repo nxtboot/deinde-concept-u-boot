@@ -262,13 +262,22 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 	struct driver *entry;
 	struct udevice *dev;
 	const char *name, *compat_list, *compat;
+	bool node_pre_reloc = false;
 	int compat_length, i;
 	int ret = 0;
 
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM)) {
 		bootstage_start(BOOTSTAGE_ID_ACCUM_DM_BIND, "dm_bind");
 		dm_bind_inc(DM_BIND_NODES);
-		if (pre_reloc_only && ofnode_pre_reloc(node))
+	}
+
+	/*
+	 * Work out once whether the node itself asks to be bound before
+	 * relocation, rather than for each driver which matches it
+	 */
+	if (pre_reloc_only) {
+		node_pre_reloc = ofnode_pre_reloc(node);
+		if (node_pre_reloc)
 			dm_bind_inc(DM_BIND_PRERELOC);
 	}
 
@@ -314,6 +323,19 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 				continue;
 			}
 
+			/*
+			 * Before relocation a device can only bind if its node
+			 * asks for it, or the driver does. Check the flag first,
+			 * since comparing the compatible strings is far more
+			 * expensive: it runs over every driver for every node,
+			 * with the caches still off
+			 */
+			if (pre_reloc_only && !node_pre_reloc &&
+			    !(entry->flags & DM_FLAG_PRE_RELOC)) {
+				log_debug("Skipping device pre-relocation\n");
+				continue;
+			}
+
 			id = NULL;
 			if (entry->of_match) {
 				dm_bind_inc(DM_BIND_CHECKS);
@@ -323,16 +345,6 @@ int lists_bind_fdt(struct udevice *parent, ofnode node, struct udevice **devp,
 					continue;
 				log_debug("   - found match at driver '%s' for '%s'\n",
 					  entry->name, id->compatible);
-			}
-
-			if (pre_reloc_only) {
-				if (!ofnode_pre_reloc(node) &&
-				    !(entry->flags & DM_FLAG_PRE_RELOC)) {
-					log_debug("Skipping device pre-relocation\n");
-					if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
-						bootstage_accum(BOOTSTAGE_ID_ACCUM_DM_BIND);
-					return 0;
-				}
 			}
 
 			if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
