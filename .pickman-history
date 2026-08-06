@@ -95159,3 +95159,31 @@ Same labgrid place-contention as attempt 1: `place edison is not acquired by you
 
 ---
 
+## 2026-08-06: us/main
+
+Branch: cherry-eecc4148fe61
+
+Commits:
+- eecc4148fe61 tools: mkimage: fix stale data pointer in fit_import_data()
+- 7551ce097779 test: py: add regression test for fit_import_data() stale state
+- aa4ca3e1bc6e Merge patch series "tools: mkimage: fix stale data pointer in fit_import_data()"
+
+### Conversation log
+Matches perfectly. Now build test:
+
+All 3 commits cherry-picked successfully.
+
+**Final Status:**
+
+- **Build result:** OK (sandbox build passed on all 3 cherry-picks)
+- **Commits present on branch `cherry-eecc4148fe61`:**
+  - `f230ad9a1769` — tools: mkimage: fix stale data pointer in fit_import_data() (1 file, +2/-2, matches original exactly)
+  - `05a05357f4c8` — test: py: add regression test for fit_import_data() stale state (1 new file, +89, matches original exactly)
+  - `07faa8041050` — Merge patch series "tools: mkimage: fix stale data pointer in fit_import_data()" (empty merge commit, preserved with `--allow-empty`)
+- **Fix-ups:** None to the code. The merge commit landed empty (as expected) and was preserved via `--allow-empty`; I amended it to add the `(cherry picked from commit aa4ca3e1bc6ec1367af2f7d08e4ada31c01d8311)` trailer since the initial `-x` didn't attach it after the empty-commit halt.
+- **Concerning deltas:** None. Both non-merge cherry-picks matched original stats exactly.
+
+Branch is ready to push.
+
+---
+
