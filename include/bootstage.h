@@ -290,7 +290,7 @@ void show_boot_progress(int val);
  * relocation, since memory can be overwritten later.
  * Return: Always returns 0, to indicate success
  */
-int bootstage_relocate(void *to);
+int bootstage_relocate(void *to, int size);
 
 /**
  * Add a new bootstage record
@@ -460,7 +460,7 @@ static inline ulong bootstage_add_record(enum bootstage_id id,
  * and won't even do that unless CONFIG_SHOW_BOOT_PROGRESS is defined
  */
 
-static inline int bootstage_relocate(void *to)
+static inline int bootstage_relocate(void *to, int size)
 {
 	return 0;
 }

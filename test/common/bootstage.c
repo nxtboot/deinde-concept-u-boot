@@ -244,6 +244,62 @@ static int test_bootstage_get_rec(struct unit_test_state *uts)
 }
 COMMON_TEST(test_bootstage_get_rec, 0);
 
+/* Test that relocation stays inside the space which was reserved for it */
+static int test_bootstage_relocate(struct unit_test_state *uts)
+{
+	struct bootstage_data *orig = gd->bootstage;
+	const struct bootstage_record *rec;
+	int count, size, small;
+	char *buf, *small_buf;
+
+	count = bootstage_get_rec_count();
+	ut_assert(count > 0);
+
+	/*
+	 * An accumulator creates its record without a name, so this checks
+	 * that a nameless record is handled the same way everywhere
+	 */
+	bootstage_accum(BOOTSTAGE_ID_USER + 60);
+
+	size = bootstage_get_size(true);
+	buf = malloc(size + 4);
+	ut_assertnonnull(buf);
+	strcpy(buf + size, "grd");
+
+	ut_assertok(bootstage_relocate(buf, size));
+
+	/* Nothing may be written past the space which was reserved */
+	ut_asserteq_str("grd", buf + size);
+
+	/* The names must have come across */
+	rec = bootstage_get_rec(0);
+	ut_assertnonnull(rec);
+	ut_asserteq_str("reset", rec->name);
+
+	/*
+	 * Records can be added after the space is reserved, so relocation must
+	 * cope with there being too little room for the names. Use a buffer of
+	 * exactly the smaller size, so that writing past it is detected
+	 */
+	small = size - 20;
+	ut_assert(small > 0);
+	small_buf = malloc(small + 4);
+	ut_assertnonnull(small_buf);
+	strcpy(small_buf + small, "grd");
+
+	gd->bootstage = orig;
+	ut_assertok(bootstage_relocate(small_buf, small));
+	ut_asserteq_str("grd", small_buf + small);
+
+	gd->bootstage = orig;
+	bootstage_set_rec_count(count);
+	free(small_buf);
+	free(buf);
+
+	return 0;
+}
+COMMON_TEST(test_bootstage_relocate, 0);
+
 #if IS_ENABLED(CONFIG_BOOTSTAGE_STASH)
 /* Test that records survive a stash and unstash */
 static int test_bootstage_stash(struct unit_test_state *uts)

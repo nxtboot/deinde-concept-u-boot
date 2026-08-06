@@ -47,11 +47,15 @@ struct bootstage_hdr {
 	u32 next_id;		/* Next ID to use for bootstage */
 };
 
-int bootstage_relocate(void *to)
+static const char *get_record_name(char *buf, int len,
+				   const struct bootstage_record *rec);
+
+int bootstage_relocate(void *to, int size)
 {
 	struct bootstage_data *data;
+	char *ptr, *end;
+	char buf[20];
 	int i;
-	char *ptr;
 
 	debug("Copying bootstage from %p to %p\n", gd->bootstage, to);
 	memcpy(to, gd->bootstage, sizeof(struct bootstage_data));
@@ -59,6 +63,7 @@ int bootstage_relocate(void *to)
 
 	/* Figure out where to relocate the strings to */
 	ptr = (char *)(data + 1);
+	end = (char *)to + size;
 
 	/*
 	 * Duplicate all strings.  They may point to an old location in the
@@ -66,11 +71,24 @@ int bootstage_relocate(void *to)
 	 */
 	debug("Relocating %d records\n", data->rec_count);
 	for (i = 0; i < data->rec_count; i++) {
-		const char *from = data->record[i].name;
+		const char *from;
+		int len;
 
-		strcpy(ptr, from);
+		from = get_record_name(buf, sizeof(buf), &data->record[i]);
+		len = strlen(from) + 1;
+
+		/*
+		 * The space was reserved earlier in board_init_f(), so any
+		 * record added since then may not fit. Leave the remaining
+		 * names where they are rather than writing out of bounds
+		 */
+		if (ptr + len > end) {
+			log_warning("Bootstage: no room to relocate names\n");
+			break;
+		}
+		memcpy(ptr, from, len);
 		data->record[i].name = ptr;
-		ptr += strlen(ptr) + 1;
+		ptr += len;
 	}
 
 	return 0;
@@ -616,10 +634,16 @@ int bootstage_get_size(bool add_strings)
 	if (add_strings) {
 		struct bootstage_data *data = gd->bootstage;
 		struct bootstage_record *rec;
+		char buf[20];
 		int i;
 
+		/*
+		 * Use the same name as the other users, since a record made by
+		 * an accumulator has none of its own
+		 */
 		for (rec = data->record, i = 0; i < data->rec_count; i++, rec++)
-			size += strlen(rec->name) + 1;
+			size += strlen(get_record_name(buf, sizeof(buf), rec)) +
+				1;
 	}
 
 	return size;
