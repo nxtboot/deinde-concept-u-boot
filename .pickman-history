@@ -95122,3 +95122,40 @@ Local vs remote diff: only a pickman bookkeeping commit differs — no U-Boot co
 
 ---
 
+### Pipeline fix: 2026-08-06 (attempt 2)
+
+Branch: cherry-e7b59552d88d
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- edison (sjg-lab)
+
+### Conversation log
+Rebase succeeded. Verify the fix landed in the right commit:
+
+Done. Branch `cherry-e7b59552d88d-fix2` is ready locally (head c756ba7489fa).
+
+## Report
+
+### Job: build all 64bit ARM platforms — code failure, fixed
+
+**Root cause:** The MT8188 boards (mt8370_genio_510_evk, mt8390_genio_700_evk) fail to link because `mtk-power-domain.c` calls `syscon_node_to_regmap()` and `regmap_get_range()` but nothing enables `SYSCON`/`REGMAP` for them.
+
+**Why attempt 2 still failed:** This is the *same* failure diagnosed in the original review response. That fix (`select REGMAP`/`select SYSCON` on `MTK_POWER_DOMAIN`) was made on the local branch `cherry-e7b59552d88d-v2` but **was never actually pushed to the remote** — the MR head (99c9418776c4) does not contain the Kconfig change, despite the earlier report claiming it was force-pushed and "remains in place". The pipeline therefore rebuilt the unfixed code and hit the identical link error.
+
+**Responsible commit:** 7866552894b1 → now 181972f07997, "power: domain: mediatek: add support for the power-controller model" — the commit introducing the syscon/regmap usage.
+
+**Fix applied:** Re-applied the two-line change to `drivers/power/domain/Kconfig` (`select REGMAP` + `select SYSCON` in `config MTK_POWER_DOMAIN`), folded into the responsible commit via `rf 7` with a `[pickman]` note appended to its message. All 63 commits preserved, including the flattened merge commit.
+
+**Verified:**
+- `um build sandbox` — clean
+- `buildman mt8370_genio_510_evk mt8390_genio_700_evk` — both build OK; `u-boot.cfg` confirms `CONFIG_REGMAP`/`CONFIG_SYSCON` are now set
+
+### Job: edison — infrastructure, no change needed
+
+Same labgrid place-contention as attempt 1: `place edison is not acquired by your user, acquired by labgrid` (held by kea/labgrid). The job never built or ran U-Boot. Retry once the place is released; no code change is warranted.
+
+**Not pushed** — caller handles that. Pushing fix2 this time is essential, since the previous attempt's fix was lost by not being pushed.
+
+---
+
