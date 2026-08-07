@@ -95395,3 +95395,38 @@ tk1, ff3399, vbe are also labgrid acquisition issues. But bpif3 and vf2 exit wit
 
 ---
 
+### Review: 2026-08-06
+
+Branch: cherry-33e63831080d
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) zybo, edison, play, vbe, tk1, bpif3, vf2, ff3399.
+
+Sam...
+
+### Conversation log
+Build passes. Now create the -v2 branch and push:
+
+Done. Summary of what happened:
+
+## Report
+
+**Comment analysis:** The single review comment (`project_1_bot_...`) is the bot's own record of "Pipeline fix (attempt 1)". It contains the diagnosis that all 8 failed sjg-lab jobs were infrastructure failures:
+- **zybo, edison, play, tk1, vbe, ff3399** — labgrid place-acquisition contention (places held by another user/session)
+- **vf2** — SD-mux/card flakiness (BootROM could not read the SD card; SPL never ran)
+- **bpif3** — USB/BootROM flakiness (FSBL never started over USB)
+
+No code change was requested or needed, so no commits were amended and no fixup was added.
+
+**Actions taken:**
+1. Checked out `cherry-33e63831080d` (HEAD: 74a77afcab71, which includes the pickman pipeline-fix record on top of the previously verified f813141ecffc)
+2. Verified the build: `buildman -L --board sandbox` — 1 board built cleanly, no warnings
+3. Created local snapshot branch `cherry-33e63831080d-v2`
+4. Pushed to the original remote branch: `f813141ecffc..74a77afcab71 -> cherry-33e63831080d` on the `ci` remote, which triggers a fresh MR pipeline for !1252
+
+**Suggested MR reply:**
+
+> All 8 job failures in the previous pipeline were lab infrastructure issues (labgrid place contention for zybo/edison/play/tk1/vbe/ff3399; SD-mux flakiness on vf2; USB/BootROM flakiness on bpif3) — none reached U-Boot code, so no source changes were needed. The branch has been re-pushed unchanged to trigger a fresh pipeline. If the labgrid places are still held by stale acquisitions, they may need to be released before the jobs can pass.
+
+---
+
