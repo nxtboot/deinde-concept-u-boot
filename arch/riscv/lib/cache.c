@@ -167,8 +167,7 @@ __weak int dcache_status(void)
 
 __weak void enable_caches(void)
 {
-	if (!riscv_zicbom_init())
-		log_info("Zicbom not initialized.\n");
+	riscv_zicbom_init();
 }
 
 int __weak pgprot_set_attrs(phys_addr_t addr, size_t size, enum pgprot_attrs perm)
