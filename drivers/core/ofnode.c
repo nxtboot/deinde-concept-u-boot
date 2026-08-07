@@ -6,6 +6,7 @@
 
 #define LOG_CATEGORY	LOGC_DT
 
+#include <bootstage.h>
 #include <dm.h>
 #include <fdtdec.h>
 #include <fdt_support.h>
@@ -825,8 +826,29 @@ ofnode oftree_get_by_phandle(oftree tree, uint phandle)
 	return node;
 }
 
+static fdt_addr_t ___ofnode_get_addr_size_index(ofnode node, int index,
+						fdt_size_t *size,
+						bool translate);
+
 static fdt_addr_t __ofnode_get_addr_size_index(ofnode node, int index,
 					       fdt_size_t *size, bool translate)
+{
+	fdt_addr_t addr;
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT)) {
+		bootstage_start(BOOTSTAGE_ID_ACCUM_DT_ADDR, "dt_addr");
+		if (!ofnode_is_np(node))
+			dt_addr_record(ofnode_to_offset(node));
+	}
+	addr = ___ofnode_get_addr_size_index(node, index, size, translate);
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_accum(BOOTSTAGE_ID_ACCUM_DT_ADDR);
+
+	return addr;
+}
+
+static fdt_addr_t ___ofnode_get_addr_size_index(ofnode node, int index,
+						fdt_size_t *size, bool translate)
 {
 	int na, ns;
 
@@ -1665,6 +1687,56 @@ int ofnode_read_simple_size_cells(ofnode node)
 				      ofnode_to_offset(node));
 }
 
+#if !defined(CONFIG_XPL_BUILD) && !defined(CONFIG_TPL_BUILD) && \
+	CONFIG_IS_ENABLED(OF_PRERELOC_FAST)
+/**
+ * ofnode_has_any_prop() - Check whether a node has any of some properties
+ *
+ * Looking up a property in a flat tree scans the node's property list, so
+ * checking several names separately scans it several times. Walk the list
+ * once instead, comparing each property against all the names. The live
+ * tree has no such problem, so it uses the normal lookup
+ *
+ * @node: Node to check
+ * @names: List of property names to look for
+ * @count: Number of entries in @names
+ * Return: true if any of the properties is present
+ */
+static bool ofnode_has_any_prop(ofnode node, const char * const names[],
+				int count)
+{
+	int i;
+
+	if (ofnode_is_np(node)) {
+		for (i = 0; i < count; i++) {
+			if (ofnode_read_bool(node, names[i]))
+				return true;
+		}
+
+		return false;
+	}
+
+	if (CONFIG_IS_ENABLED(OF_REAL)) {
+		const void *fdt = ofnode_to_fdt(node);
+		int prop;
+
+		fdt_for_each_property_offset(prop, fdt,
+					     ofnode_to_offset(node)) {
+			const char *name;
+
+			if (!fdt_getprop_by_offset(fdt, prop, &name, NULL))
+				continue;
+			for (i = 0; i < count; i++) {
+				if (!strcmp(name, names[i]))
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+#endif /* !XPL_BUILD && !TPL_BUILD */
+
 bool ofnode_pre_reloc(ofnode node)
 {
 #if defined(CONFIG_XPL_BUILD) || defined(CONFIG_TPL_BUILD)
@@ -1673,6 +1745,32 @@ bool ofnode_pre_reloc(ofnode node)
 	 * They are removed in final dtb (fdtgrep 2nd pass)
 	 */
 	return true;
+#elif CONFIG_IS_ENABLED(OF_PRERELOC_FAST)
+	static const char * const early[] = {
+		"bootph-all",
+		"bootph-some-ram",
+	};
+	/*
+	 * In regular builds individual spl and tpl handling both
+	 * count as handled pre-relocation for later second init.
+	 */
+	static const char * const later[] = {
+		"bootph-pre-ram",
+		"bootph-pre-sram",
+	};
+
+	if (ofnode_has_any_prop(node, early, ARRAY_SIZE(early)))
+		return true;
+
+	/*
+	 * Before relocation the remaining properties can only produce false,
+	 * so do not read them. Each read scans the node's property list,
+	 * which is expensive while the caches are still off
+	 */
+	if (!(gd->flags & GD_FLG_RELOC))
+		return false;
+
+	return ofnode_has_any_prop(node, later, ARRAY_SIZE(later));
 #else
 	if (ofnode_read_bool(node, "bootph-all"))
 		return true;

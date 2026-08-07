@@ -544,6 +544,36 @@ static int dm_test_ofnode_get_child_count(struct unit_test_state *uts)
 DM_TEST(dm_test_ofnode_get_child_count,
 	UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
+/*
+ * Test ofnode_pre_reloc(), which decides whether a node is wanted before
+ * relocation. It looks for two sets of properties, so check one of each as
+ * well as a node with neither. This runs for both the flat and the live
+ * tree, which read the properties in different ways
+ */
+static int dm_test_ofnode_pre_reloc(struct unit_test_state *uts)
+{
+	/* bootph-all asks for every phase */
+	ut_assert(ofnode_pre_reloc(ofnode_path("/a-test")));
+
+	/* bootph-some-ram is in the same set */
+	ut_assert(ofnode_pre_reloc(ofnode_path("/reset@0")));
+
+	/*
+	 * bootph-pre-ram is in the second set, which counts once U-Boot
+	 * proper has relocated, as it has by the time tests run
+	 */
+	ut_assert(ofnode_pre_reloc(ofnode_path("/pre-reloc-later")));
+
+	/* A node asking for nothing is not wanted early */
+	ut_assert(!ofnode_pre_reloc(ofnode_path("/pre-reloc-none")));
+
+	/* Nor is one which only has an unrelated bootph-like property */
+	ut_assert(!ofnode_pre_reloc(ofnode_path("/reset-ctl")));
+
+	return 0;
+}
+DM_TEST(dm_test_ofnode_pre_reloc, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
 /* test ofnode_get_child_count() with 'other' tree */
 static int dm_test_ofnode_get_child_count_ot(struct unit_test_state *uts)
 {

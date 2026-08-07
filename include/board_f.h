@@ -27,6 +27,10 @@ struct board_f {
 	 */
 	struct bootstage_data *new_bootstage;
 	/**
+	 * @bootstage_size: space reserved for relocated boot stage information
+	 */
+	int bootstage_size;
+	/**
 	 * @new_bloblist: relocated blob list information
 	 */
 	struct bloblist_hdr *new_bloblist;

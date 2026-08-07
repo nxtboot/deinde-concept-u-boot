@@ -1103,6 +1103,19 @@ config OF_LIBFDT
 	  particular compatible nodes. The library operates on a flattened
 	  version of the device tree.
 
+config OF_PRERELOC_FAST
+	bool "Speed up devicetree access before relocation"
+	depends on OF_LIBFDT
+	default y
+	help
+	  Reading the devicetree before relocation is slow, since the caches
+	  are still off: every property read scans the node's property list
+	  and finding a parent walks the tree from the root.
+
+	  Enable this to do that work in fewer passes, which costs a few
+	  hundred bytes of code. Turn it off on boards which are short of
+	  space and do not care how long they take to start.
+
 config OF_LIBFDT_ASSUME_MASK
 	hex "Mask of conditions to assume for libfdt"
 	depends on OF_LIBFDT || FIT

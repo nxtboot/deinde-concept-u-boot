@@ -1639,6 +1639,27 @@
 		#reset-cells = <1>;
 	};
 
+	/*
+	 * Matched by two drivers, only the second of which may bind before
+	 * relocation. Disabled so that it is bound only by the test
+	 */
+	order-test {
+		compatible = "denx,u-boot-order-test";
+		status = "disabled";
+	};
+
+	/*
+	 * Used to check ofnode_pre_reloc(). Neither has a compatible string,
+	 * so that adding them does not change what binds
+	 */
+	pre-reloc-later {
+		bootph-pre-ram;
+	};
+
+	pre-reloc-none {
+		some-prop;
+	};
+
 	resetc_fb: reset-ctl-fallback {
 		compatible = "sandbox,reset-ctl-fallback-only";
 		#reset-cells = <1>;

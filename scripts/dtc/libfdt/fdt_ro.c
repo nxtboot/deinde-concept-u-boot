@@ -670,7 +670,37 @@ int fdt_node_depth(const void *fdt, int nodeoffset)
 
 int fdt_parent_offset(const void *fdt, int nodeoffset)
 {
-	int nodedepth = fdt_node_depth(fdt, nodeoffset);
+#if FDT_PARENT_MAX_DEPTH
+	int supernode[FDT_PARENT_MAX_DEPTH];
+	int offset, depth;
+#endif
+	int nodedepth;
+
+#if FDT_PARENT_MAX_DEPTH
+	FDT_RO_PROBE(fdt);
+
+	/*
+	 * Walk the tree once, remembering the most recent node seen at each
+	 * depth. On reaching the target node, its parent is the last node
+	 * seen one level up
+	 *
+	 * The depth goes negative once the walk moves past the root, which
+	 * happens when nodeoffset does not name a node. Fall back in that
+	 * case, so that the checks below reject it
+	 */
+	for (offset = 0, depth = 0;
+	     offset >= 0 && offset <= nodeoffset;
+	     offset = fdt_next_node(fdt, offset, &depth)) {
+		if (depth < 0 || depth >= FDT_PARENT_MAX_DEPTH)
+			break;
+		supernode[depth] = offset;
+		if (offset == nodeoffset)
+			return depth ? supernode[depth - 1] :
+				-FDT_ERR_NOTFOUND;
+	}
+#endif /* FDT_PARENT_MAX_DEPTH */
+
+	nodedepth = fdt_node_depth(fdt, nodeoffset);
 
 	if (nodedepth < 0)
 		return nodedepth;

@@ -1472,6 +1472,43 @@ static int of_translate_one(const void *blob, int parent, struct of_bus *bus,
 	return pbus->translate(addr, offset, pna);
 }
 
+/* Deepest tree handled by fdt_node_ancestors(), which is more than enough */
+#define OF_MAX_DEPTH	32
+
+/**
+ * fdt_node_ancestors() - Collect the ancestors of a node in one pass
+ *
+ * Walk the tree once from the root, remembering the most recent node seen at
+ * each depth. On reaching @node those are exactly its ancestors, with the
+ * root first and the immediate parent last. This costs a single walk, where
+ * asking fdt_parent_offset() for each level in turn costs one walk per level.
+ *
+ * @blob: Devicetree blob
+ * @node: Offset of the node whose ancestors are wanted
+ * @anc: Returns the ancestors, root first, with @anc[depth - 1] the parent
+ * @max: Number of entries available in @anc
+ * Return: depth of @node, so the number of ancestors written, or -1 if the
+ *	node is not found or the tree is deeper than @max
+ */
+static int fdt_node_ancestors(const void *blob, int node, int *anc, int max)
+{
+	int off, depth;
+
+	if (!CONFIG_IS_ENABLED(OF_PRERELOC_FAST))
+		return -1;
+
+	for (off = 0, depth = 0; off >= 0 && depth >= 0;
+	     off = fdt_next_node(blob, off, &depth)) {
+		if (depth >= max)
+			return -1;
+		if (off == node)
+			return depth;
+		anc[depth] = off;
+	}
+
+	return -1;
+}
+
 /*
  * Translate an address from the device-tree into a CPU physical address,
  * this walks up the tree and applies the various bus mappings on the
@@ -1488,14 +1525,21 @@ static u64 __of_translate_address(const void *blob, int node_offset,
 	int parent;
 	struct of_bus *bus, *pbus;
 	fdt32_t addr[OF_MAX_ADDR_CELLS];
+	int anc[OF_MAX_DEPTH];
 	int na, ns, pna, pns;
 	u64 result = OF_BAD_ADDR;
+	int lev;
 
 	debug("OF: ** translation for device %s **\n",
 		fdt_get_name(blob, node_offset, NULL));
 
-	/* Get parent & match bus type */
-	parent = fdt_parent_offset(blob, node_offset);
+	/*
+	 * Get parent & match bus type. Collect the ancestors in one pass, so
+	 * that the walk below can step up them rather than searching the tree
+	 * again at each level
+	 */
+	lev = fdt_node_ancestors(blob, node_offset, anc, OF_MAX_DEPTH) - 1;
+	parent = lev >= 0 ? anc[lev] : fdt_parent_offset(blob, node_offset);
 	if (parent < 0)
 		goto bail;
 	bus = of_match_bus(blob, parent);
@@ -1515,9 +1559,14 @@ static u64 __of_translate_address(const void *blob, int node_offset,
 
 	/* Translate */
 	for (;;) {
-		/* Switch to parent bus */
+		/* Switch to parent bus, stepping up the chain where we have it */
 		node_offset = parent;
-		parent = fdt_parent_offset(blob, node_offset);
+		if (lev >= 0) {
+			lev--;
+			parent = lev >= 0 ? anc[lev] : -FDT_ERR_NOTFOUND;
+		} else {
+			parent = fdt_parent_offset(blob, node_offset);
+		}
 
 		/* If root, we have finished */
 		if (parent < 0) {

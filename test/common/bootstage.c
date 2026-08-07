@@ -7,10 +7,14 @@
 
 #include <bootstage.h>
 #include <malloc.h>
+#include <asm/global_data.h>
 #include <linux/delay.h>
+#include <linux/errno.h>
 #include <test/common.h>
 #include <test/test.h>
 #include <test/ut.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 /* Test bootstage_mark_name() */
 static int test_bootstage_mark(struct unit_test_state *uts)
@@ -37,6 +41,9 @@ static int test_bootstage_mark(struct unit_test_state *uts)
 	ut_asserteq(time, rec->time_us);
 	ut_asserteq(0, rec->flags);
 	ut_asserteq(time, bootstage_get_time(BOOTSTAGE_ID_USER + 50));
+
+	/* A mark is not an accumulator, so it never counts a run */
+	ut_asserteq(0, rec->run_cnt);
 
 	/* Restore the original count */
 	bootstage_set_rec_count(count);
@@ -102,6 +109,7 @@ static int test_bootstage_accum(struct unit_test_state *uts)
 
 	/* Check the accumulated time was recorded */
 	ut_asserteq(elapsed1, rec->time_us);
+	ut_asserteq(1, rec->run_cnt);
 
 	/* Start and accumulate again  */
 	bootstage_start(id, "test_accum");
@@ -114,12 +122,47 @@ static int test_bootstage_accum(struct unit_test_state *uts)
 	ut_asserteq(rec->time_us, elapsed1 + elapsed2);
 	ut_asserteq(rec->time_us, bootstage_get_time(id));
 
+	/* Both runs must be counted, since that is what gives the average */
+	ut_asserteq(2, rec->run_cnt);
+
 	/* Restore the original count */
 	bootstage_set_rec_count(count);
 
 	return 0;
 }
 COMMON_TEST(test_bootstage_accum, 0);
+
+/* Test that an accumulator can be used before bootstage_init() */
+static int test_bootstage_early(struct unit_test_state *uts)
+{
+	enum bootstage_id id = BOOTSTAGE_ID_USER + 54;
+	struct bootstage_data *data = gd->bootstage;
+	ulong start;
+	uint accum;
+	int count;
+
+	count = bootstage_get_rec_count();
+
+	/*
+	 * Pretend bootstage is not set up yet, as it is not when the earliest
+	 * code runs. Put it back before checking anything, so that a failure
+	 * here does not leave bootstage broken for later tests
+	 */
+	gd->bootstage = NULL;
+	start = bootstage_start(id, "test_early");
+	accum = bootstage_accum(id);
+	gd->bootstage = data;
+
+	/* The timestamp is still useful, even with nowhere to record it */
+	ut_assert(start > 0);
+	ut_asserteq(0, accum);
+
+	/* Nothing may have been recorded */
+	ut_asserteq(count, bootstage_get_rec_count());
+
+	return 0;
+}
+COMMON_TEST(test_bootstage_early, 0);
 
 /* Test bootstage_mark_code() */
 static int test_bootstage_mark_code(struct unit_test_state *uts)
@@ -201,6 +244,62 @@ static int test_bootstage_get_rec(struct unit_test_state *uts)
 }
 COMMON_TEST(test_bootstage_get_rec, 0);
 
+/* Test that relocation stays inside the space which was reserved for it */
+static int test_bootstage_relocate(struct unit_test_state *uts)
+{
+	struct bootstage_data *orig = gd->bootstage;
+	const struct bootstage_record *rec;
+	int count, size, small;
+	char *buf, *small_buf;
+
+	count = bootstage_get_rec_count();
+	ut_assert(count > 0);
+
+	/*
+	 * An accumulator creates its record without a name, so this checks
+	 * that a nameless record is handled the same way everywhere
+	 */
+	bootstage_accum(BOOTSTAGE_ID_USER + 60);
+
+	size = bootstage_get_size(true);
+	buf = malloc(size + 4);
+	ut_assertnonnull(buf);
+	strcpy(buf + size, "grd");
+
+	ut_assertok(bootstage_relocate(buf, size));
+
+	/* Nothing may be written past the space which was reserved */
+	ut_asserteq_str("grd", buf + size);
+
+	/* The names must have come across */
+	rec = bootstage_get_rec(0);
+	ut_assertnonnull(rec);
+	ut_asserteq_str("reset", rec->name);
+
+	/*
+	 * Records can be added after the space is reserved, so relocation must
+	 * cope with there being too little room for the names. Use a buffer of
+	 * exactly the smaller size, so that writing past it is detected
+	 */
+	small = size - 20;
+	ut_assert(small > 0);
+	small_buf = malloc(small + 4);
+	ut_assertnonnull(small_buf);
+	strcpy(small_buf + small, "grd");
+
+	gd->bootstage = orig;
+	ut_assertok(bootstage_relocate(small_buf, small));
+	ut_asserteq_str("grd", small_buf + small);
+
+	gd->bootstage = orig;
+	bootstage_set_rec_count(count);
+	free(small_buf);
+	free(buf);
+
+	return 0;
+}
+COMMON_TEST(test_bootstage_relocate, 0);
+
 #if IS_ENABLED(CONFIG_BOOTSTAGE_STASH)
 /* Test that records survive a stash and unstash */
 static int test_bootstage_stash(struct unit_test_state *uts)
@@ -234,6 +333,18 @@ static int test_bootstage_stash(struct unit_test_state *uts)
 	ut_asserteq_str("reset", rec->name);
 
 	bootstage_set_rec_count(count);
+
+	/*
+	 * A stash written by a different version must be refused, since the
+	 * record layout may have changed. The version is the first word
+	 */
+	ut_assertok(bootstage_stash(buf, CONFIG_BOOTSTAGE_STASH_SIZE));
+	*(u32 *)buf = 0xdeadbeef;
+	ut_asserteq(-EINVAL,
+		    bootstage_unstash(buf, CONFIG_BOOTSTAGE_STASH_SIZE));
+
+	/* Nothing may have been added by the rejected stash */
+	ut_asserteq(count, bootstage_get_rec_count());
 	free(buf);
 
 	/*

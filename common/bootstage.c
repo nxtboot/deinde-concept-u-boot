@@ -23,6 +23,12 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * Result of the last unstash, kept so that it can be shown once the console
+ * is up. This is set before relocation, so it must not live in bss
+ */
+int bootstage_unstash_err __section(".data");
+
 enum {
 	RECORD_COUNT = CONFIG_VAL(BOOTSTAGE_RECORD_COUNT),
 };
@@ -34,7 +40,7 @@ struct bootstage_data {
 };
 
 enum {
-	BOOTSTAGE_VERSION	= 0,
+	BOOTSTAGE_VERSION	= 1,
 	BOOTSTAGE_MAGIC		= 0xb00757a3,
 	BOOTSTAGE_DIGITS	= 9,
 };
@@ -47,11 +53,15 @@ struct bootstage_hdr {
 	u32 next_id;		/* Next ID to use for bootstage */
 };
 
-int bootstage_relocate(void *to)
+static const char *get_record_name(char *buf, int len,
+				   const struct bootstage_record *rec);
+
+int bootstage_relocate(void *to, int size)
 {
 	struct bootstage_data *data;
+	char *ptr, *end;
+	char buf[20];
 	int i;
-	char *ptr;
 
 	debug("Copying bootstage from %p to %p\n", gd->bootstage, to);
 	memcpy(to, gd->bootstage, sizeof(struct bootstage_data));
@@ -59,6 +69,7 @@ int bootstage_relocate(void *to)
 
 	/* Figure out where to relocate the strings to */
 	ptr = (char *)(data + 1);
+	end = (char *)to + size;
 
 	/*
 	 * Duplicate all strings.  They may point to an old location in the
@@ -66,11 +77,24 @@ int bootstage_relocate(void *to)
 	 */
 	debug("Relocating %d records\n", data->rec_count);
 	for (i = 0; i < data->rec_count; i++) {
-		const char *from = data->record[i].name;
+		const char *from;
+		int len;
 
-		strcpy(ptr, from);
+		from = get_record_name(buf, sizeof(buf), &data->record[i]);
+		len = strlen(from) + 1;
+
+		/*
+		 * The space was reserved earlier in board_init_f(), so any
+		 * record added since then may not fit. Leave the remaining
+		 * names where they are rather than writing out of bounds
+		 */
+		if (ptr + len > end) {
+			log_warning("Bootstage: no room to relocate names\n");
+			break;
+		}
+		memcpy(ptr, from, len);
 		data->record[i].name = ptr;
-		ptr += strlen(ptr) + 1;
+		ptr += len;
 	}
 
 	return 0;
@@ -100,6 +124,7 @@ struct bootstage_record *ensure_id(struct bootstage_data *data,
 	if (!rec && data->rec_count < RECORD_COUNT) {
 		rec = &data->record[data->rec_count++];
 		rec->id = id;
+		rec->run_cnt = 0;
 		return rec;
 	}
 
@@ -131,6 +156,7 @@ ulong bootstage_add_record(enum bootstage_id id, const char *name,
 			rec->name = name;
 			rec->flags = flags;
 			rec->id = id;
+			rec->run_cnt = 0;
 		} else {
 			log_warning("Bootstage space exhausted\n");
 		}
@@ -188,9 +214,17 @@ ulong bootstage_mark_code(const char *file, const char *func, int linenum)
 uint32_t bootstage_start(enum bootstage_id id, const char *name)
 {
 	struct bootstage_data *data = gd->bootstage;
-	struct bootstage_record *rec = ensure_id(data, id);
 	ulong start_us = timer_get_boot_us();
+	struct bootstage_record *rec;
 
+	/*
+	 * This can be called before bootstage_init(), for example from code
+	 * which runs during early driver-model setup
+	 */
+	if (!data)
+		return start_us;
+
+	rec = ensure_id(data, id);
 	if (rec) {
 		rec->start_us = start_us;
 		rec->name = name;
@@ -202,13 +236,17 @@ uint32_t bootstage_start(enum bootstage_id id, const char *name)
 uint32_t bootstage_accum(enum bootstage_id id)
 {
 	struct bootstage_data *data = gd->bootstage;
-	struct bootstage_record *rec = ensure_id(data, id);
+	struct bootstage_record *rec;
 	uint32_t duration;
 
+	if (!data)
+		return 0;
+	rec = ensure_id(data, id);
 	if (!rec)
 		return 0;
 	duration = (uint32_t)timer_get_boot_us() - rec->start_us;
 	rec->time_us += duration;
+	rec->run_cnt++;
 
 	return duration;
 }
@@ -298,7 +336,17 @@ static uint32_t print_time_record(struct bootstage_record *rec, uint32_t prev)
 		print_grouped_ull(rec->time_us, BOOTSTAGE_DIGITS);
 		print_grouped_ull(rec->time_us - prev, BOOTSTAGE_DIGITS);
 	}
-	printf("  %s\n", get_record_name(buf, sizeof(buf), rec));
+	printf("  %s", get_record_name(buf, sizeof(buf), rec));
+
+	/*
+	 * For an accumulator, show how often it ran and the average cost of
+	 * each call, which is what indicates whether it is worth optimising
+	 */
+	if (prev == -1U && rec->run_cnt)
+		printf(" (%u call%s, %lu us each)", rec->run_cnt,
+		       rec->run_cnt == 1 ? "" : "s",
+		       rec->time_us / rec->run_cnt);
+	printf("\n");
 
 	return rec->time_us;
 }
@@ -390,11 +438,21 @@ void bootstage_report(void)
 		       "Please increase CONFIG_(PHASE_)BOOTSTAGE_RECORD_COUNT\n",
 		       data->rec_count - RECORD_COUNT);
 
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH) && bootstage_unstash_err)
+		printf("Unstash failed: err=%d\n", bootstage_unstash_err);
+
 	puts("\nAccumulated time:\n");
 	for (i = 0, rec = data->record; i < data->rec_count; i++, rec++) {
 		if (rec->start_us)
 			prev = print_time_record(rec, -1);
 	}
+
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT)) {
+		fdt_parent_report();
+		dt_addr_report();
+	}
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DM))
+		lists_bind_report();
 }
 
 /**
@@ -581,7 +639,10 @@ int _bootstage_unstash_default(void)
 		stash = map_sysmem(CONFIG_BOOTSTAGE_STASH_ADDR,
 				   CONFIG_BOOTSTAGE_STASH_SIZE);
 
-	return bootstage_unstash(stash, CONFIG_BOOTSTAGE_STASH_SIZE);
+	bootstage_unstash_err = bootstage_unstash(stash,
+						 CONFIG_BOOTSTAGE_STASH_SIZE);
+
+	return bootstage_unstash_err;
 }
 #endif
 
@@ -593,10 +654,16 @@ int bootstage_get_size(bool add_strings)
 	if (add_strings) {
 		struct bootstage_data *data = gd->bootstage;
 		struct bootstage_record *rec;
+		char buf[20];
 		int i;
 
+		/*
+		 * Use the same name as the other users, since a record made by
+		 * an accumulator has none of its own
+		 */
 		for (rec = data->record, i = 0; i < data->rec_count; i++, rec++)
-			size += strlen(rec->name) + 1;
+			size += strlen(get_record_name(buf, sizeof(buf), rec)) +
+				1;
 	}
 
 	return size;

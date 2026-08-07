@@ -6,6 +6,7 @@
 
 #define LOG_CATEGORY UCLASS_SYSCON
 
+#include <bootstage.h>
 #include <log.h>
 #include <syscon.h>
 #include <dm.h>
@@ -176,11 +177,16 @@ struct regmap *syscon_get_regmap_by_driver_data(ulong driver_data)
 void *syscon_get_first_range(ulong driver_data)
 {
 	struct regmap *map;
+	void *range;
 
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_start(BOOTSTAGE_ID_ACCUM_SYSCON, "syscon");
 	map = syscon_get_regmap_by_driver_data(driver_data);
-	if (IS_ERR(map))
-		return map;
-	return regmap_get_range(map, 0);
+	range = IS_ERR(map) ? map : regmap_get_range(map, 0);
+	if (IS_ENABLED(CONFIG_BOOTSTAGE_ACCUM_DT))
+		bootstage_accum(BOOTSTAGE_ID_ACCUM_SYSCON);
+
+	return range;
 }
 
 UCLASS_DRIVER(syscon) = {

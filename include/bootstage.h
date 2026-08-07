@@ -214,28 +214,79 @@ enum bootstage_id {
 	BOOTSTAGE_ID_ACCUM_FSP_M,
 	BOOTSTAGE_ID_ACCUM_FSP_S,
 	BOOTSTAGE_ID_ACCUM_MMAP_SPI,
+	BOOTSTAGE_ID_ACCUM_DT_ADDR,
+	BOOTSTAGE_ID_ACCUM_DT_PARENT,
+	BOOTSTAGE_ID_ACCUM_DT_PARENT_R,
+	BOOTSTAGE_ID_ACCUM_SYSCON,
+	BOOTSTAGE_ID_ACCUM_DM_BIND,
+	BOOTSTAGE_ID_ACCUM_DM_MATCH,
+	BOOTSTAGE_ID_ACCUM_DM_DEVBIND,
 
 	/* a few spare for the user, from here */
 	BOOTSTAGE_ID_USER,
 	BOOTSTAGE_ID_ALLOC,
 };
 
+/* Number of pre-relocation parent-lookup callers recorded for diagnosis */
+#define FDT_PARENT_CALLERS	16
+
+/**
+ * fdt_parent_report() - Show where pre-relocation parent lookups came from
+ *
+ * Prints the return address of each caller, so that they can be matched up
+ * with the symbol table. Does nothing if none were recorded
+ */
+void fdt_parent_report(void);
+
+/**
+ * dt_addr_record() - Note that a node's address was resolved from a flat tree
+ *
+ * @offset: Offset of the node whose address was read
+ */
+void dt_addr_record(int offset);
+
+/**
+ * dt_addr_report() - Show how many flat-tree address reads were repeated
+ *
+ * Prints how many addresses were resolved and how many of those were for a
+ * node which had already been read. Does nothing if none were recorded
+ */
+void dt_addr_report(void);
+
+/**
+ * lists_bind_report() - Show how much work binding devices needed
+ *
+ * Prints how many nodes were scanned, how many asked to be bound before
+ * relocation, and how many driver comparisons were done
+ */
+void lists_bind_report(void);
+
 /**
  * struct bootstage_record - information about a bootstage timing
+ *
+ * The fields are ordered, and @flags and @id narrowed, so that adding
+ * @run_cnt leaves the record the same size as before: 32 bytes on 64-bit
+ * systems and 20 on 32-bit ones. Records are held in an array of
+ * CONFIG_BOOTSTAGE_RECORD_COUNT and are copied whole when stashed, so the
+ * size is worth keeping down. Both narrowed fields have plenty of room, IDs
+ * being allocated from BOOTSTAGE_ID_USER upwards. They use __u16 since this
+ * header is built for the host tools too, where u16 is not defined
  *
  * @time_us: time in microseconds, either the timestamp or the total accumlated
  * time for this ID
  * @start_us: timestamp of the current starting point for this ID
+ * @run_cnt: number of times this ID has been accumulated, 0 for a mark
  * @name: name of the timestamp
  * @flags: Flags (enum bootstage_flags)
- * @id: Bootstage ID
+ * @id: Bootstage ID (enum bootstage_id)
  */
 struct bootstage_record {
 	ulong time_us;
 	u32 start_us;
+	u32 run_cnt;
 	const char *name;
-	int flags;
-	enum bootstage_id id;
+	__u16 flags;
+	__u16 id;
 };
 
 /*
@@ -277,7 +328,7 @@ void show_boot_progress(int val);
  * relocation, since memory can be overwritten later.
  * Return: Always returns 0, to indicate success
  */
-int bootstage_relocate(void *to);
+int bootstage_relocate(void *to, int size);
 
 /**
  * Add a new bootstage record
@@ -447,7 +498,7 @@ static inline ulong bootstage_add_record(enum bootstage_id id,
  * and won't even do that unless CONFIG_SHOW_BOOT_PROGRESS is defined
  */
 
-static inline int bootstage_relocate(void *to)
+static inline int bootstage_relocate(void *to, int size)
 {
 	return 0;
 }
