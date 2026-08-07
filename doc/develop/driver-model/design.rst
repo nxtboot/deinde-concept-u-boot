@@ -1146,6 +1146,12 @@ amount of memory. When device tree is not used, DM_FLAG_PRE_RELOC is the
 only way for statically declared devices via U_BOOT_DRVINFO() to be bound
 prior to relocation.
 
+When a node matches more than one driver, the DM_FLAG_PRE_RELOC flag is
+checked before the compatible strings are compared, so a node which does
+not itself ask to be bound early only considers drivers which do. Where
+two drivers match the same node and only the later one has the flag,
+that later driver is the one bound before relocation.
+
 It is possible to limit this to specific relocation steps, by using
 the more specialized 'bootph-pre-ram' and 'bootph-pre-sram' flags
 in the device tree node. For U-Boot proper you can use 'bootph-some-ram'
@@ -1156,6 +1162,35 @@ To reduce the size of SPL and TPL, only the nodes with pre-relocation
 properties ('bootph-all', 'bootph-pre-ram' or 'bootph-pre-sram') are kept in
 their device trees (see README.SPL for details); the remaining nodes are
 always bound.
+
+Binding devices before relocation is the most expensive part of driver
+model on a board with a large devicetree, since it runs with the caches
+still off. Every property read scans the node's property list, and
+finding a node's parent walks the tree from the root, so work which
+looks trivial can dominate the boot.
+
+That work is done in as few passes as possible, which costs a few hundred
+bytes of code. CONFIG_OF_PRERELOC_FAST controls this and is on by
+default; turn it off on a board which is short of space and does not
+mind how long it takes to start. It has no xPL variant, so those phases
+always use the smaller code.
+
+Two options add accounting to the code involved, so that this can be
+seen on a particular board:
+
+* CONFIG_BOOTSTAGE_ACCUM_DT times the address lookups, the parent
+  lookups (separately before and after relocation) and the syscon
+  lookups, and counts how many of the address reads are for a node
+  which has already been read
+
+* CONFIG_BOOTSTAGE_ACCUM_DM times binding, and counts the nodes
+  scanned, those with no compatible string, those asking to be bound
+  before relocation and the number of driver comparisons done
+
+Both are off by default and cost time of their own, so they are for
+finding where the work is rather than for measuring how long it takes.
+Use 'bootstage report' to see the counts, which are shown along with
+the accumulated times.
 
 Then post relocation we throw that away and re-init driver model again.
 For drivers which require some sort of continuity between pre- and
