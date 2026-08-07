@@ -95476,3 +95476,55 @@ All done. Branch `cherry-5b1dac9ee202` is ready for pushing.
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-c83594e84493
+
+Commits:
+- c83594e84493 mmc: sunxi: fix MACH_SUN9I typo in get_mclk_offset()
+- 4b5a1e0283ae spi: sunxi: add support for A523 SPI controller
+- 6882f72fa356 sunxi: spl: spi: Clean up SPI0 pinmux setting
+- 9ceb0a3e0cde sunxi: spl: spi: Add support for Allwinner A523
+- 1721809d29d0 sunxi: configs: Radxa Cubie A5E: enable SPI
+- 1519d3a3840a sunxi: configs: OrangePi 4A: enable SPI
+- f8fd33a3647a pinctrl: sunxi: a523: add gmac1 support
+- 0874f96a2e42 clk: sunxi: a523: add MBUS_EMAC1 clock gate
+- d2a46d3eb2c3 arm: mach-sunxi: add syscon driver for system-control nodes
+- c5d3fac4becf net: dwc_eth_qos: add support for sun55i platform
+- 59edf9a3427c configs: radxa-cubie-a5e: enable the gmac1 controller
+- d7e7c9b063bc Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sunxi
+
+### Conversation log
+The merge commit is empty as expected — committing it to preserve the history:
+
+All done. Summary:
+
+## Cherry-pick complete — branch `cherry-c83594e84493`
+
+All 12 commits applied cleanly on top of `ci/master`:
+
+| Original | New | Subject |
+|---|---|---|
+| c83594e84493 | 0fce05c323ec | mmc: sunxi: fix MACH_SUN9I typo in get_mclk_offset() |
+| 4b5a1e0283ae | 026cf537895a | spi: sunxi: add support for A523 SPI controller |
+| 6882f72fa356 | ad1a214df235 | sunxi: spl: spi: Clean up SPI0 pinmux setting |
+| 9ceb0a3e0cde | bd9523b4346c | sunxi: spl: spi: Add support for Allwinner A523 |
+| 1721809d29d0 | 01084f2cdb9d | sunxi: configs: Radxa Cubie A5E: enable SPI |
+| 1519d3a3840a | 3f23a4edd708 | sunxi: configs: OrangePi 4A: enable SPI |
+| f8fd33a3647a | a44a3dfc3da1 | pinctrl: sunxi: a523: add gmac1 support |
+| 0874f96a2e42 | ecd69bdbdabb | clk: sunxi: a523: add MBUS_EMAC1 clock gate |
+| d2a46d3eb2c3 | bec3212c4860 | arm: mach-sunxi: add syscon driver for system-control nodes |
+| c5d3fac4becf | 735381a22250 | net: dwc_eth_qos: add support for sun55i platform |
+| 59edf9a3427c | ce8051811ed8 | configs: radxa-cubie-a5e: enable the gmac1 controller |
+| d7e7c9b063bc | 63722415d165 | Merge branch 'main' of ... u-boot-sunxi |
+
+**Status report:**
+- **Build result:** ok — sandbox built cleanly with buildman after every commit and after the final state, with no warnings or errors
+- **Fix-ups made:** none — all 11 code commits applied without conflicts
+- **Delta check:** every cherry-picked commit matches its original exactly (same files, same insertion/deletion counts)
+- **Merge commit:** applied empty (as expected, since its content came via the individual picks) using `--allow-empty`, preserving the full merge message and the `(cherry picked from commit d7e7c9b063bc...)` reference
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
