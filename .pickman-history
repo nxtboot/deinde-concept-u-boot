@@ -95642,3 +95642,41 @@ The remote MR branch was stale: it still pointed at 779f41ec2ee1, the tip of the
 
 ---
 
+### Review: 2026-08-07
+
+Branch: cherry-f079d8059da9
+
+Comments addressed:
+
+
+### Conversation log
+The branch has 11 commits on top of merge-base 28fafea, and ci/master has moved ahead. Let me record the pre-rebase state and start the rebase.
+
+Build passes. The previous run already created `-v2`, so check and increment.
+
+All done. Here is the report:
+
+## Report
+
+### Rebase
+`git rebase --keep-empty ci/master` moved the 12-commit branch from its old base (28fafea2fa47) onto the new ci/master tip (4470a7a06b3c, the cherry-5b1dac9ee202 merge). All 10 rockchip commits — including the preserved empty merge commit — applied cleanly with no conflicts.
+
+### Conflict resolved
+One conflict, in `.pickman-history` only, on the "pickman: Record cherry-pick of 10 commits" commit. It was the classic both-appended case: ci/master's new tip appends the cherry-5b1dac9ee202 (fs/load) session log at the same spot where this branch appends its cherry-f079d8059da9 (rockchip) session log. Resolved by keeping both sections in order — the fs/load entry first, then the rockchip entry — with the standard `---` separator and repeated `## 2026-08-07: us/main` heading between them. No source files were involved.
+
+### Verification
+- **Per-commit deltas:** compared `git show --stat` for every commit before vs after the rebase — all 12 MATCH exactly (file lists and line counts unchanged). The merge commit remains empty with its message preserved.
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built cleanly, no warnings or errors.
+
+### Actions taken
+1. Checked out `cherry-f079d8059da9` and rebased onto ci/master, resolving the single `.pickman-history` conflict
+2. Verified all commit deltas match pre-rebase and that sandbox builds cleanly
+3. Created local snapshot branch `cherry-f079d8059da9-v3` (`-v2` already existed from the previous round)
+4. Force-pushed via `./tools/pickman/pickman push-branch cherry-f079d8059da9 -r ci -f`: `aa48359100ce...f4a242513135 -> cherry-f079d8059da9`, triggering a fresh MR pipeline for !1254
+
+### Suggested MR reply
+
+> Rebased onto the current ci/master tip (which now includes the cherry-5b1dac9ee202 fs/load series). The only conflict was in the .pickman-history log file, where both branches appended a session entry at the same point — resolved by keeping both entries. All 10 rockchip commits applied cleanly with deltas identical to the previous round, the empty rockchip merge commit is preserved, and sandbox builds with no warnings or errors. No source changes were needed.
+
+---
+
