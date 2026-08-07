@@ -95528,3 +95528,34 @@ The branch is ready for pushing; it has not been merged anywhere.
 
 ---
 
+### Pipeline fix: 2026-08-07 (attempt 1)
+
+Branch: cherry-c83594e84493
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- edison (sjg-lab)
+- bpif3 (sjg-lab)
+- vf2 (sjg-lab)
+
+### Conversation log
+## Report: all four failures are infrastructure issues — no code changes made
+
+**Diagnosis:** The branch contains only sunxi/Allwinner changes (mach-sunxi, sunxi mmc/spi/clk/pinctrl drivers, sunxi defconfigs, plus a new `dwc_eth_qos_sunxi.c`). The only touches to shared files (`dwc_eth_qos.c`, `dwc_eth_qos.h`, `net/Kconfig`) are fully gated behind `CONFIG_DWC_ETH_QOS_SUNXI`, which depends on `ARCH_SUNXI`. None of the four failing boards is a sunxi board, so the changes cannot be the cause:
+
+| Job | Board | Root cause |
+|---|---|---|
+| edison | Intel Edison (x86) | Labgrid place-acquisition conflict: "place edison is not acquired by your user, acquired by labgrid" — the test never even started. Pure lab infrastructure. |
+| bpif3 | SpacemiT K1 (RISC-V) | BootROM refused to start the FSBL over USB after 5 reset/retry attempts ("gadget devnum still ..."). Board/USB loader hardware issue, failed before running any U-Boot code. |
+| vf2 | StarFive VisionFive 2 (RISC-V) | SD card failed voltage select in SPL ("Card did not respond to voltage select! : -110") on two consecutive boots. Hardware/SD-mux flakiness; this branch touches no RISC-V or generic MMC code. |
+| efi-x86_64-uboot-iso-install | QEMU x86 | Ubuntu ISO install test timed out waiting for the login prompt after 8m40s. The log shows Linux booting normally with a ~5-minute stall in the kernel log — slow host/QEMU install run, not a U-Boot regression (x86 builds none of the sunxi code). |
+
+**Actions taken:**
+- No commits amended, no fixup added — there is nothing in the code to fix
+- Verified `um build sandbox` passes on the branch
+- Created local branch `cherry-c83594e84493-fix1` (identical to `cherry-c83594e84493`, no changes)
+
+**Recommendation:** Retry the four jobs. The edison labgrid lock and the bpif3/vf2 board issues may need lab attention (e.g. kicking the stale `kea/labgrid` acquisition of the edison place) if they recur.
+
+---
+
