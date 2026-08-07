@@ -95291,3 +95291,68 @@ The branch has NOT been merged anywhere, as instructed.
 
 ---
 
+## 2026-08-06: us/main
+
+Branch: cherry-33e63831080d
+
+Commits:
+- 33e63831080d doc: sophgo: licheerv_nano: fix incorrect step numbering
+- 40ea5423f9aa riscv: dts: cv18xx: fix spi node name
+- 13b990d05fa4 configs: visionfive2: Add VisionFive 2 Lite eMMC DT to OF_LIST
+- be256bd560dc board: starfive: visionfive2: Support VisionFive 2 Lite eMMC
+- d8810e1d4f82 riscv: Skip riscv_cpu_setup() when CPU driver is disabled
+- 0798f12031d0 riscv: Make RISCV_ACLINT visible
+- 84b48a918103 riscv: Exclude ACLINT for TARGET_XILINX_MBV
+- c7c969d7e268 rng: jh7110: Fix invalid usage of dev_read_addr
+- e1b16d3c0f53 MAINTAINERS: riscv: Add myself as a reviewer
+- b3b5b305e2c9 riscv: remove log_debug() in enable_caches()
+- c201051a9cd3 serial: sifive: remove busy-loops from getc and putc ops
+- 5c5f1e1de185 Merge https://git.u-boot-project.org/u-boot/custodians/u-boot-riscv
+
+### Conversation log
+Delta matches well (12 vs 11 insertions, same files). Continuing:
+
+The local cpu.c has diverged significantly. Let me look at the current riscv_cpu_setup():
+
+Now the merge commit:
+
+These conflicts are just the merge re-applying changes already picked; resolve by keeping HEAD everywhere:
+
+All 12 commits present. Final build:
+
+All done. The branch `cherry-33e63831080d` is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly after every cherry-pick and in the final verification (no warnings or errors).
+
+**All 12 commits applied**, in order, with `-x` annotations:
+
+| Original | New | Notes |
+|---|---|---|
+| 33e63831080d doc: sophgo numbering | 4b2cca5fef0e | clean |
+| 40ea5423f9aa cv18xx spi node | 7e3a1c6503eb | clean |
+| 13b990d05fa4 VF2 Lite eMMC OF_LIST | 003c48803462 | clean (auto-merge) |
+| be256bd560dc VF2 Lite eMMC board | 430f447ad939 | **fix-up** (see below) |
+| d8810e1d4f82 skip riscv_cpu_setup() | fda0a0badb65 | **fix-up** (see below) |
+| 0798f12031d0 RISCV_ACLINT visible | 47937ac22e10 | clean |
+| 84b48a918103 exclude ACLINT for MBV | f4b4dc68b0ac | clean |
+| c7c969d7e268 jh7110 rng dev_read_addr | 18cb865ade8e | clean |
+| e1b16d3c0f53 MAINTAINERS reviewer | 2dbfa221e721 | clean |
+| b3b5b305e2c9 remove log in enable_caches() | f53ca434336d | **fix-up** (see below) |
+| c201051a9cd3 sifive serial busy-loops | a46227069016 | clean |
+| 5c5f1e1de185 riscv custodian merge | 102d8d9d2311 | empty commit, message preserved |
+
+**Fix-ups made** (each noted in the amended commit message):
+1. **be256bd560dc**: ci/master uses FDTFILE_* macros for fdtfile strings; adapted the eMMC branch to that style and added a new `FDTFILE_VISIONFIVE2_LITE_EMMC` macro. spl.c merged cleanly. Delta: 12 insertions vs 11 originally — fine.
+2. **d8810e1d4f82**: ci/master's `riscv_cpu_setup()` lacks the upstream ISA-string parsing code; applied the equivalent early `return 0` when `CONFIG_IS_ENABLED(CPU)` is false, matching the original's intent (whole function skipped).
+3. **b3b5b305e2c9**: ci/master has `riscv_zicbom_init()` + `log_info()` rather than upstream's `riscv_get_cbom_block_size()` + `log_debug()`; resolved by dropping the log call, keeping the init — same intent (no logging before log_init()).
+
+**Merge commit** 5c5f1e1de185 resolved to empty (all its content already picked individually); committed with `--allow-empty` preserving the original message plus the cherry-pick reference.
+
+**Concerning deltas:** none — all commits match their originals' file lists and line counts.
+
+One observation (pre-existing in ci/master, not introduced here): in `set_fdtfile()` the `VF7110` 6-char prefix check comes before the `VF7110SL` 8-char check, so the VF7110SL branch appears unreachable. Upstream orders these differently. You may want to check that ci/master refactor separately.
+
+---
+
