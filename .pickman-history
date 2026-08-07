@@ -95559,3 +95559,51 @@ Failed jobs:
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-f079d8059da9
+
+Commits:
+- f079d8059da9 rockchip: rk3568-nanopi-r5: Drop duplicated/extra sdhci
+- 1998fe69f7e1 board: rockchip: add Anbernic RG-DS
+- 3bc0f8127353 rockchip: only build GPT capsule update helpers with PARTITION_TYPE_GUID
+- 30675622843d MAINTAINERS: update ARM ROCKCHIP entry to list Simon as reviewer
+- e504d9cffbaf rockchip: pinctrl: replace RK_FUNC_n defines
+- 2f783e53754b rockchip: pinctrl: replace RK_GPIOn defines
+- 51947d401762 rockchip: pinctrl: use include from dts/upstream
+- 15387d5a90af rockchip: rk3588s: Add support for ROC-RK3588S-PC
+- d97d3df79e7b mtd: nand: raw: rockchip_nfc: fix ecc setup
+- 6fd5e4b7e7a8 Merge tag 'u-boot-rockchip-2026.10-20260724' of https://git.u-boot-project.org/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+The merge commit is empty as expected — committing it to preserve the message:
+
+All 10 commits cherry-picked successfully onto `cherry-f079d8059da9` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with no warnings or errors after every cherry-pick and in the final verification.
+
+**Commits applied (oldest first):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| 4fc7747e3830 | f079d8059da9 | rockchip: rk3568-nanopi-r5: Drop duplicated/extra sdhci |
+| 58bddd466522 | 1998fe69f7e1 | board: rockchip: add Anbernic RG-DS |
+| 6d5c0e25cbb2 | 3bc0f8127353 | rockchip: only build GPT capsule update helpers with PARTITION_TYPE_GUID |
+| ad439149d999 | 30675622843d | MAINTAINERS: update ARM ROCKCHIP entry to list Simon as reviewer |
+| 64f5e560e74b | e504d9cffbaf | rockchip: pinctrl: replace RK_FUNC_n defines |
+| 45b151754f5e | 2f783e53754b | rockchip: pinctrl: replace RK_GPIOn defines |
+| 4b1438a81ba2 | 51947d401762 | rockchip: pinctrl: use include from dts/upstream |
+| 047392148fca | 15387d5a90af | rockchip: rk3588s: Add support for ROC-RK3588S-PC |
+| e19be6dd496b | d97d3df79e7b | mtd: nand: raw: rockchip_nfc: fix ecc setup |
+| e164825dedf6 | 6fd5e4b7e7a8 | Merge tag 'u-boot-rockchip-2026.10-20260724' (empty, message preserved) |
+
+**Fix-ups:** None needed. All 9 regular commits applied cleanly (a few had trivial auto-merges in MAINTAINERS and rockchip.rst) with deltas exactly matching the originals. The merge commit became empty as expected since all its content was already picked, so it was committed with `--allow-empty` to preserve the merge message and cherry-pick reference.
+
+**Concerning deltas:** None — every commit's file list and line counts matched the original exactly.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
