@@ -95356,3 +95356,42 @@ One observation (pre-existing in ci/master, not introduced here): in `set_fdtfil
 
 ---
 
+### Pipeline fix: 2026-08-06 (attempt 1)
+
+Branch: cherry-33e63831080d
+
+Failed jobs:
+- zybo (sjg-lab)
+- edison (sjg-lab)
+- play (sjg-lab)
+- vbe (sjg-lab)
+- tk1 (sjg-lab)
+- bpif3 (sjg-lab)
+- vf2 (sjg-lab)
+- ff3399 (sjg-lab)
+
+### Conversation log
+Same labgrid error. Let me quickly check the remaining five logs for the same pattern.
+
+tk1, ff3399, vbe are also labgrid acquisition issues. But bpif3 and vf2 exit with status 2 — different. Let me read those.
+
+## Report: all failures are infrastructure — no code changes made
+
+**Diagnosis of the 8 failed sjg-lab jobs:**
+
+1. **zybo, edison, play, tk1, vbe, ff3399** — all fail identically at test startup with:
+   `labgrid-client: Error: place <X> is not acquired by your user, acquired by labgrid` (or `ellesmere/sglass` for ff3399/vbe). The labgrid places were held by another user/session when the jobs ran (all within 04:42–04:49), so `u-boot-test-getrole --configure` failed before any U-Boot code executed. Note the vbe job even reports the *ff3399* place, suggesting stale lab state. Pure lab-contention failure.
+
+2. **vf2** — the board's BootROM repeatedly prints `dwmci_s: Response Timeout` / `BOOT fail,Error is 0xffffffff` after the image is written: the ROM cannot read the SD card at all. U-Boot SPL never runs (no SPL banner), so the branch's VisionFive 2 changes cannot be the cause. The harness itself marks it `Lab failure: Marking connection bad` — SD-mux/card flakiness.
+
+3. **bpif3** — the BootROM never starts the FSBL sent over USB after 5 reset attempts (`gadget devnum still ...`, plus `USB resource not available`). This is pre-execution USB/board flakiness, also marked `Lab failure` by the harness.
+
+**Code verification done to rule out the branch:**
+- Both affected RISC-V boards build fine (the only local buildman error is the missing OpenSBI `fw_dynamic.bin` blob, which CI provides).
+- `spacemit_k1` (bpif3) and `starfive_visionfive2` (vf2) both have `CONFIG_SPL_CPU=y`, so the `riscv_cpu_setup()` early-return commit (fda0a0badb65) does not change their behaviour, and `CONFIG_SPL_RISCV_ACLINT=y` remains set despite the ACLINT visibility change.
+- `um build sandbox` passes.
+
+**Action:** Since this is transient lab infrastructure trouble, no commit was amended and no fixup added. Local branch `cherry-33e63831080d-fix1` has been created pointing at the same HEAD (f813141ecffc) so the caller can retry the pipeline. Recommend releasing/kicking the stale labgrid place acquisitions before re-running.
+
+---
+
