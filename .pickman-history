@@ -95430,3 +95430,49 @@ No code change was requested or needed, so no commits were amended and no fixup 
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-5b1dac9ee202
+
+Commits:
+- 5b1dac9ee202 fs: dispatch null_dev_desc_ok filesystems before lookup
+- c23eeeadfc4a doc: usage: cmd: load: null-block-device
+- 0ccf0193a581 test: py: load: check null_dev_desc_ok dispatch
+- 7ffa20af30dd Merge patch series "fs: regression-safe load <iface> for null_dev_desc_ok fstypes"
+
+### Conversation log
+fs/fs.c doesn't exist in ci/master — it was renamed to fs/fs_legacy.c, and git correctly followed the rename. Let me verify the patch content matches.
+
+Content is identical apart from the rename and line offsets. Now build-test.
+
+Build passes. Commit 2:
+
+Commit 3:
+
+Commit 4 (merge commit):
+
+All 4 commits are in place. Final build:
+
+All done. Branch `cherry-5b1dac9ee202` is ready for pushing.
+
+## Final status
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after each cherry-pick and at the end).
+
+**Commits on the branch (all 4 present):**
+| New hash | Original | Subject |
+|---|---|---|
+| cc8bcd1ba914 | 5b1dac9ee202 | fs: dispatch null_dev_desc_ok filesystems before lookup |
+| 9b7a5b13928d | c23eeeadfc4a | doc: usage: cmd: load: null-block-device |
+| b44ea8cd1270 | 0ccf0193a581 | test: py: load: check null_dev_desc_ok dispatch |
+| eeba4e41be5e | 7ffa20af30dd | Merge patch series (kept as empty commit) |
+
+**Fix-ups made:**
+- **Merge commit (7ffa20af30dd):** the auto-merge wrongly re-inserted the 33-line "Null-block-device interfaces" section into doc/usage/cmd/load.rst, duplicating what the doc commit already added (the section appeared at both line 91 and 124). I restored the file to its pre-merge state and amended the commit, leaving it empty as intended, with a note in the message: "drop a duplicated load.rst section from the auto-merge; empty commit".
+
+**Deltas (no concerns):**
+- The fs commit landed in fs/fs_legacy.c instead of fs/fs.c — this is correct: ci/master has renamed fs/fs.c to fs/fs_legacy.c and git followed the rename. A diff-of-diffs shows the patch content is identical apart from the path and line offsets (42 insertions in both).
+- The doc and test commits applied with exactly matching stats (33 insertions; 91 insertions / 2 deletions across 3 files).
+
+---
+
