@@ -95239,3 +95239,55 @@ Neither file can influence outcomes on lab-board test runs.
 
 ---
 
+## 2026-08-06: us/main
+
+Branch: cherry-bc61758cbce3
+
+Commits:
+- bc61758cbce3 cmd: date: Handle -ENOSYS return from dm_rtc_reset()
+- 3c82b041f73f cmd: strings: interpret second argument as a byte count
+- 0ccd0a939d7d cmd: pstore: bound path formatting with snprintf to avoid stack overflow
+- f7b525a8bc53 cmd: mbr: return false instead of NULL from bool found_key()
+- 79b6ee1a4b3c bootm: teach handle_decomp_error() about the noload decompression buffer
+- 64ce0f86ab9c serial: esp32: add driver for esp32 series chips
+- d7ef23c07b8e arm: armv8: mmu: fix DCACHE_OFF incorrectly unmapping region
+- 6380cb867ead .mailmap: map the old U-Boot mailing list address to the new one
+- 574b1adad70a fit: prefer the default configuration on best-match ties
+- d99ad807509d Azure CI: Drop Windows host tools builds
+- 9a9d46cb5e1a fs/squashfs: fix heap exhaustion during symlink resolution
+- 57e0bb7bf00d fs/squashfs: add sqfs_dir_offset() error checks
+- 171b60488853 fs/squashfs: fix dirs->entry leaks on sqfs_search_dir() error paths
+- b635d43bca42 Merge patch series "fs/squashfs: fix symlink load failure on large images"
+
+### Conversation log
+The delta matches. Waiting for the build to complete.
+
+The first cherry-pick is done with a matching delta (cmd/date.c, 1 file, +1/-1). The sandbox build is running in the background — I'll continue with the next steps once it completes.
+
+Now the bootm_load_os() call site:
+
+All 14 commits are present. Running the final build:
+
+All done. Branch 'cherry-bc61758cbce3' is ready for pushing, with all 14 commits on top of ci/master.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with buildman after each cherry-pick and in the final run (no warnings or errors).
+
+**All 14 commits present** (`git log --oneline -n 16` verified), each with a `(cherry picked from ...)` line.
+
+### Fix-ups made
+
+1. **33c28f8eeca9 bootm: teach handle_decomp_error() about the noload decompression buffer** — conflict in boot/bootm.c. ci/master uses a different noload-buffer implementation (resolve_os_comp_buf() with bmi->kern_comp_addr/kern_comp_size) than upstream's lmb_alloc_mem() path. I applied the commit's intent to the local code: added enum bootm_decomp_limit, threaded the limit parameter through handle_decomp_error() (including the host call site), set BOOTM_DECOMP_LIMIT_PER_IMAGE on the noload path, and dropped the trailing "Note: noload decompression buffer..." printf. Delta: 33+/12- vs original 29+/9- (the difference is the local decomp_len selection using if/else braces). A note describing the adaptation was added to the commit message.
+
+2. **226fc1810216 arm: armv8: mmu: fix DCACHE_OFF incorrectly unmapping region** — conflict because the fix is **already applied** on ci/master as commit 619a8f500d0d ("armv8: mmu: don't unmap on a non-cacheable dcache request"), with a semantically identical condition (`flag && attrs == PTE_TYPE_FAULT` vs `attrs == PTE_TYPE_FAULT && flag`). Preserved as an **empty commit** with the original message plus a note explaining this, to keep the commit sequence intact.
+
+3. **ad68e9540ec7 Merge patch series "fs/squashfs: ..."** — preserved as an empty commit with `-m 1 --allow-empty`, as expected for the merge.
+
+### Concerning deltas
+None — all other 11 commits applied cleanly with stats exactly matching the originals.
+
+The branch has NOT been merged anywhere, as instructed.
+
+---
+
