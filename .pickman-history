@@ -96225,3 +96225,31 @@ Done. Summary:
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-88386697bb75
+
+Commits:
+- 88386697bb75 MAINTAINERS: Replace Atmel with N:
+- 1fc320fdf8f7 Merge tag 'u-boot-at91-fixes-2026.10-a' of https://git.u-boot-project.org/u-boot/custodians/u-boot-at91
+
+### Conversation log
+Deltas match. Now build test:
+
+All done. Both commits cherry-picked successfully.
+
+**Final Status:**
+
+- **Branch:** `cherry-88386697bb75` (based on ci/master)
+- **Commits picked:**
+  - `24fe5ec268d1` — MAINTAINERS: Replace Atmel with N: (delta matches original: 1 file, +2/-11)
+  - `e1eb1b175ff6` — Merge tag 'u-boot-at91-fixes-2026.10-a' (empty, preserved via --allow-empty)
+- **Build result:** OK (sandbox built successfully, 0 warnings/errors)
+- **Fix-ups:** None required
+- **Concerning deltas:** None
+- **Conflicts:** None (auto-merge in MAINTAINERS resolved cleanly)
+
+Branch is ready for pushing.
+
+---
+
