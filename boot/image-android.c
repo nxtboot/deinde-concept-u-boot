@@ -131,7 +131,8 @@ static void android_boot_image_v3_v4_parse_hdr(const struct andr_boot_img_hdr_v3
 }
 
 static void android_vendor_boot_image_v3_v4_parse_hdr(const struct andr_vnd_boot_img_hdr
-						      *hdr, struct andr_image_data *data)
+						      *hdr, struct andr_image_data *data,
+						      bool write_trailer)
 {
 	ulong end;
 
@@ -167,20 +168,30 @@ static void android_vendor_boot_image_v3_v4_parse_hdr(const struct andr_vnd_boot
 	end += ALIGN(hdr->vendor_ramdisk_table_size, hdr->page_size);
 	data->bootconfig_addr = end;
 	if (hdr->bootconfig_size) {
-		void *bootconfig_ptr = map_sysmem(data->bootconfig_addr,
-						  data->bootconfig_size);
-		bool has_trailer;
+		bool has_trailer = false;
 
+		if (write_trailer) {
+			void *bootconfig_ptr = map_sysmem(data->bootconfig_addr,
+							  data->bootconfig_size);
+
+			/*
+			 * Do not write a trailer into the source image here:
+			 * the image buffer has no room for it, so doing so
+			 * overflows into adjacent memory. Only reserve space
+			 * for the trailer, which is written into the correctly
+			 * sized ramdisk copy by
+			 * android_boot_append_bootconfig().
+			 */
+			has_trailer = is_trailer_present((ulong)bootconfig_ptr +
+							 data->bootconfig_size);
+			unmap_sysmem(bootconfig_ptr);
+		}
 		/*
-		 * Do not write a trailer into the source image here: the image
-		 * buffer has no room for it, so doing so overflows into adjacent
-		 * memory. Only reserve space for the trailer, which is written
-		 * into the correctly sized ramdisk copy by
-		 * android_boot_append_bootconfig().
+		 * In the size-only query path only the header has been loaded,
+		 * so the bootconfig region is not present in the buffer and
+		 * must not be read; assume a trailer will be appended at load
+		 * time.
 		 */
-		has_trailer = is_trailer_present((ulong)bootconfig_ptr +
-						 data->bootconfig_size);
-		unmap_sysmem(bootconfig_ptr);
 		data->ramdisk_size += data->bootconfig_size;
 		if (!has_trailer)
 			data->ramdisk_size += BOOTCONFIG_TRAILER_SIZE;
@@ -275,7 +286,7 @@ bool android_image_get_vendor_bootimg_size(const void *hdr, u32 *vendor_boot_img
 		return false;
 	}
 
-	android_vendor_boot_image_v3_v4_parse_hdr(hdr, &data);
+	android_vendor_boot_image_v3_v4_parse_hdr(hdr, &data, false);
 
 	*vendor_boot_img_size = data.vendor_boot_img_total_size;
 
@@ -314,7 +325,7 @@ bool android_image_get_data(const void *boot_hdr, const void *vendor_boot_hdr,
 			return false;
 		}
 		android_boot_image_v3_v4_parse_hdr((const struct andr_boot_img_hdr_v3 *)bhdr, data);
-		android_vendor_boot_image_v3_v4_parse_hdr(vhdr, data);
+		android_vendor_boot_image_v3_v4_parse_hdr(vhdr, data, true);
 		unmap_sysmem(vhdr);
 	} else {
 		android_boot_image_v0_v1_v2_parse_hdr(bhdr, data);
