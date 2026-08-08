@@ -96036,3 +96036,40 @@ Both commits present. Run final build.
 
 ---
 
+### Pipeline fix: 2026-08-08 (attempt 1)
+
+Branch: cherry-09b1c0f98c0b
+
+Failed jobs:
+- edison (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/transient issues unrelated to the NVMe cherry-picks. Let me confirm by looking at what the cherry-picked commit touched.
+
+## Report: Infrastructure/transient failures — no code changes made
+
+**Diagnosis:** Both failing jobs are lab infrastructure issues unrelated to the cherry-picked commits. The NVMe commit touches only `drivers/nvme/nvme.c` and `drivers/nvme/nvme.h`, and neither pine64 nor edison exercise the NVMe path.
+
+### Job: edison (607849)
+**Root cause:** Labgrid place lock conflict — not a code failure.
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid. To work simultaneously, labgrid can execute
+labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+The pytest session aborted during `pytest_configure` because `u-boot-test-getrole edison --configure` failed — the edison board was held by another user (`kea/labgrid`). No U-Boot code ran.
+
+### Job: pine64 (607823)
+**Root cause:** Serial-line corruption on the lab UART — not a code failure.
+```
+FAILED test/py/tests/test_dm.py::test_dm_drivers
+AssertionError: assert 'bo��std_drv' in 'Driver ...'
+```
+The expected driver name `bootstd_drv` was received as `bo��std_drv` (two bytes garbled to U+FFFD replacement characters). The `dm drivers` output shows plausible driver list output otherwise. This is a classic UART framing/electrical noise glitch on the physical lab connection. All 41 other tests passed; only the byte-exact substring match tripped.
+
+### Action
+No changes made. Branch `cherry-09b1c0f98c0b-fix1` was **not** created because there is nothing to fix on the source side — retrying the pipeline (after the edison place is released) should clear both failures. The caller should re-trigger rather than patch.
+
+---
+
