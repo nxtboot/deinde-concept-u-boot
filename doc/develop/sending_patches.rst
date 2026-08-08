@@ -3,6 +3,17 @@
 Sending patches
 ===============
 
+.. note::
+
+   This page describes sending patches to **mainline U-Boot**. The Deinde
+   Concept Tree does not take patches by email: contribute to it by opening
+   a merge request against `concept.deinde.dev/u-boot/u-boot
+   <https://concept.deinde.dev/u-boot/u-boot>`_, and use the tree's
+   `mailing list
+   <https://lists.deinde.dev/mailman3/lists/concept.u-boot.org/>`_ for
+   discussion. The rules here still apply to anything you intend to send
+   upstream afterwards.
+
 *Before you begin* to implement any new ideas or concepts it is always a good
 idea to present your plans on the `U-Boot mailing list
 <https://lists.u-boot-project.org/listinfo/u-boot>`_. U-Boot supports a huge amount of
