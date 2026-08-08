@@ -32,7 +32,7 @@ def test_cmd_smbios_sandbox(ubman):
     """Run the smbios command on the sandbox"""
     output = ubman.run_command('smbios')
     assert 'DMI type 0,' in output
-    assert 'Vendor: U-Boot' in output
+    assert 'Vendor: Deinde Concept U-Boot' in output
     assert 'DMI type 1,' in output
     assert 'Manufacturer: Sandbox Corp' in output
     assert 'DMI type 2,' in output
@@ -47,7 +47,7 @@ def test_cmd_smbios_sysinfo_verbose(ubman):
     """Run the smbios command"""
     output = ubman.run_command('smbios')
     assert 'DMI type 0,' in output
-    assert 'Vendor: U-Boot' in output
+    assert 'Vendor: Deinde Concept U-Boot' in output
     assert 'DMI type 1,' in output
     assert 'Manufacturer: linux' in output
     assert 'DMI type 2,' in output

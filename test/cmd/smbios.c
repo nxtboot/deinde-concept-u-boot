@@ -28,7 +28,7 @@ static int cmd_smbios_test(struct unit_test_state *uts)
 	ut_assert_nextline_empty();
 	ut_assert_nextlinen("Handle 0x0000, DMI type 0, 26 bytes at");
 	ut_assert_nextline("BIOS Information");
-	ut_assert_nextline("\tVendor: U-Boot");
+	ut_assert_nextline("\tVendor: Deinde Concept U-Boot");
 	ut_assert_nextlinen("\tBIOS Version: ");
 	ut_assert_nextlinen("\tBIOS Release Date:");
 	ut_assert_nextline("\tBIOS ROM Size: 0x00");
