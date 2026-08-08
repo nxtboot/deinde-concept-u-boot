@@ -96141,3 +96141,44 @@ Push succeeded.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-4a237aa35f8a
+
+Commits:
+- 4a237aa35f8a arm: imx943: Update dts files to build with v7.1-dts tag
+- b9b104e8ddaa arm: qcom: Update ipq5424-rdp466-u-boot.dtsi for v7.1-dts changes
+- 44f0dcf47614 mailmap: update entry for Christopher Obbard
+- 9e596aee6855 CI: Azure: Correctly skip semihosting tests on vexpress_fvp
+- f6a37207b843 x86: add support for CONFIG_REMAKE_ELF
+- a9a289a211f7 rtc: pcf8563: add haoyu,hym8563 compatible
+- 9811c57b2e01 rtc: pcf8563: return -EINVAL when the voltage-low flag is set
+- 06c49ce4f187 Merge patch series "rtc: pcf8563: HYM8563 support and unreliable-time reporting"
+
+### Conversation log
+All 8 commits are in place. Now the final build test:
+
+## Final Status
+
+**Build result:** OK (sandbox builds cleanly)
+
+**All 8 commits present on branch `cherry-4a237aa35f8a`:**
+1. `4d3b51838ae9` — arm: imx943: Update dts files to build with v7.1-dts tag
+2. `16d72206f1aa` — arm: qcom: Update ipq5424-rdp466-u-boot.dtsi for v7.1-dts changes
+3. `06dd852ae96d` — mailmap: update entry for Christopher Obbard
+4. `757be1116e65` — CI: Azure: Correctly skip semihosting tests on vexpress_fvp (**empty**, fix-up applied)
+5. `05be4fd01c8f` — x86: add support for CONFIG_REMAKE_ELF
+6. `cae8a74c61ce` — rtc: pcf8563: add haoyu,hym8563 compatible
+7. `184589e80ecd` — rtc: pcf8563: return -EINVAL when the voltage-low flag is set
+8. `c8a951186144` — Merge patch series "rtc: pcf8563: HYM8563 support and unreliable-time reporting" (**empty merge**, preserved)
+
+**Fix-ups made:**
+- Commit #4 (`9e596aee6855`): Conflict in `.azure-pipelines.yml`. The upstream commit changes `vexpress_fvp`/`vexpress_fvp_bloblist` entries from `not hostfs` → `not semihosting`, but neither entry exists in `ci/master` (the parent commit `d75998b476de` that added them is not in this branch). Resolved by keeping HEAD (no vexpress_fvp block), committed as empty with a fix-up note appended.
+- Commit #8 (`06c49ce4f187`): Merge commit became empty after all children applied; preserved as empty commit with a fix-up note.
+
+**Concerning deltas:** None. All non-empty cherry-picks have identical file/line stats to originals.
+
+The branch is left ready for pushing.
+
+---
+
