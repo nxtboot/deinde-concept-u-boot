@@ -96322,5 +96322,36 @@ All 11 commits are present. Now running final build test.
 
 Branch is ready for pushing.
 
+## 2026-08-08: us/main
+
+Branch: cherry-cd6f2f451903
+
+Commits:
+- cd6f2f451903 fwu: Make boottime check failures visible
+- 8fac9697048d Merge tag 'fwu-main-03082026' of https://git.u-boot-project.org/u-boot/custodians/u-boot-tpm
+
+### Conversation log
+Good, delta matches. Now for the build test:
+
+All cherry-picks completed successfully.
+
+## Summary
+
+**Branch:** `cherry-cd6f2f451903` (based on `ci/master`)
+
+**Cherry-picked commits:**
+1. `90ab99b80a4e` — fwu: Make boottime check failures visible (from `cd6f2f451903`)
+   - Delta matches original exactly: 1 file changed, 2 insertions(+), 2 deletions(-)
+2. `cafd4356eb19` — Merge tag 'fwu-main-03082026' (from `8fac9697048d`)
+   - Empty merge commit preserved with `--allow-empty` (content already included via the first cherry-pick)
+
+**Build result:** OK — sandbox build passed both after each cherry-pick and at the final verification.
+
+**Fix-ups:** None required.
+
+**Concerning deltas:** None. The merge commit is empty as expected (the changes it merged were already applied in the first cherry-pick).
+
+The branch is ready for pushing.
+
 ---
 
