@@ -33,6 +33,20 @@ if you want to help out.
 Contributing Guidelines
 -----------------------
 
+.. note::
+
+   To contribute **to this tree**, open a merge request against
+   `concept.deinde.dev/u-boot/u-boot
+   <https://concept.deinde.dev/u-boot/u-boot>`_. Patches are not accepted by
+   email here; the tree's `mailing list
+   <https://lists.deinde.dev/mailman3/lists/concept.u-boot.org/>`_ is for
+   discussion.
+
+   The guidelines below describe contributing to **mainline U-Boot**, which
+   is done by sending patches to the U-Boot mailing list. Since the aim of
+   this tree is to feed proven work back upstream, anything intended for
+   mainline should follow them as well.
+
 General guidelines for contributing to the U-Boot project.
 
 .. toctree::
