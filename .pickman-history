@@ -95559,3 +95559,124 @@ Failed jobs:
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-f079d8059da9
+
+Commits:
+- f079d8059da9 rockchip: rk3568-nanopi-r5: Drop duplicated/extra sdhci
+- 1998fe69f7e1 board: rockchip: add Anbernic RG-DS
+- 3bc0f8127353 rockchip: only build GPT capsule update helpers with PARTITION_TYPE_GUID
+- 30675622843d MAINTAINERS: update ARM ROCKCHIP entry to list Simon as reviewer
+- e504d9cffbaf rockchip: pinctrl: replace RK_FUNC_n defines
+- 2f783e53754b rockchip: pinctrl: replace RK_GPIOn defines
+- 51947d401762 rockchip: pinctrl: use include from dts/upstream
+- 15387d5a90af rockchip: rk3588s: Add support for ROC-RK3588S-PC
+- d97d3df79e7b mtd: nand: raw: rockchip_nfc: fix ecc setup
+- 6fd5e4b7e7a8 Merge tag 'u-boot-rockchip-2026.10-20260724' of https://git.u-boot-project.org/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+The merge commit is empty as expected — committing it to preserve the message:
+
+All 10 commits cherry-picked successfully onto `cherry-f079d8059da9` (based on ci/master).
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with no warnings or errors after every cherry-pick and in the final verification.
+
+**Commits applied (oldest first):**
+
+| New hash | Original | Subject |
+|---|---|---|
+| 4fc7747e3830 | f079d8059da9 | rockchip: rk3568-nanopi-r5: Drop duplicated/extra sdhci |
+| 58bddd466522 | 1998fe69f7e1 | board: rockchip: add Anbernic RG-DS |
+| 6d5c0e25cbb2 | 3bc0f8127353 | rockchip: only build GPT capsule update helpers with PARTITION_TYPE_GUID |
+| ad439149d999 | 30675622843d | MAINTAINERS: update ARM ROCKCHIP entry to list Simon as reviewer |
+| 64f5e560e74b | e504d9cffbaf | rockchip: pinctrl: replace RK_FUNC_n defines |
+| 45b151754f5e | 2f783e53754b | rockchip: pinctrl: replace RK_GPIOn defines |
+| 4b1438a81ba2 | 51947d401762 | rockchip: pinctrl: use include from dts/upstream |
+| 047392148fca | 15387d5a90af | rockchip: rk3588s: Add support for ROC-RK3588S-PC |
+| e19be6dd496b | d97d3df79e7b | mtd: nand: raw: rockchip_nfc: fix ecc setup |
+| e164825dedf6 | 6fd5e4b7e7a8 | Merge tag 'u-boot-rockchip-2026.10-20260724' (empty, message preserved) |
+
+**Fix-ups:** None needed. All 9 regular commits applied cleanly (a few had trivial auto-merges in MAINTAINERS and rockchip.rst) with deltas exactly matching the originals. The merge commit became empty as expected since all its content was already picked, so it was committed with `--allow-empty` to preserve the merge message and cherry-pick reference.
+
+**Concerning deltas:** None — every commit's file list and line counts matched the original exactly.
+
+The branch is ready for pushing; it has not been merged anywhere.
+
+---
+
+### Review: 2026-08-07
+
+Branch: cherry-f079d8059da9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) zybo, edison, play, vbe, tk1, rpi5, jetson-nano, felwi...
+
+### Conversation log
+Build passes cleanly. Now create the -v2 snapshot branch and push:
+
+All done. Here is the report:
+
+## Report
+
+### Rebase
+`git rebase --keep-empty ci/master` was a **no-op** — the branch is already based on the current tip of ci/master (28fafea2fa47, the cherry-33e63831080d merge). No conflicts, no commits rewritten, so the per-commit delta/build checks did not apply; all 11 commits (10 cherry-picks including the empty preserved merge, plus the pickman record) are unchanged.
+
+### Review comment
+The single comment (`project_1_bot_...`) is the bot's own record of "Pipeline fix (attempt 1)" — the diagnosis that all 39 failed sjg-lab jobs were a lab-wide labgrid coordinator/exporter outage (no serial-port resources, place locks held by kea, `u-boot-test-getrole` KeyErrors, console timeouts), all within a 90-second window and spanning architectures this Rockchip-only branch does not touch. **No code change was requested or needed**, so no commit was amended and no fixup was added.
+
+### Notable finding
+The remote MR branch was stale: it still pointed at 779f41ec2ee1, the tip of the older cherry-e7b59552d88d (usb/xhci) work — the rockchip content had never landed on the remote branch. I verified via `git cherry` that everything on that stale tip is patch-equivalent to commits already merged into ci/master, so the force push lost nothing.
+
+### Actions taken
+1. Checked out `cherry-f079d8059da9` (tip aa48359100ce); rebase onto ci/master was a no-op
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built cleanly, no warnings
+3. Created local snapshot branch `cherry-f079d8059da9-v2`
+4. Force-pushed via `./tools/pickman/pickman push-branch cherry-f079d8059da9 -r ci -f`: `779f41ec2ee1...aa48359100ce -> cherry-f079d8059da9`, which triggers a fresh MR pipeline for !1254
+
+### Suggested MR reply
+
+> All 39 job failures in the previous pipeline were lab infrastructure issues — a labgrid coordinator/exporter outage causing missing serial-port resources, place locks held by kea/labgrid, getrole KeyErrors and console timeouts, all within the same 90-second window and affecting boards (x86, rpi, tegra, exynos, sunxi) untouched by this Rockchip-only series. No source changes were needed. The remote branch was also found to be stale (still pointing at the previous usb series tip), so it has been force-pushed with the correct rebased rockchip content, triggering a fresh pipeline. If labgrid places are still held by stale acquisitions, they may need releasing before the lab jobs can pass.
+
+---
+
+### Review: 2026-08-07
+
+Branch: cherry-f079d8059da9
+
+Comments addressed:
+
+
+### Conversation log
+The branch has 11 commits on top of merge-base 28fafea, and ci/master has moved ahead. Let me record the pre-rebase state and start the rebase.
+
+Build passes. The previous run already created `-v2`, so check and increment.
+
+All done. Here is the report:
+
+## Report
+
+### Rebase
+`git rebase --keep-empty ci/master` moved the 12-commit branch from its old base (28fafea2fa47) onto the new ci/master tip (4470a7a06b3c, the cherry-5b1dac9ee202 merge). All 10 rockchip commits — including the preserved empty merge commit — applied cleanly with no conflicts.
+
+### Conflict resolved
+One conflict, in `.pickman-history` only, on the "pickman: Record cherry-pick of 10 commits" commit. It was the classic both-appended case: ci/master's new tip appends the cherry-5b1dac9ee202 (fs/load) session log at the same spot where this branch appends its cherry-f079d8059da9 (rockchip) session log. Resolved by keeping both sections in order — the fs/load entry first, then the rockchip entry — with the standard `---` separator and repeated `## 2026-08-07: us/main` heading between them. No source files were involved.
+
+### Verification
+- **Per-commit deltas:** compared `git show --stat` for every commit before vs after the rebase — all 12 MATCH exactly (file lists and line counts unchanged). The merge commit remains empty with its message preserved.
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built cleanly, no warnings or errors.
+
+### Actions taken
+1. Checked out `cherry-f079d8059da9` and rebased onto ci/master, resolving the single `.pickman-history` conflict
+2. Verified all commit deltas match pre-rebase and that sandbox builds cleanly
+3. Created local snapshot branch `cherry-f079d8059da9-v3` (`-v2` already existed from the previous round)
+4. Force-pushed via `./tools/pickman/pickman push-branch cherry-f079d8059da9 -r ci -f`: `aa48359100ce...f4a242513135 -> cherry-f079d8059da9`, triggering a fresh MR pipeline for !1254
+
+### Suggested MR reply
+
+> Rebased onto the current ci/master tip (which now includes the cherry-5b1dac9ee202 fs/load series). The only conflict was in the .pickman-history log file, where both branches appended a session entry at the same point — resolved by keeping both entries. All 10 rockchip commits applied cleanly with deltas identical to the previous round, the empty rockchip merge commit is preserved, and sandbox builds with no warnings or errors. No source changes were needed.
+
+---
+
