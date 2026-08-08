@@ -121,7 +121,7 @@
 	status = "okay";
 };
 
-&usb3 {
+&usb3_glue {
 	bootph-pre-ram;
 	status = "okay";
 };
