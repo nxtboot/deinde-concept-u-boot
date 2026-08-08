@@ -95808,3 +95808,57 @@ The branch has NOT been merged anywhere.
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-0786aea46596
+
+Commits:
+- 0786aea46596 efi_loader: set correct frame buffer address
+- 11a9a806f6d5 doc: thead: lpi4a: detail how to enable fastboot
+- dc3765ede5a4 doc: Switch from setenv to env set
+- d1b0138f0273 doc: Switch from printenv to env print
+- e85562963f1d doc: board: renesas: Document Renesas R-Car Gen5 RSIP Cortex-R52 start
+- 7a63ea588911 cmd: nvedit_efi: use efi_auth_var_get_guid() for the default GUID
+- af5234975669 test: check default GUID selection of signature database variables
+- 3d47f5583283 efi_loader: check efi_deserialize_load_option() in get_dp_device()
+- a2fda5145fdf sandbox: fix enum host_platform_flags description
+- e354b34a6ab4 Merge tag 'efi-2026-01-rc2' of https://git.u-boot-project.org/u-boot/custodians/u-boot-efi
+
+### Conversation log
+All 10 commits are present. Running the final build:
+
+All done. Final status:
+
+## Result: success
+
+**Branch:** `cherry-0786aea46596` (based on ci/master), 10 commits applied, ready for pushing.
+
+**Build:** OK — sandbox builds cleanly with no warnings or errors, both after each pick and in the final verification.
+
+**Commits applied (oldest first):**
+| Original | New | Notes |
+|---|---|---|
+| 0786aea46596 | e32be422b7db | clean |
+| 11a9a806f6d5 | 062c5bff8a71 | clean |
+| dc3765ede5a4 | 466cfa1039e1 | conflicts, fixed up (see below) |
+| d1b0138f0273 | 79f3449c58c2 | clean (auto-merged README) |
+| e85562963f1d | 3aab02ea05ee | clean |
+| 7a63ea588911 | 486cb5b0a58c | clean |
+| af5234975669 | 95ec2147017e | clean |
+| 3d47f5583283 | 5bf4e87a8831 | clean |
+| a2fda5145fdf | 2169d9f43cea | clean |
+| e354b34a6ab4 (merge) | e92a1a47bd50 | empty commit, message preserved |
+
+**Fix-ups made:**
+
+1. **dc3765ede5a4 (doc: Switch from setenv to env set)** — two conflicts:
+   - `doc/README.console` is deleted in ci/master (moved to `doc/usage/console.rst` by 2f6a2ed3dbce). I kept the deletion and applied the commit's own sed (`s@\<setenv\>@env set@g`) to `doc/usage/console.rst` instead, converting the 5 setenv occurrences there.
+   - `doc/usage/cmd/gpt.rst` has diverged locally (different gpt_parts example formatting; ci/master lacks the upstream "known partition types" example). I took the ci/master version and applied the same sed to it.
+   - A note describing both fix-ups is amended into the commit message. Delta: 66 files / +208-209 vs original 66 files / +206-207 — fine.
+
+2. **e354b34a6ab4 (merge commit)** — hit the same README.console and gpt.rst conflicts since all its content was already applied by the preceding picks. Resolved by keeping HEAD versions, resulting in an empty commit created with `--allow-empty` to preserve the merge message for history tracking.
+
+**Concerning deltas:** none — all non-conflicting picks matched their originals exactly.
+
+---
+
