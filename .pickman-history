@@ -96104,3 +96104,40 @@ Both are transient lab infrastructure failures unrelated to the NVMe cherry-pick
 
 ---
 
+### Review: 2026-08-08
+
+Branch: cherry-09b1c0f98c0b
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match original exactly. Now run the sandbox build.
+
+Build passes. Now create the -v2 branch and force push.
+
+Push succeeded. 
+
+## Report
+
+**Rebase completed successfully** for MR !1260 (branch `cherry-09b1c0f98c0b`) onto `ci/master`.
+
+**Conflict resolved:**
+- `.pickman-history` had a text conflict — both the base branch's `cherry-38bfdf0a7702` entry (now merged into `ci/master`) and this branch's `cherry-09b1c0f98c0b` entry were appended under the same `## 2026-08-08: us/main` date header. Resolved by keeping both records, adding a `---` separator and a duplicate date header for the second block, so both cherry-pick logs coexist.
+
+**Deltas verified:**
+- `0c61f6f2198c` (nvme: Fix missing address translation) — 2 files, 31 insertions, 45 deletions — matches original exactly
+- `043277375f79` (Merge tag 'u-boot-nvme-next-20260728') — empty merge commit preserved
+
+**Build result:** OK — sandbox built cleanly, no warnings or errors.
+
+**Local branch:** `cherry-09b1c0f98c0b-v2` (created at the rebased HEAD `9a02a7871fc1`).
+
+**Push:** force-pushed to `ci/cherry-09b1c0f98c0b` (GitLab will retrigger the MR pipeline).
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. One trivial text conflict in `.pickman-history` (both branches had appended a `2026-08-08: us/main` record) resolved by keeping both entries. NVMe commit and merge cherry-picks are unchanged (deltas match the originals). Sandbox build passes. Pushed as force-update; pipeline will re-run.
+
+---
+
