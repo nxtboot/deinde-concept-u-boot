@@ -95975,3 +95975,32 @@ Every one of these jobs died in `pytest_configure` (during `u-boot-test-getrole 
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-38bfdf0a7702
+
+Commits:
+- 38bfdf0a7702 ufs: invalidate the whole descriptor data segment after a query read
+- d393e2a7b447 Merge tag 'u-boot-ufs-fixes-20260728' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-ufs
+
+### Conversation log
+Build passes. Now the merge commit:
+
+Both commits are in place. Final build:
+
+All done. Final status:
+
+## Cherry-pick complete — branch `cherry-38bfdf0a7702` ready for pushing
+
+**Commits picked (in order):**
+1. `5b35f626ebb6` — ufs: invalidate the whole descriptor data segment after a query read (from `38bfdf0a7702`) — clean pick, delta matches original exactly (1 file, 1 insertion in drivers/ufs/ufs-uclass.c)
+2. `dc876856061e` — Merge tag 'u-boot-ufs-fixes-20260728' (from `d393e2a7b447`, `-m 1`) — committed as an empty commit since its only content is the fix above; merge message preserved with cherry-pick reference
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors.
+
+**Notes:**
+- The first build attempt failed with a Rust linker error (`cannot find linker script /tmp/pickman-wt-0786/.../static.lds`). This was a stale artifact in `/tmp/pickman` referencing an old buildman worktree, unrelated to the cherry-picked change. Removing `/tmp/pickman` and rebuilding resolved it.
+- No fix-ups or conflict resolutions were needed; no concerning deltas.
+
+---
+
