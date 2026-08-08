@@ -148,7 +148,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Das U-Boot'
+project = 'Deinde Concept U-Boot'
 copyright = 'The U-Boot development community'
 author = 'The U-Boot development community'
 
@@ -570,7 +570,8 @@ epub_exclude_files = ['search.html']
 #
 # See https://rst2pdf.org/static/manual.html#sphinx
 pdf_documents = [
-    ('index', u'U-Boot', u'Das U-Boot', u'The U-Boot development community'),
+    ('index', u'U-Boot', u'Deinde Concept U-Boot',
+     u'The U-Boot development community'),
 ]
 
 # kernel-doc extension configuration for running Sphinx directly (e.g. by Read
