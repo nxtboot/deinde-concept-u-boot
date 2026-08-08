@@ -95925,3 +95925,53 @@ Three distinct code problems were found, each fixed by amending the responsible 
 
 ---
 
+### Pipeline fix: 2026-08-07 (attempt 2)
+
+Branch: cherry-0786aea46596
+
+Failed jobs:
+- edison (sjg-lab)
+- tk1 (sjg-lab)
+- jetson-nano (sjg-lab)
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- bpif3 (sjg-lab)
+- pico (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- rock5b (sjg-lab)
+- rock3a (sjg-lab)
+- rockpro64 (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+## Report
+
+**No code changes were made — all 12 failures are lab infrastructure or transient issues, not caused by the branch.**
+
+### Diagnosis
+
+**11 of 12 jobs (edison, tk1, jetson-nano, felwinter, felwinter-cb, bpif3, pico, nanopi-m5, rock5b, rock3a, rockpro64)** failed with the identical labgrid error before any test ran:
+
+```
+labgrid-client: Error: place <role> is not acquired by your user, acquired by labgrid.
+...place <role> is acquired by a different user (kea/labgrid)
+```
+
+Every one of these jobs died in `pytest_configure` (during `u-boot-test-getrole --configure`) — no build or test was ever executed. All the places were held by `kea/labgrid` at ~05:11 on 2026-08-08, so this is a single lab-wide event (something on host `kea` holding all the places), not a per-board problem and certainly not a code problem.
+
+**pine64** is the only job that actually ran tests: 41 passed, 685 skipped, 1 failed — `test_dm.py::test_dm_drivers` asserting `'fixed_factor_clock' in <dm drivers output>`. This is a transient serial-console glitch, for these reasons:
+
+- The test compares the output of `dm compat` against `dm drivers`. Both commands walk the same linker-list of drivers, so a driver reported by `dm compat` (as `fixed_factor_clock` was, seconds earlier) can only be "missing" from `dm drivers` if a line was dropped or corrupted in the UART capture — a known flaky mode on real hardware.
+- No commit on this branch touches `drivers/`, `cmd/dm.c`, or DM core (`git log f6efc73eb6ff..fb4ee8db81b8 -- drivers/ cmd/dm.c` is empty). The branch changes only EFI loader/client code, `cmd/nvedit_efi.c`, docs, a sandbox header comment, and EFI tests — none of which can alter pine64's driver list.
+- pine64 was not among the failures in the attempt-1 pipeline, i.e. it has already passed with the same relevant code.
+
+### Actions taken
+
+- Checked out `cherry-0786aea46596`; verified the working tree is clean and the attempt-1 fixes are present.
+- Created local branch `cherry-0786aea46596-fix2` at the current HEAD (`7dd977317046`), unchanged, so the caller can retrigger the pipeline. Not pushed.
+- No builds run since nothing changed (the tree is identical to what the attempt-1 verification already built cleanly: sandbox + 11 boards with buildman, htmldocs, EFI secboot tests).
+
+**Recommendation:** release/kick the labgrid places held by `kea/labgrid` (e.g. `labgrid-client -p <place> allow ellesmere/gitlab-runner` or freeing them on kea), then simply retry the pipeline — no branch changes are required.
+
+---
+
