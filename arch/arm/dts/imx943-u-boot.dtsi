@@ -249,7 +249,7 @@
 &{/soc} {
 	bootph-all;
 
-	usb3: usb@4c010010 {
+	usb3_glue: usb@4c010010 {
 		compatible = "fsl,imx95-dwc3", "fsl,imx8mp-dwc3";
 		reg = <0x0 0x4c010010 0x0 0x04>,
 		      <0x0 0x4c1f0000 0x0 0x20>;

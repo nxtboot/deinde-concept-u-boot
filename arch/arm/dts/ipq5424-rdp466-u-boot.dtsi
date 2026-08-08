@@ -17,6 +17,36 @@
 	};
 };
 
+&tlmm {
+	/*
+	 * v7.1-dts drops this state along with the &sdhc node it served, since
+	 * Linux has no user for it. U-Boot still boots from the SD controller,
+	 * so carry the pin configuration here.
+	 */
+	sdc_default_state: sdc-default-state {
+		clk-pins {
+			pins = "gpio5";
+			function = "sdc_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cmd-pins {
+			pins = "gpio4";
+			function = "sdc_cmd";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		data-pins {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3";
+			function = "sdc_data";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
 	&sdhc {
 		sdhci-caps-mask = <0x0 0x04000000>;
 		sdhci-caps = <0x0 0x04000000>;	/* SDHCI_CAN_VDD_180 */
