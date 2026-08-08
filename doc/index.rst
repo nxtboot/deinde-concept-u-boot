@@ -2,8 +2,23 @@
 
 .. _u-boot_doc:
 
-The U-Boot Documentation
-========================
+The Deinde Concept U-Boot Documentation
+=======================================
+
+.. note::
+
+   This documents the **Deinde Concept Tree**, an independent, experimental
+   downstream tree for U-Boot maintained by an independent maintainer. It is
+   not affiliated with, sponsored by, or endorsed by the Software Freedom
+   Conservancy (SFC) or the official Das U-Boot project.
+
+   The tree is a proving ground for large-scale features and refactoring, run
+   in the open with the aim of feeding proven work back to mainline U-Boot.
+   Pages here may therefore describe behaviour which does not exist in
+   mainline, or which differs from it.
+
+   * Mainline U-Boot: https://u-boot-project.org
+   * About this tree: https://deinde.dev/u-boot/
 
 This is the top level of the U-Boot's documentation tree.  U-Boot
 documentation, like the U-Boot itself, is very much a work in progress;
@@ -17,6 +32,20 @@ if you want to help out.
 
 Contributing Guidelines
 -----------------------
+
+.. note::
+
+   To contribute **to this tree**, open a merge request against
+   `concept.deinde.dev/u-boot/u-boot
+   <https://concept.deinde.dev/u-boot/u-boot>`_. Patches are not accepted by
+   email here; the tree's `mailing list
+   <https://lists.deinde.dev/mailman3/lists/concept.u-boot.org/>`_ is for
+   discussion.
+
+   The guidelines below describe contributing to **mainline U-Boot**, which
+   is done by sending patches to the U-Boot mailing list. Since the aim of
+   this tree is to feed proven work back upstream, anything intended for
+   mainline should follow them as well.
 
 General guidelines for contributing to the U-Boot project.
 

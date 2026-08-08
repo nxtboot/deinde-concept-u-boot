@@ -148,7 +148,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Das U-Boot'
+project = 'Deinde Concept U-Boot'
 copyright = 'The U-Boot development community'
 author = 'The U-Boot development community'
 
@@ -266,7 +266,7 @@ except ImportError:
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = '../tools/logos/u-boot-logo-text.svg'
+html_logo = '../tools/logos/deinde-concept-tree.svg'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -461,7 +461,7 @@ for fn in os.listdir('.'):
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'u-boot', 'The U-Boot Documentation',
+    (master_doc, 'u-boot', 'The Deinde Concept U-Boot Documentation',
      [author], 1)
 ]
 
@@ -475,7 +475,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'u-boot', 'The U-Boot Documentation',
+    (master_doc, 'u-boot', 'The Deinde Concept U-Boot Documentation',
      author, 'U-Boot', 'Boot loader for embedded systems',
      'Miscellaneous'),
 ]
@@ -570,7 +570,8 @@ epub_exclude_files = ['search.html']
 #
 # See https://rst2pdf.org/static/manual.html#sphinx
 pdf_documents = [
-    ('index', u'U-Boot', u'Das U-Boot', u'The U-Boot development community'),
+    ('index', u'U-Boot', u'Deinde Concept U-Boot',
+     u'The U-Boot development community'),
 ]
 
 # kernel-doc extension configuration for running Sphinx directly (e.g. by Read

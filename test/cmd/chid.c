@@ -24,7 +24,7 @@ static int cmd_chid_show_test(struct unit_test_state *uts)
 	ut_assert_nextline("Product SKU:       SANDBOX-SKU");
 	ut_assert_nextline("Baseboard Manuf:   Sandbox Boards");
 	ut_assert_nextline("Baseboard Product: Sandbox Motherboard");
-	ut_assert_nextline("BIOS Vendor:       U-Boot");
+	ut_assert_nextline("BIOS Vendor:       Deinde Concept U-Boot");
 	ut_assert_nextlinen("BIOS Version:      " PLAIN_VERSION);
 	ut_assert_nextline("BIOS Major:        %u", U_BOOT_VERSION_NUM % 100);
 	ut_assert_nextline("BIOS Minor:        %u", U_BOOT_VERSION_NUM_PATCH);
