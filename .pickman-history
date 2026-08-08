@@ -96278,3 +96278,49 @@ Branch left ready for pushing; not merged anywhere.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-20f2b9bbd2a6
+
+Commits:
+- 20f2b9bbd2a6 MAINTAINERS: Update SH/SoCFPGA/USB email addresses
+- 202d31f930ef clk: renesas: Add SDK SCP 4.36 map to Renesas R-Car R8A78000 X5H CPG clock driver
+- 99203d9dac52 clk: rs9: Add Renesas 9-series PCIe clock generator driver
+- 50d73309201d pci: pcie-rcar-gen4: Handle always on reference clock
+- e8bb5fdab94c arm64: renesas: r8a779g3: Enable PCIe clock generator and I2C mux drivers on Retronix R-Car V4H Sparrow Hawk board
+- 53e0237c15c9 Revert "arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock description for Sparrow Hawk"
+- 18b1ecb34a6b pinctrl: renesas: Further minimize R8A77951 H3 PFC tables
+- 394e63e7c945 pinctrl: renesas: Further minimize R8A77960 M3-W and R8A77961 M3-W+ PFC tables
+- 7feb56b8ef61 pinctrl: renesas: Further minimize R8A77965 M3-N PFC tables
+- 8fa2ad1a2c66 arm: dts: renesas: Remove unused OPP nodes from R-Car H3/M3-W/M3-W+/M3-N
+- 292230b36a47 Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 11 commits are present. Now running final build test.
+
+## Final Status
+
+**Build result:** OK — sandbox build succeeded cleanly.
+
+**Cherry-picks:** All 11 commits successfully applied to branch `cherry-20f2b9bbd2a6` (based on `ci/master`):
+
+1. `d6138e860adf` — MAINTAINERS: Update SH/SoCFPGA/USB email addresses
+2. `d567d99527cc` — clk: renesas: Add SDK SCP 4.36 map to R8A78000 X5H CPG
+3. `ea0636ed733c` — clk: rs9: Add Renesas 9-series PCIe clock generator driver
+4. `91229268b53c` — pci: pcie-rcar-gen4: Handle always on reference clock
+5. `5ae87c03b469` — arm64: renesas: r8a779g3: Enable PCIe/I2C mux on Sparrow Hawk
+6. `c3f938781b33` — Revert "arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock…"
+7. `f91c1e42e28b` — pinctrl: renesas: Minimize R8A77951 H3 PFC tables
+8. `70551df3c8d6` — pinctrl: renesas: Minimize R8A77960/61 M3-W(+) PFC tables
+9. `c5471cc418e6` — pinctrl: renesas: Minimize R8A77965 M3-N PFC tables
+10. `03d60c4c52b7` — arm: dts: renesas: Remove unused OPP nodes from R-Car H3/M3-W/M3-W+/M3-N
+11. `b85fe46ead96` — Merge branch 'main' (u-boot-sh) — empty merge commit preserved with `--allow-empty`
+
+**Fix-ups:** None. All non-merge commits applied with identical stats to originals. The merge commit resulted in an empty commit (as expected, since all its contents were already applied via the preceding cherry-picks) and was preserved with `--allow-empty` to maintain history.
+
+**Concerning deltas:** None.
+
+Branch is ready for pushing.
+
+---
+
