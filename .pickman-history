@@ -95680,3 +95680,77 @@ One conflict, in `.pickman-history` only, on the "pickman: Record cherry-pick of
 
 ---
 
+## 2026-08-07: us/main
+
+Branch: cherry-765ec2edd9a2
+
+Commits:
+- 765ec2edd9a2 board: purism: Add support for the Librem5 devkit
+- 0d61a1fda618 imx9: bootaux: Support authenticate signed Mcore container image
+- bc92fd3aec26 imx9: bootaux: Support booting CM70, CM71 and CM33 sync cores
+- 047ed967843a imx9{4, 5, 52}_evk: power on mcore according to SM config
+- ae31cc745bcb imx9: scmi: reset GPIO2 according its node status
+- 573b03317aab arm: dts: imx943-evk: Add label for gpio expander devices
+- cec2f200b4bf mx6: ddr: Subtract half a cycle instead of three quarters of a cycle after DQS gating calibration
+- 3dcbac87a2cc arm64: dts: imx8m: Reinstate TEE ifdeffery
+- beae2cdf2fbd sysinfo: tq_eeprom: select NVMEM
+- 1786f0e16e8f arm: dts: tqma6ul: add eeprom nvmem-layout
+- e643d211f55f arm: dts: tqma6ul: integrate tq,eeprom sysinfo driver
+- 141b9cab273d boards: tqma6ul: select TQ_COMMON_SYSINFO
+- d2d005a32b97 ge: common: vpd_reader: fix errloc array size in verify_bch()
+- c62cdff89cc5 binman: imx8mimage: Generate FSPI header in binman instead of mkimage
+- 3f7a074d83a5 arm64: dts: imx8mm: Drop nxp,fspi-header-filename
+- ba1a95aef3ed arm64: dts: imx8mn: Drop nxp,fspi-header-filename
+- 099fc6eda544 imx93_frdm: Add OP-TEE device tree node
+- bb4b0925d48c imx9: scmi: Update get mac from fuse for iMX952
+- 1f829fcc2ade board: toradex: smarc-imx95: detect RAM sizes
+- 3685450a8118 board: toradex: aquila-imx95: detect RAM sizes
+- f7d1cb673de0 toradex: tdx-cfg-block: Add smarc imx95 0229 pid4
+- 9d42978d91a1 toradex: tdx-cfg-block: Add aquila tda4 0230 pid4
+- 6c00fdf583e5 toradex: tdx-cfg-block: Add apalis imx8qm 64gb emmc pid4s
+- 30586348b87b toradex: tdx-cfg-block: Add verdin imx8mp 64gb emmc pid4s
+- 96a52d11aea6 toradex: tdx-cfg-block: Add verdin imx8mm 0239 pid4
+- 815de583703a toradex: tdx-cfg-block: Add smarc imx8mp 0240 pid4
+- 2e49ea72ff5f toradex: tdx-cfg-block: Add verdin am62 0242 pid4
+- 771dca9677df arm64: imx: Handle both MMC2 and SD2 boot devices on Data Modul i.MX8M Mini eDM SBC
+- 5c2fc4acc4ef rtc: snvs: Add i.MX SNVS RTC driver
+- 2484741fec39 board: tqma6: change U-Boot device tree fragments
+- c644dec64af5 ARM: dts: tqma6: add boot phase properties
+- 2416b2a21cf1 dts: tqma6: mba6: remove old device trees
+- c6bf5b6a14e3 board: tqma6: use runtime SoC detection in enet setup
+- 17abea6ca049 board: tqma6: implement ENET errata workaround detection
+- 1aae8d914dee board: tqma6: add kernel device tree handling for environment
+- 0f662df68899 configs: tqma6ul: add support for redundant environment
+- ce5793d777fd board: gateworks: fsa: bound FSA EEPROM gpio descriptor count
+- 5c215cb75c37 Prepare v2026.10-rc1
+- 134ad3c3c077 Merge tag 'u-boot-imx-main-20260727' of https://git.u-boot-project.org/u-boot/custodians/u-boot-imx
+
+### Conversation log
+15 of 39 done, all clean. Continuing.
+
+24 of 39 done. Continuing.
+
+Now amending to note the conflict resolution, then build test:
+
+Now the final merge commit (38 of 39 done):
+
+The merge commit is empty as expected (all its content already picked). Committing it to preserve the message:
+
+All 39 commits are present. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete: 39/39 commits on `cherry-765ec2edd9a2`
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors (verified after every commit and again at the end).
+
+**Fix-ups made:**
+1. **`5c215cb75c37` (Prepare v2026.10-rc1)** — conflict in `Makefile`: ci/master has `PATCHLEVEL = 04` while the commit changes `07` → `10`. Resolved by taking the incoming version (`PATCHLEVEL = 10`, `EXTRAVERSION = -rc1`), matching the commit's intent. A note was added to the commit message; `doc/develop/release_cycle.rst` applied cleanly.
+2. **`134ad3c3c077` (merge commit)** — cherry-picked with `-m 1` and resulted in an empty commit (all content already picked individually). Committed with `--allow-empty` to preserve the merge message, as required.
+
+**Delta checks:** every other commit applied with file lists and line counts exactly matching the originals (a few had trivial auto-merged context in `imx8mm-u-boot.dtsi`, `imx95_evk.config`, `verdin-imx8mm.c` and `ftest.py`, with identical stats).
+
+The branch `cherry-765ec2edd9a2` is left checked out and ready for pushing; it is 39 commits ahead of `ci/master` and has not been merged anywhere.
+
+---
+
