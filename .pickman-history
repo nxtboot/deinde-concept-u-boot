@@ -96004,3 +96004,35 @@ All done. Final status:
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-09b1c0f98c0b
+
+Commits:
+- 09b1c0f98c0b nvme: Fix missing address translation for PCIe inbound access
+- 47b70ba39abd Merge tag 'u-boot-nvme-next-20260728' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-nvme
+
+### Conversation log
+Deltas match exactly. Now run the build test.
+
+Build passes. Now cherry-pick the merge commit.
+
+Both commits present. Run final build.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-09b1c0f98c0b` (based on ci/master, ready for pushing)
+
+**Commits cherry-picked:**
+1. `bac973d98d37` — nvme: Fix missing address translation for PCIe inbound access (from `09b1c0f98c0b`)
+   - Delta matches original exactly: 2 files, 31 insertions, 45 deletions
+2. `e39adeaa71bc` — Merge tag 'u-boot-nvme-next-20260728' (from `47b70ba39abd`)
+   - Empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups:** None required — clean cherry-picks
+**Concerning deltas:** None
+
+---
+
