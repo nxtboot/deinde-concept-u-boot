@@ -96182,3 +96182,46 @@ The branch is left ready for pushing.
 
 ---
 
+### Review: 2026-08-08
+
+Branch: cherry-4a237aa35f8a
+
+Comments addressed:
+
+
+### Conversation log
+Now let me record commit hashes and stats before rebasing so I can compare after:
+
+Both v7.1-dts-related cherry-picks are already superseded by better local fixes in ci/master. Let me skip them.
+
+All 7 remaining commits have deltas identical to the originals. Now build:
+
+Build passes. Now push to the remote:
+
+Done. Summary:
+
+## Rebase completed
+
+**Branch:** `cherry-4a237aa35f8a-v2` (force-pushed to `ci/cherry-4a237aa35f8a`, MR !1264)
+
+**Commits dropped (superseded by better fixes now in `ci/master`):**
+- `4d3b51838ae9` — arm: imx943: Update dts files to build with v7.1-dts tag → superseded by `927bfeb7fe18` "arm: dts: imx943: Rename the local USB3 glue label". The us/main commit *deletes* the local USB3 glue node; the ci/master commit specifically explains why that is unsafe ("Removing them builds cleanly but leaves the controller unbound") and renames the label instead.
+- `16d72206f1aa` — arm: qcom: Update ipq5424-rdp466-u-boot.dtsi → superseded by `5b733da8f0cc` "arm: dts: ipq5424: Provide the SD-card pin state locally". The us/main commit redirects `pinctrl-0` to the wrong (NAND) pin state; the ci/master commit adds the correct SD `sdc_default_state` node locally.
+
+**Conflicts resolved:**
+- `.pickman-history` — both `ci/master` (via merged cherry-09b1c0f98c0b) and this branch appended entries under the same `## 2026-08-08: us/main` header. Kept both with a `---` separator and a duplicate date header.
+
+**Remaining 7 commits** (mailmap, CI vexpress_fvp empty, x86 REMAKE_ELF, two pcf8563 rtc commits, empty rtc merge, pickman history) all rebased with byte-identical stat deltas versus originals.
+
+**Build:** `buildman --board sandbox` — OK.
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. Two commits were dropped because `ci/master` now carries superior local fixes for the same v7.1-dts problems:
+> - `arm: imx943: Update dts files to build with v7.1-dts tag` — superseded by ci/master's `arm: dts: imx943: Rename the local USB3 glue label` (927bfeb7fe18). The upstream fix deletes the local USB3 glue node, which as the ci/master commit explains would leave the controller unbound; renaming the label is the correct fix.
+> - `arm: qcom: Update ipq5424-rdp466-u-boot.dtsi for v7.1-dts changes` — superseded by ci/master's `arm: dts: ipq5424: Provide the SD-card pin state locally` (5b733da8f0cc). The upstream fix redirects pinctrl to the NAND pin state; ci/master reinstates the correct SD pin state locally.
+> 
+> One trivial `.pickman-history` conflict resolved by keeping both date entries. Remaining 7 commits rebased with identical deltas. Sandbox build passes.
+
+---
+
