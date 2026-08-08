@@ -95751,6 +95751,60 @@ All done. Final status:
 **Delta checks:** every other commit applied with file lists and line counts exactly matching the originals (a few had trivial auto-merged context in `imx8mm-u-boot.dtsi`, `imx95_evk.config`, `verdin-imx8mm.c` and `ftest.py`, with identical stats).
 
 The branch `cherry-765ec2edd9a2` is left checked out and ready for pushing; it is 39 commits ahead of `ci/master` and has not been merged anywhere.
+---
+
+## 2026-08-07: us/main
+
+Branch: cherry-3caa8f42e1f6
+
+Commits:
+- 3caa8f42e1f6 cmd: ums: Set Device Descriptor iSerial based on serial# env variable
+- 6f9c431a2062 usb: gadget: dwc2: Use usb_ep_set_maxpacket_limit() for fifo sizes
+- c5c4cc4c6b98 usb: gadget: dwc2: Set endpoint capabilities via .caps field
+- ee3ab6988860 boot: android: fix out-of-bounds access in bootconfig parsing
+- eed2ed75883b usb: ci_udc: set correct ep type in ep_enable()
+- b79147bbd47c usb: ci_udc: Update usb request status
+- b60560972473 usb: ci_udc: verify all dtds are inactive before completing request
+- a7f65a6b6abc boot: android: fix AvbOps and verify-data leaks in AVB path
+- f9c750ea3068 avb: free mmc_part allocated by get_partition()
+- 88ac359a95ec libavb: update to AOSP 1.3.0
+- e6f091a20827 doc: android: refresh AVB provenance and pin libavb reference
+- 9f934c71810e Merge tag 'u-boot-dfu-20260728' of https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+Now amend to note the resolution:
+
+Now the final merge commit:
+
+All done. Branch `cherry-3caa8f42e1f6` is ready for pushing, with all 12 commits present on top of ci/master.
+
+## Final status
+
+**Build result:** OK — sandbox built cleanly with buildman after every cherry-pick and in the final verification (no warnings or errors).
+
+**Commits picked (12/12):**
+| Original | New | Notes |
+|---|---|---|
+| 3caa8f42e1f6 cmd: ums: iSerial | b29b24083aa4 | clean |
+| 6f9c431a2062 dwc2 maxpacket | be3c2c6389c5 | clean |
+| c5c4cc4c6b98 dwc2 .caps | 9f66b99e7bf0 | clean |
+| ee3ab6988860 bootconfig OOB fix | e866264c5cf8 | **conflict, resolved** (see below) |
+| eed2ed75883b ci_udc ep type | 6c45d5301006 | clean |
+| b79147bbd47c ci_udc request status | b745effd96eb | clean |
+| b60560972473 ci_udc dtd check | 20a22e5b1026 | clean |
+| a7f65a6b6abc AVB leaks fix | c4875d9e3760 | clean |
+| f9c750ea3068 avb mmc_part free | 41d85ae9f791 | clean |
+| 88ac359a95ec libavb 1.3.0 | 41bbb0a8ecda | clean (14 files, stats match exactly) |
+| e6f091a20827 doc AVB refresh | 7a030fef80fc | clean |
+| 9f934c71810e Merge tag u-boot-dfu-20260728 | 5b28b0d7d844 | empty commit, preserved with `--allow-empty` |
+
+**Fix-ups made:**
+- **ee3ab6988860** conflicted in `boot/image-android.c` because ci/master already has a different fix for the same overflow bug (5738021bc125 "boot: android: Fix bootconfig trailer buffer overflow", which never writes the trailer into the source image). I merged the two approaches: kept ci/master's no-write behaviour, while adopting the upstream commit's `write_trailer` parameter so the size-only query path (`android_image_get_vendor_bootimg_size()`) no longer reads the unloaded bootconfig region via `is_trailer_present()`. The commit message is amended with a note describing this.
+- **9f934c71810e** (merge commit) conflicted in the same hunk; resolved by keeping our version, which made the pick empty — committed empty as instructed to preserve the merge message in history.
+
+**Delta checks:** All picked commits match their originals' file lists and line counts exactly, except ee3ab6988860 (25+/14- vs original 25+/12-), which is expected given the semantic merge with the existing fix.
+
+The branch has NOT been merged anywhere.
 
 ---
 
