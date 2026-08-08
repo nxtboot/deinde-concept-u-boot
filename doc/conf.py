@@ -461,7 +461,7 @@ for fn in os.listdir('.'):
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'u-boot', 'The U-Boot Documentation',
+    (master_doc, 'u-boot', 'The Deinde Concept U-Boot Documentation',
      [author], 1)
 ]
 
@@ -475,7 +475,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'u-boot', 'The U-Boot Documentation',
+    (master_doc, 'u-boot', 'The Deinde Concept U-Boot Documentation',
      author, 'U-Boot', 'Boot loader for embedded systems',
      'Miscellaneous'),
 ]

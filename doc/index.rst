@@ -2,8 +2,23 @@
 
 .. _u-boot_doc:
 
-The U-Boot Documentation
-========================
+The Deinde Concept U-Boot Documentation
+=======================================
+
+.. note::
+
+   This documents the **Deinde Concept Tree**, an independent, experimental
+   downstream tree for U-Boot maintained by an independent maintainer. It is
+   not affiliated with, sponsored by, or endorsed by the Software Freedom
+   Conservancy (SFC) or the official Das U-Boot project.
+
+   The tree is a proving ground for large-scale features and refactoring, run
+   in the open with the aim of feeding proven work back to mainline U-Boot.
+   Pages here may therefore describe behaviour which does not exist in
+   mainline, or which differs from it.
+
+   * Mainline U-Boot: https://u-boot-project.org
+   * About this tree: https://deinde.dev/u-boot/
 
 This is the top level of the U-Boot's documentation tree.  U-Boot
 documentation, like the U-Boot itself, is very much a work in progress;
