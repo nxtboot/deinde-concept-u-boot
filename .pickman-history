@@ -96004,3 +96004,140 @@ All done. Final status:
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-09b1c0f98c0b
+
+Commits:
+- 09b1c0f98c0b nvme: Fix missing address translation for PCIe inbound access
+- 47b70ba39abd Merge tag 'u-boot-nvme-next-20260728' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-nvme
+
+### Conversation log
+Deltas match exactly. Now run the build test.
+
+Build passes. Now cherry-pick the merge commit.
+
+Both commits present. Run final build.
+
+## Cherry-pick Complete
+
+**Branch:** `cherry-09b1c0f98c0b` (based on ci/master, ready for pushing)
+
+**Commits cherry-picked:**
+1. `bac973d98d37` — nvme: Fix missing address translation for PCIe inbound access (from `09b1c0f98c0b`)
+   - Delta matches original exactly: 2 files, 31 insertions, 45 deletions
+2. `e39adeaa71bc` — Merge tag 'u-boot-nvme-next-20260728' (from `47b70ba39abd`)
+   - Empty merge commit preserved with `--allow-empty`
+
+**Build result:** OK (sandbox built successfully, no warnings/errors)
+
+**Fix-ups:** None required — clean cherry-picks
+**Concerning deltas:** None
+
+---
+
+### Pipeline fix: 2026-08-08 (attempt 1)
+
+Branch: cherry-09b1c0f98c0b
+
+Failed jobs:
+- edison (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+Both failures are infrastructure/transient issues unrelated to the NVMe cherry-picks. Let me confirm by looking at what the cherry-picked commit touched.
+
+## Report: Infrastructure/transient failures — no code changes made
+
+**Diagnosis:** Both failing jobs are lab infrastructure issues unrelated to the cherry-picked commits. The NVMe commit touches only `drivers/nvme/nvme.c` and `drivers/nvme/nvme.h`, and neither pine64 nor edison exercise the NVMe path.
+
+### Job: edison (607849)
+**Root cause:** Labgrid place lock conflict — not a code failure.
+```
+labgrid-client: Error: place edison is not acquired by your user,
+acquired by labgrid. To work simultaneously, labgrid can execute
+labgrid-client -p edison allow ellesmere/gitlab-runner
+```
+The pytest session aborted during `pytest_configure` because `u-boot-test-getrole edison --configure` failed — the edison board was held by another user (`kea/labgrid`). No U-Boot code ran.
+
+### Job: pine64 (607823)
+**Root cause:** Serial-line corruption on the lab UART — not a code failure.
+```
+FAILED test/py/tests/test_dm.py::test_dm_drivers
+AssertionError: assert 'bo��std_drv' in 'Driver ...'
+```
+The expected driver name `bootstd_drv` was received as `bo��std_drv` (two bytes garbled to U+FFFD replacement characters). The `dm drivers` output shows plausible driver list output otherwise. This is a classic UART framing/electrical noise glitch on the physical lab connection. All 41 other tests passed; only the byte-exact substring match tripped.
+
+### Action
+No changes made. Branch `cherry-09b1c0f98c0b-fix1` was **not** created because there is nothing to fix on the source side — retrying the pipeline (after the edison place is released) should clear both failures. The caller should re-trigger rather than patch.
+
+---
+
+### Review: 2026-08-08
+
+Branch: cherry-09b1c0f98c0b
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) edison, pine64.
+
+Both failures are infrastructure/tran...
+
+### Conversation log
+The "review comment" is actually the previous pipeline-fix bot's own status report, not an actionable review request. It concludes that both failed jobs (edison, pine64) were transient lab infrastructure issues unrelated to the NVMe cherry-picks and recommends re-triggering the pipeline rather than patching code.
+
+Let me verify the current branch state and confirm nothing else needs changing.
+
+## Report
+
+**Nothing to change.** The "review comment" flagged in the task is the previous pipeline-fix bot's own status report, not an actionable review request from a human reviewer. It correctly diagnosed:
+
+- **edison (607849)**: labgrid place lock conflict — board held by another user; pytest aborted in `pytest_configure`, no U-Boot code ran
+- **pine64 (607823)**: UART framing/noise glitch — `bootstd_drv` received as `bo��std_drv`; 41 other tests passed
+
+Both are transient lab infrastructure failures unrelated to the NVMe cherry-picks. The commit only touches `drivers/nvme/nvme.c` and `drivers/nvme/nvme.h`, and neither affected board exercises the NVMe path.
+
+**Actions taken:** None. No code changes made, no `-v2` branch created, no force-push performed — modifying commits without a real fix would only invalidate the (already-good) cherry-picks and trigger another full pipeline against unchanged code.
+
+**Suggested reply to post on the MR:**
+
+> Acknowledged — the previous bot report is a self-diagnosis of transient lab failures (edison labgrid lock, pine64 UART noise glitch), not an actionable code review. The NVMe cherry-picks touch only `drivers/nvme/*` and neither failing board exercises the NVMe path. No code change is warranted; please re-trigger the pipeline (once the edison place is released) rather than patch the branch.
+
+---
+
+### Review: 2026-08-08
+
+Branch: cherry-09b1c0f98c0b
+
+Comments addressed:
+
+
+### Conversation log
+Deltas match original exactly. Now run the sandbox build.
+
+Build passes. Now create the -v2 branch and force push.
+
+Push succeeded. 
+
+## Report
+
+**Rebase completed successfully** for MR !1260 (branch `cherry-09b1c0f98c0b`) onto `ci/master`.
+
+**Conflict resolved:**
+- `.pickman-history` had a text conflict — both the base branch's `cherry-38bfdf0a7702` entry (now merged into `ci/master`) and this branch's `cherry-09b1c0f98c0b` entry were appended under the same `## 2026-08-08: us/main` date header. Resolved by keeping both records, adding a `---` separator and a duplicate date header for the second block, so both cherry-pick logs coexist.
+
+**Deltas verified:**
+- `0c61f6f2198c` (nvme: Fix missing address translation) — 2 files, 31 insertions, 45 deletions — matches original exactly
+- `043277375f79` (Merge tag 'u-boot-nvme-next-20260728') — empty merge commit preserved
+
+**Build result:** OK — sandbox built cleanly, no warnings or errors.
+
+**Local branch:** `cherry-09b1c0f98c0b-v2` (created at the rebased HEAD `9a02a7871fc1`).
+
+**Push:** force-pushed to `ci/cherry-09b1c0f98c0b` (GitLab will retrigger the MR pipeline).
+
+**Suggested MR reply:**
+
+> Rebased onto latest `ci/master`. One trivial text conflict in `.pickman-history` (both branches had appended a `2026-08-08: us/main` record) resolved by keeping both entries. NVMe commit and merge cherry-picks are unchanged (deltas match the originals). Sandbox build passes. Pushed as force-update; pipeline will re-run.
+
+---
+
