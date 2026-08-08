@@ -96250,6 +96250,31 @@ All done. Both commits cherry-picked successfully.
 - **Conflicts:** None (auto-merge in MAINTAINERS resolved cleanly)
 
 Branch is ready for pushing.
+Branch: cherry-9879c40f6d01
+
+Commits:
+- 9879c40f6d01 usb: mtu3: wait for TX FIFO to drain before disconnect
+- 8aafc34c4936 Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-usb
+
+### Conversation log
+Stats match exactly. Now build test then cherry-pick the merge.
+
+All done. Summary:
+
+**Cherry-pick complete on branch `cherry-9879c40f6d01`:**
+
+1. `3c5399ef10d0` — usb: mtu3: wait for TX FIFO to drain before disconnect (from `9879c40f6d01`)
+   - Stats match original exactly: 3 files, 45 insertions(+), 4 deletions(-)
+2. `4c5fab564cd7` — Merge branch 'main' of .../u-boot-usb (from `8aafc34c4936`)
+   - Empty merge commit (contents already present via the mtu3 pick); committed with `--allow-empty` to preserve history
+
+**Note on "already applied as 10b95e1dfca8":** Verified this is a different merge — `10b95e1dfca8` merges `8d0777940d0a` (xhci-dwc3), not the mtu3 TX FIFO commit. So this was not a duplicate and the cherry-pick was performed.
+
+**Build result:** ok — sandbox builds cleanly, no warnings or errors.
+
+**Fix-ups:** None required.
+
+Branch left ready for pushing; not merged anywhere.
 
 ---
 
