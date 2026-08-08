@@ -95862,3 +95862,66 @@ All done. Final status:
 
 ---
 
+### Pipeline fix: 2026-08-07 (attempt 1)
+
+Branch: cherry-0786aea46596
+
+Failed jobs:
+- sandbox test.py (test.py)
+- sandbox with clang test.py (test.py)
+- efi-x86_app32 test.py (test.py)
+- efi-arm_app64 test.py (test.py)
+- build all other platforms (world_build)
+- build all 64bit ARM platforms (world_build)
+- edison (sjg-lab)
+- efi-aarch64 (sjg-lab)
+- bpif3 (sjg-lab)
+- rock5b (sjg-lab)
+- minnowmax (sjg-lab)
+- Check make check (test.py)
+- docs (test_suites)
+
+### Conversation log
+Now let me look at the sandbox test failure. Checking what test_efi_var_auth6 is and which commit added it:
+
+The sandbox failure needs local investigation. Let me build sandbox and reproduce the failing test:
+
+Root causes are becoming clear. Now checking the lab job logs:
+
+While that builds, let me look at the gpt.rst docs issue:
+
+Build passes now (the clang diagnostics are LSP indexer noise — buildman built cleanly). Amend and continue:
+
+jaguar-rk3588 fails identically at the base commit — pre-existing, not caused by this branch. Clean up and run remaining verification:
+
+No other underline issues. Create the result branch while verification runs:
+
+All done. Branch `cherry-0786aea46596-fix1` is ready.
+
+## Report
+
+Three distinct code problems were found, each fixed by amending the responsible commit (with a `[pickman]` note appended). All 11 commits survived the rebase, including the empty merge-marker commit.
+
+### 1. `docs` job — Sphinx "Title underline too short" in gpt.rst
+- **Responsible commit:** `doc: Switch from setenv to env set` (was 466cfa1039e1, now 926869b06063)
+- **Root cause:** the sed converting `setenv`→`env set` made the heading "gpt env set" (11 chars) longer than its 10-char `~~~~~~~~~~` underline at doc/usage/cmd/gpt.rst:106
+- **Fix:** extended the underline by one character. Verified with a full `make htmldocs` (no warnings) plus a script scan of all .rst files touched by both doc commits (no other mismatches).
+
+### 2. EFI app link failure — `undefined reference to 'efi_auth_var_get_guid'`
+- **Responsible commit:** `cmd: nvedit_efi: use efi_auth_var_get_guid() for the default GUID` (was 486cb5b0a58c, now fadf12e6161d)
+- **Root cause:** `efi_auth_var_get_guid()` lives in lib/efi_loader/efi_var_common.c, which is only built with CONFIG_EFI_LOADER. This tree (unlike upstream) enables CMD_NVEDIT_EFI for CONFIG_EFI_APP builds, so efi-x86_app32 failed to link and efi-arm_app64 failed `checkarmreloc` (the undefined symbol produced R_AARCH64_NONE relocations). This broke both `efi-*_app` test.py jobs, both world builds and the efi-aarch64 lab job.
+- **Fix:** added a small `efi_auth_var_get_guid()` implementation to lib/efi_client/efi_vars.c mapping db/dbx/dbt/dbr to the image security database GUID, falling back to the global variable GUID — matching the loader's table. EFI_LOADER depends on !EFI_APP so no duplicate symbol. Both app boards now build cleanly with buildman.
+
+### 3. `sandbox test.py` / `make check` — test_efi_var_auth6 assertion failure
+- **Responsible commit:** `test: check default GUID selection of signature database variables` (was 95ec2147017e, now a62e91425fb3)
+- **Root cause:** the cherry-picked test uses upstream-style `printenv -e SetupMode` expecting a hex dump, but in this tree `printenv -e` prints only variable names by default (needs `-v`), so the assertion on `00000000: 01` failed. (The mmc1.img messages in the log are unrelated noise.)
+- **Fix:** changed to `printenv -e -v SetupMode`, matching the existing local tests. Full test_efi_secboot suite now passes (20 passed).
+
+### Not fixed — pre-existing / infrastructure
+- **jaguar-rk3588** (`build all 64bit ARM platforms`): `aarch64-linux-ld: invalid length for memory region .sram` — reproduced identically at the base commit f6efc73eb6ff, so pre-existing on ci/master, not caused by this branch.
+- **edison**: labgrid place acquired by another user; **bpif3**: ssh deploy failure ("Lab failure: Marking connection bad"); **rock5b / minnowmax**: "Lab failure: Timeout executing ..." — all lab infrastructure issues, no code change needed.
+
+**Verification:** `um build sandbox` clean; `buildman efi-x86_app32 efi-arm_app64 sandbox` — 11 boards, 0 errors; `make htmldocs` clean; test_efi_secboot 20/20 passed. Working tree clean; branch not pushed.
+
+---
+
