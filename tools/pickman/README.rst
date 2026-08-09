@@ -721,6 +721,21 @@ one pickman parked as a conflict that is a record, shown as ``recorded``;
 otherwise it is found by searching the log, shown as ``inferred``, which is a
 good starting point rather than a fact.
 
+Files inside a vendored subtree - ``dts/upstream``, mbedtls, lwip - are left
+out of all of this.  They track a different project and are carried by
+``update-subtree.sh``, so reverting a delta there would be undone by the next
+pull, much as reverting a defconfig reorder is undone by the next
+savedefconfig.  They are counted and reported separately rather than ignored:
+those deltas are deliberate local changes which have to survive every subtree
+update, so the count is the maintenance cost of carrying the subtree and is
+worth watching even though pickman cannot act on it.
+
+Provenance alone cannot make this distinction.  A subtree squash commit
+carries no cherry-pick line, so it reads as downstream-original and everything
+under it as wanted - which would make the same file look wanted or drifted
+depending only on how recently the subtree was pulled.  The paths are
+therefore tested for by name.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -8710,7 +8710,7 @@ class TestDriftLoadBearing(unittest.TestCase):
                           'abc123')
         return control.DriftInfo(
             'a' * 40, [], {path: [drift.Verdict(hunk, drift.DRIFT, None)]},
-            [], set(), set(), 0, [])
+            [], set(), set(), 0, [], [])
 
     def _grep(self, hits):
         """Answer git grep with some hits
@@ -8786,7 +8786,7 @@ class TestDriftLoadBearing(unittest.TestCase):
                           'abc123')
         info = control.DriftInfo(
             'a' * 40, [], {'a.h': [drift.Verdict(hunk, drift.DRIFT, None)]},
-            [], set(), set(), 0, [])
+            [], set(), set(), 0, [], [])
         self._grep([('b.c', 40)])
         with terminal.capture():
             held = control.drift_load_bearing(info, ['a.h'], 'ci/master')

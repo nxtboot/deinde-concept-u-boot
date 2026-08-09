@@ -152,9 +152,11 @@ ApplyInfo = namedtuple('ApplyInfo',
 #     inside, which a shallow run does for every file it would have blamed
 # deleted: paths which a downstream commit has removed, so that blame cannot
 #     say who did it and their hunks are taken as wanted
+# subtree: paths inside a vendored subtree, which update-subtree.sh manages
+#     rather than pickman, so they are no part of the drift figure
 DriftInfo = namedtuple('DriftInfo',
                        ['base', 'fdiffs', 'verdicts', 'binary', 'orphans',
-                        'touched', 'skipped', 'deleted'])
+                        'touched', 'skipped', 'deleted', 'subtree'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -969,8 +971,22 @@ def drift_collect(dbs, source, branch, deep=False, base=None):  # pylint: disabl
     verdicts = {}
     binary = []
     deleted = []
+    subtree = []
     skipped = 0
+    subtree_paths = tuple(SUBTREE_NAMES)
     for fdiff in fdiffs:
+        # A vendored subtree is managed by update-subtree.sh, not by picks.
+        # Its contents differ from upstream because they track a different
+        # project, so calling that drift would offer to revert work which is
+        # not pickman's, and calling it absent would advise a cherry-pick
+        # which could not bring it.  Note that provenance alone cannot tell:
+        # a subtree squash commit carries no cherry-pick line, so it reads as
+        # downstream-original and its files as wanted - which means the same
+        # file can look wanted or drifted depending only on how recently the
+        # subtree was pulled.  Hence the explicit test here
+        if fdiff.path.startswith(subtree_paths):
+            subtree.append(fdiff.path)
+            continue
         touched = fdiff.path in down_paths
         if fdiff.binary:
             if not touched and not drift.match_accept(accepts, fdiff.path,
@@ -996,7 +1012,7 @@ def drift_collect(dbs, source, branch, deep=False, base=None):  # pylint: disabl
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
     return DriftInfo(base, fdiffs, verdicts, binary, orphans, down_paths,
-                     skipped, deleted)
+                     skipped, deleted, subtree)
 
 
 def drift_absent_paths(info):
@@ -1369,6 +1385,10 @@ def drift_show_report(info, show_list, show_diff):
         tout.info(f'  {info.skipped} file(s) which downstream commits touch '
                   'were taken as wanted without being looked inside; drop '
                   "'-s' to blame them")
+    if info.subtree:
+        tout.info(f'  {len(info.subtree)} file(s) are in a vendored subtree; '
+                  'update-subtree.sh owns these, but they still differ from '
+                  'upstream and must survive each pull')
     if info.deleted:
         tout.info(f'  {len(info.deleted)} file(s) deleted downstream cannot '
                   "be blamed, so their hunks are taken as wanted ('-l' to "
