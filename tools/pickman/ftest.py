@@ -7321,9 +7321,23 @@ class TestDriftGroupByArea(unittest.TestCase):
 DRIFT_CHERRY = 'c' * 40
 DRIFT_DOWN = 'd' * 40
 
+# The upstream commit which the cherry-pick came from, and one which no
+# tracked source has, so that a pick naming it is an orphan
+DRIFT_UPSTREAM = 'e' * 40
+DRIFT_GONE = 'f' * 40
+
 # 'git log --format=@%H --name-only': the cherry-pick touched README, the
 # downstream commit touched the video driver
 DRIFT_LOG = f'@{DRIFT_CHERRY}\nREADME\n\n@{DRIFT_DOWN}\ndrivers/video/vid.c\n'
+
+# 'git log --format=%H%x00%B%x01': the cherry-pick records where it came
+# from, the downstream commit records nothing
+DRIFT_BODIES = (f'{DRIFT_CHERRY}\x00A pick\n\n'
+                f'(cherry picked from commit {DRIFT_UPSTREAM})\n\x01'
+                f'{DRIFT_DOWN}\x00Downstream work\n\x01')
+
+# 'git rev-list <source>': only the upstream commit is reachable
+DRIFT_REVLIST = f'{DRIFT_UPSTREAM}\n'
 
 # 'git blame --porcelain': the downstream commit wrote line 13, the
 # cherry-pick left line 34
@@ -7376,7 +7390,11 @@ class TestDriftCommands(unittest.TestCase):
         if args[0] == 'rev-parse':
             # An explicit --upstream commit is validated with rev-parse
             return command.CommandResult(return_code=0)
+        if args[0] == 'rev-list':
+            return command.CommandResult(stdout=DRIFT_REVLIST)
         if args[0] == 'log':
+            if any('%x00' in a for a in args):
+                return command.CommandResult(stdout=DRIFT_BODIES)
             if '--grep' in args:
                 return command.CommandResult(stdout=f'{DRIFT_CHERRY}\n')
             return command.CommandResult(stdout=DRIFT_LOG)
@@ -7402,10 +7420,65 @@ class TestDriftCommands(unittest.TestCase):
     def test_downstream_commits(self):
         """Test finding the commits written downstream, not cherry-picked"""
         with terminal.capture():
-            hashes, paths = control.drift_downstream_commits(
+            hashes, paths, orphans = control.drift_downstream_commits(
                 'us/master', 'ci/master')
         self.assertEqual(hashes, {DRIFT_DOWN})
         self.assertEqual(paths, {'drivers/video/vid.c'})
+        self.assertEqual(orphans, set())
+
+    def test_cherry_picks(self):
+        """Test that a pick whose upstream commit is known is genuine"""
+        with terminal.capture():
+            genuine, orphan = control.drift_cherry_picks('a..b', ['us/master'])
+        self.assertEqual(genuine, {DRIFT_CHERRY})
+        self.assertEqual(orphan, set())
+
+    def test_cherry_picks_orphan(self):
+        """Test that a pick from a series no source has is an orphan
+
+        The commit records where it came from, but that commit is in no
+        tracked source, so upstream has no such change and the work is
+        downstream-only.
+        """
+        bodies = (f'{DRIFT_CHERRY}\x00A pick\n\n'
+                  f'(cherry picked from commit {DRIFT_GONE})\n\x01')
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            if args[0] == 'rev-list':
+                return command.CommandResult(stdout=DRIFT_REVLIST)
+            if args[0] == 'rev-parse':
+                return command.CommandResult(return_code=0)
+            if args[0] == 'log':
+                return command.CommandResult(stdout=bodies)
+            raise ValueError(f'Unexpected git command: {args}')
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            genuine, orphan = control.drift_cherry_picks('a..b', ['us/master'])
+        self.assertEqual(genuine, set())
+        self.assertEqual(orphan, {DRIFT_CHERRY})
+
+    def test_cherry_picks_abbreviated(self):
+        """Test that a pick naming an abbreviated hash still resolves"""
+        bodies = (f'{DRIFT_CHERRY}\x00A pick\n\n'
+                  f'(cherry picked from commit {DRIFT_UPSTREAM[:11]})\n\x01')
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            if args[0] == 'rev-list':
+                return command.CommandResult(stdout=DRIFT_REVLIST)
+            if args[0] == 'rev-parse':
+                return command.CommandResult(return_code=0)
+            if args[0] == 'log':
+                return command.CommandResult(stdout=bodies)
+            raise ValueError(f'Unexpected git command: {args}')
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            genuine, orphan = control.drift_cherry_picks('a..b', ['us/master'])
+        self.assertEqual(genuine, {DRIFT_CHERRY})
+        self.assertEqual(orphan, set())
 
     def test_blame(self):
         """Test that blame maps a line to the downstream commit which wrote it
@@ -7609,12 +7682,19 @@ class TestStatus(unittest.TestCase):
         """Answer the git commands which status and drift run"""
         args = list(pipe_list[0])[1:]
         if args[0] == 'rev-list':
+            if '--count' not in args:
+                # Walking a source to resolve cherry-picks
+                return command.CommandResult(stdout=DRIFT_REVLIST)
             # First-parent merges give the series count, non-merges the commits
             return command.CommandResult(
                 stdout='7\n' if '--merges' in args else '123\n')
         if args[0] == 'merge-base':
             return command.CommandResult(stdout='f' * 40)
+        if args[0] == 'rev-parse':
+            return command.CommandResult(return_code=0)
         if args[0] == 'log':
+            if any('%x00' in a for a in args):
+                return command.CommandResult(stdout=DRIFT_BODIES)
             if '-1' in args:
                 return command.CommandResult(stdout='abc1234 A subject')
             if '--grep' in args:

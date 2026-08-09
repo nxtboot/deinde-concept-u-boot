@@ -142,7 +142,10 @@ ApplyInfo = namedtuple('ApplyInfo',
 # verdicts: dict mapping path to the list of drift.Verdict for its hunks
 # binary: list of paths which differ from upstream in binary content, and
 #     which no downstream commit accounts for
-DriftInfo = namedtuple('DriftInfo', ['base', 'fdiffs', 'verdicts', 'binary'])
+# orphans: set of commits picked from a series which upstream never took, and
+#     so treated as downstream-original rather than as cherry-picks
+DriftInfo = namedtuple('DriftInfo',
+                       ['base', 'fdiffs', 'verdicts', 'binary', 'orphans'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -806,34 +809,89 @@ def drift_write_accepts(accepts):
                      binary=False)
 
 
-def drift_downstream_commits(source, branch):
+def drift_cherry_picks(rng, sources):
+    """Sort the cherry-picks in a range into genuine ones and orphans
+
+    A commit which records '(cherry picked from commit X)' has only really
+    come from upstream if X is reachable from a tracked source.  Some
+    downstream commits are picked from a series which upstream never took, so
+    X exists in no source; their change is downstream-only work which upstream
+    does not have.  Treating those as cherry-picks would report the work as
+    drift and offer to revert it, so they are separated out here.
+
+    Args:
+        rng (str): Commit range to examine, e.g. 'base..branch'
+        sources (list of str): Tracked source refs to resolve against
+
+    Return:
+        tuple:
+            set of str: Hashes of the genuine cherry-picks
+            set of str: Hashes of the orphans, picked from an unmerged series
+    """
+    reachable = set()
+    for ref in sources:
+        if gitutil.ref_exists(ref):
+            reachable.update(gitutil.rev_list(ref))
+
+    # A trailer may abbreviate the hash, so index the reachable commits by
+    # each prefix length which turns up
+    by_len = {}
+
+    genuine = set()
+    orphan = set()
+    for chash, body in gitutil.log_bodies(rng, no_merges=True):
+        found = RE_CHERRY_PICK.findall(body)
+        if not found:
+            continue
+        ref = found[-1]
+        if len(ref) >= 40:
+            known = ref in reachable
+        else:
+            prefixes = by_len.get(len(ref))
+            if prefixes is None:
+                prefixes = {full[:len(ref)] for full in reachable}
+                by_len[len(ref)] = prefixes
+            known = ref in prefixes
+        if known:
+            genuine.add(chash)
+        else:
+            orphan.add(chash)
+    return genuine, orphan
+
+
+def drift_downstream_commits(source, branch, sources=None):
     """Find the commits made downstream which did not come from upstream
 
     Commits added since the trees diverged which carry no cherry-pick line are
     downstream-original: they are the reason the trees are allowed to differ.
     Merges are ignored, since their content belongs to the commits they merge.
 
+    A commit picked from a series which upstream never took counts as
+    downstream-original too, since upstream has no such change to match.
+
     Args:
         source (str): Source branch name, e.g. 'us/master'
         branch (str): Downstream branch to examine, e.g. 'ci/master'
+        sources (list of str): Tracked source refs to resolve cherry-picks
+            against, or None to use just the source being compared
 
     Return:
         tuple:
             set of str: Hashes of the downstream-original commits
             set of str: Paths which those commits touch
+            set of str: Hashes of the orphans, picked from an unmerged series
     """
     fork = gitutil.merge_base(branch, source)
     rng = f'{fork}..{branch}'
-    cherry = set(gitutil.log_hashes(rng, grep='cherry picked from commit',
-                                    no_merges=True))
+    genuine, orphan = drift_cherry_picks(rng, sources or [source])
 
     hashes = set()
     paths = set()
     for chash, files in gitutil.log_commits_with_files(rng, no_merges=True):
-        if chash not in cherry:
+        if chash not in genuine:
             hashes.add(chash)
             paths.update(files)
-    return hashes, paths
+    return hashes, paths, orphan
 
 
 def drift_blame(branch, path, down_hashes):
@@ -882,7 +940,12 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
             return None
 
     accepts = drift_read_accepts()
-    down_hashes, down_paths = drift_downstream_commits(source, branch)
+    # Resolve cherry-picks against every tracked source, so that a commit
+    # picked from a series which upstream never took is not mistaken for one
+    # whose change upstream already has
+    tracked = [name for name, _ in dbs.source_get_all()] or [source]
+    down_hashes, down_paths, orphans = drift_downstream_commits(
+        source, branch, tracked)
 
     diff = gitutil.diff(base, branch)
     fdiffs = drift.parse_diff(diff)
@@ -916,7 +979,7 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
             blame = drift_blame(branch, fdiff.path, down_hashes)
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
-    return DriftInfo(base, fdiffs, verdicts, binary)
+    return DriftInfo(base, fdiffs, verdicts, binary, orphans)
 
 
 def drift_paths(info):
@@ -995,6 +1058,9 @@ def drift_show_report(info, show_list, show_diff):
               'downstream commits')
     tout.info(f'  {states[drift.ACCEPTED]} hunk(s) accepted by '
               f'{drift.ACCEPT_FILE}')
+    if info.orphans:
+        tout.info(f'  {len(info.orphans)} commit(s) picked from a series no '
+                  'tracked source has, treated as downstream')
     tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} '
               f'file(s), {drift_percent(states):.0f}% of divergence')
 
