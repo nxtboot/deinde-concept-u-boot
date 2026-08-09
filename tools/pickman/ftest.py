@@ -8732,7 +8732,9 @@ class TestDriftLoadBearing(unittest.TestCase):
         self._grep([('b.c', 40)])
         with terminal.capture():
             held = control.drift_load_bearing(info, ['a.h'], 'ci/master')
-        self.assertEqual(held, {'a.h': [('SOME_LONG_NAME', 'b.c')]})
+        self.assertEqual(held,
+                         {'a.h': [('SOME_LONG_NAME', 'b.c',
+                                   'removes')]})
 
     def test_user_inside_the_set_still_counts(self):
         """Test that a user being reverted for another hunk still counts
@@ -8747,7 +8749,9 @@ class TestDriftLoadBearing(unittest.TestCase):
         with terminal.capture():
             held = control.drift_load_bearing(info, ['a.h', 'b.c'],
                                               'ci/master')
-        self.assertEqual(held, {'a.h': [('SOME_LONG_NAME', 'b.c')]})
+        self.assertEqual(held,
+                         {'a.h': [('SOME_LONG_NAME', 'b.c',
+                                   'removes')]})
 
     def test_use_removed_by_the_revert(self):
         """Test that a use which the revert itself takes away is ignored"""
@@ -8760,6 +8764,33 @@ class TestDriftLoadBearing(unittest.TestCase):
             held = control.drift_load_bearing(info, ['a.h', 'b.c'],
                                               'ci/master')
         self.assertEqual(held, {})
+
+    def test_survives_revert_false(self):
+        """Test that a name only added is reported as removed, not changed"""
+        hunk = drift.Hunk('a.h', 1, 2, [1],
+                          ['@@ -1,1 +1,2 @@', '+#define SOME_LONG_NAME 1'],
+                          'abc123')
+        self.assertFalse(drift.survives_revert([hunk], 'SOME_LONG_NAME'))
+
+    def test_says_changes_when_the_name_survives(self):
+        """Test that a name on both sides is reported as changed, not removed
+
+        A revert which restores an older prototype leaves the name in place;
+        what breaks is every caller of the newer one, so calling it a removal
+        sends the reader looking for the wrong thing.
+        """
+        hunk = drift.Hunk('a.h', 1, 2, [1],
+                          ['@@ -1,1 +1,2 @@',
+                           '-int SOME_LONG_NAME(void *blob);',
+                           '+int SOME_LONG_NAME(void *blob, int extra);'],
+                          'abc123')
+        info = control.DriftInfo(
+            'a' * 40, [], {'a.h': [drift.Verdict(hunk, drift.DRIFT, None)]},
+            [], set(), set(), 0, [])
+        self._grep([('b.c', 40)])
+        with terminal.capture():
+            held = control.drift_load_bearing(info, ['a.h'], 'ci/master')
+        self.assertEqual(held['a.h'][0][2], 'changes')
 
     def test_no_users(self):
         """Test that a name nothing uses does not hold anything back"""

@@ -576,6 +576,29 @@ def is_code_reference(text, name):
     return False
 
 
+def survives_revert(hunks, name):
+    """Check whether a name still exists once some hunks are reverted
+
+    A revert takes out the lines a hunk adds and puts back the ones it
+    removes.  Where a name appears on both sides the revert does not take it
+    away: it restores an older form of it, which is a different hazard - the
+    definition still builds and every caller of the newer form breaks.
+
+    Args:
+        hunks (list of Hunk): Hunks which would be reverted
+        name (str): Name to look for
+
+    Return:
+        bool: True if the revert leaves the name in place, in another form
+    """
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if line.startswith('-') and re.search(
+                    r'\b' + re.escape(name) + r'\b', line[1:]):
+                return True
+    return False
+
+
 def build_patch(fdiffs, verdicts, states=(DRIFT,)):
     """Build a patch which reverts the hunks in some states
 

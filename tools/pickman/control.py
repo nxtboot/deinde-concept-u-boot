@@ -1190,8 +1190,8 @@ def drift_load_bearing(info, paths, branch):
         branch (str): Branch to search for remaining users
 
     Return:
-        dict: Maps path to a list of (name, file still using it), for the
-            files which cannot safely be reverted
+        dict: Maps path to a list of (name, file still using it, what the
+            revert does to it), for the files which cannot safely be reverted
     """
     # The history file records every run, so it mentions names which nothing
     # uses; searching it would decline almost everything
@@ -1199,9 +1199,11 @@ def drift_load_bearing(info, paths, branch):
 
     names_for = {}
     dropped = {}
+    hunks_for = {}
     for path in paths:
         hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
                  if vdt.state == drift.DRIFT]
+        hunks_for[path] = hunks
         names = drift.removed_identifiers(hunks)
         if names:
             names_for[path] = names
@@ -1243,7 +1245,13 @@ def drift_load_bearing(info, paths, branch):
                 # definition, so it does not hold anything back
                 if user in dropped and num in dropped[user]:
                     continue
-                held.setdefault(path, []).append((name, user))
+                # Say which hazard it is: a name on both sides of the hunk
+                # is not taken away, it goes back to an older form, and the
+                # callers of the newer one are what break
+                verb = ('changes' if drift.survives_revert(hunks_for[path],
+                                                           name)
+                        else 'removes')
+                held.setdefault(path, []).append((name, user, verb))
                 break
             if path in held:
                 break
@@ -1757,11 +1765,13 @@ def do_drift_fix(args, dbs):
                     drift_load_bearing(info, paths, args.branch))
             if held:
                 tout.warning(f'{area}: declining {len(held)} file(s) whose '
-                             'revert would remove something still in use:')
+                             'revert would change or remove something still '
+                             'in use:')
                 shown = sorted(held.items())[:DECLINE_SHOWN]
                 for path, users in shown:
-                    name, user = users[0]
-                    tout.warning(f'  {path}: {name} still used by {user}')
+                    name, user, verb = users[0]
+                    tout.warning(f'  {path}: {verb} {name}, still used by '
+                                 f'{user}')
                 if len(held) > len(shown):
                     tout.warning(f'  ... and {len(held) - len(shown)} more '
                                  f'(showing {len(shown)} of {len(held)})')
