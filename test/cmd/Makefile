@@ -31,6 +31,9 @@ ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_EDITENV) += editenv.o
 endif
 obj-$(CONFIG_CMD_FDT) += fdt.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_GREPENV) += grepenv.o
+endif
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
 obj-$(CONFIG_CMD_I3C) += i3c.o
