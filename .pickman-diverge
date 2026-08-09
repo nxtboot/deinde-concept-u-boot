@@ -1,0 +1,12 @@
+# .pickman-diverge: deltas from upstream which are intentional
+#
+# Pickman reverts any delta from upstream which no downstream commit
+# accounts for.  Deltas listed here are exempt from that.
+#
+# <path>  <hunk>  <reason>
+#
+# <path> may be a glob.  <hunk> is a hunk fingerprint, or '*' for
+# every hunk in the file.  Run "pickman drift-accept" to add entries.
+
+cmd/efi_common.c                  ae35f1f9e5d1  efi_memmap_type_name(): renamed from upstream to avoid clashing with the global efi_mem_type_name() of d07934b67e2f
+cmd/efi_common.c                  c784074111b3  efi_memmap_type_name(): call site of the rename above
