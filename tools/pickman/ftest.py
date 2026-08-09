@@ -7504,7 +7504,7 @@ class TestDriftCommands(unittest.TestCase):
         """
         args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
                 'shallow': True, 'diff': False, 'list': False,
-                'upstream': None}
+                'fingerprints': False, 'upstream': None}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7640,6 +7640,34 @@ class TestDriftCommands(unittest.TestCase):
         self.assertIn('tools/old.c', out)
         self.assertIn('binary', out)
         self.assertLess(out.index('1 hunk(s)  README'), out.index('binary'))
+
+    def test_report_fingerprints(self):
+        """Test that -f lists the fingerprint which drift-accept -u takes"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(fingerprints=True))
+        out = stdout.getvalue()
+        fdiff = drift.parse_diff(DRIFT_DIFF)[0]
+        self.assertIn(fdiff.hunks[0].fingerprint, out)
+        self.assertIn('README', out)
+
+    def test_select_paths(self):
+        """Test that a glob narrows the files down"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        bad = control.drift_paths(info)
+        got = control.drift_select(bad, info, ['tools/*'], False)
+        self.assertEqual([path for path, _ in got], ['tools/old.c'])
+
+    def test_select_unambiguous(self):
+        """Test that -u keeps only files no downstream commit has touched"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        bad = [('README', 1), ('drivers/video/vid.c', 2)]
+        got = control.drift_select(bad, info, None, True)
+        # The video driver is touched downstream, so its drift might be wanted
+        self.assertEqual([path for path, _ in got], ['README'])
 
     def test_report_diff(self):
         """Test that the patch shows the drift hunks"""

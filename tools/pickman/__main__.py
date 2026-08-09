@@ -87,6 +87,9 @@ def add_main_commands(subparsers):
                            help='Show the drift as a patch')
     drift_cmd.add_argument('-l', '--list', action='store_true',
                            help='List each file which has drift')
+    drift_cmd.add_argument('-f', '--fingerprints', action='store_true',
+                           help='List each drift hunk with the fingerprint '
+                                "'drift-accept -u' takes")
 
     drift_acc = subparsers.add_parser(
         'drift-accept', help='Record a delta from upstream as intentional')
@@ -107,6 +110,11 @@ def add_main_commands(subparsers):
     drift_fix.add_argument('-s', '--shallow', action='store_true',
                            help='Skip blaming files which downstream commits '
                                 'touch; faster but misses drift inside them')
+    drift_fix.add_argument('--paths', metavar='GLOB', nargs='+',
+                           help='Only fix files matching these globs')
+    drift_fix.add_argument('-u', '--unambiguous', action='store_true',
+                           help='Only fix files which no downstream commit '
+                                'has touched, whose drift cannot be wanted')
     drift_fix.add_argument('-p', '--push', action='store_true',
                            help='Push branch and create GitLab MR')
     drift_fix.add_argument('-r', '--remote', default='ci',

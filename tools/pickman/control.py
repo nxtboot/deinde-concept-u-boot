@@ -8,6 +8,7 @@
 
 from collections import namedtuple
 from datetime import date
+import fnmatch
 import os
 import re
 import sys
@@ -144,8 +145,11 @@ ApplyInfo = namedtuple('ApplyInfo',
 #     which no downstream commit accounts for
 # orphans: set of commits picked from a series which upstream never took, and
 #     so treated as downstream-original rather than as cherry-picks
+# touched: set of paths which a downstream-original commit has touched, so
+#     that drift in them might have a justification
 DriftInfo = namedtuple('DriftInfo',
-                       ['base', 'fdiffs', 'verdicts', 'binary', 'orphans'])
+                       ['base', 'fdiffs', 'verdicts', 'binary', 'orphans',
+                        'touched'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -979,7 +983,8 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
             blame = drift_blame(branch, fdiff.path, down_hashes)
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
-    return DriftInfo(base, fdiffs, verdicts, binary, orphans)
+    return DriftInfo(base, fdiffs, verdicts, binary, orphans,
+                     down_paths)
 
 
 def drift_paths(info):
@@ -1036,6 +1041,53 @@ def drift_percent(states):
     if not total:
         return 0.0
     return 100.0 * states[drift.DRIFT] / total
+
+
+def drift_select(bad, info, patterns=None, unambiguous=False):
+    """Narrow a list of drifted files down to those asked for
+
+    Args:
+        bad (list of tuple): (path, hunk count) from drift_paths()
+        info (DriftInfo): Result from drift_collect()
+        patterns (list of str): Globs a path must match, or None for any
+        unambiguous (bool): True to keep only files which no downstream
+            commit has touched, whose drift therefore cannot be justified
+
+    Return:
+        list of tuple: The entries which are wanted, in the order given
+    """
+    out = []
+    for path, count in bad:
+        if unambiguous and path in info.touched:
+            continue
+        if patterns and not any(fnmatch.fnmatch(path, pat) or
+                                path.startswith(pat.rstrip('*'))
+                                for pat in patterns):
+            continue
+        out.append((path, count))
+    return out
+
+
+def drift_show_fingerprints(info):
+    """List each drift hunk with the fingerprint which identifies it
+
+    The fingerprint is what 'drift-accept -u' takes, so without this there is
+    no way to accept a single hunk rather than a whole file.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+    """
+    for path, _ in drift_paths(info):
+        hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
+                 if vdt.state == drift.DRIFT]
+        if not hunks:
+            continue
+        tout.info(path)
+        for hunk in hunks:
+            plus = sum(1 for line in hunk.lines[1:] if line.startswith('+'))
+            minus = sum(1 for line in hunk.lines[1:] if line.startswith('-'))
+            tout.info(f'  {hunk.fingerprint}  {hunk.lines[0][:46]:<46} '
+                      f'+{plus} -{minus}')
 
 
 def drift_show_report(info, show_list, show_diff):
@@ -1119,7 +1171,7 @@ def do_drift(args, dbs):
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'shallow',
-            'list', 'diff' and 'upstream' attributes
+            'list', 'diff', 'fingerprints' and 'upstream' attributes
         dbs (Database): Database instance
 
     Return:
@@ -1133,7 +1185,11 @@ def do_drift(args, dbs):
     info = drift_collect(dbs, args.source, branch, not args.shallow, base=base)
     if not info:
         return 1
-    return drift_show_report(info, args.list, args.diff)
+    ret = drift_show_report(info, args.list, args.diff)
+    if args.fingerprints:
+        tout.info('')
+        drift_show_fingerprints(info)
+    return ret
 
 
 def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
@@ -1246,7 +1302,7 @@ def do_drift_fix(args, dbs):
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'count',
-            'push', 'remote' and 'target' attributes
+            'paths', 'unambiguous', 'push', 'remote' and 'target' attributes
         dbs (Database): Database instance
 
     Return:
@@ -1266,6 +1322,12 @@ def do_drift_fix(args, dbs):
     bad = drift_paths(info)
     if not bad:
         tout.info('No drift from upstream ✓')
+        return 0
+
+    bad = drift_select(bad, info, getattr(args, 'paths', None),
+                       getattr(args, 'unambiguous', False))
+    if not bad:
+        tout.info('Nothing to fix with the filters given')
         return 0
 
     areas = drift.group_by_area([path for path, _ in bad])
