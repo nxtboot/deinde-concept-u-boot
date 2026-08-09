@@ -96534,3 +96534,347 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-f2f1a1e7d218
+
+Commits:
+- f2f1a1e7d218 board: phycore_imx8mm: update RAM timings
+- 14ca9eb18daa board: phycore_imx8mm: add 1 and 4GB RAM timings
+- 4eeaaee054be binman: add CST backend selection for i.MX8M signing
+- 01b7aee2ee99 imx: scmi: suppress invalid origin/errid in reset reason print
+- 9dfa2015e01f arm: imx: initialize the system counter earlier on i.MX7
+- 8a6f042dc3cb toradex: tdx-cfg-block: Add Aquila iMX95 0243 PID4
+- 280ae6506824 imx: Add FRDM-IMX95 initial support
+- fca58e8a08cf binman: nxp_imx8mcst: Handle FCFB header during SPI NOR boot
+- 06c866fee005 Gitlab CI: sage: Disable test_net_tftpboot_boot on Raspberry Pi 4 for now
+- d0615e4a67c8 Merge tag 'u-boot-imx-main-20260807' of https://git.u-boot-project.org/u-boot/custodians/u-boot-imx
+
+### Conversation log
+All 10 commits are in place. Now let me run the final build test.
+
+## Summary
+
+All 10 commits were cherry-picked cleanly onto the new branch `cherry-f2f1a1e7d218` (based on `ci/master`).
+
+**Cherry-pick results:**
+- All 9 regular commits applied cleanly (a few `Auto-merging` messages for `tools/binman/ftest.py` and `.gitlab-ci-sage-lab.yml`, resolved automatically without conflict).
+- The merge commit `d0615e4a67c8` was empty after cherry-pick (its content was already brought in by the individual commits above); preserved with `--allow-empty` using the original merge commit message.
+
+**Delta comparisons:** All commits' file lists and line counts match the originals exactly — no concerning deltas.
+
+**Build result:** `buildman -L --board sandbox` passed after every cherry-pick and in the final run (1/1 built, no warnings/errors).
+
+**Fix-ups:** None required.
+
+**Final log (top 10):**
+```
+0e6445d5c430 Merge tag 'u-boot-imx-main-20260807' ...
+ae249c54920a Gitlab CI: sage: Disable test_net_tftpboot_boot on RPi4 for now
+cb7ab722ae31 binman: nxp_imx8mcst: Handle FCFB header during SPI NOR boot
+af8c8e1e17b6 imx: Add FRDM-IMX95 initial support
+67b002df52e5 toradex: tdx-cfg-block: Add Aquila iMX95 0243 PID4
+205c0bda4f26 arm: imx: initialize the system counter earlier on i.MX7
+d0e84badab9f imx: scmi: suppress invalid origin/errid in reset reason print
+7b4a1e359a2f binman: add CST backend selection for i.MX8M signing
+d66a5aea838a board: phycore_imx8mm: add 1 and 4GB RAM timings
+686021189163 board: phycore_imx8mm: update RAM timings
+```
+
+Branch `cherry-f2f1a1e7d218` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-08-08 (attempt 1)
+
+Branch: cherry-f2f1a1e7d218
+
+Failed jobs:
+- edison (sjg-lab)
+- bpif3 (sjg-lab)
+- link64 (sjg-lab)
+- link (sjg-lab)
+
+### Conversation log
+All four failures are infrastructure/lab issues, not code issues. Let me verify by checking what commits touched by looking at the branch state:
+
+All four failures are pure infrastructure/lab issues, unrelated to any code on this branch. The branch consists of imx-related patches (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 board support, binman CST backend, RPi CI gate) — none of which touch the failing boards (edison=x86, link/link64=x86 chromebook, bpif3=spacemit RISC‑V).
+
+## Root cause per job
+
+- **edison (612544)**: `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.` The labgrid place was held by another user (kea/labgrid). This is a lab‑reservation/setup issue, not a code issue.
+- **bpif3 (612533)**: `USB loader not ready (attempt 1..5): BootROM did not start the FSBL (gadget devnum still …); board needs a reset`. The SpaceMiT K1 BootROM never handed off — board needed a physical reset. Hardware/lab transient.
+- **link64 (612506)**: `serial.SerialException: Could not open serial port rfc2217://kea:46143 … Remote does not seem to support RFC2217 or BINARY mode` plus `ConnectionResetError: [Errno 104] Connection reset by peer`. RFC2217 serial console server issue (kea host). Infra transient.
+- **link (612505)**: Same RFC2217 / connection-reset failure as link64 on port 36815. Same infra issue.
+
+## Conclusion
+
+No code change is warranted. These are all lab-infrastructure/transient failures (labgrid reservation contention, hardware needing manual reset, RFC2217 serial console disconnects on `kea`). None correlate with any commit on `cherry-f2f1a1e7d218`.
+
+Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I am not creating branch `cherry-f2f1a1e7d218-fix1` and not amending any commit. Recommend simply retrying the lab jobs (and, for edison, releasing the labgrid place first).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) edison, link64, link.
+
+All three failures are the same...
+
+### Conversation log
+The branch is already based on the current `ci/master` tip (b027aeecd311) — no rebase needed. The review comment is my own pipeline-fix-attempt-2 analysis echoed back, which concluded "No code change is warranted" — all 3 failures (edison, link64, link) are lab infrastructure on boards this imx-only branch doesn't touch.
+
+Let me verify the build still passes to be safe:
+
+Build passes. No action to take on this MR.
+
+## Report
+
+**Rebase:** Not required. `cherry-f2f1a1e7d218` already has `ci/master` (b027aeecd311) as an ancestor — 12 commits ahead, 0 behind. The branch is already up-to-date with the target.
+
+**Review comment:** The single comment (`project_1_bot_2541d37e7146e9c25808a380e05ebef0`) is the pipeline-fix-attempt-2 analysis I posted previously, echoed back into the MR conversation. Its conclusion is explicit: **"No code change is warranted"**. All three failures (edison, link64, link) are lab/infrastructure issues on x86 boards (Intel Atom Edison, x86 Chromebook link/link64) that this imx-only branch cannot possibly affect — the failures occur *before* the U-Boot binary is even booted (edison dies in `pytest_configure` at labgrid reservation, link/link64 die in `client.on_activate()` opening the RFC2217 serial port on host `kea`).
+
+**Action taken:** None. No checkout of files, no code change, no amend, no `-v2` branch, no force-push. Per the standing instruction ("If the failure is an infrastructure or transient issue … report this without making changes"), and to avoid churn from force-pushing an identical branch just to re-trigger a pipeline.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, 0:00:08, no warnings/errors.
+
+## Suggested MR reply
+
+> Acknowledged — this comment mirrors the previous attempt-2 analysis. All three failures (edison, link64, link) are lab/infrastructure transients on x86 boards (Intel Atom, x86 Chromebook) unrelated to this branch's imx-only changes, and they all fail *before* U-Boot is booted (labgrid reservation contention on edison; `kea` RFC2217 serial-console `BrokenPipeError` on link/link64). Branch is already current with `ci/master` (b027aeecd311 is an ancestor), sandbox build passes cleanly. No code change is warranted; not pushing a `-v3` since the commits would be identical. Please retry the three lab jobs — and, for edison, release the labgrid place still held by `kea/labgrid` first.
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+The branch is already on top of ci/master (0 commits behind). Let me run the rebase anyway (will be a no-op) and verify the build.
+
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip (`b027aeecd311`) — 13 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date."
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 3 pickman bookkeeping commits (cherry-pick record, pipeline-fix record, review-handling record)
+
+**Action taken:** No local branch created, no force-push. The branch is already current with `ci/master` and the commits are byte-identical to what is already on the remote. Force-pushing the same commit range solely to re-trigger CI would be pure churn (as noted in the previous attempt's response and consistent with the standing instruction).
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip (`b027aeecd311`) — 0 commits behind, no rebase needed. `git rebase --keep-empty ci/master` is a no-op ("Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The three prior lab failures (edison, link64, link) remain lab/infrastructure transients on x86 boards unrelated to this imx-only branch. Not pushing a `-v4` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip — 13 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date."
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 3 pickman bookkeeping commits (cherry-pick record, pipeline-fix record, review-handling records)
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:09, no warnings/errors.
+
+**Action taken:** No local `-v5` branch created, no force-push. The branch on the remote is already byte-identical to the desired state (up-to-date with `ci/master`, build passing). Force-pushing the same commit range solely to re-trigger CI would be pure churn — consistent with the previous attempts' conclusions.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:09, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v5` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based on the current `ci/master` tip — 15 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 5 pickman bookkeeping commits (cherry-pick record, pipeline fix record, three review-handling records)
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 4 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v6` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip — 16 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 6 pickman bookkeeping commits (cherry-pick record, pipeline fix record, four review-handling records)
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 5 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v7` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip — 17 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 7 pickman bookkeeping commits (cherry-pick record, pipeline-fix record, five review-handling records)
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 6 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v8` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+Branch is already current with `ci/master` (0 commits behind, 17 ahead), rebase is a no-op, and sandbox build passes cleanly. No local `-v2` branch created, no force-push performed — the remote branch is already byte-identical to the desired state.
+
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip — 17 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 7 pickman bookkeeping commits (cherry-pick record, pipeline fix record, six review-handling records — including this one to be added)
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 7 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v9` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip (`b027aeecd311`) — 19 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 9 pickman bookkeeping commits (cherry-pick record, pipeline-fix record, seven review-handling records — this is the 8th such iteration)
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 8 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip (`b027aeecd311`) — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v10` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report
+
+**Review comment:** `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.`
+
+This is a system-generated notice that the automated pipeline-fix retry loop has been exhausted. It is not an actionable code-review comment — it is an escalation asking a human to look at the situation.
+
+**Branch state:**
+- On `cherry-f2f1a1e7d218`, 20 commits ahead of `ci/master`, **0 commits behind**.
+- 10 imx-only cherry-picked commits + 10 pickman bookkeeping commits accumulated over the prior 9 review-handling iterations.
+- No rebase needed; no merge conflicts possible.
+
+**Analysis of the escalation:**
+Over the previous 3 pipeline-fix attempts and 8 subsequent review-handling iterations, the failing jobs were consistently:
+
+| Job | Board | Failure |
+|---|---|---|
+| edison | Intel Atom x86 | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` — reservation contention held by `kea/labgrid` |
+| link | x86 Chromebook | `BrokenPipeError` in pySerial RFC2217 subnegotiation to `kea:<port>` |
+| link64 | x86 Chromebook | Same `BrokenPipeError` on `kea` RFC2217 |
+| bpif3 | SpaceMiT RISC‑V | BootROM never handed off; board needed physical reset |
+
+None of these boards are touched by this branch (imx-only: phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board, binman CST for i.MX8M, RPi CI gate). All failures occur *before* U-Boot is even booted — inside `pytest_configure`/labgrid reservation or `client.on_activate()` opening the serial port. **No code change on this branch could make these lab issues go away.**
+
+**Action taken:** None on the code. Manual-intervention needed items are lab-side:
+
+1. **edison**: release the labgrid place from `kea/labgrid` (or `labgrid-client -p edison unlock --kick`).
+2. **link / link64**: investigate/restart the RFC2217 serial-console server on `kea` — it has been dropping connections at socket-open time for multiple attempts, suggesting a persistent issue on that host (not a transient) that a plain retry may not clear.
+3. **bpif3**: a physical (or smart-PDU) reset of the SpaceMiT K1 board before the next attempt.
+
+Not creating a `-v2`/`-v3` or force-pushing. The remote branch is already up-to-date with `ci/master` and byte-identical to the desired state; pushing an identical commit range solely to re-trigger CI would not help since the failures are on the lab side, and the retry-limit notice explicitly asks for **manual intervention**, not another automated push.
+
+## Suggested MR reply
+
+> This is a system-generated retry-limit notice, not a code-review comment. All three attempts hit the same lab/infrastructure failures on boards this imx-only branch does not touch — edison (labgrid reservation held by `kea/labgrid`), link/link64 (RFC2217 `BrokenPipeError` on `kea`), and previously bpif3 (SpaceMiT BootROM hang). The failures happen before U-Boot is even booted, so no code change on this branch can fix them. Branch is already current with `ci/master` (0 commits behind), sandbox build passes cleanly. **Manual lab intervention needed:** release the `edison` labgrid place from `kea/labgrid`, and investigate the `kea` RFC2217 serial-console server which has been dropping connections across multiple attempts (looks persistent rather than transient at this point). Once the lab is healthy, please retry the three jobs — no `-v2` push is warranted since the commits would be byte-identical.
+
+---
+
