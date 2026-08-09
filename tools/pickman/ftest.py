@@ -8332,5 +8332,76 @@ class TestParked(unittest.TestCase):
         self.assertIn('uncommitted changes', stderr.getvalue())
 
 
+class TestParkedOverlap(unittest.TestCase):
+    """Tests for spotting commits which touch parked-conflict files"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    @staticmethod
+    def _mock_files(files):
+        """Answer 'git log --name-only' with the files each commit touches
+
+        Args:
+            files (dict): Maps commit hash to the list of paths it touches
+        """
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            rng = args[-1]
+            chash = rng.split('^')[0]
+            paths = files.get(chash, [])
+            out = f'@{chash}\n' + '\n'.join(paths) + '\n'
+            return command.CommandResult(stdout=out)
+
+        command.TEST_RESULT = handle
+
+    def test_no_overlap(self):
+        """Test that unrelated files give no overlap"""
+        self._mock_files({'aaa': ['a.c'], 'bbb': ['b.c']})
+        commits = [control.CommitInfo('bbb', 'bbb', 'Later', 'Me')]
+        with terminal.capture():
+            shared = control.parked_overlap([(1, 'aaa', 'Parked')], commits)
+        self.assertEqual(shared, {})
+
+    def test_overlap_found(self):
+        """Test that a shared file names the parked commit which touches it
+
+        This is the shape of the linker-script case: a parked commit adds an
+        alignment, and a later commit moves that alignment about.  Applying
+        the second without the first leaves the tree half-done.
+        """
+        self._mock_files({
+            'aaa': ['arch/arm/cpu/u-boot-spl.lds', 'other.c'],
+            'bbb': ['arch/arm/cpu/u-boot-spl.lds'],
+        })
+        commits = [control.CommitInfo('bbb', 'bbb', 'Remove rel.dyn', 'Me')]
+        with terminal.capture():
+            shared = control.parked_overlap(
+                [(1, 'aaa', 'Update linker scripts')], commits)
+        self.assertEqual(list(shared), ['arch/arm/cpu/u-boot-spl.lds'])
+        self.assertEqual(shared['arch/arm/cpu/u-boot-spl.lds'],
+                         [('aaa', 'Update linker scripts')])
+
+    def test_nothing_parked(self):
+        """Test that no parked conflicts means no work and no git calls"""
+        commits = [control.CommitInfo('bbb', 'bbb', 'Later', 'Me')]
+        self.assertEqual(control.parked_overlap([], commits), {})
+
+    def test_note_empty(self):
+        """Test that no overlap produces no note"""
+        self.assertEqual(control.parked_overlap_note({}), '')
+
+    def test_note_lists_parked_commit(self):
+        """Test that the note names the parked commit and the shared files"""
+        shared = {'a.c': [('a' * 40, 'Parked work')],
+                  'b.c': [('a' * 40, 'Parked work')]}
+        note = control.parked_overlap_note(shared)
+        self.assertIn('parked conflicts also touch', note)
+        self.assertIn('Parked work', note)
+        self.assertIn('- a.c', note)
+        self.assertIn('- b.c', note)
+
+
 if __name__ == '__main__':
     unittest.main()

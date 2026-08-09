@@ -1506,6 +1506,70 @@ def status_parked(dbs, source_id):
     return sorted((rec[0], rec[1], rec[4]) for rec in recs)
 
 
+def parked_overlap(parked, commits):
+    """Find where commits about to be applied touch parked-conflict files
+
+    A parked commit's change is missing from the tree.  A later commit which
+    touches the same file may be adjusting something the parked one was
+    supposed to add, so applying it alone leaves the tree with half the work -
+    it still builds, CI stays green, and nothing says a thing.  That is how a
+    board came to hang for months on a missing linker-script alignment.
+
+    Args:
+        parked (list of tuple): (id, hash, subject) from status_parked()
+        commits (list of CommitInfo): Commits about to be applied
+
+    Return:
+        dict: Maps each shared path to the list of (hash, subject) parked
+            commits which touch it, for the paths the new commits also touch
+    """
+    if not parked or not commits:
+        return {}
+
+    parked_paths = {}
+    for _, chash, subj in parked:
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                parked_paths.setdefault(path, []).append((chash, subj))
+
+    shared = {}
+    for commit in commits:
+        for _, files in gitutil.log_commits_with_files(f'{commit.hash}^!'):
+            for path in files:
+                if path in parked_paths:
+                    shared[path] = parked_paths[path]
+    return shared
+
+
+def parked_overlap_note(shared):
+    """Describe an overlap with parked commits, for a merge request
+
+    Args:
+        shared (dict): Result from parked_overlap()
+
+    Return:
+        str: Text to add to the merge request, or '' if there is no overlap
+    """
+    if not shared:
+        return ''
+    seen = {}
+    for path, owners in sorted(shared.items()):
+        for chash, subj in owners:
+            seen.setdefault((chash, subj), []).append(path)
+
+    out = ['### Touches files which parked conflicts also touch', '',
+           'These commits were parked as conflicts, so their change is '
+           'missing from the tree. A commit here may be adjusting something '
+           'one of them was meant to add:', '']
+    for (chash, subj), paths in sorted(seen.items(), key=lambda it: it[0][1]):
+        out.append(f'- `{chash[:11]}` {subj}')
+        for path in sorted(paths)[:5]:
+            out.append(f'  - {path}')
+        if len(paths) > 5:
+            out.append(f'  - ... and {len(paths) - 5} more')
+    return '\n'.join(out) + '\n'
+
+
 def parked_retry(dbs, parked, branch, dry_run=False):
     """Try each parked commit again against the current tree
 
@@ -2912,6 +2976,19 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
 
     # Add all commits to database with 'pending' status (agent updates later)
     source_id = dbs.source_get_id(source)
+
+    # A parked conflict's change is missing from the tree, so a commit which
+    # touches the same file may be adjusting work which is not there.  Say so
+    # rather than apply it blind
+    shared = parked_overlap(status_parked(dbs, source_id), commits)
+    if shared:
+        tout.warning(f'{len(shared)} file(s) here are also touched by parked '
+                     'conflicts, whose change is missing from the tree:')
+        for path in sorted(shared)[:5]:
+            owners = ', '.join(chash[:11] for chash, _ in shared[path])
+            tout.warning(f'  {path} (parked: {owners})')
+        if len(shared) > 5:
+            tout.warning(f'  ... and {len(shared) - 5} more')
     for commit in commits:
         dbs.commit_add(commit.hash, source_id, commit.subject, commit.author,
                        status='pending')
@@ -2966,7 +3043,9 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
         if args.push:
             title = f'[pickman] {commits[-1].subject}'
             summary = format_history(source, commits, branch_name)
-            description = f'{summary}\n\n### Conversation log\n{conv_log}'
+            note = parked_overlap_note(shared)
+            description = (f'{summary}\n\n{note}\n'
+                           f'### Conversation log\n{conv_log}')
             if not push_mr(args, branch_name, title, description):
                 ret = 1
         else:

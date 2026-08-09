@@ -677,6 +677,15 @@ which still conflict stay parked.  Merges are left alone, since a merge
 carries no change of its own.  Use ``-n`` to see what would apply without
 keeping anything.
 
+When a set of commits is applied, pickman checks whether any of them touch a
+file which a parked commit also touches, and says so on the console and in the
+merge request.  A parked commit's change is missing from the tree, so a later
+commit which adjusts that same file may be adjusting work which is not there -
+the tree still builds and CI stays green, but a board can misbehave for
+months.  The overlap is reported rather than refused, since with a large
+backlog it would otherwise be impossible to make progress; the decision is
+left to review, where it belongs.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
