@@ -41,8 +41,9 @@ the UEFI variables.
 The next commands are kept as alias and for compatibility:
 
 + :doc:`askenv <askenv>` = *env ask*
-+ *editenv* = *env edit*
-+ *grepenv* = *env grep*
++ :doc:`editenv <editenv>` = *env edit*
++ :doc:`eraseenv <eraseenv>` = *env erase*
++ :doc:`grepenv <grepenv>` = *env grep*
 + :doc:`printenv <printenv>` = *env print*
 + *run* = *env run*
 + *setenv* = *env set*
