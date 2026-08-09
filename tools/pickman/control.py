@@ -149,9 +149,11 @@ ApplyInfo = namedtuple('ApplyInfo',
 #     that drift in them might have a justification
 # skipped: number of files taken as wanted in full without being looked
 #     inside, which a shallow run does for every file it would have blamed
+# deleted: paths which a downstream commit has removed, so that blame cannot
+#     say who did it and their hunks are taken as wanted
 DriftInfo = namedtuple('DriftInfo',
                        ['base', 'fdiffs', 'verdicts', 'binary', 'orphans',
-                        'touched', 'skipped'])
+                        'touched', 'skipped', 'deleted'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -965,6 +967,7 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
 
     verdicts = {}
     binary = []
+    deleted = []
     skipped = 0
     for fdiff in fdiffs:
         touched = fdiff.path in down_paths
@@ -977,18 +980,22 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
         if touched:
             # A file which is gone downstream cannot be blamed, and a shallow
             # run does not try to tell one hunk from another.  Either way the
-            # downstream commits get the benefit of the doubt
-            if not deep or fdiff.deleted:
+            # downstream commits get the benefit of the doubt, but the two are
+            # worth counting apart: only one of them can be acted on
+            if fdiff.deleted or not deep:
                 verdicts[fdiff.path] = [
                     drift.Verdict(hunk, drift.WANTED, 'downstream file')
                     for hunk in fdiff.hunks]
-                skipped += 1
+                if fdiff.deleted:
+                    deleted.append(fdiff.path)
+                else:
+                    skipped += 1
                 continue
             blame = drift_blame(branch, fdiff.path, down_hashes)
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
     return DriftInfo(base, fdiffs, verdicts, binary, orphans, down_paths,
-                     skipped)
+                     skipped, deleted)
 
 
 def drift_paths(info):
@@ -1152,6 +1159,10 @@ def drift_show_report(info, show_list, show_diff):
         tout.info(f'  {info.skipped} file(s) which downstream commits touch '
                   'were taken as wanted without being looked inside; drop '
                   "'-s' to blame them")
+    if info.deleted:
+        tout.info(f'  {len(info.deleted)} file(s) deleted downstream cannot '
+                  "be blamed, so their hunks are taken as wanted ('-l' to "
+                  'list)')
 
     if not bad:
         tout.info('')
@@ -1163,6 +1174,8 @@ def drift_show_report(info, show_list, show_diff):
         for path, count in bad:
             what = f'{count} hunk(s)' if count else 'binary'
             tout.info(f'  {what:>12}  {path}')
+        for path in sorted(info.deleted):
+            tout.info(f'  {"deleted":>12}  {path}')
 
     if show_diff:
         # Print the patch plainly, so that it can be piped to 'git apply -R'

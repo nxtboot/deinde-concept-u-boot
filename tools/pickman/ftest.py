@@ -7658,6 +7658,36 @@ class TestDriftCommands(unittest.TestCase):
             control.do_pickman(self._drift_args(shallow=False))
         self.assertNotIn('without being looked inside', stdout.getvalue())
 
+    def _handle_git_deleted(self, pipe_list=None, **_):
+        """Answer git so the downstream commit touches the deleted file"""
+        args = list(pipe_list[0])[1:]
+        if args[0] == 'log' and '--name-only' in args:
+            return command.CommandResult(
+                stdout=f'@{DRIFT_CHERRY}\nREADME\n\n@{DRIFT_DOWN}\n'
+                       'tools/old.c\n')
+        return self._handle_git(pipe_list=pipe_list)
+
+    def test_report_deleted_not_blamed(self):
+        """Test that a file deleted downstream is reported as such
+
+        Blame cannot say who removed a file, so its hunks are taken as
+        wanted.  That is nothing to do with a shallow run, so the advice to
+        drop '-s' must not be given for it.
+        """
+        command.TEST_RESULT = self._handle_git_deleted
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(shallow=False))
+        out = stdout.getvalue()
+        self.assertIn('1 file(s) deleted downstream cannot be blamed', out)
+        self.assertNotIn("drop '-s'", out)
+
+    def test_report_deleted_listed(self):
+        """Test that a file deleted downstream is listed, not left invisible"""
+        command.TEST_RESULT = self._handle_git_deleted
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(shallow=False, list=True))
+        self.assertIn('deleted  tools/old.c', stdout.getvalue())
+
     def test_report_unambiguous(self):
         """Test that the report calls out drift which cannot be wanted
 
