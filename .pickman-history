@@ -96585,3 +96585,33 @@ Branch `cherry-f2f1a1e7d218` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-08 (attempt 1)
+
+Branch: cherry-f2f1a1e7d218
+
+Failed jobs:
+- edison (sjg-lab)
+- bpif3 (sjg-lab)
+- link64 (sjg-lab)
+- link (sjg-lab)
+
+### Conversation log
+All four failures are infrastructure/lab issues, not code issues. Let me verify by checking what commits touched by looking at the branch state:
+
+All four failures are pure infrastructure/lab issues, unrelated to any code on this branch. The branch consists of imx-related patches (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 board support, binman CST backend, RPi CI gate) — none of which touch the failing boards (edison=x86, link/link64=x86 chromebook, bpif3=spacemit RISC‑V).
+
+## Root cause per job
+
+- **edison (612544)**: `labgrid-client: Error: place edison is not acquired by your user, acquired by labgrid.` The labgrid place was held by another user (kea/labgrid). This is a lab‑reservation/setup issue, not a code issue.
+- **bpif3 (612533)**: `USB loader not ready (attempt 1..5): BootROM did not start the FSBL (gadget devnum still …); board needs a reset`. The SpaceMiT K1 BootROM never handed off — board needed a physical reset. Hardware/lab transient.
+- **link64 (612506)**: `serial.SerialException: Could not open serial port rfc2217://kea:46143 … Remote does not seem to support RFC2217 or BINARY mode` plus `ConnectionResetError: [Errno 104] Connection reset by peer`. RFC2217 serial console server issue (kea host). Infra transient.
+- **link (612505)**: Same RFC2217 / connection-reset failure as link64 on port 36815. Same infra issue.
+
+## Conclusion
+
+No code change is warranted. These are all lab-infrastructure/transient failures (labgrid reservation contention, hardware needing manual reset, RFC2217 serial console disconnects on `kea`). None correlate with any commit on `cherry-f2f1a1e7d218`.
+
+Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I am not creating branch `cherry-f2f1a1e7d218-fix1` and not amending any commit. Recommend simply retrying the lab jobs (and, for edison, releasing the labgrid place first).
+
+---
+
