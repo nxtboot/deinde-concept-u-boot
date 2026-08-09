@@ -90,6 +90,9 @@ def add_main_commands(subparsers):
     drift_cmd.add_argument('-f', '--fingerprints', action='store_true',
                            help='List each drift hunk with the fingerprint '
                                 "'drift-accept -u' takes")
+    drift_cmd.add_argument('-o', '--orphans', action='store_true',
+                           help='List the commits picked from a series no '
+                                'tracked source has')
 
     drift_acc = subparsers.add_parser(
         'drift-accept', help='Record a delta from upstream as intentional')

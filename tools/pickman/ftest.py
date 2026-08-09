@@ -7504,7 +7504,7 @@ class TestDriftCommands(unittest.TestCase):
         """
         args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
                 'shallow': True, 'diff': False, 'list': False,
-                'fingerprints': False, 'upstream': None}
+                'fingerprints': False, 'orphans': False, 'upstream': None}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7640,6 +7640,58 @@ class TestDriftCommands(unittest.TestCase):
         self.assertIn('tools/old.c', out)
         self.assertIn('binary', out)
         self.assertLess(out.index('1 hunk(s)  README'), out.index('binary'))
+
+    def test_report_shallow_note(self):
+        """Test that a shallow run says how many files it did not look inside
+
+        The video driver is touched downstream, so a shallow run takes it as
+        wanted without blaming it, and should say so.
+        """
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args())
+        self.assertIn('1 file(s) which downstream commits touch were taken '
+                      'as wanted', stdout.getvalue())
+
+    def test_report_no_shallow_note_when_deep(self):
+        """Test that a deep run has nothing to say about skipped files"""
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(shallow=False))
+        self.assertNotIn('without being looked inside', stdout.getvalue())
+
+    def test_report_unambiguous(self):
+        """Test that the report calls out drift which cannot be wanted
+
+        A deep run finds drift in the video driver, which a downstream commit
+        has touched, so the certain drift is only part of the total.
+        """
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(shallow=False))
+        self.assertIn('no downstream commit has touched', stdout.getvalue())
+
+    def test_report_orphans_listed(self):
+        """Test that -o lists the commits picked from an unmerged series"""
+        bodies = (f'{DRIFT_CHERRY}\x00A pick\n\n'
+                  f'(cherry picked from commit {DRIFT_GONE})\n\x01'
+                  f'{DRIFT_DOWN}\x00Downstream work\n\x01')
+        summary = f'{DRIFT_CHERRY[:11]} A pick'
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            if args[0] == 'log':
+                if '--no-walk' in args:
+                    return command.CommandResult(stdout=f'{summary}\n')
+                if any('%x00' in arg for arg in args):
+                    # The pick names a commit no source has, so it is an orphan
+                    return command.CommandResult(stdout=bodies)
+            return self._handle_git(pipe_list=pipe_list)
+
+        command.TEST_RESULT = handle
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._drift_args(orphans=True))
+        out = stdout.getvalue()
+        self.assertIn('1 commit(s) picked from a series no tracked source',
+                      out)
+        self.assertIn(summary, out)
 
     def test_report_fingerprints(self):
         """Test that -f lists the fingerprint which drift-accept -u takes"""

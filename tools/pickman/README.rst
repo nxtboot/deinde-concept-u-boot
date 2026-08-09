@@ -668,13 +668,26 @@ Options:
 - ``-s`` skip blaming the files which downstream commits have touched; faster
   but misses drift inside them
 - ``-f`` list each drift hunk with the fingerprint ``drift-accept -u`` takes
+- ``-o`` list the commits picked from a series no tracked source has
 - ``-b`` downstream branch to examine (default: ci/master)
 - ``--upstream COMMIT`` compare against this upstream commit rather than the
   tracked source position (read-only), e.g. to back-fill historical drift
 
 By default pickman blames those touched files, which finds drift inside them
-but takes a few minutes on a large tree.  The exit code is 1 if there is any
-drift, so this can be used as a check.
+but takes a few minutes on a large tree.  A shallow run says how many files it
+took on trust rather than looking inside, since drift hidden in a file with
+real downstream changes is easy to miss and is often the most interesting.
+The exit code is 1 if there is any drift, so this can be used as a check.
+
+The report also separates out the drift in files no downstream commit has ever
+touched.  That drift cannot have a justification, so it is the safest thing to
+revert; ``drift-fix -u`` does only those.
+
+A commit which records '(cherry picked from commit X)' has only really come
+from upstream if a tracked source has X.  A pick from a series which upstream
+never took is counted as downstream work instead, since upstream has no such
+change to match; ``-o`` lists those, which is worth a look as upstream moves
+and takes some of the series.
 
 To record a delta as intentional, exempting it from the above::
 

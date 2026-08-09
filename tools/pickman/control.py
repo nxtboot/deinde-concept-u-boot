@@ -147,9 +147,11 @@ ApplyInfo = namedtuple('ApplyInfo',
 #     so treated as downstream-original rather than as cherry-picks
 # touched: set of paths which a downstream-original commit has touched, so
 #     that drift in them might have a justification
+# skipped: number of files taken as wanted in full without being looked
+#     inside, which a shallow run does for every file it would have blamed
 DriftInfo = namedtuple('DriftInfo',
                        ['base', 'fdiffs', 'verdicts', 'binary', 'orphans',
-                        'touched'])
+                        'touched', 'skipped'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -963,6 +965,7 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
 
     verdicts = {}
     binary = []
+    skipped = 0
     for fdiff in fdiffs:
         touched = fdiff.path in down_paths
         if fdiff.binary:
@@ -979,12 +982,13 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
                 verdicts[fdiff.path] = [
                     drift.Verdict(hunk, drift.WANTED, 'downstream file')
                     for hunk in fdiff.hunks]
+                skipped += 1
                 continue
             blame = drift_blame(branch, fdiff.path, down_hashes)
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
-    return DriftInfo(base, fdiffs, verdicts, binary, orphans,
-                     down_paths)
+    return DriftInfo(base, fdiffs, verdicts, binary, orphans, down_paths,
+                     skipped)
 
 
 def drift_paths(info):
@@ -1068,6 +1072,22 @@ def drift_select(bad, info, patterns=None, unambiguous=False):
     return out
 
 
+def drift_show_orphans(info):
+    """List the commits picked from a series no tracked source has
+
+    Upstream may take such a series later, at which point the commit becomes
+    an ordinary cherry-pick and its delta should match upstream again, so
+    these are worth looking at again as upstream moves.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+    """
+    tout.info(f'{len(info.orphans)} commit(s) picked from a series no '
+              'tracked source has:')
+    for line in gitutil.commit_summaries(sorted(info.orphans)):
+        tout.info(f'  {line}')
+
+
 def drift_show_fingerprints(info):
     """List each drift hunk with the fingerprint which identifies it
 
@@ -1116,9 +1136,22 @@ def drift_show_report(info, show_list, show_diff):
                   'so they say the same as upstream')
     if info.orphans:
         tout.info(f'  {len(info.orphans)} commit(s) picked from a series no '
-                  'tracked source has, treated as downstream')
+                  "tracked source has, treated as downstream ('-o' to list)")
     tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} '
               f'file(s), {drift_percent(states):.0f}% of divergence')
+
+    # Drift in a file no downstream commit has touched cannot have a
+    # justification, so say how much of the total is certain
+    sure = drift_select(bad, info, None, True)
+    if sure and len(sure) != len(bad):
+        hunks = sum(count for _, count in sure)
+        tout.info(f'    of which {hunks} hunk(s) in {len(sure)} file(s) are '
+                  "in files no downstream commit has touched ('drift-fix -u')")
+
+    if info.skipped:
+        tout.info(f'  {info.skipped} file(s) which downstream commits touch '
+                  'were taken as wanted without being looked inside; drop '
+                  "'-s' to blame them")
 
     if not bad:
         tout.info('')
@@ -1171,7 +1204,7 @@ def do_drift(args, dbs):
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'shallow',
-            'list', 'diff', 'fingerprints' and 'upstream' attributes
+            'list', 'diff', 'fingerprints', 'orphans' and 'upstream'
         dbs (Database): Database instance
 
     Return:
@@ -1189,6 +1222,9 @@ def do_drift(args, dbs):
     if args.fingerprints:
         tout.info('')
         drift_show_fingerprints(info)
+    if getattr(args, 'orphans', False) and info.orphans:
+        tout.info('')
+        drift_show_orphans(info)
     return ret
 
 
