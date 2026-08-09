@@ -8578,6 +8578,86 @@ class TestRemovedIdentifiers(unittest.TestCase):
         self.assertEqual(drift.removed_identifiers([hunk]), set())
 
 
+class TestDriftLoadBearing(unittest.TestCase):
+    """Tests for declining a revert which would break something"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    @staticmethod
+    def _info(path, added_lines):
+        """Build a DriftInfo whose one file adds a distinctive name
+
+        Args:
+            path (str): File the hunk is in
+            added_lines (list of int): Downstream lines the hunk adds
+        """
+        hunk = drift.Hunk(path, 1, 2, added_lines,
+                          ['@@ -1,1 +1,2 @@', '+#define SOME_LONG_NAME 1'],
+                          'abc123')
+        return control.DriftInfo(
+            'a' * 40, [], {path: [drift.Verdict(hunk, drift.DRIFT, None)]},
+            [], set(), set(), 0, [])
+
+    def _grep(self, hits):
+        """Answer git grep with some hits
+
+        Args:
+            hits (list of tuple): (path, line number) each using the name
+        """
+        out = ''.join(f'ci/master:{path}:{num}:  SOME_LONG_NAME\n'
+                      for path, num in hits)
+
+        def handle(**_):
+            return command.CommandResult(stdout=out)
+
+        command.TEST_RESULT = handle
+
+    def test_user_outside_the_set(self):
+        """Test that a user outside the revert is declined"""
+        info = self._info('a.h', [1])
+        self._grep([('b.c', 40)])
+        with terminal.capture():
+            held = control.drift_load_bearing(info, ['a.h'], 'ci/master')
+        self.assertEqual(held, {'a.h': [('SOME_LONG_NAME', 'b.c')]})
+
+    def test_user_inside_the_set_still_counts(self):
+        """Test that a user being reverted for another hunk still counts
+
+        Being in the revert does not mean the use goes away: the file may be
+        reverted for something else and keep using the name.
+        """
+        info = self._info('a.h', [1])
+        # b.c is reverted, but its line 40 is not one the revert removes
+        info.verdicts['b.c'] = []
+        self._grep([('b.c', 40)])
+        with terminal.capture():
+            held = control.drift_load_bearing(info, ['a.h', 'b.c'],
+                                              'ci/master')
+        self.assertEqual(held, {'a.h': [('SOME_LONG_NAME', 'b.c')]})
+
+    def test_use_removed_by_the_revert(self):
+        """Test that a use which the revert itself takes away is ignored"""
+        info = self._info('a.h', [1])
+        hunk = drift.Hunk('b.c', 40, 1, [40], ['@@ -40 +40 @@',
+                                               '+  SOME_LONG_NAME'], 'd')
+        info.verdicts['b.c'] = [drift.Verdict(hunk, drift.DRIFT, None)]
+        self._grep([('b.c', 40)])
+        with terminal.capture():
+            held = control.drift_load_bearing(info, ['a.h', 'b.c'],
+                                              'ci/master')
+        self.assertEqual(held, {})
+
+    def test_no_users(self):
+        """Test that a name nothing uses does not hold anything back"""
+        info = self._info('a.h', [1])
+        self._grep([])
+        with terminal.capture():
+            held = control.drift_load_bearing(info, ['a.h'], 'ci/master')
+        self.assertEqual(held, {})
+
+
 class TestDriftBuild(unittest.TestCase):
     """Tests for checking that a revert still builds"""
 

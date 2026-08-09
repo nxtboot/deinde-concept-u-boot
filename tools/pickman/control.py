@@ -1125,16 +1125,51 @@ def drift_build_ok(build_cmd):
     return False, chr(10).join(lines[:BUILD_ERROR_LINES])
 
 
-def drift_load_bearing(info, paths, branch):
+# Names searched for in one go, to keep the command line sane
+GREP_BATCH = 200
+
+
+def drift_grep_names(names, branch):
+    """Find every line in a branch which uses any of some names
+
+    One search covers the whole area, since a search for each name in turn
+    means thousands of git processes and takes minutes on a large one.
+
+    Args:
+        names (list of str): Names to look for, matched as whole words
+        branch (str): Branch to search
+
+    Return:
+        list of tuple: (path, line number, text) for each matching line
+    """
+    hits = []
+    names = sorted(names)
+    for pos in range(0, len(names), GREP_BATCH):
+        cmd = ['git', 'grep', '-n', '-w']
+        for name in names[pos:pos + GREP_BATCH]:
+            cmd += ['-e', name]
+        cmd.append(branch)
+        out = command.output(*cmd, raise_on_error=False)
+        for line in out.splitlines():
+            # 'git grep <rev>' prints 'rev:path:lineno:text'
+            parts = line.split(':', 3)
+            if len(parts) == 4 and parts[2].isdigit():
+                hits.append((parts[1], int(parts[2]), parts[3]))
+    return hits
+
+
+def drift_load_bearing(info, paths, branch):  # pylint: disable=too-many-locals
     """Find files whose revert would remove something still in use
 
     Reverting a hunk takes out the lines it adds.  Where those lines define
-    something - a macro, say - and other code still refers to it, the revert
-    leaves the tree unable to build.  Nothing else catches this: the tree
-    builds before, CI only complains after the merge request exists.
+    something and other code still refers to it, the revert leaves the tree
+    unable to build.  Nothing else catches this: the tree builds before, so
+    the first sign of trouble is CI failing on a merge request already open.
 
-    Only files outside the set being reverted are searched, since a name whose
-    only users are also being reverted goes away with it.
+    A use which the revert itself removes does not count, since it goes away
+    with the definition.  That is judged line by line rather than by file: a
+    file being reverted for one hunk may still use the name somewhere the
+    revert does not touch, and taking the whole file as safe would miss it.
 
     Args:
         info (DriftInfo): Result from drift_collect()
@@ -1145,28 +1180,45 @@ def drift_load_bearing(info, paths, branch):
         dict: Maps path to a list of (name, file still using it), for the
             files which cannot safely be reverted
     """
-    reverting = set(paths)
-    held = {}
     # The history file records every run, so it mentions names which nothing
-    # actually uses; searching it would decline almost everything
+    # uses; searching it would decline almost everything
     ignore = {HISTORY_FILE, drift.ACCEPT_FILE}
+
+    names_for = {}
+    dropped = {}
     for path in paths:
         hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
                  if vdt.state == drift.DRIFT]
         names = drift.removed_identifiers(hunks)
+        if names:
+            names_for[path] = names
+        # Lines this revert takes away, so a use on one of them goes too
+        dropped[path] = {num for hunk in hunks for num in hunk.added}
+
+    every = set()
+    for names in names_for.values():
+        every.update(names)
+    if not every:
+        return {}
+
+    hits = drift_grep_names(every, branch)
+
+    held = {}
+    for path, names in names_for.items():
         for name in sorted(names):
-            try:
-                out = command.output('git', 'grep', '-l', '-w', name,
-                                     branch, raise_on_error=False)
-            except Exception:  # pylint: disable=broad-except
-                continue
-            for line in out.splitlines():
-                # 'git grep <rev>' prints 'rev:path'
-                user = line.split(':', 1)[-1]
-                if user != path and user not in reverting and (
-                        user not in ignore):
-                    held.setdefault(path, []).append((name, user))
-                    break
+            for user, num, text in hits:
+                if user == path or user in ignore:
+                    continue
+                if name not in text:
+                    continue
+                # A use which is itself being reverted disappears with the
+                # definition, so it does not hold anything back
+                if user in dropped and num in dropped[user]:
+                    continue
+                held.setdefault(path, []).append((name, user))
+                break
+            if path in held:
+                break
     return held
 
 
