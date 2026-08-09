@@ -96833,3 +96833,48 @@ Comments addressed:
 
 ---
 
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+## Report
+
+**Review comment:** `Pipeline fix: reached retry limit (3 attempts). Manual intervention required.`
+
+This is a system-generated notice that the automated pipeline-fix retry loop has been exhausted. It is not an actionable code-review comment — it is an escalation asking a human to look at the situation.
+
+**Branch state:**
+- On `cherry-f2f1a1e7d218`, 20 commits ahead of `ci/master`, **0 commits behind**.
+- 10 imx-only cherry-picked commits + 10 pickman bookkeeping commits accumulated over the prior 9 review-handling iterations.
+- No rebase needed; no merge conflicts possible.
+
+**Analysis of the escalation:**
+Over the previous 3 pipeline-fix attempts and 8 subsequent review-handling iterations, the failing jobs were consistently:
+
+| Job | Board | Failure |
+|---|---|---|
+| edison | Intel Atom x86 | `labgrid-client: place edison is not acquired by your user, acquired by labgrid` — reservation contention held by `kea/labgrid` |
+| link | x86 Chromebook | `BrokenPipeError` in pySerial RFC2217 subnegotiation to `kea:<port>` |
+| link64 | x86 Chromebook | Same `BrokenPipeError` on `kea` RFC2217 |
+| bpif3 | SpaceMiT RISC‑V | BootROM never handed off; board needed physical reset |
+
+None of these boards are touched by this branch (imx-only: phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board, binman CST for i.MX8M, RPi CI gate). All failures occur *before* U-Boot is even booted — inside `pytest_configure`/labgrid reservation or `client.on_activate()` opening the serial port. **No code change on this branch could make these lab issues go away.**
+
+**Action taken:** None on the code. Manual-intervention needed items are lab-side:
+
+1. **edison**: release the labgrid place from `kea/labgrid` (or `labgrid-client -p edison unlock --kick`).
+2. **link / link64**: investigate/restart the RFC2217 serial-console server on `kea` — it has been dropping connections at socket-open time for multiple attempts, suggesting a persistent issue on that host (not a transient) that a plain retry may not clear.
+3. **bpif3**: a physical (or smart-PDU) reset of the SpaceMiT K1 board before the next attempt.
+
+Not creating a `-v2`/`-v3` or force-pushing. The remote branch is already up-to-date with `ci/master` and byte-identical to the desired state; pushing an identical commit range solely to re-trigger CI would not help since the failures are on the lab side, and the retry-limit notice explicitly asks for **manual intervention**, not another automated push.
+
+## Suggested MR reply
+
+> This is a system-generated retry-limit notice, not a code-review comment. All three attempts hit the same lab/infrastructure failures on boards this imx-only branch does not touch — edison (labgrid reservation held by `kea/labgrid`), link/link64 (RFC2217 `BrokenPipeError` on `kea`), and previously bpif3 (SpaceMiT BootROM hang). The failures happen before U-Boot is even booted, so no code change on this branch can fix them. Branch is already current with `ci/master` (0 commits behind), sandbox build passes cleanly. **Manual lab intervention needed:** release the `edison` labgrid place from `kea/labgrid`, and investigate the `kea` RFC2217 serial-console server which has been dropping connections across multiple attempts (looks persistent rather than transient at this point). Once the lab is healthy, please retry the three jobs — no `-v2` push is warranted since the commits would be byte-identical.
+
+---
+
