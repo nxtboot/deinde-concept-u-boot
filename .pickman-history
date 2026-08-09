@@ -96355,3 +96355,32 @@ The branch is ready for pushing.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-dcadbeed2a90
+
+Commits:
+- dcadbeed2a90 cyclic: get rid of cyclic_get_list() helper
+- 2f44bb1417bf cyclic: return early from cyclic_run() if the list is empty
+- d9ce7ed30571 watchdog: ast2600: add AST2700 support
+- 482f9d63b504 Merge tag 'u-boot-watchdog-20260803' of https://git.u-boot-project.org/u-boot/custodians/u-boot-watchdog
+
+### Conversation log
+Delta matches exactly. Let me build test.
+
+All 4 commits cherry-picked successfully to branch `cherry-dcadbeed2a90`.
+
+**Final Status:**
+- **Build result:** OK (sandbox build passed after each cherry-pick and the final build)
+- **Fix-ups:** None needed — all cherry-picks applied cleanly
+- **Deltas:** All commits match originals exactly (file counts and line changes identical)
+- **Commits on branch (in order):**
+  1. `e3957e3638d3` cyclic: get rid of cyclic_get_list() helper
+  2. `68b16d858e5d` cyclic: return early from cyclic_run() if the list is empty
+  3. `0235dfe90628` watchdog: ast2600: add AST2700 support
+  4. `36467dbc98a5` Merge tag 'u-boot-watchdog-20260803' (empty merge commit, preserved as instructed)
+
+Branch is ready for pushing.
+
+---
+
