@@ -433,6 +433,13 @@ RE_DEF_FUNC = re.compile(
 RE_DEF_ASSIGN = re.compile(r'^\s*(?:PROVIDE\s*\(\s*)?([A-Za-z_]\w*)\s*=')
 RE_DEF_LABEL = re.compile(r'^\s*([A-Za-z_]\w*)\s*:\s*[A-Za-z_{]')
 
+# Words which start a statement, so what follows is a call and not a
+# definition: 'return foo(x);' names foo but does not define it
+STMT_KEYWORDS = {
+    'return', 'if', 'else', 'while', 'for', 'switch', 'case', 'do', 'goto',
+    'sizeof', 'break', 'continue',
+}
+
 # Files whose contents are assignments rather than statements
 LDS_SUFFIXES = ('.lds', '.lds.S')
 
@@ -458,7 +465,13 @@ def defined_names(text, path):
         set of str: Names this line defines
     """
     names = set()
+    # A line which starts with a statement keyword holds a call, so the name
+    # after it is used rather than defined
+    first = text.strip().split('(')[0].split()
+    statement = bool(first) and first[0] in STMT_KEYWORDS
     for regex in (RE_DEF_CPP, RE_DEF_KCONFIG, RE_DEF_TAG, RE_DEF_FUNC):
+        if statement and regex is RE_DEF_FUNC:
+            continue
         match = regex.match(text)
         if match:
             names.add(match.group(1))

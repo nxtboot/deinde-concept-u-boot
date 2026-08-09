@@ -8601,6 +8601,23 @@ class TestRemovedIdentifiers(unittest.TestCase):
         hunk = self._hunk('+#define include 1')
         self.assertEqual(drift.removed_identifiers([hunk]), set())
 
+    def test_call_is_not_a_definition(self):
+        """Test that a call in a return statement is not taken as a definition
+
+        'return foo(x);' matches the shape of a function definition if the
+        leading keyword is read as a return type, which declined files for
+        names they only call.
+        """
+        for text in ('\treturn fdtdec_setup_memory_banksize();',
+                     '\treturn bloblist_reloc((void *)addr, size);',
+                     '\tif (some_long_helper(x))'):
+            self.assertEqual(drift.defined_names(text, 'a.c'), set(), text)
+        # A real definition is still found
+        self.assertIn('sandbox_do_thing',
+                      drift.defined_names(
+                          'static int sandbox_do_thing(struct udevice *dev)',
+                          'a.c'))
+
     def test_short_names_ignored(self):
         """Test that a short common word is not counted
 
