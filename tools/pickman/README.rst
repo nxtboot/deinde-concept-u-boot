@@ -713,6 +713,14 @@ Some deltas are correct downstream work which provenance cannot explain,
 because no commit accounts for them.  Those belong in ``.pickman-diverge``
 with a reason saying why, so that nobody reverts them again later.
 
+``drift-fix --missing`` declines a file whose commit left other files absent
+too, since restoring one file of a commit applies only half a change - the
+Makefile entry which builds it, or the devicetree which includes it, may still
+be missing.  It prints the commit to cherry-pick instead.  Where the commit is
+one pickman parked as a conflict that is a record, shown as ``recorded``;
+otherwise it is found by searching the log, shown as ``inferred``, which is a
+good starting point rather than a fact.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

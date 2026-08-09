@@ -1537,6 +1537,81 @@ def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
     return 0
 
 
+# Where the knowledge of which commit adds a file came from
+ORIGIN_RECORDED = 'recorded'
+ORIGIN_INFERRED = 'inferred'
+
+
+def drift_absent_origin(dbs, source_id, source, paths):
+    """Find the commit which adds each file this tree never received
+
+    A parked conflict in the database is a record: pickman tried that commit
+    and set it aside, so its files are missing for a known reason.  Where
+    there is no such record the log is searched instead, which gives a good
+    starting point but is a guess - the file may have gone missing during a
+    pick which pickman believed had succeeded.
+
+    Args:
+        dbs (Database): Database instance
+        source_id (int): Source branch id
+        source (str): Source branch to search when nothing is recorded
+        paths (list of str): Files which are absent downstream
+
+    Return:
+        dict: Maps path to (hash, subject, where it came from)
+    """
+    want = set(paths)
+    found = {}
+
+    # A parked commit is a record of why the file is missing
+    for _, chash, subj in status_parked(dbs, source_id):
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            continue
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                if path in want and path not in found:
+                    found[path] = (chash, subj, ORIGIN_RECORDED)
+
+    # Anything left has to be looked up, which is a guess rather than a record
+    for path in paths:
+        if path in found:
+            continue
+        out = command.output('git', 'log', '--diff-filter=A', '-1',
+                             '--format=%H%x00%s', source, '--', path,
+                             raise_on_error=False).strip()
+        if '\x00' in out:
+            chash, subj = out.split('\x00', 1)
+            found[path] = (chash, subj, ORIGIN_INFERRED)
+    return found
+
+
+def drift_absent_partial(origin, absent):
+    """Find files whose restore would apply only part of a commit
+
+    A file which arrives without the rest of its commit is half a change: the
+    Makefile entry which builds it, or the devicetree which includes it, may
+    still be missing.  Cherry-picking the commit brings the whole thing, so
+    that is what should happen instead.
+
+    Args:
+        origin (dict): Result from drift_absent_origin()
+        absent (set of str): Every file which is absent downstream
+
+    Return:
+        dict: Maps path to (hash, subject, where from, other files still
+            absent from the same commit)
+    """
+    partial = {}
+    for path, (chash, subj, where) in origin.items():
+        others = set()
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            others |= {name for name in files
+                       if name != path and name in absent}
+        if others:
+            partial[path] = (chash, subj, where, sorted(others))
+    return partial
+
+
 def drift_absent_reason(dbs, source_id, paths):
     """Find parked commits which add the files a restore would bring back
 
@@ -1780,8 +1855,29 @@ def do_drift_fix(args, dbs):
                     tout.warning(f'{area}: nothing left to revert, skipping')
                     continue
             if missing:
-                reasons = drift_absent_reason(
-                    dbs, dbs.source_get_id(args.source), paths)
+                sid = dbs.source_get_id(args.source)
+                absent = {path for path, _ in drift_absent_paths(info)}
+                origin = drift_absent_origin(dbs, sid, args.source, paths)
+                partial = drift_absent_partial(origin, absent)
+                if partial:
+                    tout.warning(f'{area}: declining {len(partial)} file(s) '
+                                 'which would apply only part of a commit:')
+                    for path in sorted(partial)[:DECLINE_SHOWN]:
+                        chash, _, where, others = partial[path]
+                        tout.warning(f'  {path} ({where}): {len(others)} more '
+                                     f'file(s) of {chash[:11]} still absent')
+                        tout.warning(f'    run: pickman pick {chash[:11]}')
+                    if len(partial) > DECLINE_SHOWN:
+                        tout.warning(f'  ... and {len(partial) - DECLINE_SHOWN}'
+                                     f' more (showing {DECLINE_SHOWN} of '
+                                     f'{len(partial)})')
+                    paths = [path for path in paths if path not in partial]
+                    if not paths:
+                        tout.warning(f'{area}: nothing left to restore, '
+                                     'skipping')
+                        continue
+                reasons = {path: (rec[0], rec[1])
+                           for path, rec in origin.items() if path in paths}
                 msg = drift_absent_msg(area, paths, info, reasons)
             else:
                 msg = drift_commit_msg(area, paths, info)

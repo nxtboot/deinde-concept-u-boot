@@ -8876,5 +8876,45 @@ class TestDriftBuild(unittest.TestCase):
                          control.BUILD_ERROR_LINES)
 
 
+class TestAbsentOrigin(unittest.TestCase):
+    """Tests for tracing the commit which adds an absent file"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    def test_partial_declines(self):
+        """Test that a commit with other files still absent is partial
+
+        Restoring one file of a commit leaves half a change: the Makefile
+        entry which builds it may still be missing.
+        """
+        origin = {'a.c': ('c' * 40, 'Add the thing', control.ORIGIN_RECORDED)}
+
+        def handle(**_):
+            return command.CommandResult(
+                stdout=f'@{"c" * 40}\na.c\nb.c\nMakefile\n')
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            partial = control.drift_absent_partial(
+                origin, {'a.c', 'b.c', 'Makefile'})
+        self.assertEqual(partial['a.c'][3], ['Makefile', 'b.c'])
+
+    def test_complete_allowed(self):
+        """Test that the last file of a commit is not partial"""
+        origin = {'a.c': ('c' * 40, 'Add the thing', control.ORIGIN_RECORDED)}
+
+        def handle(**_):
+            return command.CommandResult(
+                stdout=f'@{"c" * 40}\na.c\nb.c\n')
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            # b.c is present downstream, so only a.c is absent
+            partial = control.drift_absent_partial(origin, {'a.c'})
+        self.assertEqual(partial, {})
+
+
 if __name__ == '__main__':
     unittest.main()
