@@ -11,6 +11,7 @@ from datetime import date
 import fnmatch
 import os
 import re
+import shlex
 import sys
 import tempfile
 import time
@@ -1073,6 +1074,57 @@ def drift_percent(states):
     return 100.0 * states[drift.DRIFT] / total
 
 
+# Build used to check that a revert leaves a tree which still compiles.  It
+# writes out of tree, so it does not dirty the working copy it is checking
+DEFAULT_BUILD_CMD = 'um build sandbox'
+
+# How many lines of a failed build to show; the first errors name the symbol
+BUILD_ERROR_LINES = 8
+
+
+def drift_build_cmd(args):
+    """Work out the build command which checks a revert
+
+    Args:
+        args (Namespace): Parsed arguments, read for 'build_cmd' and
+            'no_build'
+
+    Return:
+        str: Command to run, or None if building is turned off
+    """
+    if getattr(args, 'no_build', False):
+        return None
+    return (getattr(args, 'build_cmd', None) or
+            gitlab_api.get_config_value('build', 'command') or
+            DEFAULT_BUILD_CMD)
+
+
+def drift_build_ok(build_cmd):
+    """Check that the working tree still builds
+
+    The identifier check cannot see a short name like a three-letter struct
+    member, so a build is the only complete answer to 'does this revert leave
+    something which compiles'.  It runs against the reverted working tree,
+    before anything is committed.
+
+    Args:
+        build_cmd (str): Command to run
+
+    Return:
+        tuple:
+            bool: True if the build succeeded
+            str: The tail of the output when it did not, else ''
+    """
+    tout.info(f'  building with: {build_cmd}')
+    res = command.run_one(*shlex.split(build_cmd), capture=True,
+                          capture_stderr=True, raise_on_error=False)
+    if not res.return_code:
+        return True, ''
+    out = (res.combined or res.stderr or res.stdout or '')
+    lines = [line for line in out.splitlines() if line.strip()]
+    return False, chr(10).join(lines[:BUILD_ERROR_LINES])
+
+
 def drift_load_bearing(info, paths, branch):
     """Find files whose revert would remove something still in use
 
@@ -1488,7 +1540,8 @@ def drift_commit_msg(area, paths, info):
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
-def drift_revert_area(info, area, paths, branch, msg=None, missing=False):
+def drift_revert_area(info, area, paths, branch, msg=None, missing=False,
+                      build_cmd=None):
     """Create a branch which reverts the drift in one area of the tree
 
     Args:
@@ -1499,6 +1552,8 @@ def drift_revert_area(info, area, paths, branch, msg=None, missing=False):
         msg (str): Commit message, or None to describe it as drift
         missing (bool): True to restore files upstream has, rather than
             revert drift hunks
+        build_cmd (str): Command to check the reverted tree builds, or None
+            to commit without checking
 
     Return:
         str: Name of the branch created, or None on failure
@@ -1539,6 +1594,22 @@ def drift_revert_area(info, area, paths, branch, msg=None, missing=False):
 
     # Commit these paths and no others, so that anything else in the tree is
     # left where it is
+    # Check before committing: a revert can remove something another file
+    # still uses, and the identifier check cannot see every such name
+    if build_cmd:
+        built, errors = drift_build_ok(build_cmd)
+        if not built:
+            tout.error(f'{area}: the revert does not build, so it is not '
+                       'worth a merge request:')
+            for line in errors.splitlines():
+                tout.error(f'    {line}')
+            # Put the working tree back and drop the branch, which has no
+            # commit on it yet
+            run_git(['reset', '--hard'])
+            gitutil.checkout_branch(branch)
+            gitutil.delete_branch(name)
+            return None
+
     gitutil.add(paths)
     gitutil.commit_paths(msg or drift_commit_msg(area, paths, info), paths)
     return name
@@ -1591,6 +1662,11 @@ def do_drift_fix(args, dbs):
         tout.info(f'{len(areas)} area(s) have drift, fixing {len(todo)} - '
                   'run again for the rest')
 
+    build_cmd = drift_build_cmd(args)
+    if build_cmd:
+        tout.info(f"Each area is checked with '{build_cmd}'; --no-build "
+                  'turns that off')
+
     orig = gitutil.current_branch()
     ret = 0
     try:
@@ -1615,7 +1691,7 @@ def do_drift_fix(args, dbs):
             else:
                 msg = drift_commit_msg(area, paths, info)
             name = drift_revert_area(info, area, paths, args.branch, msg,
-                                     missing)
+                                     missing, build_cmd)
             if not name:
                 ret = 1
                 continue

@@ -8578,5 +8578,80 @@ class TestRemovedIdentifiers(unittest.TestCase):
         self.assertEqual(drift.removed_identifiers([hunk]), set())
 
 
+class TestDriftBuild(unittest.TestCase):
+    """Tests for checking that a revert still builds"""
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+
+    @staticmethod
+    def _args(**kwargs):
+        """Build arguments for choosing a build command"""
+        args = {'build_cmd': None, 'no_build': False}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def test_default_command(self):
+        """Test that the default build command is used"""
+        with mock.patch.object(gitlab, 'get_config_value',
+                               return_value=None):
+            self.assertEqual(control.drift_build_cmd(self._args()),
+                             control.DEFAULT_BUILD_CMD)
+
+    def test_config_command(self):
+        """Test that a configured command beats the default"""
+        with mock.patch.object(gitlab, 'get_config_value',
+                               return_value='make check'):
+            self.assertEqual(control.drift_build_cmd(self._args()),
+                             'make check')
+
+    def test_argument_wins(self):
+        """Test that an explicit command beats the configured one"""
+        with mock.patch.object(gitlab, 'get_config_value',
+                               return_value='make check'):
+            self.assertEqual(
+                control.drift_build_cmd(self._args(build_cmd='um build x')),
+                'um build x')
+
+    def test_no_build(self):
+        """Test that --no-build turns the check off"""
+        self.assertIsNone(control.drift_build_cmd(self._args(no_build=True)))
+
+    def test_build_passes(self):
+        """Test that a successful build reports no errors"""
+        command.TEST_RESULT = command.CommandResult(return_code=0)
+        with terminal.capture():
+            built, errors = control.drift_build_ok('true')
+        self.assertTrue(built)
+        self.assertEqual(errors, '')
+
+    def test_build_fails_reports_errors(self):
+        """Test that a failed build returns the first error lines
+
+        The compiler names the symbol and file directly, which is what the
+        person reading the failure needs.
+        """
+        out = ("drivers/clk/clk_sandbox.c:19:20: error: 'struct "
+               "sandbox_clk_priv' has no member named 'clk'\n"
+               'make[3]: *** [drivers/clk/clk_sandbox.o] Error 1\n')
+        command.TEST_RESULT = command.CommandResult(combined=out,
+                                                    return_code=2)
+        with terminal.capture():
+            built, errors = control.drift_build_ok('um build sandbox')
+        self.assertFalse(built)
+        self.assertIn('has no member named', errors)
+
+    def test_build_error_lines_capped(self):
+        """Test that a long build failure is trimmed"""
+        out = chr(10).join(f'error line {num}' for num in range(50))
+        command.TEST_RESULT = command.CommandResult(combined=out,
+                                                    return_code=2)
+        with terminal.capture():
+            _, errors = control.drift_build_ok('um build sandbox')
+        self.assertEqual(len(errors.splitlines()),
+                         control.BUILD_ERROR_LINES)
+
+
 if __name__ == '__main__':
     unittest.main()

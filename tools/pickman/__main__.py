@@ -125,6 +125,12 @@ def add_main_commands(subparsers):
     drift_fix.add_argument('-u', '--unambiguous', action='store_true',
                            help='Only fix files which no downstream commit '
                                 'has touched, whose drift cannot be wanted')
+    drift_fix.add_argument('--build-cmd', metavar='CMD',
+                           help='Command to check a revert builds (default: '
+                                "'um build sandbox', or [build] command in "
+                                '~/.config/pickman.conf)')
+    drift_fix.add_argument('--no-build', action='store_true',
+                           help='Commit a revert without checking it builds')
     drift_fix.add_argument('--missing', action='store_true',
                            help='Restore files which upstream has and this '
                                 'tree never received, instead of reverting '
