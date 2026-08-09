@@ -8,6 +8,9 @@ ifdef CONFIG_HUSH_PARSER
 obj-$(CONFIG_CONSOLE_RECORD) += test_echo.o
 endif
 ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_HUSH_OLD_PARSER) += showvar.o
+endif
+ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_PAUSE) += test_pause.o
 endif
 obj-$(CONFIG_HUSH_PARSER) += exit.o
