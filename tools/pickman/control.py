@@ -1493,6 +1493,141 @@ def status_parked(dbs, source_id):
     return sorted((rec[0], rec[1], rec[4]) for rec in recs)
 
 
+def parked_retry(dbs, parked, branch, dry_run=False):
+    """Try each parked commit again against the current tree
+
+    A conflict is often only true of the tree as it stood at the time: once
+    the change it clashed with has itself been picked, the commit applies
+    cleanly.  Retrying costs nothing and lands work which would otherwise sit
+    missing for good.
+
+    Merges are left alone, since a merge carries no change of its own.
+
+    Args:
+        dbs (Database): Database instance
+        parked (list of tuple): (id, hash, subject) from status_parked()
+        branch (str): Branch to base the retry on, e.g. 'ci/master'
+        dry_run (bool): True to report what would apply, keeping nothing
+
+    Return:
+        tuple:
+            list of tuple: The (id, hash, subject) which now apply
+            list of tuple: Those which still conflict
+            str: Name of the branch holding them, or None if nothing applied
+                or this is a dry run
+    """
+    todo = [rec for rec in parked if not rec[2].startswith('Merge')]
+    skipped = len(parked) - len(todo)
+    if skipped:
+        tout.info(f'  ignoring {skipped} merge(s), which carry no change')
+
+    name = 'parked-retry'
+    if gitutil.branch_exists(name):
+        gitutil.delete_branch(name)
+    gitutil.create_branch(name, branch)
+
+    applied = []
+    still = []
+    for rec in todo:
+        chash = rec[1]
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            tout.warning(f'  #{rec[0]} {chash[:11]}: gone from the repo')
+            still.append(rec)
+            continue
+        try:
+            run_git(['cherry-pick', '-x', chash])
+            applied.append(rec)
+        except Exception:  # pylint: disable=broad-except
+            # Still conflicts, so put it back and move on to the next
+            _abort_in_progress()
+            still.append(rec)
+
+    if dry_run or not applied:
+        gitutil.checkout_branch(branch)
+        gitutil.delete_branch(name)
+        return applied, still, None
+
+    for rec in applied:
+        dbs.commit_set_status(rec[1], 'applied')
+    dbs.commit()
+    return applied, still, name
+
+
+def do_parked(args, dbs):
+    """Report the commits parked as conflicts, and optionally retry them
+
+    Args:
+        args (Namespace): Parsed arguments with 'source', 'branch', 'retry',
+            'dry_run', 'push', 'remote' and 'target'
+        dbs (Database): Database instance
+
+    Return:
+        int: 0 if nothing is parked, 1 if anything still is, so that this can
+            be used as a check
+    """
+    source = args.source
+    source_id = dbs.source_get_id(source)
+    if not source_id:
+        tout.error(f"Source '{source}' not found - use 'pickman add-source'")
+        return 1
+
+    parked = status_parked(dbs, source_id)
+    if not parked:
+        tout.info(f'No parked conflicts for {source} ✓')
+        return 0
+
+    merges = sum(1 for _, _, subj in parked if subj.startswith('Merge'))
+    tout.info(f'{len(parked)} parked conflict(s) for {source}, {merges} of '
+              'them merges:')
+    for cid, chash, subj in parked:
+        tout.info(f'  #{cid} {chash[:11]} {subj[:60]}')
+
+    if not args.retry:
+        tout.info('')
+        tout.info("Each of these is missing from the tree; '--retry' tries "
+                  'them again')
+        return 1
+
+    # A retry checks out a branch and cherry-picks onto it, so anything left
+    # lying around in the working tree would be swept along with it
+    if gitutil.has_uncommitted_changes():
+        tout.error('Working tree has uncommitted changes - commit or stash '
+                   'them first')
+        return 1
+
+    tout.info('')
+    tout.info(f'Retrying against {args.branch}...')
+    orig = gitutil.current_branch()
+    try:
+        applied, still, name = parked_retry(dbs, parked, args.branch,
+                                            args.dry_run)
+    finally:
+        if gitutil.current_branch() != orig and gitutil.branch_exists(orig):
+            gitutil.checkout_branch(orig)
+
+    tout.info('')
+    tout.info(f'{len(applied)} now apply cleanly, {len(still)} still conflict')
+    for cid, _, subj in applied:
+        tout.info(f'  applies: #{cid} {subj[:60]}')
+
+    if args.dry_run:
+        tout.info('')
+        tout.info('Dry run, so nothing was kept')
+    elif name:
+        tout.info('')
+        if args.push:
+            title = f'[pickman] Retry {len(applied)} parked conflict(s)'
+            desc = ('These commits were parked as conflicts and apply '
+                    'cleanly now that the tree has moved on.\n\n' +
+                    '\n'.join(f'- {rec[1][:11]} {rec[2]}' for rec in applied))
+            if not push_mr(args, name, title, desc):
+                return 1
+        else:
+            tout.info(f'Created branch {name}')
+
+    return 1 if still else 0
+
+
 def parked_warning(source, parked):
     """Build a one-line warning about parked conflicts
 
@@ -3982,6 +4117,7 @@ COMMANDS = {
     'list-sources': do_list_sources,
     'next-merges': do_next_merges,
     'next-set': do_next_set,
+    'parked': do_parked,
     'pick': do_pick,
     'poll': do_poll,
     'push-branch': do_push_branch,

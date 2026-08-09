@@ -8117,5 +8117,190 @@ class TestStatus(unittest.TestCase):
         self.assertIn('2 parked conflict(s) for us/master', stderr.getvalue())
 
 
+class TestParked(unittest.TestCase):
+    """Tests for the parked command and retrying parked conflicts"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
+        os.unlink(self.db_path)
+        self.old_db_fname = control.DB_FNAME
+        control.DB_FNAME = self.db_path
+        database.Database.instances.clear()
+
+        with terminal.capture():
+            dbs = database.Database(self.db_path)
+            dbs.start()
+            dbs.source_set('us/master', 'a' * 40)
+            dbs.commit()
+            dbs.close()
+        database.Database.instances.clear()
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        command.TEST_RESULT = None
+        control.DB_FNAME = self.old_db_fname
+        if os.path.exists(self.db_path):
+            os.unlink(self.db_path)
+        database.Database.instances.clear()
+
+    def _add(self, rows):
+        """Add parked-conflict commits to the test database"""
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        sid = dbs.source_get_id('us/master')
+        for chash, subject in rows:
+            dbs.commit_add(chash, sid, subject, 'Me', status='conflict')
+        dbs.commit()
+        dbs.close()
+        database.Database.instances.clear()
+
+    @staticmethod
+    def _args(**kwargs):
+        """Build the arguments for the parked command"""
+        args = {'cmd': 'parked', 'source': 'us/master', 'branch': 'ci/master',
+                'retry': False, 'dry_run': False, 'push': False,
+                'remote': 'ci', 'target': 'master'}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def _mock_git(self, applies):
+        """Answer git so that only some commits cherry-pick cleanly
+
+        Args:
+            applies (set of str): Hashes which apply without conflict
+        """
+        self.picked = []
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            if args[0] == 'status':
+                return command.CommandResult(stdout='')
+            if args[0] == 'rev-parse':
+                return command.CommandResult(stdout='drift\n', return_code=0)
+            if args[0] in ('branch', 'checkout'):
+                return command.CommandResult()
+            if args[0] == 'cherry-pick':
+                chash = args[-1]
+                self.picked.append(chash)
+                if chash in applies:
+                    return command.CommandResult()
+                raise command.CommandExc('conflict',
+                                         command.CommandResult(return_code=1))
+            return command.CommandResult()
+
+        command.TEST_RESULT = handle
+
+    def test_none_parked(self):
+        """Test that a source with nothing parked passes as a check"""
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        self.assertEqual(ret, 0)
+        self.assertIn('No parked conflicts', stdout.getvalue())
+
+    def test_list_and_exit_code(self):
+        """Test that parked commits are listed and the exit code is 1
+
+        A non-zero exit lets this be used as a check, so that a backlog
+        cannot sit unnoticed.
+        """
+        self._add([('a' * 40, 'An old fix'), ('b' * 40, 'Merge a series')])
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args())
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)
+        self.assertIn('2 parked conflict(s) for us/master, 1 of them merges',
+                      out)
+        self.assertIn('An old fix', out)
+
+    def test_retry_applies_some(self):
+        """Test that a commit which now applies is picked and recorded"""
+        self._add([('a' * 40, 'Now applies'), ('b' * 40, 'Still broken')])
+        self._mock_git({'a' * 40})
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args(retry=True))
+        out = stdout.getvalue()
+        self.assertEqual(ret, 1)  # one still conflicts
+        self.assertIn('1 now apply cleanly, 1 still conflict', out)
+        self.assertIn('applies: #1 Now applies', out)
+        self.assertIn('Created branch parked-retry', out)
+
+        # The one which applied is no longer parked; the other still is
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        self.assertEqual(dbs.commit_get('a' * 40)[6], 'applied')
+        self.assertEqual(dbs.commit_get('b' * 40)[6], 'conflict')
+
+    def test_retry_all_apply(self):
+        """Test that clearing the backlog gives a passing exit code"""
+        self._add([('a' * 40, 'One'), ('b' * 40, 'Two')])
+        self._mock_git({'a' * 40, 'b' * 40})
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._args(retry=True))
+        self.assertEqual(ret, 0)
+        self.assertIn('2 now apply cleanly, 0 still conflict',
+                      stdout.getvalue())
+
+    def test_retry_skips_merges(self):
+        """Test that a merge is left alone, since it carries no change"""
+        self._add([('a' * 40, 'Merge a series'), ('b' * 40, 'A fix')])
+        self._mock_git({'b' * 40})
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._args(retry=True))
+        self.assertIn('ignoring 1 merge(s)', stdout.getvalue())
+        # Only the non-merge was attempted
+        self.assertEqual(self.picked, ['b' * 40])
+
+    def test_retry_dry_run_keeps_nothing(self):
+        """Test that a dry run reports but changes nothing"""
+        self._add([('a' * 40, 'Now applies')])
+        self._mock_git({'a' * 40})
+        with terminal.capture() as (stdout, _):
+            control.do_pickman(self._args(retry=True, dry_run=True))
+        self.assertIn('Dry run, so nothing was kept', stdout.getvalue())
+
+        database.Database.instances.clear()
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        self.addCleanup(dbs.close)
+        self.assertEqual(dbs.commit_get('a' * 40)[6], 'conflict')
+
+    def test_retry_missing_commit(self):
+        """Test that a commit gone from the repo stays parked"""
+        self._add([('a' * 40, 'Vanished')])
+
+        def handle(pipe_list=None, **_):
+            args = list(pipe_list[0])[1:]
+            if args[0] == 'status':
+                return command.CommandResult(stdout='')
+            if args[0] == 'rev-parse':
+                # --verify of the commit fails; the branch lookup succeeds
+                if any('^{commit}' in arg for arg in args):
+                    return command.CommandResult(return_code=1)
+                return command.CommandResult(stdout='drift\n')
+            return command.CommandResult()
+
+        command.TEST_RESULT = handle
+        with terminal.capture() as (stdout, stderr):
+            ret = control.do_pickman(self._args(retry=True))
+        self.assertEqual(ret, 1)
+        self.assertIn('gone from the repo', stderr.getvalue())
+        self.assertIn('0 now apply cleanly, 1 still conflict',
+                      stdout.getvalue())
+
+    def test_retry_needs_clean_tree(self):
+        """Test that a dirty working tree stops a retry"""
+        self._add([('a' * 40, 'A fix')])
+        command.TEST_RESULT = command.CommandResult(stdout=' M foo.c\n')
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._args(retry=True))
+        self.assertEqual(ret, 1)
+        self.assertIn('uncommitted changes', stderr.getvalue())
+
+
 if __name__ == '__main__':
     unittest.main()

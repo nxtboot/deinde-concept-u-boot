@@ -654,6 +654,29 @@ trailers alone - picks are not a clean prefix of upstream, so the trailers do
 not pin the frontier - so supply the historical position from wherever it is
 reconstructed (e.g. the ``cherry-<hash>`` merge history).
 
+Parked Conflicts
+~~~~~~~~~~~~~~~~
+
+To list the commits which were tried, hit a conflict and moved past::
+
+    ./tools/pickman/pickman parked us/main
+
+The exit code is 1 while anything is parked, so this can be used as a check.
+Each parked commit is a change which is simply missing from the downstream
+branch, with no merge request and no CI failure to show for it.
+
+A conflict is often only true of the tree as it stood at the time.  Once the
+change it clashed with has itself been picked, the commit applies cleanly, so
+it is worth trying again::
+
+    ./tools/pickman/pickman parked us/main --retry
+
+This tries each parked commit against the current branch and puts the ones
+which now apply on a branch of their own, ready to push with ``-p``.  Those
+which still conflict stay parked.  Merges are left alone, since a merge
+carries no change of its own.  Use ``-n`` to see what would apply without
+keeping anything.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

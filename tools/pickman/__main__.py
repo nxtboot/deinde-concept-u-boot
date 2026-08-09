@@ -134,6 +134,23 @@ def add_main_commands(subparsers):
 
     subparsers.add_parser('list-sources', help='List tracked source branches')
 
+    parked = subparsers.add_parser(
+        'parked', help='Report commits parked as conflicts, and retry them')
+    parked.add_argument('source', help='Source branch name')
+    parked.add_argument('-b', '--branch', default='ci/master',
+                        help='Branch to retry against (default: ci/master)')
+    parked.add_argument('--retry', action='store_true',
+                        help='Try each parked commit again against the tree')
+    parked.add_argument('-n', '--dry-run', action='store_true',
+                        help='With --retry, report what would apply and keep '
+                             'nothing')
+    parked.add_argument('-p', '--push', action='store_true',
+                        help='Push the retry branch and create a GitLab MR')
+    parked.add_argument('-r', '--remote', default='ci',
+                        help='Git remote for push (default: ci)')
+    parked.add_argument('-t', '--target', default='master',
+                        help='Target branch for MR (default: master)')
+
     next_merges = subparsers.add_parser(
         'next-merges', help='Show next N merges to be applied')
     next_merges.add_argument('source', help='Source branch name')
