@@ -115,6 +115,47 @@ def log_commits_with_files(commit_range, no_merges=False, git_dir=None):
     return commits
 
 
+def log_bodies(commit_range, no_merges=False, git_dir=None):
+    """List commits in a range together with their commit messages
+
+    Args:
+        commit_range (str): Range to list, e.g. 'base..branch'
+        no_merges (bool): True to exclude merge commits
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of tuple: (hash, message) for each commit, newest first
+    """
+    # Use control characters as separators, since a commit message can hold
+    # anything else
+    cmd = ['git', 'log', '--format=%H%x00%B%x01']
+    if no_merges:
+        cmd.append('--no-merges')
+    cmd.append(commit_range)
+    out = command.output(*cmd, cwd=git_dir)
+    commits = []
+    for rec in out.split('\x01'):
+        if '\x00' in rec:
+            chash, body = rec.split('\x00', 1)
+            commits.append((chash.strip(), body))
+    return commits
+
+
+def rev_list(*refs, git_dir=None):
+    """List every commit reachable from some refs
+
+    Args:
+        *refs (str): Refs to walk from
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of str: Commit hashes
+    """
+    return command.output('git', 'rev-list', *refs, cwd=git_dir).split()
+
+
 def commit_summary(ref, git_dir=None):
     """Get a one-line summary of a commit
 
