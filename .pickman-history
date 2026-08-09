@@ -96727,3 +96727,29 @@ Comments addressed:
 
 ---
 
+### Review: 2026-08-09
+
+Branch: cherry-f2f1a1e7d218
+
+Comments addressed:
+
+
+### Conversation log
+## Report
+
+**Rebase status:** Not required. `cherry-f2f1a1e7d218` is already based directly on the current `ci/master` tip — 16 commits ahead, **0 commits behind**. `git rebase --keep-empty ci/master` returned "Current branch cherry-f2f1a1e7d218 is up to date." No conflicts to resolve.
+
+**Build verification:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built cleanly in 0:00:08, no warnings/errors.
+
+**Branch contents (unchanged from prior attempts):**
+- 10 imx-only cherry-picked commits (phycore_imx8mm RAM timings, i.MX7 counter init, iMX95 FRDM board support, binman CST backend for i.MX8M, RPi CI gate, imx merge)
+- 6 pickman bookkeeping commits (cherry-pick record, pipeline fix record, four review-handling records)
+
+**Action taken:** No `-v2` local branch created, no force-push. The remote branch is already byte-identical to the desired state (already on top of `ci/master`, build passing). Force-pushing an identical commit range solely to re-trigger CI would be pure churn — consistent with the conclusion of the previous 5 attempts on this MR.
+
+## Suggested MR reply
+
+> The branch is already based on the current `ci/master` tip — 0 commits behind, no rebase needed (`git rebase --keep-empty ci/master` is a no-op: "Current branch is up to date"). Sandbox build passes cleanly (1/1, 0:00:08, no warnings). The prior lab failures (edison, link64, link) were lab/infrastructure transients on x86 boards unrelated to this imx-only branch and required no code change. Not pushing a `-v7` since the commits would be identical to what is already on the remote — please just retry the lab jobs (releasing the `edison` labgrid place from `kea/labgrid` first if it is still held).
+
+---
+
