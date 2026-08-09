@@ -67,7 +67,7 @@ err:
 
 static struct cmd_tbl cmd_sound_sub[] = {
 	U_BOOT_CMD_MKENT(init, 0, 1, do_init, "", ""),
-	U_BOOT_CMD_MKENT(play, INT_MAX, 1, do_play, "", ""),
+	U_BOOT_CMD_MKENT(play, CMD_MAXARGS, 1, do_play, "", ""),
 };
 
 /* process sound command */
@@ -92,7 +92,7 @@ static int do_sound(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 U_BOOT_CMD(
-	sound, INT_MAX, 1, do_sound,
+	sound, CMD_MAXARGS, 1, do_sound,
 	"sound sub-system",
 	"init - initialise the sound driver\n"
 	"sound play [len [freq [len [freq ...]]]] - play sounds\n"

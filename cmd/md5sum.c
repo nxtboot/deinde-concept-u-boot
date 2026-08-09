@@ -33,7 +33,7 @@ static int do_md5sum(struct cmd_tbl *cmdtp, int flag, int argc,
 		ac--;
 	}
 
-	return hash_command("md5", flags, cmdtp, flag, ac, av);
+	return hash_command("md5", flags, ac, av);
 }
 
 #if IS_ENABLED(CONFIG_MD5SUM_VERIFY)

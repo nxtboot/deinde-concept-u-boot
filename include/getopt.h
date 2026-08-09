@@ -10,18 +10,40 @@
 #define __GETOPT_H
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <linux/kconfig.h>
 
 /**
  * struct getopt_state - Saved state across getopt() calls
  */
 struct getopt_state {
+#ifdef CONFIG_GETOPT_PERMUTE
 	/**
-	 * @index: Index of the next unparsed argument of @argv. If getopt() has
-	 * parsed all of @argv, then @index will equal @argc.
+	 * @argv: Working copy of argv. getopt() reorders this in place: as
+	 * options are consumed, non-options are permuted to the end.
+	 */
+	char *argv[CONFIG_SYS_MAXARGS + 1];
+#else
+	/**
+	 * @argv: Borrowed pointer to the caller's argv. In POSIX mode getopt()
+	 * never reorders, so no writable copy is needed.
+	 */
+	char *const *argv;
+#endif
+	/** @argc: Argument count, as passed to getopt_init_state() */
+	int argc;
+	/**
+	 * @index: Index of the next unparsed argument of @argv. If getopt()
+	 * has parsed all of @argv, then @index will be the first non-option
+	 * argument of @argv (or @argc if none).
 	 */
 	int index;
 	/** @arg_index: Index within the current argument */
 	int arg_index;
+#ifdef CONFIG_GETOPT_PERMUTE
+	/** @nonopts: Number of non-option arguments in @argv. */
+	int nonopts;
+#endif
 	union {
 		/**
 		 * @opt: Option being parsed when an error occurs. @opt is only
@@ -39,20 +61,20 @@ struct getopt_state {
 /**
  * getopt_init_state() - Initialize a &struct getopt_state
  * @gs: The state to initialize
+ * @argc: Argument count
+ * @argv: Source argv. Copied into @gs->argv; the original is not
+ *        modified. @argc must not exceed ``CONFIG_SYS_MAXARGS``;
+ *        excess arguments are silently dropped.
  *
  * This must be called before using @gs with getopt().
  */
-void getopt_init_state(struct getopt_state *gs);
-
-int __getopt(struct getopt_state *gs, int argc, char *const argv[],
-	     const char *optstring, bool silent);
+void getopt_init_state(struct getopt_state *gs, int argc,
+		       char *const argv[]);
 
 /**
  * getopt() - Parse short command-line options
  * @gs: Internal state and out-of-band return arguments. This must be
- *      initialized with getopt_init_context() beforehand.
- * @argc: Number of arguments, not including the %NULL terminator
- * @argv: Argument list, terminated by %NULL
+ *      initialized with getopt_init_state() beforehand.
  * @optstring: Option specification, as described below
  *
  * getopt() parses short options. Short options are single characters. They may
@@ -67,11 +89,17 @@ int __getopt(struct getopt_state *gs, int argc, char *const argv[],
  * by ``::`` in @optstring, it expects an optional argument. @gs.arg points
  * to the argument, if one is parsed.
  *
- * getopt() stops parsing options when it encounters the first non-option
- * argument, when it encounters the argument ``--``, or when it runs out of
- * arguments. For example, in ``ls -l foo -R``, option parsing will stop when
- * getopt() encounters ``foo``, if ``l`` does not expect an argument. However,
- * the whole list of arguments would be parsed if ``l`` expects an argument.
+ * By default, getopt() permutes its argv: when it encounters a non-option,
+ * it moves that element to the end of @gs.argv and keeps scanning, so
+ * options can appear anywhere on the command line. After parsing finishes,
+ * @gs.index points at the first non-option, and there are @gs.nonopts of
+ * them at @gs.argv[gs.index..argc-1]. If @optstring begins with ``+``,
+ * getopt() instead stops at the first non-option (POSIX ``getopt``
+ * behaviour). An ``--`` argument terminates option scanning in either mode.
+ *
+ * getopt() does not print any error messages; the caller is expected to
+ * detect '?' and ':' and report via its own usage string (typically
+ * CMD_RET_USAGE).
  *
  * An example invocation of getopt() might look like::
  *
@@ -79,16 +107,16 @@ int __getopt(struct getopt_state *gs, int argc, char *const argv[],
  *     int opt, argc = ARRAY_SIZE(argv) - 1;
  *     struct getopt_state gs;
  *
- *     getopt_init_state(&gs);
- *     while ((opt = getopt(&gs, argc, argv, "a::b:c")) != -1)
+ *     getopt_init_state(&gs, argc, argv);
+ *     while ((opt = getopt(&gs, "a::b:c")) != -1)
  *         printf("opt = %c, index = %d, arg = \"%s\"\n", opt, gs.index, gs.arg);
- *     printf("%d argument(s) left\n", argc - gs.index);
+ *     printf("%d argument(s) left\n", gs.nonopts);
  *
  * and would produce an output of::
  *
  *     opt = c, index = 1, arg = "<NULL>"
  *     opt = b, index = 2, arg = "x"
- *     opt = a, index = 4, arg = "foo"
+ *     opt = a, index = 3, arg = "foo"
  *     1 argument(s) left
  *
  * For further information, refer to the getopt(3) man page.
@@ -96,34 +124,56 @@ int __getopt(struct getopt_state *gs, int argc, char *const argv[],
  * Return:
  * * An option character if an option is found. @gs.arg is set to the
  *   argument if there is one, otherwise it is set to ``NULL``.
- * * ``-1`` if there are no more options, if a non-option argument is
- *   encountered, or if an ``--`` argument is encountered.
+ * * ``-1`` if there are no more options, or if an ``--`` argument is
+ *   encountered.
  * * ``'?'`` if we encounter an option not in @optstring. @gs.opt is set to
  *   the unknown option.
  * * ``':'`` if an argument is required, but no argument follows the
  *   option. @gs.opt is set to the option missing its argument.
  *
- * @gs.index is always set to the index of the next unparsed argument in @argv.
+ * @gs.index is always set to the index of the next unparsed argument in
+ * @gs.argv.
  */
-static inline int getopt(struct getopt_state *gs, int argc,
-			 char *const argv[], const char *optstring)
+int getopt(struct getopt_state *gs, const char *optstring);
+
+/**
+ * getopt_silent() - Compatibility alias for getopt()
+ * @gs: getopt state
+ * @optstring: option specification, as for getopt()
+ *
+ * getopt() no longer prints error messages, so this is identical to
+ * getopt(). Kept for callers (notably the unit tests) that named it
+ * explicitly.
+ *
+ * Return: same as getopt()
+ */
+static inline int getopt_silent(struct getopt_state *gs, const char *optstring)
 {
-	return __getopt(gs, argc, argv, optstring, false);
+	return getopt(gs, optstring);
 }
 
 /**
- * getopt_silent() - Parse short command-line options silently
- * @gs: State
- * @argc: Argument count
- * @argv: Argument list
- * @optstring: Option specification
+ * getopt_pop() - Take the next remaining positional argument
+ * @gs: State, after getopt() has returned -1
  *
- * Same as getopt(), except no error messages are printed.
+ * Returns the first permuted non-option (``gs->argv[gs->index]``),
+ * advances the index, and decrements ``gs->nonopts``. Returns NULL
+ * when no positional arguments remain.
+ *
+ * Useful for consuming positionals one at a time after parsing::
+ *
+ *     algo = getopt_pop(&gs);
+ *     return hash_command(algo, ..., gs.nonopts, &gs.argv[gs.index]);
  */
-static inline int getopt_silent(struct getopt_state *gs, int argc,
-				char *const argv[], const char *optstring)
+static inline char *getopt_pop(struct getopt_state *gs)
 {
-	return __getopt(gs, argc, argv, optstring, true);
+	if (gs->index >= gs->argc)
+		return NULL;
+#ifdef CONFIG_GETOPT_PERMUTE
+	if (gs->nonopts > 0)
+		gs->nonopts--;
+#endif
+	return gs->argv[gs->index++];
 }
 
 #endif /* __GETOPT_H */

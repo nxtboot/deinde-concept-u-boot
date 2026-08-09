@@ -102,13 +102,11 @@ struct hash_algo {
  *
  * @algo_name:		Hash algorithm being used (lower case!)
  * @flags:		Flags value (HASH_FLAG_...)
- * @cmdtp:		Pointer to command table entry
- * @flag:		Some flags normally 0 (see CMD_FLAG_.. above)
  * @argc:		Number of arguments (arg 0 must be the command text)
  * @argv:		Arguments
  */
-int hash_command(const char *algo_name, int flags, struct cmd_tbl *cmdtp,
-		 int flag, int argc, char *const argv[]);
+int hash_command(const char *algo_name, int flags, int argc,
+		 char *const argv[]);
 
 /**
  * hash_block() - Hash a block according to the requested algorithm

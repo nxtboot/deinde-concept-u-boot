@@ -66,6 +66,16 @@ int strcasecmp(const char *s1, const char *s2)
 	return strncasecmp(s1, s2, -1U);
 }
 
+char *strlower(char *s)
+{
+	char *p;
+
+	for (p = s; *p; p++)
+		*p = tolower(*p);
+
+	return s;
+}
+
 char * ___strtok;
 
 #ifndef __HAVE_ARCH_STRCPY

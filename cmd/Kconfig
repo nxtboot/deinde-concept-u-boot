@@ -762,12 +762,14 @@ config CMD_ASKENV
 config CMD_EXPORTENV
 	bool "env export"
 	default y
+	select GETOPT
 	help
 	  Export environments.
 
 config CMD_IMPORTENV
 	bool "env import"
 	default y
+	select GETOPT
 	help
 	  Import environments.
 
@@ -788,6 +790,7 @@ config CMD_EDITENV_EXPO
 
 config CMD_GREPENV
 	bool "search env"
+	select GETOPT
 	help
 	  Allow for searching environment variables
 
@@ -1271,6 +1274,7 @@ config CMD_DM
 config CMD_FASTBOOT
 	bool "fastboot - Android fastboot support"
 	depends on FASTBOOT
+	select GETOPT
 	help
 	  This enables the command "fastboot" which enables the Android
 	  fastboot mode for the platform. Fastboot is a protocol for
@@ -1999,6 +2003,7 @@ config CMD_CAT
 config CMD_ECHO
 	bool "echo"
 	default y
+	select GETOPT
 	help
 	  Echo args to console
 
@@ -2898,6 +2903,7 @@ config CMD_BLOB
 
 config CMD_HASH
 	bool "Support 'hash' command"
+	select GETOPT
 	select HASH
 	help
 	  This provides a way to hash data in memory using various supported

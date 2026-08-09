@@ -23,6 +23,13 @@ static struct test_data echo_data[] = {
 	{"echo -n 1 2 3; echo a b c",
 	 "1 2 3a b c"},
 	/*
+	 * Option parsing stops at the first non-option, so a -n which
+	 * follows an argument is printed literally and the trailing
+	 * newline is still emitted.
+	 */
+	{"echo 1 -n 2",
+	 "1 -n 2"},
+	/*
 	 * Test handling of environment variables.
 	 *
 	 * j, q, x are among the least frequent letters in English.

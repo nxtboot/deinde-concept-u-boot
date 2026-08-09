@@ -95,8 +95,8 @@ static int do_log_filter_list(struct cmd_tbl *cmdtp, int flag, int argc,
 	struct log_filter *filt;
 	struct log_device *ldev;
 
-	getopt_init_state(&gs);
-	while ((opt = getopt(&gs, argc, argv, "d:")) > 0) {
+	getopt_init_state(&gs, argc, argv);
+	while ((opt = getopt(&gs, "+d:")) > 0) {
 		switch (opt) {
 		case 'd':
 			drv_name = gs.arg;
@@ -157,8 +157,8 @@ static int do_log_filter_add(struct cmd_tbl *cmdtp, int flag, int argc,
 	enum log_level_t level = LOGL_MAX;
 	struct getopt_state gs;
 
-	getopt_init_state(&gs);
-	while ((opt = getopt(&gs, argc, argv, "Ac:d:Df:F:l:L:p")) > 0) {
+	getopt_init_state(&gs, argc, argv);
+	while ((opt = getopt(&gs, "+Ac:d:Df:F:l:L:p")) > 0) {
 		switch (opt) {
 		case 'A':
 #define do_type() do { \
@@ -250,8 +250,8 @@ static int do_log_filter_remove(struct cmd_tbl *cmdtp, int flag, int argc,
 	const char *drv_name = "console";
 	struct getopt_state gs;
 
-	getopt_init_state(&gs);
-	while ((opt = getopt(&gs, argc, argv, "ad:")) > 0) {
+	getopt_init_state(&gs, argc, argv);
+	while ((opt = getopt(&gs, "+ad:")) > 0) {
 		switch (opt) {
 		case 'a':
 			all = true;

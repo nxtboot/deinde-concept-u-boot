@@ -10,6 +10,7 @@
 #include <console.h>
 #include <g_dnl.h>
 #include <fastboot.h>
+#include <getopt.h>
 #include <net.h>
 #include <usb.h>
 #include <watchdog.h>
@@ -126,40 +127,33 @@ exit:
 	return ret;
 }
 
-static int do_fastboot(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_fastboot(struct getopt_state *gs)
 {
 	uintptr_t buf_addr = (uintptr_t)NULL;
 	size_t buf_size = 0;
+	int argc;
+	char *const *argv;
+	int opt;
 
-	if (argc < 2)
+	if (gs->argc < 2)
 		return CMD_RET_USAGE;
 
-	while (argc > 1 && **(argv + 1) == '-') {
-		char *arg = *++argv;
-
-		--argc;
-		while (*++arg) {
-			switch (*arg) {
-			case 'l':
-				if (--argc <= 0)
-					return CMD_RET_USAGE;
-				buf_addr = hextoul(*++argv, NULL);
-				goto NXTARG;
-
-			case 's':
-				if (--argc <= 0)
-					return CMD_RET_USAGE;
-				buf_size = hextoul(*++argv, NULL);
-				goto NXTARG;
-
-			default:
-				return CMD_RET_USAGE;
-			}
+	while ((opt = getopt(gs, "+l:s:")) > 0) {
+		switch (opt) {
+		case 'l':
+			buf_addr = hextoul(gs->arg, NULL);
+			break;
+		case 's':
+			buf_size = hextoul(gs->arg, NULL);
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
-NXTARG:
-		;
 	}
+
+	/* Step past the parsed options to the transport/controller args */
+	argc = gs->argc - (gs->index - 1);
+	argv = &gs->argv[gs->index - 1];
 
 	/* Handle case when USB controller param is just '-' */
 	if (argc == 1) {
@@ -183,7 +177,7 @@ NXTARG:
 	return do_fastboot_usb(argc, argv, buf_addr, buf_size);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	fastboot, CONFIG_SYS_MAXARGS, 1, do_fastboot,
 	"run as a fastboot usb or udp device",
 	"[-l addr] [-s size] usb <controller> | udp\n"

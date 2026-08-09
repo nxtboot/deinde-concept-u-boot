@@ -30,6 +30,7 @@
 #include <env.h>
 #include <env_internal.h>
 #include <expo.h>
+#include <getopt.h>
 #include <log.h>
 #include <search.h>
 #include <errno.h>
@@ -129,49 +130,46 @@ static int do_env_print(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 #ifdef CONFIG_CMD_GREPENV
-static int do_env_grep(struct cmd_tbl *cmdtp, int flag,
-		       int argc, char *const argv[])
+static int do_env_grep(struct getopt_state *gs)
 {
+	const char *optstring = IS_ENABLED(CONFIG_REGEX) ? "+envb" : "+nvb";
 	char *res = NULL;
 	int len, grep_how, grep_what;
-
-	if (argc < 2)
-		return CMD_RET_USAGE;
+	int argc;
+	char *const *argv;
+	int opt;
 
 	grep_how  = H_MATCH_SUBSTR;	/* default: substring search	*/
 	grep_what = H_MATCH_BOTH;	/* default: grep names and values */
 
-	while (--argc > 0 && **++argv == '-') {
-		char *arg = *argv;
-		while (*++arg) {
-			switch (*arg) {
-#ifdef CONFIG_REGEX
-			case 'e':		/* use regex matching */
+	while ((opt = getopt(gs, optstring)) > 0) {
+		switch (opt) {
+		case 'e':		/* use regex matching */
+			if (IS_ENABLED(CONFIG_REGEX))
 				grep_how  = H_MATCH_REGEX;
-				break;
-#endif
-			case 'n':		/* grep for name */
-				grep_what = H_MATCH_KEY;
-				break;
-			case 'v':		/* grep for value */
-				grep_what = H_MATCH_DATA;
-				break;
-			case 'b':		/* grep for both */
-				grep_what = H_MATCH_BOTH;
-				break;
-			case '-':
-				goto DONE;
-			default:
-				return CMD_RET_USAGE;
-			}
+			break;
+		case 'n':		/* grep for name */
+			grep_what = H_MATCH_KEY;
+			break;
+		case 'v':		/* grep for value */
+			grep_what = H_MATCH_DATA;
+			break;
+		case 'b':		/* grep for both */
+			grep_what = H_MATCH_BOTH;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
 	}
 
-DONE:
-	len = hexport_r(&env_htab, '\n',
-			flag | grep_what | grep_how,
-			&res, 0, argc, argv);
+	argc = gs->argc - gs->index;
+	argv = &gs->argv[gs->index];
 
+	if (argc < 1)
+		return CMD_RET_USAGE;
+
+	len = hexport_r(&env_htab, '\n', grep_what | grep_how, &res, 0,
+			argc, argv);
 	if (len > 0) {
 		puts(res);
 		free(res);
@@ -656,10 +654,8 @@ static int do_env_delete(struct cmd_tbl *cmdtp, int flag,
  *
  *	=> env import -d -t ${backup_addr}
  */
-static int do_env_export(struct cmd_tbl *cmdtp, int flag,
-			 int argc, char *const argv[])
+static int do_env_export(struct getopt_state *gs)
 {
-	char	buf[32];
 	ulong	addr;
 	char	*ptr, *cmd, *res;
 	size_t	size = 0;
@@ -668,52 +664,48 @@ static int do_env_export(struct cmd_tbl *cmdtp, int flag,
 	char	sep = '\n';
 	int	chk = 0;
 	int	fmt = 0;
+	int	argc;
+	char	*const *argv;
+	int	opt;
 
-	cmd = *argv;
+	cmd = gs->argv[0];
 
-	while (--argc > 0 && **++argv == '-') {
-		char *arg = *argv;
-		while (*++arg) {
-			switch (*arg) {
-			case 'b':		/* raw binary format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				break;
-			case 'c':		/* external checksum format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				chk = 1;
-				break;
-			case 's':		/* size given */
-				if (--argc <= 0)
-					return cmd_usage(cmdtp);
-				size = hextoul(*++argv, NULL);
-				goto NXTARG;
-			case 't':		/* text format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\n';
-				break;
-			default:
-				return CMD_RET_USAGE;
-			}
+	while ((opt = getopt(gs, "+bcs:t")) > 0) {
+		switch (opt) {
+		case 'b':		/* raw binary format */
+			sep = '\0';
+			fmt++;
+			break;
+		case 'c':		/* external checksum format */
+			sep = '\0';
+			chk = 1;
+			fmt++;
+			break;
+		case 's':		/* size given */
+			size = hextoul(gs->arg, NULL);
+			break;
+		case 't':		/* text format */
+			sep = '\n';
+			fmt++;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
-NXTARG:		;
 	}
+	if (fmt > 1)
+		goto sep_err;
 
-	if (argc < 1)
+	if (gs->index >= gs->argc)
 		return CMD_RET_USAGE;
 
-	addr = hextoul(argv[0], NULL);
+	addr = hextoul(getopt_pop(gs), NULL);
 	ptr = map_sysmem(addr, size);
 
 	if (size)
 		memset(ptr, '\0', size);
 
-	argc--;
-	argv++;
+	argc = gs->argc - gs->index;
+	argv = &gs->argv[gs->index];
 
 	if (sep) {		/* export as text file */
 		len = hexport_r(&env_htab, sep,
@@ -724,8 +716,8 @@ NXTARG:		;
 			       errno);
 			return 1;
 		}
-		sprintf(buf, "%zX", (size_t)len);
-		env_set("filesize", buf);
+		if (env_set_hex("filesize", len))
+			return 1;
 
 		return 0;
 	}
@@ -753,7 +745,8 @@ NXTARG:		;
 		envp->flags = ENV_REDUND_ACTIVE;
 #endif
 	}
-	env_set_hex("filesize", len + offsetof(env_t, data));
+	if (env_set_hex("filesize", len + offsetof(env_t, data)))
+		return 1;
 
 	return 0;
 
@@ -789,8 +782,7 @@ sep_err:
  *		the environment at address 'addr'. Without arguments, the whole
  *		environment gets imported.
  */
-static int do_env_import(struct cmd_tbl *cmdtp, int flag,
-			 int argc, char *const argv[])
+static int do_env_import(struct getopt_state *gs)
 {
 	ulong	addr;
 	char	*cmd, *ptr;
@@ -801,40 +793,42 @@ static int do_env_import(struct cmd_tbl *cmdtp, int flag,
 	int	crlf_is_lf = 0;
 	int	wl = 0;
 	size_t	size;
+	int	argc;
+	char	*const *argv;
+	int	opt;
 
-	cmd = *argv;
+	cmd = gs->argv[0];
 
-	while (--argc > 0 && **++argv == '-') {
-		char *arg = *argv;
-		while (*++arg) {
-			switch (*arg) {
-			case 'b':		/* raw binary format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				break;
-			case 'c':		/* external checksum format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\0';
-				chk = 1;
-				break;
-			case 't':		/* text format */
-				if (fmt++)
-					goto sep_err;
-				sep = '\n';
-				break;
-			case 'r':		/* handle CRLF like LF */
-				crlf_is_lf = 1;
-				break;
-			case 'd':
-				del = 1;
-				break;
-			default:
-				return CMD_RET_USAGE;
-			}
+	while ((opt = getopt(gs, "+bcdrt")) > 0) {
+		switch (opt) {
+		case 'b':		/* raw binary format */
+			sep = '\0';
+			fmt++;
+			break;
+		case 'c':		/* external checksum format */
+			sep = '\0';
+			chk = 1;
+			fmt++;
+			break;
+		case 't':		/* text format */
+			sep = '\n';
+			fmt++;
+			break;
+		case 'r':		/* handle CRLF like LF */
+			crlf_is_lf = 1;
+			break;
+		case 'd':
+			del = 1;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
 	}
+	if (fmt > 1)
+		goto sep_err;
+
+	argc = gs->argc - gs->index;
+	argv = &gs->argv[gs->index];
 
 	if (argc < 1)
 		return CMD_RET_USAGE;
@@ -1102,13 +1096,13 @@ static struct cmd_tbl cmd_env_sub[] = {
 	U_BOOT_CMD_MKENT(flags, 1, 0, do_env_flags, "", ""),
 #endif
 #if defined(CONFIG_CMD_EXPORTENV)
-	U_BOOT_CMD_MKENT(export, 4, 0, do_env_export, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(export, 4, 0, do_env_export, "", ""),
 #endif
 #if defined(CONFIG_CMD_GREPENV)
-	U_BOOT_CMD_MKENT(grep, CONFIG_SYS_MAXARGS, 1, do_env_grep, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(grep, CONFIG_SYS_MAXARGS, 0, do_env_grep, "", ""),
 #endif
 #if defined(CONFIG_CMD_IMPORTENV)
-	U_BOOT_CMD_MKENT(import, 5, 0, do_env_import, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(import, 5, 0, do_env_import, "", ""),
 #endif
 #if defined(CONFIG_CMD_NVEDIT_INDIRECT)
 	U_BOOT_CMD_MKENT(indirect, 3, 0, do_env_indirect, "", ""),
@@ -1152,7 +1146,7 @@ static int do_env(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	cp = find_cmd_tbl(argv[0], cmd_env_sub, ARRAY_SIZE(cmd_env_sub));
 
 	if (cp)
-		return cp->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(cp, flag, argc, argv);
 
 	return CMD_RET_USAGE;
 }
@@ -1271,7 +1265,7 @@ U_BOOT_CMD_COMPLETE(
 );
 
 #ifdef CONFIG_CMD_GREPENV
-U_BOOT_CMD_COMPLETE(
+U_BOOT_CMD_GETOPT_COMPLETE(
 	grepenv, CONFIG_SYS_MAXARGS, 0,  do_env_grep,
 	"search environment variables",
 #ifdef CONFIG_REGEX

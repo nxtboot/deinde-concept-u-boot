@@ -350,3 +350,30 @@ static int lib_strim(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_strim, 0);
+
+static int lib_strlower(struct unit_test_state *uts)
+{
+	char buf[32];
+	char *p;
+
+	/* Mixed case is fully lowered, returns @s */
+	strcpy(buf, "SHA256");
+	p = strlower(buf);
+	ut_asserteq_ptr(p, buf);
+	ut_asserteq_str("sha256", buf);
+
+	/* Already lower-case is unchanged */
+	strcpy(buf, "abc");
+	ut_asserteq_str("abc", strlower(buf));
+
+	/* Non-letters and digits pass through */
+	strcpy(buf, "Hello, World! 1234");
+	ut_asserteq_str("hello, world! 1234", strlower(buf));
+
+	/* Empty string */
+	strcpy(buf, "");
+	ut_asserteq_str("", strlower(buf));
+
+	return 0;
+}
+LIB_TEST(lib_strlower, 0);

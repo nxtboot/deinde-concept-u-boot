@@ -11,8 +11,9 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <hash.h>
-#include <linux/ctype.h>
+#include <linux/string.h>
 
 #if IS_ENABLED(CONFIG_HASH_VERIFY)
 #define HARGS 6
@@ -20,31 +21,34 @@
 #define HARGS 5
 #endif
 
-static int do_hash(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_hash(struct getopt_state *gs)
 {
-	char *s;
+	const char *optstring = IS_ENABLED(CONFIG_HASH_VERIFY) ? "+v" : "+";
 	int flags = HASH_FLAG_ENV;
+	char *algo;
+	int opt;
 
-	if (argc < 4)
+	while ((opt = getopt(gs, optstring)) > 0) {
+		switch (opt) {
+		case 'v':
+			flags |= HASH_FLAG_VERIFY;
+			break;
+		default:
+			return CMD_RET_USAGE;
+		}
+	}
+
+	/* Need at least: algorithm address count */
+	if (gs->argc - gs->index < 3)
 		return CMD_RET_USAGE;
 
-#if IS_ENABLED(CONFIG_HASH_VERIFY)
-	if (!strcmp(argv[1], "-v")) {
-		flags |= HASH_FLAG_VERIFY;
-		argc--;
-		argv++;
-	}
-#endif
-	/* Move forward to 'algorithm' parameter */
-	argc--;
-	argv++;
-	for (s = *argv; *s; s++)
-		*s = tolower(*s);
-	return hash_command(*argv, flags, cmdtp, flag, argc - 1, argv + 1);
+	algo = strlower(getopt_pop(gs));
+
+	return hash_command(algo, flags, gs->argc - gs->index,
+			    &gs->argv[gs->index]);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	hash,	HARGS,	1,	do_hash,
 	"compute hash message digest",
 	"algorithm address count [[*]hash_dest]\n"

@@ -5,27 +5,29 @@
  */
 
 #include <command.h>
-#include <linux/string.h>
+#include <getopt.h>
 
-static int do_echo(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_echo(struct getopt_state *gs)
 {
-	int i = 1;
 	bool space = false;
 	bool newline = true;
+	const char *arg;
+	int opt;
 
-	if (argc > 1) {
-		if (!strcmp(argv[1], "-n")) {
+	while ((opt = getopt(gs, "+n")) > 0) {
+		switch (opt) {
+		case 'n':
 			newline = false;
-			++i;
+			break;
+		default:
+			return CMD_RET_USAGE;
 		}
 	}
 
-	for (; i < argc; ++i) {
-		if (space) {
+	while ((arg = getopt_pop(gs))) {
+		if (space)
 			putc(' ');
-		}
-		puts(argv[i]);
+		puts(arg);
 		space = true;
 	}
 
@@ -35,7 +37,7 @@ static int do_echo(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	echo, CONFIG_SYS_MAXARGS, 1, do_echo,
 	"echo args to console",
 	"[-n] [args..]\n"

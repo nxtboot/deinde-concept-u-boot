@@ -1093,6 +1093,23 @@ config ARGON2
 	  Note: This option includes its own BLAKE2 implementation and is
 	  mutually exclusive with CONFIG_BLAKE2.
 
+config GETOPT_PERMUTE
+	bool "Permute non-option arguments to the end"
+	depends on GETOPT
+	help
+	  When enabled, getopt() permutes non-option arguments to the end
+	  of the argv list so options can appear anywhere on the command
+	  line; this matches GNU getopt behaviour. To support this getopt()
+	  keeps a writable copy of argv in struct getopt_state and tracks
+	  the number of non-options seen so far.
+
+	  When disabled, getopt() stops at the first non-option (POSIX
+	  behaviour), which produces smaller code and a much smaller
+	  struct getopt_state (it borrows the caller's argv rather than
+	  copying it), at the cost of forcing callers to put all options
+	  before any positional arguments. The '+' prefix on an optstring
+	  becomes a no-op since that is already the only mode.
+
 config OF_LIBFDT
 	bool "Enable the FDT library"
 	default y if OF_CONTROL

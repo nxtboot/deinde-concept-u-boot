@@ -1263,7 +1263,7 @@ static int do_mem_crc(struct cmd_tbl *cmdtp, int flag, int argc,
 	}
 #endif
 
-	return hash_command("crc32", flags, cmdtp, flag, ac, av);
+	return hash_command("crc32", flags, ac, av);
 }
 
 #endif
