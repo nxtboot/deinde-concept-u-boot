@@ -7267,6 +7267,97 @@ class TestDriftClassify(unittest.TestCase):
         self.assertEqual(verdicts[0].state, drift.DRIFT)
 
 
+# A defconfig where one line has moved, all within a single hunk
+REORDER_DIFF = '\n'.join([
+    'diff --git a/configs/a_defconfig b/configs/a_defconfig',
+    '--- a/configs/a_defconfig',
+    '+++ b/configs/a_defconfig',
+    '@@ -1,4 +1,4 @@',
+    ' CONFIG_ARM=y',
+    '-CONFIG_DRAM_CLK=480',
+    ' CONFIG_SPL=y',
+    '+CONFIG_DRAM_CLK=480',
+    '',
+])
+
+# The same move, but far enough that it lands in two separate hunks
+REORDER_SPLIT_DIFF = '\n'.join([
+    'diff --git a/configs/b_defconfig b/configs/b_defconfig',
+    '--- a/configs/b_defconfig',
+    '+++ b/configs/b_defconfig',
+    '@@ -1,3 +1,2 @@',
+    ' CONFIG_ARM=y',
+    '-CONFIG_DRAM_CLK=480',
+    ' CONFIG_SPL=y',
+    '@@ -40,2 +39,3 @@',
+    ' CONFIG_NET=y',
+    '+CONFIG_DRAM_CLK=480',
+    ' CONFIG_USB=y',
+    '',
+])
+
+
+class TestDriftReorder(unittest.TestCase):
+    """Tests for spotting hunks which only move lines about"""
+
+    def test_hunk_reorder(self):
+        """Test that a hunk which moves a line within itself is a reorder"""
+        fdiff = drift.parse_diff(REORDER_DIFF)[0]
+        self.assertTrue(drift.is_reorder(fdiff.hunks[0]))
+        self.assertTrue(drift.is_reorder_file(fdiff))
+
+    def test_file_reorder_across_hunks(self):
+        """Test that a line moved between hunks is a reorder of the file
+
+        Neither hunk is a reorder on its own - one only removes, the other
+        only adds - but together they say the same as upstream.
+        """
+        fdiff = drift.parse_diff(REORDER_SPLIT_DIFF)[0]
+        self.assertFalse(drift.is_reorder(fdiff.hunks[0]))
+        self.assertFalse(drift.is_reorder(fdiff.hunks[1]))
+        self.assertTrue(drift.is_reorder_file(fdiff))
+
+    def test_real_change_is_not_reorder(self):
+        """Test that a hunk which alters a line is not a reorder"""
+        fdiff = drift.parse_diff(DRIFT_DIFF)[0]
+        self.assertFalse(drift.is_reorder(fdiff.hunks[0]))
+        self.assertFalse(drift.is_reorder_file(fdiff))
+
+    def test_binary_is_not_a_reorder(self):
+        """Test that a binary file is never called a reorder
+
+        There are no hunks to compare, so nothing can be said about the
+        order of its lines.
+        """
+        fdiff = drift.FileDiff('logo.bmp', [], [], True, False)
+        self.assertFalse(drift.is_reorder_file(fdiff))
+
+    def test_no_hunks_is_not_a_reorder(self):
+        """Test that a file with no hunks is not a reorder"""
+        fdiff = drift.FileDiff('a.c', [], [], False, False)
+        self.assertFalse(drift.is_reorder_file(fdiff))
+
+    def test_classify_reorder(self):
+        """Test that a reorder is classified apart from drift"""
+        fdiff = drift.parse_diff(REORDER_SPLIT_DIFF)[0]
+        verdicts = drift.classify(fdiff, [], None)
+        self.assertEqual([vdt.state for vdt in verdicts],
+                         [drift.REORDER, drift.REORDER])
+
+    def test_accept_beats_reorder(self):
+        """Test that an accepted hunk stays accepted, not a reorder"""
+        fdiff = drift.parse_diff(REORDER_DIFF)[0]
+        accepts = [drift.Accept('configs/a_defconfig', '*', 'Ours')]
+        verdicts = drift.classify(fdiff, accepts, None)
+        self.assertEqual(verdicts[0].state, drift.ACCEPTED)
+
+    def test_reorder_is_not_reverted(self):
+        """Test that a reorder is left out of the revert patch"""
+        fdiff = drift.parse_diff(REORDER_SPLIT_DIFF)[0]
+        verdicts = {fdiff.path: drift.classify(fdiff, [], None)}
+        self.assertEqual(drift.build_patch([fdiff], verdicts), '')
+
+
 class TestDriftBuildPatch(unittest.TestCase):
     """Tests for building the patch which reverts drift"""
 

@@ -78,9 +78,9 @@ Accept = namedtuple('Accept', ['pattern', 'fingerprint', 'reason'])
 # The outcome of classifying one hunk
 #
 # hunk: the Hunk itself
-# state: one of WANTED, ACCEPTED or DRIFT
+# state: one of WANTED, ACCEPTED, REORDER or DRIFT
 # reason: for ACCEPTED, the reason from the accept file; for WANTED, the
-#     downstream commit which accounts for the hunk; None for DRIFT
+#     downstream commit which accounts for the hunk; None for the rest
 Verdict = namedtuple('Verdict', ['hunk', 'state', 'reason'])
 
 # A hunk which a downstream-original commit accounts for
@@ -88,6 +88,9 @@ WANTED = 'wanted'
 
 # A hunk which the accept file records as intentional
 ACCEPTED = 'accepted'
+
+# A hunk which only moves lines about, so it says the same thing as upstream
+REORDER = 'reorder'
 
 # A hunk which nothing accounts for, and which should go back to upstream
 DRIFT = 'drift'
@@ -287,11 +290,72 @@ def match_accept(accepts, path, fprint):
     return None
 
 
+def _added_removed(hunks):
+    """Split the lines some hunks change into those added and those removed
+
+    Args:
+        hunks (list of Hunk): Hunks to examine
+
+    Return:
+        tuple:
+            list of str: Added lines, sorted
+            list of str: Removed lines, sorted
+    """
+    added = []
+    removed = []
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if line.startswith('+'):
+                added.append(line[1:])
+            elif line.startswith('-'):
+                removed.append(line[1:])
+    return sorted(added), sorted(removed)
+
+
+def is_reorder(hunk):
+    """Check whether a hunk only moves lines about
+
+    Some files are generated in an order which depends on the tree, so a
+    downstream Kconfig change is enough to shuffle a defconfig without
+    altering what it says.  Such a hunk adds and removes the same lines, so
+    reverting it says nothing and the generator would undo the revert anyway.
+
+    Args:
+        hunk (Hunk): Hunk to examine
+
+    Return:
+        bool: True if the added and removed lines are the same multiset, and
+            there is at least one of each
+    """
+    added, removed = _added_removed([hunk])
+    return bool(added) and added == removed
+
+
+def is_reorder_file(fdiff):
+    """Check whether a file differs from upstream only in the order of lines
+
+    A line which moves far enough leaves two hunks, one dropping it and one
+    adding it back, so a file can be a pure reorder while none of its hunks
+    is.  This catches that, which is the usual shape for a defconfig.
+
+    Args:
+        fdiff (FileDiff): File to examine
+
+    Return:
+        bool: True if the file's added and removed lines are the same multiset
+    """
+    if fdiff.binary or not fdiff.hunks:
+        return False
+    added, removed = _added_removed(fdiff.hunks)
+    return bool(added) and added == removed
+
+
 def classify(fdiff, accepts, blame=None):
-    """Classify each hunk of a file as wanted, accepted or drift
+    """Classify each hunk of a file as wanted, accepted, reorder or drift
 
     A hunk is wanted if a downstream-original commit accounts for it, accepted
-    if the accept file exempts it, and drift otherwise.
+    if the accept file exempts it, a reorder if it only shuffles lines, and
+    drift otherwise.
 
     Where blame is available, a hunk which only removes lines is always
     treated as wanted, since blame can say who wrote a line but not who
@@ -313,11 +377,17 @@ def classify(fdiff, accepts, blame=None):
     Return:
         list of Verdict: One entry per hunk, in file order
     """
+    # A line can move between hunks, so a file can be a pure reorder while
+    # none of its hunks is
+    file_reorder = is_reorder_file(fdiff)
+
     verdicts = []
     for hunk in fdiff.hunks:
         ent = match_accept(accepts, hunk.path, hunk.fingerprint)
         if ent:
             verdicts.append(Verdict(hunk, ACCEPTED, ent.reason))
+        elif file_reorder or is_reorder(hunk):
+            verdicts.append(Verdict(hunk, REORDER, None))
         elif blame is None:
             verdicts.append(Verdict(hunk, DRIFT, None))
         elif not hunk.added:

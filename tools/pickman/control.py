@@ -1009,7 +1009,8 @@ def drift_state_counts(info):
     Return:
         dict: Maps state (WANTED, ACCEPTED, DRIFT) to the number of hunks
     """
-    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}
+    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.REORDER: 0,
+              drift.DRIFT: 0}
     for verdicts in info.verdicts.values():
         for vdt in verdicts:
             states[vdt.state] += 1
@@ -1058,6 +1059,9 @@ def drift_show_report(info, show_list, show_diff):
               'downstream commits')
     tout.info(f'  {states[drift.ACCEPTED]} hunk(s) accepted by '
               f'{drift.ACCEPT_FILE}')
+    if states[drift.REORDER]:
+        tout.info(f'  {states[drift.REORDER]} hunk(s) only reorder lines, '
+                  'so they say the same as upstream')
     if info.orphans:
         tout.info(f'  {len(info.orphans)} commit(s) picked from a series no '
                   'tracked source has, treated as downstream')
