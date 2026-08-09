@@ -96384,3 +96384,44 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-a5f93037f286
+
+Commits:
+- a5f93037f286 misc: mpfs_syscontroller: add mailbox RX helper for service responses
+- 752704d854fd misc: mpfs_syscontroller: bind RNG sub-device
+- c58dc99616b5 rng: add Microchip PolarFire SoC hardware RNG driver
+- 899cbeee1c8a configs: microchip_mpfs_generic: enable MPFS RNG support
+- 47cd1fd361e6 mailbox: mpfs-mbox: replace unbounded BUSY polling with bounded waits
+- d803fb548e58 mailbox: mpfs: add bounded wait for BUSY to clear before sending request
+- bacb61a06fd3 board: sophgo: move ethernet driver to common directory
+- 98b59e181daa board: sophgo: add support for Milk-V Duo 256M
+- fce4beb53367 Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-riscv
+
+### Conversation log
+All 9 commits present. Final build test:
+
+## Cherry-pick complete
+
+**Branch:** `cherry-a5f93037f286` (based on `ci/master`)
+
+**All 9 commits applied successfully:**
+1. `0bf45c77b149` — misc: mpfs_syscontroller: add mailbox RX helper
+2. `c60118205e5d` — misc: mpfs_syscontroller: bind RNG sub-device
+3. `8fdd56a63eea` — rng: add Microchip PolarFire SoC hardware RNG driver
+4. `6565ed044d82` — configs: microchip_mpfs_generic: enable MPFS RNG support
+5. `5f60c158e2de` — mailbox: mpfs-mbox: replace unbounded BUSY polling
+6. `c5530a04776e` — mailbox: mpfs: add bounded wait for BUSY
+7. `7b894a052e9a` — board: sophgo: move ethernet driver to common
+8. `4a39bfe418d8` — board: sophgo: add support for Milk-V Duo 256M
+9. `7232b4f1b87e` — Merge branch 'main' of u-boot-riscv (empty, preserved with --allow-empty)
+
+**Build:** OK (sandbox, no warnings/errors)
+
+**Deltas:** All commits matched original file/line counts exactly. Auto-merges occurred on `arch/riscv/Kconfig` and `arch/riscv/dts/Makefile` for the Milk-V Duo 256M commit and the merge commit (which became empty as expected — the merge only combined already-picked content).
+
+**Fix-ups:** None required. No manual conflict resolution needed.
+
+---
+
