@@ -26,6 +26,9 @@ obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CMD_CHID) += chid.o
 obj-$(CONFIG_CMD_CONFIG) += config.o
 obj-$(CONFIG_COREBOOT_SYSINFO) += coreboot.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_EDITENV) += editenv.o
+endif
 obj-$(CONFIG_CMD_FDT) += fdt.o
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
