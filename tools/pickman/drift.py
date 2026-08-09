@@ -422,6 +422,57 @@ IDENT_SKIP = {
 }
 
 
+# Shapes which define a name, rather than merely using one
+RE_DEF_CPP = re.compile(r'^\s*#\s*define\s+([A-Za-z_]\w*)')
+RE_DEF_KCONFIG = re.compile(r'^\s*(?:menu)?config\s+([A-Za-z_]\w*)')
+RE_DEF_TAG = re.compile(
+    r'^\s*(?:typedef\s+)?(?:struct|union|enum)\s+([A-Za-z_]\w*)\s*\{')
+RE_DEF_FUNC = re.compile(
+    r'^\s*(?:static\s+|inline\s+|const\s+)*[A-Za-z_]\w*[\s*]+'
+    r'([A-Za-z_]\w*)\s*\(')
+RE_DEF_ASSIGN = re.compile(r'^\s*(?:PROVIDE\s*\(\s*)?([A-Za-z_]\w*)\s*=')
+RE_DEF_LABEL = re.compile(r'^\s*([A-Za-z_]\w*)\s*:\s*[A-Za-z_{]')
+
+# Files whose contents are assignments rather than statements
+LDS_SUFFIXES = ('.lds', '.lds.S')
+
+# Files where a leading 'label:' introduces a node
+DTS_SUFFIXES = ('.dts', '.dtsi')
+
+
+def defined_names(text, path):
+    """Find the names a line defines, as opposed to ones it merely uses
+
+    A name a hunk only uses is not a hazard when reverted: removing a use
+    cannot break anything else.  Only removing a definition can.  Most of what
+    a hunk contains is uses - a linker script keyword, a device-tree binding
+    constant, a config symbol read from prose - so telling the two apart is
+    what keeps the check from declining nearly everything.
+
+    Args:
+        text (str): Line to examine
+        path (str): File the line is in, which decides what a definition
+            looks like
+
+    Return:
+        set of str: Names this line defines
+    """
+    names = set()
+    for regex in (RE_DEF_CPP, RE_DEF_KCONFIG, RE_DEF_TAG, RE_DEF_FUNC):
+        match = regex.match(text)
+        if match:
+            names.add(match.group(1))
+    if path.endswith(LDS_SUFFIXES):
+        match = RE_DEF_ASSIGN.match(text)
+        if match:
+            names.add(match.group(1))
+    if path.endswith(DTS_SUFFIXES):
+        match = RE_DEF_LABEL.match(text)
+        if match:
+            names.add(match.group(1))
+    return names
+
+
 def removed_identifiers(hunks):
     """Find the distinctive names which reverting some hunks would remove
 
@@ -429,9 +480,12 @@ def removed_identifiers(hunks):
     goes with them.  If something else still uses such a name the tree stops
     building, which is worth knowing before the revert is offered.
 
-    Only distinctive names are returned - long, or holding an underscore, or
-    upper case.  A short common word like 'clk' appears all over the tree and
-    tells us nothing, so including it would decline every hunk.
+    Only names the lines DEFINE are returned.  A line which merely uses a name
+    takes nothing away when reverted, and uses are most of what a hunk holds.
+
+    Only distinctive names are kept - long, and holding an underscore or upper
+    case.  A short common word appears all over the tree and tells us nothing,
+    so including it would decline every hunk.
 
     Args:
         hunks (list of Hunk): Hunks whose added lines would be removed
@@ -444,19 +498,69 @@ def removed_identifiers(hunks):
         for line in hunk.lines[1:]:
             if not line.startswith('+'):
                 continue
-            body = line[1:].strip()
-            # A comment mentioning a name does not define it, and prose names
-            # things which live elsewhere - counting those would blame the
-            # wrong file
-            if body.startswith(('*', '//', '/*', '#')) and not (
-                    body.startswith('#define')):
-                continue
-            for name in RE_IDENT.findall(body):
+            for name in defined_names(line[1:], hunk.path):
                 if name in IDENT_SKIP or len(name) < 6:
                     continue
                 if '_' in name or name.isupper():
                     names.add(name)
     return names
+
+
+def masked_positions(text):
+    """Find the characters of a line which sit in a string or a comment
+
+    Args:
+        text (str): Line to examine
+
+    Return:
+        set of int: Character positions which are quoted or commented out
+    """
+    masked = set()
+    # A line which continues a block comment carries no code at all
+    if text.strip().startswith(('*', '//', '/*')):
+        return set(range(len(text)))
+
+    quote = None
+    pos = 0
+    while pos < len(text):
+        char = text[pos]
+        if quote:
+            masked.add(pos)
+            if char == '\\':
+                pos += 1
+                masked.add(pos)
+            elif char == quote:
+                quote = None
+        elif char in '"\'':
+            quote = char
+            masked.add(pos)
+        elif text[pos:pos + 2] in ('//', '/*'):
+            masked.update(range(pos, len(text)))
+            break
+        pos += 1
+    return masked
+
+
+def is_code_reference(text, name):
+    """Check whether a line really uses a name, rather than just saying it
+
+    A name inside a string is not a dependency: U-Boot mentions environment
+    variables, command names and device names in quotes all over the tree,
+    and env_get("bootm_boot_mode") does not break if some help text which
+    happens to contain the same word is reverted.  Nor does a comment.
+
+    Args:
+        text (str): Line which matched
+        name (str): Name searched for
+
+    Return:
+        bool: True if the name appears as code somewhere in the line
+    """
+    masked = masked_positions(text)
+    for match in re.finditer(r'\b' + re.escape(name) + r'\b', text):
+        if match.start() not in masked:
+            return True
+    return False
 
 
 def build_patch(fdiffs, verdicts, states=(DRIFT,)):

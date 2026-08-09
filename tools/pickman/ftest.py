@@ -8560,6 +8560,47 @@ class TestRemovedIdentifiers(unittest.TestCase):
         self.assertIn('SANDBOX_SPL_FIT_ADDR', names)
         self.assertNotIn('CONFIG_SYS_LOAD_ADDR', names)
 
+    def test_use_is_not_a_definition(self):
+        """Test that a name a hunk only uses is not collected
+
+        Most of a hunk is uses - a linker keyword, a binding constant - and
+        removing a use cannot break anything else.
+        """
+        hunk = self._hunk('+\t.bss (NOLOAD_SECTION) : {')
+        self.assertEqual(drift.removed_identifiers([hunk]), set())
+
+    def test_lds_assignment_is_a_definition(self):
+        """Test that a linker script assignment defines its name"""
+        self.assertIn('__rel_dyn_end',
+                      drift.defined_names('\t__rel_dyn_end = .;', 'a.lds'))
+        # ...but the same shape in C is an assignment, not a definition
+        self.assertEqual(drift.defined_names('\t__rel_dyn_end = .;', 'a.c'),
+                         set())
+
+    def test_kconfig_symbol_is_a_definition(self):
+        """Test that a config symbol is defined, but its help text is not"""
+        self.assertIn(
+            'SEC_FIRMWARE_ARMV8',
+            drift.defined_names('config SEC_FIRMWARE_ARMV8', 'Kconfig'))
+        self.assertEqual(
+            drift.defined_names('\t  set the bootm_boot_mode env', 'Kconfig'),
+            set())
+
+    def test_dts_label_is_a_definition(self):
+        """Test that a device-tree label defines its name"""
+        self.assertIn('cp0_smi_pins',
+                      drift.defined_names('\tcp0_smi_pins: cp0-smi-pins {',
+                                          'a.dtsi'))
+        # A property which merely uses a binding constant does not
+        self.assertEqual(
+            drift.defined_names('\tgpios = <&gpio 1 GPIO_ACTIVE_LOW>;',
+                                'a.dtsi'), set())
+
+    def test_skipped_words_ignored(self):
+        """Test that a common word is not collected even where it defines"""
+        hunk = self._hunk('+#define include 1')
+        self.assertEqual(drift.removed_identifiers([hunk]), set())
+
     def test_short_names_ignored(self):
         """Test that a short common word is not counted
 
@@ -8576,6 +8617,60 @@ class TestRemovedIdentifiers(unittest.TestCase):
         """
         hunk = self._hunk('-#define SOME_OLD_NAME 1')
         self.assertEqual(drift.removed_identifiers([hunk]), set())
+
+
+class TestDriftMasking(unittest.TestCase):
+    """Tests for telling code apart from strings and comments"""
+
+    def test_block_comment_line(self):
+        """Test that a line continuing a block comment is all comment"""
+        text = ' * see SOME_LONG_NAME for details'
+        self.assertEqual(drift.masked_positions(text),
+                         set(range(len(text))))
+        self.assertFalse(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_string_literal(self):
+        """Test that a name inside a string is not a reference
+
+        U-Boot names environment variables and commands in quotes all over
+        the tree, and reverting a definition cannot break a quoted word.
+        """
+        text = '\tchar *s = env_get("bootm_boot_mode");'
+        self.assertFalse(drift.is_code_reference(text, 'bootm_boot_mode'))
+
+    def test_single_quotes(self):
+        """Test that a single-quoted section is masked too"""
+        text = "\tc = 'SOME_LONG_NAME';"
+        self.assertFalse(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_escape_inside_string(self):
+        """Test that an escaped quote does not end the string early"""
+        text = '\tputs("a\\"b SOME_LONG_NAME");'
+        self.assertFalse(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_trailing_line_comment(self):
+        """Test that a name after // is not a reference"""
+        text = '\tx = 1;  // SOME_LONG_NAME'
+        self.assertFalse(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_trailing_block_comment(self):
+        """Test that a name after /* is not a reference"""
+        text = '\tx = 1;  /* SOME_LONG_NAME */'
+        self.assertFalse(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_real_code_reference(self):
+        """Test that a name used as code is a reference"""
+        text = '\theader = map_sysmem(SANDBOX_SPL_FIT_ADDR, size);'
+        self.assertTrue(drift.is_code_reference(text, 'SANDBOX_SPL_FIT_ADDR'))
+
+    def test_code_before_a_string(self):
+        """Test that code is still seen when a string follows it"""
+        text = '\tif (SOME_LONG_NAME) puts("SOME_LONG_NAME");'
+        self.assertTrue(drift.is_code_reference(text, 'SOME_LONG_NAME'))
+
+    def test_name_absent(self):
+        """Test that a line without the name is not a reference"""
+        self.assertFalse(drift.is_code_reference('\tx = 1;', 'NO_SUCH_NAME'))
 
 
 class TestDriftLoadBearing(unittest.TestCase):

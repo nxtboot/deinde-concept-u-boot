@@ -1128,6 +1128,12 @@ def drift_build_ok(build_cmd):
 # Names searched for in one go, to keep the command line sane
 GREP_BATCH = 200
 
+# How many declined files to name before summarising the rest
+DECLINE_SHOWN = 5
+
+# Files which describe rather than build, so nothing in them can break
+DOC_SUFFIXES = ('.rst', '.txt', '.md', '.yaml', '.yml', '.json')
+
 
 def drift_grep_names(names, branch):
     """Find every line in a branch which uses any of some names
@@ -1158,7 +1164,8 @@ def drift_grep_names(names, branch):
     return hits
 
 
-def drift_load_bearing(info, paths, branch):  # pylint: disable=too-many-locals
+# pylint: disable-next=too-many-locals,too-many-branches
+def drift_load_bearing(info, paths, branch):
     """Find files whose revert would remove something still in use
 
     Reverting a hunk takes out the lines it adds.  Where those lines define
@@ -1209,7 +1216,22 @@ def drift_load_bearing(info, paths, branch):  # pylint: disable=too-many-locals
             for user, num, text in hits:
                 if user == path or user in ignore:
                     continue
+                # Cheap test first: the regex below is far more costly and
+                # most lines in the batch matched some other name
                 if name not in text:
+                    continue
+                if user.endswith(DOC_SUFFIXES):
+                    # Documentation cannot fail to build
+                    continue
+                # A line which defines the name itself is not a user of
+                # ours: every linker script declares its own __rel_dyn_end,
+                # and two device trees may label unrelated nodes alike
+                if name in drift.defined_names(text, user):
+                    continue
+                # A name inside a string or a comment is not a dependency:
+                # reverting a definition cannot break a line which only
+                # mentions the word
+                if not drift.is_code_reference(text, name):
                     continue
                 # A use which is itself being reverted disappears with the
                 # definition, so it does not hold anything back
@@ -1729,9 +1751,13 @@ def do_drift_fix(args, dbs):
             if held:
                 tout.warning(f'{area}: declining {len(held)} file(s) whose '
                              'revert would remove something still in use:')
-                for path, users in sorted(held.items())[:5]:
+                shown = sorted(held.items())[:DECLINE_SHOWN]
+                for path, users in shown:
                     name, user = users[0]
                     tout.warning(f'  {path}: {name} still used by {user}')
+                if len(held) > len(shown):
+                    tout.warning(f'  ... and {len(held) - len(shown)} more '
+                                 f'(showing {len(shown)} of {len(held)})')
                 paths = [path for path in paths if path not in held]
                 if not paths:
                     tout.warning(f'{area}: nothing left to revert, skipping')
