@@ -96534,3 +96534,54 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-f2f1a1e7d218
+
+Commits:
+- f2f1a1e7d218 board: phycore_imx8mm: update RAM timings
+- 14ca9eb18daa board: phycore_imx8mm: add 1 and 4GB RAM timings
+- 4eeaaee054be binman: add CST backend selection for i.MX8M signing
+- 01b7aee2ee99 imx: scmi: suppress invalid origin/errid in reset reason print
+- 9dfa2015e01f arm: imx: initialize the system counter earlier on i.MX7
+- 8a6f042dc3cb toradex: tdx-cfg-block: Add Aquila iMX95 0243 PID4
+- 280ae6506824 imx: Add FRDM-IMX95 initial support
+- fca58e8a08cf binman: nxp_imx8mcst: Handle FCFB header during SPI NOR boot
+- 06c866fee005 Gitlab CI: sage: Disable test_net_tftpboot_boot on Raspberry Pi 4 for now
+- d0615e4a67c8 Merge tag 'u-boot-imx-main-20260807' of https://git.u-boot-project.org/u-boot/custodians/u-boot-imx
+
+### Conversation log
+All 10 commits are in place. Now let me run the final build test.
+
+## Summary
+
+All 10 commits were cherry-picked cleanly onto the new branch `cherry-f2f1a1e7d218` (based on `ci/master`).
+
+**Cherry-pick results:**
+- All 9 regular commits applied cleanly (a few `Auto-merging` messages for `tools/binman/ftest.py` and `.gitlab-ci-sage-lab.yml`, resolved automatically without conflict).
+- The merge commit `d0615e4a67c8` was empty after cherry-pick (its content was already brought in by the individual commits above); preserved with `--allow-empty` using the original merge commit message.
+
+**Delta comparisons:** All commits' file lists and line counts match the originals exactly — no concerning deltas.
+
+**Build result:** `buildman -L --board sandbox` passed after every cherry-pick and in the final run (1/1 built, no warnings/errors).
+
+**Fix-ups:** None required.
+
+**Final log (top 10):**
+```
+0e6445d5c430 Merge tag 'u-boot-imx-main-20260807' ...
+ae249c54920a Gitlab CI: sage: Disable test_net_tftpboot_boot on RPi4 for now
+cb7ab722ae31 binman: nxp_imx8mcst: Handle FCFB header during SPI NOR boot
+af8c8e1e17b6 imx: Add FRDM-IMX95 initial support
+67b002df52e5 toradex: tdx-cfg-block: Add Aquila iMX95 0243 PID4
+205c0bda4f26 arm: imx: initialize the system counter earlier on i.MX7
+d0e84badab9f imx: scmi: suppress invalid origin/errid in reset reason print
+7b4a1e359a2f binman: add CST backend selection for i.MX8M signing
+d66a5aea838a board: phycore_imx8mm: add 1 and 4GB RAM timings
+686021189163 board: phycore_imx8mm: update RAM timings
+```
+
+Branch `cherry-f2f1a1e7d218` is ready for pushing.
+
+---
+
