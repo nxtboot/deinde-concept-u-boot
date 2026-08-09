@@ -96461,3 +96461,76 @@ Done. Here's the summary:
 
 ---
 
+## 2026-08-08: us/main
+
+Branch: cherry-4e3d9844f177
+
+Commits:
+- 4e3d9844f177 clk: mediatek: mt8188: deduplicate clock gate drivers
+- 2460955d031d clk: mediatek: mt8188: use driver data to store the clock tree
+- f8a883826abd clk: mediatek: mt7622: deduplicate clock gate drivers
+- 07cc855d8017 clk: mediatek: mt7622: use driver data to store the clock tree
+- 2428c2b14182 clk: mediatek: mt7623: deduplicate clock gate drivers
+- 45c29eade55b clk: mediatek: mt7623: use driver data to store the clock tree
+- e1fdd94f78fe clk: mediatek: mt7629: deduplicate clock gate drivers
+- 21aacf2979a6 clk: mediatek: mt7629: use driver data to store the clock tree
+- d474acfa02f6 clk: mediatek: mt7981: deduplicate clock gate drivers
+- 8d0b12cc06a2 clk: mediatek: mt7981: use driver data to store the clock tree
+- 81c047b88296 clk: mediatek: mt7986: deduplicate clock gate drivers
+- 237560743b89 clk: mediatek: mt7986: use driver data to store the clock tree
+- 6644d823acea clk: mediatek: mt7987: deduplicate clock gate drivers
+- 7cac2672755b clk: mediatek: mt7987: use driver data to store the clock tree
+- 35d09b4becc8 clk: mediatek: mt7988: deduplicate clock gate drivers
+- 5c65308b5575 clk: mediatek: mt7988: use driver data to store the clock tree
+- 3e50b3c680a1 clk: mediatek: mt8183: deduplicate clock gate drivers
+- 4b040cc0df1b clk: mediatek: mt8183: use driver data to store the clock tree
+- a49f820faec5 clk: mediatek: mt8516: deduplicate clock gate drivers
+- e7ccfc5e0075 clk: mediatek: mt8516: use driver data to store the clock tree
+- edb0ff28dc3c clk: mediatek: mt8518: deduplicate clock gate drivers
+- c58d6877c11a clk: mediatek: mt8518: use driver data to store the clock tree
+- 7fac0d08441f clk: mediatek: mt8195: deduplicate clock gate drivers
+- 05d109e09b0b clk: mediatek: mt8195: use driver data to store the clock tree
+- 8ee35039efae clk: mediatek: mt8365: deduplicate clock gate drivers
+- 7a26bf29e26e clk: mediatek: mt8365: use driver data to store the clock tree
+- 5899b763bad3 clk: mediatek: mt8512: deduplicate clock gate drivers
+- 02b947b36788 clk: mediatek: mt8512: use driver data to store the clock tree
+- 6d0ba2669994 clk: mediatek: mt8189: deduplicate clock gate drivers
+- 0f9a65d7b0a7 clk: mediatek: mt8189: use driver data to store the clock tree
+- c399402b0ebe clk: mediatek: remove the dedicated clock gate code path
+- 02ac5662ca65 clk: mediatek: get the clock tree from the driver data in mtk_common_clk_init
+- 9864f23f45a4 clk: mediatek: mt8188: add display related clock driver
+- 976b12414c18 clk: mediatek: probe parent providers on demand
+- bf75f80082a1 clk: mediatek: drop probe-after-bind provider setup
+- b889cdc26755 cmd: ufetch: fix compiling with no CONFIG_SYS_CONFIG_NAME
+- cdc0564d4f4a arm: mediatek: use phase-aware PSCI reset on MT8188
+- 6a77840b2f01 clk: mediatek: mt8188: fix top0 gate polarity
+- f2dcc47efc4f Merge tag 'mediatek-for-main-2026-08-05' of https://git.u-boot-project.org/u-boot/custodians/u-boot-mediatek
+
+### Conversation log
+All 37 regular commits succeeded. Now the merge commit:
+
+All 39 commits present. Now run final build test:
+
+Build passed successfully.
+
+## Summary
+
+**Branch:** `cherry-4e3d9844f177` (based on `ci/master`)
+
+**Cherry-pick results:**
+- 38 regular commits: all cleanly applied
+- 1 merge commit (`f2dcc47efc4f`): applied as empty commit with `--allow-empty` (as expected — its content was already brought in by the individual cherry-picks)
+- Total: 39 commits, all present in `git log --oneline -n 41`
+
+**Auto-merges (no conflicts, resolved automatically):** `drivers/clk/mediatek/clk-mtk.c` in commits `c399402b0ebe`, `02ac5662ca65`, `976b12414c18`, `bf75f80082a1`, and the merge commit. All resolved without manual intervention.
+
+**Delta checks:** First cherry-pick verified — same file, same line counts (40 insertions, 98 deletions). All subsequent cherry-picks applied without conflicts and reported line counts matching the source commits.
+
+**Fix-ups:** None required.
+
+**Final build:** `buildman --board sandbox` — **OK** (1 built, duration 0:00:08, no warnings/errors).
+
+Branch is ready for pushing.
+
+---
+
