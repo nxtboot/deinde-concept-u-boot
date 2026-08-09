@@ -8893,25 +8893,42 @@ class TestAbsentOrigin(unittest.TestCase):
 
         def handle(**_):
             return command.CommandResult(
-                stdout=f'@{"c" * 40}\na.c\nb.c\nMakefile\n')
+                stdout='A\ta.c\nA\tb.c\nM\tMakefile\n')
 
         command.TEST_RESULT = handle
         with terminal.capture():
-            partial = control.drift_absent_partial(
-                origin, {'a.c', 'b.c', 'Makefile'})
-        self.assertEqual(partial['a.c'][3], ['Makefile', 'b.c'])
+            partial = control.drift_absent_partial(origin, {'a.c', 'b.c'})
+        # b.c is another added file still absent; the Makefile is one the
+        # commit changes, whose hunks are missing too
+        self.assertEqual(partial['a.c'][3], ['b.c'])
+        self.assertEqual(partial['a.c'][4], ['Makefile'])
+
+    def test_modified_files_make_it_partial(self):
+        """Test that a commit which also changes existing files is partial
+
+        Restoring the added file alone leaves the Makefile entry which
+        builds it still missing, so the file lands inert.
+        """
+        origin = {'a.c': ('c' * 40, 'Add the thing', control.ORIGIN_RECORDED)}
+
+        def handle(**_):
+            return command.CommandResult(stdout='A\ta.c\nM\tMakefile\n')
+
+        command.TEST_RESULT = handle
+        with terminal.capture():
+            partial = control.drift_absent_partial(origin, {'a.c'})
+        self.assertIn('a.c', partial)
+        self.assertEqual(partial['a.c'][4], ['Makefile'])
 
     def test_complete_allowed(self):
         """Test that the last file of a commit is not partial"""
         origin = {'a.c': ('c' * 40, 'Add the thing', control.ORIGIN_RECORDED)}
 
         def handle(**_):
-            return command.CommandResult(
-                stdout=f'@{"c" * 40}\na.c\nb.c\n')
+            return command.CommandResult(stdout='A\ta.c\n')
 
         command.TEST_RESULT = handle
         with terminal.capture():
-            # b.c is present downstream, so only a.c is absent
             partial = control.drift_absent_partial(origin, {'a.c'})
         self.assertEqual(partial, {})
 

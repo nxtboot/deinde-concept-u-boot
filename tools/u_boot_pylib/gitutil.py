@@ -142,6 +142,28 @@ def log_bodies(commit_range, no_merges=False, git_dir=None):
     return commits
 
 
+def commit_file_status(ref, git_dir=None):
+    """List the files a commit touches, with what it did to each
+
+    Args:
+        ref (str): Commit/ref
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of tuple: (status letter, path), where the letter is 'A' for
+            added, 'M' for modified, 'D' for deleted and so on
+    """
+    out = command.output('git', 'show', '--name-status', '--format=', ref,
+                         cwd=git_dir)
+    rows = []
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) >= 2 and parts[0]:
+            rows.append((parts[0][0], parts[-1]))
+    return rows
+
+
 def rev_list(*refs, git_dir=None):
     """List every commit reachable from some refs
 

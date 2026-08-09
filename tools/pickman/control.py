@@ -1599,16 +1599,25 @@ def drift_absent_partial(origin, absent):
 
     Return:
         dict: Maps path to (hash, subject, where from, other files still
-            absent from the same commit)
+            absent, files the commit also changes)
     """
     partial = {}
     for path, (chash, subj, where) in origin.items():
         others = set()
-        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
-            others |= {name for name in files
-                       if name != path and name in absent}
-        if others:
-            partial[path] = (chash, subj, where, sorted(others))
+        changed = set()
+        for status, name in gitutil.commit_file_status(chash):
+            if name == path:
+                continue
+            if status == 'A':
+                if name in absent:
+                    others.add(name)
+            else:
+                # A file the commit changes rather than adds is present here,
+                # but its hunks came with the commit and are missing too
+                changed.add(name)
+        if others or changed:
+            partial[path] = (chash, subj, where, sorted(others),
+                             sorted(changed))
     return partial
 
 
@@ -1863,15 +1872,20 @@ def do_drift_fix(args, dbs):
                     tout.warning(f'{area}: declining {len(partial)} file(s) '
                                  'which would apply only part of a commit:')
                     for path in sorted(partial)[:DECLINE_SHOWN]:
-                        chash, _, where, others = partial[path]
-                        tout.warning(f'  {path} ({where}): {len(others)} more '
-                                     f'file(s) of {chash[:11]} still absent')
+                        chash, _, where, others, changed = partial[path]
+                        tout.warning(
+                            f'  {path} ({where}): applies only part of '
+                            f'{chash[:11]} - {len(others)} file(s) still '
+                            f'absent and {len(changed)} it also changes')
                         tout.warning(f'    run: pickman pick {chash[:11]}')
                     if len(partial) > DECLINE_SHOWN:
                         tout.warning(f'  ... and {len(partial) - DECLINE_SHOWN}'
                                      f' more (showing {DECLINE_SHOWN} of '
                                      f'{len(partial)})')
                     paths = [path for path in paths if path not in partial]
+                    if len(partial) > len(paths):
+                        tout.info('  most of these want picking rather than '
+                                  'restoring, which is the tool working')
                     if not paths:
                         tout.warning(f'{area}: nothing left to restore, '
                                      'skipping')
