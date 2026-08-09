@@ -43,6 +43,7 @@ int getopt(struct getopt_state *gs, const char *optstring)
 {
 	char curopt;	/* current option character */
 	const char *curoptp;	/* pointer to the current option in optstring */
+	bool optional;	/* option takes an optional argument */
 	int argc = gs->argc;
 #ifdef CONFIG_GETOPT_PERMUTE
 	char **argv = gs->argv;
@@ -129,39 +130,15 @@ int getopt(struct getopt_state *gs, const char *optstring)
 		return curopt;
 	}
 
-	if (*(curoptp + 1) && *(curoptp + 2) == ':') {
-		/* optional argument */
-		if (argv[gs->index][gs->arg_index + 1]) {
-			/* optional argument with directly following arg */
-			gs->arg = argv[gs->index++] + gs->arg_index + 1;
-			gs->arg_index = 1;
-			return curopt;
-		}
-		if (gs->index + NONOPTS(gs) + 1 == argc) {
-			/* We are at the last argv[] element */
-			gs->arg = NULL;
-			gs->index++;
-			return curopt;
-		}
-		if (*argv[gs->index + 1] != '-') {
-			/*
-			 * optional argument with arg in next argv[] element
-			 */
-			gs->index++;
-			gs->arg = argv[gs->index++];
-			gs->arg_index = 1;
-			return curopt;
-		}
-
-		/* no optional argument found */
-		gs->arg = NULL;
-		gs->arg_index = 1;
-		gs->index++;
-		return curopt;
-	}
+	/*
+	 * The option takes an argument. A second ':' makes it optional, which
+	 * changes only what happens when no argument turns out to be
+	 * available; finding one works the same either way
+	 */
+	optional = curoptp[2] == ':';
 
 	if (argv[gs->index][gs->arg_index + 1]) {
-		/* required argument with directly following arg */
+		/* argument follows directly in this argv[] element */
 		gs->arg = argv[gs->index++] + gs->arg_index + 1;
 		gs->arg_index = 1;
 		return curopt;
@@ -170,11 +147,18 @@ int getopt(struct getopt_state *gs, const char *optstring)
 	gs->index++;
 	gs->arg_index = 1;
 
-	if (gs->index + NONOPTS(gs) >= argc || argv[gs->index][0] == '-') {
-		gs->opt = curopt;
-		return ':';
+	if (gs->index + NONOPTS(gs) < argc && *argv[gs->index] != '-') {
+		/* argument is the next argv[] element */
+		gs->arg = argv[gs->index++];
+		return curopt;
 	}
 
-	gs->arg = argv[gs->index++];
-	return curopt;
+	/* no argument available */
+	if (optional) {
+		gs->arg = NULL;
+		return curopt;
+	}
+	gs->opt = curopt;
+
+	return ':';
 }
