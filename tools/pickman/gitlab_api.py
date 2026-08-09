@@ -10,6 +10,7 @@ import configparser
 import os
 import re
 import sys
+import time
 
 # Allow 'from pickman import xxx' to work via symlink
 our_path = os.path.dirname(os.path.realpath(__file__))
@@ -610,6 +611,86 @@ def update_mr_title(remote, mr_iid, title):
         return False
 
 
+# A merge request URL ends in its iid, e.g. .../-/merge_requests/42
+RE_MR_IID = re.compile(r'/merge_requests/(\d+)')
+
+
+def count_pipeline_jobs(project, pipeline_id):
+    """Count the jobs in a pipeline
+
+    Args:
+        project: python-gitlab project object
+        pipeline_id (int): Pipeline ID
+
+    Return:
+        int: Number of jobs, or None if the pipeline cannot be read
+    """
+    try:
+        pipeline = project.pipelines.get(pipeline_id)
+        return len(pipeline.jobs.list(get_all=True))
+    except Exception as exc:  # pylint: disable=broad-except
+        tout.warning(f'Could not read pipeline {pipeline_id}: {exc}')
+        return None
+
+
+def ensure_mr_pipeline(remote, mr_iid, tries=6, delay=5):
+    """Make sure a merge request has a pipeline which will actually run
+
+    A merge request created moments after its branch is pushed can end up
+    with a pipeline holding no jobs at all: the rules are evaluated before
+    the new ref is fully visible, and the result is a merge request which
+    looks green while having run nothing.  That is a bad way to fail, so
+    check for it and trigger a fresh pipeline when it happens.
+
+    Args:
+        remote (str): Remote name
+        mr_iid (int): Merge request IID
+        tries (int): How many times to look for a pipeline appearing
+        delay (int): Seconds to wait between looks
+
+    Return:
+        bool: True if the merge request ends up with a pipeline which has
+            jobs, False if that could not be arranged
+    """
+    if not check_available():
+        return False
+    token = get_token()
+    if not token:
+        return False
+    host, proj_path = parse_url(get_remote_url(remote))
+    if not host or not proj_path:
+        return False
+
+    try:
+        glab = gitlab.Gitlab(f'https://{host}', private_token=token)
+        project = glab.projects.get(proj_path)
+        merge_req = project.mergerequests.get(mr_iid)
+
+        for attempt in range(tries):
+            pipelines = merge_req.pipelines.list(get_all=False)
+            if pipelines:
+                count = count_pipeline_jobs(project, pipelines[0].id)
+                if count:
+                    return True
+                if count == 0:
+                    tout.warning(
+                        f'MR !{mr_iid}: pipeline {pipelines[0].id} has no '
+                        'jobs, so nothing would run - triggering another')
+                    merge_req.pipelines.create({})
+                    # Give the new one a moment, then look again
+                    time.sleep(delay)
+                    continue
+            if attempt < tries - 1:
+                time.sleep(delay)
+
+        tout.warning(f'MR !{mr_iid}: no pipeline with jobs after '
+                     f'{tries} tries; check it by hand')
+        return False
+    except Exception as exc:  # pylint: disable=broad-except
+        tout.warning(f'Could not check the pipeline for MR !{mr_iid}: {exc}')
+        return False
+
+
 def push_and_create_mr(remote, branch, target, title, desc=''):
     """Push a branch and create a merge request
 
@@ -643,6 +724,11 @@ def push_and_create_mr(remote, branch, target, title, desc=''):
 
     if mr_url:
         tout.info(f'Merge request created: {mr_url}')
+        # The branch was pushed a moment ago, so the pipeline may have been
+        # made before the ref was visible and hold no jobs at all
+        match = RE_MR_IID.search(mr_url)
+        if match:
+            ensure_mr_pipeline(remote, int(match.group(1)))
 
     return mr_url
 

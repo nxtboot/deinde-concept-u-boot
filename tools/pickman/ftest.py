@@ -8453,5 +8453,83 @@ class TestParkedOverlap(unittest.TestCase):
         self.assertIn('- b.c', note)
 
 
+class TestEnsureMrPipeline(unittest.TestCase):
+    """Tests for making sure a merge request has a pipeline which runs"""
+
+    @staticmethod
+    def _project(job_counts):
+        """Build a mock project whose pipeline job counts are given
+
+        Args:
+            job_counts (list of int): Number of jobs to report on each
+                successive read of a pipeline
+
+        Return:
+            tuple: (project mock, merge request mock)
+        """
+        counts = iter(job_counts)
+
+        def get_pipeline(_):
+            pipeline = mock.Mock()
+            pipeline.jobs.list.return_value = [mock.Mock()] * next(counts)
+            return pipeline
+
+        merge_req = mock.Mock()
+        merge_req.pipelines.list.return_value = [mock.Mock(id=7)]
+        project = mock.Mock()
+        project.pipelines.get.side_effect = get_pipeline
+        project.mergerequests.get.return_value = merge_req
+        return project, merge_req
+
+    def _run(self, project):
+        """Run ensure_mr_pipeline() against a mock project"""
+        glab = mock.Mock()
+        glab.projects.get.return_value = project
+        with mock.patch.object(gitlab, 'check_available',
+                               return_value=True), \
+             mock.patch.object(gitlab, 'get_token', return_value='tok'), \
+             mock.patch.object(gitlab, 'get_remote_url',
+                               return_value=TEST_SSH_URL), \
+             mock.patch.object(gitlab, 'gitlab', create=True) as mod, \
+             mock.patch.object(gitlab.time, 'sleep'):
+            mod.Gitlab.return_value = glab
+            with terminal.capture() as (_, stderr):
+                ret = gitlab.ensure_mr_pipeline('ci', 42)
+        return ret, stderr.getvalue()
+
+    def test_pipeline_has_jobs(self):
+        """Test that a pipeline with jobs is left alone"""
+        project, merge_req = self._project([100])
+        ret, _ = self._run(project)
+        self.assertTrue(ret)
+        merge_req.pipelines.create.assert_not_called()
+
+    def test_empty_pipeline_retriggered(self):
+        """Test that a pipeline with no jobs causes another to be made
+
+        A merge request made moments after its branch is pushed can get a
+        pipeline holding nothing, which looks green while running nothing.
+        """
+        project, merge_req = self._project([0, 100])
+        ret, err = self._run(project)
+        self.assertTrue(ret)
+        merge_req.pipelines.create.assert_called_once()
+        self.assertIn('has no jobs', err)
+
+    def test_gives_up_and_says_so(self):
+        """Test that a pipeline which stays empty is reported, not hidden"""
+        project, merge_req = self._project([0] * 12)
+        ret, err = self._run(project)
+        self.assertFalse(ret)
+        self.assertIn('check it by hand', err)
+
+    def test_not_available(self):
+        """Test that a missing gitlab module is handled"""
+        with mock.patch.object(gitlab, 'check_available',
+                               return_value=False):
+            with terminal.capture():
+                self.assertFalse(gitlab.ensure_mr_pipeline('ci', 42))
+
+
 if __name__ == '__main__':
     unittest.main()
