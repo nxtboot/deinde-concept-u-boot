@@ -93,12 +93,19 @@ def add_main_commands(subparsers):
 
     drift_acc = subparsers.add_parser(
         'drift-accept', help='Record a delta from upstream as intentional')
-    drift_acc.add_argument('path', help='File path, or glob to cover several')
+    drift_acc.add_argument('path', nargs='?',
+                           help='File path, or glob to cover several')
     drift_acc.add_argument('-m', '--message', required=True, dest='message',
                            help='Reason the delta is wanted')
     drift_acc.add_argument('-u', '--hunk', default='*',
                            help="Hunk fingerprint (default: '*', the whole "
                                 'file)')
+    drift_acc.add_argument('--from', dest='from_file', metavar='FILE',
+                           help="Read paths from FILE, or '-' for stdin, "
+                                'and accept them all with one reason')
+    drift_acc.add_argument('-n', '--dry-run', action='store_true',
+                           help='Show what would be accepted, changing '
+                                'nothing')
 
     drift_fix = subparsers.add_parser(
         'drift-fix', help='Revert drift back to upstream and create MRs')

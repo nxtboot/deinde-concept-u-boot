@@ -1192,30 +1192,88 @@ def do_drift(args, dbs):
     return ret
 
 
-def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
-    """Record a delta from upstream as intentional
+def drift_accept_paths(args):
+    """Work out which paths a drift-accept call covers
 
     Args:
-        args (Namespace): Parsed arguments with 'path', 'hunk' and 'message'
+        args (Namespace): Parsed arguments, read for 'path' and 'from_file'
+
+    Return:
+        list of str: Paths to accept, in the order given
+
+    Raises:
+        ValueError: If neither or both of the two are given, or the file
+            names nothing
+    """
+    from_file = getattr(args, 'from_file', None)
+    if bool(args.path) == bool(from_file):
+        raise ValueError("Give either a path or --from, not both")
+    if not from_file:
+        return [args.path]
+
+    if from_file == '-':
+        text = sys.stdin.read()
+    else:
+        text = tools.read_file(from_file, binary=False)
+    paths = [line.strip() for line in text.splitlines()
+             if line.strip() and not line.startswith('#')]
+    if not paths:
+        raise ValueError(f"No paths found in '{from_file}'")
+    return paths
+
+
+def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
+    """Record one or more deltas from upstream as intentional
+
+    Args:
+        args (Namespace): Parsed arguments with 'path', 'from_file', 'hunk',
+            'message' and 'dry_run'
         dbs (Database): Database instance (unused)
 
     Return:
         int: 0 on success, 1 on failure
     """
+    try:
+        paths = drift_accept_paths(args)
+    except (ValueError, IOError) as exc:
+        tout.error(str(exc))
+        return 1
+
     accepts = drift_read_accepts()
-    new = drift.Accept(args.path, args.hunk, args.message)
+    have = {(ent.pattern, ent.fingerprint) for ent in accepts}
 
-    for ent in accepts:
-        if (ent.pattern, ent.fingerprint) == (new.pattern, new.fingerprint):
-            tout.error(f"'{new.pattern}' is already accepted: {ent.reason}")
-            return 1
+    added = []
+    for path in paths:
+        new = drift.Accept(path, args.hunk, args.message)
+        if (new.pattern, new.fingerprint) in have:
+            # With a list, an entry already recorded is not worth failing over
+            if len(paths) == 1:
+                tout.error(f"'{path}' is already accepted")
+                return 1
+            tout.info(f"  {path}: already accepted, skipped")
+            continue
+        have.add((new.pattern, new.fingerprint))
+        added.append(new)
 
-    accepts.append(new)
-    drift_write_accepts(accepts)
+    what = ('every hunk' if args.hunk == drift.ALL_HUNKS
+            else f'hunk {args.hunk}')
+    if getattr(args, 'dry_run', False):
+        tout.info(f'Would accept {what} in {len(added)} path(s):')
+        for ent in added:
+            tout.info(f'  {ent.pattern}')
+        return 0
 
-    what = ('every hunk' if new.fingerprint == drift.ALL_HUNKS
-            else f'hunk {new.fingerprint}')
-    tout.info(f"Accepted {what} in '{new.pattern}': {new.reason}")
+    if not added:
+        tout.info('Nothing to accept')
+        return 0
+
+    drift_write_accepts(accepts + added)
+    if len(added) == 1:
+        tout.info(f"Accepted {what} in '{added[0].pattern}': "
+                  f'{added[0].reason}')
+    else:
+        tout.info(f'Accepted {what} in {len(added)} path(s): '
+                  f'{args.message}')
     tout.info(f'Updated {drift.ACCEPT_FILE} - commit this to record it')
     return 0
 

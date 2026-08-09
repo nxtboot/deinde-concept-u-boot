@@ -7718,6 +7718,70 @@ class TestDriftCommands(unittest.TestCase):
         self.assertEqual(ret, 1)
         self.assertIn('is already accepted', stderr.getvalue())
 
+    def _accept_args(self, **kwargs):
+        """Build the arguments for a bulk drift-accept"""
+        args = {'cmd': 'drift-accept', 'path': None, 'hunk': '*',
+                'message': 'Ours', 'from_file': None, 'dry_run': False}
+        args.update(kwargs)
+        return argparse.Namespace(**args)
+
+    def _path_list(self, *paths):
+        """Write a file listing some paths, with a comment and a blank line"""
+        fname = os.path.join(self.tmpdir, 'paths.txt')
+        tools.write_file(fname, '# a comment\n\n' + '\n'.join(paths) + '\n',
+                         binary=False)
+        return fname
+
+    def test_accept_from_file(self):
+        """Test accepting many paths at once with one reason"""
+        fname = self._path_list('configs/a_defconfig', 'configs/b_defconfig')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._accept_args(from_file=fname))
+        self.assertEqual(ret, 0)
+        self.assertIn('Accepted every hunk in 2 path(s)', stdout.getvalue())
+
+        accepts = drift.read_accepts(
+            tools.read_file(self.accept_file, binary=False))
+        self.assertEqual([ent.pattern for ent in accepts],
+                         ['configs/a_defconfig', 'configs/b_defconfig'])
+        self.assertEqual({ent.reason for ent in accepts}, {'Ours'})
+
+    def test_accept_from_file_dry_run(self):
+        """Test that a dry run changes nothing"""
+        fname = self._path_list('configs/a_defconfig')
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(
+                self._accept_args(from_file=fname, dry_run=True))
+        self.assertEqual(ret, 0)
+        self.assertIn('Would accept', stdout.getvalue())
+        self.assertFalse(os.path.exists(self.accept_file))
+
+    def test_accept_from_file_skips_known(self):
+        """Test that a path already accepted is skipped, not an error"""
+        fname = self._path_list('configs/a_defconfig', 'configs/b_defconfig')
+        with terminal.capture():
+            control.do_pickman(self._accept_args(from_file=fname))
+        with terminal.capture() as (stdout, _):
+            ret = control.do_pickman(self._accept_args(from_file=fname))
+        self.assertEqual(ret, 0)
+        self.assertIn('already accepted, skipped', stdout.getvalue())
+
+    def test_accept_needs_one_of(self):
+        """Test that a path and --from together are refused"""
+        fname = self._path_list('configs/a_defconfig')
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(
+                self._accept_args(path='README', from_file=fname))
+        self.assertEqual(ret, 1)
+        self.assertIn('either a path or --from', stderr.getvalue())
+
+    def test_accept_needs_any(self):
+        """Test that neither a path nor --from is refused"""
+        with terminal.capture() as (_, stderr):
+            ret = control.do_pickman(self._accept_args())
+        self.assertEqual(ret, 1)
+        self.assertIn('either a path or --from', stderr.getvalue())
+
     def test_accept_removes_drift(self):
         """Test that an accepted delta no longer counts as drift"""
         with terminal.capture():

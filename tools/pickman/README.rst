@@ -667,6 +667,7 @@ Options:
 - ``-d`` show the drift as a patch
 - ``-s`` skip blaming the files which downstream commits have touched; faster
   but misses drift inside them
+- ``-f`` list each drift hunk with the fingerprint ``drift-accept -u`` takes
 - ``-b`` downstream branch to examine (default: ci/master)
 - ``--upstream COMMIT`` compare against this upstream commit rather than the
   tracked source position (read-only), e.g. to back-fill historical drift
@@ -682,7 +683,14 @@ To record a delta as intentional, exempting it from the above::
     ./tools/pickman/pickman drift-accept lib/efi.c -u a3f19c2b8d41 -m 'Ours'
 
 This writes ``.pickman-diverge``, which should be committed. Without ``-u`` the
-whole file is accepted; with it, only the hunk with that fingerprint.
+whole file is accepted; with it, only the hunk with that fingerprint, which
+``drift -f`` prints.
+
+To record many paths with one reason, read them from a file (or from stdin
+with ``-``), and use ``-n`` to see what would happen without writing::
+
+    ./tools/pickman/pickman drift-accept --from reorder-only.txt \
+        -m 'Ordering follows downstream Kconfig'
 
 To revert drift back to upstream::
 
@@ -691,6 +699,9 @@ To revert drift back to upstream::
 Options:
 
 - ``-c`` number of areas of the tree to fix at once (default: 1)
+- ``--paths GLOB...`` only fix files matching these globs
+- ``-u`` only fix files which no downstream commit has ever touched, whose
+  drift therefore cannot be wanted; the safest first run
 - ``-p`` push each branch and open an MR for it
 - ``-s`` skip blaming touched files, matching a shallow ``drift`` run
 - ``-r`` git remote for the push (default: ci)
