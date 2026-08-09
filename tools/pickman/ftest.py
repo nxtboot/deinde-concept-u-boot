@@ -8531,5 +8531,52 @@ class TestEnsureMrPipeline(unittest.TestCase):
                 self.assertFalse(gitlab.ensure_mr_pipeline('ci', 42))
 
 
+class TestRemovedIdentifiers(unittest.TestCase):
+    """Tests for finding names a revert would take away"""
+
+    @staticmethod
+    def _hunk(*lines):
+        """Build a hunk from some diff lines"""
+        return drift.parse_diff('\n'.join(
+            ['diff --git a/f.h b/f.h', '--- a/f.h', '+++ b/f.h',
+             '@@ -1,1 +1,%d @@' % (len(lines) + 1), ' ctx'] +
+            list(lines) + [''])).pop().hunks[0]
+
+    def test_define(self):
+        """Test that a macro a revert would remove is found"""
+        hunk = self._hunk('+#define SANDBOX_SPL_FIT_ADDR\t0x4000000')
+        self.assertIn('SANDBOX_SPL_FIT_ADDR',
+                      drift.removed_identifiers([hunk]))
+
+    def test_comment_ignored(self):
+        """Test that a name merely mentioned in a comment is not counted
+
+        Prose names things which live elsewhere, so counting them would
+        blame the wrong file for holding a hunk back.
+        """
+        hunk = self._hunk('+ * see CONFIG_SYS_LOAD_ADDR for the other one',
+                          '+#define SANDBOX_SPL_FIT_ADDR\t0x4000000')
+        names = drift.removed_identifiers([hunk])
+        self.assertIn('SANDBOX_SPL_FIT_ADDR', names)
+        self.assertNotIn('CONFIG_SYS_LOAD_ADDR', names)
+
+    def test_short_names_ignored(self):
+        """Test that a short common word is not counted
+
+        'clk' appears all over the tree, so treating it as a definition
+        would decline every hunk.
+        """
+        hunk = self._hunk('+\tstruct clk clk;')
+        self.assertEqual(drift.removed_identifiers([hunk]), set())
+
+    def test_removed_lines_ignored(self):
+        """Test that lines the hunk removes are not counted
+
+        A revert puts those back, so they cannot go missing.
+        """
+        hunk = self._hunk('-#define SOME_OLD_NAME 1')
+        self.assertEqual(drift.removed_identifiers([hunk]), set())
+
+
 if __name__ == '__main__':
     unittest.main()

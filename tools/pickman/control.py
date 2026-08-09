@@ -1073,6 +1073,51 @@ def drift_percent(states):
     return 100.0 * states[drift.DRIFT] / total
 
 
+def drift_load_bearing(info, paths, branch):
+    """Find files whose revert would remove something still in use
+
+    Reverting a hunk takes out the lines it adds.  Where those lines define
+    something - a macro, say - and other code still refers to it, the revert
+    leaves the tree unable to build.  Nothing else catches this: the tree
+    builds before, CI only complains after the merge request exists.
+
+    Only files outside the set being reverted are searched, since a name whose
+    only users are also being reverted goes away with it.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+        paths (list of str): Files about to be reverted
+        branch (str): Branch to search for remaining users
+
+    Return:
+        dict: Maps path to a list of (name, file still using it), for the
+            files which cannot safely be reverted
+    """
+    reverting = set(paths)
+    held = {}
+    # The history file records every run, so it mentions names which nothing
+    # actually uses; searching it would decline almost everything
+    ignore = {HISTORY_FILE, drift.ACCEPT_FILE}
+    for path in paths:
+        hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
+                 if vdt.state == drift.DRIFT]
+        names = drift.removed_identifiers(hunks)
+        for name in sorted(names):
+            try:
+                out = command.output('git', 'grep', '-l', '-w', name,
+                                     branch, raise_on_error=False)
+            except Exception:  # pylint: disable=broad-except
+                continue
+            for line in out.splitlines():
+                # 'git grep <rev>' prints 'rev:path'
+                user = line.split(':', 1)[-1]
+                if user != path and user not in reverting and (
+                        user not in ignore):
+                    held.setdefault(path, []).append((name, user))
+                    break
+    return held
+
+
 def drift_select(bad, info, patterns=None, unambiguous=False):
     """Narrow a list of drifted files down to those asked for
 
@@ -1499,7 +1544,7 @@ def drift_revert_area(info, area, paths, branch, msg=None, missing=False):
     return name
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def do_drift_fix(args, dbs):
     """Revert drift back to upstream, one area of the tree at a time
 
@@ -1551,6 +1596,18 @@ def do_drift_fix(args, dbs):
     try:
         for area, paths in todo:
             tout.info(f'{area}: reverting {len(paths)} file(s)')
+            held = ({} if missing else
+                    drift_load_bearing(info, paths, args.branch))
+            if held:
+                tout.warning(f'{area}: declining {len(held)} file(s) whose '
+                             'revert would remove something still in use:')
+                for path, users in sorted(held.items())[:5]:
+                    name, user = users[0]
+                    tout.warning(f'  {path}: {name} still used by {user}')
+                paths = [path for path in paths if path not in held]
+                if not paths:
+                    tout.warning(f'{area}: nothing left to revert, skipping')
+                    continue
             if missing:
                 reasons = drift_absent_reason(
                     dbs, dbs.source_get_id(args.source), paths)

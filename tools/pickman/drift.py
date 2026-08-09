@@ -412,6 +412,53 @@ def classify(fdiff, accepts, blame=None):
     return verdicts
 
 
+# A C identifier
+RE_IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+
+# Words which turn up everywhere and say nothing about what a hunk defines
+IDENT_SKIP = {
+    'struct', 'union', 'return', 'static', 'define', 'include', 'unsigned',
+    'endif', 'ifndef', 'ifdef', 'typedef', 'extern', 'const', 'sizeof',
+}
+
+
+def removed_identifiers(hunks):
+    """Find the distinctive names which reverting some hunks would remove
+
+    Reverting takes out the lines a hunk adds, so anything those lines define
+    goes with them.  If something else still uses such a name the tree stops
+    building, which is worth knowing before the revert is offered.
+
+    Only distinctive names are returned - long, or holding an underscore, or
+    upper case.  A short common word like 'clk' appears all over the tree and
+    tells us nothing, so including it would decline every hunk.
+
+    Args:
+        hunks (list of Hunk): Hunks whose added lines would be removed
+
+    Return:
+        set of str: Names worth checking for remaining users
+    """
+    names = set()
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if not line.startswith('+'):
+                continue
+            body = line[1:].strip()
+            # A comment mentioning a name does not define it, and prose names
+            # things which live elsewhere - counting those would blame the
+            # wrong file
+            if body.startswith(('*', '//', '/*', '#')) and not (
+                    body.startswith('#define')):
+                continue
+            for name in RE_IDENT.findall(body):
+                if name in IDENT_SKIP or len(name) < 6:
+                    continue
+                if '_' in name or name.isupper():
+                    names.add(name)
+    return names
+
+
 def build_patch(fdiffs, verdicts, states=(DRIFT,)):
     """Build a patch which reverts the hunks in some states
 
