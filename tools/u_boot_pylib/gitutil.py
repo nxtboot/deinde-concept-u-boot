@@ -171,6 +171,24 @@ def commit_summary(ref, git_dir=None):
                           cwd=git_dir).strip()
 
 
+def commit_summaries(refs, git_dir=None):
+    """Get one-line summaries for several commits, in a single call
+
+    Args:
+        refs (list of str): Commits/refs to summarise
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of str: The abbreviated hash and subject of each, newest first
+    """
+    if not refs:
+        return []
+    out = command.output('git', 'log', '--no-walk', '--format=%h %s',
+                         *refs, cwd=git_dir)
+    return out.splitlines()
+
+
 def branch_exists(name, git_dir=None):
     """Check whether a local branch exists
 
