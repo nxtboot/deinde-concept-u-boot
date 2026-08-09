@@ -699,6 +699,20 @@ committed with a message describing what it really is; where the commit which
 adds such a file is itself parked as a conflict, that is named too, since it
 explains the change far better than guessing at a conflict resolution.
 
+Each area is checked before it is committed, by default with
+``um build sandbox``; a non-zero exit drops that area rather than offering it.
+The command is whatever ``--build-cmd`` or the ``[build]`` section of
+``~/.config/pickman.conf`` says, and only its exit status is looked at, so it
+may run tests as well as build.  That is worth doing: a revert can compile
+perfectly and still be wrong, since a downstream test may depend on the very
+bytes being reverted - one test reads the first 32 bytes of the README and
+asserts them, so restoring a single leading space there builds fine and fails
+two tests.  A check which passes says the check passed, nothing more.
+
+Some deltas are correct downstream work which provenance cannot explain,
+because no commit accounts for them.  Those belong in ``.pickman-diverge``
+with a reason saying why, so that nobody reverts them again later.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

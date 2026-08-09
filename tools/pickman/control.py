@@ -1100,12 +1100,18 @@ def drift_build_cmd(args):
 
 
 def drift_build_ok(build_cmd):
-    """Check that the working tree still builds
+    """Run a check against the reverted working tree
 
     The identifier check cannot see a short name like a three-letter struct
-    member, so a build is the only complete answer to 'does this revert leave
+    member, so building is the only answer to 'does this revert leave
     something which compiles'.  It runs against the reverted working tree,
     before anything is committed.
+
+    A command which passes says only that this check passed.  It does not say
+    the revert is right: a downstream test may depend on the very bytes being
+    reverted, which compiles perfectly and fails when run.  The command is
+    whatever is configured, so it can build and test both - the exit status is
+    all that is looked at.
 
     Args:
         build_cmd (str): Command to run
@@ -1739,7 +1745,8 @@ def do_drift_fix(args, dbs):
     build_cmd = drift_build_cmd(args)
     if build_cmd:
         tout.info(f"Each area is checked with '{build_cmd}'; --no-build "
-                  'turns that off')
+                  'turns that off.  Passing means the check passed, not that '
+                  'the revert is right')
 
     orig = gitutil.current_branch()
     ret = 0
