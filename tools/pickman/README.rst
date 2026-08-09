@@ -686,6 +686,19 @@ months.  The overlap is reported rather than refused, since with a large
 backlog it would otherwise be impossible to make progress; the decision is
 left to review, where it belongs.
 
+Two quite different things show up as a difference from upstream.  A hunk may
+have been mangled on the way in, in a file both trees have: that is small, safe
+and reviewable at a glance.  Or a file upstream has may never have arrived at
+all, in which case putting it back adds the whole thing - a feature, not a
+tidy-up, which needs a build and often a matching Makefile or Kconfig entry to
+be of any use.
+
+These are reported apart, and ``drift-fix`` reverts only the mangled hunks by
+default.  Use ``drift-fix --missing`` to restore the absent files, which is
+committed with a message describing what it really is; where the commit which
+adds such a file is itself parked as a conflict, that is named too, since it
+explains the change far better than guessing at a conflict resolution.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

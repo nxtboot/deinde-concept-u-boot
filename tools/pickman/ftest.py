@@ -7260,11 +7260,15 @@ class TestDriftClassify(unittest.TestCase):
         self.assertEqual(verdicts[0].state, drift.WANTED)
         self.assertEqual(verdicts[0].reason, 'deletion')
 
-    def test_deletion_is_drift_without_blame(self):
-        """Test that a deletion is drift when no commit touched the file"""
+    def test_absent_file(self):
+        """Test that a file upstream has and we lack is absent, not drift
+
+        Nothing was mangled here: the change never arrived, so putting it
+        back adds a whole file rather than tidying one.
+        """
         old = self.by_path['tools/old.c']
         verdicts = drift.classify(old, [], None)
-        self.assertEqual(verdicts[0].state, drift.DRIFT)
+        self.assertEqual(verdicts[0].state, drift.ABSENT)
 
 
 # A defconfig where one line has moved, all within a single hunk
@@ -7504,7 +7508,8 @@ class TestDriftCommands(unittest.TestCase):
         """
         args = {'cmd': 'drift', 'source': 'us/master', 'branch': 'ci/master',
                 'shallow': True, 'diff': False, 'list': False,
-                'fingerprints': False, 'orphans': False, 'upstream': None}
+                'fingerprints': False, 'orphans': False, 'missing': False,
+                'upstream': None}
         args.update(kwargs)
         return argparse.Namespace(**args)
 
@@ -7614,8 +7619,10 @@ class TestDriftCommands(unittest.TestCase):
         # README and tools/old.c are drift; the video driver is not looked
         # inside, so its 2 hunks are taken as wanted
         self.assertIn('2 hunk(s) wanted', out)
-        # 2 of the 4 classified hunks are drift
-        self.assertIn('2 hunk(s) of drift in 3 file(s), 50% of divergence',
+        # tools/old.c is a whole file upstream has, reported apart from drift
+        self.assertIn('1 file(s) upstream has which this tree never received',
+                      out)
+        self.assertIn('1 hunk(s) of drift in 2 file(s), 25% of divergence',
                       out)
 
     def test_report_deep(self):
@@ -7627,8 +7634,7 @@ class TestDriftCommands(unittest.TestCase):
         # Blame shows the downstream commit wrote only the first hunk, so the
         # second one is drift
         self.assertIn('1 hunk(s) wanted', out)
-        # 3 of the 4 classified hunks are drift
-        self.assertIn('3 hunk(s) of drift in 4 file(s), 75% of divergence',
+        self.assertIn('2 hunk(s) of drift in 3 file(s), 50% of divergence',
                       out)
 
     def test_report_list(self):
@@ -7637,7 +7643,6 @@ class TestDriftCommands(unittest.TestCase):
             control.do_pickman(self._drift_args(list=True))
         out = stdout.getvalue()
         self.assertIn('README', out)
-        self.assertIn('tools/old.c', out)
         self.assertIn('binary', out)
         self.assertLess(out.index('1 hunk(s)  README'), out.index('binary'))
 
@@ -7723,6 +7728,52 @@ class TestDriftCommands(unittest.TestCase):
                       out)
         self.assertIn(summary, out)
 
+    def test_absent_listed_apart(self):
+        """Test that an absent file is listed apart from drift"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        self.assertEqual([p for p, _ in control.drift_absent_paths(info)],
+                         ['tools/old.c'])
+        # ...and is not in the drift list, so drift-fix leaves it alone
+        self.assertNotIn('tools/old.c',
+                         [p for p, _ in control.drift_paths(info)])
+
+    def test_absent_not_in_revert_patch(self):
+        """Test that a plain drift revert does not drag in absent files"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        patch = drift.build_patch(info.fdiffs, info.verdicts)
+        self.assertNotIn('tools/old.c', patch)
+        # Asking for them explicitly does include them
+        patch = drift.build_patch(info.fdiffs, info.verdicts,
+                                  (drift.ABSENT,))
+        self.assertIn('tools/old.c', patch)
+
+    def test_absent_commit_msg(self):
+        """Test that restoring a file is described as such, not as drift"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        msg = control.drift_absent_msg('tools', ['tools/old.c'], info, {})
+        self.assertTrue(msg.startswith('tools: Restore files which upstream '
+                                       'has\n'))
+        self.assertIn('never received them', msg)
+        self.assertNotIn('crept in', msg)
+        self.assertIn('Makefile or Kconfig entry', msg)
+
+    def test_absent_commit_msg_names_parked(self):
+        """Test that a parked commit which adds the file is named"""
+        with terminal.capture():
+            info = control.drift_collect(self._open_db(), 'us/master',
+                                         'ci/master')
+        reasons = {'tools/old.c': ('c' * 40, 'Add the tool')}
+        msg = control.drift_absent_msg('tools', ['tools/old.c'], info,
+                                       reasons)
+        self.assertIn('parked as a conflict', msg)
+        self.assertIn('Add the tool', msg)
+
     def test_report_fingerprints(self):
         """Test that -f lists the fingerprint which drift-accept -u takes"""
         with terminal.capture() as (stdout, _):
@@ -7738,8 +7789,8 @@ class TestDriftCommands(unittest.TestCase):
             info = control.drift_collect(self._open_db(), 'us/master',
                                          'ci/master')
         bad = control.drift_paths(info)
-        got = control.drift_select(bad, info, ['tools/*'], False)
-        self.assertEqual([path for path, _ in got], ['tools/old.c'])
+        got = control.drift_select(bad, info, ['README'], False)
+        self.assertEqual([path for path, _ in got], ['README'])
 
     def test_select_unambiguous(self):
         """Test that -u keeps only files no downstream commit has touched"""
@@ -7874,7 +7925,7 @@ class TestDriftCommands(unittest.TestCase):
             control.do_pickman(self._drift_args())
         out = stdout.getvalue()
         self.assertIn('1 hunk(s) accepted', out)
-        self.assertIn('1 hunk(s) of drift in 2 file(s)', out)
+        self.assertIn('0 hunk(s) of drift in 1 file(s)', out)
 
     def test_accept_binary(self):
         """Test that an accepted binary file no longer counts as drift"""
@@ -7891,12 +7942,12 @@ class TestDriftCommands(unittest.TestCase):
         with terminal.capture():
             info = control.drift_collect(self._open_db(), 'us/master',
                                          'ci/master')
-        msg = control.drift_commit_msg('tools', ['tools/old.c'], info)
+        msg = control.drift_commit_msg('README', ['README'], info)
         self.assertTrue(msg.startswith(
-            'tools: Drop unintended deltas from upstream\n'))
+            'README: Drop unintended deltas from upstream\n'))
         self.assertIn('no downstream commit accounts', msg)
         self.assertIn('This reverts 1 hunk(s) in 1 file(s):', msg)
-        self.assertIn(' - tools/old.c', msg)
+        self.assertIn(' - README', msg)
 
     def _open_db(self):
         """Open the test database, ready for use"""
@@ -8000,9 +8051,8 @@ class TestStatus(unittest.TestCase):
         self.assertIn('7 series remaining (123 non-merge commits)', out)
         # Shallow: README and tools/old.c drift, plus the binary logo.bmp
         self.assertIn('4 file(s) differ from upstream', out)
-        self.assertIn('2 spurious hunk(s) in 3 file(s) (shallow', out)
-        # 2 of the 4 classified hunks are drift
-        self.assertIn('50% of the divergence is drift', out)
+        self.assertIn('1 spurious hunk(s) in 2 file(s) (shallow', out)
+        self.assertIn('25% of the divergence is drift', out)
 
     def test_status_deep_default(self):
         """Test that the deep count is used when -s is not given
@@ -8015,8 +8065,8 @@ class TestStatus(unittest.TestCase):
         out = stdout.getvalue()
         self.assertEqual(ret, 0)
         self.assertIn('(this may take a while)', out)
-        self.assertIn('3 spurious hunk(s) in 4 file(s) (deep)', out)
-        self.assertIn('75% of the divergence is drift', out)
+        self.assertIn('2 spurious hunk(s) in 3 file(s) (deep)', out)
+        self.assertIn('50% of the divergence is drift', out)
 
     def test_parse_default_is_deep(self):
         """Test that drift and status default to deep, with -s for shallow"""

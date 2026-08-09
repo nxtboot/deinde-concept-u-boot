@@ -923,7 +923,7 @@ def drift_blame(branch, path, down_hashes):
     return blame
 
 
-def drift_collect(dbs, source, branch, deep=False, base=None):
+def drift_collect(dbs, source, branch, deep=False, base=None):  # pylint: disable=too-many-locals
     """Compare the downstream tree with upstream and classify every delta
 
     Args:
@@ -998,6 +998,25 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
                      skipped, deleted)
 
 
+def drift_absent_paths(info):
+    """List the files which upstream has and this tree never received
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+
+    Return:
+        list of tuple: (path, number of lines the file has), largest first
+    """
+    out = []
+    for path, verdicts in info.verdicts.items():
+        hunks = [vdt.hunk for vdt in verdicts if vdt.state == drift.ABSENT]
+        if hunks:
+            lines = sum(1 for hunk in hunks for line in hunk.lines[1:]
+                        if line[:1] in '+-')
+            out.append((path, lines))
+    return sorted(out, key=lambda item: (-item[1], item[0]))
+
+
 def drift_paths(info):
     """List the files which have drift, worst first
 
@@ -1026,7 +1045,7 @@ def drift_state_counts(info):
         dict: Maps state (WANTED, ACCEPTED, DRIFT) to the number of hunks
     """
     states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.REORDER: 0,
-              drift.DRIFT: 0}
+              drift.ABSENT: 0, drift.DRIFT: 0}
     for verdicts in info.verdicts.values():
         for vdt in verdicts:
             states[vdt.state] += 1
@@ -1144,6 +1163,12 @@ def drift_show_report(info, show_list, show_diff):
     if info.orphans:
         tout.info(f'  {len(info.orphans)} commit(s) picked from a series no '
                   "tracked source has, treated as downstream ('-o' to list)")
+    absent = drift_absent_paths(info)
+    if absent:
+        lines = sum(count for _, count in absent)
+        tout.info(f'  {len(absent)} file(s) upstream has which this tree '
+                  f'never received ({lines} lines), reported apart from '
+                  "drift ('drift-fix --missing')")
     tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} '
               f'file(s), {drift_percent(states):.0f}% of divergence')
 
@@ -1182,8 +1207,8 @@ def drift_show_report(info, show_list, show_diff):
         print(drift.build_patch(info.fdiffs, info.verdicts), end='')
 
     tout.info('')
-    tout.info(f"Run 'pickman drift-fix' to revert these to upstream, or "
-              f"'pickman drift-accept' to record one as intentional")
+    tout.info("Run 'pickman drift-fix' to revert these to upstream, or "
+              "'pickman drift-accept' to record one as intentional")
     return 1
 
 
@@ -1327,6 +1352,70 @@ def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
     return 0
 
 
+def drift_absent_reason(dbs, source_id, paths):
+    """Find parked commits which add the files a restore would bring back
+
+    An absent file is often not cruft at all: the commit which adds it was
+    parked as a conflict and never retried.  Saying so explains the change far
+    better than guessing at a mangled conflict resolution.
+
+    Args:
+        dbs (Database): Database instance
+        source_id (int): Source branch id
+        paths (list of str): Files which are absent downstream
+
+    Return:
+        dict: Maps path to the (hash, subject) parked commit which adds it
+    """
+    parked = status_parked(dbs, source_id)
+    if not parked:
+        return {}
+    want = set(paths)
+    found = {}
+    for _, chash, subj in parked:
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            continue
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                if path in want:
+                    found.setdefault(path, (chash, subj))
+    return found
+
+
+def drift_absent_msg(area, paths, info, reasons):
+    """Compose the commit message for restoring files upstream has
+
+    Args:
+        area (str): Area of the tree, e.g. 'arch/arm'
+        paths (list of str): Files being restored
+        info (DriftInfo): Result from drift_collect()
+        reasons (dict): Parked commits by path, from drift_absent_reason()
+
+    Return:
+        str: Commit message
+    """
+    files = chr(10).join(f' - {path}' for path in paths)
+    out = [f'{area}: Restore files which upstream has',
+           '',
+           'Upstream has these files and this tree never received them.',
+           'Nothing was mangled on the way in: the change simply did not',
+           'arrive, so this adds them back as upstream has them at',
+           f'{info.base[:12]}',
+           '']
+    if reasons:
+        named = sorted(set(reasons.values()))
+        out += ['The commit which adds them is parked as a conflict, so this',
+                'is work which was tried and set aside rather than lost:', '']
+        out += [f' - {chash[:11]} {subj}' for chash, subj in named]
+        out += ['']
+    out += ['Note that a restored file may need a Makefile or Kconfig entry',
+            'to be of any use, so this wants a build before it is merged.',
+            '',
+            f'This restores {len(paths)} file(s):',
+            files, '']
+    return chr(10).join(out)
+
+
 def drift_commit_msg(area, paths, info):
     """Compose the commit message for a revert of drift in one area
 
@@ -1353,7 +1442,8 @@ def drift_commit_msg(area, paths, info):
         f'{files}\n')
 
 
-def drift_revert_area(info, area, paths, branch):
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
+def drift_revert_area(info, area, paths, branch, msg=None, missing=False):
     """Create a branch which reverts the drift in one area of the tree
 
     Args:
@@ -1361,11 +1451,14 @@ def drift_revert_area(info, area, paths, branch):
         area (str): Area of the tree, e.g. 'drivers/video'
         paths (list of str): Files to revert
         branch (str): Downstream branch to base the revert on
+        msg (str): Commit message, or None to describe it as drift
+        missing (bool): True to restore files upstream has, rather than
+            revert drift hunks
 
     Return:
         str: Name of the branch created, or None on failure
     """
-    name = 'drift-' + area.replace('/', '-')
+    name = ('missing-' if missing else 'drift-') + area.replace('/', '-')
     if gitutil.branch_exists(name):
         tout.info(f'Deleting existing branch {name}')
         gitutil.delete_branch(name)
@@ -1373,7 +1466,8 @@ def drift_revert_area(info, area, paths, branch):
 
     wanted = set(paths)
     fdiffs = [fdiff for fdiff in info.fdiffs if fdiff.path in wanted]
-    patch = drift.build_patch(fdiffs, info.verdicts)
+    states = (drift.ABSENT,) if missing else (drift.DRIFT,)
+    patch = drift.build_patch(fdiffs, info.verdicts, states)
 
     if patch:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.patch',
@@ -1387,7 +1481,8 @@ def drift_revert_area(info, area, paths, branch):
             # to deal with: the point here is to match it exactly
             gitutil.apply_patch(pname, reverse=True, whitespace='nowarn')
         except Exception as exc:  # pylint: disable=broad-except
-            tout.error(f'Failed to revert drift in {area}: {exc}')
+            what = 'restore' if missing else 'revert drift in'
+            tout.error(f'Failed to {what} {area}: {exc}')
             return None
         finally:
             os.unlink(pname)
@@ -1400,10 +1495,11 @@ def drift_revert_area(info, area, paths, branch):
     # Commit these paths and no others, so that anything else in the tree is
     # left where it is
     gitutil.add(paths)
-    gitutil.commit_paths(drift_commit_msg(area, paths, info), paths)
+    gitutil.commit_paths(msg or drift_commit_msg(area, paths, info), paths)
     return name
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def do_drift_fix(args, dbs):
     """Revert drift back to upstream, one area of the tree at a time
 
@@ -1426,10 +1522,17 @@ def do_drift_fix(args, dbs):
     if not info:
         return 1
 
-    bad = drift_paths(info)
-    if not bad:
-        tout.info('No drift from upstream ✓')
-        return 0
+    missing = getattr(args, 'missing', False)
+    if missing:
+        bad = drift_absent_paths(info)
+        if not bad:
+            tout.info('No files missing from upstream ✓')
+            return 0
+    else:
+        bad = drift_paths(info)
+        if not bad:
+            tout.info('No drift from upstream ✓')
+            return 0
 
     bad = drift_select(bad, info, getattr(args, 'paths', None),
                        getattr(args, 'unambiguous', False))
@@ -1448,13 +1551,21 @@ def do_drift_fix(args, dbs):
     try:
         for area, paths in todo:
             tout.info(f'{area}: reverting {len(paths)} file(s)')
-            name = drift_revert_area(info, area, paths, args.branch)
+            if missing:
+                reasons = drift_absent_reason(
+                    dbs, dbs.source_get_id(args.source), paths)
+                msg = drift_absent_msg(area, paths, info, reasons)
+            else:
+                msg = drift_commit_msg(area, paths, info)
+            name = drift_revert_area(info, area, paths, args.branch, msg,
+                                     missing)
             if not name:
                 ret = 1
                 continue
             if args.push:
-                title = f'{area}: Drop unintended deltas from upstream'
-                desc = drift_commit_msg(area, paths, info)
+                title = (f'{area}: Restore files which upstream has' if missing
+                         else f'{area}: Drop unintended deltas from upstream')
+                desc = msg
                 if not push_mr(args, name, title, desc):
                     ret = 1
             else:
@@ -1630,6 +1741,7 @@ def parked_retry(dbs, parked, branch, dry_run=False):
     return applied, still, name
 
 
+# pylint: disable-next=too-many-branches,too-many-locals
 def do_parked(args, dbs):
     """Report the commits parked as conflicts, and optionally retry them
 
@@ -1722,7 +1834,7 @@ def parked_warning(source, parked):
             f"merges) not landed - run 'pickman status {source}' to review")
 
 
-def do_status(args, dbs):
+def do_status(args, dbs):  # pylint: disable=too-many-locals
     """Summarise the downstream branch against the upstream source
 
     Reports the upstream series not yet brought in, the commits parked as
@@ -2672,7 +2784,7 @@ def _subtree_record(dbs, source, squash_hash, merge_hash):
               f'{merge_hash[:12]}')
 
 
-def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: disable=too-many-arguments
+def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: disable=too-many-arguments,too-many-locals
                          target, push=True):
     """Apply a subtree update on a branch and create a merge request
 
@@ -2803,7 +2915,7 @@ def _prepare_get_commits(dbs, source, remote, target):
         return info, None
 
 
-def prepare_apply(dbs, source, branch, remote=None, target=None,  # pylint: disable=too-many-arguments
+def prepare_apply(dbs, source, branch, remote=None, target=None,  # pylint: disable=too-many-arguments,too-many-locals
                    info=None):
     """Prepare for applying commits from a source branch
 
@@ -2955,7 +3067,7 @@ def handle_already_applied(dbs, source, commits, branch_name, conv_log, args,
     return 0
 
 
-def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # pylint: disable=too-many-locals
+def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # pylint: disable=too-many-locals,too-many-branches
     """Execute the apply operation: run agent, update database, push MR
 
     Args:

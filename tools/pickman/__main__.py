@@ -125,6 +125,10 @@ def add_main_commands(subparsers):
     drift_fix.add_argument('-u', '--unambiguous', action='store_true',
                            help='Only fix files which no downstream commit '
                                 'has touched, whose drift cannot be wanted')
+    drift_fix.add_argument('--missing', action='store_true',
+                           help='Restore files which upstream has and this '
+                                'tree never received, instead of reverting '
+                                'drift hunks')
     drift_fix.add_argument('-p', '--push', action='store_true',
                            help='Push branch and create GitLab MR')
     drift_fix.add_argument('-r', '--remote', default='ci',

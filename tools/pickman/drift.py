@@ -78,7 +78,7 @@ Accept = namedtuple('Accept', ['pattern', 'fingerprint', 'reason'])
 # The outcome of classifying one hunk
 #
 # hunk: the Hunk itself
-# state: one of WANTED, ACCEPTED, REORDER or DRIFT
+# state: one of WANTED, ACCEPTED, REORDER, ABSENT or DRIFT
 # reason: for ACCEPTED, the reason from the accept file; for WANTED, the
 #     downstream commit which accounts for the hunk; None for the rest
 Verdict = namedtuple('Verdict', ['hunk', 'state', 'reason'])
@@ -91,6 +91,11 @@ ACCEPTED = 'accepted'
 
 # A hunk which only moves lines about, so it says the same thing as upstream
 REORDER = 'reorder'
+
+# A hunk in a file which upstream has and this tree never received.  Nothing
+# was mangled here: the change simply never arrived, so putting it back adds a
+# whole file rather than tidying one
+ABSENT = 'absent'
 
 # A hunk which nothing accounts for, and which should go back to upstream
 DRIFT = 'drift'
@@ -354,8 +359,8 @@ def classify(fdiff, accepts, blame=None):
     """Classify each hunk of a file as wanted, accepted, reorder or drift
 
     A hunk is wanted if a downstream-original commit accounts for it, accepted
-    if the accept file exempts it, a reorder if it only shuffles lines, and
-    drift otherwise.
+    if the accept file exempts it, a reorder if it only shuffles lines, absent
+    if the whole file never arrived from upstream, and drift otherwise.
 
     Where blame is available, a hunk which only removes lines is always
     treated as wanted, since blame can say who wrote a line but not who
@@ -386,6 +391,10 @@ def classify(fdiff, accepts, blame=None):
         ent = match_accept(accepts, hunk.path, hunk.fingerprint)
         if ent:
             verdicts.append(Verdict(hunk, ACCEPTED, ent.reason))
+        elif fdiff.deleted and blame is None:
+            # Upstream has this file and this tree does not, so the change
+            # never arrived rather than being mangled on the way in
+            verdicts.append(Verdict(hunk, ABSENT, None))
         elif file_reorder or is_reorder(hunk):
             verdicts.append(Verdict(hunk, REORDER, None))
         elif blame is None:
@@ -403,8 +412,8 @@ def classify(fdiff, accepts, blame=None):
     return verdicts
 
 
-def build_patch(fdiffs, verdicts):
-    """Build a patch which reverts the drift hunks
+def build_patch(fdiffs, verdicts, states=(DRIFT,)):
+    """Build a patch which reverts the hunks in some states
 
     The patch is expressed as upstream-to-downstream, the same direction as
     the diff it came from, so it must be applied in reverse to take the tree
@@ -414,6 +423,7 @@ def build_patch(fdiffs, verdicts):
     Args:
         fdiffs (list of FileDiff): Files which differ from upstream
         verdicts (dict): Maps path to the list of Verdict for that file
+        states (tuple of str): States to revert, DRIFT alone by default
 
     Return:
         str: Patch text, empty if there is nothing to revert
@@ -421,7 +431,7 @@ def build_patch(fdiffs, verdicts):
     out = []
     for fdiff in fdiffs:
         drift = [vdt.hunk for vdt in verdicts.get(fdiff.path, [])
-                 if vdt.state == DRIFT]
+                 if vdt.state in states]
         if not drift:
             continue
         out += fdiff.header
