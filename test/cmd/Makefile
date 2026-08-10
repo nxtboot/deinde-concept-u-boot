@@ -9,6 +9,7 @@ obj-$(CONFIG_CONSOLE_RECORD) += test_echo.o
 endif
 ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_HUSH_OLD_PARSER) += showvar.o
+obj-$(CONFIG_ENV_IS_IN_SANDBOX) += eraseenv.o
 endif
 ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_PAUSE) += test_pause.o
@@ -26,7 +27,13 @@ obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CMD_CHID) += chid.o
 obj-$(CONFIG_CMD_CONFIG) += config.o
 obj-$(CONFIG_COREBOOT_SYSINFO) += coreboot.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_EDITENV) += editenv.o
+endif
 obj-$(CONFIG_CMD_FDT) += fdt.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_GREPENV) += grepenv.o
+endif
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
 obj-$(CONFIG_CMD_I3C) += i3c.o

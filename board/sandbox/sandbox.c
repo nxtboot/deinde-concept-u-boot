@@ -89,6 +89,14 @@ unsigned long timer_read_counter(void)
 
 /* specific order for sandbox: nowhere is the first value, used by default */
 static enum env_location env_locations[] = {
+#ifdef CONFIG_ENV_IS_IN_SANDBOX
+	/*
+	 * This is first so that -E selects it, but it reports itself as
+	 * unavailable when that option is absent, leaving the rest of the
+	 * list to work as before.
+	 */
+	ENVL_SANDBOX,
+#endif
 #ifdef CONFIG_ENV_IS_NOWHERE
 	ENVL_NOWHERE,
 #endif

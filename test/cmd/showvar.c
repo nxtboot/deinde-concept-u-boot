@@ -11,7 +11,7 @@
 #include <test/ut.h>
 
 /* Test 'showvar' with local variables which exist */
-static int cmd_test_showvar(struct unit_test_state *uts)
+static int cmd_test_showvar_base(struct unit_test_state *uts)
 {
 	/* a local variable is created by a plain assignment */
 	ut_assertok(run_command("fred=42", 0));
@@ -42,7 +42,7 @@ static int cmd_test_showvar(struct unit_test_state *uts)
 
 	return 0;
 }
-CMD_TEST(cmd_test_showvar, UTF_CONSOLE);
+CMD_TEST(cmd_test_showvar_base, UTF_CONSOLE);
 
 /* Test 'showvar' with variables which do not exist */
 static int cmd_test_showvar_missing(struct unit_test_state *uts)
@@ -71,3 +71,24 @@ static int cmd_test_showvar_missing(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_showvar_missing, UTF_CONSOLE);
+
+/* Test that 'showvar' rejects options, since it has none */
+static int cmd_test_showvar_opt(struct unit_test_state *uts)
+{
+	ut_assertok(run_command("dino=purple", 0));
+	ut_assert_console_end();
+
+	/* an option is a usage error, not a variable which is not defined */
+	ut_asserteq(1, run_command("showvar -x", 0));
+	ut_assert_skip_to_line("showvar name ...");
+	ut_assert_skipline();
+	ut_assert_console_end();
+
+	/* a name is still a name, even after the option is rejected */
+	ut_assertok(run_command("showvar dino", 0));
+	ut_assert_nextline("dino=purple");
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_showvar_opt, UTF_CONSOLE);

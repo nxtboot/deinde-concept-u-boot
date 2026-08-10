@@ -80,11 +80,12 @@ static bool env_has_inited(enum env_location location)
 static void env_set_inited(enum env_location location)
 {
 	/*
-	 * We're using a 32-bits bitmask stored in gd (env_has_init)
-	 * using the above enum value as the bit index. We need to
-	 * make sure that we're not overflowing it.
+	 * We're using a bitmask stored in gd (env_has_init) using the above
+	 * enum value as the bit index. We need to make sure that we're not
+	 * overflowing it, so check against the width of that field rather
+	 * than a machine word, which is much wider.
 	 */
-	BUILD_BUG_ON(ENVL_COUNT > BITS_PER_LONG);
+	BUILD_BUG_ON(ENVL_COUNT > sizeof(gd->env_has_init) * 8);
 
 	gd->env_has_init |= BIT(location);
 }

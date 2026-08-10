@@ -15,6 +15,7 @@ obj-$(CONFIG_ENV_IS_IN_EEPROM) += embedded.o
 extra-$(CONFIG_ENV_IS_IN_FLASH) += embedded.o
 obj-$(CONFIG_ENV_IS_IN_NVRAM) += embedded.o
 obj-$(CONFIG_ENV_IS_IN_NVRAM) += nvram.o
+obj-$(CONFIG_ENV_IS_IN_SANDBOX) += sandbox.o
 obj-$(CONFIG_ENV_IS_IN_ONENAND) += onenand.o
 obj-$(CONFIG_ENV_IS_IN_REMOTE) += remote.o
 obj-$(CONFIG_ENV_IS_IN_UBI) += ubi.o

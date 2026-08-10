@@ -37,6 +37,7 @@ depends on HUSH_PARSER
 config HUSH_OLD_PARSER
 	bool "Use hush old parser"
 	default y
+	select GETOPT
 	help
 	  This option enables the old flavor of hush based on hush Busybox from
 	  2005.
@@ -776,6 +777,7 @@ config CMD_IMPORTENV
 config CMD_EDITENV
 	bool "editenv"
 	default y
+	select GETOPT
 	help
 	  Edit environment variable.
 

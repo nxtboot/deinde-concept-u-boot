@@ -151,6 +151,7 @@ struct sandbox_state {
 	bool ram_buf_rm;		/* Remove RAM buffer file after read */
 	bool write_ram_buf;		/* Write RAM buffer on exit */
 	const char *state_fname;	/* File containing sandbox state */
+	const char *env_fname;		/* File containing the environment */
 	void *state_fdt;		/* Holds saved state for sandbox */
 	bool read_state;		/* Read sandbox state on startup */
 	bool write_state;		/* Write sandbox state on exit */
