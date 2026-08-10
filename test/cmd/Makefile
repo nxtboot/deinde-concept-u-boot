@@ -45,7 +45,7 @@ endif
 obj-$(CONFIG_CMD_MEMORY) += mem_copy.o
 obj-$(CONFIG_CMD_MEM_SEARCH) += mem_search.o
 ifdef CONFIG_CONSOLE_RECORD
-obj-$(CONFIG_CMD_MEMORY) += mm.o
+obj-$(CONFIG_CMD_MEMORY) += mm.o nm.o
 endif
 obj-$(CONFIG_CMD_PART) += part.o
 obj-$(CONFIG_CMD_PART_FIND) += part_find.o
