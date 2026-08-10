@@ -116,6 +116,7 @@ enum env_location {
 	ENVL_MTD,
 	ENVL_UBI,
 	ENVL_SCSI,
+	ENVL_SANDBOX,
 	ENVL_NOWHERE,
 
 	ENVL_COUNT,

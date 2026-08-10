@@ -100,6 +100,15 @@ config ENV_IS_DEFAULT
 		     !ENV_IS_IN_UBI && !ENV_IS_IN_MTD && !ENV_IS_IN_SCSI
 	select ENV_IS_NOWHERE
 
+config ENV_IS_IN_SANDBOX
+	bool "Environment is in a sandbox host file"
+	depends on SANDBOX
+	help
+	  Define this to store the environment in a file on the host
+	  filesystem, so that it survives a restart of sandbox. The file is
+	  named with the -E option; without it this location is unavailable
+	  and the next one is used instead.
+
 config ENV_IS_NOWHERE
 	bool "Environment is not stored"
 	help
