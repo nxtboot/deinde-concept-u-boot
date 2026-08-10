@@ -83,6 +83,7 @@
 #include <cli.h>
 #include <cli_hush.h>
 #include <command.h>        /* find_cmd */
+#include <getopt.h>         /* getopt, getopt_pop */
 #include <vsprintf.h>
 #endif
 #ifndef __U_BOOT__
@@ -3653,14 +3654,19 @@ static char *make_string(char **inp, int *nonnull)
 }
 
 #ifdef __U_BOOT__
-static int do_showvar(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_showvar(struct getopt_state *gs)
 {
-	int i, k;
+	int k;
 	int rcode = 0;
 	struct variables *cur;
+	const char *name;
 
-	if (argc == 1) {		/* Print all env variables	*/
+	/* the command takes no options, so any is a mistake */
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	name = getopt_pop(gs);
+	if (!name) {			/* Print all env variables	*/
 		for (cur = top_vars; cur; cur = cur->next) {
 			printf ("%s=%s\n", cur->name, cur->value);
 			if (ctrlc ()) {
@@ -3670,9 +3676,7 @@ static int do_showvar(struct cmd_tbl *cmdtp, int flag, int argc,
 		}
 		return 0;
 	}
-	for (i = 1; i < argc; ++i) {	/* print single env variables	*/
-		char *name = argv[i];
-
+	do {				/* print single env variables	*/
 		k = -1;
 		for (cur = top_vars; cur; cur = cur->next) {
 			if(strcmp (cur->name, name) == 0) {
@@ -3688,11 +3692,11 @@ static int do_showvar(struct cmd_tbl *cmdtp, int flag, int argc,
 			printf ("## Error: \"%s\" not defined\n", name);
 			rcode ++;
 		}
-	}
+	} while ((name = getopt_pop(gs)));
 	return rcode;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	showvar, CONFIG_SYS_MAXARGS, 1,	do_showvar,
 	"print local hushshell variables",
 	"\n    - print values of all hushshell variables\n"
