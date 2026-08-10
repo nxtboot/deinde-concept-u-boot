@@ -231,6 +231,13 @@ available options. Some of these are described below:
   Remove the memory file when starting up. This only has any effect if `-m` is
   used.
 
+-E, --env <filename>
+  Provides the filename to hold the environment. With this option 'saveenv'
+  writes the environment to that file and it is read back on the next start,
+  so the environment survives a restart of sandbox. 'eraseenv' removes the
+  file. Without this option there is no persistent environment, which is the
+  default behaviour.
+
 -s, --state <filename>
   Provides the filename of the state file. This is in devicetree format, with a
   node for each device which has written its state on exit. The file can be used

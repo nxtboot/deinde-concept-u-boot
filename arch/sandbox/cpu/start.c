@@ -322,6 +322,15 @@ static int sandbox_cmdline_cb_state(struct sandbox_state *state,
 }
 SANDBOX_CMDLINE_OPT_SHORT(state, 's', 1, "Specify the sandbox state FDT");
 
+static int sandbox_cmdline_cb_env(struct sandbox_state *state, const char *arg)
+{
+	state->env_fname = arg;
+
+	return 0;
+}
+SANDBOX_CMDLINE_OPT_SHORT(env, 'E', 1,
+			  "Specify a file to hold the environment");
+
 static int sandbox_cmdline_cb_read(struct sandbox_state *state,
 				   const char *arg)
 {
