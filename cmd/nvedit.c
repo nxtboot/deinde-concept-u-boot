@@ -422,25 +422,28 @@ static int do_env_flags(struct cmd_tbl *cmdtp, int flag, int argc, char *const a
  * Interactively edit an environment variable
  */
 #if defined(CONFIG_CMD_EDITENV)
-static int do_env_edit(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_env_edit(struct getopt_state *gs)
 {
 	char buffer[CONFIG_SYS_CBSIZE];
 	bool use_expo = false;
 	const char *varname;
 	char *init_val;
+	int opt;
 
-	if (IS_ENABLED(CONFIG_CMD_EDITENV_EXPO) &&
-	    argc >= 2 && !strcmp(argv[1], "-e")) {
-		use_expo = true;
-		argc--;
-		argv++;
+	while ((opt = getopt(gs, IS_ENABLED(CONFIG_CMD_EDITENV_EXPO) ?
+			     "+e" : "+")) > 0) {
+		switch (opt) {
+		case 'e':
+			use_expo = true;
+			break;
+		default:
+			return CMD_RET_USAGE;
+		}
 	}
 
-	if (argc < 2)
+	varname = getopt_pop(gs);
+	if (!varname)
 		return CMD_RET_USAGE;
-
-	varname = argv[1];
 
 	/* before import into hashtable */
 	if (!(gd->flags & GD_FLG_ENV_READY))
@@ -1087,7 +1090,7 @@ static struct cmd_tbl cmd_env_sub[] = {
 	U_BOOT_CMD_MKENT(default, 1, 0, do_env_default, "", ""),
 	U_BOOT_CMD_MKENT(delete, CONFIG_SYS_MAXARGS, 0, do_env_delete, "", ""),
 #if defined(CONFIG_CMD_EDITENV)
-	U_BOOT_CMD_MKENT(edit, 3, 0, do_env_edit, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(edit, 3, 0, do_env_edit, "", ""),
 #endif
 #if defined(CONFIG_CMD_ENV_CALLBACK)
 	U_BOOT_CMD_MKENT(callbacks, 1, 0, do_env_callback, "", ""),
@@ -1233,7 +1236,7 @@ U_BOOT_CMD(
  */
 
 #if defined(CONFIG_CMD_EDITENV)
-U_BOOT_CMD_COMPLETE(
+U_BOOT_CMD_GETOPT_COMPLETE(
 	editenv, 3, 0,	do_env_edit,
 	"edit environment variable",
 #if defined(CONFIG_CMD_EDITENV_EXPO)

@@ -66,6 +66,17 @@ static int cmd_test_editenv_delete(struct unit_test_state *uts)
 	ut_assert_skip_to_linen("    - edit environment variable");
 	ut_assert_console_end();
 
+	/*
+	 * An unknown option is rejected before anything is read, so there is
+	 * no 'edit:' prompt and no attempt to edit a variable of that name.
+	 */
+	ut_asserteq(1, run_command("editenv -x", 0));
+	ut_assert_nextlinen("editenv - edit environment variable");
+	ut_assert_nextline_empty();
+	ut_assert_nextlinen("Usage:");
+	ut_assert_skip_to_linen("    - edit environment variable");
+	ut_assert_console_end();
+
 	return 0;
 }
 CMD_TEST(cmd_test_editenv_delete, UTF_CONSOLE);

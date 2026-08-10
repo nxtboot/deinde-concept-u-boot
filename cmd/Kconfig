@@ -776,6 +776,7 @@ config CMD_IMPORTENV
 config CMD_EDITENV
 	bool "editenv"
 	default y
+	select GETOPT
 	help
 	  Edit environment variable.
 
