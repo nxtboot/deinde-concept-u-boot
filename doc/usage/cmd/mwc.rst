@@ -74,3 +74,11 @@ Return value
 
 The return value $? is 0 (true) when the command is stopped with Ctrl-C. It is
 1 (false) if any of the three arguments is missing.
+
+See also
+--------
+
+* :doc:`mdc<mdc>` for displaying memory repeatedly
+* *mw* for writing a value to memory once, or filling a region
+* :doc:`mm<mm>`, :doc:`nm<nm>` for modifying memory interactively
+* :doc:`base<base>` for the address offset applied to these commands

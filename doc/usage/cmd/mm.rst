@@ -100,3 +100,12 @@ Return value
 The return value $? is 0 (true) if the command completes. It is 1 (false) if the
 address is missing, if more than one address is given, or if the data_size is
 not valid.
+
+See also
+--------
+
+* :doc:`nm<nm>` for modifying memory at a constant address
+* :doc:`mdc<mdc>` for displaying memory repeatedly
+* :doc:`md<md>` for displaying memory once
+* *mw* for writing a value to memory without prompting
+* :doc:`base<base>` for the address offset applied to these commands
