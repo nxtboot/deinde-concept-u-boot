@@ -11,7 +11,7 @@
 #include <test/ut.h>
 
 /* Test 'showvar' with local variables which exist */
-static int cmd_test_showvar(struct unit_test_state *uts)
+static int cmd_test_showvar_base(struct unit_test_state *uts)
 {
 	/* a local variable is created by a plain assignment */
 	ut_assertok(run_command("fred=42", 0));
@@ -42,7 +42,7 @@ static int cmd_test_showvar(struct unit_test_state *uts)
 
 	return 0;
 }
-CMD_TEST(cmd_test_showvar, UTF_CONSOLE);
+CMD_TEST(cmd_test_showvar_base, UTF_CONSOLE);
 
 /* Test 'showvar' with variables which do not exist */
 static int cmd_test_showvar_missing(struct unit_test_state *uts)
