@@ -124,6 +124,68 @@ static int env_sandbox_erase(void)
 	return 0;
 }
 
+/**
+ * find_sandbox_prio() - Find the priority of this location
+ *
+ * Return: priority of ENVL_SANDBOX in the board's list, or -ENOENT if it is
+ * not present
+ */
+static int find_sandbox_prio(void)
+{
+	int prio;
+
+	for (prio = 0; ; prio++) {
+		enum env_location loc = env_get_location(ENVOP_SAVE, prio);
+
+		if (loc == ENVL_UNKNOWN)
+			return -ENOENT;
+		if (loc == ENVL_SANDBOX)
+			return prio;
+	}
+}
+
+int sandbox_env_set_file(const char *fname)
+{
+	static int old_prio;
+	static bool attached;
+	int prio, ret;
+
+	state_get_current()->env_fname = fname;
+
+	if (!fname) {
+		if (attached) {
+			gd->env_load_prio = old_prio;
+			attached = false;
+		}
+
+		return 0;
+	}
+
+	prio = find_sandbox_prio();
+	if (prio < 0)
+		return prio;
+
+	/* mark the location as available, now that it has a file */
+	ret = env_init();
+	if (ret)
+		return ret;
+
+	/*
+	 * Select the location so that 'saveenv' and 'eraseenv' use it. Do not
+	 * call env_load(): that would replace the live environment with the
+	 * contents of the file, or with the default when the file is missing,
+	 * losing anything set up at start-up such as the variables imported
+	 * from the devicetree.
+	 */
+	if (!attached) {
+		old_prio = gd->env_load_prio;
+		attached = true;
+	}
+	gd->env_load_prio = prio;
+
+	return 0;
+}
+
 U_BOOT_ENV_LOCATION(sandbox) = {
 	.location	= ENVL_SANDBOX,
 	.init		= env_sandbox_init,

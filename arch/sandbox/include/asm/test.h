@@ -81,6 +81,19 @@ enum cros_ec_test_t {
  * @bus:	sandbox I2C bus to adjust
  * @test_mode:	true to select test mode, false to run normally
  */
+/**
+ * sandbox_env_set_file() - Set the file holding the environment
+ *
+ * This provides at runtime what the -E option provides at start-up, so that a
+ * test can obtain a persistent environment without the sandbox binary having
+ * been started with that option. The environment is reloaded from @fname, so
+ * 'saveenv' and 'eraseenv' then act on it.
+ *
+ * @fname: File to use, or NULL to go back to having no persistent environment
+ * Return: 0 if OK, -ve on error
+ */
+int sandbox_env_set_file(const char *fname);
+
 void sandbox_i2c_set_test_mode(struct udevice *bus, bool test_mode);
 
 enum sandbox_i2c_eeprom_test_mode {
