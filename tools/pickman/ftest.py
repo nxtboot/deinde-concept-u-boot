@@ -8865,6 +8865,18 @@ class TestDriftBuild(unittest.TestCase):
         self.assertFalse(built)
         self.assertIn('has no member named', errors)
 
+    def test_shell_operators_work(self):
+        """Test that a chained command runs as written
+
+        Splitting into words hands '&&' to the first program, which fails in
+        a way that looks like the revert being at fault - and since every
+        area then declines, it reads as caution rather than a broken command.
+        """
+        command.TEST_RESULT = None
+        with terminal.capture():
+            self.assertEqual(control.drift_build_ok('true && true')[0], True)
+            self.assertEqual(control.drift_build_ok('true && false')[0], False)
+
     def test_build_error_lines_capped(self):
         """Test that a long build failure is trimmed"""
         out = chr(10).join(f'error line {num}' for num in range(50))

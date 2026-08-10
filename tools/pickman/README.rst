@@ -702,8 +702,16 @@ explains the change far better than guessing at a conflict resolution.
 Each area is checked before it is committed, by default with
 ``um build sandbox``; a non-zero exit drops that area rather than offering it.
 The command is whatever ``--build-cmd`` or the ``[build]`` section of
-``~/.config/pickman.conf`` says, and only its exit status is looked at, so it
-may run tests as well as build.  That is worth doing: a revert can compile
+``~/.config/pickman.conf`` says.  It runs through a shell and only its exit
+status is looked at, so it may chain and run tests as well as build::
+
+    [build]
+    command = um build sandbox && um test dm
+
+It is run once against the tree as it stands before any area is touched.  A
+command which cannot pass a clean tree says nothing useful about a reverted
+one, and would otherwise decline every area - which reads as caution rather
+than as a broken command.  That is worth doing: a revert can compile
 perfectly and still be wrong, since a downstream test may depend on the very
 bytes being reverted - one test reads the first 32 bytes of the README and
 asserts them, so restoring a single leading space there builds fine and fails

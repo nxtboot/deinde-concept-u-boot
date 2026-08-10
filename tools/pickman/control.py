@@ -11,7 +11,6 @@ from datetime import date
 import fnmatch
 import os
 import re
-import shlex
 import sys
 import tempfile
 import time
@@ -1138,7 +1137,11 @@ def drift_build_ok(build_cmd):
             str: The tail of the output when it did not, else ''
     """
     tout.info(f'  building with: {build_cmd}')
-    res = command.run_one(*shlex.split(build_cmd), capture=True,
+    # Run through a shell, so that a command may chain with && or | as the
+    # documentation says it can.  Splitting it into words instead would hand
+    # '&&' to the first program as an argument, which fails in a way that
+    # looks like the revert being at fault
+    res = command.run_one('sh', '-c', build_cmd, capture=True,
                           capture_stderr=True, raise_on_error=False)
     if not res.return_code:
         return True, ''
@@ -1859,6 +1862,17 @@ def do_drift_fix(args, dbs):
         tout.info(f"Each area is checked with '{build_cmd}'; --no-build "
                   'turns that off.  Passing means the check passed, not that '
                   'the revert is right')
+        # If the check cannot pass the tree as it stands, nothing it says
+        # about a reverted tree means anything - and every area would decline,
+        # which looks like caution rather than a broken command
+        tout.info('  checking it passes on the tree as it is...')
+        built, errors = drift_build_ok(build_cmd)
+        if not built:
+            tout.error('That command fails on the unmodified tree, so its '
+                       'verdict on a revert would be meaningless:')
+            for line in errors.splitlines():
+                tout.error(f'    {line}')
+            return 1
 
     orig = gitutil.current_branch()
     ret = 0
