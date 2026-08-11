@@ -48,7 +48,7 @@ int do_io_iod(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		 * Defaults to long if no or incorrect specification.
 		 */
 		size = cmd_get_data_size(argv[0], 4);
-		if (size < 0)
+		if (size < 0 || size == 8)
 			return 1;
 
 		/* Address is specified since argc > 1 */
@@ -100,7 +100,7 @@ int do_io_iow(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		return CMD_RET_USAGE;
 
 	size = cmd_get_data_size(argv[0], 4);
-	if (size < 0)
+	if (size < 0 || size == 8)
 		return 1;
 
 	addr = hextoul(argv[1], NULL);
