@@ -130,3 +130,79 @@ static int cmd_test_iod_usage(struct unit_test_state *uts)
 	return 0;
 }
 IO_TEST(cmd_test_iod_usage);
+
+/* Test 'iow' writing a byte to I/O space */
+static int cmd_test_iow_base(struct unit_test_state *uts)
+{
+	ulong io_addr;
+
+	ut_assertok(get_io_addr(uts, &io_addr));
+	outb(0, io_addr);
+	console_record_reset();
+
+	/* the write is silent; read it back to see that it happened */
+	ut_assertok(run_commandf("iow.b %lx 55", io_addr));
+	ut_assert_console_end();
+	ut_asserteq(0x55, inb(io_addr));
+
+	return 0;
+}
+IO_TEST(cmd_test_iow_base);
+
+/* Test that 'iow' truncates the value to the size of the write */
+static int cmd_test_iow_size(struct unit_test_state *uts)
+{
+	ulong io_addr;
+
+	ut_assertok(get_io_addr(uts, &io_addr));
+	console_record_reset();
+
+	/*
+	 * The emulator stores whatever value reaches it and hands the whole
+	 * thing back on any read, so inb() shows exactly what the command
+	 * passed to the accessor. A byte write drops everything above the
+	 * bottom byte
+	 */
+	ut_assertok(run_commandf("iow.b %lx 1234", io_addr));
+	ut_asserteq(0x34, inb(io_addr));
+
+	/* a word write keeps two bytes */
+	ut_assertok(run_commandf("iow.w %lx 1234", io_addr));
+	ut_asserteq(0x1234, inb(io_addr));
+
+	/* .l is the default, so this one keeps the lot */
+	ut_assertok(run_commandf("iow %lx 123456", io_addr));
+	ut_asserteq(0x123456, inb(io_addr));
+	ut_assert_console_end();
+
+	return 0;
+}
+IO_TEST(cmd_test_iow_size);
+
+/* Test 'iow' with a bad command line */
+static int cmd_test_iow_usage(struct unit_test_state *uts)
+{
+	ulong io_addr;
+
+	ut_assertok(get_io_addr(uts, &io_addr));
+	outb(0x99, io_addr);
+	console_record_reset();
+
+	/* both an address and a value are required */
+	ut_asserteq(1, run_commandf("iow %lx", io_addr));
+	ut_assert_nextline("iow - IO space modify");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("Usage:");
+	ut_assert_skip_to_linen("iow [.b, .w, .l]");
+
+	/* an unsupported size is rejected without any output */
+	ut_asserteq(1, run_commandf("iow.x %lx 11", io_addr));
+	ut_asserteq(1, run_commandf("iow.q %lx 11", io_addr));
+	ut_assert_console_end();
+
+	/* none of the failed commands writes anything */
+	ut_asserteq(0x99, inb(io_addr));
+
+	return 0;
+}
+IO_TEST(cmd_test_iow_usage);
