@@ -85,6 +85,6 @@ write is not acknowledged, so the only way to tell is to read the value back.
 See also
 --------
 
-* *iod* for displaying I/O space
+* :doc:`iod<iod>` for displaying I/O space
 * *mw* for writing a value to memory rather than to I/O space
 * :doc:`mm<mm>`, :doc:`nm<nm>` for modifying memory interactively

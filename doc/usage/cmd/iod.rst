@@ -91,6 +91,6 @@ no address is given, or if the data_size is not one of .b, .w and .l.
 See also
 --------
 
-* *iow* for writing a value to I/O space
+* :doc:`iow<iow>` for writing a value to I/O space
 * :doc:`md<md>` for displaying memory rather than I/O space
 * :doc:`mm<mm>`, :doc:`nm<nm>` for reading and modifying memory interactively
