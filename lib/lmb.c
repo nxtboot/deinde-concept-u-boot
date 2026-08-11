@@ -788,14 +788,14 @@ int lmb_alloc_addr(phys_addr_t base, phys_size_t size, u32 flags)
 		 */
 		if (lmb_addrs_overlap(lmb_memory[rgn].base,
 				      lmb_memory[rgn].size,
-				      base + size - 1, 1)) {
+				      base + size - 1, 1))
 			/* ok, reserve the memory */
-			if (!lmb_reserve(base, size, flags))
-				return 0;
-		}
+			return lmb_reserve(base, size, flags);
+
+		return -EINVAL;
 	}
 
-	return -1;
+	return -EFAULT;
 }
 
 /* Return number of bytes from a given address that are free */
