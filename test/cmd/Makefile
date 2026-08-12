@@ -57,6 +57,9 @@ obj-$(CONFIG_CMD_QFW) += qfw.o
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
 obj-$(CONFIG_CONSOLE_TRUETYPE) += font.o
+ifdef CONFIG_CMD_PCI
+obj-$(CONFIG_CMD_IO) += io.o
+endif
 obj-$(CONFIG_CMD_MBR) += mbr.o
 obj-$(CONFIG_CMD_PINMUX) += pinmux.o
 obj-$(CONFIG_CMD_PWM) += pwm.o
