@@ -77,7 +77,7 @@ data_size is not one of .b, .w, .l and .q.
 See also
 --------
 
-* *loopw* for writing a value to memory in the same way
+* :doc:`loopw<loopw>` for writing a value to memory in the same way
 * :doc:`md<md>` for displaying memory once
 * :doc:`mdc<mdc>` for displaying memory repeatedly, which stops on Ctrl-C
 * :doc:`mtest<mtest>` for checking that memory holds what is written to it
