@@ -60,6 +60,8 @@ See also
 
 * :doc:`bootstage<bootstage>` for timings of the individual steps of the boot,
   which is what the timer is usually wanted for
+* :doc:`timer<timer>` for measuring an interval, which saves working out the
+  difference by hand
 * :doc:`date<date>` for the time of day, which needs an RTC
 * :doc:`sleep<sleep>` for waiting for a given time
 * *time* for timing a single command

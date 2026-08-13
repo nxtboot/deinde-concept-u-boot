@@ -117,3 +117,5 @@ See also
 * :doc:`sntp<sntp>` for setting the clock from a time server on the network
 * :doc:`gettime<gettime>` for the time since U-Boot started, which does not
   need an RTC
+* :doc:`timer<timer>` for measuring an interval rather than reading the time
+  of day
