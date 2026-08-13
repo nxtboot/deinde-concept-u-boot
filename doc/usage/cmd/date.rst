@@ -115,3 +115,5 @@ See also
 * *rtc* for reading and writing individual RTC registers, and for reaching an
   RTC other than the first
 * :doc:`sntp<sntp>` for setting the clock from a time server on the network
+* :doc:`gettime<gettime>` for the time since U-Boot started, which does not
+  need an RTC
