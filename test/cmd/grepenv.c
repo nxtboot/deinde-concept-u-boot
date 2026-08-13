@@ -16,7 +16,6 @@ static int setup_vars(struct unit_test_state *uts)
 {
 	ut_assertok(env_set("ut_grep_one", "ut_alpha"));
 	ut_assertok(env_set("ut_grep_two", "ut_beta"));
-	console_record_reset();
 
 	return 0;
 }
