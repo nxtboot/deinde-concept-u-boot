@@ -58,6 +58,7 @@ endif
 obj-$(CONFIG_CMD_QFW) += qfw.o
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
+obj-$(CONFIG_CMD_DATE) += date.o
 obj-$(CONFIG_CONSOLE_TRUETYPE) += font.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_IO) += io.o
