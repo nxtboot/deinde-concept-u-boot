@@ -47,7 +47,6 @@ static int cmd_test_iod_base(struct unit_test_state *uts)
 	ulong io_addr;
 
 	ut_assertok(get_io_addr(uts, &io_addr));
-	console_record_reset();
 
 	/* the emulator hands back the value last written to its I/O region */
 	outb(2, io_addr);
@@ -66,7 +65,6 @@ static int cmd_test_iod_size(struct unit_test_state *uts)
 
 	ut_assertok(get_io_addr(uts, &io_addr));
 	outb(3, io_addr);
-	console_record_reset();
 
 	/*
 	 * the emulator implements only the first byte of its region, so the
@@ -91,7 +89,6 @@ static int cmd_test_iod_length(struct unit_test_state *uts)
 
 	ut_assertok(get_io_addr(uts, &io_addr));
 	outb(4, io_addr);
-	console_record_reset();
 
 	/*
 	 * the length is a count of values, so this asks for 0x14 bytes, which
@@ -113,7 +110,6 @@ static int cmd_test_iod_usage(struct unit_test_state *uts)
 	ulong io_addr;
 
 	ut_assertok(get_io_addr(uts, &io_addr));
-	console_record_reset();
 
 	/* an address is required */
 	ut_asserteq(1, run_commandf("iod"));
@@ -138,7 +134,6 @@ static int cmd_test_iow_base(struct unit_test_state *uts)
 
 	ut_assertok(get_io_addr(uts, &io_addr));
 	outb(0, io_addr);
-	console_record_reset();
 
 	/* the write is silent; read it back to see that it happened */
 	ut_assertok(run_commandf("iow.b %lx 55", io_addr));
@@ -155,7 +150,6 @@ static int cmd_test_iow_size(struct unit_test_state *uts)
 	ulong io_addr;
 
 	ut_assertok(get_io_addr(uts, &io_addr));
-	console_record_reset();
 
 	/*
 	 * The emulator stores whatever value reaches it and hands the whole
@@ -186,7 +180,6 @@ static int cmd_test_iow_usage(struct unit_test_state *uts)
 
 	ut_assertok(get_io_addr(uts, &io_addr));
 	outb(0x99, io_addr);
-	console_record_reset();
 
 	/* both an address and a value are required */
 	ut_asserteq(1, run_commandf("iow %lx", io_addr));

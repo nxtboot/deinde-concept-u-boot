@@ -66,7 +66,6 @@ static int cmd_test_eraseenv_base(struct unit_test_state *uts)
 
 	/* take over the environment, so that there is something to erase */
 	ut_assertok(sandbox_env_set_file(fname));
-	console_record_reset();
 
 	ut_assertok(env_set("ut_erase", "gravel"));
 	ut_assertok(run_command("saveenv", 0));
