@@ -94,7 +94,7 @@ arguments.
 See also
 --------
 
-* *lzmadec* for the same job on an LZMA stream
+* :doc:`lzmadec<lzmadec>` for the same job on an LZMA stream
 * :doc:`load<load>` for reading a compressed file into memory first
 * :doc:`md<md>` for looking at the result
 * :doc:`bootm<bootm>` for booting an image, which decompresses it as a step
