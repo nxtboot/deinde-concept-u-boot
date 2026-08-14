@@ -36,14 +36,14 @@ static int do_lzmadec(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_USAGE;
 	}
 
-	ret = lzmaBuffToBuffDecompress(map_sysmem(dst, dst_len), &src_len,
-				       map_sysmem(src, 0), dst_len);
+	ret = lzmaBuffToBuffDecompress(map_sysmem(dst, dst_len), &dst_len,
+				       map_sysmem(src, 0), src_len);
 
 	if (ret != SZ_OK)
 		return 1;
-	printf("Uncompressed size: %ld = %#lX\n", (ulong)src_len,
-	       (ulong)src_len);
-	env_set_hex("filesize", src_len);
+	printf("Uncompressed size: %ld = %#lX\n", (ulong)dst_len,
+	       (ulong)dst_len);
+	env_set_hex("filesize", dst_len);
 
 	return 0;
 }
