@@ -139,3 +139,4 @@ See also
 --------
 
 * :doc:`iminfo<iminfo>` for checking an image once it has been loaded
+* :doc:`go<go>` for starting an application once it has been loaded

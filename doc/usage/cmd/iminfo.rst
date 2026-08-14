@@ -127,4 +127,5 @@ See also
 * :doc:`bootm<bootm>` for booting an image whose header this command prints
 * :doc:`load<load>` for reading an image into memory in the first place
 * :doc:`imxtract<imxtract>` for pulling a single component out of an image
+* :doc:`go<go>` for calling the entry point which this command prints
 * *imls* for listing the images stored in flash

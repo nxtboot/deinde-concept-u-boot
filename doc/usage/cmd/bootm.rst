@@ -410,6 +410,7 @@ See also
 --------
 
 * :doc:`iminfo<iminfo>` for checking an image before booting it
+* :doc:`go<go>` for starting an application which returns to U-Boot
 
 .. sectionauthor:: Bartlomiej Sieka <tur@semihalf.com>
 .. sectionauthor:: Simon Glass <sjg@chromium.org>

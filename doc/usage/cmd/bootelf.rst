@@ -59,3 +59,8 @@ Configuration
 
 The bootelf command is only available if CONFIG_CMD_ELF=y. FDT setup by flag -d
 need CONFIG_CMD_ELF_FDT_SETUP=y.
+
+See also
+--------
+
+* :doc:`go<go>` for calling code at an address which is already known
