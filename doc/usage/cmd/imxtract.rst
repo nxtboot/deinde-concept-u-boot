@@ -76,3 +76,9 @@ Configuration
 The imxtract command is only available if CONFIG_CMD_XIMG=y. Support for FIT
 images requires CONFIG_FIT=y. Support for legacy U-Boot images requires
 CONFIG_LEGACY_IMAGE_FORMAT=y.
+
+See also
+--------
+
+* :doc:`iminfo<iminfo>` for listing what an image holds before extracting
+  from it

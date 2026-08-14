@@ -134,3 +134,8 @@ The return value $? is set to 0 (true) if the file was successfully loaded
 even if the number of bytes is less then the specified length.
 
 If an error occurs, the return value $? is set to 1 (false).
+
+See also
+--------
+
+* :doc:`iminfo<iminfo>` for checking an image once it has been loaded
