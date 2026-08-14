@@ -32,6 +32,7 @@ obj-$(CONFIG_CMD_EDITENV) += editenv.o
 endif
 obj-$(CONFIG_CMD_FDT) += fdt.o
 ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_GETTIME) += gettime.o
 obj-$(CONFIG_CMD_GREPENV) += grepenv.o
 endif
 obj-$(CONFIG_CMD_HASH) += hash.o
@@ -58,6 +59,7 @@ endif
 obj-$(CONFIG_CMD_QFW) += qfw.o
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
+obj-$(CONFIG_CMD_DATE) += date.o
 obj-$(CONFIG_CONSOLE_TRUETYPE) += font.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_IO) += io.o
@@ -70,6 +72,7 @@ obj-y += sb.o
 obj-$(CONFIG_CMD_SETEXPR) += setexpr.o
 obj-$(CONFIG_CMD_SMBIOS) += smbios.o
 obj-$(CONFIG_CMD_TEMPERATURE) += temperature.o
+obj-$(CONFIG_CMD_TIMER) += timer.o
 obj-$(CONFIG_CMD_TKEY) += tkey.o
 ifdef CONFIG_NET_LEGACY
 obj-$(CONFIG_CMD_WGET) += wget.o

@@ -55,6 +55,7 @@ static int do_date(struct cmd_tbl *cmdtp, int flag, int argc,
 				/* insert new date & time */
 				if (mk_date(argv[1], &tm) != 0) {
 					puts ("## Bad date format\n");
+					rcode = CMD_RET_FAILURE;
 					break;
 				}
 				/* and write to RTC */
