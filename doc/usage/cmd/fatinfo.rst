@@ -46,3 +46,10 @@ Configuration
 -------------
 
 The fatinfo command is only available if CONFIG_CMD_FAT=y.
+
+See also
+--------
+
+* :doc:`fatload<fatload>` for reading a file from the filesystem
+* :doc:`fatsize<fatsize>` for finding a file's size without reading it
+* :doc:`fsinfo<fsinfo>` for listing the filesystems U-Boot supports

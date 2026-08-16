@@ -81,3 +81,10 @@ The return value $? is set to 0 (true) if the file was successfully loaded
 even if the number of bytes is less then the specified length.
 
 If an error occurs, the return value $? is set to 1 (false).
+
+See also
+--------
+
+* :doc:`fatsize<fatsize>` for finding a file's size without reading it
+* :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
+* :doc:`load<load>` for the same operation on any supported filesystem
