@@ -116,7 +116,7 @@ static int do_fat_rm(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(
 	fatrm,	4,	1,	do_fat_rm,
 	"delete a file",
-	"<interface> [<dev[:part]>] <filename>\n"
+	"<interface> <dev[:part]> <filename>\n"
 	"    - delete a file from 'dev' on 'interface'"
 );
 
@@ -129,7 +129,7 @@ static int do_fat_mkdir(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(
 	fatmkdir,	4,	1,	do_fat_mkdir,
 	"create a directory",
-	"<interface> [<dev[:part]>] <directory>\n"
+	"<interface> <dev[:part]> <directory>\n"
 	"    - create a directory in 'dev' on 'interface'"
 );
 #endif
