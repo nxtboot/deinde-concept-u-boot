@@ -1110,7 +1110,7 @@ int fit_all_image_verify(const void *fit)
 
 	/* Process all image subnodes, check hashes for each */
 	printf("## Checking hash(es) for FIT Image at %08lx ...\n",
-	       (ulong)fit);
+	       (ulong)map_to_sysmem(fit));
 	for (ndepth = 0, count = 0,
 	     noffset = fdt_next_node(fit, images_noffset, &ndepth);
 			(noffset >= 0) && (ndepth > 0);
