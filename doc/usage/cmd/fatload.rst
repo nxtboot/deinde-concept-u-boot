@@ -86,5 +86,6 @@ See also
 --------
 
 * :doc:`fatsize<fatsize>` for finding a file's size without reading it
+* :doc:`fatwrite<fatwrite>` for writing memory back out to a file
 * :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
 * :doc:`load<load>` for the same operation on any supported filesystem

@@ -72,6 +72,7 @@ See also
 
 * :doc:`fatload<fatload>` for reading a file into memory, which also sets
   filesize
+* :doc:`fatwrite<fatwrite>` for creating the file in the first place
 * :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
 * :doc:`size<size>` for the same operation on any supported filesystem
 * *fatls* for listing files with their sizes
