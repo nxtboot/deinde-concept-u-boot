@@ -20,8 +20,8 @@ The fatwrite command writes data from memory to a file on a FAT filesystem,
 creating the file if it does not already exist. Note that you can use the
 :doc:`save command <save>` instead.
 
-The parent directory must exist; fatwrite does not create it. Use *fatmkdir*
-for that.
+The parent directory must exist; fatwrite does not create it. Use
+:doc:`fatmkdir<fatmkdir>` for that.
 
 interface
     interface for accessing the block device (mmc, sata, scsi, usb, ....)
@@ -91,4 +91,5 @@ See also
 
 * :doc:`fatload<fatload>` for reading the data back into memory
 * :doc:`fatsize<fatsize>` for finding the resulting file's size
+* :doc:`fatmkdir<fatmkdir>` for creating the directory to write into
 * :doc:`save<save>` for the same operation on any supported filesystem
