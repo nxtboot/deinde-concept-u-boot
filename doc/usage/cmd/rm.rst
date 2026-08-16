@@ -45,3 +45,10 @@ Return value
 
 The return value $? is set to 0 (true) if the file was deleted,
 1 (false) otherwise.
+
+See also
+--------
+
+* :doc:`fatrm<fatrm>` for the FAT-only form of this command
+* :doc:`mkdir<mkdir>` for creating a directory
+* :doc:`mount<mount>` for making a filesystem available to the VFS

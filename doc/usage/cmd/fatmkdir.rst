@@ -78,6 +78,7 @@ See also
 --------
 
 * :doc:`fatwrite<fatwrite>` for writing files into the new directory
+* :doc:`fatrm<fatrm>` for removing the directory again once it is empty
 * :doc:`mkdir<mkdir>` for the same operation on any supported filesystem
 * :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
 * *fatls* for listing the contents of a directory
