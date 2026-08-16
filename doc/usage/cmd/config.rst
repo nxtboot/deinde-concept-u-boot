@@ -38,3 +38,8 @@ Examples
 
     # Print all lines related to pinctrl
     config pinctrl
+
+See also
+--------
+
+* :doc:`license<license>` for the GPL text, which is embedded in the same way

@@ -38,6 +38,10 @@ endif
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
 obj-$(CONFIG_CMD_I3C) += i3c.o
+ifdef CONFIG_LEGACY_IMAGE_FORMAT
+obj-$(CONFIG_CMD_IMI) += iminfo.o
+endif
+obj-$(CONFIG_CMD_LICENSE) += license.o
 obj-$(CONFIG_CMD_LOADM) += loadm.o
 obj-$(CONFIG_CMD_MALLOC) += malloc.o
 ifdef CONFIG_SANDBOX
@@ -61,6 +65,7 @@ obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
 obj-$(CONFIG_CMD_DATE) += date.o
 obj-$(CONFIG_CONSOLE_TRUETYPE) += font.o
+obj-$(CONFIG_CMD_GO) += go.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_IO) += io.o
 endif
