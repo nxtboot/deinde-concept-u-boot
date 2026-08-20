@@ -96878,3 +96878,37 @@ Not creating a `-v2`/`-v3` or force-pushing. The remote branch is already up-to-
 
 ---
 
+## 2026-08-20: us/main
+
+Branch: cherry-740b825e55c1
+
+Commits:
+- 740b825e55c1 mtd: rpc: renesas: Switch to dev_read_addr_name()
+- ded62933e0e6 mtd: rpc: renesas: Add R-Car Gen5 DT compatible
+- fb178839bfd3 mtd: spi: renesas: Align macro prefixes
+- 08060053829c mtd: spi: renesas: Add R-Car Gen5 DT compatible
+- 844e134e9d21 ufs: rcar-gen5: Switch from FASTAUTO mode to FAST mode
+- b61287948030 arm: renesas: Disable MMC support on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- ba6260a7be9a arm: renesas: Bind RPC on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 22a7f4afee39 arm: renesas: Enable RPC on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 6e4cc078a851 arm: renesas: Store env in HF on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 5862199fac0f arm64: dts: renesas: ironhide: Describe all reserved memory
+- c0ed490da30e arm64: dts: renesas: ironhide: Describe inline ECC carveouts
+- 9167d2079afe Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 12 commits present. Now the final build test:
+
+All 12 commits cherry-picked successfully to branch `cherry-740b825e55c1`.
+
+**Summary:**
+- ✅ All 12 commits applied cleanly with no conflicts
+- ✅ Commit deltas match originals exactly (same files, same line counts)
+- ✅ Final sandbox build passes with no warnings/errors
+- Merge commit `9167d2079afe` verified as NOT the same as the potentially-already-applied `00671532e656` (that one was a pickman merge with different parents/subject), so it was cherry-picked as an empty commit with `--allow-empty` to preserve the history
+- No fix-ups required
+
+Branch `cherry-740b825e55c1` is ready for pushing.
+
+---
+
