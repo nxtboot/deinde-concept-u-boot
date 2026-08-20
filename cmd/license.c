@@ -5,18 +5,21 @@
  */
 
 #include <command.h>
+#include <getopt.h>
 #include <gzip.h>
 #include <malloc.h>
 
 #include "license_data_gz.h"
 #include "license_data_size.h"
 
-static int do_license(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_license(struct getopt_state *gs)
 {
 	char *dst;
 	unsigned long len = data_size;
 	int ret = CMD_RET_SUCCESS;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	dst = malloc(data_size + 1);
 	if (!dst)
@@ -38,7 +41,7 @@ free:
 	return ret;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	license, 1, 1, do_license,
 	"print GPL license text",
 	""

@@ -11,6 +11,7 @@
  */
 
 #include <console.h>
+#include <getopt.h>
 #include <bootretry.h>
 #include <cli.h>
 #include <command.h>
@@ -181,11 +182,15 @@ static int do_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 #ifdef CONFIG_CMD_MX_CYCLIC
-static int do_mem_mdc(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_mem_mdc(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i;
 	ulong count;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -209,11 +214,15 @@ static int do_mem_mdc(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-static int do_mem_mwc(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_mem_mwc(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i;
 	ulong count;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -521,9 +530,10 @@ static int do_mem_base(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-static int do_mem_loop(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_mem_loop(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong	addr, length, i, bytes;
 	int	size;
 	volatile ulong *llp;  /* 64-bit if MEM_SUPPORT_64BIT_DATA */
@@ -531,6 +541,9 @@ static int do_mem_loop(struct cmd_tbl *cmdtp, int flag, int argc,
 	volatile u16 *shortp;
 	volatile u8 *cp;
 	const void *buf;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
@@ -613,9 +626,10 @@ static int do_mem_loop(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 #ifdef CONFIG_LOOPW
-static int do_mem_loopw(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_mem_loopw(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong	addr, length, i, bytes;
 	int	size;
 	volatile ulong *llp;  /* 64-bit if MEM_SUPPORT_64BIT_DATA */
@@ -624,6 +638,9 @@ static int do_mem_loopw(struct cmd_tbl *cmdtp, int flag, int argc,
 	volatile u16 *shortp;
 	volatile u8 *cp;
 	void *buf;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -1269,14 +1286,18 @@ static int do_mem_crc(struct cmd_tbl *cmdtp, int flag, int argc,
 #endif
 
 #ifdef CONFIG_CMD_RANDOM
-static int do_random(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_random(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long addr, len;
 	unsigned long seed; // NOT INITIALIZED ON PURPOSE
 	unsigned int *buf, *start;
 	unsigned char *buf8;
 	unsigned int i;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 3 || argc > 4)
 		return CMD_RET_USAGE;
@@ -1388,14 +1409,14 @@ U_BOOT_CMD(
 	"base off\n    - set address offset for memory commands to 'off'"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	loop,	3,	1,	do_mem_loop,
 	"infinite loop on address range",
 	"[.b, .w, .l" HELP_Q "] address number_of_objects"
 );
 
 #ifdef CONFIG_LOOPW
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	loopw,	4,	1,	do_mem_loopw,
 	"infinite write loop on address range",
 	"[.b, .w, .l" HELP_Q "] address number_of_objects data_to_write"
@@ -1411,13 +1432,13 @@ U_BOOT_CMD(
 #endif	/* CONFIG_CMD_MEMTEST */
 
 #ifdef CONFIG_CMD_MX_CYCLIC
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mdc,	4,	1,	do_mem_mdc,
 	"memory display cyclic",
 	"[.b, .w, .l" HELP_Q "] address count delay(ms)"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mwc,	4,	1,	do_mem_mwc,
 	"memory write cyclic",
 	"[.b, .w, .l" HELP_Q "] address value delay(ms)"
@@ -1425,7 +1446,7 @@ U_BOOT_CMD(
 #endif /* CONFIG_CMD_MX_CYCLIC */
 
 #ifdef CONFIG_CMD_RANDOM
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	random,	4,	0,	do_random,
 	"fill memory with random pattern",
 	"<addr> <len> [<seed>]\n"

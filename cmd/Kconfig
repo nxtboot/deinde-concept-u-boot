@@ -294,6 +294,7 @@ config CMD_HISTORY_USE_CALLOC
 
 config CMD_LICENSE
 	bool "license"
+	select GETOPT
 	select BUILD_BIN2C
 	depends on GZIP
 	help
@@ -640,6 +641,7 @@ config CMD_EXTENSION
 config CMD_GO
 	bool "go"
 	default y
+	select GETOPT
 	help
 	  Start an application at a given address.
 
@@ -652,6 +654,7 @@ config CMD_RUN
 config CMD_IMI
 	bool "iminfo"
 	default y
+	select GETOPT
 	help
 	  Print header information for application image.
 
@@ -807,6 +810,7 @@ config CMD_SAVEENV
 config CMD_ERASEENV
 	bool "eraseenv"
 	depends on CMD_SAVEENV
+	select GETOPT
 	help
 	  Erase environment variables from the compiled-in persistent
 	  storage.
@@ -998,6 +1002,7 @@ config SYS_EEPROM_PAGE_WRITE_DELAY_MS
 
 config LOOPW
 	bool "loopw"
+	select GETOPT
 	help
 	  Infinite write loop on address range
 
@@ -1042,6 +1047,7 @@ config CMD_MEMSIZE
 config CMD_MEMORY
 	bool "md, mm, nm, mw, cp, cmp, base, loop"
 	default y
+	select GETOPT
 	help
 	  Memory commands.
 	  md - memory display
@@ -1070,6 +1076,7 @@ config CMD_MEM_SEARCH
 config CMD_MX_CYCLIC
 	bool "Enable cyclic md/mw commands"
 	depends on CMD_MEMORY
+	select GETOPT
 	help
 	  Add the "mdc" and "mwc" memory commands. These are cyclic
 	  "md/mw" commands.
@@ -1085,6 +1092,7 @@ config CMD_RANDOM
 	bool "random"
 	default y
 	depends on CMD_MEMORY && (LIB_RAND || LIB_HW_RAND)
+	select GETOPT
 	help
 	  random - fill memory with random data
 
@@ -1157,6 +1165,7 @@ menu "Compression commands"
 config CMD_LZMADEC
 	bool "lzmadec"
 	default y if CMD_BOOTI
+	select GETOPT
 	select LZMA
 	help
 	  Support decompressing an LZMA (Lempel-Ziv-Markov chain algorithm)
@@ -1165,6 +1174,7 @@ config CMD_LZMADEC
 config CMD_UNLZ4
 	bool "unlz4"
 	default y if CMD_BOOTI
+	select GETOPT
 	select LZ4
 	help
 	  Support decompressing an LZ4 image from memory region.
@@ -1424,6 +1434,7 @@ config CMD_IDE
 
 config CMD_IO
 	bool "io - Support for performing I/O accesses"
+	select GETOPT
 	help
 	  Provides an 'iod' command to display I/O space and an 'iow' command
 	  to write values to the I/O space. This can be useful for manually
@@ -2570,6 +2581,7 @@ config CMD_INI
 config CMD_DATE
 	bool "date"
 	default y if DM_RTC
+	select GETOPT
 	select LIB_DATE
 	help
 	  Enable the 'date' command for getting/setting the time/date in RTC
@@ -2589,6 +2601,7 @@ config CMD_TIME
 
 config CMD_GETTIME
 	bool "gettime - read elapsed time"
+	select GETOPT
 	help
 	  Enable the 'gettime' command which reads the elapsed time since
 	  U-Boot started running. This shows the time in seconds and
@@ -2642,6 +2655,7 @@ config CMD_TKEY
 
 config CMD_TIMER
 	bool "timer"
+	select GETOPT
 	help
 	  Access the system timer.
 

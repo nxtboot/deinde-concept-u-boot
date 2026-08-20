@@ -499,13 +499,15 @@ U_BOOT_CMD(
 );
 
 #if defined(CONFIG_CMD_ERASEENV)
-static int do_env_erase(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_env_erase(struct getopt_state *gs)
 {
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	return env_erase() ? 1 : 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	eraseenv, 1, 0,	do_env_erase,
 	"erase environment variables from persistent storage",
 	""
@@ -1123,7 +1125,7 @@ static struct cmd_tbl cmd_env_sub[] = {
 #if defined(CONFIG_CMD_SAVEENV) && !IS_ENABLED(CONFIG_ENV_IS_DEFAULT)
 	U_BOOT_CMD_MKENT(save, 1, 0, do_env_save, "", ""),
 #if defined(CONFIG_CMD_ERASEENV)
-	U_BOOT_CMD_MKENT(erase, 1, 0, do_env_erase, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(erase, 1, 0, do_env_erase, "", ""),
 #endif
 #endif
 #if defined(CONFIG_CMD_NVEDIT_SELECT)

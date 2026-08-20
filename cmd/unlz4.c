@@ -6,16 +6,21 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <mapmem.h>
 #include <vsprintf.h>
 #include <u-boot/lz4.h>
 
-static int do_unlz4(struct cmd_tbl *cmdtp, int flag, int argc,
-		    char *const argv[])
+static int do_unlz4(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long src, dst;
 	size_t src_len = ~0UL, dst_len = ~0UL;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	switch (argc) {
 	case 4:
@@ -40,9 +45,9 @@ static int do_unlz4(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(unlz4, 4, 1, do_unlz4,
-	   "lz4 uncompress a memory region",
-	   "srcaddr dstaddr dstsize\n"
-	   "NOTE: Specify the destination size that is sufficiently larger\n"
-	   " than the source size.\n"
+U_BOOT_CMD_GETOPT(unlz4, 4, 1, do_unlz4,
+		  "lz4 uncompress a memory region",
+		  "srcaddr dstaddr dstsize\n"
+		  "NOTE: Specify the destination size that is sufficiently larger\n"
+		  " than the source size.\n"
 );

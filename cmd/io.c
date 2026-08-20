@@ -9,6 +9,7 @@
 
 #include <command.h>
 #include <display_options.h>
+#include <getopt.h>
 #include <vsprintf.h>
 #include <asm/io.h>
 
@@ -91,10 +92,15 @@ int do_io_iod(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
-int do_io_iow(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_io_iow(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong addr, val;
 	int size;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 3)
 		return CMD_RET_USAGE;
@@ -120,6 +126,6 @@ int do_io_iow(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(iod, 3, 1, do_io_iod,
 	   "IO space display", "[.b, .w, .l] address");
 
-U_BOOT_CMD(iow, 3, 0, do_io_iow,
-	   "IO space modify",
-	   "[.b, .w, .l] address value");
+U_BOOT_CMD_GETOPT(iow, 3, 0, do_io_iow,
+		  "IO space modify",
+		  "[.b, .w, .l] address value");

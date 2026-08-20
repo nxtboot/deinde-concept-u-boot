@@ -8,6 +8,7 @@
  * Misc boot support
  */
 #include <command.h>
+#include <getopt.h>
 #include <net.h>
 #include <vsprintf.h>
 
@@ -21,10 +22,15 @@ unsigned long do_go_exec(ulong (*entry)(int, char * const []), int argc,
 	return entry (argc, argv);
 }
 
-static int do_go(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_go(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong	addr, rc;
 	int     rcode = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -47,7 +53,7 @@ static int do_go(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 /* -------------------------------------------------------------------- */
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	go, CONFIG_SYS_MAXARGS, 1,	do_go,
 	"start application at address 'addr'",
 	"addr [arg ...]\n    - start application at address 'addr'\n"
