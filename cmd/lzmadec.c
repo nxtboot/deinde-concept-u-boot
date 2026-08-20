@@ -11,18 +11,23 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <mapmem.h>
 #include <vsprintf.h>
 #include <asm/io.h>
 
 #include <lzma/LzmaTools.h>
 
-static int do_lzmadec(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_lzmadec(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long src, dst;
 	SizeT src_len = ~0UL, dst_len = ~0UL;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	switch (argc) {
 	case 4:
@@ -48,7 +53,7 @@ static int do_lzmadec(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	lzmadec,    4,    1,    do_lzmadec,
 	"lzma uncompress a memory region",
 	"srcaddr dstaddr [dstsize]"

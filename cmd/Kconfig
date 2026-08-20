@@ -1162,6 +1162,7 @@ menu "Compression commands"
 config CMD_LZMADEC
 	bool "lzmadec"
 	default y if CMD_BOOTI
+	select GETOPT
 	select LZMA
 	help
 	  Support decompressing an LZMA (Lempel-Ziv-Markov chain algorithm)
