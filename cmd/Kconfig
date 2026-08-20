@@ -807,6 +807,7 @@ config CMD_SAVEENV
 config CMD_ERASEENV
 	bool "eraseenv"
 	depends on CMD_SAVEENV
+	select GETOPT
 	help
 	  Erase environment variables from the compiled-in persistent
 	  storage.
