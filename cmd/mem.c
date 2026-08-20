@@ -42,7 +42,7 @@
 #define HELP_Q ""
 #endif
 
-static int mod_mem(struct cmd_tbl *, int, int, int, char * const []);
+static int mod_mem(int, int, int, char * const []);
 
 /* Display values from last command.
  * Memory modify remembered values are different from display memory.
@@ -118,13 +118,13 @@ static int do_mem_md(struct cmd_tbl *cmdtp, int flag, int argc,
 static int do_mem_mm(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return mod_mem (cmdtp, 1, flag, argc, argv);
+	return mod_mem(1, flag, argc, argv);
 }
 
 static int do_mem_nm(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return mod_mem (cmdtp, 0, flag, argc, argv);
+	return mod_mem(0, flag, argc, argv);
 }
 
 static int do_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1164,8 +1164,7 @@ static int do_mem_mtest(struct cmd_tbl *cmdtp, int flag, int argc,
  *	mm{.b, .w, .l, .q} {addr}
  */
 static int
-mod_mem(struct cmd_tbl *cmdtp, int incrflag, int flag, int argc,
-	char *const argv[])
+mod_mem(int incrflag, int flag, int argc, char *const argv[])
 {
 	ulong	addr;
 	ulong i;  /* 64-bit if MEM_SUPPORT_64BIT_DATA */
