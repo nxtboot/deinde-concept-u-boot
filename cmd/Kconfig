@@ -641,6 +641,7 @@ config CMD_EXTENSION
 config CMD_GO
 	bool "go"
 	default y
+	select GETOPT
 	help
 	  Start an application at a given address.
 
