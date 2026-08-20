@@ -96996,3 +96996,41 @@ None of the affected boards (rpi3, rockchip/jerry, sunxi/pcduino3_nano, imx8/col
 
 ---
 
+### Pipeline fix: 2026-08-20 (attempt 2)
+
+Branch: cherry-740b825e55c1
+
+Failed jobs:
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+- snow (sjg-lab)
+- kevin (sjg-lab)
+- bpi (sjg-lab)
+
+### Conversation log
+## Diagnosis: All six failures are lab infrastructure — no code fix needed
+
+The branch cherry-picks 12 commits, all touching only Renesas R-Car–specific files (`drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`, `drivers/ufs/ufs-renesas-rcar-gen5.c`, `arch/arm/dts/r8a78000-ironhide*`, `configs/r8a78000_ironhide_cm33_defconfig`, `include/configs/rcar-gen5-common.h`). None of the failing boards runs any of that code.
+
+### Failure breakdown
+
+| Job | Board | Root cause | Type |
+|---|---|---|---|
+| **felwinter** | chromebook_brya | `Could not find EM100pro with serial number EM142535` on lab host `kea` | Lab hardware (EM100 flasher missing / offline) |
+| **felwinter-cb** | chromebook_brya_cb | Same EM100pro EM142535 not found on `kea` | Lab hardware |
+| **vf2** | starfive_visionfive2 | `dwmci_s: Response Timeout` on the SD-card writer, then `TIMEOUT waiting for login` | Lab hardware (MMC/SD writer) |
+| **snow** | snow (Exynos) | `USB loader not ready ... Connection refused` on `kea`, `dut-control … t20_rec:on` connection refused | Lab hardware (dut-control daemon on `kea`) |
+| **kevin** | chromebook_kevin | `BrokenPipeError` during `rfc2217` port reconfiguration in `serial/rfc2217.py` | Lab infrastructure (rfc2217 serial server) |
+| **bpi** | Bananapi (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 45 seconds ... waiting for login` — no U-Boot prompt after 2 reset attempts | Lab hardware (board no-boot) |
+
+Every failure is a `Lab failure: Marking connection bad - no other tests will run` — pytest exits before any test runs. Common thread: the shared lab host `kea` (EM100 flasher / dut-control) appears down, and other DUT-side flakes rounded out the set.
+
+### Conclusion
+
+**No branch created, no changes made** — same pattern as attempt 1 (that MR review comment concluded "No code fix is warranted" for a different lab-outage event; this one is the next occurrence). None of the R-Car-only files this branch modifies could plausibly break sunxi/rockchip/exynos/riscv/chromebook boards, and the failure mode in each case is the hardware never producing any output, not the built U-Boot behaving badly.
+
+**Recommendation:** retry the pipeline once the `kea` lab host is healthy (EM100pro flasher reattached, dut-control daemon back up, rfc2217 serial server reachable). No `cherry-740b825e55c1-fix2` branch was needed.
+
+---
+
