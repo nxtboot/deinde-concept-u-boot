@@ -1071,6 +1071,7 @@ config CMD_MEM_SEARCH
 config CMD_MX_CYCLIC
 	bool "Enable cyclic md/mw commands"
 	depends on CMD_MEMORY
+	select GETOPT
 	help
 	  Add the "mdc" and "mwc" memory commands. These are cyclic
 	  "md/mw" commands.

@@ -11,6 +11,7 @@
  */
 
 #include <console.h>
+#include <getopt.h>
 #include <bootretry.h>
 #include <cli.h>
 #include <command.h>
@@ -181,11 +182,15 @@ static int do_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 #ifdef CONFIG_CMD_MX_CYCLIC
-static int do_mem_mdc(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_mem_mdc(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i;
 	ulong count;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -1411,7 +1416,7 @@ U_BOOT_CMD(
 #endif	/* CONFIG_CMD_MEMTEST */
 
 #ifdef CONFIG_CMD_MX_CYCLIC
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mdc,	4,	1,	do_mem_mdc,
 	"memory display cyclic",
 	"[.b, .w, .l" HELP_Q "] address count delay(ms)"
