@@ -546,6 +546,7 @@ int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 		func = (int (*)(struct getopt_state *))cmdtp->cmd;
 		getopt_init_state(&gs, argc, argv);
+		gs.cmd_flag = flag;
 
 		return func(&gs);
 	}

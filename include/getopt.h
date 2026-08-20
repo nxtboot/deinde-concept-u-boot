@@ -40,6 +40,13 @@ struct getopt_state {
 	int index;
 	/** @arg_index: Index within the current argument */
 	int arg_index;
+	/**
+	 * @cmd_flag: Flags for the command being run, such as CMD_FLAG_REPEAT,
+	 * as passed to cmd_invoke(). This lets a command tell a repeat from a
+	 * fresh invocation. It is zero when the state was set up by hand rather
+	 * than to run a command.
+	 */
+	int cmd_flag;
 #ifdef CONFIG_GETOPT_PERMUTE
 	/** @nonopts: Number of non-option arguments in @argv. */
 	int nonopts;

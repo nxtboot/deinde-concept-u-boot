@@ -37,6 +37,7 @@ void getopt_init_state(struct getopt_state *gs, int argc, char *const argv[])
 	gs->argc = argc;
 	gs->index = 1;
 	gs->arg_index = 1;
+	gs->cmd_flag = 0;
 }
 
 int getopt(struct getopt_state *gs, const char *optstring)
