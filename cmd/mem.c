@@ -214,11 +214,15 @@ static int do_mem_mdc(struct getopt_state *gs)
 	return 0;
 }
 
-static int do_mem_mwc(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_mem_mwc(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i;
 	ulong count;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -1422,7 +1426,7 @@ U_BOOT_CMD_GETOPT(
 	"[.b, .w, .l" HELP_Q "] address count delay(ms)"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mwc,	4,	1,	do_mem_mwc,
 	"memory write cyclic",
 	"[.b, .w, .l" HELP_Q "] address value delay(ms)"
