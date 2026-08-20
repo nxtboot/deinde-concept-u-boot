@@ -626,9 +626,10 @@ static int do_mem_loop(struct getopt_state *gs)
 }
 
 #ifdef CONFIG_LOOPW
-static int do_mem_loopw(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_mem_loopw(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong	addr, length, i, bytes;
 	int	size;
 	volatile ulong *llp;  /* 64-bit if MEM_SUPPORT_64BIT_DATA */
@@ -637,6 +638,9 @@ static int do_mem_loopw(struct cmd_tbl *cmdtp, int flag, int argc,
 	volatile u16 *shortp;
 	volatile u8 *cp;
 	void *buf;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -1408,7 +1412,7 @@ U_BOOT_CMD_GETOPT(
 );
 
 #ifdef CONFIG_LOOPW
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	loopw,	4,	1,	do_mem_loopw,
 	"infinite write loop on address range",
 	"[.b, .w, .l" HELP_Q "] address number_of_objects data_to_write"

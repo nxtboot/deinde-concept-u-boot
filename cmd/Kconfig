@@ -999,6 +999,7 @@ config SYS_EEPROM_PAGE_WRITE_DELAY_MS
 
 config LOOPW
 	bool "loopw"
+	select GETOPT
 	help
 	  Infinite write loop on address range
 
