@@ -2596,6 +2596,7 @@ config CMD_TIME
 
 config CMD_GETTIME
 	bool "gettime - read elapsed time"
+	select GETOPT
 	help
 	  Enable the 'gettime' command which reads the elapsed time since
 	  U-Boot started running. This shows the time in seconds and

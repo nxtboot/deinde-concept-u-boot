@@ -12,12 +12,15 @@
  * Get Timer overflows after 2^32 / CONFIG_SYS_HZ (32Khz) = 131072 sec
  */
 #include <command.h>
+#include <getopt.h>
 #include <time.h>
 
-static int do_gettime(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_gettime(struct getopt_state *gs)
 {
 	unsigned long int val = get_timer(0);
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 #ifdef CONFIG_SYS_HZ
 	printf("Timer val: %lu\n", val);
@@ -32,7 +35,7 @@ static int do_gettime(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	gettime,	1,	1,	do_gettime,
 	"get timer val elapsed",
 	"get time elapsed from uboot start"
