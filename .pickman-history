@@ -97080,3 +97080,31 @@ Every failure is `Lab failure: Marking connection bad - no other tests will run`
 
 ---
 
+## 2026-08-20: us/main
+
+Branch: cherry-948c428ff7ea
+
+Commits:
+- 948c428ff7ea doc: usb: remove obsolete MediaTek MTU3 bindings
+- 0f8cbf3a0d6f usb: mtu3: support the upstream devicetree binding
+- 08b77aac333c usb: mtu3: add SPL support
+- 28515d7ff528 Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-usb
+
+### Conversation log
+All 4 commits cherry-picked successfully on branch `cherry-948c428ff7ea`.
+
+**Final status:**
+- Build result: **OK** (sandbox builds cleanly after every cherry-pick and after the full series)
+- Cherry-picked commits (in order):
+  - `ec65830ec8c1` doc: usb: remove obsolete MediaTek MTU3 bindings (2 files, -125 lines — matches original)
+  - `816015872a97` usb: mtu3: support the upstream devicetree binding (9 files, +192/-119 — matches original)
+  - `af9b0417b3ca` usb: mtu3: add SPL support (5 files, +52/-12 — matches original; trivial auto-merge in `drivers/Makefile`)
+  - `1490d483d31c` Merge branch 'main' … u-boot-usb (empty merge, preserved with `--allow-empty`)
+- Deltas: all three code commits match the originals exactly (same files, same line counts)
+- Fix-ups: none required; only an auto-merge in `drivers/Makefile` for the SPL commit, no manual conflict resolution
+- Concerning deltas: none
+
+Branch is left ready for pushing; no merges performed.
+
+---
+
