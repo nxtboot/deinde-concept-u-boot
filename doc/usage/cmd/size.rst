@@ -75,3 +75,10 @@ Return value
 
 The return value $? is set to 0 (true) if the file was found,
 1 (false) otherwise.
+
+See also
+--------
+
+* :doc:`fatsize<fatsize>` for the FAT-only form of this command
+* :doc:`load<load>` for reading a file into memory, which also sets filesize
+* :doc:`mount<mount>` for making a filesystem available to the VFS form

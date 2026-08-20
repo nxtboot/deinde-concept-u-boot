@@ -47,3 +47,10 @@ Return value
 
 The return value $? is set to 0 (true) if the directory was created,
 1 (false) otherwise.
+
+See also
+--------
+
+* :doc:`fatmkdir<fatmkdir>` for the FAT-only form of this command
+* :doc:`rm<rm>` for removing a file or an empty directory
+* :doc:`mount<mount>` for making a filesystem available to the VFS

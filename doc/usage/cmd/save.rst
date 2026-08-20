@@ -53,3 +53,10 @@ Return value
 
 The return value $? is set to 0 (true) if the file was successfully
 written, 1 (false) otherwise.
+
+See also
+--------
+
+* :doc:`fatwrite<fatwrite>` for the FAT-only form of this command
+* :doc:`load<load>` for reading the data back into memory
+* :doc:`mount<mount>` for making a filesystem available to the VFS
