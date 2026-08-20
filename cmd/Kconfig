@@ -1043,6 +1043,7 @@ config CMD_MEMSIZE
 config CMD_MEMORY
 	bool "md, mm, nm, mw, cp, cmp, base, loop"
 	default y
+	select GETOPT
 	help
 	  Memory commands.
 	  md - memory display
