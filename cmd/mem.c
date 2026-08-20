@@ -115,10 +115,12 @@ static int do_mem_md(struct cmd_tbl *cmdtp, int flag, int argc,
 	return (rc);
 }
 
-static int do_mem_mm(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_mem_mm(struct getopt_state *gs)
 {
-	return mod_mem(1, flag, argc, argv);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return mod_mem(1, gs->cmd_flag, gs->argc, gs->argv);
 }
 
 static int do_mem_nm(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1338,7 +1340,7 @@ U_BOOT_CMD(
 	"[.b, .w, .l" HELP_Q "] address [# of objects]"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mm,	2,	1,	do_mem_mm,
 	"memory modify (auto-incrementing address)",
 	"[.b, .w, .l" HELP_Q "] address"
