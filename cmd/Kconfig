@@ -294,6 +294,7 @@ config CMD_HISTORY_USE_CALLOC
 
 config CMD_LICENSE
 	bool "license"
+	select GETOPT
 	select BUILD_BIN2C
 	depends on GZIP
 	help
