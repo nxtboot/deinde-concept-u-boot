@@ -11,6 +11,7 @@
 #include <command.h>
 #include <env.h>
 #include <errno.h>
+#include <getopt.h>
 #include <image.h>
 #include <malloc.h>
 #include <nand.h>
@@ -261,12 +262,16 @@ U_BOOT_CMD(
 /* iminfo - print header info for a requested image */
 /*******************************************************************/
 #if defined(CONFIG_CMD_IMI)
-static int do_iminfo(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_iminfo(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int	arg;
 	ulong	addr;
 	int	rcode = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2) {
 		return image_info(image_load_addr);
@@ -351,7 +356,7 @@ static int image_info(ulong addr)
 	return 1;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	iminfo,	CONFIG_SYS_MAXARGS,	1,	do_iminfo,
 	"print header information for application image",
 	"addr [addr ...]\n"

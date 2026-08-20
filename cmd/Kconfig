@@ -653,6 +653,7 @@ config CMD_RUN
 config CMD_IMI
 	bool "iminfo"
 	default y
+	select GETOPT
 	help
 	  Print header information for application image.
 
