@@ -96878,3 +96878,205 @@ Not creating a `-v2`/`-v3` or force-pushing. The remote branch is already up-to-
 
 ---
 
+## 2026-08-20: us/main
+
+Branch: cherry-740b825e55c1
+
+Commits:
+- 740b825e55c1 mtd: rpc: renesas: Switch to dev_read_addr_name()
+- ded62933e0e6 mtd: rpc: renesas: Add R-Car Gen5 DT compatible
+- fb178839bfd3 mtd: spi: renesas: Align macro prefixes
+- 08060053829c mtd: spi: renesas: Add R-Car Gen5 DT compatible
+- 844e134e9d21 ufs: rcar-gen5: Switch from FASTAUTO mode to FAST mode
+- b61287948030 arm: renesas: Disable MMC support on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- ba6260a7be9a arm: renesas: Bind RPC on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 22a7f4afee39 arm: renesas: Enable RPC on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 6e4cc078a851 arm: renesas: Store env in HF on R-Car R8A78000 X5H Cortex-M33 RSIP port
+- 5862199fac0f arm64: dts: renesas: ironhide: Describe all reserved memory
+- c0ed490da30e arm64: dts: renesas: ironhide: Describe inline ECC carveouts
+- 9167d2079afe Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh
+
+### Conversation log
+All 12 commits present. Now the final build test:
+
+All 12 commits cherry-picked successfully to branch `cherry-740b825e55c1`.
+
+**Summary:**
+- ✅ All 12 commits applied cleanly with no conflicts
+- ✅ Commit deltas match originals exactly (same files, same line counts)
+- ✅ Final sandbox build passes with no warnings/errors
+- Merge commit `9167d2079afe` verified as NOT the same as the potentially-already-applied `00671532e656` (that one was a pickman merge with different parents/subject), so it was cherry-picked as an empty commit with `--allow-empty` to preserve the history
+- No fix-ups required
+
+Branch `cherry-740b825e55c1` is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-08-20 (attempt 1)
+
+Branch: cherry-740b825e55c1
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- colibrimx8 (sjg-lab)
+- jerry (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All five failures are lab infrastructure issues, not code failures. Let me verify by checking what the commits touched.
+
+All five failures are infrastructure/transient issues, not code issues introduced by this branch. No changes needed.
+
+## Diagnosis
+
+The branch cherry-picks 12 commits, all touching only Renesas R-Car specific code:
+- `drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`
+- `drivers/ufs/ufs-renesas-rcar-gen5.c`
+- `arch/arm/dts/r8a78000-ironhide*` and `configs/r8a78000_ironhide_cm33_defconfig`
+- `include/configs/rcar-gen5-common.h`
+
+None of these files affect rpi3, chromebook_jerry, pcduino3_nano (sunxi), colibrimx8 (imx8), or the EFI x86_64 build.
+
+## Failure breakdown
+
+| Job | Root cause | Type |
+|---|---|---|
+| **jerry** | `SerialException: Could not open port rfc2217://kea:None?...` — serial-port allocator "kea" returned `None` for the port | Lab infrastructure |
+| **pcduino3_nano** | Same `rfc2217://kea:None?...` error | Lab infrastructure |
+| **rpi3** | Same `rfc2217://kea:None?...` error | Lab infrastructure |
+| **colibrimx8** | "Lab timeout: Marking connection bad" during build phase (before any test ran) | Lab timeout |
+| **efi-x86_64-uboot-iso-install** | Tests actually **passed** (`1 passed, 738 deselected in 598.11s`), then the job was killed at the 10m0s job timeout during release cleanup — the 9:58 test run left <2s to finish | Job-timeout config, not code |
+
+## Conclusion
+
+No code fix is warranted:
+- The three `kea:None` failures are a single lab-infrastructure event (rfc2217 serial-server outage).
+- colibrimx8's lab-timeout appears to be a downstream effect of the same lab issue.
+- The efi-x86_64 job actually passed its test; the timeout is a CI-config knob (tests take ~10 min, job limit is 10 min), unrelated to any of the cherry-picked commits.
+
+Retry the pipeline once the "kea" lab node is healthy, and consider bumping the efi-x86_64-uboot-iso-install job timeout above 10 minutes so the release step has margin. No branch `cherry-740b825e55c1-fix1` was created — nothing to fix on this branch.
+
+---
+
+### Review: 2026-08-20
+
+Branch: cherry-740b825e55c1
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, colibrimx8, jerry, pcdui...
+
+### Conversation log
+The single "review comment" is actually the diagnostic report from the previous pipeline-fix analysis, whose own conclusion was **"No code fix is warranted"** — all five failed jobs (efi-x86_64-uboot-iso-install, colibrimx8, jerry, pcduino3_nano, rpi3) were lab-infrastructure issues, none touching the Renesas R-Car files this branch modifies.
+
+Let me verify the branch state hasn't drifted and confirm nothing actionable exists.
+
+The branch state matches what was previously prepared. All 12 cherry-picked commits plus the two pickman tracking commits are in place.
+
+## Report
+
+**No code changes made** — no `-v2` branch created, no push performed.
+
+### Why
+
+The single "review comment" on MR !1297 is the auto-posted diagnostic from the previous pipeline-fix attempt. Its own explicit conclusion was:
+
+> **"No code fix is warranted"** — all five failed jobs were lab-infrastructure issues, unrelated to the Renesas R-Car–only files this branch touches.
+
+Breakdown (from that report, still accurate):
+- **jerry, pcduino3_nano, rpi3** — `SerialException: rfc2217://kea:None?...`, i.e. the shared "kea" serial-port allocator returned `None` (lab-side rfc2217 outage).
+- **colibrimx8** — "Lab timeout: Marking connection bad" during build phase, downstream of the same lab event.
+- **efi-x86_64-uboot-iso-install** — Test actually **passed** (`1 passed, 738 deselected in 598.11s`); job killed by the 10m0s job-timeout during cleanup because the test consumed 9:58.
+
+None of the affected boards (rpi3, rockchip/jerry, sunxi/pcduino3_nano, imx8/colibrimx8, x86_64 EFI) run any of the files this branch modifies (`drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`, `drivers/ufs/ufs-renesas-rcar-gen5.c`, `arch/arm/dts/r8a78000-ironhide*`, `configs/r8a78000_ironhide_cm33_defconfig`, `include/configs/rcar-gen5-common.h`).
+
+### Suggested MR reply
+
+> This comment is the auto-diagnostic from pipeline-fix attempt 1 and concludes "No code fix is warranted." All five failures were lab-infrastructure — three `rfc2217://kea:None` serial-allocator errors (jerry / pcduino3_nano / rpi3), a downstream lab timeout on colibrimx8, and efi-x86_64-uboot-iso-install where the test actually passed but the 9:58 runtime blew the 10m0s job cap during cleanup. None of these boards touch the Renesas R-Car–only files in this branch. Please retry the pipeline once the "kea" lab node is healthy, and consider raising the efi-x86_64-uboot-iso-install job timeout above 10 min. No branch update needed.
+
+---
+
+### Pipeline fix: 2026-08-20 (attempt 2)
+
+Branch: cherry-740b825e55c1
+
+Failed jobs:
+- felwinter (sjg-lab)
+- felwinter-cb (sjg-lab)
+- vf2 (sjg-lab)
+- snow (sjg-lab)
+- kevin (sjg-lab)
+- bpi (sjg-lab)
+
+### Conversation log
+## Diagnosis: All six failures are lab infrastructure — no code fix needed
+
+The branch cherry-picks 12 commits, all touching only Renesas R-Car–specific files (`drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`, `drivers/ufs/ufs-renesas-rcar-gen5.c`, `arch/arm/dts/r8a78000-ironhide*`, `configs/r8a78000_ironhide_cm33_defconfig`, `include/configs/rcar-gen5-common.h`). None of the failing boards runs any of that code.
+
+### Failure breakdown
+
+| Job | Board | Root cause | Type |
+|---|---|---|---|
+| **felwinter** | chromebook_brya | `Could not find EM100pro with serial number EM142535` on lab host `kea` | Lab hardware (EM100 flasher missing / offline) |
+| **felwinter-cb** | chromebook_brya_cb | Same EM100pro EM142535 not found on `kea` | Lab hardware |
+| **vf2** | starfive_visionfive2 | `dwmci_s: Response Timeout` on the SD-card writer, then `TIMEOUT waiting for login` | Lab hardware (MMC/SD writer) |
+| **snow** | snow (Exynos) | `USB loader not ready ... Connection refused` on `kea`, `dut-control … t20_rec:on` connection refused | Lab hardware (dut-control daemon on `kea`) |
+| **kevin** | chromebook_kevin | `BrokenPipeError` during `rfc2217` port reconfiguration in `serial/rfc2217.py` | Lab infrastructure (rfc2217 serial server) |
+| **bpi** | Bananapi (sunxi) | `pexpect.exceptions.TIMEOUT: Timeout of 45 seconds ... waiting for login` — no U-Boot prompt after 2 reset attempts | Lab hardware (board no-boot) |
+
+Every failure is a `Lab failure: Marking connection bad - no other tests will run` — pytest exits before any test runs. Common thread: the shared lab host `kea` (EM100 flasher / dut-control) appears down, and other DUT-side flakes rounded out the set.
+
+### Conclusion
+
+**No branch created, no changes made** — same pattern as attempt 1 (that MR review comment concluded "No code fix is warranted" for a different lab-outage event; this one is the next occurrence). None of the R-Car-only files this branch modifies could plausibly break sunxi/rockchip/exynos/riscv/chromebook boards, and the failure mode in each case is the hardware never producing any output, not the built U-Boot behaving badly.
+
+**Recommendation:** retry the pipeline once the `kea` lab host is healthy (EM100pro flasher reattached, dut-control daemon back up, rfc2217 serial server reachable). No `cherry-740b825e55c1-fix2` branch was needed.
+
+---
+
+### Review: 2026-08-20
+
+Branch: cherry-740b825e55c1
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) felwinter, felwinter-cb, vf2, snow, kevin, bpi.
+
+## Di...
+
+### Conversation log
+The branch state is intact — all 12 cherry-picked commits are present, plus pickman tracking commits from the previous attempts. Let me examine the review comment itself.
+
+The "review comment" is the auto-posted diagnostic from **pipeline-fix attempt 2**, whose own explicit conclusion is:
+
+> **"No code fix is warranted"** — all six failures are lab infrastructure on lab host `kea`
+
+## Analysis
+
+This is the same pattern as attempt 1: the review comment IS the diagnostic report, which already concluded no action is needed. Re-verifying:
+
+| Job | Board | Root cause |
+|---|---|---|
+| **felwinter / felwinter-cb** | chromebook_brya[_cb] | EM100pro EM142535 flasher not found on `kea` |
+| **vf2** | starfive_visionfive2 | `dwmci_s: Response Timeout` (SD-card writer HW) |
+| **snow** | snow (Exynos) | `USB loader not ready ... Connection refused` on `kea` |
+| **kevin** | chromebook_kevin | `BrokenPipeError` in rfc2217 serial server |
+| **bpi** | Bananapi (sunxi) | pexpect `TIMEOUT waiting for login` (no boot) |
+
+Every failure is `Lab failure: Marking connection bad - no other tests will run` — pytest exits before any test runs. None of the failing boards (Chromebook Brya x86, StarFive RISC-V, Exynos, Rockchip, sunxi) touch any of the R-Car-only files this branch modifies:
+- `drivers/mtd/renesas_rpc_hf.c`
+- `drivers/spi/renesas_rpc_spi.c`
+- `drivers/ufs/ufs-renesas-rcar-gen5.c`
+- `arch/arm/dts/r8a78000-ironhide*`
+- `configs/r8a78000_ironhide_cm33_defconfig`
+- `include/configs/rcar-gen5-common.h`
+
+## Actions taken
+
+**None.** No `cherry-740b825e55c1-v2` branch created, no push performed, no code changed. The branch remains at commit `61202e0cbca4` with all 12 cherry-picked commits intact.
+
+## Suggested MR reply
+
+> This comment is the auto-diagnostic from pipeline-fix attempt 2 and concludes "No code fix is warranted." All six failures (felwinter, felwinter-cb, vf2, snow, kevin, bpi) are lab-infrastructure issues centred on lab host `kea` — EM100pro flasher offline (felwinter/felwinter-cb), SD-writer dwmci_s response timeout (vf2), USB loader / dut-control connection refused (snow), rfc2217 `BrokenPipeError` (kevin), and pexpect boot-timeout with no serial output (bpi). Every failure is `Lab failure: Marking connection bad - no other tests will run` — pytest never reaches a test. None of these boards (x86 Brya, StarFive RISC-V, Exynos, Rockchip, sunxi) touches any of the Renesas R-Car–only files in this branch. Please retry the pipeline once the `kea` lab host is healthy. No branch update needed.
+
+---
+
