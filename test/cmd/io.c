@@ -104,6 +104,37 @@ static int cmd_test_iod_length(struct unit_test_state *uts)
 }
 IO_TEST(cmd_test_iod_length);
 
+/* Test that repeating 'iod' carries on where the last one stopped */
+static int cmd_test_iod_repeat(struct unit_test_state *uts)
+{
+	char *const args[] = { "iod.b", NULL, "10", NULL };
+	char addr_str[20];
+	int repeatable;
+	ulong io_addr;
+
+	ut_assertok(get_io_addr(uts, &io_addr));
+	outb(5, io_addr);
+
+	snprintf(addr_str, sizeof(addr_str), "%lx", io_addr);
+	((char **)args)[1] = addr_str;
+
+	/* a fresh command starts at the address it is given */
+	ut_assertok(cmd_process(0, 3, args, &repeatable, NULL));
+	ut_assert_nextlinen("%08lx: 05", io_addr);
+	ut_assert_console_end();
+
+	/*
+	 * A repeat takes no notice of the arguments and shows the next block,
+	 * which it can only do by seeing CMD_FLAG_REPEAT in the state
+	 */
+	ut_assertok(cmd_process(CMD_FLAG_REPEAT, 3, args, &repeatable, NULL));
+	ut_assert_nextlinen("%08lx: 00", io_addr + 0x10);
+	ut_assert_console_end();
+
+	return 0;
+}
+IO_TEST(cmd_test_iod_repeat);
+
 /* Test 'iod' with a bad command line */
 static int cmd_test_iod_usage(struct unit_test_state *uts)
 {
