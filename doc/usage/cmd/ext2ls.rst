@@ -88,7 +88,7 @@ The return value $? is set to 0 (true) if the directory was listed,
 See also
 --------
 
-* *ext2load* for reading one of the listed files into memory
+* :doc:`ext2load<ext2load>` for reading one of the listed files into memory
 * *ext4ls* for the same command under its ext4 name
 * :doc:`ls<ls>` for listing a directory on any supported filesystem
 * :doc:`size<size>` for asking about one file rather than listing them all

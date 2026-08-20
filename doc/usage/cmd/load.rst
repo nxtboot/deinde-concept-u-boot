@@ -138,5 +138,7 @@ If an error occurs, the return value $? is set to 1 (false).
 See also
 --------
 
+* :doc:`ext2load<ext2load>` for the ext-only form of this command
+* :doc:`fatload<fatload>` for the FAT-only form of this command
 * :doc:`iminfo<iminfo>` for checking an image once it has been loaded
 * :doc:`go<go>` for starting an application once it has been loaded
