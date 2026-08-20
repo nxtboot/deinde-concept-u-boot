@@ -96912,3 +96912,50 @@ Branch `cherry-740b825e55c1` is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-20 (attempt 1)
+
+Branch: cherry-740b825e55c1
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- colibrimx8 (sjg-lab)
+- jerry (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+All five failures are lab infrastructure issues, not code failures. Let me verify by checking what the commits touched.
+
+All five failures are infrastructure/transient issues, not code issues introduced by this branch. No changes needed.
+
+## Diagnosis
+
+The branch cherry-picks 12 commits, all touching only Renesas R-Car specific code:
+- `drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`
+- `drivers/ufs/ufs-renesas-rcar-gen5.c`
+- `arch/arm/dts/r8a78000-ironhide*` and `configs/r8a78000_ironhide_cm33_defconfig`
+- `include/configs/rcar-gen5-common.h`
+
+None of these files affect rpi3, chromebook_jerry, pcduino3_nano (sunxi), colibrimx8 (imx8), or the EFI x86_64 build.
+
+## Failure breakdown
+
+| Job | Root cause | Type |
+|---|---|---|
+| **jerry** | `SerialException: Could not open port rfc2217://kea:None?...` — serial-port allocator "kea" returned `None` for the port | Lab infrastructure |
+| **pcduino3_nano** | Same `rfc2217://kea:None?...` error | Lab infrastructure |
+| **rpi3** | Same `rfc2217://kea:None?...` error | Lab infrastructure |
+| **colibrimx8** | "Lab timeout: Marking connection bad" during build phase (before any test ran) | Lab timeout |
+| **efi-x86_64-uboot-iso-install** | Tests actually **passed** (`1 passed, 738 deselected in 598.11s`), then the job was killed at the 10m0s job timeout during release cleanup — the 9:58 test run left <2s to finish | Job-timeout config, not code |
+
+## Conclusion
+
+No code fix is warranted:
+- The three `kea:None` failures are a single lab-infrastructure event (rfc2217 serial-server outage).
+- colibrimx8's lab-timeout appears to be a downstream effect of the same lab issue.
+- The efi-x86_64 job actually passed its test; the timeout is a CI-config knob (tests take ~10 min, job limit is 10 min), unrelated to any of the cherry-picked commits.
+
+Retry the pipeline once the "kea" lab node is healthy, and consider bumping the efi-x86_64-uboot-iso-install job timeout above 10 minutes so the release step has margin. No branch `cherry-740b825e55c1-fix1` was created — nothing to fix on this branch.
+
+---
+
