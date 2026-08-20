@@ -9,6 +9,7 @@
  */
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 #include <rtc.h>
 #include <i2c.h>
 
@@ -20,12 +21,16 @@ static int mk_date(const char *, struct rtc_time *);
 
 static struct rtc_time default_tm = { 0, 0, 0, 1, 1, 2000, 6, 0, 0 };
 
-static int do_date(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_date(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct rtc_time tm;
 	int rcode = 0;
 	int old_bus __maybe_unused;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/* switch to correct I2C bus */
 	struct udevice *dev;
@@ -204,7 +209,7 @@ static int mk_date(const char *datestr, struct rtc_time *tmp)
 
 /***************************************************/
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	date,	2,	1,	do_date,
 	"get/set/reset date & time",
 	"[MMDDhhmm[[CC]YY][.ss]]\ndate reset\n"
