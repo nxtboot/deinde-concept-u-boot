@@ -97108,3 +97108,41 @@ Branch is left ready for pushing; no merges performed.
 
 ---
 
+### Review: 2026-08-20
+
+Branch: cherry-948c428ff7ea
+
+Comments addressed:
+
+
+### Conversation log
+Rebase succeeded cleanly. Let me verify the deltas match.
+
+All deltas identical. Now let me run the build verification.
+
+Build passes. Now create v2 branch and push.
+
+Rebase complete and pushed. Summary:
+
+## Rebase of MR !1298 (`cherry-948c428ff7ea`) onto `ci/master`
+
+**Result: SUCCESS — clean rebase, no conflicts, build passes**
+
+### Actions
+- Fetched `ci/master` (16 new upstream commits)
+- Rebased with `git rebase --keep-empty ci/master` — clean, no conflicts
+- Verified all 5 commit deltas (`git show --stat`) are **identical** pre/post rebase:
+  - `ec65830ec8c1 → 817c81a376d7` doc: usb: remove obsolete MediaTek MTU3 bindings
+  - `816015872a97 → 8ef4be4f6779` usb: mtu3: support the upstream devicetree binding
+  - `af9b0417b3ca → 695370d472d9` usb: mtu3: add SPL support
+  - `1490d483d31c → 2cb8e6a8d179` Merge branch 'main' … u-boot-usb (empty merge preserved)
+  - `24a80ae71877 → 5a23d91c4be8` pickman: Record cherry-pick
+- Build: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built OK
+- Created local branch `cherry-948c428ff7ea-v2`
+- Force-pushed to `ci/cherry-948c428ff7ea` — MR pipeline auto-triggered
+
+### Suggested MR reply
+> Rebased onto latest `ci/master`. Clean rebase, no conflicts. All 5 commit deltas identical to pre-rebase versions; sandbox build passes.
+
+---
+
