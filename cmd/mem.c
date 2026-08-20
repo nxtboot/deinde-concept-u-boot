@@ -123,10 +123,12 @@ static int do_mem_mm(struct getopt_state *gs)
 	return mod_mem(1, gs->cmd_flag, gs->argc, gs->argv);
 }
 
-static int do_mem_nm(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_mem_nm(struct getopt_state *gs)
 {
-	return mod_mem(0, flag, argc, argv);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return mod_mem(0, gs->cmd_flag, gs->argc, gs->argv);
 }
 
 static int do_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1346,7 +1348,7 @@ U_BOOT_CMD_GETOPT(
 	"[.b, .w, .l" HELP_Q "] address"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	nm,	2,	1,	do_mem_nm,
 	"memory modify (constant address)",
 	"[.b, .w, .l" HELP_Q "] address"
