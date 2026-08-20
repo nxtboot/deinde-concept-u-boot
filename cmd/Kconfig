@@ -2650,6 +2650,7 @@ config CMD_TKEY
 
 config CMD_TIMER
 	bool "timer"
+	select GETOPT
 	help
 	  Access the system timer.
 

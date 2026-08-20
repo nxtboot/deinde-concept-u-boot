@@ -5,13 +5,18 @@
  */
 
 #include <command.h>
+#include <getopt.h>
 #include <time.h>
 #include <linux/string.h>
 
-static int do_timer(struct cmd_tbl *cmdtp, int flag, int argc,
-		    char *const argv[])
+static int do_timer(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	static ulong start;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 2)
 		return CMD_RET_USAGE;
@@ -27,7 +32,7 @@ static int do_timer(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	timer,    2,    1,     do_timer,
 	"access the system timer",
 	"start - Reset the timer reference.\n"
