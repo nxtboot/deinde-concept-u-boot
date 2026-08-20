@@ -52,3 +52,10 @@ Return value
 
 The return value $? is set to 0 (true) if the directory was listed,
 1 (false) otherwise.
+
+See also
+--------
+
+* :doc:`ext2ls<ext2ls>` for listing an ext filesystem without mounting it
+* :doc:`mount<mount>` for making a filesystem available to this command
+* :doc:`size<size>` for asking about one file rather than listing them all
