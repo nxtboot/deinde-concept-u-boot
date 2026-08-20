@@ -96959,3 +96959,40 @@ Retry the pipeline once the "kea" lab node is healthy, and consider bumping the 
 
 ---
 
+### Review: 2026-08-20
+
+Branch: cherry-740b825e55c1
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) efi-x86_64-uboot-iso-install, colibrimx8, jerry, pcdui...
+
+### Conversation log
+The single "review comment" is actually the diagnostic report from the previous pipeline-fix analysis, whose own conclusion was **"No code fix is warranted"** — all five failed jobs (efi-x86_64-uboot-iso-install, colibrimx8, jerry, pcduino3_nano, rpi3) were lab-infrastructure issues, none touching the Renesas R-Car files this branch modifies.
+
+Let me verify the branch state hasn't drifted and confirm nothing actionable exists.
+
+The branch state matches what was previously prepared. All 12 cherry-picked commits plus the two pickman tracking commits are in place.
+
+## Report
+
+**No code changes made** — no `-v2` branch created, no push performed.
+
+### Why
+
+The single "review comment" on MR !1297 is the auto-posted diagnostic from the previous pipeline-fix attempt. Its own explicit conclusion was:
+
+> **"No code fix is warranted"** — all five failed jobs were lab-infrastructure issues, unrelated to the Renesas R-Car–only files this branch touches.
+
+Breakdown (from that report, still accurate):
+- **jerry, pcduino3_nano, rpi3** — `SerialException: rfc2217://kea:None?...`, i.e. the shared "kea" serial-port allocator returned `None` (lab-side rfc2217 outage).
+- **colibrimx8** — "Lab timeout: Marking connection bad" during build phase, downstream of the same lab event.
+- **efi-x86_64-uboot-iso-install** — Test actually **passed** (`1 passed, 738 deselected in 598.11s`); job killed by the 10m0s job-timeout during cleanup because the test consumed 9:58.
+
+None of the affected boards (rpi3, rockchip/jerry, sunxi/pcduino3_nano, imx8/colibrimx8, x86_64 EFI) run any of the files this branch modifies (`drivers/mtd/renesas_rpc_hf.c`, `drivers/spi/renesas_rpc_spi.c`, `drivers/ufs/ufs-renesas-rcar-gen5.c`, `arch/arm/dts/r8a78000-ironhide*`, `configs/r8a78000_ironhide_cm33_defconfig`, `include/configs/rcar-gen5-common.h`).
+
+### Suggested MR reply
+
+> This comment is the auto-diagnostic from pipeline-fix attempt 1 and concludes "No code fix is warranted." All five failures were lab-infrastructure — three `rfc2217://kea:None` serial-allocator errors (jerry / pcduino3_nano / rpi3), a downstream lab timeout on colibrimx8, and efi-x86_64-uboot-iso-install where the test actually passed but the 9:58 runtime blew the 10m0s job cap during cleanup. None of these boards touch the Renesas R-Car–only files in this branch. Please retry the pipeline once the "kea" lab node is healthy, and consider raising the efi-x86_64-uboot-iso-install job timeout above 10 min. No branch update needed.
+
+---
+
