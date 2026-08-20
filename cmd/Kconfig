@@ -1089,6 +1089,7 @@ config CMD_RANDOM
 	bool "random"
 	default y
 	depends on CMD_MEMORY && (LIB_RAND || LIB_HW_RAND)
+	select GETOPT
 	help
 	  random - fill memory with random data
 

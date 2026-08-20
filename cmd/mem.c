@@ -1286,14 +1286,18 @@ static int do_mem_crc(struct cmd_tbl *cmdtp, int flag, int argc,
 #endif
 
 #ifdef CONFIG_CMD_RANDOM
-static int do_random(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_random(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long addr, len;
 	unsigned long seed; // NOT INITIALIZED ON PURPOSE
 	unsigned int *buf, *start;
 	unsigned char *buf8;
 	unsigned int i;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 3 || argc > 4)
 		return CMD_RET_USAGE;
@@ -1442,7 +1446,7 @@ U_BOOT_CMD_GETOPT(
 #endif /* CONFIG_CMD_MX_CYCLIC */
 
 #ifdef CONFIG_CMD_RANDOM
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	random,	4,	0,	do_random,
 	"fill memory with random pattern",
 	"<addr> <len> [<seed>]\n"
