@@ -42,7 +42,7 @@
 #define HELP_Q ""
 #endif
 
-static int mod_mem(int, int, int, char * const []);
+static int mod_mem(struct getopt_state *, int);
 
 /* Display values from last command.
  * Memory modify remembered values are different from display memory.
@@ -120,7 +120,7 @@ static int do_mem_mm(struct getopt_state *gs)
 	if (getopt(gs, "+") > 0)
 		return CMD_RET_USAGE;
 
-	return mod_mem(1, gs->cmd_flag, gs->argc, gs->argv);
+	return mod_mem(gs, 1);
 }
 
 static int do_mem_nm(struct getopt_state *gs)
@@ -128,7 +128,7 @@ static int do_mem_nm(struct getopt_state *gs)
 	if (getopt(gs, "+") > 0)
 		return CMD_RET_USAGE;
 
-	return mod_mem(0, gs->cmd_flag, gs->argc, gs->argv);
+	return mod_mem(gs, 0);
 }
 
 static int do_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1167,15 +1167,14 @@ static int do_mem_mtest(struct cmd_tbl *cmdtp, int flag, int argc,
  * Syntax:
  *	mm{.b, .w, .l, .q} {addr}
  */
-static int
-mod_mem(int incrflag, int flag, int argc, char *const argv[])
+static int mod_mem(struct getopt_state *gs, int incrflag)
 {
 	ulong	addr;
 	ulong i;  /* 64-bit if MEM_SUPPORT_64BIT_DATA */
 	int	nbytes, size;
 	void *ptr = NULL;
 
-	if (argc != 2)
+	if (gs->argc != 2)
 		return CMD_RET_USAGE;
 
 	bootretry_reset_cmd_timeout();	/* got a good command to get here */
@@ -1185,16 +1184,17 @@ mod_mem(int incrflag, int flag, int argc, char *const argv[])
 	addr = mm_last_addr;
 	size = mm_last_size;
 
-	if ((flag & CMD_FLAG_REPEAT) == 0) {
+	if ((gs->cmd_flag & CMD_FLAG_REPEAT) == 0) {
 		/* New command specified.  Check for a size specification.
 		 * Defaults to long if no or incorrect specification.
 		 */
-		if ((size = cmd_get_data_size(argv[0], 4)) < 0)
+		size = cmd_get_data_size(gs->argv[0], 4);
+		if (size < 0)
 			return 1;
 
 		/* Address is specified since argc > 1
 		*/
-		addr = hextoul(argv[1], NULL);
+		addr = hextoul(gs->argv[1], NULL);
 		addr += base_address;
 	}
 
