@@ -26,11 +26,16 @@ static ulong base_address;
  * Syntax:
  *	iod{.b, .w, .l} {addr}
  */
-int do_io_iod(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_io_iod(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	ulong addr, length, bytes;
 	u8 buf[DISP_LINE_LEN];
 	int size, todo;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/*
 	 * We use the last specified parameters, unless new ones are
@@ -43,7 +48,7 @@ int do_io_iod(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
-	if ((flag & CMD_FLAG_REPEAT) == 0) {
+	if ((gs->cmd_flag & CMD_FLAG_REPEAT) == 0) {
 		/*
 		 * New command specified.  Check for a size specification.
 		 * Defaults to long if no or incorrect specification.
@@ -123,8 +128,8 @@ int do_io_iow(struct getopt_state *gs)
 }
 
 /**************************************************/
-U_BOOT_CMD(iod, 3, 1, do_io_iod,
-	   "IO space display", "[.b, .w, .l] address");
+U_BOOT_CMD_GETOPT(iod, 3, 1, do_io_iod,
+		  "IO space display", "[.b, .w, .l] address");
 
 U_BOOT_CMD_GETOPT(iow, 3, 0, do_io_iow,
 		  "IO space modify",
