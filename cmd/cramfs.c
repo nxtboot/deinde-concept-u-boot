@@ -133,7 +133,7 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
 		filename = argv[1];
 	}
 	if (argc == 3) {
-		offset = simple_strtoul(argv[1], NULL, 0);
+		offset = hextoul(argv[1], NULL);
 		image_load_addr = offset;
 		filename = argv[2];
 	}
@@ -216,9 +216,9 @@ int do_cramfs_ls(struct getopt_state *gs)
 U_BOOT_CMD(
 	cramfsload,	3,	0,	do_cramfs_load,
 	"load binary file from a filesystem image",
-	"[ off ] [ filename ]\n"
-	"    - load binary file from address 'cramfsaddr'\n"
-	"      with offset 'off'\n"
+	"[ addr ] [ filename ]\n"
+	"    - load binary file from the image at 'cramfsaddr'\n"
+	"      to address 'addr', hexadecimal\n"
 );
 U_BOOT_CMD_GETOPT(
 	cramfsls,	2,	1,	do_cramfs_ls,
