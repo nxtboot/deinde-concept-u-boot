@@ -21,11 +21,14 @@
  */
 #include <command.h>
 #include <fs_cmd.h>
+#include <getopt.h>
 
-static int do_ext2ls(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_ext2ls(struct getopt_state *gs)
 {
-	return do_ls(argc, argv, FS_TYPE_EXT);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return do_ls(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
 /******************************************************************************
@@ -36,7 +39,7 @@ int do_ext2load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return do_load(argc, argv, FS_TYPE_EXT);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	ext2ls,	4,	1,	do_ext2ls,
 	"list files in a directory (default /)",
 	"<interface> <dev[:part]> [directory]\n"

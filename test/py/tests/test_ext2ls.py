@@ -72,6 +72,28 @@ def test_ext2ls_missing(ubman):
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_ext2')
 @pytest.mark.buildconfigspec('fs_ext4l')
+def test_ext2ls_option(ubman):
+    """Check that ext2ls refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with FsHelper(ubman.config, 'ext4', 2, 'test_ext2ls_option') as fsh:
+        make_image(fsh)
+        ubman.run_command(f'host bind 0 {fsh.fs_img}')
+
+        out = ubman.run_command('ext2ls -l host 0')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+        # An option after the interface is a directory name, as before
+        out = ubman.run_command('ext2ls host 0 -l')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' not in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_ext2')
+@pytest.mark.buildconfigspec('fs_ext4l')
 def test_ext2ls_baddev(ubman):
     """Check that ext2ls complains about a device which is not there
 
