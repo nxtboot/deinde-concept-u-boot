@@ -191,6 +191,21 @@ def test_cramfsls_unset(ubman):
 
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_cramfs')
+def test_cramfsls_option(ubman):
+    """Check that cramfsls refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with CramfsImage() as img:
+        load_image(ubman, img)
+
+        out = ubman.run_command('cramfsls -a')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_cramfs')
 def test_cramfsls_args(ubman):
     """Check that cramfsls rejects too many arguments
 

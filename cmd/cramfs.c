@@ -11,6 +11,7 @@
  */
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <malloc.h>
 #include <mapmem.h>
@@ -167,7 +168,7 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
  * @param argv arguments list
  * Return: 0 on success, 1 otherwise
  */
-int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_cramfs_ls(struct getopt_state *gs)
 {
 	char *filename = "/";
 	int ret;
@@ -177,6 +178,9 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 	const char *addr_str;
 	ulong addr;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	addr_str = env_get("cramfsaddr");
 	if (!addr_str) {
@@ -195,8 +199,8 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	/* fake the address offset */
 	part.offset = (u64)(uintptr_t) map_sysmem(addr - OFFSET_ADJUSTMENT, 0);
 
-	if (argc == 2)
-		filename = argv[1];
+	if (gs->argc == 2)
+		filename = gs->argv[1];
 
 	ret = 0;
 	if (cramfs_check(&part))
@@ -216,7 +220,7 @@ U_BOOT_CMD(
 	"    - load binary file from address 'cramfsaddr'\n"
 	"      with offset 'off'\n"
 );
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cramfsls,	2,	1,	do_cramfs_ls,
 	"list files in a directory (default /)",
 	"[ directory ]\n"
