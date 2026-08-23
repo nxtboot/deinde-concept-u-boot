@@ -94,4 +94,6 @@ See also
   rather than the filesystem
 * :doc:`fsinfo<fsinfo>` for the block counts of the same filesystem
 * :doc:`ls<ls>` for listing what the filesystem contains
+* :doc:`btrsubvol<btrsubvol>` for the subvolumes of a BTRFS filesystem,
+  which share the one UUID reported here
 * *fstype* for asking which filesystem is on a partition
