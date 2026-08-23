@@ -34,9 +34,12 @@ static int do_ext2ls(struct getopt_state *gs)
 /******************************************************************************
  * Ext2fs boot command intepreter. Derived from diskboot
  */
-int do_ext2load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_ext2load(struct getopt_state *gs)
 {
-	return do_load(argc, argv, FS_TYPE_EXT);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return do_load(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
 U_BOOT_CMD_GETOPT(
@@ -46,7 +49,7 @@ U_BOOT_CMD_GETOPT(
 	"    - list files from 'dev' on 'interface' in a 'directory'"
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	ext2load,	7,	0,	do_ext2load,
 	"load binary file from a Ext2 filesystem",
 	"<interface> [<dev[:part]> [addr [filename [bytes [pos]]]]]\n"

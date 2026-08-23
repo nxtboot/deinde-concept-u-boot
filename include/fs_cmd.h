@@ -22,17 +22,6 @@ struct cmd_tbl;
 int do_fat_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 		  char *const argv[]);
 
-/**
- * do_ext2load - Run the ext2load command
- *
- * @cmdtp: Command information for ext2load
- * @flag: Command flags (CMD_FLAG\_...)
- * @argc: Number of arguments
- * @argv: List of arguments
- * Return: result (see enum command_ret_t)
- */
-int do_ext2load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
-
 /*
  * Common implementation for various filesystem commands, optionally limited
  * to a specific filesystem type via the fstype parameter.

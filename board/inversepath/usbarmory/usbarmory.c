@@ -9,6 +9,7 @@
 
 #include <config.h>
 #include <command.h>
+#include <fs_cmd.h>
 #include <fs_legacy.h>
 #include <init.h>
 #include <asm/global_data.h>
@@ -441,7 +442,7 @@ int board_run_command(const char *cmdline)
 	printf("%s %s %s %s %s\n", ext2_argv[0], ext2_argv[1], ext2_argv[2],
 	       ext2_argv[3], ext2_argv[4]);
 
-	if (do_ext2load(NULL, 0, 5, ext2_argv) != 0) {
+	if (do_load(5, ext2_argv, FS_TYPE_EXT) != 0) {
 		udelay(5*1000*1000);
 		return 1;
 	}
