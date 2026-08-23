@@ -103,8 +103,15 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
 	struct mtd_device dev;
 	struct mtdids id;
 
+	const char *addr_str;
 	ulong addr;
-	addr = hextoul(env_get("cramfsaddr"), NULL);
+
+	addr_str = env_get("cramfsaddr");
+	if (!addr_str) {
+		printf("Environment variable 'cramfsaddr' is not set\n");
+		return 1;
+	}
+	addr = hextoul(addr_str, NULL);
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
@@ -168,8 +175,15 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	struct mtd_device dev;
 	struct mtdids id;
 
+	const char *addr_str;
 	ulong addr;
-	addr = hextoul(env_get("cramfsaddr"), NULL);
+
+	addr_str = env_get("cramfsaddr");
+	if (!addr_str) {
+		printf("Environment variable 'cramfsaddr' is not set\n");
+		return 1;
+	}
+	addr = hextoul(addr_str, NULL);
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
