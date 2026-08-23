@@ -96,4 +96,6 @@ See also
 * :doc:`ls<ls>` for listing what the filesystem contains
 * :doc:`btrsubvol<btrsubvol>` for the subvolumes of a BTRFS filesystem,
   which share the one UUID reported here
+* :doc:`cramfsls<cramfsls>` for a CRAMFS image, which is held in memory
+  rather than on a block device and has no UUID to look up
 * *fstype* for asking which filesystem is on a partition

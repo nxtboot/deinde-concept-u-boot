@@ -57,5 +57,7 @@ See also
 --------
 
 * :doc:`ext2ls<ext2ls>` for listing an ext filesystem without mounting it
+* :doc:`cramfsls<cramfsls>` for listing a CRAMFS image held in memory,
+  which has no block device to mount
 * :doc:`mount<mount>` for making a filesystem available to this command
 * :doc:`size<size>` for asking about one file rather than listing them all
