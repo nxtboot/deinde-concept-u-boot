@@ -3108,6 +3108,7 @@ config CMD_VFS
 config CMD_FS_UUID
 	bool "fsuuid command"
 	default y if SANDBOX
+	select GETOPT
 	help
 	  Enables fsuuid command for filesystem UUID.
 

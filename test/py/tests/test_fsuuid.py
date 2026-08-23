@@ -133,6 +133,28 @@ def test_fsuuid_missing(ubman):
 
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_fs_uuid')
+def test_fsuuid_option(ubman):
+    """Check that fsuuid refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with FsHelper(ubman.config, 'ext4', 2, 'test_fsuuid_option') as fsh:
+        make_image(fsh)
+        ubman.run_command(f'host bind 0 {fsh.fs_img}')
+
+        out = ubman.run_command('fsuuid -x host 0')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+        # An option after the interface is a variable name, as before. The
+        # UUID goes into a variable called -x, which the shell cannot expand,
+        # so the proof is that nothing was printed and the command succeeded
+        assert '' == ubman.run_command('fsuuid host 0 -x')
+        assert '0' == ubman.run_command('echo $?')
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_fs_uuid')
 def test_fsuuid_args(ubman):
     """Check that fsuuid rejects the wrong number of arguments
 
