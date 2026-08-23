@@ -17,25 +17,25 @@
 static int do_host_load(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
-	return do_load(cmdtp, flag, argc, argv, FS_TYPE_SANDBOX);
+	return do_load(argc, argv, FS_TYPE_SANDBOX);
 }
 
 static int do_host_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 		      char *const argv[])
 {
-	return do_ls(cmdtp, flag, argc, argv, FS_TYPE_SANDBOX);
+	return do_ls(argc, argv, FS_TYPE_SANDBOX);
 }
 
 static int do_host_size(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
-	return do_size(cmdtp, flag, argc, argv, FS_TYPE_SANDBOX);
+	return do_size(argc, argv, FS_TYPE_SANDBOX);
 }
 
 static int do_host_save(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
-	return do_save(cmdtp, flag, argc, argv, FS_TYPE_SANDBOX);
+	return do_save(argc, argv, FS_TYPE_SANDBOX);
 }
 
 static int do_host_bind(struct cmd_tbl *cmdtp, int flag, int argc,
