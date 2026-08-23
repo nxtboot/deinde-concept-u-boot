@@ -338,7 +338,7 @@ static int do_ihs_axi(struct cmd_tbl *cmdtp, int flag, int argc,
 	c = find_cmd_tbl(argv[0], &cmd_axi_sub[0], ARRAY_SIZE(cmd_axi_sub));
 
 	if (c)
-		return c->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(c, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }

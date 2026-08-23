@@ -418,5 +418,5 @@ int do_tpm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (!cmd)
 		return CMD_RET_USAGE;
 
-	return cmd->cmd(cmdtp, flag, argc - 1, argv + 1);
+	return cmd_invoke(cmd, flag, argc - 1, argv + 1);
 }

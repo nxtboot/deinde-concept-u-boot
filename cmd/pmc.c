@@ -63,7 +63,7 @@ static struct cmd_tbl cmd_pmc_sub[] = {
 
 static int do_pmc(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	const struct cmd_tbl *cp;
+	struct cmd_tbl *cp;
 
 	if (argc < 2) /* no subcommand */
 		return cmd_usage(cmdtp);
@@ -72,7 +72,7 @@ static int do_pmc(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_CMD(
