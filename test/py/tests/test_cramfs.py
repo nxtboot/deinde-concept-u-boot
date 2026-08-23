@@ -15,6 +15,9 @@ import pytest
 ADDR = 0x1000000
 BAD_ADDR = 0x2000000
 
+# Address to load a file out of the image to
+DEST = 0x3000000
+
 # Contents of the two files in the image
 HELLO = 'Hello, world!\n'
 DEEP = 'down here\n'
@@ -218,3 +221,70 @@ def test_cramfsls_args(ubman):
         out = ubman.run_command('cramfsls subdir extra')
         assert '1' == ubman.run_command('echo $?')
         assert 'Usage:' in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_cramfs')
+def test_cramfsload_base(ubman):
+    """Check that cramfsload reads a file out of a CRAMFS image
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with CramfsImage() as img:
+        load_image(ubman, img)
+
+        out = ubman.run_command(f'cramfsload {DEST:x} hello.txt')
+        assert '0' == ubman.run_command('echo $?')
+        assert f'{len(HELLO)} bytes loaded to 0x{DEST:x}' in out
+
+        # the size is reported in filesize, in hex
+        assert f'filesize={len(HELLO):x}' in ubman.run_command(
+            'printenv filesize')
+
+        # the file really is there, in the ASCII column of the dump
+        out = ubman.run_command(f'md.b {DEST:x} {len(HELLO):x}')
+        assert HELLO.strip() in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_cramfs')
+def test_cramfsload_subdir(ubman):
+    """Check that cramfsload reads a file from a subdirectory
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with CramfsImage() as img:
+        load_image(ubman, img)
+
+        out = ubman.run_command(f'cramfsload {DEST:x} subdir/deep.txt')
+        assert f'{len(DEEP)} bytes loaded to 0x{DEST:x}' in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_cramfs')
+def test_cramfsload_hex(ubman):
+    """Check that the address is read as hexadecimal
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with CramfsImage() as img:
+        load_image(ubman, img)
+
+        # 2000000 means 0x2000000, not two million
+        out = ubman.run_command('cramfsload 2000000 hello.txt')
+        assert 'loaded to 0x2000000' in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_cramfs')
+def test_cramfsload_missing(ubman):
+    """Check that cramfsload reports a file which is not in the image
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with CramfsImage() as img:
+        load_image(ubman, img)
+
+        out = ubman.run_command(f'cramfsload {DEST:x} nofile.txt')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'CRAMFS LOAD ERROR' in out
