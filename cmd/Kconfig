@@ -3013,6 +3013,7 @@ menu "Filesystem commands"
 config CMD_BTRFS
 	bool "Enable the 'btrsubvol' command"
 	select FS_BTRFS
+	select GETOPT
 	help
 	  This enables the 'btrsubvol' command to list subvolumes
 	  of a BTRFS filesystem. There are no special commands for

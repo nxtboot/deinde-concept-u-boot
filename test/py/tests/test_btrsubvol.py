@@ -84,6 +84,28 @@ def test_btrsubvol_missing(ubman):
 
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_btrfs')
+def test_btrsubvol_option(ubman):
+    """Check that btrsubvol refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with FsHelper(ubman.config, 'btrfs', BTRFS_MB,
+                  'test_btrsubvol_option') as fsh:
+        make_image(fsh)
+        ubman.run_command(f'host bind 0 {fsh.fs_img}')
+
+        out = ubman.run_command('btrsubvol -x host 0')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+        # An option after the interface is still counted as an argument
+        out = ubman.run_command('btrsubvol host 0 -x')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_btrfs')
 def test_btrsubvol_args(ubman):
     """Check that btrsubvol rejects the wrong number of arguments
 

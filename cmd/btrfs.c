@@ -6,21 +6,25 @@
 #include <command.h>
 #include <btrfs.h>
 #include <fs_legacy.h>
+#include <getopt.h>
 
-int do_btrsubvol(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_btrsubvol(struct getopt_state *gs)
 {
-	if (argc != 3)
+	if (getopt(gs, "+") > 0)
 		return CMD_RET_USAGE;
 
-	if (fs_set_blk_dev(argv[1], argv[2], FS_TYPE_BTRFS))
+	if (gs->argc != 3)
+		return CMD_RET_USAGE;
+
+	if (fs_set_blk_dev(gs->argv[1], gs->argv[2], FS_TYPE_BTRFS))
 		return 1;
 
 	btrfs_list_subvols();
 	return 0;
 }
 
-U_BOOT_CMD(btrsubvol, 3, 1, do_btrsubvol,
-	"list subvolumes of a BTRFS filesystem",
-	"<interface> <dev[:part]>\n"
-	"     - List subvolumes of a BTRFS filesystem."
+U_BOOT_CMD_GETOPT(btrsubvol, 3, 1, do_btrsubvol,
+		  "list subvolumes of a BTRFS filesystem",
+		  "<interface> <dev[:part]>\n"
+		  "     - List subvolumes of a BTRFS filesystem."
 );
