@@ -80,5 +80,7 @@ See also
 --------
 
 * :doc:`fatsize<fatsize>` for the FAT-only form of this command
+* :doc:`ext2ls<ext2ls>` for listing an ext filesystem, which shows sizes too
+* :doc:`ext2load<ext2load>` for reading a file, which also sets filesize
 * :doc:`load<load>` for reading a file into memory, which also sets filesize
 * :doc:`mount<mount>` for making a filesystem available to the VFS form

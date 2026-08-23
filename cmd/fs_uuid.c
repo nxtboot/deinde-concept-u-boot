@@ -12,7 +12,7 @@
 static int do_fs_uuid_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			      char *const argv[])
 {
-	return do_fs_uuid(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_fs_uuid(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(

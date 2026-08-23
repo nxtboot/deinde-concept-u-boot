@@ -42,24 +42,24 @@
 
 int do_ext4_size(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	return do_size(cmdtp, flag, argc, argv, FS_TYPE_EXT);
+	return do_size(argc, argv, FS_TYPE_EXT);
 }
 
 int do_ext4_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	return do_load(cmdtp, flag, argc, argv, FS_TYPE_EXT);
+	return do_load(argc, argv, FS_TYPE_EXT);
 }
 
 int do_ext4_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	return do_ls(cmdtp, flag, argc, argv, FS_TYPE_EXT);
+	return do_ls(argc, argv, FS_TYPE_EXT);
 }
 
 #if defined(CONFIG_CMD_EXT4_WRITE)
 int do_ext4_write(struct cmd_tbl *cmdtp, int flag, int argc,
 		  char *const argv[])
 {
-	return do_save(cmdtp, flag, argc, argv, FS_TYPE_EXT);
+	return do_save(argc, argv, FS_TYPE_EXT);
 }
 
 U_BOOT_CMD(ext4write, 7, 1, do_ext4_write,

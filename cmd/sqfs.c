@@ -13,7 +13,7 @@
 
 static int do_sqfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
-	return do_ls(cmdtp, flag, argc, argv, FS_TYPE_SQUASHFS);
+	return do_ls(argc, argv, FS_TYPE_SQUASHFS);
 }
 
 U_BOOT_CMD(sqfsls, 4, 1, do_sqfs_ls,
@@ -24,7 +24,7 @@ U_BOOT_CMD(sqfsls, 4, 1, do_sqfs_ls,
 
 static int do_sqfs_load(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
-	return do_load(cmdtp, flag, argc, argv, FS_TYPE_SQUASHFS);
+	return do_load(argc, argv, FS_TYPE_SQUASHFS);
 }
 
 U_BOOT_CMD(sqfsload, 7, 0, do_sqfs_load,

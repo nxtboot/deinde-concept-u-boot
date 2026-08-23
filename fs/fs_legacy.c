@@ -940,8 +940,7 @@ int fs_rename(const char *old_path, const char *new_path)
 	return ret;
 }
 
-int do_size(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	    int fstype)
+int do_size(int argc, char *const argv[], int fstype)
 {
 	loff_t size;
 
@@ -959,8 +958,7 @@ int do_size(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	    int fstype)
+int do_load(int argc, char *const argv[], int fstype)
 {
 	struct blk_desc *dev_desc;
 	unsigned long addr;
@@ -1053,8 +1051,7 @@ int do_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	  int fstype)
+int do_ls(int argc, char *const argv[], int fstype)
 {
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1079,8 +1076,7 @@ int file_exists(const char *dev_type, const char *dev_part, const char *file,
 	return fs_exists(file);
 }
 
-int do_save(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	    int fstype)
+int do_save(int argc, char *const argv[], int fstype)
 {
 	unsigned long addr;
 	const char *filename;
@@ -1121,8 +1117,7 @@ int do_save(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_fs_uuid(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	       int fstype)
+int do_fs_uuid(int argc, char *const argv[], int fstype)
 {
 	int ret;
 	char uuid[37];
@@ -1200,8 +1195,7 @@ int do_fs_statfs(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
-int do_rm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	  int fstype)
+int do_rm(int argc, char *const argv[], int fstype)
 {
 	if (argc != 4)
 		return CMD_RET_USAGE;
@@ -1215,8 +1209,7 @@ int do_rm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_mkdir(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	     int fstype)
+int do_mkdir(int argc, char *const argv[], int fstype)
 {
 	int ret;
 
@@ -1235,8 +1228,7 @@ int do_mkdir(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_ln(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	  int fstype)
+int do_ln(int argc, char *const argv[], int fstype)
 {
 	if (argc != 5)
 		return CMD_RET_USAGE;
@@ -1250,8 +1242,7 @@ int do_ln(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
 	return 0;
 }
 
-int do_mv(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	  int fstype)
+int do_mv(int argc, char *const argv[], int fstype)
 {
 	struct fs_dir_stream *dirs;
 	char *src = argv[3];

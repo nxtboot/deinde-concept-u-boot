@@ -11,7 +11,7 @@
 static int do_size_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			   char *const argv[])
 {
-	return do_size(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_size(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -25,7 +25,7 @@ U_BOOT_CMD(
 static int do_load_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			   char *const argv[])
 {
-	return do_load(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_load(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -43,7 +43,7 @@ U_BOOT_CMD(
 static int do_save_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			   char *const argv[])
 {
-	return do_save(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_save(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -60,7 +60,7 @@ U_BOOT_CMD(
 static int do_ls_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			 char *const argv[])
 {
-	return do_ls(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_ls(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -74,7 +74,7 @@ U_BOOT_CMD(
 static int do_ln_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			 char *const argv[])
 {
-	return do_ln(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_ln(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -88,7 +88,7 @@ U_BOOT_CMD(
 static int do_mkdir_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			    char *const argv[])
 {
-	return do_mkdir(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_mkdir(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -102,7 +102,7 @@ U_BOOT_CMD(
 static int do_rm_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			 char *const argv[])
 {
-	return do_rm(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_rm(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(
@@ -142,7 +142,7 @@ U_BOOT_CMD(
 static int do_mv_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
 			 char *const argv[])
 {
-	return do_mv(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+	return do_mv(argc, argv, FS_TYPE_ANY);
 }
 
 U_BOOT_CMD(

@@ -16,7 +16,7 @@
 
 static int do_fat_size(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	return do_size(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_size(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(
@@ -29,7 +29,7 @@ U_BOOT_CMD(
 
 int do_fat_fsload(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-	return do_load(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_load(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(
@@ -50,7 +50,7 @@ U_BOOT_CMD(
 static int do_fat_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return do_ls(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_ls(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(
@@ -96,7 +96,7 @@ U_BOOT_CMD(
 static int do_fat_fswrite(struct cmd_tbl *cmdtp, int flag, int argc,
 			  char *const argv[])
 {
-	return do_save(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_save(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(
@@ -110,7 +110,7 @@ U_BOOT_CMD(
 static int do_fat_rm(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return do_rm(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_rm(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(
@@ -123,7 +123,7 @@ U_BOOT_CMD(
 static int do_fat_mkdir(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
-	return do_mkdir(cmdtp, flag, argc, argv, FS_TYPE_FAT);
+	return do_mkdir(argc, argv, FS_TYPE_FAT);
 }
 
 U_BOOT_CMD(

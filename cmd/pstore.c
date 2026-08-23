@@ -415,7 +415,7 @@ static int pstore_save(struct cmd_tbl *cmdtp, int flag,  int argc,
 		sprintf(length, "0x%X", size - header_len);
 		snprintf(path, sizeof(path), "%s/dmesg-ramoops-%u%s", argv[3],
 			 index, compressed ? ".enc.z" : "");
-		do_save(cmdtp, flag, 6, save_argv, FS_TYPE_ANY);
+		do_save(6, save_argv, FS_TYPE_ANY);
 		index++;
 	}
 
@@ -427,7 +427,7 @@ static int pstore_save(struct cmd_tbl *cmdtp, int flag,  int argc,
 	if (size != 0) {
 		sprintf(length, "0x%X", size);
 		snprintf(path, sizeof(path), "%s/console-ramoops-0", argv[3]);
-		do_save(cmdtp, flag, 6, save_argv, FS_TYPE_ANY);
+		do_save(6, save_argv, FS_TYPE_ANY);
 	}
 	ptr += pstore_console_size;
 
@@ -439,7 +439,7 @@ static int pstore_save(struct cmd_tbl *cmdtp, int flag,  int argc,
 	if (size != 0) {
 		sprintf(length, "0x%X", size);
 		snprintf(path, sizeof(path), "%s/ftrace-ramoops-0", argv[3]);
-		do_save(cmdtp, flag, 6, save_argv, FS_TYPE_ANY);
+		do_save(6, save_argv, FS_TYPE_ANY);
 	}
 	ptr += pstore_ftrace_size;
 
@@ -449,7 +449,7 @@ static int pstore_save(struct cmd_tbl *cmdtp, int flag,  int argc,
 	if (size != 0) {
 		sprintf(length, "0x%X", size);
 		snprintf(path, sizeof(path), "%s/pmsg-ramoops-0", argv[3]);
-		do_save(cmdtp, flag, 6, save_argv, FS_TYPE_ANY);
+		do_save(6, save_argv, FS_TYPE_ANY);
 	}
 
 	free(buffer);

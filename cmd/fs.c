@@ -21,8 +21,7 @@
 #include <vfs.h>
 #include <dm/uclass.h>
 
-int do_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[],
-	    int fstype);
+int do_load(int argc, char *const argv[], int fstype);
 int do_fs_types(struct cmd_tbl *cmdtp, int flag, int argc,
 		char *const argv[]);
 
@@ -744,7 +743,7 @@ static int do_load_vfs(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc >= 2) {
 		hextoul(argv[1], &endp);
 		if (*endp)
-			return do_load(cmdtp, flag, argc, argv, FS_TYPE_ANY);
+			return do_load(argc, argv, FS_TYPE_ANY);
 	}
 
 	return do_vfs_load(cmdtp, flag, argc, argv);

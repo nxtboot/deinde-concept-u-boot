@@ -3050,6 +3050,7 @@ config CMD_EROFS
 config CMD_EXT2
 	bool "ext2 command support"
 	select FS_EXT4 if !FS_EXT4L
+	select GETOPT
 	help
 	  Enables EXT2 FS command
 
