@@ -86,7 +86,8 @@ holding no CRAMFS image, and a path which the image does not contain.
 See also
 --------
 
-* *cramfsload* for reading one of the listed files into memory
+* :doc:`cramfsload<cramfsload>` for reading one of the listed files into
+  memory
 * :doc:`ls<ls>` for listing a directory on a filesystem held on a block
   device rather than in memory
 * :doc:`fsuuid<fsuuid>` for the UUID of such a filesystem, which CRAMFS
