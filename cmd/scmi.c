@@ -367,7 +367,7 @@ static int do_scmi(struct cmd_tbl *cmdtp, int flag,
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_LONGHELP(scmi,

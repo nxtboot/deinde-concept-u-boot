@@ -188,7 +188,7 @@ static int do_rkmtd(struct cmd_tbl *cmdtp, int flag, int argc,
 	c = find_cmd_tbl(argv[0], cmd_rkmtd_sub, ARRAY_SIZE(cmd_rkmtd_sub));
 
 	if (c)
-		return c->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(c, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }
