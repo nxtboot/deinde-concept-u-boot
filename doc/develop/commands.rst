@@ -7,13 +7,28 @@ Command definition
 ------------------
 
 Commands are added to U-Boot by creating a new command structure.
-This is done by first including command.h, then using the U_BOOT_CMD() or the
-U_BOOT_CMD_COMPLETE macro to fill in a struct cmd_tbl structure.
+This is done by first including command.h, then using one of the U_BOOT_CMD
+macros to fill in a struct cmd_tbl structure.
+
+**Use U_BOOT_CMD_GETOPT() for a new command.** It gives the command function
+the getopt signature, described below, which parses options for it:
+
+.. code-block:: c
+
+    U_BOOT_CMD_GETOPT(name, maxargs, repeatable, command, "usage", "help")
+    U_BOOT_CMD_GETOPT_COMPLETE(name, maxargs, repeatable, command, "usage",
+                               "help", comp)
+
+Many existing commands use the older macros, which give the command function
+the classic signature instead. Do not convert one without a test to show that
+its behaviour has not changed:
 
 .. code-block:: c
 
     U_BOOT_CMD(name, maxargs, repeatable, command, "usage", "help")
-    U_BOOT_CMD_COMPLETE(name, maxargs, repeatable, command, "usage, "help", comp)
+    U_BOOT_CMD_COMPLETE(name, maxargs, repeatable, command, "usage", "help", comp)
+
+The arguments are the same either way:
 
 name
     The name of the command. This is **not** a string.
@@ -45,15 +60,31 @@ comp
 Sub-command definition
 ----------------------
 
-Likewise an array of struct cmd_tbl holding sub-commands can be created using
-either of the following macros:
+A command with sub-commands is best declared with U_BOOT_CMD_WITH_SUBCMDS(),
+which writes the table and the code to search it for you:
+
+.. code-block:: c
+
+    U_BOOT_CMD_WITH_SUBCMDS(foo, "do foo things", foo_help_text,
+        U_BOOT_SUBCMD_MKENT(bar, 2, 1, do_foo_bar),
+        U_BOOT_SUBCMD_MKENT(baz, 3, 0, do_foo_baz));
+
+The dispatcher it generates finds the sub-command, refuses to repeat one which
+is not repeatable, and calls it. Each sub-command has its own maxargs and its
+own repeatable flag, so 'foo bar' can repeat when Enter is pressed while
+'foo baz' does not.
+
+Where a command searches its own table instead, the entries are made with:
 
 .. code-block:: c
 
     U_BOOT_CMD_MKENT(name, maxargs, repeatable, command, "usage", "help")
-    U_BOOT_CMD_MKENTCOMPLETE(name, maxargs, repeatable, command, "usage, "help", comp)
+    U_BOOT_CMD_MKENT_COMPLETE(name, maxargs, repeatable, command, "usage",
+                              "help", comp)
+    U_BOOT_CMD_MKENT_GETOPT(name, maxargs, repeatable, command, "usage", "help")
 
-This table has to be evaluated in the command function of the main command, e.g.
+and the sub-command is reached with cmd_invoke(), which passes it its own table
+entry and copes with either signature:
 
 .. code-block:: c
 
@@ -62,9 +93,11 @@ This table has to be evaluated in the command function of the main command, e.g.
         U_BOOT_CMD_MKENT(bar, CONFIG_SYS_MAXARGS, 1, do_bar, "", ""),
     };
 
-    static int do_cmd(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+    static int do_cmd(struct getopt_state *gs)
     {
         struct cmd_tbl *cp;
+        int argc = gs->argc;
+        char *const *argv = gs->argv;
 
         if (argc < 2)
                 return CMD_RET_USAGE;
@@ -73,18 +106,81 @@ This table has to be evaluated in the command function of the main command, e.g.
         argc--;
         argv++;
 
-        cp = find_cmd_tbl(argv[0], cmd_ut_sub, ARRAY_SIZE(cmd_sub));
+        cp = find_cmd_tbl(argv[0], cmd_sub, ARRAY_SIZE(cmd_sub));
 
         if (cp)
-            return cp->cmd(cmdtp, flag, argc, argv);
+            return cmd_invoke(cp, gs->cmd_flag, argc, argv);
 
         return CMD_RET_USAGE;
     }
 
+Do not call ``cp->cmd()`` directly. That passes the outer command's table entry
+to the sub-command, so a sub-command reading cmdtp->name sees the wrong name,
+and it cannot call a sub-command which uses the getopt signature.
+
 Command function
 ----------------
 
-The command function pointer has to be of type
+There are two shapes of command function. A new command should use the getopt
+one:
+
+.. code-block:: c
+
+    int (*cmd)(struct getopt_state *gs);
+
+gs
+    Parser state for this invocation. It holds the arguments and the command
+    flags, and getopt() reads options out of it. The fields a command uses
+    are:
+
+    * gs->argc - number of arguments including the command
+    * gs->argv - the arguments
+    * gs->cmd_flag - the flags described below
+
+Options are read with getopt(), which returns each option letter in turn and
+-1 when there are none left:
+
+.. code-block:: c
+
+    static int do_foo(struct getopt_state *gs)
+    {
+        bool verbose = false;
+        const char *arg;
+        int opt;
+
+        while ((opt = getopt(gs, "+v")) > 0) {
+            switch (opt) {
+            case 'v':
+                verbose = true;
+                break;
+            default:
+                return CMD_RET_USAGE;
+            }
+        }
+
+        while ((arg = getopt_pop(gs)))
+            printf("%s\n", arg);
+
+        return 0;
+    }
+
+Start the optstring with ``+``. That makes getopt() stop at the first argument
+which is not an option, which is how U-Boot commands have always behaved, and
+avoids needing CONFIG_GETOPT_PERMUTE, which would make every command carry a
+writable copy of its arguments.
+
+A command with no options at all still gains something from the signature: an
+empty optstring refuses any option rather than treating it as data:
+
+.. code-block:: c
+
+    if (getopt(gs, "+") > 0)
+        return CMD_RET_USAGE;
+
+The remaining arguments are taken one at a time with getopt_pop(), or read from
+``gs->argv[gs->index]`` onwards.
+
+The older signature, used by commands which have not been converted, is:
 
 .. code-block:: c
 
@@ -94,17 +190,19 @@ cmdtp
     Table entry describing the command (see above).
 
 flag
-    A bitmap which may contain the following bits
-
-    * CMD_FLAG_REPEAT - The last command is repeated.
-    * CMD_FLAG_BOOTD  - The command is called by the bootd command.
-    * CMD_FLAG_ENV    - The command is called by the run command.
+    The command flags, as gs->cmd_flag above.
 
 argc
     Number of arguments including the command.
 
 argv
     Arguments.
+
+The command flags are a bitmap which may contain the following bits:
+
+* CMD_FLAG_REPEAT - The last command is repeated.
+* CMD_FLAG_BOOTD  - The command is called by the bootd command.
+* CMD_FLAG_ENV    - The command is called by the run command.
 
 Allowable return value are:
 
