@@ -144,22 +144,6 @@ void getopt_init_state(struct getopt_state *gs, int argc,
 int getopt(struct getopt_state *gs, const char *optstring);
 
 /**
- * getopt_silent() - Compatibility alias for getopt()
- * @gs: getopt state
- * @optstring: option specification, as for getopt()
- *
- * getopt() no longer prints error messages, so this is identical to
- * getopt(). Kept for callers (notably the unit tests) that named it
- * explicitly.
- *
- * Return: same as getopt()
- */
-static inline int getopt_silent(struct getopt_state *gs, const char *optstring)
-{
-	return getopt(gs, optstring);
-}
-
-/**
  * getopt_pop() - Take the next remaining positional argument
  * @gs: State, after getopt() has returned -1
  *

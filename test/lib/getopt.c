@@ -20,7 +20,7 @@ static int do_test_getopt(struct unit_test_state *uts, int line,
 
 	getopt_init_state(gs, args, argv);
 	for (int i = 0; i < expected_count; i++) {
-		opt = getopt_silent(gs, optstring);
+		opt = getopt(gs, optstring);
 		if (expected[i] != opt) {
 			/*
 			 * Fudge the line number so we can tell which test
@@ -34,7 +34,7 @@ static int do_test_getopt(struct unit_test_state *uts, int line,
 		}
 	}
 
-	opt = getopt_silent(gs, optstring);
+	opt = getopt(gs, optstring);
 	if (opt != -1) {
 		ut_failf(uts, __FILE__, line, __func__,
 			 "getopt() != -1",
@@ -155,13 +155,13 @@ static int lib_test_getopt(struct unit_test_state *uts)
 
 	/* '+' prefix disables permutation: stop at the first non-option */
 	getopt_init_state(&gs, ARRAY_SIZE(plus_argv) - 1, plus_argv);
-	ut_asserteq(-1, getopt_silent(&gs, "+a"));
+	ut_asserteq(-1, getopt(&gs, "+a"));
 	ut_asserteq(1, gs.index);
 	ut_asserteq(0, gs.nonopts);
 #else
 	/* POSIX-only mode: getopt() always stops at the first non-option */
 	getopt_init_state(&gs, ARRAY_SIZE(plus_argv) - 1, plus_argv);
-	ut_asserteq(-1, getopt_silent(&gs, "a"));
+	ut_asserteq(-1, getopt(&gs, "a"));
 	ut_asserteq(1, gs.index);
 #endif
 
