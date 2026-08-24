@@ -84,6 +84,9 @@ obj-$(CONFIG_CMD_WGET) += wget.o
 endif
 obj-$(CONFIG_ARM_FFA_TRANSPORT) += armffa.o
 endif
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_CPU) += subcmd.o
+endif
 obj-$(CONFIG_CMD_SPAWN) += spawn.o
 ifdef CONFIG_CMD_ZIP
 obj-$(CONFIG_CMD_UNZIP) += unzip.o
