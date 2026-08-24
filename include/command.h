@@ -10,6 +10,7 @@
 #ifndef __COMMAND_H
 #define __COMMAND_H
 
+#include <getopt.h>
 #include <linker_lists.h>
 #include <limits.h>
 
@@ -68,21 +69,7 @@ enum {
 	CMDF_GETOPT	= BIT(0),
 	/* the command may be repeated by pressing Enter at an empty prompt */
 	CMDF_REPEATABLE	= BIT(1),
-	/*
-	 * ->cmd holds a sub-command dispatcher with the extended signature
-	 * (..., int *repeatable), so it can report the repeatable property of
-	 * the sub-command it dispatched to. cmd_call() calls it accordingly.
-	 */
-	CMDF_SUBCMD_REP	= BIT(2),
 };
-
-/*
- * Type of a sub-command dispatcher (a CMDF_SUBCMD_REP command's ->cmd). It has
- * the classic command arguments plus a @repeatable output which it sets from
- * the sub-command it dispatches to.
- */
-typedef int (*cmd_rep_func_t)(struct cmd_tbl *cmdtp, int flag, int argc,
-			      char *const argv[], int *repeatable);
 
 /**
  * cmd_arg_get() - Get a particular argument
@@ -256,8 +243,7 @@ int do_bootz(struct cmd_tbl *cmdtp, int flag, int argc,
 int do_booti(struct cmd_tbl *cmdtp, int flag, int argc,
 	     char *const argv[]);
 
-int do_zboot_parent(struct cmd_tbl *cmdtp, int flag, int argc,
-		    char *const argv[], int *repeatable);
+int do_zboot_parent(struct getopt_state *gs);
 
 int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 		    char *const argv[]);
@@ -411,10 +397,10 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	static __maybe_unused const char _cmdname##_help_text[] = text
 
 #define U_BOOT_SUBCMDS_DO_CMD(_cmdname)					\
-	static int do_##_cmdname(struct cmd_tbl *cmdtp, int flag,	\
-				 int argc, char *const argv[],		\
-				 int *repeatable)			\
+	static int do_##_cmdname(struct getopt_state *gs)		\
 	{								\
+		int argc = gs->argc;					\
+		char *const *argv = gs->argv;				\
 		struct cmd_tbl *subcmd;					\
 									\
 		/* We need at least the cmd and subcmd names. */	\
@@ -426,13 +412,15 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		if (!subcmd || argc - 1 > subcmd->maxargs)		\
 			return CMD_RET_USAGE;				\
 									\
-		if (flag == CMD_FLAG_REPEAT &&				\
+		if (gs->cmd_flag == CMD_FLAG_REPEAT &&			\
 		    !cmd_is_repeatable(subcmd))				\
 			return CMD_RET_SUCCESS;				\
 									\
-		*repeatable &= cmd_is_repeatable(subcmd);		\
+		if (gs->repeatable)					\
+			*gs->repeatable &= cmd_is_repeatable(subcmd);	\
 									\
-		return cmd_invoke(subcmd, flag, argc - 1, argv + 1);	\
+		return cmd_invoke_rep(subcmd, gs->cmd_flag, argc - 1,	\
+				      argv + 1, gs->repeatable);	\
 	}
 
 #ifdef CONFIG_AUTO_COMPLETE
@@ -492,14 +480,13 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 						 _cmd, _usage, _help, _comp)
 
 /*
- * Declare a top-level command whose ->cmd is a sub-command dispatcher with
- * the extended (..., int *repeatable) signature (see CMDF_SUBCMD_REP). The
- * dispatcher is stored in ->cmd and tagged so cmd_call() invokes it with the
- * repeatable pointer.
+ * Declare a top-level command whose ->cmd is a sub-command dispatcher. It uses
+ * the getopt signature and reaches the repeatable output through the state, so
+ * it is tagged like any other getopt command.
  */
 #define U_BOOT_SUBCMD_DECL(_name, _maxargs, _do_cmd, _usage, _help, _comp) \
 	ll_entry_declare(struct cmd_tbl, _name, cmd) = {		\
-		#_name, _maxargs, CMDF_SUBCMD_REP | CMDF_REPEATABLE,	\
+		#_name, _maxargs, CMDF_GETOPT | CMDF_REPEATABLE,	\
 		(int (*)(struct cmd_tbl *, int, int,			\
 			 char *const []))(_do_cmd),			\
 		_usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }

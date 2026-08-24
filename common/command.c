@@ -580,18 +580,11 @@ static int cmd_call(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	*repeatable = !!(cmdtp->cmd_flags & CMDF_REPEATABLE);
 
-	if (cmdtp->cmd_flags & CMDF_SUBCMD_REP) {
-		/*
-		 * A sub-command dispatcher refines *repeatable for the
-		 * sub-command it picks, so call it with the extended signature.
-		 */
-		cmd_rep_func_t func = (cmd_rep_func_t)cmdtp->cmd;
-
-		result = func(cmdtp, flag, argc, argv, repeatable);
-	} else {
-		result = cmd_invoke_rep(cmdtp, flag, argc, argv,
-					repeatable);
-	}
+	/*
+	 * A sub-command dispatcher narrows *repeatable to the sub-command it
+	 * picks, which it reaches through the getopt state.
+	 */
+	result = cmd_invoke_rep(cmdtp, flag, argc, argv, repeatable);
 
 	if (result)
 		debug("Command failed, result=%d\n", result);
