@@ -47,6 +47,14 @@ struct getopt_state {
 	 * than to run a command.
 	 */
 	int cmd_flag;
+	/**
+	 * @repeatable: Where to report whether the command may be repeated by
+	 * pressing Enter, or NULL if nobody is asking. A sub-command
+	 * dispatcher narrows it to the sub-command it picked. Only the
+	 * command-line interface passes a pointer here; it is NULL when the
+	 * state was set up by hand.
+	 */
+	int *repeatable;
 #ifdef CONFIG_GETOPT_PERMUTE
 	/** @nonopts: Number of non-option arguments in @argv. */
 	int nonopts;

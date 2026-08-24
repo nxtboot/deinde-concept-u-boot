@@ -148,6 +148,22 @@ int cmd_usage(const struct cmd_tbl *cmdtp);
  */
 int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 
+/**
+ * cmd_invoke_rep() - Call a command, saying where to report repeatability
+ *
+ * As cmd_invoke(), but a getopt command is given @repeatable in its state, so
+ * that a sub-command dispatcher can narrow it to the sub-command it picks.
+ *
+ * @cmdtp: Command to call
+ * @flag: Command flags (CMD_FLAG_...)
+ * @argc: Number of arguments
+ * @argv: List of arguments
+ * @repeatable: Where to report whether the command may be repeated, or NULL
+ * Return: result (see enum command_ret_t)
+ */
+int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
+		   char *const argv[], int *repeatable);
+
 static inline bool cmd_is_repeatable(struct cmd_tbl *cmdtp)
 {
 	return cmdtp->cmd_flags & CMDF_REPEATABLE;

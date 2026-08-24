@@ -538,7 +538,8 @@ void fixup_cmdtable(struct cmd_tbl *cmdtp, int size)
 	}
 }
 
-int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
+		   char *const argv[], int *repeatable)
 {
 	if (CONFIG_IS_ENABLED(GETOPT) && (cmdtp->cmd_flags & CMDF_GETOPT)) {
 		int (*func)(struct getopt_state *gs);
@@ -547,11 +548,17 @@ int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		func = (int (*)(struct getopt_state *))cmdtp->cmd;
 		getopt_init_state(&gs, argc, argv);
 		gs.cmd_flag = flag;
+		gs.repeatable = repeatable;
 
 		return func(&gs);
 	}
 
 	return cmdtp->cmd(cmdtp, flag, argc, argv);
+}
+
+int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	return cmd_invoke_rep(cmdtp, flag, argc, argv, NULL);
 }
 
 /**
@@ -582,7 +589,8 @@ static int cmd_call(struct cmd_tbl *cmdtp, int flag, int argc,
 
 		result = func(cmdtp, flag, argc, argv, repeatable);
 	} else {
-		result = cmd_invoke(cmdtp, flag, argc, argv);
+		result = cmd_invoke_rep(cmdtp, flag, argc, argv,
+					repeatable);
 	}
 
 	if (result)
