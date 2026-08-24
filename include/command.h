@@ -64,7 +64,8 @@ struct cmd_tbl {
 enum {
 	/*
 	 * ->cmd holds a function with the getopt_state signature
-	 * (int (*)(struct getopt_state *)) instead of the classic one
+	 * (int (*)(struct getopt_state *)) instead of the classic one. This is
+	 * what a new command should use; see doc/develop/commands.rst
 	 */
 	CMDF_GETOPT	= BIT(0),
 	/* the command may be repeated by pressing Enter at an empty prompt */
@@ -446,6 +447,22 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 #if CONFIG_IS_ENABLED(CMDLINE)
 /* Encode the _rep argument as the CMDF_REPEATABLE flag bit */
 #define _CMD_REP_FLAG(_rep)	((_rep) ? CMDF_REPEATABLE : 0)
+
+/*
+ * Macros for declaring a command, in two flavours.
+ *
+ * The _GETOPT ones give the command function the getopt signature,
+ * int (*)(struct getopt_state *), so that it can parse its options with
+ * getopt(). Use these for a new command; see doc/develop/commands.rst
+ *
+ * The others give it the classic signature,
+ * int (*)(struct cmd_tbl *, int, int, char *const []), which most commands
+ * still use. Do not move a command from one to the other without a test
+ * showing that its behaviour has not changed.
+ *
+ * Either way, _MKENT makes a table entry, the bare macro declares a
+ * top-level command, and _COMPLETE also takes an auto-complete function.
+ */
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 				_usage, _help, _comp)			\
