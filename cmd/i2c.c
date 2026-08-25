@@ -310,7 +310,7 @@ static int do_i2c_write(struct cmd_tbl *cmdtp, int flag, int argc,
 #endif
 
 	if ((argc < 5) || (argc > 6))
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/*
 	 * memaddr is the address where to store things in memory
@@ -329,7 +329,7 @@ static int do_i2c_write(struct cmd_tbl *cmdtp, int flag, int argc,
 	devaddr = hextoul(argv[3], NULL);
 	alen = get_alen(argv[3], DEFAULT_ADDR_LEN);
 	if (alen > 3)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/*
 	 * Length is the number of bytes.
@@ -757,8 +757,7 @@ static int do_i2c_crc(struct cmd_tbl *cmdtp, int flag, int argc,
  *	i2c mm{.b, .w, .l} {i2c_chip} {addr}{.0, .1, .2}
  *	i2c nm{.b, .w, .l} {i2c_chip} {addr}{.0, .1, .2}
  */
-static int mod_i2c_mem(struct cmd_tbl *cmdtp, int incrflag, int flag, int argc,
-		       char *const argv[])
+static int mod_i2c_mem(int incrflag, int flag, int argc, char *const argv[])
 {
 	uint	chip;
 	ulong	addr;
@@ -1621,10 +1620,8 @@ int do_edid(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	struct udevice *dev;
 #endif
 
-	if (argc < 2) {
-		cmd_usage(cmdtp);
-		return 1;
-	}
+	if (argc < 2)
+		return CMD_RET_USAGE;
 
 	chip = hextoul(argv[1], NULL);
 #if CONFIG_IS_ENABLED(DM_I2C)
@@ -1840,7 +1837,7 @@ static int do_i2c_bus_speed(struct cmd_tbl *cmdtp, int flag, int argc,
 static int do_i2c_mm(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return mod_i2c_mem (cmdtp, 1, flag, argc, argv);
+	return mod_i2c_mem(1, flag, argc, argv);
 }
 
 /**
@@ -1856,7 +1853,7 @@ static int do_i2c_mm(struct cmd_tbl *cmdtp, int flag, int argc,
 static int do_i2c_nm(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
-	return mod_i2c_mem (cmdtp, 0, flag, argc, argv);
+	return mod_i2c_mem(0, flag, argc, argv);
 }
 
 /**
