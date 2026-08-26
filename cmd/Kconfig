@@ -2814,6 +2814,7 @@ menu "Power commands"
 config CMD_PMIC
 	bool "Enable Driver Model PMIC command"
 	depends on DM_PMIC
+	select GETOPT
 	help
 	  This is the pmic command, based on a driver model pmic's API.
 	  Command features are unchanged:

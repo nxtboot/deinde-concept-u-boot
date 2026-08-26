@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <dm.h>
 #include <dm/uclass-internal.h>
+#include <getopt.h>
 #include <power/pmic.h>
 
 #define LIMIT_DEV	32
@@ -205,10 +206,14 @@ static struct cmd_tbl subcmd[] = {
 	U_BOOT_CMD_MKENT(write, 3, 1, do_write, "", ""),
 };
 
-static int do_pmic(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_pmic(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *cmd;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	argc--;
 	argv++;
@@ -217,10 +222,10 @@ static int do_pmic(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (cmd == NULL || argc > cmd->maxargs)
 		return CMD_RET_USAGE;
 
-	return cmd_invoke(cmd, flag, argc, argv);
+	return cmd_invoke(cmd, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD(pmic, CONFIG_SYS_MAXARGS, 1, do_pmic,
+U_BOOT_CMD_GETOPT(pmic, CONFIG_SYS_MAXARGS, 1, do_pmic,
 	"PMIC sub-system",
 	"list          - list pmic devices\n"
 	"pmic dev [name]    - show or [set] operating PMIC device\n"
