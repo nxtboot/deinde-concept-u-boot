@@ -59,6 +59,9 @@ obj-$(CONFIG_CMD_MX_CYCLIC) += mdc.o mwc.o
 obj-$(CONFIG_CMD_RANDOM) += random.o
 endif
 obj-$(CONFIG_CMD_PART) += part.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_PMIC) += pmic.o
+endif
 obj-$(CONFIG_CMD_PART_FIND) += part_find.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_PCI_MPS) += pci_mps.o
