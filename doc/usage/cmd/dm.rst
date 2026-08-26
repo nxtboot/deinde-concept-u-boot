@@ -522,3 +522,5 @@ See also
 --------
 
 * :doc:`clk<clk>` for the rate and usage count of each clock device
+* :doc:`pmic<pmic>` for the registers of a power management chip, which
+  ``dm tree`` shows as the parent of the supplies it provides

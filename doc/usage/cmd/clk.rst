@@ -118,5 +118,6 @@ See also
 * :doc:`dm<dm>` for the driver-model devices behind these clocks, which
   ``dm uclass`` lists by uclass
 * :doc:`scmi<scmi>` for the SCMI server which provides the scmi-* clocks
-* *pmic* for the register-level view of a power management chip
+* :doc:`pmic<pmic>` for the register-level view of a power management chip,
+  which is often what provides these clocks
 * *regulator* for the supplies such a chip provides
