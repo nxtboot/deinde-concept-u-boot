@@ -67,6 +67,9 @@ ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_PCI_MPS) += pci_mps.o
 endif
 obj-$(CONFIG_CMD_QFW) += qfw.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_REGULATOR) += regulator.o
+endif
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
 obj-$(CONFIG_CMD_DATE) += date.o
