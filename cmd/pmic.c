@@ -144,7 +144,7 @@ static int do_read(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	reg = simple_strtoul(argv[1], NULL, 0);
 	regs = pmic_reg_count(dev);
-	if (reg > regs) {
+	if (reg >= regs) {
 		printf("PMIC max reg: %d\n", regs);
 		return failure(-EFAULT);
 	}
@@ -181,7 +181,7 @@ static int do_write(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	reg = simple_strtoul(argv[1], NULL, 0);
 	regs = pmic_reg_count(dev);
-	if (reg > regs) {
+	if (reg >= regs) {
 		printf("PMIC max reg: %d\n", regs);
 		return failure(-EFAULT);
 	}
