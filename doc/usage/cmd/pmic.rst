@@ -134,5 +134,5 @@ See also
 
 * :doc:`clk<clk>` for the clocks such a chip may also provide
 * :doc:`dm<dm>` for the driver-model devices behind these chips
-* *regulator* for the supplies a PMIC provides, at the level of volts
-  rather than register values
+* :doc:`regulator<regulator>` for the supplies a PMIC provides, at the level
+  of volts rather than register values

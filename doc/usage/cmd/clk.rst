@@ -120,4 +120,4 @@ See also
 * :doc:`scmi<scmi>` for the SCMI server which provides the scmi-* clocks
 * :doc:`pmic<pmic>` for the register-level view of a power management chip,
   which is often what provides these clocks
-* *regulator* for the supplies such a chip provides
+* :doc:`regulator<regulator>` for the supplies such a chip provides
