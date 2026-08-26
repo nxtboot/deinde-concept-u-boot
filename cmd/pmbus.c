@@ -780,7 +780,7 @@ static int do_pmbus(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (cmd) {
 		if (argc > cmd->maxargs)
 			return CMD_RET_USAGE;
-		return cmd->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(cmd, flag, argc, argv);
 	}
 
 	/* Vendor namespace dispatch */

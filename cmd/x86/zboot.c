@@ -9,6 +9,7 @@
 
 #include <bootm.h>
 #include <command.h>
+#include <getopt.h>
 #include <env.h>
 #include <mapmem.h>
 #include <vsprintf.h>
@@ -144,9 +145,11 @@ static int do_zboot_states(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-int do_zboot_parent(struct cmd_tbl *cmdtp, int flag, int argc,
-		    char *const argv[], int *repeatable)
+int do_zboot_parent(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
+
 	/* determine if we have a sub command */
 	if (argc > 1) {
 		char *endp;
@@ -157,10 +160,10 @@ int do_zboot_parent(struct cmd_tbl *cmdtp, int flag, int argc,
 		 * number, so pass it along to the normal processing
 		 */
 		if (*endp)
-			return do_zboot(cmdtp, flag, argc, argv, repeatable);
+			return do_zboot(gs);
 	}
 
-	do_zboot_states(cmdtp, flag, argc, argv, ZBOOT_STATE_START |
+	do_zboot_states(NULL, gs->cmd_flag, argc, argv, ZBOOT_STATE_START |
 			ZBOOT_STATE_LOAD | ZBOOT_STATE_SETUP |
 			ZBOOT_STATE_INFO | ZBOOT_STATE_GO);
 

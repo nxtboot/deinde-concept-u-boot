@@ -47,6 +47,14 @@ struct getopt_state {
 	 * than to run a command.
 	 */
 	int cmd_flag;
+	/**
+	 * @repeatable: Where to report whether the command may be repeated by
+	 * pressing Enter, or NULL if nobody is asking. A sub-command
+	 * dispatcher narrows it to the sub-command it picked. Only the
+	 * command-line interface passes a pointer here; it is NULL when the
+	 * state was set up by hand.
+	 */
+	int *repeatable;
 #ifdef CONFIG_GETOPT_PERMUTE
 	/** @nonopts: Number of non-option arguments in @argv. */
 	int nonopts;
@@ -142,22 +150,6 @@ void getopt_init_state(struct getopt_state *gs, int argc,
  * @gs.argv.
  */
 int getopt(struct getopt_state *gs, const char *optstring);
-
-/**
- * getopt_silent() - Compatibility alias for getopt()
- * @gs: getopt state
- * @optstring: option specification, as for getopt()
- *
- * getopt() no longer prints error messages, so this is identical to
- * getopt(). Kept for callers (notably the unit tests) that named it
- * explicitly.
- *
- * Return: same as getopt()
- */
-static inline int getopt_silent(struct getopt_state *gs, const char *optstring)
-{
-	return getopt(gs, optstring);
-}
 
 /**
  * getopt_pop() - Take the next remaining positional argument

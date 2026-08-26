@@ -554,7 +554,7 @@ static int do_tpmtest(struct cmd_tbl *cmdtp, int flag, int argc,
 	argv++;
 	c = find_cmd_tbl(argv[0], cmd_cros_tpm_sub,
 			 ARRAY_SIZE(cmd_cros_tpm_sub));
-	return c ? c->cmd(cmdtp, flag, argc, argv) : cmd_usage(cmdtp);
+	return c ? cmd_invoke(c, flag, argc, argv) : cmd_usage(cmdtp);
 }
 
 U_BOOT_CMD(tpmtest, 2, 1, do_tpmtest, "TPM tests",

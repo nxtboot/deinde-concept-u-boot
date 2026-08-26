@@ -63,7 +63,7 @@ static int do_blkcache(struct cmd_tbl *cmdtp, int flag,
 	if (!c)
 		return CMD_RET_USAGE;
 
-	return c->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(c, flag, argc, argv);
 }
 
 U_BOOT_CMD(

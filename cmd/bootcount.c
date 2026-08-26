@@ -40,7 +40,7 @@ static int do_bootcount(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	cp = find_cmd_tbl(argv[0], bootcount_sub, ARRAY_SIZE(bootcount_sub));
 	if (cp)
-		return cp->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(cp, flag, argc, argv);
 
 	return CMD_RET_USAGE;
 }

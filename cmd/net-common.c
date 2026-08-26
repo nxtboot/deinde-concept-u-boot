@@ -98,7 +98,7 @@ static int do_net(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (flag == CMD_FLAG_REPEAT && !cmd_is_repeatable(cp))
 		return CMD_RET_SUCCESS;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_CMD(net, 3, 1, do_net, "NET sub-system",

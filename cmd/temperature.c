@@ -74,7 +74,7 @@ static int do_temperature(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (!cmd || argc > cmd->maxargs)
 		return CMD_RET_USAGE;
 
-	return cmd->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cmd, flag, argc, argv);
 }
 
 U_BOOT_CMD(temperature, CONFIG_SYS_MAXARGS, 1, do_temperature,

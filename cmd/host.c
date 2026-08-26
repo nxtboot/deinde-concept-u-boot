@@ -245,7 +245,7 @@ static int do_host(struct cmd_tbl *cmdtp, int flag, int argc,
 	c = find_cmd_tbl(argv[0], cmd_host_sub, ARRAY_SIZE(cmd_host_sub));
 
 	if (c)
-		return c->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(c, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }

@@ -479,7 +479,7 @@ static int do_pstore(struct cmd_tbl *cmdtp, int flag, int argc, char * const arg
 	if (!c)
 		return CMD_RET_USAGE;
 
-	return c->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(c, flag, argc, argv);
 }
 
 void fdt_fixup_pstore(void *blob)

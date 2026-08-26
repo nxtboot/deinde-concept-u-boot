@@ -271,7 +271,7 @@ static int do_optee_rpmb(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (flag == CMD_FLAG_REPEAT)
 		return CMD_RET_FAILURE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_CMD (

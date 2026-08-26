@@ -340,7 +340,7 @@ static int do_efi_capsule(struct cmd_tbl *cmdtp, int flag,
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 #endif /* CONFIG_EFI_HAVE_CAPSULE_SUPPORT */
 
@@ -1513,7 +1513,7 @@ static int do_efi_boot_opt(struct cmd_tbl *cmdtp, int flag,
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 /**
@@ -1589,7 +1589,7 @@ static int do_efi_test(struct cmd_tbl *cmdtp, int flag,
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 /**
@@ -1754,7 +1754,7 @@ static int do_efidebug(struct cmd_tbl *cmdtp, int flag,
 			return CMD_RET_FAILURE;
 	}
 
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_LONGHELP(efidebug,

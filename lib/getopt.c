@@ -38,6 +38,7 @@ void getopt_init_state(struct getopt_state *gs, int argc, char *const argv[])
 	gs->index = 1;
 	gs->arg_index = 1;
 	gs->cmd_flag = 0;
+	gs->repeatable = NULL;
 }
 
 int getopt(struct getopt_state *gs, const char *optstring)

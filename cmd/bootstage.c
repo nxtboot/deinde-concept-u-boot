@@ -110,7 +110,7 @@ static int do_boostage(struct cmd_tbl *cmdtp, int flag, int argc,
 			 ARRAY_SIZE(cmd_bootstage_sub));
 
 	if (c)
-		return c->cmd(cmdtp, flag, argc, argv);
+		return cmd_invoke(c, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }

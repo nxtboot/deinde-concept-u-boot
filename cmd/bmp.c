@@ -83,7 +83,7 @@ static int do_bmp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	c = find_cmd_tbl(argv[0], &cmd_bmp_sub[0], ARRAY_SIZE(cmd_bmp_sub));
 
 	if (c)
-		return  c->cmd(cmdtp, flag, argc, argv);
+		return  cmd_invoke(c, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }

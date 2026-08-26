@@ -338,7 +338,7 @@ static int do_mmcrpmb(struct cmd_tbl *cmdtp, int flag,
 	if (blk_select_hwpart_devnum(UCLASS_MMC, curr_device, MMC_PART_RPMB) !=
 	    0)
 		return CMD_RET_FAILURE;
-	ret = cp->cmd(cmdtp, flag, argc, argv);
+	ret = cmd_invoke(cp, flag, argc, argv);
 
 	/* Return to original partition */
 	if (blk_select_hwpart_devnum(UCLASS_MMC, curr_device, original_part) !=
@@ -1300,7 +1300,7 @@ static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
 			return CMD_RET_FAILURE;
 		}
 	}
-	return cp->cmd(cmdtp, flag, argc, argv);
+	return cmd_invoke(cp, flag, argc, argv);
 }
 
 U_BOOT_CMD(
