@@ -25,6 +25,9 @@ obj-$(CONFIG_CMD_BACKTRACE) += backtrace.o
 obj-$(CONFIG_CMD_BDI) += bdinfo.o
 obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CMD_CHID) += chid.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_CLK) += clk.o
+endif
 obj-$(CONFIG_CMD_CONFIG) += config.o
 obj-$(CONFIG_COREBOOT_SYSINFO) += coreboot.o
 ifdef CONFIG_CONSOLE_RECORD
