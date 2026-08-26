@@ -1249,6 +1249,7 @@ config CMD_BIND
 config CMD_CLK
 	bool "clk - Show and set clock frequencies"
 	depends on CLK
+	select GETOPT
 	help
 	  Show and set clock frequencies managed by CLK uclass drivers.
 
