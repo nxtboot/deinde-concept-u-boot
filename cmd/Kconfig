@@ -3013,6 +3013,7 @@ menu "Filesystem commands"
 config CMD_BTRFS
 	bool "Enable the 'btrsubvol' command"
 	select FS_BTRFS
+	select GETOPT
 	help
 	  This enables the 'btrsubvol' command to list subvolumes
 	  of a BTRFS filesystem. There are no special commands for
@@ -3033,6 +3034,7 @@ config CMD_CBFS
 config CMD_CRAMFS
 	bool "Enable the 'cramfs' command"
 	depends on FS_CRAMFS
+	select GETOPT
 	help
 	  This provides commands for dealing with CRAMFS (Compressed ROM
 	  filesystem). CRAMFS is useful when space is tight since files are
@@ -3108,6 +3110,7 @@ config CMD_VFS
 config CMD_FS_UUID
 	bool "fsuuid command"
 	default y if SANDBOX
+	select GETOPT
 	help
 	  Enables fsuuid command for filesystem UUID.
 

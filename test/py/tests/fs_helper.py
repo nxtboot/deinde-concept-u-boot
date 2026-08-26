@@ -83,7 +83,8 @@ class FsHelper:
         Args:
             config (u_boot_config): U-Boot configuration
             fs_type (str): File system type: one of ext2, ext3, ext4, vfat,
-                fat12, fat16, fat32, exfat, fs_generic (which means vfat)
+                fat12, fat16, fat32, exfat, btrfs, fs_generic (which means
+                vfat)
             size_mb (int): Size of file system in MB
             prefix (str): Prefix string of volume's file name
             part_mb (int, optional): Size of partition in MB. If None, defaults
@@ -101,7 +102,7 @@ class FsHelper:
                 master key (via --master-key-file), enabling pre_derived unlock.
         """
         if ('fat' not in fs_type and 'ext' not in fs_type and
-             fs_type not in ['exfat', 'fs_generic', 'iso']):
+             fs_type not in ['btrfs', 'exfat', 'fs_generic', 'iso']):
             raise ValueError(f"Unsupported filesystem type '{fs_type}'")
 
         self.config = config
@@ -150,6 +151,11 @@ class FsHelper:
             mkfs_opt = '-F 32'
         elif self.fs_type.startswith('ext'):
             mkfs_opt = f'-d {self.srcdir}'
+        elif self.fs_type == 'btrfs':
+            # Mixed block groups with a single metadata copy keep the minimum
+            # image size down to a few MB, instead of the 109MB mkfs.btrfs
+            # otherwise insists on
+            mkfs_opt = f'-q -M -m single -r {self.srcdir}'
         else:
             mkfs_opt = ''
 
@@ -191,7 +197,7 @@ class FsHelper:
                                shell=True)
         elif fs_lnxtype == 'exfat':
             check_call(f'fattools cp {self.srcdir}/* {fs_img}', shell=True)
-        elif self.srcdir and os.listdir(self.srcdir):
+        elif fs_lnxtype == 'vfat' and self.srcdir and os.listdir(self.srcdir):
             flags = f"-smpQ{'' if self.quiet else 'v'}"
             check_call(f'mcopy -i {fs_img} {flags} {self.srcdir}/* ::/',
                     shell=True)

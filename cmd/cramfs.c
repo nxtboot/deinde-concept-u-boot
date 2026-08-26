@@ -11,6 +11,7 @@
  */
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <malloc.h>
 #include <mapmem.h>
@@ -91,9 +92,10 @@ extern int cramfs_info (struct part_info *info);
  * @param argv arguments list
  * Return: 0 on success, 1 otherwise
  */
-int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_cramfs_load(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	char *filename;
 	int size;
 	ulong offset = image_load_addr;
@@ -103,8 +105,18 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
 	struct mtd_device dev;
 	struct mtdids id;
 
+	const char *addr_str;
 	ulong addr;
-	addr = hextoul(env_get("cramfsaddr"), NULL);
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	addr_str = env_get("cramfsaddr");
+	if (!addr_str) {
+		printf("Environment variable 'cramfsaddr' is not set\n");
+		return 1;
+	}
+	addr = hextoul(addr_str, NULL);
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
@@ -125,7 +137,7 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
 		filename = argv[1];
 	}
 	if (argc == 3) {
-		offset = simple_strtoul(argv[1], NULL, 0);
+		offset = hextoul(argv[1], NULL);
 		image_load_addr = offset;
 		filename = argv[2];
 	}
@@ -160,7 +172,7 @@ int do_cramfs_load(struct cmd_tbl *cmdtp, int flag, int argc,
  * @param argv arguments list
  * Return: 0 on success, 1 otherwise
  */
-int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_cramfs_ls(struct getopt_state *gs)
 {
 	char *filename = "/";
 	int ret;
@@ -168,8 +180,18 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	struct mtd_device dev;
 	struct mtdids id;
 
+	const char *addr_str;
 	ulong addr;
-	addr = hextoul(env_get("cramfsaddr"), NULL);
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	addr_str = env_get("cramfsaddr");
+	if (!addr_str) {
+		printf("Environment variable 'cramfsaddr' is not set\n");
+		return 1;
+	}
+	addr = hextoul(addr_str, NULL);
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
@@ -181,8 +203,8 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	/* fake the address offset */
 	part.offset = (u64)(uintptr_t) map_sysmem(addr - OFFSET_ADJUSTMENT, 0);
 
-	if (argc == 2)
-		filename = argv[1];
+	if (gs->argc == 2)
+		filename = gs->argv[1];
 
 	ret = 0;
 	if (cramfs_check(&part))
@@ -195,14 +217,14 @@ int do_cramfs_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 /* command line only */
 
 /***************************************************/
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cramfsload,	3,	0,	do_cramfs_load,
 	"load binary file from a filesystem image",
-	"[ off ] [ filename ]\n"
-	"    - load binary file from address 'cramfsaddr'\n"
-	"      with offset 'off'\n"
+	"[ addr ] [ filename ]\n"
+	"    - load binary file from the image at 'cramfsaddr'\n"
+	"      to address 'addr', hexadecimal\n"
 );
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cramfsls,	2,	1,	do_cramfs_ls,
 	"list files in a directory (default /)",
 	"[ directory ]\n"

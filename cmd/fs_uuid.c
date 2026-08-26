@@ -8,14 +8,17 @@
 #include <command.h>
 #include <fs_cmd.h>
 #include <fs_legacy.h>
+#include <getopt.h>
 
-static int do_fs_uuid_wrapper(struct cmd_tbl *cmdtp, int flag, int argc,
-			      char *const argv[])
+static int do_fs_uuid_wrapper(struct getopt_state *gs)
 {
-	return do_fs_uuid(argc, argv, FS_TYPE_ANY);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return do_fs_uuid(gs->argc, gs->argv, FS_TYPE_ANY);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	fsuuid, 4, 1, do_fs_uuid_wrapper,
 	"Look up a filesystem UUID",
 	"<interface> <dev>:<part>\n"
