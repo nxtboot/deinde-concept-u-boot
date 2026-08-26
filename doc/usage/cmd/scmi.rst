@@ -119,4 +119,9 @@ Configuration
 The scmi command is only available if CONFIG_CMD_SCMI=y.
 Default n because this command is mainly for debug purpose.
 
+See also
+--------
+
+* :doc:`clk<clk>` for the rate of each clock the SCMI server provides
+
 .. _`SCMI specification`: https://developer.arm.com/documentation/den0056/e/?lang=en

@@ -517,3 +517,8 @@ This example shows the abridged sandbox output::
     2     mmc0.blk @ 0301d380, seq 2
 
     =>
+
+See also
+--------
+
+* :doc:`clk<clk>` for the rate and usage count of each clock device
