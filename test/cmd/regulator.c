@@ -255,6 +255,13 @@ static int cmd_test_regulator_usage(struct unit_test_state *uts)
 	ut_assert_nextline_empty();
 	ut_assert_console_end();
 
+	/* status takes -a and nothing else */
+	ut_asserteq(1, run_command("regulator status -x", 0));
+	ut_assert_nextline("regulator - uclass operations");
+	ut_assert_skip_to_linen("regulator disable");
+	ut_assert_nextline_empty();
+	ut_assert_console_end();
+
 	/* enable takes no arguments */
 	ut_asserteq(1, run_command("regulator enable now", 0));
 	ut_assert_nextline("regulator - uclass operations");

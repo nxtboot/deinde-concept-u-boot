@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <dm.h>
 #include <dm/uclass-internal.h>
+#include <getopt.h>
 #include <linux/printk.h>
 #include <power/regulator.h>
 
@@ -236,14 +237,24 @@ static void do_status_line(struct udevice *dev, int status)
 	printf("\n");
 }
 
-static int do_status(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_status(struct getopt_state *gs)
 {
 	struct dm_regulator_uclass_plat *uc_pdata;
 	struct udevice *dev;
-	int ret;
+	bool all = false;
+	int opt, ret;
 
-	if (currdev && (argc < 2 || strcmp(argv[1], "-a"))) {
+	while ((opt = getopt(gs, "+a")) > 0) {
+		switch (opt) {
+		case 'a':
+			all = true;
+			break;
+		default:
+			return CMD_RET_USAGE;
+		}
+	}
+
+	if (currdev && !all) {
 		ret = curr_dev_and_plat(&dev, &uc_pdata, true);
 		if (ret)
 			return CMD_RET_FAILURE;
@@ -431,7 +442,7 @@ static struct cmd_tbl subcmd[] = {
 	U_BOOT_CMD_MKENT(dev, 2, 1, do_dev, "", ""),
 	U_BOOT_CMD_MKENT(list, 1, 1, do_list, "", ""),
 	U_BOOT_CMD_MKENT(info, 2, 1, do_info, "", ""),
-	U_BOOT_CMD_MKENT(status, 2, 1, do_status, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(status, 2, 1, do_status, "", ""),
 	U_BOOT_CMD_MKENT(value, 3, 1, do_value, "", ""),
 	U_BOOT_CMD_MKENT(current, 3, 1, do_current, "", ""),
 	U_BOOT_CMD_MKENT(mode, 2, 1, do_mode, "", ""),
@@ -439,10 +450,14 @@ static struct cmd_tbl subcmd[] = {
 	U_BOOT_CMD_MKENT(disable, 1, 1, do_disable, "", ""),
 };
 
-static int do_regulator(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_regulator(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *cmd;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	argc--;
 	argv++;
@@ -451,10 +466,10 @@ static int do_regulator(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (cmd == NULL || argc > cmd->maxargs)
 		return CMD_RET_USAGE;
 
-	return cmd_invoke(cmd, flag, argc, argv);
+	return cmd_invoke(cmd, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD(regulator, CONFIG_SYS_MAXARGS, 1, do_regulator,
+U_BOOT_CMD_GETOPT(regulator, CONFIG_SYS_MAXARGS, 1, do_regulator,
 	"uclass operations",
 	"list             - list UCLASS regulator devices\n"
 	"regulator dev [regulator-name] - show/[set] operating regulator device\n"

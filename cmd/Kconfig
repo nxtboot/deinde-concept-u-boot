@@ -2842,6 +2842,7 @@ config CMD_PMBUS
 config CMD_REGULATOR
 	bool "Enable Driver Model REGULATOR command"
 	depends on DM_REGULATOR
+	select GETOPT
 	help
 	  This command is based on driver model regulator's API.
 	  User interface features:
