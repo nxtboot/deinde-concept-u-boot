@@ -97186,3 +97186,38 @@ The branch is left checked out and ready for pushing; it has not been merged any
 
 ---
 
+## 2026-08-27: us/main
+
+Branch: cherry-1cf825afd0d7
+
+Commits:
+- 1cf825afd0d7 fs: btrfs: report file sizes from readdir
+- 1a5c8af2d4e4 fs: btrfs: release the path when btrfs_search_slot() fails
+- a11f8659f451 fs: btrfs: deduplicate the inode size lookup
+- 3cafdbb9cb6a Merge patch series "fs: btrfs: report file sizes from readdir"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+The merge commit is empty as expected — committing it to preserve the message:
+
+All 4 commits cherry-picked successfully onto `cherry-1cf825afd0d7` (based on ci/master).
+
+## Final status
+
+**Commits** (all present, in order):
+- `337389806df2` fs: btrfs: report file sizes from readdir (from 1cf825afd0d7)
+- `51b3b8543945` fs: btrfs: release the path when btrfs_search_slot() fails (from 1a5c8af2d4e4)
+- `92f2d182b9b4` fs: btrfs: deduplicate the inode size lookup (from a11f8659f451)
+- `b3b48502ed80` Merge patch series "fs: btrfs: report file sizes from readdir" (empty, preserved with --allow-empty)
+
+**Build result**: OK — sandbox built cleanly after each cherry-pick and in the final check, with no warnings or errors.
+
+**Deltas**: All three code commits matched their originals exactly (same files, same line counts: 31+/3-, 12+/4-, 42+/33-). Git auto-merged minor context differences in fs/btrfs/btrfs.c; no manual fix-ups were needed.
+
+**Concerning deltas**: None. The merge commit came out empty (its content was fully covered by the three picks), which is expected and was committed to preserve history.
+
+The branch is ready for pushing.
+
+---
+
