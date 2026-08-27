@@ -26,7 +26,7 @@ resource - use it. Being familiar with the :doc:`process` is also important.
 
 A good introduction how to prepare for submitting patches can be found in the
 LWN article `How to Get Your Change Into the Linux Kernel
-<http://lwn.net/Articles/139918/>`_ as the same rules apply to U-Boot, too.
+<https://lwn.net/Articles/139918/>`_ as the same rules apply to U-Boot, too.
 
 .. _b4_contrib:
 
@@ -324,7 +324,7 @@ to observe the following rules.
   Note: it is *not* sufficient to provide a change log in some cover letter
   that gets sent as a separate message with the patch series. The reason is
   that such cover letters are not as easily reviewed in our `patchwork queue
-  <http://patchwork.ozlabs.org/project/uboot/list/>`_ so they are not helpful
+  <https://patchwork.ozlabs.org/project/uboot/list/>`_ so they are not helpful
   to any reviewers using this tool. Example::
 
    From: Joe Hacker <jh@hackers.paradise.com>
@@ -391,12 +391,12 @@ Notes
 Patch Tracking
 --------------
 
-Like some other projects, U-Boot uses `Patchwork <http://patchwork.ozlabs.org/>`__
+Like some other projects, U-Boot uses `Patchwork <https://patchwork.ozlabs.org/>`__
 to track the state of patches. This is one of the reasons why it is mandatory
 to submit all patches to the U-Boot mailing list - only then they will be
 picked up by patchwork.
 
-At http://patchwork.ozlabs.org/project/uboot/list/ you can find the list of
+At https://patchwork.ozlabs.org/project/uboot/list/ you can find the list of
 open U-Boot patches. By using the "Filters" link (Note: requires JavaScript)
 you can also select other views, for example, to include old patches that have,
 for example, already been applied or rejected.
@@ -481,7 +481,7 @@ Apply patches
 ^^^^^^^^^^^^^
 
 To apply a patch from the `patchwork queue
-<http://patchwork.ozlabs.org/project/uboot/list/>`_ using ``git``, download the
+<https://patchwork.ozlabs.org/project/uboot/list/>`_ using ``git``, download the
 mbox file and apply it using::
 
    git am file
@@ -506,7 +506,7 @@ The `pwclient` command line tool can be used for example to retrieve patches,
 search the queue or update the state.
 
 All necessary information for `pwclient` is linked from the bottom of
-http://patchwork.ozlabs.org/project/uboot/
+https://patchwork.ozlabs.org/project/uboot/
 
 Use::
 
