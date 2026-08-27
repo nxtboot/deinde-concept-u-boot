@@ -25,6 +25,9 @@ obj-$(CONFIG_CMD_BACKTRACE) += backtrace.o
 obj-$(CONFIG_CMD_BDI) += bdinfo.o
 obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CMD_CHID) += chid.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_CLK) += clk.o
+endif
 obj-$(CONFIG_CMD_CONFIG) += config.o
 obj-$(CONFIG_COREBOOT_SYSINFO) += coreboot.o
 ifdef CONFIG_CONSOLE_RECORD
@@ -56,11 +59,17 @@ obj-$(CONFIG_CMD_MX_CYCLIC) += mdc.o mwc.o
 obj-$(CONFIG_CMD_RANDOM) += random.o
 endif
 obj-$(CONFIG_CMD_PART) += part.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_PMIC) += pmic.o
+endif
 obj-$(CONFIG_CMD_PART_FIND) += part_find.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_PCI_MPS) += pci_mps.o
 endif
 obj-$(CONFIG_CMD_QFW) += qfw.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_REGULATOR) += regulator.o
+endif
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
 obj-$(CONFIG_CMD_DATE) += date.o

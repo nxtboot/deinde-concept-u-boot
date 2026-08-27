@@ -5,6 +5,7 @@
 #include <command.h>
 #include <clk.h>
 #include <dm.h>
+#include <getopt.h>
 #include <dm/device.h>
 #include <dm/root.h>
 #include <dm/device-internal.h>
@@ -126,10 +127,14 @@ static struct cmd_tbl cmd_clk_sub[] = {
 	U_BOOT_CMD_MKENT(setfreq, 3, 1, do_clk_setfreq, "", ""),
 };
 
-static int do_clk(struct cmd_tbl *cmdtp, int flag, int argc,
-		  char *const argv[])
+static int do_clk(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -141,7 +146,7 @@ static int do_clk(struct cmd_tbl *cmdtp, int flag, int argc,
 	c = find_cmd_tbl(argv[0], &cmd_clk_sub[0], ARRAY_SIZE(cmd_clk_sub));
 
 	if (c)
-		return cmd_invoke(c, flag, argc, argv);
+		return cmd_invoke(c, gs->cmd_flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }
@@ -150,4 +155,4 @@ U_BOOT_LONGHELP(clk,
 	"dump - Print clock frequencies\n"
 	"clk setfreq [clk] [freq] - Set clock frequency");
 
-U_BOOT_CMD(clk, 4, 1, do_clk, "CLK sub-system", clk_help_text);
+U_BOOT_CMD_GETOPT(clk, 4, 1, do_clk, "CLK sub-system", clk_help_text);

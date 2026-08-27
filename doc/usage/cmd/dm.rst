@@ -517,3 +517,11 @@ This example shows the abridged sandbox output::
     2     mmc0.blk @ 0301d380, seq 2
 
     =>
+
+See also
+--------
+
+* :doc:`clk<clk>` for the rate and usage count of each clock device
+* :doc:`pmic<pmic>` for the registers of a power management chip, which
+  ``dm tree`` shows as the parent of the supplies it provides
+* :doc:`regulator<regulator>` for the voltage and current of each supply
