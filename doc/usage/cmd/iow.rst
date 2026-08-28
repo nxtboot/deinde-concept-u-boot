@@ -88,3 +88,4 @@ See also
 * :doc:`iod<iod>` for displaying I/O space
 * *mw* for writing a value to memory rather than to I/O space
 * :doc:`mm<mm>`, :doc:`nm<nm>` for modifying memory interactively
+* :doc:`axi<axi>` for writing to an AXI bus, another separate address space
