@@ -97273,3 +97273,57 @@ New commit hashes:
 
 ---
 
+## 2026-08-28: us/main
+
+Branch: cherry-c882fc0fe40e
+
+Commits:
+- c882fc0fe40e mtd: cfi: Replace env_get_f() with env_get_yesno()
+- 06084f6f92a2 cmd: scsi: Drop duplicate leading scsi prefix
+- 780808133b75 serial: coreboot: Accept DBG2 subtype 0x12
+- 0ed1a87ad81f arm: mach-k3: j784s4: Add clk and power support for main_uart2 and main_uart3
+- 4cb0bd4702a6 bootretry: only reinitialize retry_time when bootretry env variable has been touched
+- 93926f630e48 Makefile: depend on OF_LIST dts sources for fit-dtb.blob
+- 8da656ae6a97 board_f: Call initf_malloc() before fdtdec_setup()
+- 36c377b9859f Prepare v2026.10-rc2
+- ce220f7f6407 cmd: scmi: Show names for vendor protocols 0x80 and 0x82
+- fc55d1e91094 firmware: scmi: Support probe vendor ID 0x81
+- 607d45d1e3b3 power: pmic: tps65219: fail if regulators node is missing
+- d13ee7acafb9 arm: dts: layerscape: drop leading zeros from unit addresses
+- 289b1bae1c79 pci: layerscape: fix pci_iommu_extra hotplug
+- d57e3e4c7595 power: regulator: tps65219: Fix LDO selector boundaries
+- 9f82dcd48924 scmi: pinctrl: Rename SCMI_PIN_DEFUALT to SCMI_PIN_DEFAULT
+- 5a32ebc96295 armv8: layerscape: Fix TF-A DRAM reservation with empty banks
+- 77bc0326456d Merge tag 'fsl-qoriq-for-2026.10-rc3' of https://git.u-boot-project.org/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+Commit 1 OK. Continuing.
+
+Simple conflict — both branches add an #ifdef block in the same place. I'll keep both.
+
+The other hunks applied cleanly. I'll merge both intents: keep HEAD's older/newer trace-cmd comment format, but use initf_bootstage as the example per the upstream change.
+
+Now the final merge commit:
+
+All done. Final status:
+
+## Result: Success — all 17 commits cherry-picked onto `cherry-c882fc0fe40e` (based on `ci/master`)
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors after every commit and in the final verification.
+
+**Fix-ups made (2):**
+
+1. **`bootretry: only reinitialize retry_time...`** (4cb0bd4702a6 → 43dd58987b08)
+   Context conflict in `include/env_callback.h`: ci/master has a `PAGER_CALLBACK` block added at the same location as the new `BOOTRETRY_CALLBACK` block. Resolved by keeping both blocks. Note appended to the commit message.
+
+2. **`board_f: Call initf_malloc() before fdtdec_setup()`** (8da656ae6a97 → 5a83041bdb95)
+   Comment conflict in `test/py/tests/test_trace.py`: ci/master has a rewritten comment describing older/newer trace-cmd output formats (using `initf_malloc` as the example), while the upstream commit removes `initf_malloc` example lines. Resolved by keeping the older/newer format comment but switching the example to `initf_bootstage`, matching upstream intent. The code hunks (`initf_upl` assert, funcgraph comment, `common/board_f.c` change) applied cleanly. Note appended to the commit message.
+
+**Merge commit:** `77bc0326456d` (fsl-qoriq merge) resulted in an empty commit since all its content was already picked individually — committed with `--allow-empty` preserving the full original merge message plus the cherry-pick reference.
+
+**Deltas:** All commits match their originals exactly, except the `board_f` commit where `test_trace.py` shows 7 lines changed vs 5 upstream — this is solely due to the comment merge described above; the functional changes are identical.
+
+The branch is ready for pushing. No merges were performed back to any other branch.
+
+---
+
