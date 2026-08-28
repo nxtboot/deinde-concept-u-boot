@@ -1762,6 +1762,7 @@ config USE_ONENAND_BOARD_INIT
 config CMD_OSD
 	bool "osd"
 	depends on OSD
+	select GETOPT
 	help
 	  Enable the 'osd' command which allows to query information from and
 	  write text data to a on-screen display (OSD) device; a virtual device
