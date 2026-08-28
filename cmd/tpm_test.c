@@ -499,7 +499,7 @@ static int test_write_limit(struct udevice *dev)
 		ret = get_tpm(&dev); \
 		if (ret) \
 			return ret; \
-		return test_##XFUNC(dev); \
+		return test_##XFUNC(dev) ? CMD_RET_FAILURE : CMD_RET_SUCCESS; \
 	}
 
 #define VOIDENT(XNAME) \
