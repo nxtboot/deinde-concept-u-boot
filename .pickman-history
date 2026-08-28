@@ -97327,3 +97327,43 @@ The branch is ready for pushing. No merges were performed back to any other bran
 
 ---
 
+### Pipeline fix: 2026-08-28 (attempt 1)
+
+Branch: cherry-c882fc0fe40e
+
+Failed jobs:
+- play (sjg-lab)
+- snow (sjg-lab)
+- jerry (sjg-lab)
+
+### Conversation log
+I've reviewed the three job logs. Let me look at the branch and diagnose.
+
+The tps65219 bind change is a strong suspect for play (BeaglePlay has a TPS65219 PMIC). Let me check how the BeaglePlay device tree marks the PMIC for SPL.
+
+Confirmed: `tps65219.o` is built without a PHASE guard, so it's in SPL too. Let me verify the failure path to hang().
+
+Upstream already has the exact fix: `1262e50a34a0 arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators`. Let me look at it.
+
+Now build and verify:
+
+Done. The fix is on local branch `cherry-c882fc0fe40e-fix1`.
+
+## Report
+
+**Root cause (play):** genuine regression from the series. Commit `30d3b2e23067` ("power: pmic: tps65219: fail if regulators node is missing", cherry-pick of upstream `607d45d1e3b3`) makes `tps65219_bind()` return -ENXIO when the PMIC's `regulators` subnode is absent. On BeaglePlay the `pmic@30` node is `bootph-all` but its `regulators` children carry no bootph tags, so fdtgrep prunes them from the SPL devicetree. The bind failure propagates out of `dm_init_and_scan()`, `spl_init()` fails, and `board_init_r()` calls `hang()` — exactly what the play log shows: A53 SPL banner, stack-usage line, then `### ERROR ### Please RESET the board ###` before any "Trying to boot from".
+
+**Fix applied:** cherry-picked the existing upstream follow-up `1262e50a34a0` ("arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators") on top of the branch, with a `[pickman]` note explaining why. I added it as a new commit rather than amending, since it is a separate upstream commit by a different author (Anshul Dalal) that the series would need to pick eventually anyway.
+
+**snow:** infrastructure failure, no code change made — labgrid reports "place snow is not acquired by your user, acquired by labgrid (kea/labgrid)"; the job never even started testing. A retry should resolve it.
+
+**jerry:** almost certainly board/lab flake, no code change made — the board produced no serial output at all (not even the TPL banner) after flashing via em100. Nothing in this series touches rockchip, TPL, or any code path that runs before the first banner, so the series cannot plausibly cause total console silence. Worth a retry.
+
+**Verification:**
+- `um build sandbox` — clean
+- `buildman` for chromebook_jerry, am62x_beagleplay_a53, am62x_beagleplay_r5, sandbox (all variants), snow — 13 boards built, 0 failures. The `invalid length for memory region .sram` warning on the r5 build is pre-existing (reproduced identically at the parent commit; it stems from the faked TI firmware blobs in local builds), not introduced by the fix.
+
+Branch `cherry-c882fc0fe40e-fix1` is ready; not pushed.
+
+---
+
