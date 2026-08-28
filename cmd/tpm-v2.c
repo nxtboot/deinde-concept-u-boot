@@ -511,7 +511,8 @@ struct cmd_tbl *get_tpm2_commands(unsigned int *size)
 	return tpm2_commands;
 }
 
-U_BOOT_CMD(tpm2, CONFIG_SYS_MAXARGS, 1, do_tpm, "Issue a TPMv2.x command",
+U_BOOT_CMD_GETOPT(tpm2, CONFIG_SYS_MAXARGS, 1, do_tpm,
+"Issue a TPMv2.x command",
 "<command> [<arguments>]\n"
 "\n"
 "device [num device]\n"

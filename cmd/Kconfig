@@ -2971,6 +2971,7 @@ config CMD_TPM
 	depends on TPM_V1 || TPM_V2
 	select CMD_TPM_V1 if TPM_V1
 	select CMD_TPM_V2 if TPM_V2
+	select GETOPT
 	help
 	  This provides a means to talk to a TPM from the command line. A wide
 	  range of commands if provided - see 'tpm help' for details. The

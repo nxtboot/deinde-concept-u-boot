@@ -738,7 +738,7 @@ struct cmd_tbl *get_tpm1_commands(unsigned int *size)
 	return tpm1_commands;
 }
 
-U_BOOT_CMD(tpm, CONFIG_SYS_MAXARGS, 1, do_tpm,
+U_BOOT_CMD_GETOPT(tpm, CONFIG_SYS_MAXARGS, 1, do_tpm,
 "Issue a TPMv1.x command",
 "cmd args...\n"
 "    - Issue TPM command <cmd> with arguments <args...>.\n"

@@ -6,6 +6,7 @@
 #include <command.h>
 #include <dm.h>
 #include <env.h>
+#include <getopt.h>
 #include <malloc.h>
 #include <asm/unaligned.h>
 #include <linux/string.h>
@@ -382,13 +383,18 @@ int do_tpm_autostart(struct cmd_tbl *cmdtp, int flag, int argc,
 	return report_return_code(tpm_auto_start(dev));
 }
 
-int do_tpm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_tpm(struct getopt_state *gs)
 {
 	struct cmd_tbl *tpm_commands, *cmd;
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct tpm_chip_priv *priv;
 	struct udevice *dev;
 	unsigned int size;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -418,5 +424,5 @@ int do_tpm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (!cmd)
 		return CMD_RET_USAGE;
 
-	return cmd_invoke(cmd, flag, argc - 1, argv + 1);
+	return cmd_invoke(cmd, gs->cmd_flag, argc - 1, argv + 1);
 }
