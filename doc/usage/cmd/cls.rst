@@ -22,3 +22,8 @@ Configuration
 -------------
 
 The cls command is only available if CONFIG_CMD_CLS=y.
+
+See also
+--------
+
+* :doc:`osd<osd>` for the text overlay, which this command leaves alone
