@@ -1999,6 +1999,7 @@ config CMD_WRITE
 config CMD_AXI
 	bool "axi"
 	depends on AXI
+	select GETOPT
 	help
 	  Enable the command "axi" for accessing AXI (Advanced eXtensible
 	  Interface) busses, a on-chip interconnect specification for managing
