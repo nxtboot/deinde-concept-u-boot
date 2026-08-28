@@ -269,6 +269,7 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 	u32 writeval;
 	ulong addr, count, size;
 	enum axi_size_t axisize;
+	int unitsize;
 
 	if (argc <= 3 || argc >= 6)
 		return CMD_RET_USAGE;
@@ -283,12 +284,15 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 	switch (size) {
 	case 8:
 		axisize = AXI_SIZE_8;
+		unitsize = 1;
 		break;
 	case 16:
 		axisize = AXI_SIZE_16;
+		unitsize = 2;
 		break;
 	case 32:
 		axisize = AXI_SIZE_32;
+		unitsize = 4;
 		break;
 	default:
 		printf("Unknown write size '%lu'\n", size);
@@ -308,7 +312,7 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 		count = 1;
 
 	while (count-- > 0) {
-		int ret = axi_write(axi_cur_bus, addr + count * sizeof(u32),
+		int ret = axi_write(axi_cur_bus, addr + count * unitsize,
 				    &writeval, axisize);
 
 		if (ret) {
