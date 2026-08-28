@@ -97146,3 +97146,43 @@ Rebase complete and pushed. Summary:
 
 ---
 
+## 2026-08-27: us/main
+
+Branch: cherry-ba9ce23d21e3
+
+Commits:
+- ba9ce23d21e3 boot: fit: factor out node-path collection in fit_config_add_hash()
+- 2601d94691c0 boot: fit: cover the dm-verity roothash with the config signature
+- fe9877c7d9de test: fit: verify dm-verity roothash is covered by the config signature
+- 6ea67890d034 Merge patch series "boot: fit: authenticate the dm-verity roothash"
+
+### Conversation log
+Stats match exactly. Running build test:
+
+The merge commit is empty as expected. Committing it to preserve the history:
+
+All 4 commits applied. Running the final build:
+
+All done. Final status:
+
+## Cherry-pick complete — branch `cherry-ba9ce23d21e3`
+
+**Commits applied (on top of ci/master):**
+
+| New hash | Original | Subject | Notes |
+|---|---|---|---|
+| 4eaf393f0df4 | ba9ce23d21e3 | boot: fit: factor out node-path collection in fit_config_add_hash() | Auto-merged cleanly; delta identical (2 files, +91/−55) |
+| d11f952cc542 | 2601d94691c0 | boot: fit: cover the dm-verity roothash with the config signature | Auto-merged cleanly; delta identical (4 files, +46/−5) |
+| cba48fda9d6d | fe9877c7d9de | test: fit: verify dm-verity roothash is covered by the config signature | Auto-merged cleanly; delta identical (5 files, +443/−7) |
+| bb4b911339e9 | 6ea67890d034 | Merge patch series "boot: fit: authenticate the dm-verity roothash" | Empty commit (expected for the merge); full message and cherry-pick note preserved |
+
+**Build result:** sandbox builds cleanly after each cherry-pick and in the final combined build — no warnings or errors.
+
+**Fix-ups:** none needed. No conflicts; all file/line deltas match the originals exactly.
+
+**Concerning deltas:** none.
+
+The branch is left checked out and ready for pushing; it has not been merged anywhere.
+
+---
+
