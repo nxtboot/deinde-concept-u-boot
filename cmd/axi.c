@@ -273,6 +273,11 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc <= 3 || argc >= 6)
 		return CMD_RET_USAGE;
 
+	if (!axi_cur_bus) {
+		puts("No AXI bus selected\n");
+		return CMD_RET_FAILURE;
+	}
+
 	size = dectoul(argv[1], NULL);
 
 	switch (size) {
