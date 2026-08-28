@@ -293,4 +293,4 @@ See also
 
 * :doc:`md<md>` for showing the memory that a read fills in
 * *tpm2* for the same command driving a TPMv2.x device
-* *tpmtest* for a suite of tests which exercise a TPMv1.x device
+* :doc:`tpmtest<tpmtest>` for a suite of tests which exercise a TPMv1.x device
