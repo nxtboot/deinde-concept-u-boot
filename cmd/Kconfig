@@ -2983,6 +2983,7 @@ if CMD_TPM
 config CMD_TPM_TEST
 	bool "Enable the 'tpm test' command"
 	depends on TPM_V1
+	select GETOPT
 	help
 	  This provides a a series of tests to confirm that the TPMv1.x is
 	  working correctly. The tests cover initialisation, non-volatile RAM,

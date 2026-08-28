@@ -5,6 +5,7 @@
 
 #include <command.h>
 #include <cpu_func.h>
+#include <getopt.h>
 #include <log.h>
 #include <time.h>
 #include <tpm-v1.h>
@@ -537,11 +538,15 @@ static struct cmd_tbl cmd_cros_tpm_sub[] = {
 	VOIDENT(timer)
 };
 
-static int do_tpmtest(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_tpmtest(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
 	int i;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	printf("argc = %d, argv = ", argc);
 
@@ -554,10 +559,10 @@ static int do_tpmtest(struct cmd_tbl *cmdtp, int flag, int argc,
 	argv++;
 	c = find_cmd_tbl(argv[0], cmd_cros_tpm_sub,
 			 ARRAY_SIZE(cmd_cros_tpm_sub));
-	return c ? cmd_invoke(c, flag, argc, argv) : cmd_usage(cmdtp);
+	return c ? cmd_invoke(c, gs->cmd_flag, argc, argv) : CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(tpmtest, 2, 1, do_tpmtest, "TPM tests",
+U_BOOT_CMD_GETOPT(tpmtest, 2, 1, do_tpmtest, "TPM tests",
 	"\n\tearly_extend\n"
 	"\tearly_nvram\n"
 	"\tearly_nvram2\n"
