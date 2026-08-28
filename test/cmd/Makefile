@@ -20,6 +20,7 @@ obj-$(CONFIG_CMD_ADDR_FIND) += addr_find.o
 obj-$(CONFIG_CMD_ADDRMAP) += addrmap.o
 ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_ACPI) += acpi.o
+obj-$(CONFIG_CMD_AXI) += axi.o
 endif
 obj-$(CONFIG_CMD_BACKTRACE) += backtrace.o
 obj-$(CONFIG_CMD_BDI) += bdinfo.o
@@ -60,6 +61,7 @@ obj-$(CONFIG_CMD_RANDOM) += random.o
 endif
 obj-$(CONFIG_CMD_PART) += part.o
 ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_OSD) += osd.o
 obj-$(CONFIG_CMD_PMIC) += pmic.o
 endif
 obj-$(CONFIG_CMD_PART_FIND) += part_find.o

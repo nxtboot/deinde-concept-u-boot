@@ -14,6 +14,7 @@
 #include <console.h>
 #include <display_options.h>
 #include <dm.h>
+#include <getopt.h>
 #include <log.h>
 
 /* Currently selected AXI bus device */
@@ -269,21 +270,30 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 	u32 writeval;
 	ulong addr, count, size;
 	enum axi_size_t axisize;
+	int unitsize;
 
 	if (argc <= 3 || argc >= 6)
 		return CMD_RET_USAGE;
+
+	if (!axi_cur_bus) {
+		puts("No AXI bus selected\n");
+		return CMD_RET_FAILURE;
+	}
 
 	size = dectoul(argv[1], NULL);
 
 	switch (size) {
 	case 8:
 		axisize = AXI_SIZE_8;
+		unitsize = 1;
 		break;
 	case 16:
 		axisize = AXI_SIZE_16;
+		unitsize = 2;
 		break;
 	case 32:
 		axisize = AXI_SIZE_32;
+		unitsize = 4;
 		break;
 	default:
 		printf("Unknown write size '%lu'\n", size);
@@ -303,7 +313,7 @@ static int do_axi_mw(struct cmd_tbl *cmdtp, int flag, int argc,
 		count = 1;
 
 	while (count-- > 0) {
-		int ret = axi_write(axi_cur_bus, addr + count * sizeof(u32),
+		int ret = axi_write(axi_cur_bus, addr + count * unitsize,
 				    &writeval, axisize);
 
 		if (ret) {
@@ -322,10 +332,14 @@ static struct cmd_tbl cmd_axi_sub[] = {
 	U_BOOT_CMD_MKENT(mw, 5, 1, do_axi_mw, "", ""),
 };
 
-static int do_ihs_axi(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_ihs_axi(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -338,7 +352,7 @@ static int do_ihs_axi(struct cmd_tbl *cmdtp, int flag, int argc,
 	c = find_cmd_tbl(argv[0], &cmd_axi_sub[0], ARRAY_SIZE(cmd_axi_sub));
 
 	if (c)
-		return cmd_invoke(c, flag, argc, argv);
+		return cmd_invoke(c, gs->cmd_flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }
@@ -349,7 +363,7 @@ U_BOOT_LONGHELP(axi,
 	"axi md size addr [# of objects] - read from AXI device at address [addr] and data width [size] (one of 8, 16, 32)\n"
 	"axi mw size addr value [count] - write data [value] to AXI device at address [addr] and data width [size] (one of 8, 16, 32)\n");
 
-U_BOOT_CMD(axi, 7, 1, do_ihs_axi,
-	   "AXI sub-system",
-	   axi_help_text
+U_BOOT_CMD_GETOPT(axi, 7, 1, do_ihs_axi,
+		  "AXI sub-system",
+		  axi_help_text
 );

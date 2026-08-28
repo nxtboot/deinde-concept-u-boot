@@ -11,6 +11,7 @@
 
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 #include <hexdump.h>
 #include <video_osd.h>
 #include <malloc.h>
@@ -258,9 +259,14 @@ static struct cmd_tbl cmd_osd_sub[] = {
 	U_BOOT_CMD_MKENT(size, 2, 1, do_osd_size, "", ""),
 };
 
-static int do_osd(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_osd(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -272,7 +278,7 @@ static int do_osd(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	c = find_cmd_tbl(argv[0], &cmd_osd_sub[0], ARRAY_SIZE(cmd_osd_sub));
 
 	if (c)
-		return cmd_invoke(c, flag, argc, argv);
+		return cmd_invoke(c, gs->cmd_flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }
@@ -284,7 +290,7 @@ U_BOOT_LONGHELP(osd,
 	"print [pos_x] [pos_y] [color] [text] - write ASCII buffer (given by text data and driver-specific color information) to osd memory\n"
 	"size [size_x] [size_y] - set OSD XY size in characters\n");
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	osd, 6, 1, do_osd,
 	"OSD sub-system",
 	osd_help_text

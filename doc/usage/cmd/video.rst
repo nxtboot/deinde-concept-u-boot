@@ -118,3 +118,8 @@ Return value
 ------------
 
 The return value $? is 0 (true) on success, 1 (false) on failure.
+
+See also
+--------
+
+* :doc:`osd<osd>` for the text overlay drawn on top of the display

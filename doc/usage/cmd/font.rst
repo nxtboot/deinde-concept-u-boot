@@ -95,3 +95,8 @@ Complex glyphs (CJK, emoji) or very large font sizes may need 64KB or more.
 Allocations exceeding the buffer size fall back to malloc transparently.
 
 CONFIG_VIDEO_GLYPH_STATS enables tracking of glyph-rendering statistics.
+
+See also
+--------
+
+* :doc:`osd<osd>` for the text overlay, which has a font of its own
