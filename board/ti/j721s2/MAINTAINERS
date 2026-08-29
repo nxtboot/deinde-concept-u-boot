@@ -1,4 +1,4 @@
-J721S2 BOARD
+J721S2XSOMXEVM BOARD
 M:	Manorit Chawdhry <m-chawdhry@ti.com>
 S:	Maintained
 F:	arch/arm/dts/k3-am68-sk-base-board-u-boot.dtsi
