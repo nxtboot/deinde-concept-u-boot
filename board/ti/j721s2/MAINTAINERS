@@ -1,6 +1,7 @@
 J721S2XSOMXEVM BOARD
 M:	Manorit Chawdhry <m-chawdhry@ti.com>
 S:	Maintained
+F:	arch/arm/dts/k3-j721s2-binman.dtsi
 F:	arch/arm/dts/k3-j721s2-common-proc-board-u-boot.dtsi
 F:	arch/arm/dts/k3-j721s2-ddr-evm-lp4-4266.dtsi
 F:	arch/arm/dts/k3-j721s2-ddr.dtsi
@@ -16,9 +17,10 @@ F:	include/configs/j721s2_evm.h
 SK-AM68 BOARD
 M:	Manorit Chawdhry <m-chawdhry@ti.com>
 S:	Maintained
-F:	board/ti/j721s2
+F:	arch/arm/dts/k3-am68-ddr-sk-lp4-4266.dtsi
 F:	arch/arm/dts/k3-am68-sk-base-board-u-boot.dtsi
 F:	arch/arm/dts/k3-am68-sk-r5-base-board.dts
+F:	arch/arm/dts/k3-j721s2-binman.dtsi
 F:	arch/arm/dts/k3-j721s2-ddr.dtsi
 F:	arch/arm/dts/k3-j721s2-r5.dtsi
 F:	arch/arm/mach-k3/j721s2/
