@@ -111,7 +111,7 @@ static int do_demo(struct cmd_tbl *cmdtp, int flag, int argc,
 		devnum = dectoul(argv[0], NULL);
 		ret = uclass_get_device(UCLASS_DEMO, devnum, &demo_dev);
 		if (ret)
-			return cmd_process_error(cmdtp, ret);
+			return cmd_process_error(demo_cmd, ret);
 		argc--;
 		argv++;
 	} else {
@@ -120,7 +120,7 @@ static int do_demo(struct cmd_tbl *cmdtp, int flag, int argc,
 			return CMD_RET_USAGE;
 	}
 
-	ret = demo_cmd->cmd(demo_cmd, flag, argc, argv);
+	ret = cmd_invoke(demo_cmd, flag, argc, argv);
 
 	return cmd_process_error(demo_cmd, ret);
 }
