@@ -24,6 +24,9 @@ obj-$(CONFIG_CMD_AXI) += axi.o
 endif
 obj-$(CONFIG_CMD_BACKTRACE) += backtrace.o
 obj-$(CONFIG_CMD_BDI) += bdinfo.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_BMP) += bmp.o
+endif
 obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CMD_CHID) += chid.o
 ifdef CONFIG_CONSOLE_RECORD
