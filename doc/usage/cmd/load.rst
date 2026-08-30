@@ -142,3 +142,4 @@ See also
 * :doc:`fatload<fatload>` for the FAT-only form of this command
 * :doc:`iminfo<iminfo>` for checking an image once it has been loaded
 * :doc:`go<go>` for starting an application once it has been loaded
+* :doc:`bmp<bmp>` for showing a BMP image once it has been loaded
