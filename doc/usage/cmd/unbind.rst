@@ -91,3 +91,11 @@ Configuration
 -------------
 
 The unbind command is only available if CONFIG_CMD_BIND=y.
+
+See also
+--------
+
+* :doc:`bind<bind>` for attaching a driver to a device
+* :doc:`dm<dm>` for the devices and uclasses driver model has bound
+* :doc:`demo<demo>` for the example uclass used to show how driver model
+  works
