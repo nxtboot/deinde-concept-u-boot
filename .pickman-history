@@ -97403,3 +97403,44 @@ Done. Here's the summary:
 
 ---
 
+### Review: 2026-08-30
+
+Branch: cherry-c882fc0fe40e
+
+Comments addressed:
+
+
+### Conversation log
+The 11 new upstream commits are all TPM/command work — unlikely to conflict with this series. Now I'll rebase with a per-commit build check using `-x`:
+
+The Monitor tool is erroring, so I'll rely on the background task completion notification. Waiting for the rebase to finish.
+
+Rebase completed cleanly — no conflicts, and all per-commit sandbox builds passed. Now verifying the deltas match the pre-rebase commits:
+
+All 21 commits rebased identically (`=` in range-diff), including the preserved empty fsl-qoriq merge commit. Now the final build check, versioned local branch, and push:
+
+Rebase complete and pushed. Here's the summary:
+
+## Report
+
+**Rebase:** `cherry-c882fc0fe40e` rebased onto latest `ci/master` (`c69260e07782`, 11 new commits — all TPM/cmd getopt work) using `git rebase --keep-empty ci/master`.
+
+**Result: clean rebase, zero conflicts.**
+- All 21 commits applied without any conflict resolution needed — the new upstream commits (tpm/tpmtest command work) don't touch any files in this series
+- `git range-diff` shows every commit as `=` (patch-identical) to its pre-rebase counterpart, so no deltas changed
+- The empty fsl-qoriq merge commit is preserved (`888511b023ff`) with its full original message
+
+**Build verification:** sandbox built via `buildman -L --board sandbox -w -o /tmp/pickman` after **every** rebased commit (run as a rebase `-x` step) plus a final check — 21/21 builds passed, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-c882fc0fe40e-v3` (v2 already existed) at `c8a7b17257e7`
+- Force-pushed to `ci/cherry-c882fc0fe40e` (`4544c97fbb8b → c8a7b17257e7`), updating MR !1308 and triggering a fresh pipeline
+
+**Note:** the push also carries the previously local-only bookkeeping commit `pickman: Record review handling for cherry-c882fc0fe40e` (was `a25853c02b42`, now `c8a7b17257e7`), which had not yet made it to the remote. It touches only `.pickman-history`.
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (c69260e07782) with --keep-empty. Clean rebase — no conflicts, and range-diff confirms all 21 commits are patch-identical to the previous revision, with the empty fsl-qoriq merge commit preserved. Sandbox was built with buildman after every rebased commit: 21/21 passed with no warnings. This push also includes the pickman review-handling record commit. A fresh pipeline has been triggered.
+
+---
+
