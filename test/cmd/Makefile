@@ -89,6 +89,8 @@ obj-$(CONFIG_CMD_SETEXPR) += setexpr.o
 obj-$(CONFIG_CMD_SMBIOS) += smbios.o
 obj-$(CONFIG_CMD_TEMPERATURE) += temperature.o
 obj-$(CONFIG_CMD_TIMER) += timer.o
+obj-$(CONFIG_CMD_TPM_V1) += tpm.o
+obj-$(CONFIG_CMD_TPM_TEST) += tpmtest.o
 obj-$(CONFIG_CMD_TKEY) += tkey.o
 ifdef CONFIG_NET_LEGACY
 obj-$(CONFIG_CMD_WGET) += wget.o

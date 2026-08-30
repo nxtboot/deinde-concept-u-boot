@@ -6,6 +6,7 @@
 #include <command.h>
 #include <env.h>
 #include <malloc.h>
+#include <mapmem.h>
 #include <vsprintf.h>
 #include <asm/unaligned.h>
 #include <tpm-common.h>
@@ -73,14 +74,15 @@ static int do_tpm_nv_read_value(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc != 4)
 		return CMD_RET_USAGE;
 	index = simple_strtoul(argv[1], NULL, 0);
-	data = (void *)simple_strtoul(argv[2], NULL, 0);
 	count = simple_strtoul(argv[3], NULL, 0);
+	data = map_sysmem(simple_strtoul(argv[2], NULL, 0), count);
 
 	rc = tpm_nv_read_value(dev, index, data, count);
 	if (!rc) {
 		puts("area content:\n");
 		print_byte_string(data, count);
 	}
+	unmap_sysmem(data);
 
 	return report_return_code(rc);
 }
@@ -155,14 +157,15 @@ static int do_tpm_pcr_read(struct cmd_tbl *cmdtp, int flag, int argc,
 	if (argc != 4)
 		return CMD_RET_USAGE;
 	index = simple_strtoul(argv[1], NULL, 0);
-	data = (void *)simple_strtoul(argv[2], NULL, 0);
 	count = simple_strtoul(argv[3], NULL, 0);
+	data = map_sysmem(simple_strtoul(argv[2], NULL, 0), count);
 
 	rc = tpm_pcr_read(dev, index, data, count);
 	if (!rc) {
 		puts("Named PCR content:\n");
 		print_byte_string(data, count);
 	}
+	unmap_sysmem(data);
 
 	return report_return_code(rc);
 }
@@ -198,14 +201,15 @@ static int do_tpm_read_pubek(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	if (argc != 3)
 		return CMD_RET_USAGE;
-	data = (void *)simple_strtoul(argv[1], NULL, 0);
 	count = simple_strtoul(argv[2], NULL, 0);
+	data = map_sysmem(simple_strtoul(argv[1], NULL, 0), count);
 
 	rc = tpm_read_pubek(dev, data, count);
 	if (!rc) {
 		puts("pubek value:\n");
 		print_byte_string(data, count);
 	}
+	unmap_sysmem(data);
 
 	return report_return_code(rc);
 }
@@ -244,14 +248,15 @@ static int do_tpm_get_capability(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_USAGE;
 	cap_area = simple_strtoul(argv[1], NULL, 0);
 	sub_cap = simple_strtoul(argv[2], NULL, 0);
-	cap = (void *)simple_strtoul(argv[3], NULL, 0);
 	count = simple_strtoul(argv[4], NULL, 0);
+	cap = map_sysmem(simple_strtoul(argv[3], NULL, 0), count);
 
 	rc = tpm_get_capability(dev, cap_area, sub_cap, cap, count);
 	if (!rc) {
 		puts("capability information:\n");
 		print_byte_string(cap, count);
 	}
+	unmap_sysmem(cap);
 
 	return report_return_code(rc);
 }
@@ -415,15 +420,18 @@ static int do_tpm_load_key_by_sha1(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_USAGE;
 
 	parse_byte_string(argv[1], parent_hash, NULL);
-	key = (void *)simple_strtoul(argv[2], NULL, 0);
 	key_len = simple_strtoul(argv[3], NULL, 0);
-	if (strlen(argv[4]) != 2 * DIGEST_LENGTH)
+	key = map_sysmem(simple_strtoul(argv[2], NULL, 0), key_len);
+	if (strlen(argv[4]) != 2 * DIGEST_LENGTH) {
+		unmap_sysmem(key);
 		return CMD_RET_FAILURE;
+	}
 	parse_byte_string(argv[4], usage_auth, NULL);
 
 	err = tpm1_find_key_sha1(dev, usage_auth, parent_hash, &parent_handle);
 	if (err) {
 		printf("Could not find matching parent key (err = %d)\n", err);
+		unmap_sysmem(key);
 		return CMD_RET_FAILURE;
 	}
 
@@ -431,6 +439,7 @@ static int do_tpm_load_key_by_sha1(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	err = tpm1_load_key2_oiap(dev, parent_handle, key, key_len, usage_auth,
 				 &key_handle);
+	unmap_sysmem(key);
 	if (!err) {
 		printf("Key handle is 0x%x\n", key_handle);
 		env_set_hex("key_handle", key_handle);
@@ -457,14 +466,17 @@ static int do_tpm_load_key2_oiap(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_USAGE;
 
 	parent_handle = simple_strtoul(argv[1], NULL, 0);
-	key = (void *)simple_strtoul(argv[2], NULL, 0);
 	key_len = simple_strtoul(argv[3], NULL, 0);
-	if (strlen(argv[4]) != 2 * DIGEST_LENGTH)
+	key = map_sysmem(simple_strtoul(argv[2], NULL, 0), key_len);
+	if (strlen(argv[4]) != 2 * DIGEST_LENGTH) {
+		unmap_sysmem(key);
 		return CMD_RET_FAILURE;
+	}
 	parse_byte_string(argv[4], usage_auth, NULL);
 
 	err = tpm1_load_key2_oiap(dev, parent_handle, key, key_len, usage_auth,
 				  &key_handle);
+	unmap_sysmem(key);
 	if (!err)
 		printf("Key handle is 0x%x\n", key_handle);
 
@@ -726,7 +738,7 @@ struct cmd_tbl *get_tpm1_commands(unsigned int *size)
 	return tpm1_commands;
 }
 
-U_BOOT_CMD(tpm, CONFIG_SYS_MAXARGS, 1, do_tpm,
+U_BOOT_CMD_GETOPT(tpm, CONFIG_SYS_MAXARGS, 1, do_tpm,
 "Issue a TPMv1.x command",
 "cmd args...\n"
 "    - Issue TPM command <cmd> with arguments <args...>.\n"
@@ -819,8 +831,8 @@ U_BOOT_CMD(tpm, CONFIG_SYS_MAXARGS, 1, do_tpm,
 "    - Establish a space at index <index> with <permission> of <size> bytes.\n"
 "  nv_read_value index addr count\n"
 "    - Read <count> bytes from space <index> to memory address <addr>.\n"
-"  nv_write_value index addr count\n"
-"    - Write <count> bytes from memory address <addr> to space <index>.\n"
+"  nv_write_value index byte_string\n"
+"    - Write the bytes of <byte_string> to space <index>.\n"
 "Miscellaneous helper functions:\n"
 "  raw_transfer byte_string\n"
 "    - Send a byte string <byte_string> to TPM and print the response.\n"

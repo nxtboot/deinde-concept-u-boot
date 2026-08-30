@@ -110,3 +110,4 @@ See also
 --------
 
 * :doc:`axi<axi>` for reading an AXI bus in the same layout
+* :doc:`tpm<tpm>` for reading TPM data into memory, which md then shows

@@ -184,6 +184,8 @@ static int sandbox_tpm_xfer(struct udevice *dev, const uint8_t *sendbuf,
 			return -EINVAL;
 		printf("tpm: nvwrite index=%#02x, len=%#02x\n", index, length);
 		sb_tpm_write_data(tpm->nvdata, seq, sendbuf, 22, length);
+		*recv_len = 12;
+		memset(recvbuf, '\0', *recv_len);
 		break;
 	case TPM_CMD_NV_READ_VALUE: /* nvread */
 		index = get_unaligned_be32(sendbuf + 10);
