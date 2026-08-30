@@ -30,10 +30,8 @@ __weak efi_status_t platform_get_rng_device(struct udevice **devp)
 	struct udevice *dev;
 
 	ret = uclass_first_device_err(UCLASS_RNG, &dev);
-	if (ret) {
-		debug("Unable to get rng device\n");
+	if (ret)
 		return EFI_DEVICE_ERROR;
-	}
 
 	*devp = dev;
 
