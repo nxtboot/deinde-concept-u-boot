@@ -9,6 +9,7 @@
 #include <command.h>
 #include <dm.h>
 #include <dm-demo.h>
+#include <getopt.h>
 #include <mapmem.h>
 #include <asm/io.h>
 
@@ -89,12 +90,16 @@ static struct cmd_tbl demo_commands[] = {
 	U_BOOT_CMD_MKENT(status, 1, 1, do_demo_status, "", ""),
 };
 
-static int do_demo(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_demo(struct getopt_state *gs)
 {
+	char *const *argv = gs->argv;
 	struct cmd_tbl *demo_cmd;
+	int argc = gs->argc;
 	int devnum = 0;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -120,12 +125,12 @@ static int do_demo(struct cmd_tbl *cmdtp, int flag, int argc,
 			return CMD_RET_USAGE;
 	}
 
-	ret = cmd_invoke(demo_cmd, flag, argc, argv);
+	ret = cmd_invoke(demo_cmd, gs->cmd_flag, argc, argv);
 
 	return cmd_process_error(demo_cmd, ret);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	demo,   4,      1,      do_demo,
 	"Driver model (dm) demo operations",
 	"list                     List available demo devices\n"
