@@ -341,6 +341,14 @@ static int draw_bmp(struct udevice *dev, ulong bmp_image, int x, int y,
 		video_splash_align_axis(&y, priv->ysize, height);
 	}
 
+	/*
+	 * The clamping below subtracts the position from the display size, so a
+	 * position off the display underflows and the image is drawn outside
+	 * the frame buffer
+	 */
+	if (x < 0 || y < 0 || x >= (int)pwidth || y >= (int)priv->ysize)
+		return -ERANGE;
+
 	if ((x + width) > pwidth)
 		width = pwidth - x;
 	if ((y + height) > priv->ysize)
