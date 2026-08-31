@@ -45,8 +45,8 @@ mtdparts
 
 partition
     the partition selected as current, as ``<dev-id>,<part-num>``. It is
-    written by this command and read by the commands which act on the current
-    partition.
+    written by this command and by :doc:`chpart<chpart>`, and read by the
+    commands which act on the current partition.
 
 With no arguments the command lists the partitions of every device, marks the
 current one and reports the built-in defaults.
@@ -149,6 +149,7 @@ fall back on, since it has done what was asked of it: the variables are unset.
 See also
 --------
 
+* :doc:`chpart<chpart>` for choosing which of these partitions is current
 * :doc:`sf<sf>` for reading and writing SPI flash, which can be partitioned
   this way
 * *mtd* for the MTD stack command which supersedes this one
