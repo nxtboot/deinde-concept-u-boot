@@ -97739,3 +97739,45 @@ If instead you want me to force-push a no-op v2 to trigger a fresh pipeline run,
 
 ---
 
+### Pipeline fix: 2026-08-31 (attempt 2)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- vbe (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- ff3399 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All six failures are infrastructure / lab issues rather than code problems introduced by this branch's changes. Let me verify by checking the branch content and confirming.
+
+## Analysis: All six failures are infrastructure / lab issues, not code defects
+
+The branch's diff (26 files, all networking) touches only `cmd/lwip/`, `cmd/net.c`, `drivers/net/`, `net/`, `net/nfs-common.c`, `test/dm/net_defrag.c`, and `test/py/tests/test_net.py`. Nothing in the diff can affect any of the specific failures.
+
+### Per-job diagnosis
+
+| Job | Failure | Root cause |
+|-----|---------|-----------|
+| **vbe** | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention — the vbe role maps to the ff3399 place, currently held by user `sglass`. Test never ran. |
+| **rockpro64** | `place rockpro64 is not acquired by your user, acquired by sglass` | Labgrid contention — place held by `sglass`. Test never ran. |
+| **snow** | `place snow is not acquired by your user, acquired by labgrid` | Labgrid contention — place held by `kea/labgrid`. Test never ran. |
+| **ff3399** | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention — place held by `sglass`. Test never ran. |
+| **minnowmax** | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` | Board never reached U-Boot prompt after em100 flash; `Lab failure: Marking connection bad`. No x86/minnowmax code changed on this branch. |
+| **efi-x86_64-uboot-iso** | `Initramfs unpacking failed: invalid magic at start of compressed archive`, then `test_distro_ubuntu_iso_uboot` timeout waiting for `Started gdm.service` | Ubuntu ISO boot: kernel loaded but initrd magic invalid — a QEMU/ISO/loader flake. Branch touches no EFI, distro-boot, BLS, filesystem, or bzImage-load code. |
+
+### Pattern
+
+Five of six failures share the same runner (`ellesmere-lab VKe9dm-Af`) and time window (13:46–14:00 UTC). The labgrid places `vbe/ff3399`, `rockpro64`, `ff3399` are all being held by user `sglass` simultaneously — the lab operator apparently had these boards acquired for other work during the run. `snow` is held by a different service account (`kea/labgrid`). `minnowmax` is a classic serial-boot flake on that board. `efi-x86_64-uboot-iso` is a known-flaky distro-boot test where a truncated/corrupt initrd load in QEMU EFI causes the Linux boot to fail before reaching userspace.
+
+### Action taken
+
+**None.** Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have not created `cherry-614ebea14bfc-fix2` and have not amended any commit. The branch remains at `a66a431497c3` unchanged.
+
+**Recommendation:** retry the six failed jobs after the lab boards are released.
+
+---
+
