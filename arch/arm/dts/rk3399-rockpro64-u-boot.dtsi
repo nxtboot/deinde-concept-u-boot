@@ -40,6 +40,18 @@
 	bootph-pre-ram;
 };
 
+&gmac {
+	/*
+	 * The upstream rx_delay of 0x11 sits on the very edge of this board's
+	 * RGMII receive window.  Sweeping the delay while counting
+	 * mmc_rx_crc_error and large-ping loss shows 0x00-0x10 failing
+	 * completely, 0x11 marginal (5% loss on 1400-byte pings) and
+	 * 0x14-0x50 entirely clean, with 0x60 upwards failing again.  Use the
+	 * middle of that window.
+	 */
+	rx_delay = <0x30>;
+};
+
 &sdhci {
 	cap-mmc-highspeed;
 	mmc-ddr-1_8v;
