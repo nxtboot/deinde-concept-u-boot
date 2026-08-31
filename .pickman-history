@@ -97856,3 +97856,40 @@ Branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-08-31 (attempt 1)
+
+Branch: cherry-0c68b88ce574
+
+Failed jobs:
+- vbe (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- ff3399 (sjg-lab)
+
+### Conversation log
+All five failures are infrastructure/transient issues unrelated to the cherry-picked commits on this branch. No code changes are warranted.
+
+**Root cause per job:**
+
+| Job | Failure | Cause |
+|-----|---------|-------|
+| `vbe` | `place ff3399 is not acquired by your user, acquired by sglass` | labgrid place held by another user |
+| `snow` | `place snow is not acquired by your user, acquired by labgrid` (kea) | labgrid place held elsewhere |
+| `rockpro64` | `place rockpro64 is not acquired by your user, acquired by sglass` | labgrid place held by another user |
+| `ff3399` | `place ff3399 is not acquired by your user, acquired by sglass` | labgrid place held by another user |
+| `efi-x86_64-uboot-iso` | `test_distro_ubuntu_iso_uboot ... console_base.Timeout` waiting for `Started gdm.service` | Ubuntu ISO boot timed out — transient runtime flake |
+
+**Why these are not caused by the branch:**
+
+The three cherry-picked commits touch only:
+- `include/linux/hw_bitfield.h` — new, isolated header, not referenced by any of the failing boards
+- `arch/arm/mach-rockchip/rk3576/Kconfig` — affects only rk3576 (none of the failing boards are rk3576; rockpro64/ff3399 are rk3399, snow is exynos5, vbe/efi-x86 are sandbox/x86)
+- An empty Rockchip merge commit
+
+None of these can plausibly cause a labgrid place-acquisition conflict or an Ubuntu userland gdm boot timeout.
+
+**Action:** No fix applied. No `cherry-0c68b88ce574-fix1` branch created since there is nothing to fix — the pipeline just needs to be re-run once the labgrid places are released (and the x86 ISO boot re-attempted).
+
+---
+
