@@ -9,6 +9,7 @@
  */
 
 #include <command.h>
+#include <getopt.h>
 #include <image.h>
 #include <mapmem.h>
 #include <splash.h>
@@ -72,9 +73,14 @@ static struct cmd_tbl cmd_bmp_sub[] = {
 	U_BOOT_CMD_MKENT(display, 5, 0, do_bmp_display, "", ""),
 };
 
-static int do_bmp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_bmp(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/* Strip off leading 'bmp' command argument */
 	argc--;
@@ -83,12 +89,12 @@ static int do_bmp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	c = find_cmd_tbl(argv[0], &cmd_bmp_sub[0], ARRAY_SIZE(cmd_bmp_sub));
 
 	if (c)
-		return  cmd_invoke(c, flag, argc, argv);
+		return  cmd_invoke(c, gs->cmd_flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	bmp,	5,	1,	do_bmp,
 	"manipulate BMP image data",
 	"info <imageAddr>          - display image info\n"

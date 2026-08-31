@@ -27,3 +27,4 @@ See also
 --------
 
 * :doc:`osd<osd>` for the text overlay, which this command leaves alone
+* :doc:`bmp<bmp>` for drawing a BMP image on the display

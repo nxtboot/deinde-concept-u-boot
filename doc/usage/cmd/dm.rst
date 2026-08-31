@@ -525,3 +525,5 @@ See also
 * :doc:`pmic<pmic>` for the registers of a power management chip, which
   ``dm tree`` shows as the parent of the supplies it provides
 * :doc:`regulator<regulator>` for the voltage and current of each supply
+* :doc:`demo<demo>` for the example uclass used to show how driver model
+  works
