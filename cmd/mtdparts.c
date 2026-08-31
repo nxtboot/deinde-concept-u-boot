@@ -1913,19 +1913,20 @@ static struct part_info* mtd_part_info(struct mtd_device *dev, unsigned int part
  * Routine implementing u-boot chpart command. Sets new current partition based
  * on the user supplied partition id. For partition id format see find_dev_and_part().
  *
- * @param cmdtp command internal data
- * @param flag command flag
- * @param argc number of arguments supplied to the command
- * @param argv arguments list
+ * @param gs getopt state, holding the arguments supplied to the command
  * Return: 0 on success, 1 otherwise
  */
-static int do_chpart(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_chpart(struct getopt_state *gs)
 {
 /* command line only */
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_device *dev;
 	struct part_info *part;
 	u8 pnum;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (mtdparts_init() !=0)
 		return 1;
@@ -2079,7 +2080,7 @@ static int do_mtdparts(struct getopt_state *gs)
 }
 
 /***************************************************/
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	chpart,	2,	0,	do_chpart,
 	"change active partition of a MTD device",
 	"part-id\n"
