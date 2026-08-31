@@ -97557,3 +97557,39 @@ All done. Here's the summary:
 
 ---
 
+### Review: 2026-08-31
+
+Branch: cherry-fcf44934dfdd
+
+Comments addressed:
+
+
+### Conversation log
+I'll resolve by keeping both history sections.
+
+All source commits are patch-identical. The only delta is expected context in `.pickman-history` for the record commit. Now let's verify the build.
+
+Build passes cleanly. Now create the -v2 branch and push.
+
+Pushed. Here's the summary:
+
+## Report
+
+**Rebase:** `cherry-fcf44934dfdd` rebased onto latest `ci/master` (`fb9811417243`) with `--keep-empty`.
+
+**Conflict resolution:** One conflict in `.pickman-history` on the `pickman: Record cherry-pick of 16 commits from us/main` commit — both ci/master and this branch had appended new history sections. Resolved by keeping both sections (HEAD's `cherry-c882fc0fe40e` entry followed by this branch's `cherry-fcf44934dfdd` entry, separated by the standard `---` divider).
+
+**Delta check:** `git range-diff` confirms all 16 source commits and the empty xilinx-for-v2026.10-rc3 merge commit are patch-identical (`=`) to their pre-rebase versions. Only the `pickman: Record cherry-pick...` commit shows a difference — a context-line-only change caused by the `.pickman-history` file having grown with the upstream `cherry-c882fc0fe40e` section. No source code deltas.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-fcf44934dfdd-v3` (v2 already existed) at `8561df4b37e3`
+- Force-pushed to `ci/cherry-fcf44934dfdd` (`75bdb6412c57 → 8561df4b37e3`), updating MR !1311 and triggering a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (fb9811417243) with `--keep-empty`. The only conflict was in `.pickman-history` (both ci/master and this branch appended new sections); resolved by keeping both entries. `git range-diff` confirms all 16 source commits and the empty xilinx-for-v2026.10-rc3 merge commit are patch-identical to the previous revision — no source-code deltas. Sandbox build passes cleanly with buildman. A fresh pipeline has been triggered.
+
+---
+
