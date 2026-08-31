@@ -72,6 +72,7 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <log.h>
 #include <malloc.h>
 #include <mtd.h>
@@ -1951,15 +1952,17 @@ static int do_chpart(struct cmd_tbl *cmdtp, int flag, int argc,
  * Routine implementing u-boot mtdparts command. Initialize/update default global
  * partition list and process user partition request (list, add, del).
  *
- * @param cmdtp command internal data
- * @param flag command flag
- * @param argc number of arguments supplied to the command
- * @param argv arguments list
+ * @param gs getopt state, holding the arguments supplied to the command
  * Return: 0 on success, 1 otherwise
  */
-static int do_mtdparts(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_mtdparts(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (argc == 2) {
 		if (strcmp(argv[1], "default") == 0) {
 			env_set("mtdids", NULL);
@@ -2127,7 +2130,7 @@ U_BOOT_LONGHELP(mtdparts,
 	"<name>     := '(' NAME ')'\n"
 	"<ro-flag>  := when set to 'ro' makes partition read-only (not used, passed to kernel)");
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mtdparts,	6,	0,	do_mtdparts,
 	"define flash/nand partitions", mtdparts_help_text
 );

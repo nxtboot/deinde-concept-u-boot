@@ -3179,6 +3179,7 @@ config CMD_MTDPARTS
 	bool "MTD partition support"
 	depends on !COMPILE_TEST
 	depends on MTD
+	select GETOPT
 	select MTD_PARTITIONS
 	help
 	  MTD partitioning tool support.
