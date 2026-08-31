@@ -1732,6 +1732,14 @@ int mtdparts_init(void)
 #if defined(CONFIG_SYS_MTDPARTS_RUNTIME)
 		board_mtdparts_default(&mtdids_default, &mtdparts_default);
 #endif
+		/*
+		 * a Kconfig string which is not set expands to "", so treat an
+		 * empty default as no default at all
+		 */
+		if (mtdids_default && !*mtdids_default)
+			mtdids_default = NULL;
+		if (mtdparts_default && !*mtdparts_default)
+			mtdparts_default = NULL;
 		use_defaults = 1;
 		initialized = 1;
 	}
