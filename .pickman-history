@@ -97444,3 +97444,50 @@ Rebase complete and pushed. Here's the summary:
 
 ---
 
+## 2026-08-30: us/main
+
+Branch: cherry-fcf44934dfdd
+
+Commits:
+- fcf44934dfdd arm64: versal2: Make hardware.h assembly safe
+- 5bca08783b54 arm64: versal2: Select GIC redistributor base at runtime
+- 40727c4f38d6 board: xilinx: Generate FWU capsule dfu_alt_info from fwu_platform_hook()
+- 93332d403a97 spi: zynqmp_gqspi: fix quad mode bus conflict
+- 90ddf602cf96 xilinx: mbv: Disable CPU driver in SPL
+- 84e3df261f39 xilinx: mbv: Disable arch-specific memory functions in SPL
+- 74467fdf1d5c xilinx: mbv: Enable SPL_REMAKE_ELF support
+- 4710d760b96f xilinx: zynqmp: Setup BOARD_SIZE_LIMIT for mini configurations
+- f81d620a82ff xilinx: zynqmp: Enable SPL for zynqmp mini
+- 63c228d0a0ef firmware: zynqmp: Remove duplicated sys_proto.h header
+- 661b6e44a446 xilinx: versal2: Add PM UFS firmware interface
+- 9e8a0f54b023 ufs: amd-versal2: Perform controller reset in the init callback
+- f2294a98b286 xilinx: versal2: Clean UFS firmware interface
+- fafbcbdc977a ufs: amd-versal2: Remove ZYNQMP_FIRMWARE dependency
+- 86cc9f2fb563 MAINTAINERS: Add missing fragment for Versal Gen 2
+- 0b581a9612e4 Merge tag 'xilinx-for-v2026.10-rc3' of https://git.u-boot-project.org/u-boot/custodians/u-boot-amd
+
+### Conversation log
+The merge commit conflicts because all its content is already applied. I'll resolve by keeping HEAD's versions (the merge should be empty).
+
+All 16 commits are present. Running the final build:
+
+All done. Final status:
+
+## Result: success
+
+Branch `cherry-fcf44934dfdd` (based on ci/master) now has all 16 commits, ready for pushing.
+
+**Build**: sandbox builds cleanly with buildman after every cherry-pick and at the end — no warnings or errors.
+
+**Fix-ups made** (noted in the respective commit messages):
+
+1. **`xilinx: mbv: Disable CPU driver in SPL`** (d52e3ea2d613) — conflict in `configs/xilinx_mbv32_defconfig` because context lines from an earlier SPL malloc commit (`CONFIG_SPL_HAS_CUSTOM_MALLOC_START` etc, not in ci/master) appeared in the hunk. Resolved by adding only the intended new line `# CONFIG_SPL_CPU is not set` (matches the original 1-insertion delta).
+
+2. **`xilinx: zynqmp: Setup BOARD_SIZE_LIMIT for mini configurations`** (bd672f80ee35) — conflict in `configs/xilinx_zynqmp_mini_qspi_defconfig`: ci/master has an extra `CONFIG_SPL_MAX_SIZE=0x40000` line next to the `# CONFIG_EXPERT is not set` line being replaced. Kept the SPL_MAX_SIZE line and applied the replacement with `CONFIG_SKIP_RELOCATE=y`. Delta matches the original exactly (2 files, +8/-3).
+
+3. **Merge commit** `Merge tag 'xilinx-for-v2026.10-rc3'` (c985d33f60a9) — conflicted on the two defconfigs above but resolved to empty (all content already picked), so it was committed with `--allow-empty` to preserve the merge message in history, with a "cherry picked from" line added.
+
+**Deltas**: all other 13 commits applied cleanly with file lists and line counts identical to the originals — no concerning deltas.
+
+---
+
