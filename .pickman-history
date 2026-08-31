@@ -97593,3 +97593,35 @@ Pushed. Here's the summary:
 
 ---
 
+### Review: 2026-08-31
+
+Branch: cherry-fcf44934dfdd
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly with no conflicts. All 20 commits patch-identical. Now build:
+
+Build passes with 0 warnings, 0 errors. Now check existing local v-branches and push:
+
+Push succeeded. Task complete — I'll skip TodoWrite as this was a small linear task.
+
+## Report
+
+**Rebase:** `cherry-fcf44934dfdd` rebased cleanly onto latest `ci/master` (`033b21ea9e32`) with `--keep-empty`. No conflicts this time — `ci/master` had advanced by two commits (`x86: samus: Increase the bloblist size after relocation` and `CI: Add sjg-lab jobs for the samus Chromebook`), neither of which touched anything on this branch.
+
+**Delta check:** `git range-diff` confirms all 20 commits on the branch are patch-identical (`=`) to their pre-rebase versions. Zero source-code deltas.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-fcf44934dfdd-v4` at `ebe3cb2528f7` (v2/v3 already existed)
+- Force-pushed to `ci/cherry-fcf44934dfdd` (`8561df4b37e3 → ebe3cb2528f7`), updating MR !1311 and triggering a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (033b21ea9e32) with `--keep-empty`. No conflicts — the two new upstream commits (samus bloblist size + samus CI jobs) don't overlap with this Xilinx series. `git range-diff` confirms all 20 commits are patch-identical to the previous revision (no source-code deltas). Sandbox build passes cleanly with buildman. A fresh pipeline has been triggered.
+
+---
+
