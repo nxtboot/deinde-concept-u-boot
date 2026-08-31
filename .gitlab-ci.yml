@@ -1134,6 +1134,22 @@ felwinter:
   resource_group: felwinter-board
   <<: *sjg_lab_dfn
 
+# Chromebook Pixel 2015 (samus, Broadwell), booting from an EM100 flash
+# emulator
+samus:
+  variables:
+    ROLE: samus
+  # Shares the physical board with the 'samus_tpl' job, so serialise them
+  resource_group: samus-board
+  <<: *sjg_lab_dfn
+
+# The same board, running the TPL build
+samus_tpl:
+  variables:
+    ROLE: samus_tpl
+  resource_group: samus-board
+  <<: *sjg_lab_dfn
+
 jetson-nano:
   variables:
     ROLE: jetson-nano
