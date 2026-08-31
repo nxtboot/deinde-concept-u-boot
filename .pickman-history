@@ -97186,3 +97186,90 @@ The branch is left checked out and ready for pushing; it has not been merged any
 
 ---
 
+## 2026-08-27: us/main
+
+Branch: cherry-1cf825afd0d7
+
+Commits:
+- 1cf825afd0d7 fs: btrfs: report file sizes from readdir
+- 1a5c8af2d4e4 fs: btrfs: release the path when btrfs_search_slot() fails
+- a11f8659f451 fs: btrfs: deduplicate the inode size lookup
+- 3cafdbb9cb6a Merge patch series "fs: btrfs: report file sizes from readdir"
+
+### Conversation log
+Delta matches exactly. Running build test:
+
+The merge commit is empty as expected — committing it to preserve the message:
+
+All 4 commits cherry-picked successfully onto `cherry-1cf825afd0d7` (based on ci/master).
+
+## Final status
+
+**Commits** (all present, in order):
+- `337389806df2` fs: btrfs: report file sizes from readdir (from 1cf825afd0d7)
+- `51b3b8543945` fs: btrfs: release the path when btrfs_search_slot() fails (from 1a5c8af2d4e4)
+- `92f2d182b9b4` fs: btrfs: deduplicate the inode size lookup (from a11f8659f451)
+- `b3b48502ed80` Merge patch series "fs: btrfs: report file sizes from readdir" (empty, preserved with --allow-empty)
+
+**Build result**: OK — sandbox built cleanly after each cherry-pick and in the final check, with no warnings or errors.
+
+**Deltas**: All three code commits matched their originals exactly (same files, same line counts: 31+/3-, 12+/4-, 42+/33-). Git auto-merged minor context differences in fs/btrfs/btrfs.c; no manual fix-ups were needed.
+
+**Concerning deltas**: None. The merge commit came out empty (its content was fully covered by the three picks), which is expected and was committed to preserve history.
+
+The branch is ready for pushing.
+
+---
+
+### Review: 2026-08-28
+
+Branch: cherry-1cf825afd0d7
+
+Comments addressed:
+
+
+### Conversation log
+The branch has 5 commits (4 cherry-picks + pickman record) and is 26 commits behind ci/master. Let me record the pre-rebase deltas, then rebase.
+
+The four code commits applied cleanly; only the `.pickman-history` record file conflicts. Let me look:
+
+Sections are separated by `---` lines. I'll resolve by keeping both sections — the ci/master record first, then our record under its own heading:
+
+The count of 13 may be from quoted markers elsewhere in this large log file. Let me verify the actual conflict is resolved:
+
+Conflict markers are gone. Let me verify the merged region reads correctly, then continue:
+
+The resolution looks correct — both records preserved with the proper `---` separator. Continuing the rebase:
+
+Rebase complete with all 5 commits, including the empty merge commit. Now comparing post-rebase deltas against the pre-rebase stats:
+
+All commit deltas are identical to the pre-rebase versions. Running the build check:
+
+Build passes cleanly. Creating the local `-v2` branch and force-pushing to update the MR:
+
+Rebase complete and pushed. Summary:
+
+## What was done
+
+1. **Checked out** `cherry-1cf825afd0d7` and fetched `ci`; the branch was 26 commits behind `ci/master`
+2. **Rebased** with `git rebase --keep-empty ci/master`:
+   - All 4 series commits applied cleanly with no conflicts
+   - One conflict in `.pickman-history` (the pickman record commit): both this branch and `ci/master` had appended a "2026-08-27" record at the same spot (ci/master gained the `cherry-ba9ce23d21e3` record). Resolved by keeping both sections in the append-only log, separated by the standard `---` divider
+3. **Verified deltas**: all 5 rebased commits have file/line stats identical to their pre-rebase versions (31+/3-, 12+/4-, 42+/33-, empty merge, 35+ record). The empty merge commit `9a5af75a2832` was preserved by `--keep-empty`
+4. **Build**: `buildman -L --board sandbox -w -o /tmp/pickman` → 1 built OK, no warnings or errors
+5. **Created local branch** `cherry-1cf825afd0d7-v2`
+6. **Force-pushed** to `ci/cherry-1cf825afd0d7` via pickman (`6c40a784c87e` → `dead16765a55`) — the MR pipeline is auto-triggered
+
+New commit hashes:
+- `a6242ab7e1d6` fs: btrfs: report file sizes from readdir
+- `8291fb25f681` fs: btrfs: release the path when btrfs_search_slot() fails
+- `aeac71517e35` fs: btrfs: deduplicate the inode size lookup
+- `9a5af75a2832` Merge patch series (empty, preserved)
+- `dead16765a55` pickman: Record cherry-pick of 4 commits from us/main
+
+## Suggested MR reply
+
+> Rebased onto latest `ci/master`. The only conflict was in the `.pickman-history` log (both sides appended a record for 2026-08-27); resolved by keeping both entries. All commit deltas are identical to the pre-rebase versions, the empty merge commit is preserved, and the sandbox build passes with no warnings. Note the previous 'snow' job failure was transient labgrid contention, so this fresh pipeline should also confirm that.
+
+---
+
