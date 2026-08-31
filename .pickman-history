@@ -97781,3 +97781,50 @@ Five of six failures share the same runner (`ellesmere-lab VKe9dm-Af`) and time 
 
 ---
 
+### Pipeline fix: 2026-08-31 (attempt 3)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- vbe (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- ff3399 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+## Report
+
+**No code changes made. No `cherry-614ebea14bfc-fix3` branch created.**
+
+All five failures are infrastructure/lab issues, not code defects — the same pattern as attempt 2, from the same runner (`ellesmere-lab VKe9dm-Af`) in an overlapping ~6-minute window.
+
+### Per-job diagnosis
+
+| Job | Failure | Root cause |
+|-----|---------|-----------|
+| **vbe** (632579) | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention (vbe role → ff3399 place, held by `ellesmere/sglass`). Test never started. |
+| **rockpro64** (632566) | `place rockpro64 is not acquired by your user, acquired by sglass` | Labgrid contention (held by `ellesmere/sglass`). Test never started. |
+| **snow** (632559) | `place snow is not acquired by your user, acquired by labgrid` | Labgrid contention (held by `kea/labgrid`). Test never started. |
+| **ff3399** (632551) | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention (held by `ellesmere/sglass`). Test never started. |
+| **minnowmax** (632546) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad` | Board never reached U-Boot prompt after em100 flash; classic x86 serial/em100 bootstrap flake. |
+
+### Why this can't be code
+
+The branch diff is 26 files, all networking-only:
+`cmd/lwip/`, `cmd/net.c`, `drivers/net/`, `net/`, `net/nfs-common.c`, `include/net-lwip.h`, `lib/lwip/u-boot/lwipopts.h`, `configs/qemu_arm64_lwip_defconfig`, `doc/usage/cmd/tftpsrv.rst`, `test/dm/net_defrag.c`, `test/py/tests/test_net.py`.
+
+Nothing in this diff is reachable from:
+- labgrid client acquisition (fails before any U-Boot is built or booted),
+- x86 minnowmax em100 boot bootstrap (no x86 or minnowmax_defconfig / SPL / EFI changes).
+
+Four jobs (vbe, rockpro64, ff3399, snow) exit before U-Boot is even built — the board hardware is simply held by other users. The minnowmax timeout is on the pre-test bootstrap `Writing U-Boot using method em100` step, before any test runs; the branch does not modify anything on the minnowmax boot path.
+
+### Action
+
+Per instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have not amended any commit and have not created `cherry-614ebea14bfc-fix3`. The branch remains at `35ceb6e83ff5` unchanged.
+
+**Recommendation:** retry the five failed jobs via GitLab's job-retry once the contended lab boards (`ff3399`, `rockpro64`, `snow`) are released and the minnowmax em100 flash is not flaking. Force-pushing a no-op v3 would just replay the same pipeline against the same code and hit the same lab contention.
+
+---
+
