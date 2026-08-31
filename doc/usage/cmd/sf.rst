@@ -244,5 +244,10 @@ This second example is running on coral, an x86 Chromebook::
    3 read: 189 ticks, 2708 KiB/s 21.664 Mbps
 
 
+See also
+--------
+
+* :doc:`mtdparts<mtdparts>` for splitting a flash device into named partitions
+
 .. _SPI documentation:
    https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
