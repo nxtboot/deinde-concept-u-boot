@@ -97659,3 +97659,50 @@ All 15 commits successfully cherry-picked onto branch `cherry-614ebea14bfc` (bas
 
 ---
 
+### Pipeline fix: 2026-08-31 (attempt 1)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All three failures are infrastructure/lab issues, not code problems introduced by the branch. Let me verify by looking at the actual code changes:
+
+All three failures are infrastructure/lab issues unrelated to the code changes in this branch.
+
+## Analysis
+
+The branch `cherry-614ebea14bfc` contains 15 net-related cherry-picks. The diff touches only `drivers/net/`, `cmd/lwip/`, `net/lwip/`, `net/`, `net/nfs-common.c`, `cmd/net.c`, `test/dm/net_defrag.c`, and `test/py/tests/test_net.py` — nothing that could affect the failures observed.
+
+### Failure diagnosis
+
+**snow (job 631651)** — infrastructure:
+```
+labgrid-client: Error: place snow is not acquired by your user, acquired by labgrid.
+```
+The lab place was held by a different user (`kea/labgrid`). No test even started. Pure lab contention.
+
+**minnowmax (job 631638)** — infrastructure:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Board never reached the U-Boot prompt during bootstrap. Nothing in the diff changes minnowmax boot (no x86 or lwip-defconfig changes for it). Lab hardware/serial flake.
+
+**pine64 (job 631648)** — serial corruption:
+```
+FAILED test/py/tests/test_dm.py::test_dm_compat - AssertionError: assert not {'wdt��eboot'}
+```
+The `wdt��eboot` string contains U+FFFD replacement characters (0xEF 0xBF 0xBD) — the parsed output of `dm compat` was garbled on the serial line. The real driver name is `wdt_reboot` (or similar). The branch does not touch any watchdog or driver-model code, so this is a serial glitch on the pine64 UART, not a real code problem.
+
+## Action taken
+
+None. Per the instructions, infrastructure/transient failures should be reported without making code changes. No fix branch was created.
+
+Recommendation: retry the pipeline. The snow place should free up, the minnowmax lab timeout is likely transient, and the pine64 serial glitch should not repeat on a clean run.
+
+---
+
