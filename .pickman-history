@@ -97625,3 +97625,37 @@ Push succeeded. Task complete — I'll skip TodoWrite as this was a small linear
 
 ---
 
+## 2026-08-31: us/main
+
+Branch: cherry-614ebea14bfc
+
+Commits:
+- 614ebea14bfc net: phy: dp83867: enable extended read / write for driver
+- 2671bd1d77ab net: phy: fix duplicate eth_phy binding
+- afcd55654d85 net: Drop unnecessary device_set_name
+- 0601d2d9a290 net: lwip: add tftpsrv command
+- 02154ba0367a net: lwip: handle chained pbufs in transmit path
+- 2e7e0dbb1594 cmd: lwip: sntp: fix netif leak when ntpserverip is unset
+- 495368c55383 cmd: lwip: wget: free mbedtls x509 cert context to avoid memory leak
+- f517fdbc0ddc net: dwc_eth_xgmac: Return -ENODEV when phy_connect() fails
+- 85d82c523275 net: nfs: clean up bounds checks in nfs_readlink_reply()
+- 04ca915d5bf3 net: fix out-of-bounds write in IP fragment reassembly
+- 7946774a0feb test: net: add regression test for IP reassembly overflow
+- a1aaacc968ae net: rtl8169: add support for RTL8126A and RTL8127A
+- 5eb45fb2917c net: lwip: dhcp: fix DHCP fine timer interval
+- b752e4417900 net: srand_mac(): fix -ENODEV crash with CONFIG_DM_RNG
+- c2ac5fc4e3bc Merge tag 'net-20260813' of https://git.u-boot-project.org/u-boot/custodians/u-boot-net
+
+### Conversation log
+All 15 commits successfully cherry-picked onto branch `cherry-614ebea14bfc` (based on `ci/master`).
+
+**Status: SUCCESS**
+
+- **Build result:** OK (all builds passed cleanly with no warnings/errors after every cherry-pick and final verification)
+- **Fix-ups:** None required. All 14 regular commits applied cleanly (some with auto-merges but no conflicts). The merge commit `c2ac5fc4e3bc` was applied as an empty commit (via `git commit --allow-empty -C`), preserving the original merge message with the full net PR summary.
+- **Deltas:** All commits matched the originals exactly — same files, same line counts. No concerning deltas.
+
+`git log --oneline -n 17` confirms all 15 commits are present on top of the two prior pickman commits on ci/master. Branch is ready for pushing.
+
+---
+
