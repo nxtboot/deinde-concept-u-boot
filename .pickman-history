@@ -97491,3 +97491,38 @@ Branch `cherry-fcf44934dfdd` (based on ci/master) now has all 16 commits, ready 
 
 ---
 
+### Pipeline fix: 2026-08-30 (attempt 1)
+
+Branch: cherry-fcf44934dfdd
+
+Failed jobs:
+- rock5b (sjg-lab)
+- snow (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All three job logs point to lab/infrastructure problems rather than code failures. Let me verify by checking what the branch actually touches.
+
+## Report
+
+**No code changes were made — all three failures are lab/infrastructure issues, not caused by any commit on this branch.**
+
+### Evidence
+
+The branch contains only Xilinx/AMD changes (versal2, zynqmp, mbv, gqspi, UFS, xilinx boards). It touches nothing in x86, Rockchip, or Exynos code, so it cannot have caused failures on minnowmax, rock5b, or snow. All three CI jobs built U-Boot successfully; the failures occurred in the lab flash/boot/reservation phase:
+
+1. **rock5b (631258)** — flashing failed on lab host kea: `dd: error writing '/dev/sdy': Input/output error` after 4.8 MiB written. USB/SD-mux hardware I/O error.
+2. **snow (631249)** — never ran a test: `labgrid-client: Error: place snow is not acquired by your user, acquired by labgrid`. Labgrid place-reservation conflict.
+3. **minnowmax (631236)** — flashed via em100, then `pexpect TIMEOUT: 15 seconds exceeded during waiting for login` (no U-Boot prompt, even after a retry reset). Board/lab boot flake on unmodified x86 code.
+
+### Verification
+
+- `um build sandbox`: clean, no output
+- `buildman -o /tmp/pickman minnowmax rock5b sandbox snow`: 4 built, 0 warnings/errors (only the expected local missing-blob binman notes for rock5b)
+
+### Result
+
+Branch `cherry-fcf44934dfdd-fix1` created at the same commit as `cherry-fcf44934dfdd` (bcd86a6926b0), unchanged. Recommendation: retry the pipeline; the snow labgrid reservation and rock5b `/dev/sdy` I/O error on kea may need lab-side attention if they recur.
+
+---
+
