@@ -97273,3 +97273,174 @@ New commit hashes:
 
 ---
 
+## 2026-08-28: us/main
+
+Branch: cherry-c882fc0fe40e
+
+Commits:
+- c882fc0fe40e mtd: cfi: Replace env_get_f() with env_get_yesno()
+- 06084f6f92a2 cmd: scsi: Drop duplicate leading scsi prefix
+- 780808133b75 serial: coreboot: Accept DBG2 subtype 0x12
+- 0ed1a87ad81f arm: mach-k3: j784s4: Add clk and power support for main_uart2 and main_uart3
+- 4cb0bd4702a6 bootretry: only reinitialize retry_time when bootretry env variable has been touched
+- 93926f630e48 Makefile: depend on OF_LIST dts sources for fit-dtb.blob
+- 8da656ae6a97 board_f: Call initf_malloc() before fdtdec_setup()
+- 36c377b9859f Prepare v2026.10-rc2
+- ce220f7f6407 cmd: scmi: Show names for vendor protocols 0x80 and 0x82
+- fc55d1e91094 firmware: scmi: Support probe vendor ID 0x81
+- 607d45d1e3b3 power: pmic: tps65219: fail if regulators node is missing
+- d13ee7acafb9 arm: dts: layerscape: drop leading zeros from unit addresses
+- 289b1bae1c79 pci: layerscape: fix pci_iommu_extra hotplug
+- d57e3e4c7595 power: regulator: tps65219: Fix LDO selector boundaries
+- 9f82dcd48924 scmi: pinctrl: Rename SCMI_PIN_DEFUALT to SCMI_PIN_DEFAULT
+- 5a32ebc96295 armv8: layerscape: Fix TF-A DRAM reservation with empty banks
+- 77bc0326456d Merge tag 'fsl-qoriq-for-2026.10-rc3' of https://git.u-boot-project.org/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+Commit 1 OK. Continuing.
+
+Simple conflict — both branches add an #ifdef block in the same place. I'll keep both.
+
+The other hunks applied cleanly. I'll merge both intents: keep HEAD's older/newer trace-cmd comment format, but use initf_bootstage as the example per the upstream change.
+
+Now the final merge commit:
+
+All done. Final status:
+
+## Result: Success — all 17 commits cherry-picked onto `cherry-c882fc0fe40e` (based on `ci/master`)
+
+**Build result:** OK — sandbox builds cleanly with no warnings or errors after every commit and in the final verification.
+
+**Fix-ups made (2):**
+
+1. **`bootretry: only reinitialize retry_time...`** (4cb0bd4702a6 → 43dd58987b08)
+   Context conflict in `include/env_callback.h`: ci/master has a `PAGER_CALLBACK` block added at the same location as the new `BOOTRETRY_CALLBACK` block. Resolved by keeping both blocks. Note appended to the commit message.
+
+2. **`board_f: Call initf_malloc() before fdtdec_setup()`** (8da656ae6a97 → 5a83041bdb95)
+   Comment conflict in `test/py/tests/test_trace.py`: ci/master has a rewritten comment describing older/newer trace-cmd output formats (using `initf_malloc` as the example), while the upstream commit removes `initf_malloc` example lines. Resolved by keeping the older/newer format comment but switching the example to `initf_bootstage`, matching upstream intent. The code hunks (`initf_upl` assert, funcgraph comment, `common/board_f.c` change) applied cleanly. Note appended to the commit message.
+
+**Merge commit:** `77bc0326456d` (fsl-qoriq merge) resulted in an empty commit since all its content was already picked individually — committed with `--allow-empty` preserving the full original merge message plus the cherry-pick reference.
+
+**Deltas:** All commits match their originals exactly, except the `board_f` commit where `test_trace.py` shows 7 lines changed vs 5 upstream — this is solely due to the comment merge described above; the functional changes are identical.
+
+The branch is ready for pushing. No merges were performed back to any other branch.
+
+---
+
+### Pipeline fix: 2026-08-28 (attempt 1)
+
+Branch: cherry-c882fc0fe40e
+
+Failed jobs:
+- play (sjg-lab)
+- snow (sjg-lab)
+- jerry (sjg-lab)
+
+### Conversation log
+I've reviewed the three job logs. Let me look at the branch and diagnose.
+
+The tps65219 bind change is a strong suspect for play (BeaglePlay has a TPS65219 PMIC). Let me check how the BeaglePlay device tree marks the PMIC for SPL.
+
+Confirmed: `tps65219.o` is built without a PHASE guard, so it's in SPL too. Let me verify the failure path to hang().
+
+Upstream already has the exact fix: `1262e50a34a0 arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators`. Let me look at it.
+
+Now build and verify:
+
+Done. The fix is on local branch `cherry-c882fc0fe40e-fix1`.
+
+## Report
+
+**Root cause (play):** genuine regression from the series. Commit `30d3b2e23067` ("power: pmic: tps65219: fail if regulators node is missing", cherry-pick of upstream `607d45d1e3b3`) makes `tps65219_bind()` return -ENXIO when the PMIC's `regulators` subnode is absent. On BeaglePlay the `pmic@30` node is `bootph-all` but its `regulators` children carry no bootph tags, so fdtgrep prunes them from the SPL devicetree. The bind failure propagates out of `dm_init_and_scan()`, `spl_init()` fails, and `board_init_r()` calls `hang()` — exactly what the play log shows: A53 SPL banner, stack-usage line, then `### ERROR ### Please RESET the board ###` before any "Trying to boot from".
+
+**Fix applied:** cherry-picked the existing upstream follow-up `1262e50a34a0` ("arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators") on top of the branch, with a `[pickman]` note explaining why. I added it as a new commit rather than amending, since it is a separate upstream commit by a different author (Anshul Dalal) that the series would need to pick eventually anyway.
+
+**snow:** infrastructure failure, no code change made — labgrid reports "place snow is not acquired by your user, acquired by labgrid (kea/labgrid)"; the job never even started testing. A retry should resolve it.
+
+**jerry:** almost certainly board/lab flake, no code change made — the board produced no serial output at all (not even the TPL banner) after flashing via em100. Nothing in this series touches rockchip, TPL, or any code path that runs before the first banner, so the series cannot plausibly cause total console silence. Worth a retry.
+
+**Verification:**
+- `um build sandbox` — clean
+- `buildman` for chromebook_jerry, am62x_beagleplay_a53, am62x_beagleplay_r5, sandbox (all variants), snow — 13 boards built, 0 failures. The `invalid length for memory region .sram` warning on the r5 build is pre-existing (reproduced identically at the parent commit; it stems from the faked TI firmware blobs in local builds), not introduced by the fix.
+
+Branch `cherry-c882fc0fe40e-fix1` is ready; not pushed.
+
+---
+
+### Review: 2026-08-28
+
+Branch: cherry-c882fc0fe40e
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) play, snow, jerry.
+
+I've reviewed the three job logs. ...
+
+### Conversation log
+Local branch is identical to remote. The only unpushed piece is the `.pickman-history` record commit on `-fix1`. Let me check the pickman convention for record commits.
+
+Build passes. Now create the `-v2` branch and push to the MR:
+
+Done. Here's the summary:
+
+## Report
+
+**Comment analysis:** The single "review comment" is the bot's own pipeline-fix report (attempt 1), not a request for code changes. The actual fix it describes — cherry-pick of upstream `1262e50a34a0` ("arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators", now `6d46ccb49367`) — was already present on the remote branch. No new code changes were needed or made.
+
+**What was outstanding:** The `-fix1` branch held one unpushed bookkeeping commit, `4544c97fbb8b` ("pickman: Record pipeline fix for cherry-c882fc0fe40e", `.pickman-history` only). Per the established convention (other series carry pushed "pickman: Record pipeline fix" commits, e.g. `69fede7a10e1`), this belongs on the MR branch.
+
+**Actions taken:**
+1. Checked out `cherry-c882fc0fe40e` and fast-forwarded it to `-fix1` (adds only the `.pickman-history` record commit — no source changes)
+2. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 board built, 0 failures
+3. Created local branch `cherry-c882fc0fe40e-v2`
+4. Force-pushed to `ci/cherry-c882fc0fe40e` (`6d46ccb49367..4544c97fbb8b`), updating MR !1308 and triggering a fresh pipeline
+
+**Side benefit:** the new pipeline run provides the retries the report recommended for **snow** (labgrid place-acquisition infrastructure failure) and **jerry** (board/lab flake — no serial output at all).
+
+**Suggested MR reply:**
+
+> No code changes requested by this comment — it documents pipeline fix attempt 1. The BeaglePlay regression fix (bootph tags for the tps65219 regulators, upstream 1262e50a34a0) is already on the branch. This push adds the pickman history record for that fix and triggers a fresh pipeline, which also retries the snow (labgrid infrastructure) and jerry (no serial output, likely lab flake) jobs that failed for reasons unrelated to the series. Sandbox build verified clean with buildman.
+
+---
+
+### Review: 2026-08-30
+
+Branch: cherry-c882fc0fe40e
+
+Comments addressed:
+
+
+### Conversation log
+The 11 new upstream commits are all TPM/command work — unlikely to conflict with this series. Now I'll rebase with a per-commit build check using `-x`:
+
+The Monitor tool is erroring, so I'll rely on the background task completion notification. Waiting for the rebase to finish.
+
+Rebase completed cleanly — no conflicts, and all per-commit sandbox builds passed. Now verifying the deltas match the pre-rebase commits:
+
+All 21 commits rebased identically (`=` in range-diff), including the preserved empty fsl-qoriq merge commit. Now the final build check, versioned local branch, and push:
+
+Rebase complete and pushed. Here's the summary:
+
+## Report
+
+**Rebase:** `cherry-c882fc0fe40e` rebased onto latest `ci/master` (`c69260e07782`, 11 new commits — all TPM/cmd getopt work) using `git rebase --keep-empty ci/master`.
+
+**Result: clean rebase, zero conflicts.**
+- All 21 commits applied without any conflict resolution needed — the new upstream commits (tpm/tpmtest command work) don't touch any files in this series
+- `git range-diff` shows every commit as `=` (patch-identical) to its pre-rebase counterpart, so no deltas changed
+- The empty fsl-qoriq merge commit is preserved (`888511b023ff`) with its full original message
+
+**Build verification:** sandbox built via `buildman -L --board sandbox -w -o /tmp/pickman` after **every** rebased commit (run as a rebase `-x` step) plus a final check — 21/21 builds passed, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-c882fc0fe40e-v3` (v2 already existed) at `c8a7b17257e7`
+- Force-pushed to `ci/cherry-c882fc0fe40e` (`4544c97fbb8b → c8a7b17257e7`), updating MR !1308 and triggering a fresh pipeline
+
+**Note:** the push also carries the previously local-only bookkeeping commit `pickman: Record review handling for cherry-c882fc0fe40e` (was `a25853c02b42`, now `c8a7b17257e7`), which had not yet made it to the remote. It touches only `.pickman-history`.
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (c69260e07782) with --keep-empty. Clean rebase — no conflicts, and range-diff confirms all 21 commits are patch-identical to the previous revision, with the empty fsl-qoriq merge commit preserved. Sandbox was built with buildman after every rebased commit: 21/21 passed with no warnings. This push also includes the pickman review-handling record commit. A fresh pipeline has been triggered.
+
+---
+

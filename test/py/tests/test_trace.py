@@ -147,9 +147,9 @@ def check_function(ubman, fname, proftool, map_fname, trace_dat):
     out = utils.run_and_log(ubman, ['sh', '-c', cmd])
 
     # Format (older trace-cmd):
-    #      u-boot-1     0.....    60.805596: function:             initf_malloc
+    #      u-boot-1     0.....    60.805601: function:             initf_bootstage
     # Format (newer trace-cmd, includes caller):
-    #      u-boot-1     0.....    60.805596: function:             initf_malloc <-- initcall_run_f
+    #      u-boot-1     0.....    60.805601: function:             initf_bootstage <-- initcall_run_f
 
     lines = [line.replace(':', '').split() for line in out.splitlines()]
     vals = {items[4]: float(items[2]) for items in lines if len(items) >= 5}
@@ -163,7 +163,7 @@ def check_function(ubman, fname, proftool, map_fname, trace_dat):
 
     # Check for some expected functions
     if ubman.config.buildconfig.get('config_trace_early'):
-        assert 'initf_malloc' in vals.keys()
+        assert 'initf_upl' in vals.keys()
     assert 'initr_watchdog' in vals.keys()
     assert 'initr_dm' in vals.keys()
 
@@ -194,7 +194,6 @@ def check_funcgraph(ubman, fname, proftool, map_fname, trace_dat):
     out = utils.run_and_log(ubman, ['sh', '-c', cmd])
 
     # First look for this:
-    #  u-boot-1     0.....   282.101360: funcgraph_entry:   0.004 us   |    initf_malloc();
     # ...
     #  u-boot-1     0.....   282.101369: funcgraph_entry:              |    initf_bootstage() {
     #  u-boot-1     0.....   282.101369: funcgraph_entry:              |      bootstage_init() {
