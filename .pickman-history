@@ -97828,3 +97828,31 @@ Per instructions ("If the failure is an infrastructure or transient issue … re
 
 ---
 
+## 2026-08-31: us/main
+
+Branch: cherry-0c68b88ce574
+
+Commits:
+- 0c68b88ce574 include: linux: Import hw_bitfield.h from Linux v6.18
+- c8cac405f298 rockchip: rk3576: Disable force_jtag by default
+- 551188c13634 Merge tag 'u-boot-rockchip-2026.10-20260813' of https://git.u-boot-project.org/u-boot/custodians/u-boot-rockchip
+
+### Conversation log
+Deltas match. Let me build test:
+
+All 3 cherry-picks completed successfully on branch `cherry-0c68b88ce574`.
+
+**Final Status:**
+- Build result: **ok** (no warnings/errors)
+- Fix-ups: none needed
+- Deltas: all matched originals exactly (1 file, 61+/0 for first; 1 file, 11+/1- for second; merge commit empty as expected)
+
+**Commits on branch:**
+1. `bb441203b086` — include: linux: Import hw_bitfield.h from Linux v6.18
+2. `e25281d4feba` — rockchip: rk3576: Disable force_jtag by default
+3. `9d0ba7adaa8a` — Merge tag 'u-boot-rockchip-2026.10-20260813' (empty, preserved with --allow-empty)
+
+Branch is ready for pushing.
+
+---
+
