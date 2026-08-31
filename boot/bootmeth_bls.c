@@ -431,8 +431,23 @@ static int bls_load_files(struct udevice *dev, struct bootflow *bflow,
 		return log_msg_ret("ctx", ret);
 
 	if (!already_loaded) {
+		char *fdtfile = NULL;
+
+		/*
+		 * A BLS entry names its device tree outright, so there is no
+		 * fdtdir to expand.  pxe_load_files() takes ownership of the
+		 * string and only loads an FDT when it is given one.
+		 */
+		if (label->fdt) {
+			fdtfile = strdup(label->fdt);
+			if (!fdtfile) {
+				pxe_destroy_ctx(pxe_ctx);
+				return log_msg_ret("fdt", -ENOMEM);
+			}
+		}
+
 		/* Load files (kernel, initrd, FDT) */
-		ret = pxe_load_files(pxe_ctx, label, NULL);
+		ret = pxe_load_files(pxe_ctx, label, fdtfile);
 		if (ret) {
 			pxe_destroy_ctx(pxe_ctx);
 			return log_msg_ret("load", ret);
