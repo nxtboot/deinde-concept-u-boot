@@ -97444,3 +97444,184 @@ Rebase complete and pushed. Here's the summary:
 
 ---
 
+## 2026-08-30: us/main
+
+Branch: cherry-fcf44934dfdd
+
+Commits:
+- fcf44934dfdd arm64: versal2: Make hardware.h assembly safe
+- 5bca08783b54 arm64: versal2: Select GIC redistributor base at runtime
+- 40727c4f38d6 board: xilinx: Generate FWU capsule dfu_alt_info from fwu_platform_hook()
+- 93332d403a97 spi: zynqmp_gqspi: fix quad mode bus conflict
+- 90ddf602cf96 xilinx: mbv: Disable CPU driver in SPL
+- 84e3df261f39 xilinx: mbv: Disable arch-specific memory functions in SPL
+- 74467fdf1d5c xilinx: mbv: Enable SPL_REMAKE_ELF support
+- 4710d760b96f xilinx: zynqmp: Setup BOARD_SIZE_LIMIT for mini configurations
+- f81d620a82ff xilinx: zynqmp: Enable SPL for zynqmp mini
+- 63c228d0a0ef firmware: zynqmp: Remove duplicated sys_proto.h header
+- 661b6e44a446 xilinx: versal2: Add PM UFS firmware interface
+- 9e8a0f54b023 ufs: amd-versal2: Perform controller reset in the init callback
+- f2294a98b286 xilinx: versal2: Clean UFS firmware interface
+- fafbcbdc977a ufs: amd-versal2: Remove ZYNQMP_FIRMWARE dependency
+- 86cc9f2fb563 MAINTAINERS: Add missing fragment for Versal Gen 2
+- 0b581a9612e4 Merge tag 'xilinx-for-v2026.10-rc3' of https://git.u-boot-project.org/u-boot/custodians/u-boot-amd
+
+### Conversation log
+The merge commit conflicts because all its content is already applied. I'll resolve by keeping HEAD's versions (the merge should be empty).
+
+All 16 commits are present. Running the final build:
+
+All done. Final status:
+
+## Result: success
+
+Branch `cherry-fcf44934dfdd` (based on ci/master) now has all 16 commits, ready for pushing.
+
+**Build**: sandbox builds cleanly with buildman after every cherry-pick and at the end — no warnings or errors.
+
+**Fix-ups made** (noted in the respective commit messages):
+
+1. **`xilinx: mbv: Disable CPU driver in SPL`** (d52e3ea2d613) — conflict in `configs/xilinx_mbv32_defconfig` because context lines from an earlier SPL malloc commit (`CONFIG_SPL_HAS_CUSTOM_MALLOC_START` etc, not in ci/master) appeared in the hunk. Resolved by adding only the intended new line `# CONFIG_SPL_CPU is not set` (matches the original 1-insertion delta).
+
+2. **`xilinx: zynqmp: Setup BOARD_SIZE_LIMIT for mini configurations`** (bd672f80ee35) — conflict in `configs/xilinx_zynqmp_mini_qspi_defconfig`: ci/master has an extra `CONFIG_SPL_MAX_SIZE=0x40000` line next to the `# CONFIG_EXPERT is not set` line being replaced. Kept the SPL_MAX_SIZE line and applied the replacement with `CONFIG_SKIP_RELOCATE=y`. Delta matches the original exactly (2 files, +8/-3).
+
+3. **Merge commit** `Merge tag 'xilinx-for-v2026.10-rc3'` (c985d33f60a9) — conflicted on the two defconfigs above but resolved to empty (all content already picked), so it was committed with `--allow-empty` to preserve the merge message in history, with a "cherry picked from" line added.
+
+**Deltas**: all other 13 commits applied cleanly with file lists and line counts identical to the originals — no concerning deltas.
+
+---
+
+### Pipeline fix: 2026-08-30 (attempt 1)
+
+Branch: cherry-fcf44934dfdd
+
+Failed jobs:
+- rock5b (sjg-lab)
+- snow (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All three job logs point to lab/infrastructure problems rather than code failures. Let me verify by checking what the branch actually touches.
+
+## Report
+
+**No code changes were made — all three failures are lab/infrastructure issues, not caused by any commit on this branch.**
+
+### Evidence
+
+The branch contains only Xilinx/AMD changes (versal2, zynqmp, mbv, gqspi, UFS, xilinx boards). It touches nothing in x86, Rockchip, or Exynos code, so it cannot have caused failures on minnowmax, rock5b, or snow. All three CI jobs built U-Boot successfully; the failures occurred in the lab flash/boot/reservation phase:
+
+1. **rock5b (631258)** — flashing failed on lab host kea: `dd: error writing '/dev/sdy': Input/output error` after 4.8 MiB written. USB/SD-mux hardware I/O error.
+2. **snow (631249)** — never ran a test: `labgrid-client: Error: place snow is not acquired by your user, acquired by labgrid`. Labgrid place-reservation conflict.
+3. **minnowmax (631236)** — flashed via em100, then `pexpect TIMEOUT: 15 seconds exceeded during waiting for login` (no U-Boot prompt, even after a retry reset). Board/lab boot flake on unmodified x86 code.
+
+### Verification
+
+- `um build sandbox`: clean, no output
+- `buildman -o /tmp/pickman minnowmax rock5b sandbox snow`: 4 built, 0 warnings/errors (only the expected local missing-blob binman notes for rock5b)
+
+### Result
+
+Branch `cherry-fcf44934dfdd-fix1` created at the same commit as `cherry-fcf44934dfdd` (bcd86a6926b0), unchanged. Recommendation: retry the pipeline; the snow labgrid reservation and rock5b `/dev/sdy` I/O error on kea may need lab-side attention if they recur.
+
+---
+
+### Review: 2026-08-30
+
+Branch: cherry-fcf44934dfdd
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) rock5b, snow, minnowmax.
+
+All three job logs point to ...
+
+### Conversation log
+Build passes cleanly. Now create the `-v2` local branch and push to the original remote branch to update the MR and retrigger the pipeline:
+
+All done. Here's the summary:
+
+## Report
+
+**The single review comment is not actionable** — it's the bot's own "Pipeline fix (attempt 1)" report, which itself concluded that all three failed jobs (rock5b, snow, minnowmax) were lab/infrastructure failures (SD-mux I/O error on kea, labgrid place-reservation conflict, and an x86 boot flake) unrelated to this Xilinx-only branch. It requests no code change; its own recommendation is to retry the pipeline.
+
+**Actions taken:**
+1. Checked out `cherry-fcf44934dfdd` (clean, at 75bdb6412c57, which includes the pipeline-fix record commit)
+2. Made **no code changes** — nothing was requested and the branch only touches Xilinx/AMD code
+3. Verified the build: `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings/errors
+4. Created local branch `cherry-fcf44934dfdd-v2` at the same commit
+5. Force-pushed to `cherry-fcf44934dfdd` on the `ci` remote (bcd86a6926b0 → 75bdb6412c57), which retriggers the MR pipeline — implementing the comment's retry recommendation
+
+**Suggested reply to post on the MR:**
+
+> The comment above is the automated pipeline-fix report and contains no requested code change. As it notes, the rock5b, snow and minnowmax failures are lab-side (SD-mux I/O error on host kea, labgrid reservation conflict, and an x86 boot flake) and cannot be caused by this Xilinx-only series. No code changes are needed; the branch has been re-pushed unchanged to retry the pipeline. If the rock5b `/dev/sdy` I/O error or the snow labgrid reservation conflict recurs, the lab hardware needs attention.
+
+---
+
+### Review: 2026-08-31
+
+Branch: cherry-fcf44934dfdd
+
+Comments addressed:
+
+
+### Conversation log
+I'll resolve by keeping both history sections.
+
+All source commits are patch-identical. The only delta is expected context in `.pickman-history` for the record commit. Now let's verify the build.
+
+Build passes cleanly. Now create the -v2 branch and push.
+
+Pushed. Here's the summary:
+
+## Report
+
+**Rebase:** `cherry-fcf44934dfdd` rebased onto latest `ci/master` (`fb9811417243`) with `--keep-empty`.
+
+**Conflict resolution:** One conflict in `.pickman-history` on the `pickman: Record cherry-pick of 16 commits from us/main` commit — both ci/master and this branch had appended new history sections. Resolved by keeping both sections (HEAD's `cherry-c882fc0fe40e` entry followed by this branch's `cherry-fcf44934dfdd` entry, separated by the standard `---` divider).
+
+**Delta check:** `git range-diff` confirms all 16 source commits and the empty xilinx-for-v2026.10-rc3 merge commit are patch-identical (`=`) to their pre-rebase versions. Only the `pickman: Record cherry-pick...` commit shows a difference — a context-line-only change caused by the `.pickman-history` file having grown with the upstream `cherry-c882fc0fe40e` section. No source code deltas.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-fcf44934dfdd-v3` (v2 already existed) at `8561df4b37e3`
+- Force-pushed to `ci/cherry-fcf44934dfdd` (`75bdb6412c57 → 8561df4b37e3`), updating MR !1311 and triggering a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (fb9811417243) with `--keep-empty`. The only conflict was in `.pickman-history` (both ci/master and this branch appended new sections); resolved by keeping both entries. `git range-diff` confirms all 16 source commits and the empty xilinx-for-v2026.10-rc3 merge commit are patch-identical to the previous revision — no source-code deltas. Sandbox build passes cleanly with buildman. A fresh pipeline has been triggered.
+
+---
+
+### Review: 2026-08-31
+
+Branch: cherry-fcf44934dfdd
+
+Comments addressed:
+
+
+### Conversation log
+Rebase completed cleanly with no conflicts. All 20 commits patch-identical. Now build:
+
+Build passes with 0 warnings, 0 errors. Now check existing local v-branches and push:
+
+Push succeeded. Task complete — I'll skip TodoWrite as this was a small linear task.
+
+## Report
+
+**Rebase:** `cherry-fcf44934dfdd` rebased cleanly onto latest `ci/master` (`033b21ea9e32`) with `--keep-empty`. No conflicts this time — `ci/master` had advanced by two commits (`x86: samus: Increase the bloblist size after relocation` and `CI: Add sjg-lab jobs for the samus Chromebook`), neither of which touched anything on this branch.
+
+**Delta check:** `git range-diff` confirms all 20 commits on the branch are patch-identical (`=`) to their pre-rebase versions. Zero source-code deltas.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+
+**Branches:**
+- Local snapshot: `cherry-fcf44934dfdd-v4` at `ebe3cb2528f7` (v2/v3 already existed)
+- Force-pushed to `ci/cherry-fcf44934dfdd` (`8561df4b37e3 → ebe3cb2528f7`), updating MR !1311 and triggering a fresh pipeline
+
+**Suggested MR reply:**
+
+> Rebased onto latest master (033b21ea9e32) with `--keep-empty`. No conflicts — the two new upstream commits (samus bloblist size + samus CI jobs) don't overlap with this Xilinx series. `git range-diff` confirms all 20 commits are patch-identical to the previous revision (no source-code deltas). Sandbox build passes cleanly with buildman. A fresh pipeline has been triggered.
+
+---
+
