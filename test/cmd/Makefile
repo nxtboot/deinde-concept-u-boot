@@ -31,6 +31,9 @@ obj-$(CONFIG_CMD_BOOTCOUNT) += bootcount.o
 endif
 endif
 obj-$(CONFIG_CMD_BOOTSTAGE) += bootstage.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_CBFS) += cbfs.o
+endif
 obj-$(CONFIG_CMD_CHID) += chid.o
 ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_CLK) += clk.o

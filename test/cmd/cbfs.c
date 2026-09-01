@@ -1,0 +1,188 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Tests for the cbfs commands
+ *
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ */
+
+#include <cbfs.h>
+#include <malloc.h>
+#include <mapmem.h>
+#include <asm/byteorder.h>
+#include <test/cmd.h>
+#include <test/ut.h>
+
+/* Size of the ROM the tests build, and the alignment of the files in it */
+#define ROM_SIZE	0x100
+#define ROM_ALIGN	0x40
+
+/* Offset of the first file within the ROM; the master header is at the start */
+#define ROM_DATA_OFF	0x40
+
+/* Version coreboot writes into the master header */
+#define CBFS_VERSION	0x31313132
+
+/* Contents of the two files */
+#define HELLO_SIZE	16
+#define HELLO_BYTE	0x11
+#define UBOOT_SIZE	32
+#define UBOOT_BYTE	0x22
+
+/**
+ * add_file() - Write a file header and its data into the ROM
+ *
+ * The name sits directly after the header and the data after that, aligned to
+ * 16 bytes as coreboot does it.
+ *
+ * @ptr: Position in the ROM to write the file at
+ * @name: Name of the file
+ * @type: CBFS file type
+ * @byte: Byte to fill the data with
+ * @size: Number of bytes of data
+ * Return: Position of the next file, aligned as the header says
+ */
+static void *add_file(void *ptr, const char *name, uint type, int byte,
+		      uint size)
+{
+	struct cbfs_fileheader *fh = ptr;
+	uint offset;
+
+	offset = ALIGN(sizeof(*fh) + strlen(name) + 1, 16);
+	memcpy(&fh->magic, "LARCHIVE", sizeof(fh->magic));
+	fh->len = cpu_to_be32(size);
+	fh->type = cpu_to_be32(type);
+	fh->attributes_offset = 0;
+	fh->offset = cpu_to_be32(offset);
+	memcpy(fh->filename, name, strlen(name) + 1);
+	memset(ptr + offset, byte, size);
+
+	return ptr + ALIGN(offset + size, ROM_ALIGN);
+}
+
+/**
+ * build_rom() - Build a small CBFS in memory
+ *
+ * The ROM holds a raw file called hello and a payload called u-boot, with the
+ * master header at the start and the offset back to it in the last four bytes.
+ * The caller frees the ROM with free_rom() once it has finished with it.
+ *
+ * @uts: Test state
+ * @endp: Returns the address of the last byte of the ROM, which is what
+ *	cbfsinit takes
+ * @romp: Returns the ROM, for free_rom()
+ * Return: 0 if OK, other value on error
+ */
+static int build_rom(struct unit_test_state *uts, ulong *endp, void **romp)
+{
+	struct cbfs_header *hdr;
+	void *rom, *ptr;
+
+	rom = memalign(ROM_ALIGN, ROM_SIZE);
+	ut_assertnonnull(rom);
+	memset(rom, '\0', ROM_SIZE);
+
+	hdr = rom;
+	hdr->magic = cpu_to_be32(CBFS_HEADER_MAGIC);
+	hdr->version = cpu_to_be32(CBFS_VERSION);
+	hdr->rom_size = cpu_to_be32(ROM_SIZE);
+	hdr->boot_block_size = 0;
+	hdr->align = cpu_to_be32(ROM_ALIGN);
+	hdr->offset = cpu_to_be32(ROM_DATA_OFF);
+
+	ptr = add_file(rom + ROM_DATA_OFF, "hello", CBFS_TYPE_RAW, HELLO_BYTE,
+		       HELLO_SIZE);
+	add_file(ptr, "u-boot", CBFS_TYPE_PAYLOAD, UBOOT_BYTE, UBOOT_SIZE);
+
+	/*
+	 * The last four bytes hold the offset from just past the end of the
+	 * ROM back to the master header, in the endianness of the machine
+	 */
+	*(u32 *)(rom + ROM_SIZE - sizeof(u32)) = -ROM_SIZE;
+
+	*endp = map_to_sysmem(rom) + ROM_SIZE - 1;
+	*romp = rom;
+
+	return 0;
+}
+
+/**
+ * free_rom() - Drop a ROM built by build_rom()
+ *
+ * The driver caches pointers into the ROM, so this leaves it uninitialised,
+ * both to keep it away from the freed memory and so that each test starts from
+ * the same state whatever ran before it.
+ *
+ * @uts: Test state
+ * @rom: ROM to free
+ * @end: Address of the last byte of the ROM
+ * Return: 0 if OK, other value on error
+ */
+static int free_rom(struct unit_test_state *uts, void *rom, ulong end)
+{
+	/* clearing the magic is enough to make the next init fail */
+	*(u32 *)rom = 0;
+	ut_asserteq(1, run_commandf("cbfsinit %lx", end));
+	ut_assert_nextline("Bad CBFS header.");
+	free(rom);
+
+	return 0;
+}
+
+/* Test reading a CBFS into memory */
+static int cmd_test_cbfsinit_base(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, &end, &rom));
+
+	/* the command says nothing when it works */
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	/* the files are in RAM now, so listing them needs no more of the ROM */
+	ut_assertok(run_command("cbfsls", 0));
+	ut_assert_skip_to_line("       %d           payload  u-boot",
+			       UBOOT_SIZE);
+	ut_assert_nextline_empty();
+	ut_assert_nextline("2 file(s)");
+	ut_assert_nextline_empty();
+	ut_assert_console_end();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsinit_base, UTF_CONSOLE);
+
+/* Test the ways cbfsinit can fail */
+static int cmd_test_cbfsinit_bad(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, &end, &rom));
+
+	/* an address which is not a hex number is refused before any reading */
+	ut_asserteq(1, run_command("cbfsinit zz", 0));
+	ut_assert_nextline_empty();
+	ut_assert_nextline("** Invalid end of ROM **");
+	ut_assert_console_end();
+
+	/* so is a ROM whose master header has the wrong magic */
+	*(u32 *)rom = 0;
+	ut_asserteq(1, run_commandf("cbfsinit %lx", end));
+	ut_assert_nextline("Bad CBFS header.");
+	ut_assert_console_end();
+
+	/* a failed init leaves nothing behind for the other commands */
+	ut_asserteq(1, run_command("cbfsls", 0));
+	ut_assert_nextline("CBFS not initialized.");
+	ut_assert_console_end();
+
+	free(rom);
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsinit_bad, UTF_CONSOLE);
