@@ -681,6 +681,9 @@ config BOOTSTD_MENU
 config BOOTSTD_PROG
 	bool "Use programmatic boot"
 	depends on !CMDLINE
+	select LIB_BOOTI if ARM64
+	select LIB_BOOTM
+	select LIB_BOOTZ if ARM && !ARM64
 	default y
 	help
 	  Enable this to provide a board_run_command() function which can boot
@@ -1404,7 +1407,7 @@ config SYS_FSL_PBL_RCW
 	  Please refer doc/README.pblimage for more details.
 
 config SYS_BOOT_RAMDISK_HIGH
-	depends on CMD_BOOTM || CMD_BOOTI || CMD_BOOTZ
+	depends on LIB_BOOTM || LIB_BOOTI || LIB_BOOTZ
 	depends on !(NIOS2 || SANDBOX || SH || XTENSA)
 	def_bool y
 	help
