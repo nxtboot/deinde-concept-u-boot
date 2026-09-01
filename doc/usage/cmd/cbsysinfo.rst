@@ -122,3 +122,9 @@ Example
     =>
 
 Note that "Unimpl." shows tags which U-Boot does not currently implement.
+
+See also
+--------
+
+* :doc:`cbfsinit<cbfsinit>` for reading the CBFS whose offset and size this
+  command reports
