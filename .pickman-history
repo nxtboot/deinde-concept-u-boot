@@ -98099,3 +98099,40 @@ No source code was touched during conflict resolution.
 
 ---
 
+## 2026-09-01: us/main
+
+Branch: cherry-35432ef6fe2c
+
+Commits:
+- 35432ef6fe2c bootstd: android: bound the boot image read by its partition size
+- acd4ac0ea623 Merge tag 'u-boot-dfu-20260819' of https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+Delta matches perfectly. Now build test:
+
+Build passed. Now the merge commit:
+
+Let me add the cherry-pick annotation to match what `-x` would have done:
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Build result:** ok (sandbox build passed both times)
+
+**Branch:** `cherry-35432ef6fe2c` (based on `ci/master`)
+
+**Commits cherry-picked (in order):**
+1. `2c895ca440ff` — bootstd: android: bound the boot image read by its partition size
+   - Delta matches original exactly: `boot/bootmeth_android.c`, 8 insertions
+2. `4cca04b7f556` — Merge tag 'u-boot-dfu-20260819' of https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu
+   - Empty commit (as expected — the merge's content was the android fix already applied above). Preserved with `--allow-empty` to retain history, and the `(cherry picked from commit acd4ac0ea62366368b99bd69a7698bbfe097c714)` annotation was added to the message to match `-x` behaviour.
+
+**Fix-ups:** The merge commit had to be committed via `git commit --allow-empty` (git cherry-pick reported the merge as empty since the sole underlying change was already applied by the first cherry-pick). The cherry-pick annotation was appended manually.
+
+**Concerning deltas:** None. The first commit matches the original exactly. The merge being empty is expected — its payload is the single android fix that was cherry-picked separately.
+
+The branch is ready for pushing.
+
+---
+
