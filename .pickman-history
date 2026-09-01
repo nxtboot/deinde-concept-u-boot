@@ -97856,6 +97856,60 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-09-01: us/main
+
+Branch: cherry-1262e50a34a0
+
+Commits:
+- 1262e50a34a0 arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators
+- 527115ef6783 pylibfdt: Replace removed SWIG Python 2 compatibility macros
+- 78bc754cc9aa remoteproc: renesas: rsip: Clear SCMI transport flags
+- d38c44964ce4 remoteproc: renesas: rsip: Improve error print
+- e377488e85d1 remoteproc: renesas: rsip: Extract SCP initialization from board file
+- 31bf91b6a44b remoteproc: renesas: rsip: Reset SCP core on stop
+- 0771457a0ad5 remoteproc: renesas: rsip: Implement SCMI core stop
+- 47c911e929de remoteproc: renesas: rsip: Implement core status
+- b452e8288316 pci: pcie-rcar-gen4: Switch to generic firmware loader
+- 0a7534a31331 pci: pcie-rcar-gen4: Avoid repeated link attempts
+- 5a4ec19aa4ea pci: pcie-rcar-gen4: Switch to devm_*() GPIO and reset
+- f5b3b60e4255 doc: board: renesas: Document Retronix R-Car Gen4 V4H Sparrow Hawk SPI NOR layout
+- 9e4253d2dc8e arm64: renesas: r8a779g3: Add PCIe firmware environment on Retronix R-Car V4H Sparrow Hawk
+- 3511e1e3fbfe arm64: renesas: r8a779g3: Add bootloader update environment on Retronix R-Car V4H Sparrow Hawk
+- 17baf93381a4 arm64: renesas: r8a779g3: Switch to distro boot command on Retronix R-Car V4H Sparrow Hawk
+- be61172dac95 arm64: dts: renesas: r8a779g3: Drop generic SPI NOR support on Retronix R-Car V4H Sparrow Hawk board
+- a94c55e16e02 arm64: dts: renesas: r8a779g3: Drop invert microSD voltage selector on Retronix R-Car V4H Sparrow Hawk EVTB1
+- 3b4aa7df8071 arm64: dts: renesas: r8a779g3: Drop set VDDQ18_25_AVB voltage on Retronix R-Car V4H Sparrow Hawk EVTB1
+- 33472b3162ce Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh
+
+### Conversation log
+Both "maybe already applied" commits are confirmed as already applied. I'll skip 1262e50a34a0 (already applied as 9b9316ec7602) and 33472b3162ce (already applied as a756e908b0a2). Let me cherry-pick the remaining 17 commits.
+
+Build ok. Let me continue with the remaining commits.
+
+All 16 non-merge commits applied cleanly. Now the merge commit at the end:
+
+Now run the final build:
+
+## Cherry-pick complete
+
+**Branch:** `cherry-1262e50a34a0` (based on ci/master)
+
+**Summary:**
+- **Already applied (skipped):**
+  - `1262e50a34a0` (beagleplay bootph tags) — verified same as `9b9316ec7602` already on ci/master
+  - `33472b3162ce` (renesas merge) — verified as merge already applied via `a756e908b0a2`; the merge commit was still added as an empty commit to preserve history
+- **Cherry-picked cleanly (17 commits):** all pylibfdt, remoteproc renesas rsip (6), pci pcie-rcar-gen4 (3), doc, and arm64 renesas r8a779g3 (7) commits applied without conflict, with commit stats matching the originals.
+- **Empty merge commit preserved:** `1b0aee618585` "Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh"
+
+**Build result:** OK — `buildman -L --board sandbox` completed successfully both after the first cherry-pick and after the full series.
+
+**Fix-ups:** None needed.
+**Concerning deltas:** None — all cherry-picks matched original file/line counts exactly.
+
+Branch is ready for pushing.
+
+---
+
 ### Pipeline fix: 2026-08-31 (attempt 1)
 
 Branch: cherry-0c68b88ce574
@@ -97924,4 +97978,3 @@ There is no reviewer question, no code suggestion, and no new failure to address
 If you'd rather I still cut a no-op `-v2` and force-push to re-trigger the pipeline, say the word and I'll do that — but nothing on the branch needs to change.
 
 ---
-
