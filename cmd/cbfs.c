@@ -209,11 +209,14 @@ U_BOOT_CMD(
 	"    - list the files in the cbfs\n"
 );
 
-static int do_cbfs_fsinfo(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[])
+static int do_cbfs_fsinfo(struct getopt_state *gs)
 {
-	const struct cbfs_header *header = file_cbfs_get_header();
+	const struct cbfs_header *header;
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	header = file_cbfs_get_header();
 	if (!header) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
@@ -232,7 +235,7 @@ static int do_cbfs_fsinfo(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cbfsinfo,	1,	1,	do_cbfs_fsinfo,
 	"print information about filesystem",
 	"    - print information about the cbfs filesystem\n"
