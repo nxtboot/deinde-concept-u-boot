@@ -85,5 +85,5 @@ See also
 --------
 
 * :doc:`cbfsinit<cbfsinit>` for reading the CBFS this command reports on
-* *cbfsls* for listing the files rather than the header
+* :doc:`cbfsls<cbfsls>` for listing the files rather than the header
 * *cbfsload* for reading one of those files into memory

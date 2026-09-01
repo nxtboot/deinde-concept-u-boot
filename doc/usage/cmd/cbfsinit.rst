@@ -114,7 +114,7 @@ See also
 --------
 
 * :doc:`cbfsinfo<cbfsinfo>` for showing the header this command reads
-* *cbfsls* for listing the files this command finds
+* :doc:`cbfsls<cbfsls>` for listing the files this command finds
 * *cbfsload* for reading one of those files into memory
 * :doc:`cbsysinfo<cbsysinfo>` for the coreboot sysinfo table, which gives the
   offset and size of the CBFS on a board which really has one
