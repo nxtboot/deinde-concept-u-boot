@@ -5,6 +5,7 @@
  */
 
 #include <command.h>
+#include <getopt.h>
 #include <malloc.h>
 #include <part.h>
 #include <blk.h>
@@ -12,8 +13,10 @@
 #include <vsprintf.h>
 
 #define BUFSIZE (1 * 1024 * 1024)
-static int do_clone(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
+static int do_clone(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int srcdev, destdev;
 	struct blk_desc *srcdesc, *destdesc;
 	int srcbz, destbz, ret;
@@ -22,6 +25,9 @@ static int do_clone(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv
 	unsigned long timer;
 	const unsigned long buffersize = 1024 * 1024;
 	bool ok = true;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 6)
 		return CMD_RET_USAGE;
@@ -126,7 +132,7 @@ exit:
 	return ok ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	clone, 6, 1, do_clone,
 	"simple storage cloning",
 	"<src interface> <src dev> <dest interface> <dest dev> <size[K/M/G]>\n"

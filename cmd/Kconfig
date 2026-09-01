@@ -1628,6 +1628,7 @@ endif
 config CMD_CLONE
 	bool "clone"
 	depends on BLK
+	select GETOPT
 	help
 	  Enable storage cloning over block devices, useful for
 	  initial flashing by external block device without network
