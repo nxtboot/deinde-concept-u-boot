@@ -186,3 +186,60 @@ static int cmd_test_cbfsinit_bad(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_cbfsinit_bad, UTF_CONSOLE);
+
+/* Test showing the master header of a CBFS */
+static int cmd_test_cbfsinfo_base(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+
+	ut_assertok(run_command("cbfsinfo", 0));
+	ut_assert_nextline_empty();
+	ut_assert_nextline("CBFS version: %#x", CBFS_VERSION);
+	ut_assert_nextline("ROM size: %#x", ROM_SIZE);
+
+	/* the ROM has no bootblock, so the archive is all of it but the gap */
+	ut_assert_nextline("Boot block size: 0x0");
+	ut_assert_nextline("CBFS size: %#x", ROM_SIZE - ROM_DATA_OFF);
+	ut_assert_nextline("Alignment: %d", ROM_ALIGN);
+	ut_assert_nextline("Offset: %#x", ROM_DATA_OFF);
+	ut_assert_nextline_empty();
+	ut_assert_console_end();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsinfo_base, UTF_CONSOLE);
+
+/* Test cbfsinfo with no CBFS to report on, and with an argument */
+static int cmd_test_cbfsinfo_bad(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	/* make sure nothing an earlier test read is still around */
+	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	ut_asserteq(1, run_command("cbfsinfo", 0));
+	ut_assert_nextline("CBFS not initialized.");
+	ut_assert_console_end();
+
+	/* the command takes no arguments, so one is a usage error */
+	ut_asserteq(1, run_command("cbfsinfo x", 0));
+	ut_assert_nextline("cbfsinfo - print information about filesystem");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("Usage:");
+
+	/* the rest is the help text, which is not what this test is about */
+	console_record_reset();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsinfo_bad, UTF_CONSOLE);
