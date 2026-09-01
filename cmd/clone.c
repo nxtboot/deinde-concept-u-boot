@@ -114,7 +114,10 @@ exit:
 	timer = 1000 * timer / CONFIG_SYS_HZ;
 	printf("%ld read\n", rdcnt);
 	printf("%ld written\n", wrcnt);
-	printf("%ldms, %ldkB/s\n", timer, wrcnt / timer);
+	if (timer)
+		printf("%ldms, %ldkB/s\n", timer, wrcnt / timer);
+	else
+		printf("%ldms\n", timer);
 	free(buf);
 
 	return 0;
