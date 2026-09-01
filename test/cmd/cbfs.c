@@ -28,6 +28,18 @@
 #define UBOOT_SIZE	32
 #define UBOOT_BYTE	0x22
 
+/* A third file with no name and a type the command does not know */
+#define ODD_SIZE	16
+#define ODD_BYTE	0x33
+#define ODD_TYPE	17
+
+/* What build_rom() puts in the ROM */
+enum rom_t {
+	ROMT_EMPTY,	/* a master header with no files after it */
+	ROMT_FILES,	/* a raw file called hello and a payload called u-boot */
+	ROMT_ODD,	/* those two files, plus the odd one */
+};
+
 /**
  * add_file() - Write a file header and its data into the ROM
  *
@@ -62,17 +74,19 @@ static void *add_file(void *ptr, const char *name, uint type, int byte,
 /**
  * build_rom() - Build a small CBFS in memory
  *
- * The ROM holds a raw file called hello and a payload called u-boot, with the
- * master header at the start and the offset back to it in the last four bytes.
- * The caller frees the ROM with free_rom() once it has finished with it.
+ * The master header lies at the start of the ROM and the offset back to it in
+ * the last four bytes, whatever files are asked for. The caller frees the ROM
+ * with free_rom() once it has finished with it.
  *
  * @uts: Test state
+ * @type: What to put in the ROM
  * @endp: Returns the address of the last byte of the ROM, which is what
  *	cbfsinit takes
  * @romp: Returns the ROM, for free_rom()
  * Return: 0 if OK, other value on error
  */
-static int build_rom(struct unit_test_state *uts, ulong *endp, void **romp)
+static int build_rom(struct unit_test_state *uts, enum rom_t type, ulong *endp,
+		     void **romp)
 {
 	struct cbfs_header *hdr;
 	void *rom, *ptr;
@@ -89,9 +103,14 @@ static int build_rom(struct unit_test_state *uts, ulong *endp, void **romp)
 	hdr->align = cpu_to_be32(ROM_ALIGN);
 	hdr->offset = cpu_to_be32(ROM_DATA_OFF);
 
-	ptr = add_file(rom + ROM_DATA_OFF, "hello", CBFS_TYPE_RAW, HELLO_BYTE,
-		       HELLO_SIZE);
-	add_file(ptr, "u-boot", CBFS_TYPE_PAYLOAD, UBOOT_BYTE, UBOOT_SIZE);
+	if (type != ROMT_EMPTY) {
+		ptr = add_file(rom + ROM_DATA_OFF, "hello", CBFS_TYPE_RAW,
+			       HELLO_BYTE, HELLO_SIZE);
+		ptr = add_file(ptr, "u-boot", CBFS_TYPE_PAYLOAD, UBOOT_BYTE,
+			       UBOOT_SIZE);
+		if (type == ROMT_ODD)
+			add_file(ptr, "", ODD_TYPE, ODD_BYTE, ODD_SIZE);
+	}
 
 	/*
 	 * The last four bytes hold the offset from just past the end of the
@@ -134,7 +153,7 @@ static int cmd_test_cbfsinit_base(struct unit_test_state *uts)
 	ulong end;
 	void *rom;
 
-	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
 
 	/* the command says nothing when it works */
 	ut_assertok(run_commandf("cbfsinit %lx", end));
@@ -162,7 +181,7 @@ static int cmd_test_cbfsinit_bad(struct unit_test_state *uts)
 	ulong end;
 	void *rom;
 
-	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
 
 	/* an address which is not a hex number is refused before any reading */
 	ut_asserteq(1, run_command("cbfsinit zz", 0));
@@ -193,7 +212,7 @@ static int cmd_test_cbfsinfo_base(struct unit_test_state *uts)
 	ulong end;
 	void *rom;
 
-	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
 	ut_assertok(run_commandf("cbfsinit %lx", end));
 
 	ut_assertok(run_command("cbfsinfo", 0));
@@ -223,7 +242,7 @@ static int cmd_test_cbfsinfo_bad(struct unit_test_state *uts)
 	void *rom;
 
 	/* make sure nothing an earlier test read is still around */
-	ut_assertok(build_rom(uts, &end, &rom));
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
 	ut_assertok(free_rom(uts, rom, end));
 	ut_assert_console_end();
 
@@ -243,3 +262,77 @@ static int cmd_test_cbfsinfo_bad(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_cbfsinfo_bad, UTF_CONSOLE);
+
+/* Test listing the files in a CBFS */
+static int cmd_test_cbfsls_base(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+
+	ut_assertok(run_command("cbfsls", 0));
+	ut_assert_nextline("     size              type  name");
+	ut_assert_nextline("------------------------------------------");
+	ut_assert_nextline("       %d               raw  hello", HELLO_SIZE);
+	ut_assert_nextline("       %d           payload  u-boot", UBOOT_SIZE);
+	ut_assert_nextline_empty();
+	ut_assert_nextline("2 file(s)");
+	ut_assert_nextline_empty();
+	ut_assert_console_end();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsls_base, UTF_CONSOLE);
+
+/* Test a file with no name and a type the command does not know */
+static int cmd_test_cbfsls_odd(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, ROMT_ODD, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+
+	ut_assertok(run_command("cbfsls", 0));
+	ut_assert_skip_to_line("       %d                %d  (empty)", ODD_SIZE,
+			       ODD_TYPE);
+	ut_assert_nextline_empty();
+	ut_assert_nextline("3 file(s)");
+	ut_assert_nextline_empty();
+	ut_assert_console_end();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsls_odd, UTF_CONSOLE);
+
+/* Test listing a CBFS which holds no files */
+static int cmd_test_cbfsls_empty(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	ut_assertok(build_rom(uts, ROMT_EMPTY, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+
+	/*
+	 * The command cannot tell an archive with no files from a driver which
+	 * has nothing to say, so it reports the state it finds and fails
+	 */
+	ut_asserteq(1, run_command("cbfsls", 0));
+	ut_assert_nextline("Success.");
+	ut_assert_console_end();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsls_empty, UTF_CONSOLE);
