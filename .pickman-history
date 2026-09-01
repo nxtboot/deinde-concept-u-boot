@@ -98244,3 +98244,29 @@ Force-push succeeded. Rebase complete and MR updated.
 
 ---
 
+## 2026-09-01: us/main
+
+Branch: cherry-58b49a7b54ba
+
+Commits:
+- 58b49a7b54ba gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression
+- bf219c69ec5b test: cmd: Add gzwrite chunk boundary regression test
+- a08e99d33ff3 Merge patch series "gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression"
+
+### Conversation log
+Delta matches. Now build test.
+
+All 3 commits cherry-picked successfully onto branch `cherry-58b49a7b54ba`:
+
+- `5b6af5dfd01b` gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression (1 file, +10)
+- `f66a21d64f8f` test: cmd: Add gzwrite chunk boundary regression test (1 file, +116/-2)
+- `322ba7cf2c3d` Merge patch series ... (empty merge, preserved with --allow-empty)
+
+**Status:**
+- Build: OK (sandbox built cleanly after each pick and after the final commit)
+- Deltas: match originals exactly (identical file lists and line counts)
+- Fix-ups: none — the merge commit was cherry-picked as empty (expected, since its constituent patches were applied individually just before it)
+
+Branch is ready for pushing.
+---
+
