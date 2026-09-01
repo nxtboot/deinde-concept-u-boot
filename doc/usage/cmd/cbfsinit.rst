@@ -113,7 +113,7 @@ wrong value is as likely to crash U-Boot as to be reported.
 See also
 --------
 
-* *cbfsinfo* for showing the header this command reads
+* :doc:`cbfsinfo<cbfsinfo>` for showing the header this command reads
 * *cbfsls* for listing the files this command finds
 * *cbfsload* for reading one of those files into memory
 * :doc:`cbsysinfo<cbsysinfo>` for the coreboot sysinfo table, which gives the
