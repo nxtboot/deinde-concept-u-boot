@@ -100,12 +100,15 @@ U_BOOT_CMD(
 	"    - load binary file 'filename' from the cbfs to address 'addr'\n"
 );
 
-static int do_cbfs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_cbfs_ls(struct getopt_state *gs)
 {
-	const struct cbfs_cachenode *file = file_cbfs_get_first();
+	const struct cbfs_cachenode *file;
 	int files = 0;
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	file = file_cbfs_get_first();
 	if (!file) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
@@ -203,7 +206,7 @@ static int do_cbfs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cbfsls,	1,	1,	do_cbfs_ls,
 	"list files",
 	"    - list the files in the cbfs\n"
