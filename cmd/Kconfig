@@ -1628,6 +1628,7 @@ endif
 config CMD_CLONE
 	bool "clone"
 	depends on BLK
+	select GETOPT
 	help
 	  Enable storage cloning over block devices, useful for
 	  initial flashing by external block device without network
@@ -2469,6 +2470,7 @@ config CMD_BMP
 config CMD_BOOTCOUNT
 	bool "bootcount"
 	depends on BOOTCOUNT_LIMIT
+	select GETOPT
 	help
 	  Enable the bootcount command, which allows interrogation and
 	  reset of the bootcounter.

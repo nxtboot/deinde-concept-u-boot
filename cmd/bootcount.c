@@ -2,6 +2,7 @@
 
 #include <command.h>
 #include <bootcount.h>
+#include <getopt.h>
 
 static int do_bootcount_print(struct cmd_tbl *cmdtp, int flag, int argc,
 			      char *const argv[])
@@ -26,10 +27,14 @@ static struct cmd_tbl bootcount_sub[] = {
 	U_BOOT_CMD_MKENT(reset, 1, 1, do_bootcount_reset, "", ""),
 };
 
-static int do_bootcount(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_bootcount(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *cp;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -40,7 +45,7 @@ static int do_bootcount(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	cp = find_cmd_tbl(argv[0], bootcount_sub, ARRAY_SIZE(bootcount_sub));
 	if (cp)
-		return cmd_invoke(cp, flag, argc, argv);
+		return cmd_invoke(cp, gs->cmd_flag, argc, argv);
 
 	return CMD_RET_USAGE;
 }
@@ -49,7 +54,7 @@ U_BOOT_LONGHELP(bootcount,
 	"print - print current bootcounter\n"
 	"reset - reset the bootcounter");
 
-U_BOOT_CMD(bootcount, 2, 1, do_bootcount,
-	   "bootcount",
-	   bootcount_help_text
+U_BOOT_CMD_GETOPT(bootcount, 2, 1, do_bootcount,
+		  "bootcount",
+		  bootcount_help_text
 );

@@ -320,6 +320,8 @@ Access them using partition 0 or omitting the partition specification::
 See Also
 --------
 
+* :doc:`clone<clone>` - Copying raw blocks between devices, for which a blkmap
+  device makes a convenient source or destination
 * :doc:`../blkmap` - Blkmap device documentation and examples
 * :doc:`../luks` - LUKS encryption support (uses blkmap for decrypted access)
 * :doc:`../tkey-fde` - TKey full disk encryption

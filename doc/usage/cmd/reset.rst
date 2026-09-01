@@ -39,3 +39,8 @@ Return value
 ------------
 
 The return value $? is always set to 0 (true).
+
+See also
+--------
+
+* :doc:`bootcount<bootcount>` for the counter which each reset steps on
