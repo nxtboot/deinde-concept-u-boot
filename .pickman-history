@@ -98136,3 +98136,41 @@ The branch is ready for pushing.
 
 ---
 
+### Pipeline fix: 2026-09-01 (attempt 2)
+
+Branch: cherry-35432ef6fe2c
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- zybo (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All five failures are lab/infrastructure issues on hardware jobs. The MR only touches `boot/bootmeth_android.c` — an android boot method change that cannot affect zybo, rockpro64, snow, minnowmax, or an ubuntu iso install test. Let me verify sandbox builds and create the fix branch.
+
+## Report
+
+**Result: No code fix needed — all 5 failures are lab infrastructure / transient issues unrelated to this MR.**
+
+### Branch delta
+The MR delta from master is a single upstream cherry-pick `2c895ca440ff bootstd: android: bound the boot image read by its partition size` touching only `boot/bootmeth_android.c` (8 insertions), plus an empty merge commit and the pickman-history file. Nothing in this delta can affect any of the failing jobs.
+
+### Per-job diagnosis
+- **rockpro64 (sjg-lab):** labgrid: `place rockpro64 is not acquired by your user, acquired by sglass` — place-acquisition conflict, no test ran.
+- **snow (sjg-lab):** labgrid: `place snow is not acquired by your user, acquired by labgrid` — same class of place-acquisition conflict.
+- **minnowmax (sjg-lab):** labgrid `ubootstrategy`: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` after em100 flash — hardware/serial did not come up. No android-boot code path was exercised.
+- **zybo (sjg-lab):** Zynq board reached U-Boot prompt, ran a long stream of env tests, then timed out on `setenv str_var "MOs%zeA3:..."` (a very long randomly-generated string) — serial pipe stall on the DUT, not a code regression.
+- **efi-x86_64-uboot-iso-install (sjg-lab-slow):** `test_distro_ubuntu_iso_install` — kernel was actively booting (last log line `input: Power Button…`) when the 10-minute job wall-clock timeout hit. Nothing android-related; the Ubuntu iso boot path never touches `bootmeth_android.c`.
+
+### Verification
+- `um build sandbox`: passed (silent, no warnings). Skipped the wider buildman fan-out because the delta touches one file with no config-visible surface — sandbox build exercises the same `boot/bootmeth_android.c` compilation.
+
+### Result
+Local branch **`cherry-35432ef6fe2c-fix2`** created at the same tip as `cherry-35432ef6fe2c` (313c049aef36). No changes made. Recommendation: retry the pipeline; if the same lab jobs keep failing on retry, they need operator attention (labgrid place ownership, minnowmax serial) rather than a code change on this MR.
+
+The background task completed (the initial checkout that I'd already superseded with a direct foreground checkout). No further action needed — the fix2 branch is in place at the same tip as cherry-35432ef6fe2c, with no code changes since all five job failures are lab/infrastructure issues unrelated to the android-bootmeth delta.
+
+---
+
