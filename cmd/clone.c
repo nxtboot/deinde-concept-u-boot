@@ -82,7 +82,7 @@ static int do_clone(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv
 
 read:
 		ret = blk_dread(srcdesc, srcblk, toread, buf + offset);
-		if (ret < 0) {
+		if (ret <= 0) {
 			printf("Src read error @blk %ld\n", srcblk);
 			goto exit;
 		}
@@ -96,7 +96,7 @@ read:
 		offset = 0;
 write:
 		ret = blk_dwrite(destdesc, destblk, towrite, buf + offset);
-		if (ret < 0) {
+		if (ret <= 0) {
 			printf("Dest write error @blk %ld\n", destblk);
 			goto exit;
 		}
