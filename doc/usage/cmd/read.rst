@@ -47,3 +47,10 @@ Return value
 
 The command sets the return value $? to 0 (true) on success or to 1 (false) in
 case of an error.
+
+See also
+--------
+
+* :doc:`write<write>` for the opposite direction, from memory to a device
+* :doc:`clone<clone>` for copying blocks straight from one device to another,
+  without passing them through memory first

@@ -236,3 +236,9 @@ This shows looking at a device with multiple partition tables::
             type:	ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
             guid:	a0891d7e-b930-4513-94da-f629dbd637b2
     =>
+
+See also
+--------
+
+* :doc:`clone<clone>` for copying a whole device, partition table and all,
+  without regard to the partitions listed here
