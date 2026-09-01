@@ -39,3 +39,9 @@ Return value
 
 The return value $? of the bootd command is the return value of the command in
 the environment variable *bootcmd*.
+
+See also
+--------
+
+* :doc:`bootcount<bootcount>` for the counter which, once past *bootlimit*,
+  sends U-Boot to *altbootcmd* instead of *bootcmd*

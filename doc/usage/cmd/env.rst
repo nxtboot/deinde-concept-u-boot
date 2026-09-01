@@ -395,3 +395,9 @@ select
 
 set
     CONFIG_CMD_NVEDIT_EFI for UEFI variables support ('-e' option)
+
+See also
+--------
+
+* :doc:`bootcount<bootcount>` for the counter which *bootlimit* and
+  *altbootcmd* control
