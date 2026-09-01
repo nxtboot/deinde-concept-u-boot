@@ -84,7 +84,20 @@ static int bls_getfile(struct pxe_context *ctx, const char *file_path,
 		       ulong *sizep)
 {
 	struct bls_info *info = ctx->userdata;
+	const char *subdir = info->bflow->subdir;
+	char path[256];
 	int ret;
+
+	/*
+	 * Paths in an entry are relative to the directory which holds
+	 * loader/entries, so put back the prefix the entry was found under.
+	 * The prefix keeps its trailing '/', so drop the leading one here.
+	 */
+	if (subdir && strcmp(subdir, "/")) {
+		snprintf(path, sizeof(path), "%s%s", subdir,
+			 *file_path == '/' ? file_path + 1 : file_path);
+		file_path = path;
+	}
 
 	/* Allow up to 1GB */
 	*sizep = 1 << 30;
@@ -374,6 +387,13 @@ static int bls_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	if (ret) {
 		log_debug("no BLS entry file found\n");
 		return log_msg_ret("try", ret);
+	}
+
+	/* Remember the prefix, so entry paths can be resolved against it */
+	if (prefix) {
+		bflow->subdir = strdup(prefix);
+		if (!bflow->subdir)
+			return log_msg_ret("sub", -ENOMEM);
 	}
 
 	size = bflow->size;
