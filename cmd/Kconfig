@@ -2470,6 +2470,7 @@ config CMD_BMP
 config CMD_BOOTCOUNT
 	bool "bootcount"
 	depends on BOOTCOUNT_LIMIT
+	select GETOPT
 	help
 	  Enable the bootcount command, which allows interrogation and
 	  reset of the bootcounter.
