@@ -72,6 +72,7 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <log.h>
 #include <malloc.h>
 #include <mtd.h>
@@ -1549,7 +1550,7 @@ static const char *env_get_mtdparts(char *buf)
 static int parse_mtdparts(const char *const mtdparts)
 {
 	const char *p;
-	struct mtd_device *dev;
+	struct mtd_device *dev = NULL;
 	int err = 1;
 	char tmp_parts[MTDPARTS_MAXLEN];
 
@@ -1732,6 +1733,14 @@ int mtdparts_init(void)
 #if defined(CONFIG_SYS_MTDPARTS_RUNTIME)
 		board_mtdparts_default(&mtdids_default, &mtdparts_default);
 #endif
+		/*
+		 * a Kconfig string which is not set expands to "", so treat an
+		 * empty default as no default at all
+		 */
+		if (mtdids_default && !*mtdids_default)
+			mtdids_default = NULL;
+		if (mtdparts_default && !*mtdparts_default)
+			mtdparts_default = NULL;
 		use_defaults = 1;
 		initialized = 1;
 	}
@@ -1904,19 +1913,20 @@ static struct part_info* mtd_part_info(struct mtd_device *dev, unsigned int part
  * Routine implementing u-boot chpart command. Sets new current partition based
  * on the user supplied partition id. For partition id format see find_dev_and_part().
  *
- * @param cmdtp command internal data
- * @param flag command flag
- * @param argc number of arguments supplied to the command
- * @param argv arguments list
+ * @param gs getopt state, holding the arguments supplied to the command
  * Return: 0 on success, 1 otherwise
  */
-static int do_chpart(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_chpart(struct getopt_state *gs)
 {
 /* command line only */
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_device *dev;
 	struct part_info *part;
 	u8 pnum;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (mtdparts_init() !=0)
 		return 1;
@@ -1943,15 +1953,17 @@ static int do_chpart(struct cmd_tbl *cmdtp, int flag, int argc,
  * Routine implementing u-boot mtdparts command. Initialize/update default global
  * partition list and process user partition request (list, add, del).
  *
- * @param cmdtp command internal data
- * @param flag command flag
- * @param argc number of arguments supplied to the command
- * @param argv arguments list
+ * @param gs getopt state, holding the arguments supplied to the command
  * Return: 0 on success, 1 otherwise
  */
-static int do_mtdparts(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_mtdparts(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (argc == 2) {
 		if (strcmp(argv[1], "default") == 0) {
 			env_set("mtdids", NULL);
@@ -2068,7 +2080,7 @@ static int do_mtdparts(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 /***************************************************/
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	chpart,	2,	0,	do_chpart,
 	"change active partition of a MTD device",
 	"part-id\n"
@@ -2119,7 +2131,7 @@ U_BOOT_LONGHELP(mtdparts,
 	"<name>     := '(' NAME ')'\n"
 	"<ro-flag>  := when set to 'ro' makes partition read-only (not used, passed to kernel)");
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	mtdparts,	6,	0,	do_mtdparts,
 	"define flash/nand partitions", mtdparts_help_text
 );
