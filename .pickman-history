@@ -97625,3 +97625,206 @@ Push succeeded. Task complete — I'll skip TodoWrite as this was a small linear
 
 ---
 
+## 2026-08-31: us/main
+
+Branch: cherry-614ebea14bfc
+
+Commits:
+- 614ebea14bfc net: phy: dp83867: enable extended read / write for driver
+- 2671bd1d77ab net: phy: fix duplicate eth_phy binding
+- afcd55654d85 net: Drop unnecessary device_set_name
+- 0601d2d9a290 net: lwip: add tftpsrv command
+- 02154ba0367a net: lwip: handle chained pbufs in transmit path
+- 2e7e0dbb1594 cmd: lwip: sntp: fix netif leak when ntpserverip is unset
+- 495368c55383 cmd: lwip: wget: free mbedtls x509 cert context to avoid memory leak
+- f517fdbc0ddc net: dwc_eth_xgmac: Return -ENODEV when phy_connect() fails
+- 85d82c523275 net: nfs: clean up bounds checks in nfs_readlink_reply()
+- 04ca915d5bf3 net: fix out-of-bounds write in IP fragment reassembly
+- 7946774a0feb test: net: add regression test for IP reassembly overflow
+- a1aaacc968ae net: rtl8169: add support for RTL8126A and RTL8127A
+- 5eb45fb2917c net: lwip: dhcp: fix DHCP fine timer interval
+- b752e4417900 net: srand_mac(): fix -ENODEV crash with CONFIG_DM_RNG
+- c2ac5fc4e3bc Merge tag 'net-20260813' of https://git.u-boot-project.org/u-boot/custodians/u-boot-net
+
+### Conversation log
+All 15 commits successfully cherry-picked onto branch `cherry-614ebea14bfc` (based on `ci/master`).
+
+**Status: SUCCESS**
+
+- **Build result:** OK (all builds passed cleanly with no warnings/errors after every cherry-pick and final verification)
+- **Fix-ups:** None required. All 14 regular commits applied cleanly (some with auto-merges but no conflicts). The merge commit `c2ac5fc4e3bc` was applied as an empty commit (via `git commit --allow-empty -C`), preserving the original merge message with the full net PR summary.
+- **Deltas:** All commits matched the originals exactly — same files, same line counts. No concerning deltas.
+
+`git log --oneline -n 17` confirms all 15 commits are present on top of the two prior pickman commits on ci/master. Branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-08-31 (attempt 1)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All three failures are infrastructure/lab issues, not code problems introduced by the branch. Let me verify by looking at the actual code changes:
+
+All three failures are infrastructure/lab issues unrelated to the code changes in this branch.
+
+## Analysis
+
+The branch `cherry-614ebea14bfc` contains 15 net-related cherry-picks. The diff touches only `drivers/net/`, `cmd/lwip/`, `net/lwip/`, `net/`, `net/nfs-common.c`, `cmd/net.c`, `test/dm/net_defrag.c`, and `test/py/tests/test_net.py` — nothing that could affect the failures observed.
+
+### Failure diagnosis
+
+**snow (job 631651)** — infrastructure:
+```
+labgrid-client: Error: place snow is not acquired by your user, acquired by labgrid.
+```
+The lab place was held by a different user (`kea/labgrid`). No test even started. Pure lab contention.
+
+**minnowmax (job 631638)** — infrastructure:
+```
+pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login
+Lab failure: Marking connection bad - no other tests will run
+```
+Board never reached the U-Boot prompt during bootstrap. Nothing in the diff changes minnowmax boot (no x86 or lwip-defconfig changes for it). Lab hardware/serial flake.
+
+**pine64 (job 631648)** — serial corruption:
+```
+FAILED test/py/tests/test_dm.py::test_dm_compat - AssertionError: assert not {'wdt��eboot'}
+```
+The `wdt��eboot` string contains U+FFFD replacement characters (0xEF 0xBF 0xBD) — the parsed output of `dm compat` was garbled on the serial line. The real driver name is `wdt_reboot` (or similar). The branch does not touch any watchdog or driver-model code, so this is a serial glitch on the pine64 UART, not a real code problem.
+
+## Action taken
+
+None. Per the instructions, infrastructure/transient failures should be reported without making code changes. No fix branch was created.
+
+Recommendation: retry the pipeline. The snow place should free up, the minnowmax lab timeout is likely transient, and the pine64 serial glitch should not repeat on a clean run.
+
+---
+
+### Review: 2026-08-31
+
+Branch: cherry-614ebea14bfc
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) snow, pine64, minnowmax.
+
+All three failures are infra...
+
+### Conversation log
+The "review comment" in this task is actually the pickman bot's own post from "Pipeline fix (attempt 1)" — it's a self-report recording the previous automated attempt, not a new review comment from a human reviewer asking for a change.
+
+Reading the comment carefully:
+- It describes three failed jobs (snow, pine64, minnowmax) from the previous pipeline run
+- It concludes all three are infrastructure/lab flakes unrelated to the branch's net-only diff
+- It explicitly states **"Action taken: None"** and recommends **"retry the pipeline"**
+
+There is nothing actionable in this comment — it's a status record, not a request. The branch code is unchanged since the last cherry-pick recording (commit `e7ab9974a2f6`); only a pickman metadata commit (`2c9f08a0b29e`) was added on top.
+
+## Report
+
+**No code changes made.** The "comment" being addressed is the bot's own prior-attempt report which explicitly recommends "retry the pipeline" and took no action itself. There is no reviewer request to satisfy and no code defect implied.
+
+**No v2 branch created, no push performed.** Force-pushing an identical tree would just re-run the same pipeline against the same code — which is exactly what "retry the pipeline" means, but done via GitLab's retry button, not by mutating the branch.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pickman bot's own record of the previous pipeline attempt, in which the three failures (snow, pine64, minnowmax) were diagnosed as infrastructure/lab flakes — labgrid contention on snow, serial-login timeout on minnowmax, and UTF-8 replacement-character corruption of `wdt_reboot` on the pine64 UART. None of those are reachable from this branch's net-only diff (drivers/net, cmd/lwip, net/lwip, net/, cmd/net.c, test/dm/net_defrag.c, test/py/tests/test_net.py). No code changes are warranted; please retry the failed jobs.
+
+If instead you want me to force-push a no-op v2 to trigger a fresh pipeline run, say the word and I'll do that — but the cleaner action is a GitLab job retry.
+
+---
+
+### Pipeline fix: 2026-08-31 (attempt 2)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- vbe (sjg-lab)
+- efi-x86_64-uboot-iso (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- ff3399 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All six failures are infrastructure / lab issues rather than code problems introduced by this branch's changes. Let me verify by checking the branch content and confirming.
+
+## Analysis: All six failures are infrastructure / lab issues, not code defects
+
+The branch's diff (26 files, all networking) touches only `cmd/lwip/`, `cmd/net.c`, `drivers/net/`, `net/`, `net/nfs-common.c`, `test/dm/net_defrag.c`, and `test/py/tests/test_net.py`. Nothing in the diff can affect any of the specific failures.
+
+### Per-job diagnosis
+
+| Job | Failure | Root cause |
+|-----|---------|-----------|
+| **vbe** | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention — the vbe role maps to the ff3399 place, currently held by user `sglass`. Test never ran. |
+| **rockpro64** | `place rockpro64 is not acquired by your user, acquired by sglass` | Labgrid contention — place held by `sglass`. Test never ran. |
+| **snow** | `place snow is not acquired by your user, acquired by labgrid` | Labgrid contention — place held by `kea/labgrid`. Test never ran. |
+| **ff3399** | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention — place held by `sglass`. Test never ran. |
+| **minnowmax** | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` | Board never reached U-Boot prompt after em100 flash; `Lab failure: Marking connection bad`. No x86/minnowmax code changed on this branch. |
+| **efi-x86_64-uboot-iso** | `Initramfs unpacking failed: invalid magic at start of compressed archive`, then `test_distro_ubuntu_iso_uboot` timeout waiting for `Started gdm.service` | Ubuntu ISO boot: kernel loaded but initrd magic invalid — a QEMU/ISO/loader flake. Branch touches no EFI, distro-boot, BLS, filesystem, or bzImage-load code. |
+
+### Pattern
+
+Five of six failures share the same runner (`ellesmere-lab VKe9dm-Af`) and time window (13:46–14:00 UTC). The labgrid places `vbe/ff3399`, `rockpro64`, `ff3399` are all being held by user `sglass` simultaneously — the lab operator apparently had these boards acquired for other work during the run. `snow` is held by a different service account (`kea/labgrid`). `minnowmax` is a classic serial-boot flake on that board. `efi-x86_64-uboot-iso` is a known-flaky distro-boot test where a truncated/corrupt initrd load in QEMU EFI causes the Linux boot to fail before reaching userspace.
+
+### Action taken
+
+**None.** Per the instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have not created `cherry-614ebea14bfc-fix2` and have not amended any commit. The branch remains at `a66a431497c3` unchanged.
+
+**Recommendation:** retry the six failed jobs after the lab boards are released.
+
+---
+
+### Pipeline fix: 2026-08-31 (attempt 3)
+
+Branch: cherry-614ebea14bfc
+
+Failed jobs:
+- vbe (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- ff3399 (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+## Report
+
+**No code changes made. No `cherry-614ebea14bfc-fix3` branch created.**
+
+All five failures are infrastructure/lab issues, not code defects — the same pattern as attempt 2, from the same runner (`ellesmere-lab VKe9dm-Af`) in an overlapping ~6-minute window.
+
+### Per-job diagnosis
+
+| Job | Failure | Root cause |
+|-----|---------|-----------|
+| **vbe** (632579) | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention (vbe role → ff3399 place, held by `ellesmere/sglass`). Test never started. |
+| **rockpro64** (632566) | `place rockpro64 is not acquired by your user, acquired by sglass` | Labgrid contention (held by `ellesmere/sglass`). Test never started. |
+| **snow** (632559) | `place snow is not acquired by your user, acquired by labgrid` | Labgrid contention (held by `kea/labgrid`). Test never started. |
+| **ff3399** (632551) | `place ff3399 is not acquired by your user, acquired by sglass` | Labgrid contention (held by `ellesmere/sglass`). Test never started. |
+| **minnowmax** (632546) | `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` → `Lab failure: Marking connection bad` | Board never reached U-Boot prompt after em100 flash; classic x86 serial/em100 bootstrap flake. |
+
+### Why this can't be code
+
+The branch diff is 26 files, all networking-only:
+`cmd/lwip/`, `cmd/net.c`, `drivers/net/`, `net/`, `net/nfs-common.c`, `include/net-lwip.h`, `lib/lwip/u-boot/lwipopts.h`, `configs/qemu_arm64_lwip_defconfig`, `doc/usage/cmd/tftpsrv.rst`, `test/dm/net_defrag.c`, `test/py/tests/test_net.py`.
+
+Nothing in this diff is reachable from:
+- labgrid client acquisition (fails before any U-Boot is built or booted),
+- x86 minnowmax em100 boot bootstrap (no x86 or minnowmax_defconfig / SPL / EFI changes).
+
+Four jobs (vbe, rockpro64, ff3399, snow) exit before U-Boot is even built — the board hardware is simply held by other users. The minnowmax timeout is on the pre-test bootstrap `Writing U-Boot using method em100` step, before any test runs; the branch does not modify anything on the minnowmax boot path.
+
+### Action
+
+Per instructions ("If the failure is an infrastructure or transient issue … report this without making changes"), I have not amended any commit and have not created `cherry-614ebea14bfc-fix3`. The branch remains at `35ceb6e83ff5` unchanged.
+
+**Recommendation:** retry the five failed jobs via GitLab's job-retry once the contended lab boards (`ff3399`, `rockpro64`, `snow`) are released and the minnowmax em100 flash is not flaking. Force-pushing a no-op v3 would just replay the same pipeline against the same code and hit the same lab contention.
+
+---
+
