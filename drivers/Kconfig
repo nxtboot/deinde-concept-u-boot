@@ -114,6 +114,7 @@ source "drivers/remoteproc/Kconfig"
 
 source "drivers/reset/Kconfig"
 
+source "drivers/debug/Kconfig"
 source "drivers/rng/Kconfig"
 
 source "drivers/rtc/Kconfig"

@@ -1,0 +1,21 @@
+config DEBUG_DEV
+	bool "Devices which can show debug output"
+	depends on DM
+	help
+	  Enable a uclass for devices which can get a message out of U-Boot
+	  without using the console. These are called explicitly from code
+	  being debugged, rather than being wired up as a console, so they
+	  work even when the console is unavailable or is itself the thing
+	  under investigation.
+
+if DEBUG_DEV
+
+config DEBUG_SANDBOX
+	bool "Sandbox debug device"
+	depends on SANDBOX
+	default y if SANDBOX
+	help
+	  Provide a debug device for sandbox, which records what is written
+	  to it so that tests can check it.
+
+endif
