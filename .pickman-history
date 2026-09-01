@@ -98207,3 +98207,40 @@ Build passes. Now create the v3 branch and force-push.
 
 ---
 
+### Review: 2026-09-01
+
+Branch: cherry-35432ef6fe2c
+
+Comments addressed:
+
+
+### Conversation log
+Only historical text mentions remain. Continue rebase.
+
+Delta matches. Now build.
+
+Build clean. Now create v2 branch (per instructions - iterate suffix; previous was already -v3, so this is -v4).
+
+Force-push succeeded. Rebase complete and MR updated.
+
+## Summary
+
+**Branch rebased:** `cherry-35432ef6fe2c` onto latest `ci/master` (base moved from `4bcbe3f8b3ce` → `215c1c5b93ab`, ~50+ upstream commits absorbed, including the `cherry-1262e50a34a0` merge).
+
+**Local backup:** `cherry-35432ef6fe2c-v4`
+**Remote:** force-pushed `e5769a63da10 → 4eb2e659a8b5` on `ci/cherry-35432ef6fe2c` — MR !1318 pipeline will auto-retrigger.
+
+### Conflicts resolved
+- Single conflict in `.pickman-history` (append-only log). HEAD carried new sections logged against `cherry-1262e50a34a0` (from the recent master merge); ours added the `2026-09-01 cherry-35432ef6fe2c` section. Resolved by keeping both in chronological order, appending our section after HEAD's with an `---` separator. **No source code touched.**
+
+### Verification
+- All 5 commits replayed (2 code — including 1 empty merge — plus 3 pickman-history records).
+- Android cherry-pick delta unchanged from original `2c895ca440ff`: `boot/bootmeth_android.c`, 8 insertions.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (branch was behind by ~50 commits, including the merged `cherry-1262e50a34a0`). The only conflict was in `.pickman-history` — an append-only log — resolved by keeping both sides' distinct sections in chronological order; no source code was affected. The android bootmeth cherry-pick (`boot/bootmeth_android.c`, +8 lines) is unchanged. Sandbox builds clean. Branch force-pushed; pipeline should re-run automatically.
+
+---
+
