@@ -9,6 +9,7 @@
 #include <command.h>
 #include <env.h>
 #include <cbfs.h>
+#include <mapmem.h>
 #include <vsprintf.h>
 
 static int do_cbfs_init(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -28,7 +29,11 @@ static int do_cbfs_init(struct cmd_tbl *cmdtp, int flag, int argc,
 			return 1;
 		}
 	}
-	if (file_cbfs_init(end_of_rom)) {
+	/*
+	 * The driver keeps pointers into the ROM, so the mapping has to last
+	 * beyond this command and cannot be undone here
+	 */
+	if (file_cbfs_init((ulong)map_sysmem(end_of_rom, 0))) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
 	}
@@ -51,6 +56,7 @@ static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 	unsigned long offset;
 	unsigned long count;
 	long size;
+	void *buf;
 
 	if (argc < 3) {
 		printf("usage: cbfsload <addr> <filename> [bytes]\n");
@@ -75,7 +81,9 @@ static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	printf("reading %s\n", file_cbfs_name(file));
 
-	size = file_cbfs_read(file, (void *)offset, count);
+	buf = map_sysmem(offset, count);
+	size = file_cbfs_read(file, buf, count);
+	unmap_sysmem(buf);
 
 	printf("\n%ld bytes read\n", size);
 
