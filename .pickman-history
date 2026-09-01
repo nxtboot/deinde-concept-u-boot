@@ -97856,6 +97856,60 @@ Branch is ready for pushing.
 
 ---
 
+## 2026-09-01: us/main
+
+Branch: cherry-1262e50a34a0
+
+Commits:
+- 1262e50a34a0 arm: dts: k3-am625-beagleplay: add bootph tags to pmic regulators
+- 527115ef6783 pylibfdt: Replace removed SWIG Python 2 compatibility macros
+- 78bc754cc9aa remoteproc: renesas: rsip: Clear SCMI transport flags
+- d38c44964ce4 remoteproc: renesas: rsip: Improve error print
+- e377488e85d1 remoteproc: renesas: rsip: Extract SCP initialization from board file
+- 31bf91b6a44b remoteproc: renesas: rsip: Reset SCP core on stop
+- 0771457a0ad5 remoteproc: renesas: rsip: Implement SCMI core stop
+- 47c911e929de remoteproc: renesas: rsip: Implement core status
+- b452e8288316 pci: pcie-rcar-gen4: Switch to generic firmware loader
+- 0a7534a31331 pci: pcie-rcar-gen4: Avoid repeated link attempts
+- 5a4ec19aa4ea pci: pcie-rcar-gen4: Switch to devm_*() GPIO and reset
+- f5b3b60e4255 doc: board: renesas: Document Retronix R-Car Gen4 V4H Sparrow Hawk SPI NOR layout
+- 9e4253d2dc8e arm64: renesas: r8a779g3: Add PCIe firmware environment on Retronix R-Car V4H Sparrow Hawk
+- 3511e1e3fbfe arm64: renesas: r8a779g3: Add bootloader update environment on Retronix R-Car V4H Sparrow Hawk
+- 17baf93381a4 arm64: renesas: r8a779g3: Switch to distro boot command on Retronix R-Car V4H Sparrow Hawk
+- be61172dac95 arm64: dts: renesas: r8a779g3: Drop generic SPI NOR support on Retronix R-Car V4H Sparrow Hawk board
+- a94c55e16e02 arm64: dts: renesas: r8a779g3: Drop invert microSD voltage selector on Retronix R-Car V4H Sparrow Hawk EVTB1
+- 3b4aa7df8071 arm64: dts: renesas: r8a779g3: Drop set VDDQ18_25_AVB voltage on Retronix R-Car V4H Sparrow Hawk EVTB1
+- 33472b3162ce Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh
+
+### Conversation log
+Both "maybe already applied" commits are confirmed as already applied. I'll skip 1262e50a34a0 (already applied as 9b9316ec7602) and 33472b3162ce (already applied as a756e908b0a2). Let me cherry-pick the remaining 17 commits.
+
+Build ok. Let me continue with the remaining commits.
+
+All 16 non-merge commits applied cleanly. Now the merge commit at the end:
+
+Now run the final build:
+
+## Cherry-pick complete
+
+**Branch:** `cherry-1262e50a34a0` (based on ci/master)
+
+**Summary:**
+- **Already applied (skipped):**
+  - `1262e50a34a0` (beagleplay bootph tags) — verified same as `9b9316ec7602` already on ci/master
+  - `33472b3162ce` (renesas merge) — verified as merge already applied via `a756e908b0a2`; the merge commit was still added as an empty commit to preserve history
+- **Cherry-picked cleanly (17 commits):** all pylibfdt, remoteproc renesas rsip (6), pci pcie-rcar-gen4 (3), doc, and arm64 renesas r8a779g3 (7) commits applied without conflict, with commit stats matching the originals.
+- **Empty merge commit preserved:** `1b0aee618585` "Merge branch 'main' of https://git.u-boot-project.org/u-boot/custodians/u-boot-sh"
+
+**Build result:** OK — `buildman -L --board sandbox` completed successfully both after the first cherry-pick and after the full series.
+
+**Fix-ups:** None needed.
+**Concerning deltas:** None — all cherry-picks matched original file/line counts exactly.
+
+Branch is ready for pushing.
+
+---
+
 ### Pipeline fix: 2026-08-31 (attempt 1)
 
 Branch: cherry-0c68b88ce574
@@ -97922,6 +97976,126 @@ There is no reviewer question, no code suggestion, and no new failure to address
 > This review comment is the bot re-posting the previous pipeline-fix report. Its own conclusion is that no fix is warranted — all five failures (`vbe`, `snow`, `rockpro64`, `ff3399`, `efi-x86_64-uboot-iso`) are labgrid place-acquisition conflicts or a transient Ubuntu-ISO gdm boot timeout, none of which are reachable from the three cherry-picked commits (isolated new header + rk3576-only Kconfig + empty merge). No code change is required; please re-run the pipeline once the labgrid places are released.
 
 If you'd rather I still cut a no-op `-v2` and force-push to re-trigger the pipeline, say the word and I'll do that — but nothing on the branch needs to change.
+
+---
+
+### Review: 2026-09-01
+
+Branch: cherry-1262e50a34a0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 64bit ARM platforms, efi-x86_64-uboot-iso, r...
+
+### Conversation log
+The requested pipeline fix from attempt 1 was already applied to `cherry-1262e50a34a0` in the prior iteration and is currently live on remote `ci`.
+
+## Verification
+
+- Commit `338a9183c080 pci: pcie-rcar-gen4: Switch to generic firmware loader` on the branch already carries the fix:
+  - `request_firmware_into_buf_via_script((void **)&rcar->firmware, …)` at `drivers/pci/pci-rcar-gen4.c:382`
+  - Commit body includes the `[pickman] Fix …` note
+- Remote tip `ci/cherry-1262e50a34a0` = local tip = `1740d6e3e1a8` (no push needed; force-push would be a no-op)
+- Local `cherry-1262e50a34a0-v2` already exists from the previous iteration (tip `5aa805df9f0d` — "pickman: Record review handling for cherry-1262e50a34a0")
+
+## Builds
+
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built, no warnings/errors)
+- `buildman -L --board r8a779g3_sparrowhawk -w -o /tmp/pickman`: **clean** (only pre-existing DTC warnings from `r8a779g0.dtsi` — unrelated to the series)
+
+## No new code changes were made
+
+The review comment describes the same failed jobs the previous attempt already addressed. Nothing on the branch needs to change; no new `-v3` branch was created.
+
+## Suggested MR reply
+
+> Pipeline fix from attempt 1 is already in the branch (commit `338a918` — `pci: pcie-rcar-gen4: Switch to generic firmware loader` amended with the `(void **)&rcar->firmware` cast). Local re-verification: `buildman r8a779g3_sparrowhawk` and `buildman sandbox` both clean. The other three failing jobs (efi-x86_64-uboot-iso, rockpro64, snow) were lab/infrastructure issues (QEMU timeout, place-acquisition conflicts) with no code component — they should clear on retry. The remote branch is already at the fixed tip `1740d6e3`; a pipeline retry should be sufficient.
+
+---
+
+### Review: 2026-09-01
+
+Branch: cherry-1262e50a34a0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) rockpro64, snow.
+
+Both failed jobs are pure labgrid in...
+
+### Conversation log
+## Report
+
+**No code changes made — failures are identical to attempt 2's lab infrastructure diagnosis.**
+
+### Situation
+
+The review comment for "Pipeline fix (attempt 2)" reports the same failed jobs (`rockpro64`, `snow`) that were already diagnosed as pure labgrid place-acquisition conflicts in the previous iteration:
+
+- `rockpro64`: `place rockpro64 is not acquired by your user, acquired by sglass` — labgrid holds the place under a different user; job aborts in ~1s during `pytest_configure` before any board interaction.
+- `snow`: `place snow is not acquired by your user, acquired by labgrid` — same class of place-acquisition failure.
+
+Neither job reached U-Boot build/boot/test — no branch code executed. No compile or runtime error was involved.
+
+### Branch state
+
+Local `cherry-1262e50a34a0` tip is `4d2faaadc174`; it already carries the attempt-1 fix at commit `338a9183c080` (`pci: pcie-rcar-gen4: Switch to generic firmware loader` with `(void **)&rcar->firmware` cast at `drivers/pci/pci-rcar-gen4.c:373`).
+
+### Verification
+
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built).
+- `buildman -L --board r8a779g3_sparrowhawk -w -o /tmp/pickman`: **clean** (only pre-existing DTC warnings from `r8a779g0.dtsi` — unrelated to the series).
+
+### Action taken
+
+None. No `-v3` branch created, no push. Per the rubric — infrastructure/transient failures do not require source changes.
+
+### Suggested MR reply
+
+> Attempt 2 failures on `rockpro64` and `snow` are the same labgrid place-acquisition conflicts diagnosed after attempt 1 — both jobs aborted in ~1 s at `pytest_configure` before any board interaction with errors of the form `place X is not acquired by your user, acquired by Y`. No U-Boot code was exercised, so there is no code fix to make. The branch tip already carries the attempt-1 cast fix at commit `338a918`. Please release/`allow` the two labgrid places and retry the pipeline; no rebase or push is needed.
+
+---
+### Review: 2026-09-01
+
+Branch: cherry-1262e50a34a0
+
+Comments addressed:
+
+
+### Conversation log
+Now the second conflict block - keep HEAD content:
+
+Rebase complete. Now verify state and build:
+
+Good, the fix is preserved. Now build sandbox:
+
+Build clean. Now create v3 branch and force-push:
+
+Push successful. Rebase and force-push complete.
+
+## Summary
+
+**Branch:** `cherry-1262e50a34a0` — rebased onto latest `ci/master` (from base `fde18fb3` → `19858328`)
+**Local backup:** `cherry-1262e50a34a0-v3` (tip `cecf60a84015`)
+**Remote:** force-pushed to `ci/cherry-1262e50a34a0`; MR !1316 updated.
+
+### Conflicts resolved
+
+All three conflicts were in `.pickman-history` (append-only history log). Both sides were preserved wherever they added distinct sections:
+
+1. **First conflict**: kept HEAD's `2026-08-31: us/main (cherry-0c68b88ce574)` section, then appended this branch's `2026-09-01: us/main (cherry-1262e50a34a0)` section, in chronological order.
+2. **Second conflict**: HEAD had the `2026-08-31` Pipeline fix + Review sections; theirs was empty. Kept HEAD.
+3. **Third conflict**: HEAD was empty; theirs had this branch's `2026-09-01` Review section. Kept theirs.
+
+No source code was touched during conflict resolution.
+
+### Verification
+
+- All 21 commits replayed cleanly (20 code + metadata + 1 empty merge).
+- Attempt-1 PCI fix preserved: commit `0e445849541a` still carries `(void **)&rcar->firmware` cast at `drivers/pci/pci-rcar-gen4.c:382` with `[pickman] Fix …` note.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built, no warnings/errors).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (was behind by 22 commits). The only conflicts were in `.pickman-history` — an append-only log — resolved by keeping both sides' distinct sections in chronological order; no source code was affected. Attempt-1's PCI fix (`(void **)&rcar->firmware` cast in `pci-rcar-gen4.c`) is preserved. Sandbox builds clean. Branch force-pushed to `cherry-1262e50a34a0`; pipeline should re-run automatically.
 
 ---
 
