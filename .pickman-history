@@ -98270,3 +98270,51 @@ All 3 commits cherry-picked successfully onto branch `cherry-58b49a7b54ba`:
 Branch is ready for pushing.
 ---
 
+### Review: 2026-09-01
+
+Branch: cherry-58b49a7b54ba
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) samus_tpl, rockpro64, snow.
+
+All three failures are in...
+
+### Conversation log
+The branch is already based on the current `ci/master` HEAD — no rebase is actually needed (merge-base equals `ci/master`). Let me verify with a build and understand the review comment.
+
+Build passes. The branch is already at the current `ci/master` (nothing to rebase), and the "review comment" is a bot-posted report from the previous pipeline-fix attempt explaining that the CI failures were infrastructure/lab issues requiring no code changes. There is nothing actionable in the comment.
+
+Let me create the `-v2` branch and push to update the MR.
+
+Task complete — no todos needed for this straightforward push.
+
+## Report
+
+### Rebase
+No rebase was required. The branch `cherry-58b49a7b54ba` was already based on the current `ci/master` HEAD (merge-base `215c1c5b93ab` == `ci/master`). The branch is 4 commits ahead / 0 behind, so `git rebase --keep-empty ci/master` would have been a no-op.
+
+Branch commits (unchanged):
+- `5b6af5dfd01b` gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression
+- `f66a21d64f8f` test: cmd: Add gzwrite chunk boundary regression test
+- `322ba7cf2c3d` Merge patch series "gunzip: Fix spurious Z_BUF_ERROR..." (empty merge, preserved)
+- `c931b5acee66` pickman: Record cherry-pick of 3 commits from us/main
+
+### Review comment
+The single "review comment" flagged for this task was the automated **Pipeline fix (attempt 1)** bot report itself — a status post explaining that the previous run's failures (`samus_tpl`, `rockpro64`, `snow`) were pure lab/infrastructure issues (labgrid contention on two boards, transient SDRAM-training flake on the third) unrelated to the gunzip/test changes on this branch. That report was a *conclusion*, not a change request, so nothing is actionable and no code changes were made.
+
+### Build
+`buildman -L --board sandbox -w -o /tmp/pickman` — passes cleanly (1/1 built, 12 s).
+
+### Push
+- Local v2 branch created: `cherry-58b49a7b54ba-v2`
+- Force-pushed to remote `cherry-58b49a7b54ba` on `ci` (`9ec1013152c3 → c931b5acee66`), which retriggers the MR pipeline on !1319.
+
+### Suggested MR reply
+> Rebase not required — branch already sits on current `ci/master` (merge-base matches `ci/master` HEAD, 0 commits behind). No conflicts.
+>
+> Re the previous pipeline-fix comment: those `samus_tpl` / `rockpro64` / `snow` failures were lab/infrastructure issues (labgrid contention on two boards, transient SDRAM-training flake on samus_tpl) with no relation to the two-file change on this branch (`lib/gunzip.c` + a Python test). No code change is warranted; retriggering the pipeline via a force-push of the unchanged branch to exercise fresh lab runs.
+>
+> Local sandbox build via `buildman -L --board sandbox` passes.
+
+---
+
