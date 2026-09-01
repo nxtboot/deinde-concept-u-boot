@@ -21,6 +21,7 @@ static int do_clone(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv
 	unsigned long wrcnt, rdcnt, requested, srcblk, destblk;
 	unsigned long timer;
 	const unsigned long buffersize = 1024 * 1024;
+	bool ok = true;
 
 	if (argc < 6)
 		return CMD_RET_USAGE;
@@ -84,6 +85,7 @@ read:
 		ret = blk_dread(srcdesc, srcblk, toread, buf + offset);
 		if (ret <= 0) {
 			printf("Src read error @blk %ld\n", srcblk);
+			ok = false;
 			goto exit;
 		}
 		rdcnt += ret * srcbz;
@@ -98,6 +100,7 @@ write:
 		ret = blk_dwrite(destdesc, destblk, towrite, buf + offset);
 		if (ret <= 0) {
 			printf("Dest write error @blk %ld\n", destblk);
+			ok = false;
 			goto exit;
 		}
 		wrcnt += ret * destbz;
@@ -120,7 +123,7 @@ exit:
 		printf("%ldms\n", timer);
 	free(buf);
 
-	return 0;
+	return ok ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
 
 U_BOOT_CMD(
