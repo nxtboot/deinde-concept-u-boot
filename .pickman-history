@@ -97978,3 +97978,36 @@ There is no reviewer question, no code suggestion, and no new failure to address
 If you'd rather I still cut a no-op `-v2` and force-push to re-trigger the pipeline, say the word and I'll do that — but nothing on the branch needs to change.
 
 ---
+
+### Review: 2026-09-01
+
+Branch: cherry-1262e50a34a0
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 64bit ARM platforms, efi-x86_64-uboot-iso, r...
+
+### Conversation log
+The requested pipeline fix from attempt 1 was already applied to `cherry-1262e50a34a0` in the prior iteration and is currently live on remote `ci`.
+
+## Verification
+
+- Commit `338a9183c080 pci: pcie-rcar-gen4: Switch to generic firmware loader` on the branch already carries the fix:
+  - `request_firmware_into_buf_via_script((void **)&rcar->firmware, …)` at `drivers/pci/pci-rcar-gen4.c:382`
+  - Commit body includes the `[pickman] Fix …` note
+- Remote tip `ci/cherry-1262e50a34a0` = local tip = `1740d6e3e1a8` (no push needed; force-push would be a no-op)
+- Local `cherry-1262e50a34a0-v2` already exists from the previous iteration (tip `5aa805df9f0d` — "pickman: Record review handling for cherry-1262e50a34a0")
+
+## Builds
+
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built, no warnings/errors)
+- `buildman -L --board r8a779g3_sparrowhawk -w -o /tmp/pickman`: **clean** (only pre-existing DTC warnings from `r8a779g0.dtsi` — unrelated to the series)
+
+## No new code changes were made
+
+The review comment describes the same failed jobs the previous attempt already addressed. Nothing on the branch needs to change; no new `-v3` branch was created.
+
+## Suggested MR reply
+
+> Pipeline fix from attempt 1 is already in the branch (commit `338a918` — `pci: pcie-rcar-gen4: Switch to generic firmware loader` amended with the `(void **)&rcar->firmware` cast). Local re-verification: `buildman r8a779g3_sparrowhawk` and `buildman sandbox` both clean. The other three failing jobs (efi-x86_64-uboot-iso, rockpro64, snow) were lab/infrastructure issues (QEMU timeout, place-acquisition conflicts) with no code component — they should clear on retry. The remote branch is already at the fixed tip `1740d6e3`; a pipeline retry should be sufficient.
+
+---
