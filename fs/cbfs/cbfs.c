@@ -4,6 +4,7 @@
  */
 
 #include <cbfs.h>
+#include <cbfsfs.h>
 #include <log.h>
 #include <malloc.h>
 #include <linux/errno.h>
@@ -313,7 +314,14 @@ static int cbfs_init(struct cbfs_priv *priv, ulong end_of_rom)
 
 int file_cbfs_init(ulong end_of_rom)
 {
-	return cbfs_init(&cbfs_s, end_of_rom);
+	int ret;
+
+	ret = cbfs_init(&cbfs_s, end_of_rom);
+	if (ret)
+		return ret;
+
+	/* the VFS can reach the files now, if it is in use */
+	return cbfs_vfs_bind();
 }
 
 int cbfs_init_mem(ulong base, ulong size, bool require_hdr,
