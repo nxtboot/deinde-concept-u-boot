@@ -110,6 +110,20 @@ the wrong magic value or puts the start of the files past the end of the ROM.
 Note that the command reads the address it is given without checking it, so a
 wrong value is as likely to crash U-Boot as to be reported.
 
+Using the generic file commands
+-------------------------------
+
+Once this command has run, CBFS is available to the generic file commands as
+the 'cbfs' interface. It has no block device, so the device and partition are
+given as '-'::
+
+    => cbfsinit
+    => load cbfs - 1000000 u-boot
+    32 bytes read in 0 ms
+
+The generic commands read the same files as *cbfsload* and use the same
+in-memory copy of the CBFS metadata, so cbfsinit must have run first.
+
 See also
 --------
 
