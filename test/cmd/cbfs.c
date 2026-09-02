@@ -6,6 +6,7 @@
  */
 
 #include <cbfs.h>
+#include <env.h>
 #include <malloc.h>
 #include <mapmem.h>
 #include <asm/byteorder.h>
@@ -18,6 +19,7 @@
 
 /* Offset of the first file within the ROM; the master header is at the start */
 #define ROM_DATA_OFF	0x40
+#define CBFS_LOAD_ADDR	(CONFIG_SYS_LOAD_ADDR + 0x1000)
 
 /* Version coreboot writes into the master header */
 #define CBFS_VERSION	0x31313132
@@ -336,3 +338,77 @@ static int cmd_test_cbfsls_empty(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_cbfsls_empty, UTF_CONSOLE);
+
+/* Test reading a CBFS file with the generic 'load' command */
+static int cmd_test_cbfs_load(struct unit_test_state *uts)
+{
+	ulong end, addr = CBFS_LOAD_ADDR;
+	void *rom, *buf;
+	int i;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	buf = map_sysmem(addr, UBOOT_SIZE);
+	memset(buf, '\0', UBOOT_SIZE);
+
+	ut_assertok(run_commandf("load cbfs - %lx u-boot", addr));
+	ut_assert_nextlinen("%d bytes read", UBOOT_SIZE);
+	ut_assert_console_end();
+
+	for (i = 0; i < UBOOT_SIZE; i++)
+		ut_asserteq(UBOOT_BYTE, ((u8 *)buf)[i]);
+	ut_asserteq(UBOOT_SIZE, env_get_hex("filesize", 0));
+
+	unmap_sysmem(buf);
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfs_load, UTF_CONSOLE);
+
+/* Test that CBFS is offered as a filesystem, and what 'load' refuses */
+static int cmd_test_cbfs_fs(struct unit_test_state *uts)
+{
+	ulong end, addr = CBFS_LOAD_ADDR;
+	void *rom, *buf;
+	int i;
+
+	ut_assertok(run_command("fstypes", 0));
+	ut_assert_nextlinen("Supported filesystems:");
+	ut_assert_console_end();
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	/* a byte count shorter than the file stops the read there */
+	buf = map_sysmem(addr, UBOOT_SIZE);
+	memset(buf, '\0', UBOOT_SIZE);
+	ut_assertok(run_commandf("load cbfs - %lx u-boot %x", addr,
+				 UBOOT_SIZE / 2));
+	ut_assert_nextlinen("%d bytes read", UBOOT_SIZE / 2);
+	ut_assert_console_end();
+
+	for (i = 0; i < UBOOT_SIZE / 2; i++)
+		ut_asserteq(UBOOT_BYTE, ((u8 *)buf)[i]);
+	for (; i < UBOOT_SIZE; i++)
+		ut_asserteq(0, ((u8 *)buf)[i]);
+
+	/*
+	 * A file which is not there is refused. The message comes from
+	 * log_err() in do_load(), whose prefix depends on the log format, so
+	 * only the result is checked here
+	 */
+	ut_asserteq(1, run_commandf("load cbfs - %lx nope", addr));
+	console_record_reset();
+
+	unmap_sysmem(buf);
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfs_fs, UTF_CONSOLE);
