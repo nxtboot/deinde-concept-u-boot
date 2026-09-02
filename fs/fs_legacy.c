@@ -20,6 +20,7 @@
 #include <ext4fs.h>
 #include <ext4l.h>
 #include <fat.h>
+#include <cbfsfs.h>
 #include <isofs.h>
 #include <fs_legacy.h>
 #include <sandboxfs.h>
@@ -328,6 +329,27 @@ static struct fstype_info fstypes[] = {
 		.size = sandbox_fs_size,
 		.read = fs_read_sandbox,
 		.write = fs_write_sandbox,
+		.uuid = fs_uuid_unsupported,
+		.opendir = fs_opendir_unsupported,
+		.unlink = fs_unlink_unsupported,
+		.mkdir = fs_mkdir_unsupported,
+		.ln = fs_ln_unsupported,
+		.rename = fs_rename_unsupported,
+		.statfs = fs_statfs_unsupported,
+	},
+#endif
+#if CONFIG_IS_ENABLED(FS_CBFS)
+	{
+		.fstype = FS_TYPE_CBFS,
+		.name = "cbfs",
+		.null_dev_desc_ok = true,
+		.probe = cbfs_fs_set_blk_dev,
+		.close = fs_close_unsupported,
+		.ls = cbfs_fs_ls,
+		.exists = cbfs_fs_exists,
+		.size = cbfs_fs_size,
+		.read = cbfs_fs_read,
+		.write = fs_write_unsupported,
 		.uuid = fs_uuid_unsupported,
 		.opendir = fs_opendir_unsupported,
 		.unlink = fs_unlink_unsupported,

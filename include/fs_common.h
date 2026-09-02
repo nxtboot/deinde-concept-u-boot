@@ -23,6 +23,7 @@ enum fs_type_t {
 	FS_TYPE_EXFAT,
 	FS_TYPE_VIRTIO,
 	FS_TYPE_ISO,
+	FS_TYPE_CBFS,
 };
 
 /*
