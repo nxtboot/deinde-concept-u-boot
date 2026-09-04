@@ -110,6 +110,7 @@ obj-$(CONFIG_CMD_TPM_TEST) += tpmtest.o
 obj-$(CONFIG_CMD_TKEY) += tkey.o
 ifdef CONFIG_NET_LEGACY
 obj-$(CONFIG_CMD_DNS) += dns.o
+obj-$(CONFIG_CMD_LINK_LOCAL) += linklocal.o
 obj-$(CONFIG_CMD_WGET) += wget.o
 endif
 obj-$(CONFIG_ARM_FFA_TRANSPORT) += armffa.o
