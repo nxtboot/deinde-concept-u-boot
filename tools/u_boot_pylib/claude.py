@@ -35,12 +35,13 @@ fatal_seen = None  # pylint: disable=invalid-name
 
 
 def find_cli():
-    """Find the Claude Code binary which the SDK will actually run
+    """Find the Claude Code binary to run
 
     The SDK prefers a copy bundled inside claude_agent_sdk over anything on
-    the path, so the version in use is often not the one 'claude --version'
-    reports in a shell.  This mirrors that search so the difference can be
-    seen rather than guessed at.  CLAUDE_CLI overrides the lot.
+    the path, and 'claude update' never touches that copy, so left to itself
+    it runs whatever was current when the SDK was installed.  Pick the newer
+    of the two instead, so that updating either one is enough.  CLAUDE_CLI
+    overrides the lot.
 
     Return:
         tuple:
@@ -50,15 +51,51 @@ def find_cli():
     chosen = os.environ.get('CLAUDE_CLI')
     if chosen:
         return chosen, False
+    on_path = shutil.which('claude')
+    bundled = find_bundled_cli()
+    if not bundled:
+        return on_path, False
+    if not on_path:
+        return bundled, True
+    if parse_version(get_cli_version(on_path)) > parse_version(
+            get_cli_version(bundled)):
+        return on_path, False
+    return bundled, True
+
+
+def find_bundled_cli():
+    """Find the Claude Code binary bundled with the SDK, if there is one
+
+    Return:
+        str: Path to the binary, or None if the SDK or its copy is missing
+    """
     try:
         import claude_agent_sdk  # pylint: disable=import-outside-toplevel
-        bundled = os.path.join(os.path.dirname(claude_agent_sdk.__file__),
-                               '_bundled', 'claude')
-        if os.path.isfile(bundled):
-            return bundled, True
     except ImportError:
-        pass
-    return shutil.which('claude'), False
+        return None
+    bundled = os.path.join(os.path.dirname(claude_agent_sdk.__file__),
+                           '_bundled', 'claude')
+    return bundled if os.path.isfile(bundled) else None
+
+
+def parse_version(version):
+    """Turn a version string into something that sorts
+
+    Args:
+        version (str): Version such as '2.1.260', or None
+
+    Return:
+        tuple: Numeric parts of the version, empty if it could not be read
+    """
+    if not version:
+        return ()
+    parts = []
+    for part in version.split('.'):
+        digits = ''.join(c for c in part if c.isdigit())
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts)
 
 
 def get_cli_version(path):
@@ -126,11 +163,15 @@ announced = False  # pylint: disable=invalid-name
 def cli_path_option():
     """Give the cli_path argument for ClaudeAgentOptions, if one is wanted
 
+    The SDK finds its own bundled copy without help, so the path is only
+    passed when something else should run instead.
+
     Return:
-        dict: {'cli_path': ...} when CLAUDE_CLI names a binary, else {}
+        dict: {'cli_path': ...} when a binary other than the bundled one is
+            wanted, else {}
     """
-    chosen = os.environ.get('CLAUDE_CLI')
-    return {'cli_path': chosen} if chosen else {}
+    path, bundled = find_cli()
+    return {'cli_path': path} if path and not bundled else {}
 
 
 def announce_cli():

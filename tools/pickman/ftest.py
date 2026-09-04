@@ -8975,10 +8975,69 @@ class TestClaudeCli(unittest.TestCase):
         self.assertEqual(claude.cli_path_option(),
                          {'cli_path': '/somewhere/claude'})
 
-    def test_no_option_without_override(self):
-        """Test that the SDK is left to choose when nothing is set"""
+    def test_no_option_for_bundled(self):
+        """Test that the SDK is left to find its own copy when that wins"""
         os.environ.pop('CLAUDE_CLI', None)
-        self.assertEqual(claude.cli_path_option(), {})
+        with mock.patch.object(claude, 'find_cli',
+                               return_value=('/sdk/_bundled/claude', True)):
+            self.assertEqual(claude.cli_path_option(), {})
+
+    def test_newer_on_path_wins(self):
+        """Test that a newer copy on the path beats the bundled one
+
+        The SDK would run its bundled copy, which 'claude update' never
+        touches, so an update to the one on the path must be handed over.
+        """
+        os.environ.pop('CLAUDE_CLI', None)
+        versions = {'/sdk/_bundled/claude': '2.1.117',
+                    '/home/me/.local/bin/claude': '2.1.260'}
+        with mock.patch.object(claude, 'find_bundled_cli',
+                               return_value='/sdk/_bundled/claude'), \
+             mock.patch.object(claude.shutil, 'which',
+                               return_value='/home/me/.local/bin/claude'), \
+             mock.patch.object(claude, 'get_cli_version',
+                               side_effect=versions.get):
+            self.assertEqual(claude.find_cli(),
+                             ('/home/me/.local/bin/claude', False))
+            self.assertEqual(claude.cli_path_option(),
+                             {'cli_path': '/home/me/.local/bin/claude'})
+
+    def test_newer_bundled_wins(self):
+        """Test that the bundled copy is kept when it is the newer one"""
+        os.environ.pop('CLAUDE_CLI', None)
+        versions = {'/sdk/_bundled/claude': '2.1.300',
+                    '/home/me/.local/bin/claude': '2.1.260'}
+        with mock.patch.object(claude, 'find_bundled_cli',
+                               return_value='/sdk/_bundled/claude'), \
+             mock.patch.object(claude.shutil, 'which',
+                               return_value='/home/me/.local/bin/claude'), \
+             mock.patch.object(claude, 'get_cli_version',
+                               side_effect=versions.get):
+            self.assertEqual(claude.find_cli(),
+                             ('/sdk/_bundled/claude', True))
+
+    def test_only_one_copy(self):
+        """Test that whichever copy exists is used when there is only one"""
+        os.environ.pop('CLAUDE_CLI', None)
+        with mock.patch.object(claude, 'find_bundled_cli',
+                               return_value=None), \
+             mock.patch.object(claude.shutil, 'which',
+                               return_value='/usr/bin/claude'):
+            self.assertEqual(claude.find_cli(), ('/usr/bin/claude', False))
+        with mock.patch.object(claude, 'find_bundled_cli',
+                               return_value='/sdk/_bundled/claude'), \
+             mock.patch.object(claude.shutil, 'which', return_value=None):
+            self.assertEqual(claude.find_cli(),
+                             ('/sdk/_bundled/claude', True))
+
+    def test_parse_version(self):
+        """Test that versions compare numerically, not as strings"""
+        self.assertGreater(claude.parse_version('2.1.260'),
+                           claude.parse_version('2.1.99'))
+        self.assertEqual(claude.parse_version('2.1.117-beta'), (2, 1, 117))
+        self.assertEqual(claude.parse_version(None), ())
+        self.assertGreater(claude.parse_version('0.0.1'),
+                           claude.parse_version(None))
 
     def test_describe_says_where_from(self):
         """Test that the description says where the binary came from
