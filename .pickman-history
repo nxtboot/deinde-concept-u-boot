@@ -98373,3 +98373,61 @@ One note for context: the earlier `samus_tpl` / `rockpro64` / `snow` failures we
 
 ---
 
+### Review: 2026-09-04
+
+Branch: cherry-58b49a7b54ba
+
+Comments addressed:
+
+
+### Conversation log
+I'll check out the branch and see how far behind `ci/master` it is.
+
+The branch is 7 commits behind, 6 ahead. Let me record pre-rebase deltas and see what's upstream, then rebase.
+
+Upstream contains `.pickman-history` edits from another cherry branch (`cherry-35432ef6fe2c`), so a conflict on that file is likely. Running the rebase now.
+
+The three code commits (1–3) applied cleanly; the conflict is on `.pickman-history` in commit 4, as expected. Let me look at the conflict markers and the file's structure.
+
+Conflict resolved cleanly. Let me verify the tail of the file looks right and continue the rebase — the remaining two commits also touch `.pickman-history`, so they may conflict too.
+
+Tests ran; let me confirm the pass/fail summary line (my grep pattern was too narrow) before pushing.
+
+All three tests pass (failures: 0). Now the final step: force-push to the original remote branch to update the MR.
+
+Push landed (`7d253ee7bee9 → 578bd2e3e128`, forced update) and GitLab reports the MR link, so the !1319 pipeline will retrigger. Nothing further is pending — here's the report.
+
+## Report
+
+### Rebase
+The branch was **7 commits behind** `ci/master` (the `cherry-35432ef6fe2c` merge — an android bootmeth cherry-pick plus its pickman-history records). `git rebase --keep-empty ci/master` replayed all 6 commits, with **one conflict** in `.pickman-history` at commit 4 (`pickman: Record cherry-pick of 3 commits from us/main`).
+
+**Conflict resolution:** `.pickman-history` is an append-only log, and both sides had appended a `## 2026-09-01: us/main` section under the same heading — HEAD's for `cherry-35432ef6fe2c`, ours for `cherry-58b49a7b54ba`. I kept HEAD's section, then appended ours after it with its own heading and `---` separator, preserving chronological order. **No source code was involved in the conflict.** The two later pickman-history commits then applied cleanly.
+
+| Before | After | Subject |
+|---|---|---|
+| `beff505aba56` | `f0db968a5989` | gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression |
+| `b3f20396c732` | `9c8d5aec3eac` | test: cmd: Add gzwrite chunk boundary regression test |
+| `b4f906055e82` | `a7778e0b2de0` | Merge patch series "gunzip: ..." (empty, preserved) |
+| `461a7dad0b81` | `188b3d57e4eb` | pickman: Record cherry-pick of 3 commits from us/main (conflict resolved) |
+| `7d253ee7bee9` | `46b90e237452` | pickman: Record review handling for cherry-58b49a7b54ba |
+| `dad94e9524da` | `578bd2e3e128` | pickman: Record review handling for cherry-58b49a7b54ba |
+
+### Verification
+- **Deltas:** `git show --stat` compared before/after for every commit. All code deltas identical (`lib/gunzip.c +10`, `test/cmd/unzip.c +116/-2`, empty merge, `+48`, `+55`). The conflict-resolved commit went from 27 → 26 insertions; I diffed the added lines directly and the only difference is one trailing blank line that is now deduplicated against the `---` separator — content is otherwise byte-identical.
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, 12 s, no warnings.
+- **Tests:** `cmd_zip_unzip`, `cmd_zip_gzwrite` and the new `cmd_gzwrite_chunk_boundary` all pass on the rebased binary (failures: 0 each).
+
+### Branches
+- Local versioned branch: `cherry-58b49a7b54ba-v4` (`-v2` and `-v3` already existed from previous rounds).
+- Force-pushed `cherry-58b49a7b54ba` to `ci` via `pickman push-branch -f`: `7d253ee7bee9 → 578bd2e3e128`. MR title untouched.
+
+### Suggested MR reply
+> Rebased onto current `ci/master` (was 7 commits behind, from the `cherry-35432ef6fe2c` merge). The only conflict was in `.pickman-history` — an append-only log where both branches had added a section for the same date — resolved by keeping both sections in chronological order. No source code was affected; the `lib/gunzip.c` and `test/cmd/unzip.c` deltas are identical to the pre-rebase branch and the empty merge commit is preserved via `--keep-empty`.
+>
+> Local sandbox build via `buildman -L --board sandbox` passes, and the `cmd_zip_unzip`, `cmd_zip_gzwrite` and `cmd_gzwrite_chunk_boundary` unit tests all pass on the rebased tree.
+
+One note: this rebase cycle keeps recurring because each cherry MR merged into `master` appends to `.pickman-history`, guaranteeing a conflict for every other open cherry MR. It's always trivially resolvable, but if it becomes a nuisance it may be worth having pickman write per-branch history files instead of one shared log.
+
+---
+
