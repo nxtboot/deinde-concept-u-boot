@@ -109,7 +109,7 @@ void link_local_start(void)
 	ip = string_to_ip(env_get("llipaddr"));
 	if (ip.s_addr != 0 &&
 	    (ntohl(ip.s_addr) & IN_CLASSB_NET) != LINKLOCAL_ADDR) {
-		puts("invalid link address");
+		puts("invalid link address\n");
 		net_set_state(NETLOOP_FAIL);
 		return;
 	}
