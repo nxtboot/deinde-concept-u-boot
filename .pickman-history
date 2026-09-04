@@ -98657,3 +98657,42 @@ There is nothing to change. A `-v2` branch would be source-identical to the curr
 
 ---
 
+### Pipeline fix: 2026-09-04 (attempt 3)
+
+Branch: cherry-5c8c261ffce9
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- snow (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and job logs.
+
+## Result: infrastructure failures only — no code change needed
+
+Both failed jobs are unrelated to MR !1322. The CI-tested commit (1cd3ec8e) differs from ci/master only by the four ADI sc594/sc598 defconfigs (+4/−3) plus `.pickman-history` bookkeeping; neither failing job touches those boards. I made no source changes. Branch `cherry-5c8c261ffce9-fix3` exists locally at the same commit as `cherry-5c8c261ffce9` (d2488e970a3d), ready for the caller.
+
+### Root cause per job
+
+**snow (job 637857)** — labgrid place held by another user, same as attempts 1 and 2.
+- Fails in `u-boot-test-getrole snow --configure` before U-Boot is built or run: `place snow is not acquired by your user, acquired by labgrid` (owner `kea/labgrid`).
+- This is the third consecutive attempt blocked by this; it will keep failing until the place is released or `labgrid-client -p snow allow ellesmere/gitlab-runner` is run.
+
+**efi-x86_64-uboot-iso-install (job 637884)** — job killed by a 10-minute execution limit that is not in the tree.
+- The log shows the Ubuntu autoinstall proceeding normally inside the guest: partitioning, image extraction, package installation (`grub-efi-amd64-signed`, `shim-signed`, …) all completed and it was in curthooks (`configuring raid (mdadm) service`) when GitLab reported `Job failed: execution took longer than 10m0s seconds`. There is no U-Boot error; U-Boot had already booted the installer.
+- `.gitlab-ci.yml` (both at HEAD and at the tested commit 1cd3ec8e) sets `timeout: 2h` for this job, and its own comment says the test takes ~30–45 min. The `.sjg_lab_template` adds no timeout override. So the 10-minute cap must be the runner's "Maximum job timeout" (or a project-level setting) overriding the job's 2h value — a runner configuration problem, not something this MR can fix. As configured, this job can never pass regardless of the code.
+- The MR only changes ARM sc59x defconfigs; the job builds and boots `efi-x86_app64`.
+
+### Verification that the MR is sound
+
+- `um build sandbox` — rc=0, clean
+- `buildman -o /tmp/pickman snow efi-x86_app64 sc594-som-ezkit-spl sc594-som-ezlite-spl sc598-som-ezkit-spl sc598-som-ezlite-spl` — all six build. rc=101 is warnings-only: snow and efi-x86_app64 are clean; the sc59x warnings (`spi_bus_bridge` dtc warnings, `CONFIG_OF_EMBED` notice) are pre-existing and identical to ci/master, as established in attempt 1.
+
+### Recommended action
+
+- Release the `snow` labgrid place (or allow `ellesmere/gitlab-runner` on it) — this has now blocked three attempts.
+- Raise the maximum job timeout on the runner that executes `sjg-lab-slow` jobs to at least the job's declared 2h (I could not query the runner directly since `glab` is not installed here, but the 10m0s figure does not appear anywhere in the CI config).
+- Then retry the pipeline; no new push is required, since the fix3 branch is identical to the MR branch.
+
+---
+
