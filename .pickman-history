@@ -98614,3 +98614,46 @@ Retry the failed jobs, **after** cleaning `/tmp` on the `single`-tagged world-bu
 
 ---
 
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) build all 64bit ARM platforms, efi-x86_64-uboot-iso, s...
+
+### Conversation log
+I'll check the branch state first, then decide whether the comment is actionable.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The single "review comment" on !1322 is, once again, the bot's own **pipeline-fix (attempt 2) report** echoed back as a discussion note. It requests no changes; its conclusion is that all three failed jobs (64-bit ARM world build, efi-x86_64-uboot-iso, snow) were infrastructure or intermittent failures and that the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out. Local HEAD is `2349a11047f8`, remote `ci/cherry-5c8c261ffce9` is `1cd3ec8e8c5e`. The only difference is one local `.pickman-history` bookkeeping commit (52 lines added to that file, nothing else).
+- Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is nothing to change. A `-v2` branch would be source-identical to the current MR branch, and force-pushing would only publish the `.pickman-history` bookkeeping commit — no defconfig or code differences — which would trigger a new pipeline that hits the same unfixed runner disk and labgrid-place problems. That would just add noise to the MR.
+
+### Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report rather than a review request, so no code changes are needed. The branch is unchanged (source delta vs master is still only the four sc594/sc598 defconfigs) and builds cleanly with buildman for sandbox.
+>
+> The attempt-2 failures remain infrastructure-only:
+> - **build all 64bit ARM platforms**: `/tmp` on the `single`-tagged runner is still full (`No space left on device`, buildman rc=102 = exceptions, not build errors) — second consecutive attempt to hit this
+> - **snow**: labgrid place still held by `kea/labgrid`; fails in `u-boot-test-getrole` before U-Boot runs
+> - **efi-x86_64-uboot-iso**: one-off `Initramfs unpacking failed: ZSTD-compressed data is corrupt` inside the guest kernel; the same job passed on sibling MRs !1321 and !1323 on the same base
+>
+> Please clean `/tmp` on the world-build runner and release (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) the snow place, then retry the failed jobs.
+
+### Action needed from a human
+
+- Clean up disk on the `single`-tagged world-build runner (this has now blocked two attempts)
+- Release the `snow` labgrid place
+- Retry the pipeline — no new push is required
+
+---
+
