@@ -22,6 +22,7 @@ our_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(our_path, '..'))
 
 # pylint: disable=wrong-import-position,import-error,cyclic-import
+from u_boot_pylib import claude
 from u_boot_pylib import command
 from u_boot_pylib import terminal
 from u_boot_pylib import tools
@@ -8943,6 +8944,53 @@ class TestAbsentOrigin(unittest.TestCase):
         with terminal.capture():
             partial = control.drift_absent_partial(origin, {'a.c'})
         self.assertEqual(partial, {})
+
+
+class TestFatalAgentError(unittest.TestCase):
+    """Tests for spotting an agent failure which will always repeat"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.old = claude.fatal_seen
+        claude.fatal_seen = None
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        claude.fatal_seen = self.old
+
+    def test_version_error_is_fatal(self):
+        """Test that a version mismatch is seen as a setup problem"""
+        self.assertTrue(claude.is_fatal_error(
+            'Claude Code 2.1.117 does not support this model; version '
+            "2.1.251 or newer is required. Run 'claude update'"))
+
+    def test_login_error_is_fatal(self):
+        """Test that a missing login is seen as a setup problem"""
+        self.assertTrue(claude.is_fatal_error('authentication_error'))
+
+    def test_ordinary_failure_is_not(self):
+        """Test that a failure in the work itself is not called fatal"""
+        self.assertFalse(claude.is_fatal_error('merge conflict in foo.c'))
+        self.assertFalse(claude.is_fatal_error('Command failed with code 1'))
+
+    def test_reports_and_records(self):
+        """Test that a fatal failure is reported and remembered
+
+        A caller which loops needs to know, or it retries the same broken
+        setup for ever and buries the reason in identical errors.
+        """
+        with terminal.capture() as (_, stderr):
+            claude._report_failure(RuntimeError('authentication_error'))
+        out = stderr.getvalue()
+        self.assertIn('problem with the setup', out)
+        self.assertTrue(claude.fatal_seen)
+
+    def test_ordinary_failure_not_recorded(self):
+        """Test that an ordinary failure does not stop a loop"""
+        with terminal.capture() as (_, stderr):
+            claude._report_failure(RuntimeError('conflict in foo.c'))
+        self.assertIn('Agent failed', stderr.getvalue())
+        self.assertIsNone(claude.fatal_seen)
 
 
 if __name__ == '__main__':

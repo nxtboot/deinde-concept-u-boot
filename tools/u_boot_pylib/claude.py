@@ -12,6 +12,35 @@ AI assistance (e.g. pickman, patman review).
 
 from u_boot_pylib import tout
 
+# Markers in an agent failure which mean every later call will fail too: the
+# tool is too old, or not signed in, or asked for a model it cannot serve.
+# Retrying these achieves nothing, so a caller which loops needs to know
+FATAL_MARKERS = (
+    'does not support this model',
+    'claude_code_version_too_old',
+    'is required. Run \'claude update\'',
+    'authentication_error',
+    'invalid_api_key',
+    'Please run /login',
+)
+
+
+# Set once a failure is seen which will repeat, so that a caller which loops
+# can stop instead of retrying the same thing for ever
+fatal_seen = None  # pylint: disable=invalid-name
+
+
+def is_fatal_error(text):
+    """Check whether an agent failure will repeat on every future call
+
+    Args:
+        text (str): The error text
+
+    Return:
+        bool: True if the failure is in the setup rather than the request
+    """
+    return any(mark in text for mark in FATAL_MARKERS)
+
 # Maximum buffer size for agent responses
 MAX_BUFFER_SIZE = 10 * 1024 * 1024  # 10MB
 
@@ -68,10 +97,25 @@ async def run_agent_collect(prompt, options):
                         conversation_log.append(block.text)
         return True, '\n\n'.join(conversation_log)
     except (RuntimeError, ValueError, OSError) as exc:
-        tout.error(f'Agent failed: {exc}')
+        _report_failure(exc)
         return False, '\n\n'.join(conversation_log)
     except Exception as exc:
         if 'API Error' in str(exc) or 'exit code' in str(exc):
-            tout.error(f'Agent failed: {exc}')
+            _report_failure(exc)
             return False, '\n\n'.join(conversation_log)
         raise
+
+
+def _report_failure(exc):
+    """Report an agent failure, saying if it will repeat
+
+    Args:
+        exc (Exception): The failure
+    """
+    global fatal_seen  # pylint: disable=global-statement
+    tout.error(f'Agent failed: {exc}')
+    if is_fatal_error(str(exc)):
+        fatal_seen = str(exc)
+        tout.error('This is a problem with the setup rather than with this '
+                   'request, so every later agent call will fail the same '
+                   'way until it is put right')

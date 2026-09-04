@@ -28,6 +28,7 @@ from pickman import database
 from pickman import drift
 from pickman import ftest
 from pickman import gitlab_api
+from u_boot_pylib import claude
 from u_boot_pylib import command
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
@@ -1810,7 +1811,6 @@ def drift_revert_area(info, area, paths, branch, msg=None, missing=False,
     return name
 
 
-# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def do_drift_fix(args, dbs):
     """Revert drift back to upstream, one area of the tree at a time
 
@@ -1822,6 +1822,8 @@ def do_drift_fix(args, dbs):
     Return:
         int: 0 on success, 1 on failure
     """
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-return-statements
     # Branches are created and patches applied below, so anything left lying
     # around in the working tree would be swept along with it
     if gitutil.has_uncommitted_changes():
@@ -4650,6 +4652,13 @@ def do_poll(args, dbs):
             ret = do_step(args, dbs)
             if ret != 0:
                 tout.warning(f'step returned {ret}')
+            # A failure in the setup rather than in the work will happen
+            # again on every pass, so looping just hides it behind a wall of
+            # identical errors
+            if claude.fatal_seen:
+                tout.error('Stopping: the agent cannot run at all')
+                tout.error(f'  {claude.fatal_seen}')
+                return 1
             tout.info('')
             tout.info(f'Sleeping {interval} seconds...')
             time.sleep(interval)
