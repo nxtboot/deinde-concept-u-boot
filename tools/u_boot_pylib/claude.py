@@ -10,6 +10,10 @@ Provides shared functions for running Claude agents across tools that need
 AI assistance (e.g. pickman, patman review).
 """
 
+import os
+import shutil
+import subprocess
+
 from u_boot_pylib import tout
 
 # Markers in an agent failure which mean every later call will fail too: the
@@ -28,6 +32,68 @@ FATAL_MARKERS = (
 # Set once a failure is seen which will repeat, so that a caller which loops
 # can stop instead of retrying the same thing for ever
 fatal_seen = None  # pylint: disable=invalid-name
+
+
+def find_cli():
+    """Find the Claude Code binary which the SDK will actually run
+
+    The SDK prefers a copy bundled inside claude_agent_sdk over anything on
+    the path, so the version in use is often not the one 'claude --version'
+    reports in a shell.  This mirrors that search so the difference can be
+    seen rather than guessed at.  CLAUDE_CLI overrides the lot.
+
+    Return:
+        tuple:
+            str: Path to the binary, or None if none was found
+            bool: True if it is the copy bundled with the SDK
+    """
+    chosen = os.environ.get('CLAUDE_CLI')
+    if chosen:
+        return chosen, False
+    try:
+        import claude_agent_sdk  # pylint: disable=import-outside-toplevel
+        bundled = os.path.join(os.path.dirname(claude_agent_sdk.__file__),
+                               '_bundled', 'claude')
+        if os.path.isfile(bundled):
+            return bundled, True
+    except ImportError:
+        pass
+    return shutil.which('claude'), False
+
+
+def get_cli_version(path):
+    """Get the version a Claude Code binary reports
+
+    Args:
+        path (str): Path to the binary
+
+    Return:
+        str: Version string, or None if it could not be read
+    """
+    try:
+        out = subprocess.run([path, '--version'], capture_output=True,
+                             text=True, timeout=30, check=False).stdout
+        return out.strip().split()[0] if out.strip() else None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def describe_cli():
+    """Say which Claude Code binary will run, and which version
+
+    Where it came from matters as much as the version: a copy bundled with
+    the SDK is not updated by 'claude update', so an old one can sit there
+    while the shell reports something newer.
+
+    Return:
+        str: A line naming the version and where it came from, or None
+    """
+    path, bundled = find_cli()
+    if not path:
+        return None
+    version = get_cli_version(path) or 'unknown version'
+    where = 'bundled with claude-agent-sdk' if bundled else path
+    return f'Claude Code {version} ({where})'
 
 
 def is_fatal_error(text):
@@ -50,6 +116,36 @@ try:
     AGENT_AVAILABLE = True
 except ImportError:
     AGENT_AVAILABLE = False
+
+
+# Set once the binary in use has been named, so that a run which starts
+# several agents says it once rather than before each
+announced = False  # pylint: disable=invalid-name
+
+
+def cli_path_option():
+    """Give the cli_path argument for ClaudeAgentOptions, if one is wanted
+
+    Return:
+        dict: {'cli_path': ...} when CLAUDE_CLI names a binary, else {}
+    """
+    chosen = os.environ.get('CLAUDE_CLI')
+    return {'cli_path': chosen} if chosen else {}
+
+
+def announce_cli():
+    """Say once which Claude Code binary is in use
+
+    Worth stating rather than leaving to be worked out: when the version is
+    wrong the failure names a version nobody can find with 'claude --version'.
+    """
+    global announced  # pylint: disable=global-statement
+    if announced:
+        return
+    announced = True
+    desc = describe_cli()
+    if desc:
+        tout.info(f'Using {desc}')
 
 
 def check_available():
@@ -79,8 +175,8 @@ async def run_agent_collect(prompt, options):
         tuple: (success, conversation_log) where success is bool and
             conversation_log is the agent's output text
     """
-    import os
     debug = os.environ.get('PATMAN_DEBUG_AGENT')
+    announce_cli()
     conversation_log = []
     try:
         async for message in query(prompt=prompt, options=options):
@@ -119,3 +215,9 @@ def _report_failure(exc):
         tout.error('This is a problem with the setup rather than with this '
                    'request, so every later agent call will fail the same '
                    'way until it is put right')
+        _, bundled = find_cli()
+        if bundled:
+            tout.error("The binary is bundled inside claude-agent-sdk, so "
+                       "'claude update' will not touch it - update the SDK "
+                       'itself, or point at another with the CLAUDE_CLI '
+                       'environment variable')

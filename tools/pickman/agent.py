@@ -29,7 +29,8 @@ SIGNAL_CONFLICT = 'conflict'
 
 # Import common Claude agent utilities from shared module
 from u_boot_pylib.claude import (
-    AGENT_AVAILABLE, MAX_BUFFER_SIZE, check_available, run_agent_collect,
+    AGENT_AVAILABLE, MAX_BUFFER_SIZE, check_available, cli_path_option,
+    run_agent_collect,
 )
 
 ClaudeAgentOptions = None
@@ -212,6 +213,7 @@ this means the series was already applied via a different path. In this case:
         allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
         cwd=repo_path,
         max_buffer_size=MAX_BUFFER_SIZE,
+        **cli_path_option(),
     )
 
     tout.info(f'Starting Claude agent to cherry-pick {len(commits)} commits...')
@@ -464,6 +466,7 @@ async def run_review_agent(mr_iid, branch_name, comments, remote,
         allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
         cwd=repo_path,
         max_buffer_size=MAX_BUFFER_SIZE,
+        **cli_path_option(),
     )
 
     tout.info(f'Starting Claude agent to {task_desc}...')
@@ -680,6 +683,7 @@ async def run_pipeline_fix_agent(mr_iid, branch_name, failed_jobs, remote,
             allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
             cwd=repo_path,
             max_buffer_size=MAX_BUFFER_SIZE,
+            **cli_path_option(),
         )
 
         tout.info(f'Starting Claude agent to {task_desc}...')
@@ -780,6 +784,7 @@ async def run_subtree_conflict_agent(name, tag, subtree_path,
         allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
         cwd=repo_path,
         max_buffer_size=MAX_BUFFER_SIZE,
+        **cli_path_option(),
     )
 
     tout.info(f'Starting Claude agent to resolve {name} subtree '

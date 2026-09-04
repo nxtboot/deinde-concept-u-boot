@@ -8946,6 +8946,70 @@ class TestAbsentOrigin(unittest.TestCase):
         self.assertEqual(partial, {})
 
 
+class TestClaudeCli(unittest.TestCase):
+    """Tests for finding and naming the Claude Code binary in use"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.old_env = os.environ.get('CLAUDE_CLI')
+        self.old_announced = claude.announced
+
+    def tearDown(self):
+        """Clean up test fixtures"""
+        if self.old_env is None:
+            os.environ.pop('CLAUDE_CLI', None)
+        else:
+            os.environ['CLAUDE_CLI'] = self.old_env
+        claude.announced = self.old_announced
+
+    def test_override_wins(self):
+        """Test that CLAUDE_CLI beats the copy bundled with the SDK"""
+        os.environ['CLAUDE_CLI'] = '/somewhere/claude'
+        path, bundled = claude.find_cli()
+        self.assertEqual(path, '/somewhere/claude')
+        self.assertFalse(bundled)
+
+    def test_option_passed_to_sdk(self):
+        """Test that an override is handed to the SDK, not just reported"""
+        os.environ['CLAUDE_CLI'] = '/somewhere/claude'
+        self.assertEqual(claude.cli_path_option(),
+                         {'cli_path': '/somewhere/claude'})
+
+    def test_no_option_without_override(self):
+        """Test that the SDK is left to choose when nothing is set"""
+        os.environ.pop('CLAUDE_CLI', None)
+        self.assertEqual(claude.cli_path_option(), {})
+
+    def test_describe_says_where_from(self):
+        """Test that the description says where the binary came from
+
+        Which copy is running matters as much as its version: one bundled
+        with the SDK is not touched by 'claude update'.
+        """
+        with mock.patch.object(claude, 'find_cli',
+                               return_value=('/x/claude', True)), \
+             mock.patch.object(claude, 'get_cli_version',
+                               return_value='2.1.167'):
+            self.assertEqual(claude.describe_cli(),
+                             'Claude Code 2.1.167 (bundled with '
+                             'claude-agent-sdk)')
+
+    def test_announced_once(self):
+        """Test that a run with several agents says it only once"""
+        claude.announced = False
+        tout.init(tout.INFO)
+        try:
+            with mock.patch.object(claude, 'describe_cli',
+                                   return_value='Claude Code 1.2.3 (x)'):
+                with terminal.capture() as (stdout, stderr):
+                    claude.announce_cli()
+                    claude.announce_cli()
+            both = stdout.getvalue() + stderr.getvalue()
+        finally:
+            tout.init(tout.WARNING)
+        self.assertEqual(both.count('Claude Code'), 1)
+
+
 class TestFatalAgentError(unittest.TestCase):
     """Tests for spotting an agent failure which will always repeat"""
 
