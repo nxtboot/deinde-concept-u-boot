@@ -4,6 +4,7 @@
 #include <command.h>
 #include <console.h>
 #include <env.h>
+#include <getopt.h>
 #include <lwip/dns.h>
 #include <lwip/timeouts.h>
 #include <net.h>
@@ -87,19 +88,9 @@ static int dns_loop(struct udevice *udev, const char *name, const char *var)
 	return CMD_RET_FAILURE;
 }
 
-int do_dns(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int net_lwip_dns_lookup(const char *name, const char *var)
 {
-	char *name;
-	char *var = NULL;
 	int ret;
-
-	if (argc == 1 || argc > 3)
-		return CMD_RET_USAGE;
-
-	name = argv[1];
-
-	if (argc == 3)
-		var = argv[2];
 
 	if (net_lwip_eth_start() < 0)
 		return CMD_RET_FAILURE;
@@ -109,4 +100,18 @@ int do_dns(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	net_lwip_eth_stop();
 
 	return ret;
+}
+
+int do_dns(struct getopt_state *gs)
+{
+	const char *name;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	name = getopt_pop(gs);
+	if (!name)
+		return CMD_RET_USAGE;
+
+	return net_lwip_dns_lookup(name, getopt_pop(gs));
 }

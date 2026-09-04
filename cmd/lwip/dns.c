@@ -4,5 +4,5 @@
 #include <command.h>
 #include <net.h>
 
-U_BOOT_CMD(dns, 3, 1, do_dns, "lookup the IP of a hostname",
-	   "hostname [envvar]");
+U_BOOT_CMD_GETOPT(dns, 3, 1, do_dns, "lookup the IP of a hostname",
+		  "hostname [envvar]");

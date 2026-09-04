@@ -51,7 +51,16 @@ int net_lwip_dns_resolve(char *name_or_ip, ip_addr_t *ip);
  */
 bool wget_validate_uri(char *uri);
 
-int do_dns(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
+/**
+ * net_lwip_dns_lookup() - look up the address of a host
+ *
+ * @name: host name to look up
+ * @var: environment variable to hold the address, NULL to print it instead
+ * Return: CMD_RET_SUCCESS if the address was found, CMD_RET_FAILURE if not
+ */
+int net_lwip_dns_lookup(const char *name, const char *var);
+
+int do_dns(struct getopt_state *gs);
 int do_nfs(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_tftpsrv(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_wget(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[]);
