@@ -98318,3 +98318,58 @@ The single "review comment" flagged for this task was the automated **Pipeline f
 
 ---
 
+### Review: 2026-09-04
+
+Branch: cherry-58b49a7b54ba
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking out the branch and inspecting its state relative to `ci/master`.
+
+The branch is 14 commits behind `ci/master`, so a real rebase is needed this time. I'll record the pre-rebase deltas for each commit, then rebase.
+
+The upstream changes are all CBFS-related, so conflicts with `lib/gunzip.c` / `test/cmd/unzip.c` are unlikely; `.pickman-history` is the only plausible conflict point. Running the rebase now.
+
+Locating the buildman output binary so I can run the unzip tests, then creating the `-v3` branch (a `-v2` already exists from the last round) — these two are independent so I'll do them together.
+
+The binary is at `/tmp/pickman/u-boot` (with `-w` buildman writes directly into the output dir). Running the unzip tests and creating the `-v3` local branch now; they're independent.
+
+No matching output — the test name likely differs. Let me check what the branch's test file actually declares, and in parallel create the `-v3` branch (independent of the test result).
+
+Push landed (`c931b5acee66 → 7d253ee7bee9`, forced update) and GitLab reports the MR link, so the pipeline on !1319 will retrigger. Nothing further is needed — here's the report.
+
+## Report
+
+### Rebase
+Unlike the previous round, a real rebase was needed this time: the branch was **14 commits behind** `ci/master` (all from the `cmd-cov-cbfs` merge — CBFS command/doc/test work, nothing touching gunzip or unzip).
+
+`git rebase --keep-empty ci/master` completed cleanly with **no conflicts**. All 5 commits were preserved, including the empty merge commit:
+
+| Before | After | Subject |
+|---|---|---|
+| `5b6af5dfd01b` | `beff505aba56` | gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression |
+| `f66a21d64f8f` | `b3f20396c732` | test: cmd: Add gzwrite chunk boundary regression test |
+| `322ba7cf2c3d` | `b4f906055e82` | Merge patch series "gunzip: ..." (empty, preserved) |
+| `c931b5acee66` | `461a7dad0b81` | pickman: Record cherry-pick of 3 commits from us/main |
+| `feda7e63ee1c` | `7d253ee7bee9` | pickman: Record review handling for cherry-58b49a7b54ba |
+
+### Verification
+- **Deltas:** `git show --stat` for every commit compared before/after — identical file lists and line counts (`lib/gunzip.c +10`, `test/cmd/unzip.c +116/-2`, `.pickman-history +27` and `+48`, merge empty).
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, 8 s, no warnings.
+- **Tests (extra sanity check):** ran the three unzip.c DM tests on the built binary — `cmd_zip_unzip`, `cmd_zip_gzwrite` and the new `cmd_gzwrite_chunk_boundary` all pass (failures: 0).
+
+### Branches
+- Local versioned branch: `cherry-58b49a7b54ba-v3` (a `-v2` already existed from the previous no-op round, so I incremented).
+- Force-pushed `cherry-58b49a7b54ba` to `ci` via `pickman push-branch -f`: `c931b5acee66 → 7d253ee7bee9`. MR title untouched.
+
+### Suggested MR reply
+> Rebased onto current `ci/master` (was 14 commits behind, all from the `cmd-cov-cbfs` merge). No conflicts; the empty merge commit is preserved via `--keep-empty`. Per-commit deltas are identical to the pre-rebase branch.
+>
+> Local sandbox build via `buildman -L --board sandbox` passes, and the `cmd_zip_unzip`, `cmd_zip_gzwrite` and new `cmd_gzwrite_chunk_boundary` unit tests all pass on the rebased tree.
+
+One note for context: the earlier `samus_tpl` / `rockpro64` / `snow` failures were lab-infrastructure issues (labgrid contention, SDRAM-training flake) — this force-push gives them a fresh run, but if they recur they're still unrelated to this two-file change.
+
+---
+
