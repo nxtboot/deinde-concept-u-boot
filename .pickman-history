@@ -98476,3 +98476,50 @@ Nothing was unclear or unaddressable this round. As before, if the `samus_tpl` /
 
 ---
 
+## 2026-09-04: us/main
+
+Branch: cherry-5c8c261ffce9
+
+Commits:
+- 5c8c261ffce9 configs: adi: sc598: disable CONFIG_EFI_LOADER
+- 0fe8d8389a36 configs: adi: sc594: disable CONFIG_EFI_LOADER
+- 24635824319b Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"
+
+### Conversation log
+Clean tree. Creating the branch and starting the first cherry-pick.
+
+Delta matches exactly. Running the build test.
+
+Build passes. Cherry-picking the second commit and comparing its delta in one step.
+
+Delta matches. Now building, and if that passes, cherry-picking the merge commit and comparing its stat — all chained so a build failure stops before the merge pick.
+
+All done. Branch `cherry-5c8c261ffce9` (based on `ci/master`) is ready for pushing.
+
+## Final status
+
+**Commits on the branch** (`git log --oneline -n 5`):
+```
+a00c7da948ed Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"
+3c20324cfa88 configs: adi: sc594: disable CONFIG_EFI_LOADER
+2336079f840d configs: adi: sc598: disable CONFIG_EFI_LOADER
+a517eb9b549f Merge branch 'cherry-35432ef6fe2c' into 'master'   (ci/master)
+```
+All 3 requested commits are present, each with a `(cherry picked from commit ...)` line.
+
+**Build result:** OK — `buildman -L --board sandbox -w -o /tmp/pickman` passed after each cherry-pick and on the final tree, with no warnings or errors.
+
+**Delta checks:** Both regular commits match their originals exactly:
+- sc598: 2 files, +2/−2 (identical to original)
+- sc594: 2 files, +2/−1 (identical to original)
+
+**Fix-ups made:** None. No conflicts occurred; no commit messages were amended.
+
+**Notes:**
+- The merge commit `24635824319b` cherry-picked as an empty commit (its content was already carried by the two preceding picks). Git required an explicit `git commit --allow-empty --no-edit` to record it rather than skipping, which I did — the original merge message, cover-letter text and `Link:` tag are preserved intact.
+- These changes only touch ADI sc594/sc598 defconfigs, so the sandbox build exercises the tree's general health rather than these boards specifically.
+
+Nothing was merged back to any other branch.
+
+---
+
