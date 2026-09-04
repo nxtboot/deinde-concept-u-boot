@@ -79,6 +79,7 @@ variable is named, and treats a name which does not resolve as a failure.
 See also
 --------
 
+* :doc:`linklocal<linklocal>` for setting up the network without a server
 * :doc:`sntp<sntp>` for setting the time from a network server
 * :doc:`wget<wget>` for downloading a file over HTTP
 * *dhcp* for obtaining the name-server address automatically
