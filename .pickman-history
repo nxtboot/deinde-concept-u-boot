@@ -98099,3 +98099,148 @@ No source code was touched during conflict resolution.
 
 ---
 
+## 2026-09-01: us/main
+
+Branch: cherry-35432ef6fe2c
+
+Commits:
+- 35432ef6fe2c bootstd: android: bound the boot image read by its partition size
+- acd4ac0ea623 Merge tag 'u-boot-dfu-20260819' of https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu
+
+### Conversation log
+Delta matches perfectly. Now build test:
+
+Build passed. Now the merge commit:
+
+Let me add the cherry-pick annotation to match what `-x` would have done:
+
+All cherry-picks completed successfully.
+
+## Final Status
+
+**Build result:** ok (sandbox build passed both times)
+
+**Branch:** `cherry-35432ef6fe2c` (based on `ci/master`)
+
+**Commits cherry-picked (in order):**
+1. `2c895ca440ff` — bootstd: android: bound the boot image read by its partition size
+   - Delta matches original exactly: `boot/bootmeth_android.c`, 8 insertions
+2. `4cca04b7f556` — Merge tag 'u-boot-dfu-20260819' of https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu
+   - Empty commit (as expected — the merge's content was the android fix already applied above). Preserved with `--allow-empty` to retain history, and the `(cherry picked from commit acd4ac0ea62366368b99bd69a7698bbfe097c714)` annotation was added to the message to match `-x` behaviour.
+
+**Fix-ups:** The merge commit had to be committed via `git commit --allow-empty` (git cherry-pick reported the merge as empty since the sole underlying change was already applied by the first cherry-pick). The cherry-pick annotation was appended manually.
+
+**Concerning deltas:** None. The first commit matches the original exactly. The merge being empty is expected — its payload is the single android fix that was cherry-picked separately.
+
+The branch is ready for pushing.
+
+---
+
+### Pipeline fix: 2026-09-01 (attempt 2)
+
+Branch: cherry-35432ef6fe2c
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- zybo (sjg-lab)
+- rockpro64 (sjg-lab)
+- snow (sjg-lab)
+- minnowmax (sjg-lab)
+
+### Conversation log
+All five failures are lab/infrastructure issues on hardware jobs. The MR only touches `boot/bootmeth_android.c` — an android boot method change that cannot affect zybo, rockpro64, snow, minnowmax, or an ubuntu iso install test. Let me verify sandbox builds and create the fix branch.
+
+## Report
+
+**Result: No code fix needed — all 5 failures are lab infrastructure / transient issues unrelated to this MR.**
+
+### Branch delta
+The MR delta from master is a single upstream cherry-pick `2c895ca440ff bootstd: android: bound the boot image read by its partition size` touching only `boot/bootmeth_android.c` (8 insertions), plus an empty merge commit and the pickman-history file. Nothing in this delta can affect any of the failing jobs.
+
+### Per-job diagnosis
+- **rockpro64 (sjg-lab):** labgrid: `place rockpro64 is not acquired by your user, acquired by sglass` — place-acquisition conflict, no test ran.
+- **snow (sjg-lab):** labgrid: `place snow is not acquired by your user, acquired by labgrid` — same class of place-acquisition conflict.
+- **minnowmax (sjg-lab):** labgrid `ubootstrategy`: `pexpect.exceptions.TIMEOUT: Timeout of 15 seconds exceeded during waiting for login` after em100 flash — hardware/serial did not come up. No android-boot code path was exercised.
+- **zybo (sjg-lab):** Zynq board reached U-Boot prompt, ran a long stream of env tests, then timed out on `setenv str_var "MOs%zeA3:..."` (a very long randomly-generated string) — serial pipe stall on the DUT, not a code regression.
+- **efi-x86_64-uboot-iso-install (sjg-lab-slow):** `test_distro_ubuntu_iso_install` — kernel was actively booting (last log line `input: Power Button…`) when the 10-minute job wall-clock timeout hit. Nothing android-related; the Ubuntu iso boot path never touches `bootmeth_android.c`.
+
+### Verification
+- `um build sandbox`: passed (silent, no warnings). Skipped the wider buildman fan-out because the delta touches one file with no config-visible surface — sandbox build exercises the same `boot/bootmeth_android.c` compilation.
+
+### Result
+Local branch **`cherry-35432ef6fe2c-fix2`** created at the same tip as `cherry-35432ef6fe2c` (313c049aef36). No changes made. Recommendation: retry the pipeline; if the same lab jobs keep failing on retry, they need operator attention (labgrid place ownership, minnowmax serial) rather than a code change on this MR.
+
+The background task completed (the initial checkout that I'd already superseded with a direct foreground checkout). No further action needed — the fix2 branch is in place at the same tip as cherry-35432ef6fe2c, with no code changes since all five job failures are lab/infrastructure issues unrelated to the android-bootmeth delta.
+
+---
+
+### Review: 2026-09-01
+
+Branch: cherry-35432ef6fe2c
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) efi-x86_64-uboot-iso-install, zybo, rockpro64, snow, m...
+
+### Conversation log
+Build passes. Now create the v3 branch and force-push.
+
+## Summary
+
+**Review comment addressed:** The single review comment was again the bot's own report from pipeline-fix attempt 2. Its conclusion was explicit: *"No code fix needed — all 5 failures are lab infrastructure / transient issues unrelated to this MR."* (labgrid place-acquisition conflicts on rockpro64/snow, minnowmax serial timeout, zybo serial pipe stall on a long env string, and efi-x86_64-uboot-iso-install hitting the 10-min job timeout mid-kernel-boot.)
+
+**Actions taken:**
+1. Checked out `cherry-35432ef6fe2c`; confirmed the 4 commits ahead of `ci/master` are unchanged (android bootmeth cherry-pick, empty merge, two pickman-history records).
+2. Ran `buildman -L --board sandbox -w -o /tmp/pickman` — **passed** (1 built).
+3. Created local branch `cherry-35432ef6fe2c-v3` at the same tip (no code delta from v2).
+4. Force-pushed to `ci/cherry-35432ef6fe2c`: this time the remote tip actually moved (`313c049aef36..e5769a63da10`) because the earlier pipeline-fix pickman-history commit had not yet been pushed. **A new pipeline should auto-trigger.**
+
+## Suggested MR reply
+
+> ### Pipeline fix (attempt 3)
+>
+> No code change made. The previous comment's own analysis already concluded that the five failing jobs from attempt 2 (efi-x86_64-uboot-iso-install, zybo, rockpro64, snow, minnowmax) were lab/infrastructure issues unrelated to this MR — the delta is a single upstream cherry-pick to `boot/bootmeth_android.c`, which cannot affect labgrid place acquisition, hardware serial timeouts, or an Ubuntu ISO install test.
+>
+> Local re-verification on this branch:
+> - `buildman -L --board sandbox`: **passed**
+>
+> Branch has been re-pushed to retrigger the pipeline. If the same lab jobs keep failing, they need operator attention (labgrid place ownership on rockpro64/snow, minnowmax serial, zybo/efi-x86_64 wall-clock timeouts) rather than a code change on this MR.
+
+---
+
+### Review: 2026-09-01
+
+Branch: cherry-35432ef6fe2c
+
+Comments addressed:
+
+
+### Conversation log
+Only historical text mentions remain. Continue rebase.
+
+Delta matches. Now build.
+
+Build clean. Now create v2 branch (per instructions - iterate suffix; previous was already -v3, so this is -v4).
+
+Force-push succeeded. Rebase complete and MR updated.
+
+## Summary
+
+**Branch rebased:** `cherry-35432ef6fe2c` onto latest `ci/master` (base moved from `4bcbe3f8b3ce` → `215c1c5b93ab`, ~50+ upstream commits absorbed, including the `cherry-1262e50a34a0` merge).
+
+**Local backup:** `cherry-35432ef6fe2c-v4`
+**Remote:** force-pushed `e5769a63da10 → 4eb2e659a8b5` on `ci/cherry-35432ef6fe2c` — MR !1318 pipeline will auto-retrigger.
+
+### Conflicts resolved
+- Single conflict in `.pickman-history` (append-only log). HEAD carried new sections logged against `cherry-1262e50a34a0` (from the recent master merge); ours added the `2026-09-01 cherry-35432ef6fe2c` section. Resolved by keeping both in chronological order, appending our section after HEAD's with an `---` separator. **No source code touched.**
+
+### Verification
+- All 5 commits replayed (2 code — including 1 empty merge — plus 3 pickman-history records).
+- Android cherry-pick delta unchanged from original `2c895ca440ff`: `boot/bootmeth_android.c`, 8 insertions.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **clean** (1/1 built).
+
+### Suggested MR reply
+
+> Rebased onto latest `ci/master` (branch was behind by ~50 commits, including the merged `cherry-1262e50a34a0`). The only conflict was in `.pickman-history` — an append-only log — resolved by keeping both sides' distinct sections in chronological order; no source code was affected. The android bootmeth cherry-pick (`boot/bootmeth_android.c`, +8 lines) is unchanged. Sandbox builds clean. Branch force-pushed; pipeline should re-run automatically.
+
+---
+
