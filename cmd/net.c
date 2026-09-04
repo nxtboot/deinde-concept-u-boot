@@ -624,10 +624,12 @@ U_BOOT_CMD_GETOPT(
 #endif	/* CONFIG_CMD_DNS */
 
 #if defined(CONFIG_CMD_LINK_LOCAL)
-static int do_link_local(struct cmd_tbl *cmdtp, int flag, int argc,
-			 char *const argv[])
+static int do_link_local(struct getopt_state *gs)
 {
 	char tmp[22];
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (net_loop(LINKLOCAL) < 0)
 		return CMD_RET_FAILURE;
@@ -646,7 +648,7 @@ static int do_link_local(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	linklocal,	1,	1,	do_link_local,
 	"acquire a network IP address using the link-local protocol",
 	""

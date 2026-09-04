@@ -2268,6 +2268,7 @@ config CMD_CDP
 config CMD_LINK_LOCAL
 	bool "linklocal"
 	depends on (LIB_RAND || LIB_HW_RAND)
+	select GETOPT
 	help
 	  Acquire a network IP address using the link-local protocol
 
