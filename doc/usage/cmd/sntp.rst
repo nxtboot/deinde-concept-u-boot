@@ -70,3 +70,9 @@ With `CONFIG_NET_LWIP=y` and `CONFIG_DNS=y`:
     Date: 2000-01-01 (Saturday)    Time:  0:00:00
     => sntp 0.us.pool.ntp.org
     Date: 2025-06-16 Time: 15:10:59
+
+See also
+--------
+
+* :doc:`dns<dns>` for finding the address of a time server by name
+* :doc:`date<date>` for reading and setting the real-time clock
