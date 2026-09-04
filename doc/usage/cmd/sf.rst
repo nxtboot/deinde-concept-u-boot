@@ -248,6 +248,8 @@ See also
 --------
 
 * :doc:`mtdparts<mtdparts>` for splitting a flash device into named partitions
+* :doc:`cbfsinit<cbfsinit>` for reading a coreboot filesystem out of a flash
+  device which the chipset maps into memory
 
 .. _SPI documentation:
    https://en.wikipedia.org/wiki/Serial_Peripheral_Interface

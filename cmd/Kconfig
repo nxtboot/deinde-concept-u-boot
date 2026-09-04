@@ -3037,6 +3037,7 @@ config CMD_BTRFS
 config CMD_CBFS
 	bool "Enable the 'cbfs' command"
 	depends on FS_CBFS
+	select GETOPT
 	help
 	  Define this to enable support for reading from a Coreboot
 	  filesystem. This is a ROM-based filesystem used for accessing files

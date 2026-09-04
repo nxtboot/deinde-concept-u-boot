@@ -9,33 +9,39 @@
 #include <command.h>
 #include <env.h>
 #include <cbfs.h>
+#include <getopt.h>
+#include <mapmem.h>
 #include <vsprintf.h>
 
-static int do_cbfs_init(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_cbfs_init(struct getopt_state *gs)
 {
 	uintptr_t end_of_rom = 0xffffffff;
+	const char *arg;
 	char *ep;
 
-	if (argc > 2) {
-		printf("usage: cbfsls [end of rom]>\n");
-		return 0;
-	}
-	if (argc == 2) {
-		end_of_rom = hextoul(argv[1], &ep);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	arg = getopt_pop(gs);
+	if (arg) {
+		end_of_rom = hextoul(arg, &ep);
 		if (*ep) {
 			puts("\n** Invalid end of ROM **\n");
 			return 1;
 		}
 	}
-	if (file_cbfs_init(end_of_rom)) {
+	/*
+	 * The driver keeps pointers into the ROM, so the mapping has to last
+	 * beyond this command and cannot be undone here
+	 */
+	if (file_cbfs_init((ulong)map_sysmem(end_of_rom, 0))) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
 	}
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cbfsinit,	2,	0,	do_cbfs_init,
 	"initialize the cbfs driver",
 	"[end of rom]\n"
@@ -51,6 +57,7 @@ static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 	unsigned long offset;
 	unsigned long count;
 	long size;
+	void *buf;
 
 	if (argc < 3) {
 		printf("usage: cbfsload <addr> <filename> [bytes]\n");
@@ -75,7 +82,9 @@ static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	printf("reading %s\n", file_cbfs_name(file));
 
-	size = file_cbfs_read(file, (void *)offset, count);
+	buf = map_sysmem(offset, count);
+	size = file_cbfs_read(file, buf, count);
+	unmap_sysmem(buf);
 
 	printf("\n%ld bytes read\n", size);
 
@@ -91,12 +100,15 @@ U_BOOT_CMD(
 	"    - load binary file 'filename' from the cbfs to address 'addr'\n"
 );
 
-static int do_cbfs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_cbfs_ls(struct getopt_state *gs)
 {
-	const struct cbfs_cachenode *file = file_cbfs_get_first();
+	const struct cbfs_cachenode *file;
 	int files = 0;
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	file = file_cbfs_get_first();
 	if (!file) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
@@ -194,17 +206,20 @@ static int do_cbfs_ls(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cbfsls,	1,	1,	do_cbfs_ls,
 	"list files",
 	"    - list the files in the cbfs\n"
 );
 
-static int do_cbfs_fsinfo(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[])
+static int do_cbfs_fsinfo(struct getopt_state *gs)
 {
-	const struct cbfs_header *header = file_cbfs_get_header();
+	const struct cbfs_header *header;
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	header = file_cbfs_get_header();
 	if (!header) {
 		printf("%s.\n", file_cbfs_error());
 		return 1;
@@ -223,7 +238,7 @@ static int do_cbfs_fsinfo(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	cbfsinfo,	1,	1,	do_cbfs_fsinfo,
 	"print information about filesystem",
 	"    - print information about the cbfs filesystem\n"
