@@ -98696,3 +98696,47 @@ Both failed jobs are unrelated to MR !1322. The CI-tested commit (1cd3ec8e) diff
 
 ---
 
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, snow.
+
+I'll start by rea...
+
+### Conversation log
+I'll check the branch state first, then decide whether the comment is actionable.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The single "review comment" on !1322 is, for the third time, the bot's own **pipeline-fix (attempt 3) report** echoed back as a discussion note. It requests no changes; its conclusion is that both failed jobs (efi-x86_64-uboot-iso-install, snow) were infrastructure failures — the snow labgrid place still held by `kea/labgrid`, and a 10-minute runner-side job timeout overriding the job's declared 2h — and that the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out. Local HEAD is `d88b7e0b2fc0`; remote `ci/cherry-5c8c261ffce9` and `cherry-5c8c261ffce9-fix3` are both `d2488e970a3d`. The only local difference is one `.pickman-history` bookkeeping commit — the source diff against the remote is empty.
+- Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is nothing to change. A `-v2` branch would be source-identical to the MR branch, and force-pushing would publish only the `.pickman-history` bookkeeping commit — no defconfig or code differences — which would trigger yet another pipeline that hits the same unfixed snow place and runner timeout. That only adds noise to the MR.
+
+### Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report rather than a review request, so no code changes are needed. The branch is unchanged (source delta vs master remains only the four sc594/sc598 defconfigs) and still builds cleanly with buildman for sandbox.
+>
+> The attempt-3 failures are infrastructure-only:
+> - **snow**: labgrid place still held by `kea/labgrid`; fails in `u-boot-test-getrole` before U-Boot runs — this has now blocked three consecutive attempts
+> - **efi-x86_64-uboot-iso-install**: the Ubuntu autoinstall was progressing normally when GitLab killed the job at `10m0s`; `.gitlab-ci.yml` declares `timeout: 2h` for this job, so the cap is a runner/project "Maximum job timeout" setting, not something in the tree. As configured, the job cannot pass on any MR.
+>
+> Please release the snow place (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) and raise the maximum job timeout on the runner executing `sjg-lab-slow` jobs to at least 2h, then retry the failed jobs. No new push is required.
+
+### Action needed from a human
+
+- Release the `snow` labgrid place
+- Fix the 10-minute maximum job timeout on the `sjg-lab-slow` runner
+- Retry the pipeline — no new push is required
+
+---
+
