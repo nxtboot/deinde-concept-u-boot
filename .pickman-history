@@ -98740,3 +98740,58 @@ There is nothing to change. A `-v2` branch would be source-identical to the MR b
 
 ---
 
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+I'll check out the branch and check its state before deciding whether anything is actionable.
+
+The tree is clean and the source content is unchanged versus the remote. I'll confirm the build still passes, so the report is backed by a fresh result.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The only "review comment" on !1322 is the bot's terminal notice: **"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."** It is a status message, not a request for changes. It confirms what the three previous attempts each concluded: every pipeline failure was infrastructure-side, and the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out; working tree clean. Local HEAD `4888270cc2e4` differs from remote `ci/cherry-5c8c261ffce9` (`d2488e970a3d`) only by `.pickman-history` bookkeeping commits — the source diff against the remote is **empty**.
+- Source delta vs `ci/master` (excluding `.pickman-history`) remains exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is no code change to make. A `-v2` branch would be source-identical to the MR branch, and a force-push would only publish bookkeeping commits, triggering a fourth pipeline that would hit the same unresolved infrastructure problems. The retry-limit message explicitly asks for a human, and no push can substitute for that.
+
+### The manual intervention actually required
+
+Across all three attempts the blockers were the same, none in the tree:
+
+| Blocker | Attempts hit | Fix |
+|---|---|---|
+| `snow` labgrid place held by `kea/labgrid` | 1, 2, 3 | Release it, or `labgrid-client -p snow allow ellesmere/gitlab-runner` |
+| `/tmp` full on the `single`-tagged world-build runner | 1, 2 | Clean the disk |
+| ff3399 / vbe / rockpro64 places held by `sglass` | 1 | Release the places (may already be done — they passed in attempts 2 and 3) |
+| 10-minute max job timeout on the `sjg-lab-slow` runner (job declares `timeout: 2h`) | 3 | Raise the runner/project "Maximum job timeout" to ≥ 2h |
+| `efi-x86_64-uboot-iso` initrd ZSTD corruption in the guest | 2 | Intermittent; passed on sibling MRs — just retry |
+
+### Suggested reply to post on the MR
+
+> The pipeline-fix bot has reached its retry limit, but none of the failures across the three attempts were caused by this MR. The source delta vs master is only the four sc594/sc598 defconfigs, and the branch builds cleanly with buildman for sandbox.
+>
+> Manual steps needed before retrying:
+> 1. Release the `snow` labgrid place (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) — blocked all three attempts.
+> 2. Clean `/tmp` on the `single`-tagged runner used for the world builds.
+> 3. Raise the maximum job timeout on the `sjg-lab-slow` runner to at least the 2h declared in `.gitlab-ci.yml` for `efi-x86_64-uboot-iso-install`; at 10m0s it cannot pass on any MR.
+>
+> Then retry the failed jobs. No new push is required — the branch at d2488e970a3d is current.
+
+### Action needed from a human
+
+- Fix the three infrastructure items above, then retry the pipeline (or merge on the strength of the passing jobs, since the MR only touches ADI sc59x defconfigs that no failing job exercises).
+
+---
+
