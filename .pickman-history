@@ -98562,3 +98562,55 @@ There is nothing to change, so a `-v2` branch would be byte-identical to the cur
 
 ---
 
+### Pipeline fix: 2026-09-04 (attempt 2)
+
+Branch: cherry-5c8c261ffce9
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- efi-x86_64-uboot-iso (sjg-lab)
+- snow (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+Next I need the three job logs; they're independent, so I'll fetch them all at once.
+
+The world build is disk-full again (same runner). Now the two lab jobs.
+
+Snow is again the labgrid place-acquired error. Now the efi-x86_64-uboot-iso log.
+
+Builds are done and pass; wrapping up with the report.
+
+## Result: infrastructure/intermittent failures only — no code change needed
+
+All three failed jobs are unrelated to MR !1322, which differs from ci/master only by four ADI sc59x defconfigs (`# CONFIG_EFI_LOADER is not set`, plus dropping the redundant `# CONFIG_TOOLS_MKEFICAPSULE is not set`) and `.pickman-history` bookkeeping. I made no source changes. Branch `cherry-5c8c261ffce9-fix2` exists locally and points at the same commit as `cherry-5c8c261ffce9` (1cd3ec8e8c5e), so the caller can retry the pipeline.
+
+### Root cause per job
+
+**build all 64bit ARM platforms (job 637750)** — runner disk full, same as attempt 1.
+- Log contains only `mkdir: cannot create directory '.tmp_NNNN': No space left on device` and `mkdir: cannot create directory 'scripts/kconfig': No space left on device`, which cascade into `syncconfig` / `conf.o` failures for nanopi-neo4/r4s-rk3399 defconfigs. There is no compiler or linker error in any board.
+- Exit code 102 is buildman's "exceptions occurred" return, not a build failure (100).
+- The `single`-tagged runner's `/tmp` was flagged as full in attempt 1 and evidently still has not been cleaned; the retry will fail the same way until it is.
+
+**snow (job 637721)** — labgrid place held by another user, same as attempt 1.
+- Fails in `u-boot-test-getrole snow --configure` before any U-Boot is built or run: `place snow is not acquired by your user, acquired by labgrid` (owner `kea/labgrid`).
+- Needs the place released, or `labgrid-client -p snow allow ellesmere/gitlab-runner`.
+
+**efi-x86_64-uboot-iso (job 637741)** — one-off initrd corruption inside the guest kernel, not a U-Boot problem.
+- U-Boot itself did everything right: the BLS bootmeth found `/loader/entry.conf`, loaded `/casper/vmlinuz` (14.9 MB) and `/casper/initrd` (75 MB) and started the kernel. The failure is the *Linux* message `Initramfs unpacking failed: ZSTD-compressed data is corrupt`, after which userspace never comes up and `Started gdm.service` times out.
+- This test boots `efi-x86_app64` (x86 EFI app + QEMU/OVMF); the MR's changes are to ARM sc594/sc598 defconfigs and cannot affect that build.
+- GitLab history confirms it is intermittent: the same job **passed** on sibling MRs !1321 (job 637601) and !1323 (job 637464) and on `cmd-cov-cbfs-vfs` (637411), all within the hour before this run on the same base. The job is manual on master, so there is no direct master data point.
+- Most likely a corrupted/truncated rebuilt ISO (the `qemu-efi-iso` writer regenerates it via `scripts/ubuntu-iso-to-uboot.py` before each boot) or a hiccup on the loaded `ellesmere` host; the 2-minute initrd retrieval suggests the runner was under heavy load at the time.
+
+### Verification that the MR is sound
+
+- `um build sandbox` — rc=0, clean
+- `buildman -o /tmp/pickman sc594-som-ezkit-spl sc594-som-ezlite-spl sc598-som-ezkit-spl sc598-som-ezlite-spl` — all four build, rc=101 (warnings only: pre-existing `spi_bus_bridge` dtc warnings and the `CONFIG_OF_EMBED` notice, identical to ci/master as established in attempt 1)
+
+### Recommended action
+
+Retry the failed jobs, **after** cleaning `/tmp` on the `single`-tagged world-build runner (second consecutive attempt to hit it) and releasing (or `allow`-ing `ellesmere/gitlab-runner` on) the `snow` labgrid place. efi-x86_64-uboot-iso should simply pass on retry.
+
+---
+
