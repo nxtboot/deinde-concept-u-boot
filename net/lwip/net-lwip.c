@@ -399,15 +399,13 @@ int net_lwip_dns_resolve(char *name_or_ip, ip_addr_t *ip)
 {
 #if defined(CONFIG_DNS)
 	char *var = "_dnsres";
-	char *argv[] = { "dns", name_or_ip, var, NULL };
-	int argc = ARRAY_SIZE(argv) - 1;
 #endif
 
 	if (ipaddr_aton(name_or_ip, ip))
 		return 0;
 
 #if defined(CONFIG_DNS)
-	if (do_dns(NULL, 0, argc, argv) != CMD_RET_SUCCESS)
+	if (net_lwip_dns_lookup(name_or_ip, var) != CMD_RET_SUCCESS)
 		return -1;
 
 	name_or_ip = env_get(var);

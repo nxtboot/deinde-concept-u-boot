@@ -191,3 +191,9 @@ Acknowledgments are enabled by default with lwIP.
     A place to store the root CA certificates is needed, and then MBed TLS would
     need to walk the entire chain. Therefore, man-in-the middle attacks are
     possible and HTTPS should not be relied upon for payload authentication.
+
+See also
+--------
+
+* :doc:`dns<dns>` for finding the address of a web server by name
+* :doc:`tftpput<tftpput>` for sending a file to a server instead

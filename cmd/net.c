@@ -14,6 +14,7 @@
 #include <dm.h>
 #include <dm/devres.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <log.h>
 #include <net.h>
@@ -575,9 +576,15 @@ U_BOOT_CMD(
 #endif
 
 #if defined(CONFIG_CMD_DNS)
-int do_dns(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_dns(struct getopt_state *gs)
 {
-	if (argc == 1)
+	char *name;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	name = getopt_pop(gs);
+	if (!name)
 		return CMD_RET_USAGE;
 
 	/*
@@ -592,27 +599,23 @@ int do_dns(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	 * but hey - this is a minimalist implmentation, so only check length
 	 * and let the name server deal with things.
 	 */
-	if (strlen(argv[1]) >= 255) {
+	if (strlen(name) >= 255) {
 		printf("dns error: hostname too long\n");
 		return CMD_RET_FAILURE;
 	}
 
-	net_dns_resolve = argv[1];
-
-	if (argc == 3)
-		net_dns_env_var = argv[2];
-	else
-		net_dns_env_var = NULL;
+	net_dns_resolve = name;
+	net_dns_env_var = getopt_pop(gs);
 
 	if (net_loop(DNS) < 0) {
-		printf("dns lookup of %s failed, check setup\n", argv[1]);
+		printf("dns lookup of %s failed, check setup\n", name);
 		return CMD_RET_FAILURE;
 	}
 
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	dns,	3,	1,	do_dns,
 	"lookup the IP of a hostname",
 	"hostname [envvar]"
@@ -621,10 +624,12 @@ U_BOOT_CMD(
 #endif	/* CONFIG_CMD_DNS */
 
 #if defined(CONFIG_CMD_LINK_LOCAL)
-static int do_link_local(struct cmd_tbl *cmdtp, int flag, int argc,
-			 char *const argv[])
+static int do_link_local(struct getopt_state *gs)
 {
 	char tmp[22];
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (net_loop(LINKLOCAL) < 0)
 		return CMD_RET_FAILURE;
@@ -643,7 +648,7 @@ static int do_link_local(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	linklocal,	1,	1,	do_link_local,
 	"acquire a network IP address using the link-local protocol",
 	""
