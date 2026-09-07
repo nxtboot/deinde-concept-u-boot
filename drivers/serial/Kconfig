@@ -627,6 +627,14 @@ config DEBUG_UART_ANNOUNCE
 	  debug_uart_init()). This can be useful just as a check that
 	  everything is working.
 
+config DEBUG_UART_PUTS
+	bool
+	help
+	  Selected by a debug-UART backend which provides _debug_uart_puts(),
+	  so that printascii() hands it a whole string rather than a character
+	  at a time. This suits a device where each transfer carries a header,
+	  for which per-character output would be wasteful.
+
 config DEBUG_UART_SKIP_INIT
 	bool "Skip UART initialization"
 	depends on DEBUG_UART
