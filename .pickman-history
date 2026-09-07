@@ -98431,3 +98431,48 @@ One note: this rebase cycle keeps recurring because each cherry MR merged into `
 
 ---
 
+### Review: 2026-09-07
+
+Branch: cherry-58b49a7b54ba
+
+Comments addressed:
+
+
+### Conversation log
+I'll check out the branch and see where it stands relative to `ci/master`.
+
+Push landed (`578bd2e3e128 → 274a61158a9b`, forced update) and the remote now matches local, so the !1319 pipeline will retrigger. Nothing further is pending — here's the report.
+
+## Report
+
+### Rebase
+The branch was **4 commits behind** `ci/master` (the `cmd-cov-cbfs-vfs` merge — a CBFS VFS driver, its test and docs; touches only `fs/cbfs/`, `include/cbfsfs.h`, `test/cmd/cbfs.c` and `doc/usage/cmd/cbfsinit.rst`). `git rebase --keep-empty ci/master` replayed all 7 commits **with no conflicts** — this time nothing upstream touched `.pickman-history`, so the usual append-only-log clash didn't occur. The empty merge commit is preserved.
+
+| Before | After | Subject |
+|---|---|---|
+| `f0db968a5989` | `87e50d678fd0` | gunzip: Fix spurious Z_BUF_ERROR in chunked gzwrite decompression |
+| `9c8d5aec3eac` | `9f9831cdea1b` | test: cmd: Add gzwrite chunk boundary regression test |
+| `a7778e0b2de0` | `77c6078fd781` | Merge patch series "gunzip: ..." (empty, preserved) |
+| `188b3d57e4eb` | `3fbb45813f8e` | pickman: Record cherry-pick of 3 commits from us/main |
+| `46b90e237452` | `fc97779c8d93` | pickman: Record review handling for cherry-58b49a7b54ba |
+| `578bd2e3e128` | `7be793d34409` | pickman: Record review handling for cherry-58b49a7b54ba |
+| `1805d1cec00d` | `274a61158a9b` | pickman: Record review handling for cherry-58b49a7b54ba |
+
+### Verification
+- **Deltas:** captured `git show --stat` for every commit before and after, diffed them with hashes stripped — **identical** (`lib/gunzip.c +10`, `test/cmd/unzip.c +116/-2`, empty merge, `.pickman-history +26/+48/+55/+58`). Merge-base now equals `ci/master` HEAD (0 behind, 7 ahead).
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1/1 built, 10 s, no warnings.
+- **Tests:** `dm_test_cmd_zip_unzip`, `dm_test_cmd_zip_gzwrite` and the new `dm_test_cmd_gzwrite_chunk_boundary` all pass on the rebased binary (failures: 0 each). The gitignored 32 MiB `mmc9.img` from the previous round was reused for the sandbox MMC backing file.
+
+### Branches / push
+- Local versioned branch: `cherry-58b49a7b54ba-v5` (`-v2`…`-v4` already existed here from earlier rounds).
+- Force-pushed `cherry-58b49a7b54ba` to `ci` via `pickman push-branch -f`: `578bd2e3e128 → 274a61158a9b`. Remote verified to match local. MR title untouched.
+
+### Suggested MR reply
+> Rebased onto current `ci/master` (was 4 commits behind, from the `cmd-cov-cbfs-vfs` merge). No conflicts; the empty merge commit is preserved via `--keep-empty` and every per-commit delta is identical to the pre-rebase branch.
+>
+> Local sandbox build via `buildman -L --board sandbox` passes, and `dm_test_cmd_zip_unzip`, `dm_test_cmd_zip_gzwrite` and `dm_test_cmd_gzwrite_chunk_boundary` all pass on the rebased tree.
+
+Nothing was unclear or unaddressable this round. As before, if the `samus_tpl` / `rockpro64` / `snow` lab jobs fail again on the fresh pipeline, they remain unrelated to this two-file change.
+
+---
+
