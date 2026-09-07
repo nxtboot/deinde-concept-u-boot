@@ -7,6 +7,7 @@
 
 #include <cbfs.h>
 #include <env.h>
+#include <linux/errno.h>
 #include <malloc.h>
 #include <mapmem.h>
 #include <asm/byteorder.h>
@@ -412,3 +413,43 @@ static int cmd_test_cbfs_fs(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_cbfs_fs, UTF_CONSOLE);
+
+/* Test reaching CBFS files through the VFS */
+static int cmd_test_cbfs_vfs(struct unit_test_state *uts)
+{
+	ulong end;
+	void *rom;
+
+	/*
+	 * The driver is built with VFS and the mount command comes with
+	 * CMD_VFS, which depends on it. Boards without either, such as
+	 * sandbox64, have nothing to test
+	 */
+	if (!IS_ENABLED(CONFIG_CMD_VFS))
+		return -EAGAIN;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	/* cbfsinit binds the device, so mount can find it by name */
+	/* cbfsinit binds the device, so mount can find it by name */
+	ut_assertok(run_command("mount cbfs /cbfs", 0));
+	ut_assert_console_end();
+
+	ut_assertok(run_command("ls /cbfs", 0));
+	ut_assert_skip_to_line("%14d %s", HELLO_SIZE, "hello");
+	ut_assert_nextline("%14d %s", UBOOT_SIZE, "u-boot");
+	console_record_reset();
+
+	/* size finds a file through the VFS too */
+	ut_assertok(run_command("size /cbfs/hello", 0));
+	ut_asserteq(HELLO_SIZE, env_get_hex("filesize", 0));
+	console_record_reset();
+
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfs_vfs, UTF_CONSOLE);

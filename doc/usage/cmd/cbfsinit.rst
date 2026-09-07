@@ -124,6 +124,19 @@ given as '-'::
 The generic commands read the same files as *cbfsload* and use the same
 in-memory copy of the CBFS metadata, so cbfsinit must have run first.
 
+CBFS is also offered to the VFS, as a device named 'cbfs' which this
+command binds. Mount it to reach the files by path::
+
+    => cbfsinit
+    => mount cbfs /cbfs
+    => ls /cbfs
+                16 hello
+                32 u-boot
+    => size /cbfs/hello
+
+It is read-only and has no directories: CBFS holds a flat list of files in
+the ROM.
+
 See also
 --------
 

@@ -16,4 +16,18 @@ int cbfs_fs_read(const char *filename, void *buf, loff_t offset, loff_t len,
 		 loff_t *actread);
 int cbfs_fs_ls(const char *dirname);
 
+/**
+ * cbfs_vfs_bind() - Make CBFS available to the VFS as the 'cbfs' device
+ *
+ * Binds the UCLASS_FS device so that 'mount cbfs <dir>' can find it. Does
+ * nothing if it is bound already.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+#if CONFIG_IS_ENABLED(VFS)
+int cbfs_vfs_bind(void);
+#else
+static inline int cbfs_vfs_bind(void) { return 0; }
+#endif
+
 #endif
