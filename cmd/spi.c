@@ -132,6 +132,11 @@ int do_spi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 			bitlen = dectoul(argv[2], NULL);
 		if (argc >= 4) {
 			cp = argv[3];
+			if (strlen(cp) > MAX_SPI_BYTES * 2) {
+				printf("Too many bytes (max %d)\n",
+				       MAX_SPI_BYTES);
+				return 1;
+			}
 			for(j = 0; *cp; j++, cp++) {
 				tmp = *cp - '0';
 				if(tmp > 9)
