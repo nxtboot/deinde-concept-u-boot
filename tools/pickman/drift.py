@@ -78,9 +78,9 @@ Accept = namedtuple('Accept', ['pattern', 'fingerprint', 'reason'])
 # The outcome of classifying one hunk
 #
 # hunk: the Hunk itself
-# state: one of WANTED, ACCEPTED or DRIFT
+# state: one of WANTED, ACCEPTED, REORDER, ABSENT or DRIFT
 # reason: for ACCEPTED, the reason from the accept file; for WANTED, the
-#     downstream commit which accounts for the hunk; None for DRIFT
+#     downstream commit which accounts for the hunk; None for the rest
 Verdict = namedtuple('Verdict', ['hunk', 'state', 'reason'])
 
 # A hunk which a downstream-original commit accounts for
@@ -88,6 +88,14 @@ WANTED = 'wanted'
 
 # A hunk which the accept file records as intentional
 ACCEPTED = 'accepted'
+
+# A hunk which only moves lines about, so it says the same thing as upstream
+REORDER = 'reorder'
+
+# A hunk in a file which upstream has and this tree never received.  Nothing
+# was mangled here: the change simply never arrived, so putting it back adds a
+# whole file rather than tidying one
+ABSENT = 'absent'
 
 # A hunk which nothing accounts for, and which should go back to upstream
 DRIFT = 'drift'
@@ -287,11 +295,72 @@ def match_accept(accepts, path, fprint):
     return None
 
 
+def _added_removed(hunks):
+    """Split the lines some hunks change into those added and those removed
+
+    Args:
+        hunks (list of Hunk): Hunks to examine
+
+    Return:
+        tuple:
+            list of str: Added lines, sorted
+            list of str: Removed lines, sorted
+    """
+    added = []
+    removed = []
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if line.startswith('+'):
+                added.append(line[1:])
+            elif line.startswith('-'):
+                removed.append(line[1:])
+    return sorted(added), sorted(removed)
+
+
+def is_reorder(hunk):
+    """Check whether a hunk only moves lines about
+
+    Some files are generated in an order which depends on the tree, so a
+    downstream Kconfig change is enough to shuffle a defconfig without
+    altering what it says.  Such a hunk adds and removes the same lines, so
+    reverting it says nothing and the generator would undo the revert anyway.
+
+    Args:
+        hunk (Hunk): Hunk to examine
+
+    Return:
+        bool: True if the added and removed lines are the same multiset, and
+            there is at least one of each
+    """
+    added, removed = _added_removed([hunk])
+    return bool(added) and added == removed
+
+
+def is_reorder_file(fdiff):
+    """Check whether a file differs from upstream only in the order of lines
+
+    A line which moves far enough leaves two hunks, one dropping it and one
+    adding it back, so a file can be a pure reorder while none of its hunks
+    is.  This catches that, which is the usual shape for a defconfig.
+
+    Args:
+        fdiff (FileDiff): File to examine
+
+    Return:
+        bool: True if the file's added and removed lines are the same multiset
+    """
+    if fdiff.binary or not fdiff.hunks:
+        return False
+    added, removed = _added_removed(fdiff.hunks)
+    return bool(added) and added == removed
+
+
 def classify(fdiff, accepts, blame=None):
-    """Classify each hunk of a file as wanted, accepted or drift
+    """Classify each hunk of a file as wanted, accepted, reorder or drift
 
     A hunk is wanted if a downstream-original commit accounts for it, accepted
-    if the accept file exempts it, and drift otherwise.
+    if the accept file exempts it, a reorder if it only shuffles lines, absent
+    if the whole file never arrived from upstream, and drift otherwise.
 
     Where blame is available, a hunk which only removes lines is always
     treated as wanted, since blame can say who wrote a line but not who
@@ -313,11 +382,21 @@ def classify(fdiff, accepts, blame=None):
     Return:
         list of Verdict: One entry per hunk, in file order
     """
+    # A line can move between hunks, so a file can be a pure reorder while
+    # none of its hunks is
+    file_reorder = is_reorder_file(fdiff)
+
     verdicts = []
     for hunk in fdiff.hunks:
         ent = match_accept(accepts, hunk.path, hunk.fingerprint)
         if ent:
             verdicts.append(Verdict(hunk, ACCEPTED, ent.reason))
+        elif fdiff.deleted and blame is None:
+            # Upstream has this file and this tree does not, so the change
+            # never arrived rather than being mangled on the way in
+            verdicts.append(Verdict(hunk, ABSENT, None))
+        elif file_reorder or is_reorder(hunk):
+            verdicts.append(Verdict(hunk, REORDER, None))
         elif blame is None:
             verdicts.append(Verdict(hunk, DRIFT, None))
         elif not hunk.added:
@@ -333,8 +412,195 @@ def classify(fdiff, accepts, blame=None):
     return verdicts
 
 
-def build_patch(fdiffs, verdicts):
-    """Build a patch which reverts the drift hunks
+# A C identifier
+RE_IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+
+# Words which turn up everywhere and say nothing about what a hunk defines
+IDENT_SKIP = {
+    'struct', 'union', 'return', 'static', 'define', 'include', 'unsigned',
+    'endif', 'ifndef', 'ifdef', 'typedef', 'extern', 'const', 'sizeof',
+}
+
+
+# Shapes which define a name, rather than merely using one
+RE_DEF_CPP = re.compile(r'^\s*#\s*define\s+([A-Za-z_]\w*)')
+RE_DEF_KCONFIG = re.compile(r'^\s*(?:menu)?config\s+([A-Za-z_]\w*)')
+RE_DEF_TAG = re.compile(
+    r'^\s*(?:typedef\s+)?(?:struct|union|enum)\s+([A-Za-z_]\w*)\s*\{')
+RE_DEF_FUNC = re.compile(
+    r'^\s*(?:static\s+|inline\s+|const\s+)*[A-Za-z_]\w*[\s*]+'
+    r'([A-Za-z_]\w*)\s*\(')
+RE_DEF_ASSIGN = re.compile(r'^\s*(?:PROVIDE\s*\(\s*)?([A-Za-z_]\w*)\s*=')
+RE_DEF_LABEL = re.compile(r'^\s*([A-Za-z_]\w*)\s*:\s*[A-Za-z_{]')
+
+# Words which start a statement, so what follows is a call and not a
+# definition: 'return foo(x);' names foo but does not define it
+STMT_KEYWORDS = {
+    'return', 'if', 'else', 'while', 'for', 'switch', 'case', 'do', 'goto',
+    'sizeof', 'break', 'continue',
+}
+
+# Files whose contents are assignments rather than statements
+LDS_SUFFIXES = ('.lds', '.lds.S')
+
+# Files where a leading 'label:' introduces a node
+DTS_SUFFIXES = ('.dts', '.dtsi')
+
+
+def defined_names(text, path):
+    """Find the names a line defines, as opposed to ones it merely uses
+
+    A name a hunk only uses is not a hazard when reverted: removing a use
+    cannot break anything else.  Only removing a definition can.  Most of what
+    a hunk contains is uses - a linker script keyword, a device-tree binding
+    constant, a config symbol read from prose - so telling the two apart is
+    what keeps the check from declining nearly everything.
+
+    Args:
+        text (str): Line to examine
+        path (str): File the line is in, which decides what a definition
+            looks like
+
+    Return:
+        set of str: Names this line defines
+    """
+    names = set()
+    # A line which starts with a statement keyword holds a call, so the name
+    # after it is used rather than defined
+    first = text.strip().split('(')[0].split()
+    statement = bool(first) and first[0] in STMT_KEYWORDS
+    for regex in (RE_DEF_CPP, RE_DEF_KCONFIG, RE_DEF_TAG, RE_DEF_FUNC):
+        if statement and regex is RE_DEF_FUNC:
+            continue
+        match = regex.match(text)
+        if match:
+            names.add(match.group(1))
+    if path.endswith(LDS_SUFFIXES):
+        match = RE_DEF_ASSIGN.match(text)
+        if match:
+            names.add(match.group(1))
+    if path.endswith(DTS_SUFFIXES):
+        match = RE_DEF_LABEL.match(text)
+        if match:
+            names.add(match.group(1))
+    return names
+
+
+def removed_identifiers(hunks):
+    """Find the distinctive names which reverting some hunks would remove
+
+    Reverting takes out the lines a hunk adds, so anything those lines define
+    goes with them.  If something else still uses such a name the tree stops
+    building, which is worth knowing before the revert is offered.
+
+    Only names the lines DEFINE are returned.  A line which merely uses a name
+    takes nothing away when reverted, and uses are most of what a hunk holds.
+
+    Only distinctive names are kept - long, and holding an underscore or upper
+    case.  A short common word appears all over the tree and tells us nothing,
+    so including it would decline every hunk.
+
+    Args:
+        hunks (list of Hunk): Hunks whose added lines would be removed
+
+    Return:
+        set of str: Names worth checking for remaining users
+    """
+    names = set()
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if not line.startswith('+'):
+                continue
+            for name in defined_names(line[1:], hunk.path):
+                if name in IDENT_SKIP or len(name) < 6:
+                    continue
+                if '_' in name or name.isupper():
+                    names.add(name)
+    return names
+
+
+def masked_positions(text):
+    """Find the characters of a line which sit in a string or a comment
+
+    Args:
+        text (str): Line to examine
+
+    Return:
+        set of int: Character positions which are quoted or commented out
+    """
+    masked = set()
+    # A line which continues a block comment carries no code at all
+    if text.strip().startswith(('*', '//', '/*')):
+        return set(range(len(text)))
+
+    quote = None
+    pos = 0
+    while pos < len(text):
+        char = text[pos]
+        if quote:
+            masked.add(pos)
+            if char == '\\':
+                pos += 1
+                masked.add(pos)
+            elif char == quote:
+                quote = None
+        elif char in '"\'':
+            quote = char
+            masked.add(pos)
+        elif text[pos:pos + 2] in ('//', '/*'):
+            masked.update(range(pos, len(text)))
+            break
+        pos += 1
+    return masked
+
+
+def is_code_reference(text, name):
+    """Check whether a line really uses a name, rather than just saying it
+
+    A name inside a string is not a dependency: U-Boot mentions environment
+    variables, command names and device names in quotes all over the tree,
+    and env_get("bootm_boot_mode") does not break if some help text which
+    happens to contain the same word is reverted.  Nor does a comment.
+
+    Args:
+        text (str): Line which matched
+        name (str): Name searched for
+
+    Return:
+        bool: True if the name appears as code somewhere in the line
+    """
+    masked = masked_positions(text)
+    for match in re.finditer(r'\b' + re.escape(name) + r'\b', text):
+        if match.start() not in masked:
+            return True
+    return False
+
+
+def survives_revert(hunks, name):
+    """Check whether a name still exists once some hunks are reverted
+
+    A revert takes out the lines a hunk adds and puts back the ones it
+    removes.  Where a name appears on both sides the revert does not take it
+    away: it restores an older form of it, which is a different hazard - the
+    definition still builds and every caller of the newer form breaks.
+
+    Args:
+        hunks (list of Hunk): Hunks which would be reverted
+        name (str): Name to look for
+
+    Return:
+        bool: True if the revert leaves the name in place, in another form
+    """
+    for hunk in hunks:
+        for line in hunk.lines[1:]:
+            if line.startswith('-') and re.search(
+                    r'\b' + re.escape(name) + r'\b', line[1:]):
+                return True
+    return False
+
+
+def build_patch(fdiffs, verdicts, states=(DRIFT,)):
+    """Build a patch which reverts the hunks in some states
 
     The patch is expressed as upstream-to-downstream, the same direction as
     the diff it came from, so it must be applied in reverse to take the tree
@@ -344,6 +610,7 @@ def build_patch(fdiffs, verdicts):
     Args:
         fdiffs (list of FileDiff): Files which differ from upstream
         verdicts (dict): Maps path to the list of Verdict for that file
+        states (tuple of str): States to revert, DRIFT alone by default
 
     Return:
         str: Patch text, empty if there is nothing to revert
@@ -351,7 +618,7 @@ def build_patch(fdiffs, verdicts):
     out = []
     for fdiff in fdiffs:
         drift = [vdt.hunk for vdt in verdicts.get(fdiff.path, [])
-                 if vdt.state == DRIFT]
+                 if vdt.state in states]
         if not drift:
             continue
         out += fdiff.header

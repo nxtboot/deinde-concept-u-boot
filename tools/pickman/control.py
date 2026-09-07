@@ -8,6 +8,7 @@
 
 from collections import namedtuple
 from datetime import date
+import fnmatch
 import os
 import re
 import sys
@@ -27,6 +28,7 @@ from pickman import database
 from pickman import drift
 from pickman import ftest
 from pickman import gitlab_api
+from u_boot_pylib import claude
 from u_boot_pylib import command
 from u_boot_pylib import gitutil
 from u_boot_pylib import terminal
@@ -142,7 +144,19 @@ ApplyInfo = namedtuple('ApplyInfo',
 # verdicts: dict mapping path to the list of drift.Verdict for its hunks
 # binary: list of paths which differ from upstream in binary content, and
 #     which no downstream commit accounts for
-DriftInfo = namedtuple('DriftInfo', ['base', 'fdiffs', 'verdicts', 'binary'])
+# orphans: set of commits picked from a series which upstream never took, and
+#     so treated as downstream-original rather than as cherry-picks
+# touched: set of paths which a downstream-original commit has touched, so
+#     that drift in them might have a justification
+# skipped: number of files taken as wanted in full without being looked
+#     inside, which a shallow run does for every file it would have blamed
+# deleted: paths which a downstream commit has removed, so that blame cannot
+#     say who did it and their hunks are taken as wanted
+# subtree: paths inside a vendored subtree, which update-subtree.sh manages
+#     rather than pickman, so they are no part of the drift figure
+DriftInfo = namedtuple('DriftInfo',
+                       ['base', 'fdiffs', 'verdicts', 'binary', 'orphans',
+                        'touched', 'skipped', 'deleted', 'subtree'])
 
 
 def parse_log_output(log_output, has_parents=False):
@@ -806,34 +820,89 @@ def drift_write_accepts(accepts):
                      binary=False)
 
 
-def drift_downstream_commits(source, branch):
+def drift_cherry_picks(rng, sources):
+    """Sort the cherry-picks in a range into genuine ones and orphans
+
+    A commit which records '(cherry picked from commit X)' has only really
+    come from upstream if X is reachable from a tracked source.  Some
+    downstream commits are picked from a series which upstream never took, so
+    X exists in no source; their change is downstream-only work which upstream
+    does not have.  Treating those as cherry-picks would report the work as
+    drift and offer to revert it, so they are separated out here.
+
+    Args:
+        rng (str): Commit range to examine, e.g. 'base..branch'
+        sources (list of str): Tracked source refs to resolve against
+
+    Return:
+        tuple:
+            set of str: Hashes of the genuine cherry-picks
+            set of str: Hashes of the orphans, picked from an unmerged series
+    """
+    reachable = set()
+    for ref in sources:
+        if gitutil.ref_exists(ref):
+            reachable.update(gitutil.rev_list(ref))
+
+    # A trailer may abbreviate the hash, so index the reachable commits by
+    # each prefix length which turns up
+    by_len = {}
+
+    genuine = set()
+    orphan = set()
+    for chash, body in gitutil.log_bodies(rng, no_merges=True):
+        found = RE_CHERRY_PICK.findall(body)
+        if not found:
+            continue
+        ref = found[-1]
+        if len(ref) >= 40:
+            known = ref in reachable
+        else:
+            prefixes = by_len.get(len(ref))
+            if prefixes is None:
+                prefixes = {full[:len(ref)] for full in reachable}
+                by_len[len(ref)] = prefixes
+            known = ref in prefixes
+        if known:
+            genuine.add(chash)
+        else:
+            orphan.add(chash)
+    return genuine, orphan
+
+
+def drift_downstream_commits(source, branch, sources=None):
     """Find the commits made downstream which did not come from upstream
 
     Commits added since the trees diverged which carry no cherry-pick line are
     downstream-original: they are the reason the trees are allowed to differ.
     Merges are ignored, since their content belongs to the commits they merge.
 
+    A commit picked from a series which upstream never took counts as
+    downstream-original too, since upstream has no such change to match.
+
     Args:
         source (str): Source branch name, e.g. 'us/master'
         branch (str): Downstream branch to examine, e.g. 'ci/master'
+        sources (list of str): Tracked source refs to resolve cherry-picks
+            against, or None to use just the source being compared
 
     Return:
         tuple:
             set of str: Hashes of the downstream-original commits
             set of str: Paths which those commits touch
+            set of str: Hashes of the orphans, picked from an unmerged series
     """
     fork = gitutil.merge_base(branch, source)
     rng = f'{fork}..{branch}'
-    cherry = set(gitutil.log_hashes(rng, grep='cherry picked from commit',
-                                    no_merges=True))
+    genuine, orphan = drift_cherry_picks(rng, sources or [source])
 
     hashes = set()
     paths = set()
     for chash, files in gitutil.log_commits_with_files(rng, no_merges=True):
-        if chash not in cherry:
+        if chash not in genuine:
             hashes.add(chash)
             paths.update(files)
-    return hashes, paths
+    return hashes, paths, orphan
 
 
 def drift_blame(branch, path, down_hashes):
@@ -857,7 +926,7 @@ def drift_blame(branch, path, down_hashes):
     return blame
 
 
-def drift_collect(dbs, source, branch, deep=False, base=None):
+def drift_collect(dbs, source, branch, deep=False, base=None):  # pylint: disable=too-many-locals
     """Compare the downstream tree with upstream and classify every delta
 
     Args:
@@ -882,7 +951,12 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
             return None
 
     accepts = drift_read_accepts()
-    down_hashes, down_paths = drift_downstream_commits(source, branch)
+    # Resolve cherry-picks against every tracked source, so that a commit
+    # picked from a series which upstream never took is not mistaken for one
+    # whose change upstream already has
+    tracked = [name for name, _ in dbs.source_get_all()] or [source]
+    down_hashes, down_paths, orphans = drift_downstream_commits(
+        source, branch, tracked)
 
     diff = gitutil.diff(base, branch)
     fdiffs = drift.parse_diff(diff)
@@ -896,7 +970,23 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
 
     verdicts = {}
     binary = []
+    deleted = []
+    subtree = []
+    skipped = 0
+    subtree_paths = tuple(SUBTREE_NAMES)
     for fdiff in fdiffs:
+        # A vendored subtree is managed by update-subtree.sh, not by picks.
+        # Its contents differ from upstream because they track a different
+        # project, so calling that drift would offer to revert work which is
+        # not pickman's, and calling it absent would advise a cherry-pick
+        # which could not bring it.  Note that provenance alone cannot tell:
+        # a subtree squash commit carries no cherry-pick line, so it reads as
+        # downstream-original and its files as wanted - which means the same
+        # file can look wanted or drifted depending only on how recently the
+        # subtree was pulled.  Hence the explicit test here
+        if fdiff.path.startswith(subtree_paths):
+            subtree.append(fdiff.path)
+            continue
         touched = fdiff.path in down_paths
         if fdiff.binary:
             if not touched and not drift.match_accept(accepts, fdiff.path,
@@ -907,16 +997,41 @@ def drift_collect(dbs, source, branch, deep=False, base=None):
         if touched:
             # A file which is gone downstream cannot be blamed, and a shallow
             # run does not try to tell one hunk from another.  Either way the
-            # downstream commits get the benefit of the doubt
-            if not deep or fdiff.deleted:
+            # downstream commits get the benefit of the doubt, but the two are
+            # worth counting apart: only one of them can be acted on
+            if fdiff.deleted or not deep:
                 verdicts[fdiff.path] = [
                     drift.Verdict(hunk, drift.WANTED, 'downstream file')
                     for hunk in fdiff.hunks]
+                if fdiff.deleted:
+                    deleted.append(fdiff.path)
+                else:
+                    skipped += 1
                 continue
             blame = drift_blame(branch, fdiff.path, down_hashes)
         verdicts[fdiff.path] = drift.classify(fdiff, accepts, blame)
 
-    return DriftInfo(base, fdiffs, verdicts, binary)
+    return DriftInfo(base, fdiffs, verdicts, binary, orphans, down_paths,
+                     skipped, deleted, subtree)
+
+
+def drift_absent_paths(info):
+    """List the files which upstream has and this tree never received
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+
+    Return:
+        list of tuple: (path, number of lines the file has), largest first
+    """
+    out = []
+    for path, verdicts in info.verdicts.items():
+        hunks = [vdt.hunk for vdt in verdicts if vdt.state == drift.ABSENT]
+        if hunks:
+            lines = sum(1 for hunk in hunks for line in hunk.lines[1:]
+                        if line[:1] in '+-')
+            out.append((path, lines))
+    return sorted(out, key=lambda item: (-item[1], item[0]))
 
 
 def drift_paths(info):
@@ -946,7 +1061,8 @@ def drift_state_counts(info):
     Return:
         dict: Maps state (WANTED, ACCEPTED, DRIFT) to the number of hunks
     """
-    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.DRIFT: 0}
+    states = {drift.WANTED: 0, drift.ACCEPTED: 0, drift.REORDER: 0,
+              drift.ABSENT: 0, drift.DRIFT: 0}
     for verdicts in info.verdicts.values():
         for vdt in verdicts:
             states[vdt.state] += 1
@@ -974,6 +1090,257 @@ def drift_percent(states):
     return 100.0 * states[drift.DRIFT] / total
 
 
+# Build used to check that a revert leaves a tree which still compiles.  It
+# writes out of tree, so it does not dirty the working copy it is checking
+DEFAULT_BUILD_CMD = 'um build sandbox'
+
+# How many lines of a failed build to show; the first errors name the symbol
+BUILD_ERROR_LINES = 8
+
+
+def drift_build_cmd(args):
+    """Work out the build command which checks a revert
+
+    Args:
+        args (Namespace): Parsed arguments, read for 'build_cmd' and
+            'no_build'
+
+    Return:
+        str: Command to run, or None if building is turned off
+    """
+    if getattr(args, 'no_build', False):
+        return None
+    return (getattr(args, 'build_cmd', None) or
+            gitlab_api.get_config_value('build', 'command') or
+            DEFAULT_BUILD_CMD)
+
+
+def drift_build_ok(build_cmd):
+    """Run a check against the reverted working tree
+
+    The identifier check cannot see a short name like a three-letter struct
+    member, so building is the only answer to 'does this revert leave
+    something which compiles'.  It runs against the reverted working tree,
+    before anything is committed.
+
+    A command which passes says only that this check passed.  It does not say
+    the revert is right: a downstream test may depend on the very bytes being
+    reverted, which compiles perfectly and fails when run.  The command is
+    whatever is configured, so it can build and test both - the exit status is
+    all that is looked at.
+
+    Args:
+        build_cmd (str): Command to run
+
+    Return:
+        tuple:
+            bool: True if the build succeeded
+            str: The tail of the output when it did not, else ''
+    """
+    tout.info(f'  building with: {build_cmd}')
+    # Run through a shell, so that a command may chain with && or | as the
+    # documentation says it can.  Splitting it into words instead would hand
+    # '&&' to the first program as an argument, which fails in a way that
+    # looks like the revert being at fault
+    res = command.run_one('sh', '-c', build_cmd, capture=True,
+                          capture_stderr=True, raise_on_error=False)
+    if not res.return_code:
+        return True, ''
+    out = (res.combined or res.stderr or res.stdout or '')
+    lines = [line for line in out.splitlines() if line.strip()]
+    return False, chr(10).join(lines[:BUILD_ERROR_LINES])
+
+
+# Names searched for in one go, to keep the command line sane
+GREP_BATCH = 200
+
+# How many declined files to name before summarising the rest
+DECLINE_SHOWN = 5
+
+# Files which describe rather than build, so nothing in them can break
+DOC_SUFFIXES = ('.rst', '.txt', '.md', '.yaml', '.yml', '.json')
+
+
+def drift_grep_names(names, branch):
+    """Find every line in a branch which uses any of some names
+
+    One search covers the whole area, since a search for each name in turn
+    means thousands of git processes and takes minutes on a large one.
+
+    Args:
+        names (list of str): Names to look for, matched as whole words
+        branch (str): Branch to search
+
+    Return:
+        list of tuple: (path, line number, text) for each matching line
+    """
+    hits = []
+    names = sorted(names)
+    for pos in range(0, len(names), GREP_BATCH):
+        cmd = ['git', 'grep', '-n', '-w']
+        for name in names[pos:pos + GREP_BATCH]:
+            cmd += ['-e', name]
+        cmd.append(branch)
+        out = command.output(*cmd, raise_on_error=False)
+        for line in out.splitlines():
+            # 'git grep <rev>' prints 'rev:path:lineno:text'
+            parts = line.split(':', 3)
+            if len(parts) == 4 and parts[2].isdigit():
+                hits.append((parts[1], int(parts[2]), parts[3]))
+    return hits
+
+
+# pylint: disable-next=too-many-locals,too-many-branches
+def drift_load_bearing(info, paths, branch):
+    """Find files whose revert would remove something still in use
+
+    Reverting a hunk takes out the lines it adds.  Where those lines define
+    something and other code still refers to it, the revert leaves the tree
+    unable to build.  Nothing else catches this: the tree builds before, so
+    the first sign of trouble is CI failing on a merge request already open.
+
+    A use which the revert itself removes does not count, since it goes away
+    with the definition.  That is judged line by line rather than by file: a
+    file being reverted for one hunk may still use the name somewhere the
+    revert does not touch, and taking the whole file as safe would miss it.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+        paths (list of str): Files about to be reverted
+        branch (str): Branch to search for remaining users
+
+    Return:
+        dict: Maps path to a list of (name, file still using it, what the
+            revert does to it), for the files which cannot safely be reverted
+    """
+    # The history file records every run, so it mentions names which nothing
+    # uses; searching it would decline almost everything
+    ignore = {HISTORY_FILE, drift.ACCEPT_FILE}
+
+    names_for = {}
+    dropped = {}
+    hunks_for = {}
+    for path in paths:
+        hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
+                 if vdt.state == drift.DRIFT]
+        hunks_for[path] = hunks
+        names = drift.removed_identifiers(hunks)
+        if names:
+            names_for[path] = names
+        # Lines this revert takes away, so a use on one of them goes too
+        dropped[path] = {num for hunk in hunks for num in hunk.added}
+
+    every = set()
+    for names in names_for.values():
+        every.update(names)
+    if not every:
+        return {}
+
+    hits = drift_grep_names(every, branch)
+
+    held = {}
+    for path, names in names_for.items():
+        for name in sorted(names):
+            for user, num, text in hits:
+                if user == path or user in ignore:
+                    continue
+                # Cheap test first: the regex below is far more costly and
+                # most lines in the batch matched some other name
+                if name not in text:
+                    continue
+                if user.endswith(DOC_SUFFIXES):
+                    # Documentation cannot fail to build
+                    continue
+                # A line which defines the name itself is not a user of
+                # ours: every linker script declares its own __rel_dyn_end,
+                # and two device trees may label unrelated nodes alike
+                if name in drift.defined_names(text, user):
+                    continue
+                # A name inside a string or a comment is not a dependency:
+                # reverting a definition cannot break a line which only
+                # mentions the word
+                if not drift.is_code_reference(text, name):
+                    continue
+                # A use which is itself being reverted disappears with the
+                # definition, so it does not hold anything back
+                if user in dropped and num in dropped[user]:
+                    continue
+                # Say which hazard it is: a name on both sides of the hunk
+                # is not taken away, it goes back to an older form, and the
+                # callers of the newer one are what break
+                verb = ('changes' if drift.survives_revert(hunks_for[path],
+                                                           name)
+                        else 'removes')
+                held.setdefault(path, []).append((name, user, verb))
+                break
+            if path in held:
+                break
+    return held
+
+
+def drift_select(bad, info, patterns=None, unambiguous=False):
+    """Narrow a list of drifted files down to those asked for
+
+    Args:
+        bad (list of tuple): (path, hunk count) from drift_paths()
+        info (DriftInfo): Result from drift_collect()
+        patterns (list of str): Globs a path must match, or None for any
+        unambiguous (bool): True to keep only files which no downstream
+            commit has touched, whose drift therefore cannot be justified
+
+    Return:
+        list of tuple: The entries which are wanted, in the order given
+    """
+    out = []
+    for path, count in bad:
+        if unambiguous and path in info.touched:
+            continue
+        if patterns and not any(fnmatch.fnmatch(path, pat) or
+                                path.startswith(pat.rstrip('*'))
+                                for pat in patterns):
+            continue
+        out.append((path, count))
+    return out
+
+
+def drift_show_orphans(info):
+    """List the commits picked from a series no tracked source has
+
+    Upstream may take such a series later, at which point the commit becomes
+    an ordinary cherry-pick and its delta should match upstream again, so
+    these are worth looking at again as upstream moves.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+    """
+    tout.info(f'{len(info.orphans)} commit(s) picked from a series no '
+              'tracked source has:')
+    for line in gitutil.commit_summaries(sorted(info.orphans)):
+        tout.info(f'  {line}')
+
+
+def drift_show_fingerprints(info):
+    """List each drift hunk with the fingerprint which identifies it
+
+    The fingerprint is what 'drift-accept -u' takes, so without this there is
+    no way to accept a single hunk rather than a whole file.
+
+    Args:
+        info (DriftInfo): Result from drift_collect()
+    """
+    for path, _ in drift_paths(info):
+        hunks = [vdt.hunk for vdt in info.verdicts.get(path, [])
+                 if vdt.state == drift.DRIFT]
+        if not hunks:
+            continue
+        tout.info(path)
+        for hunk in hunks:
+            plus = sum(1 for line in hunk.lines[1:] if line.startswith('+'))
+            minus = sum(1 for line in hunk.lines[1:] if line.startswith('-'))
+            tout.info(f'  {hunk.fingerprint}  {hunk.lines[0][:46]:<46} '
+                      f'+{plus} -{minus}')
+
+
 def drift_show_report(info, show_list, show_diff):
     """Show what the comparison with upstream found
 
@@ -995,8 +1362,41 @@ def drift_show_report(info, show_list, show_diff):
               'downstream commits')
     tout.info(f'  {states[drift.ACCEPTED]} hunk(s) accepted by '
               f'{drift.ACCEPT_FILE}')
+    if states[drift.REORDER]:
+        tout.info(f'  {states[drift.REORDER]} hunk(s) only reorder lines, '
+                  'so they say the same as upstream')
+    if info.orphans:
+        tout.info(f'  {len(info.orphans)} commit(s) picked from a series no '
+                  "tracked source has, treated as downstream ('-o' to list)")
+    absent = drift_absent_paths(info)
+    if absent:
+        lines = sum(count for _, count in absent)
+        tout.info(f'  {len(absent)} file(s) upstream has which this tree '
+                  f'never received ({lines} lines), reported apart from '
+                  "drift ('drift-fix --missing')")
     tout.info(f'  {states[drift.DRIFT]} hunk(s) of drift in {len(bad)} '
               f'file(s), {drift_percent(states):.0f}% of divergence')
+
+    # Drift in a file no downstream commit has touched cannot have a
+    # justification, so say how much of the total is certain
+    sure = drift_select(bad, info, None, True)
+    if sure and len(sure) != len(bad):
+        hunks = sum(count for _, count in sure)
+        tout.info(f'    of which {hunks} hunk(s) in {len(sure)} file(s) are '
+                  "in files no downstream commit has touched ('drift-fix -u')")
+
+    if info.skipped:
+        tout.info(f'  {info.skipped} file(s) which downstream commits touch '
+                  'were taken as wanted without being looked inside; drop '
+                  "'-s' to blame them")
+    if info.subtree:
+        tout.info(f'  {len(info.subtree)} file(s) are in a vendored subtree; '
+                  'update-subtree.sh owns these, but they still differ from '
+                  'upstream and must survive each pull')
+    if info.deleted:
+        tout.info(f'  {len(info.deleted)} file(s) deleted downstream cannot '
+                  "be blamed, so their hunks are taken as wanted ('-l' to "
+                  'list)')
 
     if not bad:
         tout.info('')
@@ -1008,14 +1408,16 @@ def drift_show_report(info, show_list, show_diff):
         for path, count in bad:
             what = f'{count} hunk(s)' if count else 'binary'
             tout.info(f'  {what:>12}  {path}')
+        for path in sorted(info.deleted):
+            tout.info(f'  {"deleted":>12}  {path}')
 
     if show_diff:
         # Print the patch plainly, so that it can be piped to 'git apply -R'
         print(drift.build_patch(info.fdiffs, info.verdicts), end='')
 
     tout.info('')
-    tout.info(f"Run 'pickman drift-fix' to revert these to upstream, or "
-              f"'pickman drift-accept' to record one as intentional")
+    tout.info("Run 'pickman drift-fix' to revert these to upstream, or "
+              "'pickman drift-accept' to record one as intentional")
     return 1
 
 
@@ -1049,7 +1451,7 @@ def do_drift(args, dbs):
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'shallow',
-            'list', 'diff' and 'upstream' attributes
+            'list', 'diff', 'fingerprints', 'orphans' and 'upstream'
         dbs (Database): Database instance
 
     Return:
@@ -1063,35 +1465,248 @@ def do_drift(args, dbs):
     info = drift_collect(dbs, args.source, branch, not args.shallow, base=base)
     if not info:
         return 1
-    return drift_show_report(info, args.list, args.diff)
+    ret = drift_show_report(info, args.list, args.diff)
+    if args.fingerprints:
+        tout.info('')
+        drift_show_fingerprints(info)
+    if getattr(args, 'orphans', False) and info.orphans:
+        tout.info('')
+        drift_show_orphans(info)
+    return ret
+
+
+def drift_accept_paths(args):
+    """Work out which paths a drift-accept call covers
+
+    Args:
+        args (Namespace): Parsed arguments, read for 'path' and 'from_file'
+
+    Return:
+        list of str: Paths to accept, in the order given
+
+    Raises:
+        ValueError: If neither or both of the two are given, or the file
+            names nothing
+    """
+    from_file = getattr(args, 'from_file', None)
+    if bool(args.path) == bool(from_file):
+        raise ValueError("Give either a path or --from, not both")
+    if not from_file:
+        return [args.path]
+
+    if from_file == '-':
+        text = sys.stdin.read()
+    else:
+        text = tools.read_file(from_file, binary=False)
+    paths = [line.strip() for line in text.splitlines()
+             if line.strip() and not line.startswith('#')]
+    if not paths:
+        raise ValueError(f"No paths found in '{from_file}'")
+    return paths
 
 
 def do_drift_accept(args, dbs):  # pylint: disable=unused-argument
-    """Record a delta from upstream as intentional
+    """Record one or more deltas from upstream as intentional
 
     Args:
-        args (Namespace): Parsed arguments with 'path', 'hunk' and 'message'
+        args (Namespace): Parsed arguments with 'path', 'from_file', 'hunk',
+            'message' and 'dry_run'
         dbs (Database): Database instance (unused)
 
     Return:
         int: 0 on success, 1 on failure
     """
+    try:
+        paths = drift_accept_paths(args)
+    except (ValueError, IOError) as exc:
+        tout.error(str(exc))
+        return 1
+
     accepts = drift_read_accepts()
-    new = drift.Accept(args.path, args.hunk, args.message)
+    have = {(ent.pattern, ent.fingerprint) for ent in accepts}
 
-    for ent in accepts:
-        if (ent.pattern, ent.fingerprint) == (new.pattern, new.fingerprint):
-            tout.error(f"'{new.pattern}' is already accepted: {ent.reason}")
-            return 1
+    added = []
+    for path in paths:
+        new = drift.Accept(path, args.hunk, args.message)
+        if (new.pattern, new.fingerprint) in have:
+            # With a list, an entry already recorded is not worth failing over
+            if len(paths) == 1:
+                tout.error(f"'{path}' is already accepted")
+                return 1
+            tout.info(f"  {path}: already accepted, skipped")
+            continue
+        have.add((new.pattern, new.fingerprint))
+        added.append(new)
 
-    accepts.append(new)
-    drift_write_accepts(accepts)
+    what = ('every hunk' if args.hunk == drift.ALL_HUNKS
+            else f'hunk {args.hunk}')
+    if getattr(args, 'dry_run', False):
+        tout.info(f'Would accept {what} in {len(added)} path(s):')
+        for ent in added:
+            tout.info(f'  {ent.pattern}')
+        return 0
 
-    what = ('every hunk' if new.fingerprint == drift.ALL_HUNKS
-            else f'hunk {new.fingerprint}')
-    tout.info(f"Accepted {what} in '{new.pattern}': {new.reason}")
+    if not added:
+        tout.info('Nothing to accept')
+        return 0
+
+    drift_write_accepts(accepts + added)
+    if len(added) == 1:
+        tout.info(f"Accepted {what} in '{added[0].pattern}': "
+                  f'{added[0].reason}')
+    else:
+        tout.info(f'Accepted {what} in {len(added)} path(s): '
+                  f'{args.message}')
     tout.info(f'Updated {drift.ACCEPT_FILE} - commit this to record it')
     return 0
+
+
+# Where the knowledge of which commit adds a file came from
+ORIGIN_RECORDED = 'recorded'
+ORIGIN_INFERRED = 'inferred'
+
+
+def drift_absent_origin(dbs, source_id, source, paths):
+    """Find the commit which adds each file this tree never received
+
+    A parked conflict in the database is a record: pickman tried that commit
+    and set it aside, so its files are missing for a known reason.  Where
+    there is no such record the log is searched instead, which gives a good
+    starting point but is a guess - the file may have gone missing during a
+    pick which pickman believed had succeeded.
+
+    Args:
+        dbs (Database): Database instance
+        source_id (int): Source branch id
+        source (str): Source branch to search when nothing is recorded
+        paths (list of str): Files which are absent downstream
+
+    Return:
+        dict: Maps path to (hash, subject, where it came from)
+    """
+    want = set(paths)
+    found = {}
+
+    # A parked commit is a record of why the file is missing
+    for _, chash, subj in status_parked(dbs, source_id):
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            continue
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                if path in want and path not in found:
+                    found[path] = (chash, subj, ORIGIN_RECORDED)
+
+    # Anything left has to be looked up, which is a guess rather than a record
+    for path in paths:
+        if path in found:
+            continue
+        out = command.output('git', 'log', '--diff-filter=A', '-1',
+                             '--format=%H%x00%s', source, '--', path,
+                             raise_on_error=False).strip()
+        if '\x00' in out:
+            chash, subj = out.split('\x00', 1)
+            found[path] = (chash, subj, ORIGIN_INFERRED)
+    return found
+
+
+def drift_absent_partial(origin, absent):
+    """Find files whose restore would apply only part of a commit
+
+    A file which arrives without the rest of its commit is half a change: the
+    Makefile entry which builds it, or the devicetree which includes it, may
+    still be missing.  Cherry-picking the commit brings the whole thing, so
+    that is what should happen instead.
+
+    Args:
+        origin (dict): Result from drift_absent_origin()
+        absent (set of str): Every file which is absent downstream
+
+    Return:
+        dict: Maps path to (hash, subject, where from, other files still
+            absent, files the commit also changes)
+    """
+    partial = {}
+    for path, (chash, subj, where) in origin.items():
+        others = set()
+        changed = set()
+        for status, name in gitutil.commit_file_status(chash):
+            if name == path:
+                continue
+            if status == 'A':
+                if name in absent:
+                    others.add(name)
+            else:
+                # A file the commit changes rather than adds is present here,
+                # but its hunks came with the commit and are missing too
+                changed.add(name)
+        if others or changed:
+            partial[path] = (chash, subj, where, sorted(others),
+                             sorted(changed))
+    return partial
+
+
+def drift_absent_reason(dbs, source_id, paths):
+    """Find parked commits which add the files a restore would bring back
+
+    An absent file is often not cruft at all: the commit which adds it was
+    parked as a conflict and never retried.  Saying so explains the change far
+    better than guessing at a mangled conflict resolution.
+
+    Args:
+        dbs (Database): Database instance
+        source_id (int): Source branch id
+        paths (list of str): Files which are absent downstream
+
+    Return:
+        dict: Maps path to the (hash, subject) parked commit which adds it
+    """
+    parked = status_parked(dbs, source_id)
+    if not parked:
+        return {}
+    want = set(paths)
+    found = {}
+    for _, chash, subj in parked:
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            continue
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                if path in want:
+                    found.setdefault(path, (chash, subj))
+    return found
+
+
+def drift_absent_msg(area, paths, info, reasons):
+    """Compose the commit message for restoring files upstream has
+
+    Args:
+        area (str): Area of the tree, e.g. 'arch/arm'
+        paths (list of str): Files being restored
+        info (DriftInfo): Result from drift_collect()
+        reasons (dict): Parked commits by path, from drift_absent_reason()
+
+    Return:
+        str: Commit message
+    """
+    files = chr(10).join(f' - {path}' for path in paths)
+    out = [f'{area}: Restore files which upstream has',
+           '',
+           'Upstream has these files and this tree never received them.',
+           'Nothing was mangled on the way in: the change simply did not',
+           'arrive, so this adds them back as upstream has them at',
+           f'{info.base[:12]}',
+           '']
+    if reasons:
+        named = sorted(set(reasons.values()))
+        out += ['The commit which adds them is parked as a conflict, so this',
+                'is work which was tried and set aside rather than lost:', '']
+        out += [f' - {chash[:11]} {subj}' for chash, subj in named]
+        out += ['']
+    out += ['Note that a restored file may need a Makefile or Kconfig entry',
+            'to be of any use, so this wants a build before it is merged.',
+            '',
+            f'This restores {len(paths)} file(s):',
+            files, '']
+    return chr(10).join(out)
 
 
 def drift_commit_msg(area, paths, info):
@@ -1120,7 +1735,9 @@ def drift_commit_msg(area, paths, info):
         f'{files}\n')
 
 
-def drift_revert_area(info, area, paths, branch):
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
+def drift_revert_area(info, area, paths, branch, msg=None, missing=False,
+                      build_cmd=None):
     """Create a branch which reverts the drift in one area of the tree
 
     Args:
@@ -1128,11 +1745,16 @@ def drift_revert_area(info, area, paths, branch):
         area (str): Area of the tree, e.g. 'drivers/video'
         paths (list of str): Files to revert
         branch (str): Downstream branch to base the revert on
+        msg (str): Commit message, or None to describe it as drift
+        missing (bool): True to restore files upstream has, rather than
+            revert drift hunks
+        build_cmd (str): Command to check the reverted tree builds, or None
+            to commit without checking
 
     Return:
         str: Name of the branch created, or None on failure
     """
-    name = 'drift-' + area.replace('/', '-')
+    name = ('missing-' if missing else 'drift-') + area.replace('/', '-')
     if gitutil.branch_exists(name):
         tout.info(f'Deleting existing branch {name}')
         gitutil.delete_branch(name)
@@ -1140,7 +1762,8 @@ def drift_revert_area(info, area, paths, branch):
 
     wanted = set(paths)
     fdiffs = [fdiff for fdiff in info.fdiffs if fdiff.path in wanted]
-    patch = drift.build_patch(fdiffs, info.verdicts)
+    states = (drift.ABSENT,) if missing else (drift.DRIFT,)
+    patch = drift.build_patch(fdiffs, info.verdicts, states)
 
     if patch:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.patch',
@@ -1154,7 +1777,8 @@ def drift_revert_area(info, area, paths, branch):
             # to deal with: the point here is to match it exactly
             gitutil.apply_patch(pname, reverse=True, whitespace='nowarn')
         except Exception as exc:  # pylint: disable=broad-except
-            tout.error(f'Failed to revert drift in {area}: {exc}')
+            what = 'restore' if missing else 'revert drift in'
+            tout.error(f'Failed to {what} {area}: {exc}')
             return None
         finally:
             os.unlink(pname)
@@ -1166,8 +1790,24 @@ def drift_revert_area(info, area, paths, branch):
 
     # Commit these paths and no others, so that anything else in the tree is
     # left where it is
+    # Check before committing: a revert can remove something another file
+    # still uses, and the identifier check cannot see every such name
+    if build_cmd:
+        built, errors = drift_build_ok(build_cmd)
+        if not built:
+            tout.error(f'{area}: the revert does not build, so it is not '
+                       'worth a merge request:')
+            for line in errors.splitlines():
+                tout.error(f'    {line}')
+            # Put the working tree back and drop the branch, which has no
+            # commit on it yet
+            run_git(['reset', '--hard'])
+            gitutil.checkout_branch(branch)
+            gitutil.delete_branch(name)
+            return None
+
     gitutil.add(paths)
-    gitutil.commit_paths(drift_commit_msg(area, paths, info), paths)
+    gitutil.commit_paths(msg or drift_commit_msg(area, paths, info), paths)
     return name
 
 
@@ -1176,12 +1816,14 @@ def do_drift_fix(args, dbs):
 
     Args:
         args (Namespace): Parsed arguments with 'source', 'branch', 'count',
-            'push', 'remote' and 'target' attributes
+            'paths', 'unambiguous', 'push', 'remote' and 'target' attributes
         dbs (Database): Database instance
 
     Return:
         int: 0 on success, 1 on failure
     """
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-return-statements
     # Branches are created and patches applied below, so anything left lying
     # around in the working tree would be swept along with it
     if gitutil.has_uncommitted_changes():
@@ -1193,9 +1835,22 @@ def do_drift_fix(args, dbs):
     if not info:
         return 1
 
-    bad = drift_paths(info)
+    missing = getattr(args, 'missing', False)
+    if missing:
+        bad = drift_absent_paths(info)
+        if not bad:
+            tout.info('No files missing from upstream ✓')
+            return 0
+    else:
+        bad = drift_paths(info)
+        if not bad:
+            tout.info('No drift from upstream ✓')
+            return 0
+
+    bad = drift_select(bad, info, getattr(args, 'paths', None),
+                       getattr(args, 'unambiguous', False))
     if not bad:
-        tout.info('No drift from upstream ✓')
+        tout.info('Nothing to fix with the filters given')
         return 0
 
     areas = drift.group_by_area([path for path, _ in bad])
@@ -1204,18 +1859,87 @@ def do_drift_fix(args, dbs):
         tout.info(f'{len(areas)} area(s) have drift, fixing {len(todo)} - '
                   'run again for the rest')
 
+    build_cmd = drift_build_cmd(args)
+    if build_cmd:
+        tout.info(f"Each area is checked with '{build_cmd}'; --no-build "
+                  'turns that off.  Passing means the check passed, not that '
+                  'the revert is right')
+        # If the check cannot pass the tree as it stands, nothing it says
+        # about a reverted tree means anything - and every area would decline,
+        # which looks like caution rather than a broken command
+        tout.info('  checking it passes on the tree as it is...')
+        built, errors = drift_build_ok(build_cmd)
+        if not built:
+            tout.error('That command fails on the unmodified tree, so its '
+                       'verdict on a revert would be meaningless:')
+            for line in errors.splitlines():
+                tout.error(f'    {line}')
+            return 1
+
     orig = gitutil.current_branch()
     ret = 0
     try:
         for area, paths in todo:
             tout.info(f'{area}: reverting {len(paths)} file(s)')
-            name = drift_revert_area(info, area, paths, args.branch)
+            held = ({} if missing else
+                    drift_load_bearing(info, paths, args.branch))
+            if held:
+                tout.warning(f'{area}: declining {len(held)} file(s) whose '
+                             'revert would change or remove something still '
+                             'in use:')
+                shown = sorted(held.items())[:DECLINE_SHOWN]
+                for path, users in shown:
+                    name, user, verb = users[0]
+                    tout.warning(f'  {path}: {verb} {name}, still used by '
+                                 f'{user}')
+                if len(held) > len(shown):
+                    tout.warning(f'  ... and {len(held) - len(shown)} more '
+                                 f'(showing {len(shown)} of {len(held)})')
+                paths = [path for path in paths if path not in held]
+                if not paths:
+                    tout.warning(f'{area}: nothing left to revert, skipping')
+                    continue
+            if missing:
+                sid = dbs.source_get_id(args.source)
+                absent = {path for path, _ in drift_absent_paths(info)}
+                origin = drift_absent_origin(dbs, sid, args.source, paths)
+                partial = drift_absent_partial(origin, absent)
+                if partial:
+                    tout.warning(f'{area}: declining {len(partial)} file(s) '
+                                 'which would apply only part of a commit:')
+                    for path in sorted(partial)[:DECLINE_SHOWN]:
+                        chash, _, where, others, changed = partial[path]
+                        tout.warning(
+                            f'  {path} ({where}): applies only part of '
+                            f'{chash[:11]} - {len(others)} file(s) still '
+                            f'absent and {len(changed)} it also changes')
+                        tout.warning(f'    run: pickman pick {chash[:11]}')
+                    if len(partial) > DECLINE_SHOWN:
+                        tout.warning(f'  ... and {len(partial) - DECLINE_SHOWN}'
+                                     f' more (showing {DECLINE_SHOWN} of '
+                                     f'{len(partial)})')
+                    paths = [path for path in paths if path not in partial]
+                    if len(partial) > len(paths):
+                        tout.info('  most of these want picking rather than '
+                                  'restoring, which is the tool working')
+                    if not paths:
+                        tout.warning(f'{area}: nothing left to restore, '
+                                     'skipping')
+                        continue
+                reasons = {path: (rec[0], rec[1])
+                           for path, rec in origin.items() if path in paths}
+                msg = drift_absent_msg(area, paths, info, reasons)
+            else:
+                msg = drift_commit_msg(area, paths, info)
+            name = drift_revert_area(info, area, paths, args.branch, msg,
+                                     missing, build_cmd)
             if not name:
                 ret = 1
                 continue
             if args.push:
-                title = f'{area}: Drop unintended deltas from upstream'
-                desc = drift_commit_msg(area, paths, info)
+                title = (f'{area}: Restore files which upstream has' if missing
+                         else f'{area}: Drop unintended deltas from upstream')
+                desc = msg
                 if not push_mr(args, name, title, desc):
                     ret = 1
             else:
@@ -1267,6 +1991,206 @@ def status_parked(dbs, source_id):
     return sorted((rec[0], rec[1], rec[4]) for rec in recs)
 
 
+def parked_overlap(parked, commits):
+    """Find where commits about to be applied touch parked-conflict files
+
+    A parked commit's change is missing from the tree.  A later commit which
+    touches the same file may be adjusting something the parked one was
+    supposed to add, so applying it alone leaves the tree with half the work -
+    it still builds, CI stays green, and nothing says a thing.  That is how a
+    board came to hang for months on a missing linker-script alignment.
+
+    Args:
+        parked (list of tuple): (id, hash, subject) from status_parked()
+        commits (list of CommitInfo): Commits about to be applied
+
+    Return:
+        dict: Maps each shared path to the list of (hash, subject) parked
+            commits which touch it, for the paths the new commits also touch
+    """
+    if not parked or not commits:
+        return {}
+
+    parked_paths = {}
+    for _, chash, subj in parked:
+        for _, files in gitutil.log_commits_with_files(f'{chash}^!'):
+            for path in files:
+                parked_paths.setdefault(path, []).append((chash, subj))
+
+    shared = {}
+    for commit in commits:
+        for _, files in gitutil.log_commits_with_files(f'{commit.hash}^!'):
+            for path in files:
+                if path in parked_paths:
+                    shared[path] = parked_paths[path]
+    return shared
+
+
+def parked_overlap_note(shared):
+    """Describe an overlap with parked commits, for a merge request
+
+    Args:
+        shared (dict): Result from parked_overlap()
+
+    Return:
+        str: Text to add to the merge request, or '' if there is no overlap
+    """
+    if not shared:
+        return ''
+    seen = {}
+    for path, owners in sorted(shared.items()):
+        for chash, subj in owners:
+            seen.setdefault((chash, subj), []).append(path)
+
+    out = ['### Touches files which parked conflicts also touch', '',
+           'These commits were parked as conflicts, so their change is '
+           'missing from the tree. A commit here may be adjusting something '
+           'one of them was meant to add:', '']
+    for (chash, subj), paths in sorted(seen.items(), key=lambda it: it[0][1]):
+        out.append(f'- `{chash[:11]}` {subj}')
+        for path in sorted(paths)[:5]:
+            out.append(f'  - {path}')
+        if len(paths) > 5:
+            out.append(f'  - ... and {len(paths) - 5} more')
+    return '\n'.join(out) + '\n'
+
+
+def parked_retry(dbs, parked, branch, dry_run=False):
+    """Try each parked commit again against the current tree
+
+    A conflict is often only true of the tree as it stood at the time: once
+    the change it clashed with has itself been picked, the commit applies
+    cleanly.  Retrying costs nothing and lands work which would otherwise sit
+    missing for good.
+
+    Merges are left alone, since a merge carries no change of its own.
+
+    Args:
+        dbs (Database): Database instance
+        parked (list of tuple): (id, hash, subject) from status_parked()
+        branch (str): Branch to base the retry on, e.g. 'ci/master'
+        dry_run (bool): True to report what would apply, keeping nothing
+
+    Return:
+        tuple:
+            list of tuple: The (id, hash, subject) which now apply
+            list of tuple: Those which still conflict
+            str: Name of the branch holding them, or None if nothing applied
+                or this is a dry run
+    """
+    todo = [rec for rec in parked if not rec[2].startswith('Merge')]
+    skipped = len(parked) - len(todo)
+    if skipped:
+        tout.info(f'  ignoring {skipped} merge(s), which carry no change')
+
+    name = 'parked-retry'
+    if gitutil.branch_exists(name):
+        gitutil.delete_branch(name)
+    gitutil.create_branch(name, branch)
+
+    applied = []
+    still = []
+    for rec in todo:
+        chash = rec[1]
+        if not gitutil.ref_exists(f'{chash}^{{commit}}'):
+            tout.warning(f'  #{rec[0]} {chash[:11]}: gone from the repo')
+            still.append(rec)
+            continue
+        try:
+            run_git(['cherry-pick', '-x', chash])
+            applied.append(rec)
+        except Exception:  # pylint: disable=broad-except
+            # Still conflicts, so put it back and move on to the next
+            _abort_in_progress()
+            still.append(rec)
+
+    if dry_run or not applied:
+        gitutil.checkout_branch(branch)
+        gitutil.delete_branch(name)
+        return applied, still, None
+
+    for rec in applied:
+        dbs.commit_set_status(rec[1], 'applied')
+    dbs.commit()
+    return applied, still, name
+
+
+# pylint: disable-next=too-many-branches,too-many-locals
+def do_parked(args, dbs):
+    """Report the commits parked as conflicts, and optionally retry them
+
+    Args:
+        args (Namespace): Parsed arguments with 'source', 'branch', 'retry',
+            'dry_run', 'push', 'remote' and 'target'
+        dbs (Database): Database instance
+
+    Return:
+        int: 0 if nothing is parked, 1 if anything still is, so that this can
+            be used as a check
+    """
+    source = args.source
+    source_id = dbs.source_get_id(source)
+    if not source_id:
+        tout.error(f"Source '{source}' not found - use 'pickman add-source'")
+        return 1
+
+    parked = status_parked(dbs, source_id)
+    if not parked:
+        tout.info(f'No parked conflicts for {source} ✓')
+        return 0
+
+    merges = sum(1 for _, _, subj in parked if subj.startswith('Merge'))
+    tout.info(f'{len(parked)} parked conflict(s) for {source}, {merges} of '
+              'them merges:')
+    for cid, chash, subj in parked:
+        tout.info(f'  #{cid} {chash[:11]} {subj[:60]}')
+
+    if not args.retry:
+        tout.info('')
+        tout.info("Each of these is missing from the tree; '--retry' tries "
+                  'them again')
+        return 1
+
+    # A retry checks out a branch and cherry-picks onto it, so anything left
+    # lying around in the working tree would be swept along with it
+    if gitutil.has_uncommitted_changes():
+        tout.error('Working tree has uncommitted changes - commit or stash '
+                   'them first')
+        return 1
+
+    tout.info('')
+    tout.info(f'Retrying against {args.branch}...')
+    orig = gitutil.current_branch()
+    try:
+        applied, still, name = parked_retry(dbs, parked, args.branch,
+                                            args.dry_run)
+    finally:
+        if gitutil.current_branch() != orig and gitutil.branch_exists(orig):
+            gitutil.checkout_branch(orig)
+
+    tout.info('')
+    tout.info(f'{len(applied)} now apply cleanly, {len(still)} still conflict')
+    for cid, _, subj in applied:
+        tout.info(f'  applies: #{cid} {subj[:60]}')
+
+    if args.dry_run:
+        tout.info('')
+        tout.info('Dry run, so nothing was kept')
+    elif name:
+        tout.info('')
+        if args.push:
+            title = f'[pickman] Retry {len(applied)} parked conflict(s)'
+            desc = ('These commits were parked as conflicts and apply '
+                    'cleanly now that the tree has moved on.\n\n' +
+                    '\n'.join(f'- {rec[1][:11]} {rec[2]}' for rec in applied))
+            if not push_mr(args, name, title, desc):
+                return 1
+        else:
+            tout.info(f'Created branch {name}')
+
+    return 1 if still else 0
+
+
 def parked_warning(source, parked):
     """Build a one-line warning about parked conflicts
 
@@ -1284,7 +2208,7 @@ def parked_warning(source, parked):
             f"merges) not landed - run 'pickman status {source}' to review")
 
 
-def do_status(args, dbs):
+def do_status(args, dbs):  # pylint: disable=too-many-locals
     """Summarise the downstream branch against the upstream source
 
     Reports the upstream series not yet brought in, the commits parked as
@@ -2234,7 +3158,7 @@ def _subtree_record(dbs, source, squash_hash, merge_hash):
               f'{merge_hash[:12]}')
 
 
-def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: disable=too-many-arguments
+def apply_subtree_update(dbs, source, name, tag, merge_hash, remote,  # pylint: disable=too-many-arguments,too-many-locals
                          target, push=True):
     """Apply a subtree update on a branch and create a merge request
 
@@ -2365,7 +3289,7 @@ def _prepare_get_commits(dbs, source, remote, target):
         return info, None
 
 
-def prepare_apply(dbs, source, branch, remote=None, target=None,  # pylint: disable=too-many-arguments
+def prepare_apply(dbs, source, branch, remote=None, target=None,  # pylint: disable=too-many-arguments,too-many-locals
                    info=None):
     """Prepare for applying commits from a source branch
 
@@ -2517,7 +3441,7 @@ def handle_already_applied(dbs, source, commits, branch_name, conv_log, args,
     return 0
 
 
-def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # pylint: disable=too-many-locals
+def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # pylint: disable=too-many-locals,too-many-branches
     """Execute the apply operation: run agent, update database, push MR
 
     Args:
@@ -2538,6 +3462,19 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
 
     # Add all commits to database with 'pending' status (agent updates later)
     source_id = dbs.source_get_id(source)
+
+    # A parked conflict's change is missing from the tree, so a commit which
+    # touches the same file may be adjusting work which is not there.  Say so
+    # rather than apply it blind
+    shared = parked_overlap(status_parked(dbs, source_id), commits)
+    if shared:
+        tout.warning(f'{len(shared)} file(s) here are also touched by parked '
+                     'conflicts, whose change is missing from the tree:')
+        for path in sorted(shared)[:5]:
+            owners = ', '.join(chash[:11] for chash, _ in shared[path])
+            tout.warning(f'  {path} (parked: {owners})')
+        if len(shared) > 5:
+            tout.warning(f'  ... and {len(shared) - 5} more')
     for commit in commits:
         dbs.commit_add(commit.hash, source_id, commit.subject, commit.author,
                        status='pending')
@@ -2592,7 +3529,9 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
         if args.push:
             title = f'[pickman] {commits[-1].subject}'
             summary = format_history(source, commits, branch_name)
-            description = f'{summary}\n\n### Conversation log\n{conv_log}'
+            note = parked_overlap_note(shared)
+            description = (f'{summary}\n\n{note}\n'
+                           f'### Conversation log\n{conv_log}')
             if not push_mr(args, branch_name, title, description):
                 ret = 1
         else:
@@ -3713,6 +4652,13 @@ def do_poll(args, dbs):
             ret = do_step(args, dbs)
             if ret != 0:
                 tout.warning(f'step returned {ret}')
+            # A failure in the setup rather than in the work will happen
+            # again on every pass, so looping just hides it behind a wall of
+            # identical errors
+            if claude.fatal_seen:
+                tout.error('Stopping: the agent cannot run at all')
+                tout.error(f'  {claude.fatal_seen}')
+                return 1
             tout.info('')
             tout.info(f'Sleeping {interval} seconds...')
             time.sleep(interval)
@@ -3756,6 +4702,7 @@ COMMANDS = {
     'list-sources': do_list_sources,
     'next-merges': do_next_merges,
     'next-set': do_next_set,
+    'parked': do_parked,
     'pick': do_pick,
     'poll': do_poll,
     'push-branch': do_push_branch,

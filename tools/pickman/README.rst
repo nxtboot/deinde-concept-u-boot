@@ -654,6 +654,96 @@ trailers alone - picks are not a clean prefix of upstream, so the trailers do
 not pin the frontier - so supply the historical position from wherever it is
 reconstructed (e.g. the ``cherry-<hash>`` merge history).
 
+Parked Conflicts
+~~~~~~~~~~~~~~~~
+
+To list the commits which were tried, hit a conflict and moved past::
+
+    ./tools/pickman/pickman parked us/main
+
+The exit code is 1 while anything is parked, so this can be used as a check.
+Each parked commit is a change which is simply missing from the downstream
+branch, with no merge request and no CI failure to show for it.
+
+A conflict is often only true of the tree as it stood at the time.  Once the
+change it clashed with has itself been picked, the commit applies cleanly, so
+it is worth trying again::
+
+    ./tools/pickman/pickman parked us/main --retry
+
+This tries each parked commit against the current branch and puts the ones
+which now apply on a branch of their own, ready to push with ``-p``.  Those
+which still conflict stay parked.  Merges are left alone, since a merge
+carries no change of its own.  Use ``-n`` to see what would apply without
+keeping anything.
+
+When a set of commits is applied, pickman checks whether any of them touch a
+file which a parked commit also touches, and says so on the console and in the
+merge request.  A parked commit's change is missing from the tree, so a later
+commit which adjusts that same file may be adjusting work which is not there -
+the tree still builds and CI stays green, but a board can misbehave for
+months.  The overlap is reported rather than refused, since with a large
+backlog it would otherwise be impossible to make progress; the decision is
+left to review, where it belongs.
+
+Two quite different things show up as a difference from upstream.  A hunk may
+have been mangled on the way in, in a file both trees have: that is small, safe
+and reviewable at a glance.  Or a file upstream has may never have arrived at
+all, in which case putting it back adds the whole thing - a feature, not a
+tidy-up, which needs a build and often a matching Makefile or Kconfig entry to
+be of any use.
+
+These are reported apart, and ``drift-fix`` reverts only the mangled hunks by
+default.  Use ``drift-fix --missing`` to restore the absent files, which is
+committed with a message describing what it really is; where the commit which
+adds such a file is itself parked as a conflict, that is named too, since it
+explains the change far better than guessing at a conflict resolution.
+
+Each area is checked before it is committed, by default with
+``um build sandbox``; a non-zero exit drops that area rather than offering it.
+The command is whatever ``--build-cmd`` or the ``[build]`` section of
+``~/.config/pickman.conf`` says.  It runs through a shell and only its exit
+status is looked at, so it may chain and run tests as well as build::
+
+    [build]
+    command = um build sandbox && um test dm
+
+It is run once against the tree as it stands before any area is touched.  A
+command which cannot pass a clean tree says nothing useful about a reverted
+one, and would otherwise decline every area - which reads as caution rather
+than as a broken command.  That is worth doing: a revert can compile
+perfectly and still be wrong, since a downstream test may depend on the very
+bytes being reverted - one test reads the first 32 bytes of the README and
+asserts them, so restoring a single leading space there builds fine and fails
+two tests.  A check which passes says the check passed, nothing more.
+
+Some deltas are correct downstream work which provenance cannot explain,
+because no commit accounts for them.  Those belong in ``.pickman-diverge``
+with a reason saying why, so that nobody reverts them again later.
+
+``drift-fix --missing`` declines a file whose commit left other files absent
+too, since restoring one file of a commit applies only half a change - the
+Makefile entry which builds it, or the devicetree which includes it, may still
+be missing.  It prints the commit to cherry-pick instead.  Where the commit is
+one pickman parked as a conflict that is a record, shown as ``recorded``;
+otherwise it is found by searching the log, shown as ``inferred``, which is a
+good starting point rather than a fact.
+
+Files inside a vendored subtree - ``dts/upstream``, mbedtls, lwip - are left
+out of all of this.  They track a different project and are carried by
+``update-subtree.sh``, so reverting a delta there would be undone by the next
+pull, much as reverting a defconfig reorder is undone by the next
+savedefconfig.  They are counted and reported separately rather than ignored:
+those deltas are deliberate local changes which have to survive every subtree
+update, so the count is the maintenance cost of carrying the subtree and is
+worth watching even though pickman cannot act on it.
+
+Provenance alone cannot make this distinction.  A subtree squash commit
+carries no cherry-pick line, so it reads as downstream-original and everything
+under it as wanted - which would make the same file look wanted or drifted
+depending only on how recently the subtree was pulled.  The paths are
+therefore tested for by name.
+
 Checking Drift from Upstream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -667,13 +757,27 @@ Options:
 - ``-d`` show the drift as a patch
 - ``-s`` skip blaming the files which downstream commits have touched; faster
   but misses drift inside them
+- ``-f`` list each drift hunk with the fingerprint ``drift-accept -u`` takes
+- ``-o`` list the commits picked from a series no tracked source has
 - ``-b`` downstream branch to examine (default: ci/master)
 - ``--upstream COMMIT`` compare against this upstream commit rather than the
   tracked source position (read-only), e.g. to back-fill historical drift
 
 By default pickman blames those touched files, which finds drift inside them
-but takes a few minutes on a large tree.  The exit code is 1 if there is any
-drift, so this can be used as a check.
+but takes a few minutes on a large tree.  A shallow run says how many files it
+took on trust rather than looking inside, since drift hidden in a file with
+real downstream changes is easy to miss and is often the most interesting.
+The exit code is 1 if there is any drift, so this can be used as a check.
+
+The report also separates out the drift in files no downstream commit has ever
+touched.  That drift cannot have a justification, so it is the safest thing to
+revert; ``drift-fix -u`` does only those.
+
+A commit which records '(cherry picked from commit X)' has only really come
+from upstream if a tracked source has X.  A pick from a series which upstream
+never took is counted as downstream work instead, since upstream has no such
+change to match; ``-o`` lists those, which is worth a look as upstream moves
+and takes some of the series.
 
 To record a delta as intentional, exempting it from the above::
 
@@ -682,7 +786,14 @@ To record a delta as intentional, exempting it from the above::
     ./tools/pickman/pickman drift-accept lib/efi.c -u a3f19c2b8d41 -m 'Ours'
 
 This writes ``.pickman-diverge``, which should be committed. Without ``-u`` the
-whole file is accepted; with it, only the hunk with that fingerprint.
+whole file is accepted; with it, only the hunk with that fingerprint, which
+``drift -f`` prints.
+
+To record many paths with one reason, read them from a file (or from stdin
+with ``-``), and use ``-n`` to see what would happen without writing::
+
+    ./tools/pickman/pickman drift-accept --from reorder-only.txt \
+        -m 'Ordering follows downstream Kconfig'
 
 To revert drift back to upstream::
 
@@ -691,6 +802,9 @@ To revert drift back to upstream::
 Options:
 
 - ``-c`` number of areas of the tree to fix at once (default: 1)
+- ``--paths GLOB...`` only fix files matching these globs
+- ``-u`` only fix files which no downstream commit has ever touched, whose
+  drift therefore cannot be wanted; the safest first run
 - ``-p`` push each branch and open an MR for it
 - ``-s`` skip blaming touched files, matching a shallow ``drift`` run
 - ``-r`` git remote for the push (default: ci)

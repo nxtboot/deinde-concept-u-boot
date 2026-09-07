@@ -115,6 +115,69 @@ def log_commits_with_files(commit_range, no_merges=False, git_dir=None):
     return commits
 
 
+def log_bodies(commit_range, no_merges=False, git_dir=None):
+    """List commits in a range together with their commit messages
+
+    Args:
+        commit_range (str): Range to list, e.g. 'base..branch'
+        no_merges (bool): True to exclude merge commits
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of tuple: (hash, message) for each commit, newest first
+    """
+    # Use control characters as separators, since a commit message can hold
+    # anything else
+    cmd = ['git', 'log', '--format=%H%x00%B%x01']
+    if no_merges:
+        cmd.append('--no-merges')
+    cmd.append(commit_range)
+    out = command.output(*cmd, cwd=git_dir)
+    commits = []
+    for rec in out.split('\x01'):
+        if '\x00' in rec:
+            chash, body = rec.split('\x00', 1)
+            commits.append((chash.strip(), body))
+    return commits
+
+
+def commit_file_status(ref, git_dir=None):
+    """List the files a commit touches, with what it did to each
+
+    Args:
+        ref (str): Commit/ref
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of tuple: (status letter, path), where the letter is 'A' for
+            added, 'M' for modified, 'D' for deleted and so on
+    """
+    out = command.output('git', 'show', '--name-status', '--format=', ref,
+                         cwd=git_dir)
+    rows = []
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) >= 2 and parts[0]:
+            rows.append((parts[0][0], parts[-1]))
+    return rows
+
+
+def rev_list(*refs, git_dir=None):
+    """List every commit reachable from some refs
+
+    Args:
+        *refs (str): Refs to walk from
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of str: Commit hashes
+    """
+    return command.output('git', 'rev-list', *refs, cwd=git_dir).split()
+
+
 def commit_summary(ref, git_dir=None):
     """Get a one-line summary of a commit
 
@@ -128,6 +191,24 @@ def commit_summary(ref, git_dir=None):
     """
     return command.output('git', 'log', '-1', '--format=%h %s', ref,
                           cwd=git_dir).strip()
+
+
+def commit_summaries(refs, git_dir=None):
+    """Get one-line summaries for several commits, in a single call
+
+    Args:
+        refs (list of str): Commits/refs to summarise
+        git_dir (str): Directory containing git repo, or None for the current
+            working directory
+
+    Return:
+        list of str: The abbreviated hash and subject of each, newest first
+    """
+    if not refs:
+        return []
+    out = command.output('git', 'log', '--no-walk', '--format=%h %s',
+                         *refs, cwd=git_dir)
+    return out.splitlines()
 
 
 def branch_exists(name, git_dir=None):

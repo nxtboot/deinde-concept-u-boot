@@ -87,15 +87,28 @@ def add_main_commands(subparsers):
                            help='Show the drift as a patch')
     drift_cmd.add_argument('-l', '--list', action='store_true',
                            help='List each file which has drift')
+    drift_cmd.add_argument('-f', '--fingerprints', action='store_true',
+                           help='List each drift hunk with the fingerprint '
+                                "'drift-accept -u' takes")
+    drift_cmd.add_argument('-o', '--orphans', action='store_true',
+                           help='List the commits picked from a series no '
+                                'tracked source has')
 
     drift_acc = subparsers.add_parser(
         'drift-accept', help='Record a delta from upstream as intentional')
-    drift_acc.add_argument('path', help='File path, or glob to cover several')
+    drift_acc.add_argument('path', nargs='?',
+                           help='File path, or glob to cover several')
     drift_acc.add_argument('-m', '--message', required=True, dest='message',
                            help='Reason the delta is wanted')
     drift_acc.add_argument('-u', '--hunk', default='*',
                            help="Hunk fingerprint (default: '*', the whole "
                                 'file)')
+    drift_acc.add_argument('--from', dest='from_file', metavar='FILE',
+                           help="Read paths from FILE, or '-' for stdin, "
+                                'and accept them all with one reason')
+    drift_acc.add_argument('-n', '--dry-run', action='store_true',
+                           help='Show what would be accepted, changing '
+                                'nothing')
 
     drift_fix = subparsers.add_parser(
         'drift-fix', help='Revert drift back to upstream and create MRs')
@@ -107,6 +120,24 @@ def add_main_commands(subparsers):
     drift_fix.add_argument('-s', '--shallow', action='store_true',
                            help='Skip blaming files which downstream commits '
                                 'touch; faster but misses drift inside them')
+    drift_fix.add_argument('--paths', metavar='GLOB', nargs='+',
+                           help='Only fix files matching these globs')
+    drift_fix.add_argument('-u', '--unambiguous', action='store_true',
+                           help='Only fix files which no downstream commit '
+                                'has touched, whose drift cannot be wanted')
+    drift_fix.add_argument('--build-cmd', metavar='CMD',
+                           help='Command run against each reverted area; a '
+                                'non-zero exit drops it.  Runs through a '
+                                'shell, so it may build and test both, e.g. '
+                                "'um build sandbox && um test dm' (default: "
+                                "'um build sandbox', or [build] command in "
+                                '~/.config/pickman.conf)')
+    drift_fix.add_argument('--no-build', action='store_true',
+                           help='Commit a revert without checking it builds')
+    drift_fix.add_argument('--missing', action='store_true',
+                           help='Restore files which upstream has and this '
+                                'tree never received, instead of reverting '
+                                'drift hunks')
     drift_fix.add_argument('-p', '--push', action='store_true',
                            help='Push branch and create GitLab MR')
     drift_fix.add_argument('-r', '--remote', default='ci',
@@ -115,6 +146,23 @@ def add_main_commands(subparsers):
                            help='Target branch for MR (default: master)')
 
     subparsers.add_parser('list-sources', help='List tracked source branches')
+
+    parked = subparsers.add_parser(
+        'parked', help='Report commits parked as conflicts, and retry them')
+    parked.add_argument('source', help='Source branch name')
+    parked.add_argument('-b', '--branch', default='ci/master',
+                        help='Branch to retry against (default: ci/master)')
+    parked.add_argument('--retry', action='store_true',
+                        help='Try each parked commit again against the tree')
+    parked.add_argument('-n', '--dry-run', action='store_true',
+                        help='With --retry, report what would apply and keep '
+                             'nothing')
+    parked.add_argument('-p', '--push', action='store_true',
+                        help='Push the retry branch and create a GitLab MR')
+    parked.add_argument('-r', '--remote', default='ci',
+                        help='Git remote for push (default: ci)')
+    parked.add_argument('-t', '--target', default='master',
+                        help='Target branch for MR (default: master)')
 
     next_merges = subparsers.add_parser(
         'next-merges', help='Show next N merges to be applied')
