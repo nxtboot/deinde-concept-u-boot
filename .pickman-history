@@ -98795,3 +98795,65 @@ Across all three attempts the blockers were the same, none in the tree:
 
 ---
 
+### Review: 2026-09-07
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) vbe, snow, ff3399.
+
+I'll start by reading the MR descr...
+
+### Conversation log
+I'll check out the branch and look at its state relative to ci/master.
+
+The new ci/master commits touch only cbfs files, none overlapping the ADI defconfigs, so the rebase should be conflict-free. Running it now.
+
+Push landed: `9cb1317aaf6d → bf487f958ea5 (forced update)` on `ci/cherry-5c8c261ffce9`. Nothing further to do — here's the report.
+
+## Result: rebased and pushed; review comment not actionable
+
+### Rebase
+
+`cherry-5c8c261ffce9` was 4 commits behind `ci/master` (the `cmd-cov-cbfs-vfs` merge: cbfs VFS driver, test and doc). `git rebase --keep-empty ci/master` completed with no conflicts — the new master commits touch only `fs/cbfs/`, `doc/`, `test/cmd/cbfs.c` and `include/cbfsfs.h`, none of which overlap this MR's ADI defconfigs.
+
+Rebased branch (on `ci/master` = `b37200bcb895`):
+```
+bf487f958ea5 pickman: Record review handling …   (×6 bookkeeping commits)
+ba8e93da1994 pickman: Record cherry-pick of 3 commits from us/main
+7665f372234f Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"   (empty, preserved)
+af541a273c6b configs: adi: sc594: disable CONFIG_EFI_LOADER
+addf499ddb4f configs: adi: sc598: disable CONFIG_EFI_LOADER
+```
+
+**Delta checks:** `git range-diff` reports all 10 commits as `=` (byte-identical patches) against their pre-rebase counterparts. Stats unchanged: sc598 2 files +2/−2, sc594 2 files +2/−1, merge empty. Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four sc594/sc598 defconfigs, +4/−3.
+
+**Builds:** `buildman -L --board sandbox -w -o /tmp/pickman` — rc=0, no warnings, at:
+- `addf499ddb4f` (sc598 commit)
+- `bf487f958ea5` (HEAD; source tree verified identical to the sc594 and merge commits, so this one build covers them and the bookkeeping commits)
+
+### Review comment
+
+The single comment is the bot's own **pipeline-fix (attempt 1) report** for vbe/snow/ff3399, echoed back as a discussion note. It requests no changes; its conclusion is that all three jobs failed in `u-boot-test-getrole` because the labgrid places were held by another user (`snow` by `kea/labgrid`, `ff3399` by `sglass`). No code change was made for it.
+
+### Branches / push
+
+- Local bookmark: `cherry-5c8c261ffce9-v2` at `bf487f958ea5`
+- Force-pushed `cherry-5c8c261ffce9` to `ci`: `9cb1317aaf6d → bf487f958ea5`. GitLab will start a new MR pipeline. MR title untouched.
+
+### Suggested reply to post on the MR
+
+> Rebased onto current master (b37200bcb895, the cbfs VFS merge) with no conflicts; all commits are unchanged (range-diff shows every patch identical). The source delta vs master remains only the four sc594/sc598 defconfigs, and sandbox builds cleanly with buildman at each step.
+>
+> The comment above is the automated pipeline-fix report rather than a review request, so no code changes are needed. Those failures were labgrid place-ownership errors, so before the new pipeline's lab jobs can pass the places still need releasing:
+> ```
+> labgrid-client -p snow allow ellesmere/gitlab-runner
+> labgrid-client -p ff3399 allow ellesmere/gitlab-runner
+> ```
+
+### Action needed from a human
+
+Release (or `allow` the runner on) the `snow` and `ff3399` labgrid places — otherwise the freshly triggered pipeline will hit the same vbe/snow/ff3399 failures for a fifth time.
+
+---
+
