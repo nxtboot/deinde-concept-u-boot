@@ -10,6 +10,17 @@ config DEBUG_DEV
 
 if DEBUG_DEV
 
+config DEBUG_EM100
+	bool "Debug output through a Dediprog EM100Pro"
+	depends on DM_SPI
+	help
+	  Send debug output to a Dediprog EM100Pro emulating the boot flash.
+	  The emulator watches the SPI bus for a command which is not a flash
+	  access and passes what follows to the host, where it is shown by
+	  'em100 --terminal'. This needs no wiring beyond the flash connection
+	  which is already there, so it is useful on boards with no usable
+	  UART.
+
 config DEBUG_SANDBOX
 	bool "Sandbox debug device"
 	depends on SANDBOX
