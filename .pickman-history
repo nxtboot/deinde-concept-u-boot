@@ -98965,3 +98965,56 @@ Branch is left checked out and unpushed; nothing merged back.
 
 ---
 
+### Review: 2026-09-07
+
+Branch: cherry-6073c36b2c8d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state and the branch.
+
+Clean tree, 7 commits ahead, 8 commits behind. Let me save pre-rebase stats and start the rebase.
+
+The incoming commits are all networking/cmd changes, unrelated to the lmb/ubi/hash/image-fdt files. Rebasing:
+
+Per-commit stats are identical, and the only tree difference vs the pre-rebase branch is the incoming ci/master content. Now building and running the lmb tests:
+
+Build clean, 171 lib tests pass with 0 failures (the zstd lines are expected output from negative-path tests). Now creating the `-v2` local branch and force-pushing to update the MR:
+
+The push output confirms the forced update (`47c85290e57f...4b98db8ab1e0`), but the local remote-tracking ref looks stale. Let me fetch to confirm the remote is actually at the new HEAD.
+
+Remote confirmed at `4b98db8ab1e0`, matching local HEAD. Nothing further is pending — all steps are complete.
+
+## Result: MR !1325 rebased onto ci/master and pushed
+
+**Rebase:** `git rebase --keep-empty ci/master` — 7/7 commits applied with **no conflicts**. The 8 incoming ci/master commits (cmd-cov-net: dns/linklocal getopt conversions, tests, docs) touch none of the files in this series.
+
+**Delta check:** per-commit `git show --stat` output is byte-identical before and after the rebase (excluding hashes). The only tree difference vs the pre-rebase branch is the incoming ci/master content (14 files, all under cmd/, net/, doc/, test/cmd/).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+**Tests:** `ut lib` — 171 run, 0 failures (covers the lmb tests whose `-EEXIST`/`-EFAULT` assertions were fixed up in the original backport).
+
+**Branches:**
+- Local: `cherry-6073c36b2c8d-v2` created at `4b98db8ab1e0` (rebased state)
+- Remote: `ci/cherry-6073c36b2c8d` force-pushed and verified via fetch at `4b98db8ab1e0` — GitLab will trigger the MR pipeline.
+
+| Commit | Rebased |
+|---|---|
+| `4de9aada249e` test: dm: hash: check digest size before memset | clean |
+| `9c5793669003` disk: ubi: use a format string when copying the volume name | clean |
+| `7f154145a851` lmb: Return -EFAULT when requested region is not part of memory map | clean |
+| `d99828ab524b` lmb: Return -EFAULT when freeing unallocated memory regions | clean |
+| `504ed22cea67` boot: image-fdt: Restore suppression of irrelevant ERROR message | clean |
+| `5d51b2640005` Merge patch series "boot: image-fdt: ..." | clean, still empty |
+| `4b98db8ab1e0` pickman: Record cherry-pick of 6 commits from us/main | clean |
+
+Note: the earlier flag still stands — commit 5's suppression of the *reserving fdt memory region failed* message remains inert in this tree because `lmb_reserve()` never returns `-EFAULT` here (upstream goes via `lmb_alloc_mem()`). Nothing in the rebase changes that.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master (`7b33b839d217`, cmd-cov-net merge). Clean rebase with no conflicts — the incoming commits touch only cmd/net/doc/test files, disjoint from this series. Per-commit stats are identical before and after; the empty merge commit is preserved. Sandbox builds with 0 warnings and `ut lib` passes (171/171). Branch force-pushed; pipeline should be running.
+
+---
+
