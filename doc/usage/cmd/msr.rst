@@ -54,3 +54,9 @@ This shows adjusting the energy-performance bias on an Intel CPU::
     => msr write 1b0 0 f  # change to power-save
     => msr read 1b0
     00000000 0000000f
+
+See also
+--------
+
+* :doc:`pmc<pmc>` for the power settings held by the Intel power-management
+  controller rather than by the CPU

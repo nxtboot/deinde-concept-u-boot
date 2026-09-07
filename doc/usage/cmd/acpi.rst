@@ -277,5 +277,10 @@ This shows checking that the checksums are correct for each table::
     SRAT          bec9bc6a     b8  v01 BOCHS  BXPC     1 BXPC 1  OK
     WAET          bec9bd22     28  v01 BOCHS  BXPC     1 BXPC 1  OK
 
+See also
+--------
+
+* :doc:`pmc<pmc>` for the state of the Intel power-management controller these
+  tables describe
 
 .. _`ACPI specification`: https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf
