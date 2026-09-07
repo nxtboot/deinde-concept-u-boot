@@ -73,3 +73,15 @@ static int dm_test_debug_first(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_debug_first, UTF_SCAN_FDT);
+
+/* Test that a debug device says something when it is probed */
+static int dm_test_debug_announce(struct unit_test_state *uts)
+{
+	struct udevice *dev;
+
+	ut_assertok(uclass_first_device_err(UCLASS_DEBUG, &dev));
+	ut_asserteq_str("U-Boot debug device debug\n", sandbox_debug_get(dev));
+
+	return 0;
+}
+DM_TEST(dm_test_debug_announce, UTF_SCAN_FDT);

@@ -10,6 +10,20 @@ config DEBUG_DEV
 
 if DEBUG_DEV
 
+config DEBUG_DEV_ANNOUNCE
+	bool "Announce debug devices when they are probed"
+	select EVENT
+	help
+	  Write a short message to each debug device as it is probed, naming
+	  the device. This shows that the device is working, which is worth
+	  knowing before concluding that the code under investigation is the
+	  thing which is silent.
+
+	  Debug devices are probed at the end of init when this is enabled, so
+	  the message appears without anything having to call debug_puts().
+	  This is left until then because a debug device may sit on a bus which
+	  is not usable any earlier.
+
 config DEBUG_EM100
 	bool "Debug output through a Dediprog EM100Pro"
 	depends on DM_SPI

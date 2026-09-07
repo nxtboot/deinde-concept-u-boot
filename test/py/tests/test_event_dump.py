@@ -18,6 +18,7 @@ def test_event_dump(ubman):
 EVT_FT_FIXUP          bootmeth_vbe_ft_fixup           .*boot/vbe_request.c:.*
 EVT_FT_FIXUP          bootmeth_vbe_simple_ft_fixup    .*boot/vbe_simple_os.c:.*
 EVT_LAST_STAGE_INIT   alloc_write_acpi_tables         .*lib/acpi/acpi_table.c:.*
+EVT_LAST_STAGE_INIT   debug_announce                  .*drivers/debug/debug-uclass.c:.*
 EVT_LAST_STAGE_INIT   efi_block_device_create         .*lib/efi_driver/efi_block_device.c:.*
 EVT_LAST_STAGE_INIT   install_smbios_table            .*lib/efi_loader/efi_smbios.c:.*
 EVT_LAST_STAGE_INIT   last_stage_init                 .*arch/sandbox/cpu/start.c:.*
