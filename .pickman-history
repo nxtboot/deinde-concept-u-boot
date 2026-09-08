@@ -99301,3 +99301,49 @@ So the MR is now back to its intended content; nothing from the stray head neede
 
 ---
 
+## 2026-09-08: us/main
+
+Branch: cherry-561ae28cb56a
+
+Commits:
+- 561ae28cb56a fs/squashfs: fix integer overflow in directory table allocation
+- 4750bcfe857c test: squashfs: add directory table overflow regression test
+- 658fc6aee957 Merge patch series "fs/squashfs: fix directory table integer overflow"
+
+### Conversation log
+Clean tree. Creating the branch and cherry-picking the first commit.
+
+The first cherry-pick hit conflicts. I need the conflict state, plus the already-applied check on ci/master for all three subjects — these are independent, so I'll run them together.
+
+Function body is identical to upstream, so commit 1 is correct. Commit 2 applied cleanly. Now the stat comparison and build for it — independent, both now.
+
+Commit 2 matches exactly and builds. Only the merge commit remains; the final log check and build depend on it landing, so just the merge pick now.
+
+Merge commit is in with its original message and cherry-pick tag. Final verification: the log check and the full build are independent, so both go together.
+
+All done. Branch `cherry-561ae28cb56a` is checked out, based on ci/master, with all 3 commits present and ready to push.
+
+## Final status
+
+**Build:** ok — sandbox builds clean via buildman after each commit and at the end (0 warnings, 0 errors).
+
+**Commits on the branch:**
+```
+14540e773620 Merge patch series "fs/squashfs: fix directory table integer overflow"
+4296f077db78 test: squashfs: add directory table overflow regression test
+47b500538495 fs/squashfs: fix integer overflow in directory table allocation
+```
+
+**Fix-ups made:**
+- **Commit 1** (`fs/squashfs: fix integer overflow ...`) conflicted in `sqfs_read_directory_table()` in fs/squashfs/sqfs.c. ci/master already has the `metablks_count = -1; goto out;` handling in the two malloc-failure branches (part of what the upstream patch adds), so the two sides overlapped. I resolved it by keeping the incoming `__builtin_mul_overflow()` checks on top of the existing error handling, and amended a one-line note onto the commit message. I confirmed the resulting function body is byte-identical to the upstream version at 561ae28cb56a.
+- **Merge commit** was empty relative to mainline 1 (as expected), so git stopped rather than committing; I committed it with `--allow-empty` using the prepared message, which preserves the original merge text and the `(cherry picked from commit 658fc6ae...)` line.
+
+**Deltas:**
+- Commit 1: 13+/2- vs original 19+/4-. This is more than the 20% threshold on paper, but the difference is exactly the 6 lines of `metablks_count = -1` handling already on ci/master — same file, and the final code matches upstream exactly, so I did not treat it as a failed pick.
+- Commit 2: identical (75+ in the same new test file).
+- Merge: empty, as intended.
+
+Note: the clang diagnostics that appeared on sqfs.c (`asm/unaligned.h` not found, etc.) are just the editor LSP lacking U-Boot's include paths — not real errors; buildman is the authoritative check and it passed.
+
+---
+
