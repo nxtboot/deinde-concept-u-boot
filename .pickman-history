@@ -99347,3 +99347,78 @@ Note: the clang diagnostics that appeared on sqfs.c (`asm/unaligned.h` not found
 
 ---
 
+### Pipeline fix: 2026-09-08 (attempt 1)
+
+Branch: cherry-561ae28cb56a
+
+Failed jobs:
+- build all other platforms (world_build)
+- efi-x86_64-uboot-iso (sjg-lab)
+- bpif3 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- xu3 (sjg-lab)
+- snow (sjg-lab)
+- rpi4 (sjg-lab)
+- kevin (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link64 (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and a few of the job logs to find the root cause.
+
+The world build fails in arch/x86/cpu/ivybridge/sdram.o, which is unrelated to squashfs. Let me get the actual compiler error and look at the lab job logs (these are independent, so all at once).
+
+Quick status: all the evidence is in, so I'm wrapping up with the report — no code change is warranted.
+
+## Result: infrastructure failures, no code change made
+
+Branch `cherry-561ae28cb56a-fix1` is created locally, pointing at the same head as `cherry-561ae28cb56a` (00e45a773be5). Tree is clean, sandbox builds fine.
+
+### Why nothing on this branch is responsible
+
+The branch touches only `fs/squashfs/sqfs.c` (13+/2-) and a new `test_sqfs_overflow.py`. None of the 24 failures involve squashfs, and every one traces to the runner host **ellesmere** having problems in the 22:10–22:32 window.
+
+**1. 22 lab jobs (bob, bpi, bpif3, colibrimx8, coral, ff3399, jerry, kevin, link64, minnowmax, nanopi-m5, nyan-big, opi_pc, opi_pc2, pcduino3, pcduino3_nano, rpi2, rpi3, rpi3z, rpi4, snow, xu3)** — all died before U-Boot ever ran:
+
+```
+labgrid-client: Error: place <board> is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+
+Every labgrid place was already held by `kea/labgrid`, so `u-boot-test-getrole --configure` failed with exit 3 and no artifacts were produced. Lab lock contention, not a test failure.
+
+**2. build all other platforms** — the runner disk was full. The log has 21 lines of:
+
+```
+mkdir: cannot create directory '.tmp_16364xx': No space left on device
+```
+
+These are the Kbuild `try-run` temp dirs used by `cc-option`/`cc-disable-warning`. U-Boot's Makefile (lines 926 and 1024) does `cc-disable-warning, address-of-packed-member`; when the probe can't create its temp dir it silently fails, the `-Wno-...` flag is dropped, and the pre-existing packed-member accesses in `arch/x86/cpu/ivybridge/sdram.c:78,81` (`&pei_data->scrambler_seed` on `struct __packed pei_data`) become `-Werror` errors. That code hasn't changed since the `<common.h>` removal series, and `chromebook_link` builds cleanly on this branch locally with buildman (gcc 14.2). The error is an artefact of the disk-full condition.
+
+**3. efi-x86_64-uboot-iso** — `test_distro_ubuntu_iso_uboot` timed out waiting for `Started gdm.service`, but the actual failure line is:
+
+```
+[    0.221544] Initramfs unpacking failed: invalid magic at start of compressed archive
+```
+
+U-Boot did its job (found the bootflow, loaded vmlinuz and a 75 MB initrd from the ISO 9660 partition, started the kernel). Per the test's docstring, the `efi-x86_64-uboot-iso` role *rebuilds the destination ISO on the runner* via `scripts/ubuntu-iso-to-uboot.py` before QEMU boots — on ellesmere, whose disk was full at the time. A truncated initrd from that rewrite explains the bad-magic error exactly, and the `/casper/initrd` read taking ~2 minutes is consistent with a struggling host. The kernel/initrd come from ISO 9660, not squashfs, so the squashfs change is not on this path.
+
+### Recommendation
+
+Free space on ellesmere and clear the stale `kea/labgrid` place acquisitions, then retry the pipeline. No commit on the MR needs amending.
+
+---
+
