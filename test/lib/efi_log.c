@@ -4,6 +4,7 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
+#include <efi_api.h>
 #include <efi_log.h>
 #include <mapmem.h>
 #include <test/lib.h>
@@ -91,3 +92,41 @@ static int lib_test_efi_log_mem(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_log_mem, UTF_CONSOLE);
+
+/* Test that a HandleProtocol() call is not mistaken for OpenProtocol() */
+static int lib_test_efi_log_handle_prot(struct unit_test_state *uts)
+{
+	efi_guid_t guid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+	void *handle = map_sysmem(0x1000, 0);
+	void *intf = map_sysmem(0x1010, 0);
+	int ofs;
+
+	ut_assertok(efi_log_reset());
+
+	/* a real OpenProtocol() call shows its attributes */
+	ofs = efi_logs_open_protocol(handle, &guid, &intf, handle, NULL,
+				     EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	ut_assertok(efi_loge_open_protocol(ofs, EFI_SUCCESS));
+
+	/* HandleProtocol() uses an attribute an app may not use itself */
+	ofs = efi_logs_open_protocol(handle, &guid, &intf, handle, NULL,
+				     EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+	ut_assertok(efi_loge_open_protocol(ofs, EFI_SUCCESS));
+
+	ut_assertok(efi_log_show());
+
+	ut_assert_nextlinen("EFI log (size ");
+	ut_assert_nextline("times are [start_us +duration_us] since boot");
+
+	/* the first shows its attributes, the second says where it came from */
+	ut_assert_nextline_regex("  0    open_prot hdl .*Device Path attr 2 .*");
+	ut_assert_nextline_regex("  1    open_prot hdl .*Device Path \\(HandleProtocol\\) .*");
+
+	ut_assert_nextline("2 records");
+
+	unmap_sysmem(handle);
+	unmap_sysmem(intf);
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_log_handle_prot, UTF_CONSOLE);

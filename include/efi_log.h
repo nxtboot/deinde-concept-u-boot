@@ -20,6 +20,7 @@ enum efil_tag {
 	EFILT_FREE_PAGES,
 	EFILT_ALLOCATE_POOL,
 	EFILT_FREE_POOL,
+	EFILT_OPEN_PROTOCOL,
 
 	EFILT_TESTING,
 
@@ -105,6 +106,21 @@ struct efil_allocate_pool {
 /** struct efil_free_pool - holds log-info from efi_free_pool() call */
 struct efil_free_pool {
 	void *buffer;
+};
+
+/**
+ * struct efil_open_protocol - holds info from efi_open_protocol() call
+ *
+ * @e_interface: Contains the value of *@interface on return
+ */
+struct efil_open_protocol {
+	efi_handle_t handle;
+	efi_guid_t protocol;
+	void **interface;
+	efi_handle_t agent_handle;
+	efi_handle_t controller_handle;
+	u32 attributes;
+	void *e_interface;
 };
 
 /*
@@ -227,7 +243,47 @@ int efi_logs_free_pool(void *buffer);
  */
 int efi_loge_free_pool(int ofs, efi_status_t efi_ret);
 
+/**
+ * efi_logs_open_protocol() - Record a call to efi_open_protocol()
+ *
+ * @handle:		handle on which the protocol is opened
+ * @protocol:		GUID of the protocol
+ * @interface:		place to hold the protocol interface
+ * @agent_handle:	handle of the agent opening the protocol
+ * @controller_handle:	handle of the controller
+ * @attributes:		flags saying how the protocol is opened
+ * Return:		log-offset of this new record, or -ve error code
+ */
+int efi_logs_open_protocol(efi_handle_t handle, const efi_guid_t *protocol,
+			   void **interface, efi_handle_t agent_handle,
+			   efi_handle_t controller_handle, u32 attributes);
+
+/**
+ * efi_loge_open_protocol() - Record a return from efi_open_protocol()
+ *
+ * This stores the value of the interface pointer also
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_open_protocol(int ofs, efi_status_t efi_ret);
+
 #else /* !EFI_LOG */
+
+static inline int efi_logs_open_protocol(efi_handle_t handle,
+					 const efi_guid_t *protocol,
+					 void **interface,
+					 efi_handle_t agent_handle,
+					 efi_handle_t controller_handle,
+					 u32 attributes)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_open_protocol(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
 
 static inline int efi_logs_allocate_pages(enum efi_allocate_type type,
 					  enum efi_memory_type memory_type,

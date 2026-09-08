@@ -13,6 +13,7 @@
 #include <dm/root.h>
 #include <efi_device_path.h>
 #include <efi_loader.h>
+#include <efi_log.h>
 #include <irq_func.h>
 #include <log.h>
 #include <malloc.h>
@@ -3119,10 +3120,14 @@ static efi_status_t EFIAPI efi_open_protocol
 {
 	struct efi_handler *handler;
 	efi_status_t r = EFI_INVALID_PARAMETER;
+	int ofs;
 
 	EFI_ENTRY("%p, %pUs, %p, %p, %p, 0x%x", handle, protocol,
 		  protocol_interface, agent_handle, controller_handle,
 		  attributes);
+	ofs = efi_logs_open_protocol(handle, protocol, protocol_interface,
+				     agent_handle, controller_handle,
+				     attributes);
 
 	if (!handle || !protocol ||
 	    (!protocol_interface && attributes !=
@@ -3168,6 +3173,8 @@ static efi_status_t EFIAPI efi_open_protocol
 	r = efi_protocol_open(handler, protocol_interface, agent_handle,
 			      controller_handle, attributes);
 out:
+	efi_loge_open_protocol(ofs, r);
+
 	return EFI_EXIT(r);
 }
 

@@ -9,6 +9,7 @@
 #define LOG_CATEGORY LOGC_EFI
 
 #include <bloblist.h>
+#include <efi_api.h>
 #include <efi_log.h>
 #include <errno.h>
 #include <log.h>
@@ -19,6 +20,7 @@ static const char *tag_name[EFILT_COUNT] = {
 	"free_pages",
 	"alloc_pool",
 	"free_pool",
+	"open_prot",
 
 	"testing",
 };
@@ -149,6 +151,44 @@ static void *finish_rec(int ofs, efi_status_t ret)
 	rec_hdr->e_ret = ret;
 
 	return rec_hdr + 1;
+}
+
+int efi_logs_open_protocol(efi_handle_t handle, const efi_guid_t *protocol,
+			   void **interface, efi_handle_t agent_handle,
+			   efi_handle_t controller_handle, u32 attributes)
+{
+	struct efil_open_protocol *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_OPEN_PROTOCOL, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	if (protocol)
+		rec->protocol = *protocol;
+	else
+		memset(&rec->protocol, '\0', sizeof(rec->protocol));
+	rec->interface = interface;
+	rec->agent_handle = agent_handle;
+	rec->controller_handle = controller_handle;
+	rec->attributes = attributes;
+	rec->e_interface = NULL;
+
+	return ret;
+}
+
+int efi_loge_open_protocol(int ofs, efi_status_t efi_ret)
+{
+	struct efil_open_protocol *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->interface)
+		rec->e_interface = *rec->interface;
+
+	return 0;
 }
 
 int efi_logs_testing(enum efil_test_t enum_val, efi_uintn_t int_val,
@@ -373,6 +413,29 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 		show_addr("buf", map_to_sysmem(rec->buffer));
 		if (rec_hdr->ended)
 			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_OPEN_PROTOCOL: {
+		struct efil_open_protocol *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		printf("%pUs ", &rec->protocol);
+
+		/*
+		 * HandleProtocol() is implemented by calling OpenProtocol()
+		 * with this attribute, which an application is not permitted
+		 * to use itself. Say so, since the record is otherwise
+		 * indistinguishable from a real OpenProtocol() call
+		 */
+		if (rec->attributes == EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL)
+			printf("(HandleProtocol) ");
+		else
+			show_ulong("attr", rec->attributes);
+		if (rec_hdr->ended) {
+			show_addr("*intf",
+				  (ulong)map_to_sysmem(rec->e_interface));
+			show_ret(rec_hdr->e_ret);
+		}
 		break;
 	}
 	case EFILT_TESTING: {
