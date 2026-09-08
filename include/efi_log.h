@@ -48,10 +48,12 @@ struct efil_rec_hdr {
  *
  * @upto: Offset at which to store the next log record
  * @size: Total size of the log in bytes
+ * @missed: Number of records dropped because the log was full
  */
 struct efil_hdr {
 	int upto;
 	int size;
+	int missed;
 };
 
 enum efil_test_t {
@@ -353,6 +355,19 @@ static inline int efi_loge_testing(int ofs, efi_status_t efi_ret)
  * Return: 0 on success, or -ve error code
  */
 int efi_log_show(void);
+
+/**
+ * efi_log_summary() - Show a summary of the EFI log
+ *
+ * Prints how many calls were made, how many failed and how many are still
+ * pending, then a count for each type of call. Prints nothing if there is no
+ * log or it holds no records.
+ */
+#if CONFIG_IS_ENABLED(EFI_LOG)
+void efi_log_summary(void);
+#else
+static inline void efi_log_summary(void) {}
+#endif
 
 /**
  * efi_log_reset() - Reset the log, erasing all records

@@ -34,7 +34,7 @@ static int lib_test_efi_log_base(struct unit_test_state *uts)
 	ut_assertok(efi_loge_testing(ofs1, EFI_SUCCESS));
 
 	ut_assertok(efi_log_show());
-	ut_assert_nextline("EFI log (size 98)");
+	ut_assert_nextline("EFI log (size 9c)");
 	ut_assert_nextline(
 		"  0      testing test0 int 7b/123 buf 1000 mem 1010 *buf 1100 *mem 100 ret OK");
 	ut_assert_nextline(
@@ -72,7 +72,7 @@ static int lib_test_efi_log_mem(struct unit_test_state *uts)
 
 	ut_assertok(efi_log_show());
 
-	ut_assert_nextline("EFI log (size c0)");
+	ut_assert_nextline("EFI log (size c4)");
 
 	/*
 	 * We end up with internal sandbox-addresses here since EFI_LOADER
@@ -130,3 +130,41 @@ static int lib_test_efi_log_handle_prot(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_log_handle_prot, UTF_CONSOLE);
+
+/* Test the summary which the bootstage report shows */
+static int lib_test_efi_log_summary(struct unit_test_state *uts)
+{
+	void **buf = map_sysmem(0x1000, 0);
+	u64 *addr = map_sysmem(0x1010, 0);
+	int ofs;
+
+	ut_assertok(efi_log_reset());
+
+	/* nothing is shown when the log is empty */
+	efi_log_summary();
+	ut_assert_console_end();
+
+	ofs = efi_logs_allocate_pool(EFI_BOOT_SERVICES_DATA, 100, buf);
+	ut_assertok(efi_loge_allocate_pool(ofs, 0));
+
+	ofs = efi_logs_allocate_pages(EFI_ALLOCATE_ANY_PAGES,
+				      EFI_BOOT_SERVICES_CODE, 10, addr);
+	ut_assertok(efi_loge_allocate_pages(ofs, EFI_LOAD_ERROR));
+
+	/* this one is left pending, as if the function never returned */
+	efi_logs_free_pool(*buf);
+
+	efi_log_summary();
+	ut_assert_nextline_empty();
+	ut_assert_nextlinen("EFI: 3 calls, 1 returned an error, 1 did not return");
+	ut_assert_nextline("      alloc_pages 1");
+	ut_assert_nextline("       alloc_pool 1");
+	ut_assert_nextline("        free_pool 1");
+	ut_assert_console_end();
+
+	unmap_sysmem(buf);
+	unmap_sysmem(addr);
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_log_summary, UTF_CONSOLE);

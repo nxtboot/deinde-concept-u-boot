@@ -13,6 +13,7 @@
 #include <efi_log.h>
 #include <errno.h>
 #include <log.h>
+#include <linux/string.h>
 
 /* names for enum efil_tag (abbreviated to keep output to a single line) */
 static const char *tag_name[EFILT_COUNT] = {
@@ -117,8 +118,10 @@ static int prep_rec(enum efil_tag tag, uint str_size, void **recp)
 	if (!hdr)
 		return -ENOENT;
 	size = str_size + sizeof(struct efil_rec_hdr);
-	if (hdr->upto + size > hdr->size)
+	if (hdr->upto + size > hdr->size) {
+		hdr->missed++;
 		return -ENOSPC;
+	}
 
 	rec_hdr = (void *)hdr + hdr->upto;
 	rec_hdr->size = size;
@@ -475,6 +478,51 @@ int efi_log_show(void)
 	return 0;
 }
 
+void efi_log_summary(void)
+{
+	struct efil_hdr *hdr = bloblist_find(BLOBLISTT_EFI_LOG, 0);
+	int count[EFILT_COUNT];
+	struct efil_rec_hdr *rec_hdr;
+	int total, errors, pending;
+	int i;
+
+	if (!hdr)
+		return;
+
+	memset(count, '\0', sizeof(count));
+	total = 0;
+	errors = 0;
+	pending = 0;
+	for (rec_hdr = (void *)hdr + sizeof(*hdr);
+	     (void *)rec_hdr - (void *)hdr < hdr->upto;
+	     rec_hdr = (void *)rec_hdr + rec_hdr->size) {
+		if (rec_hdr->tag < EFILT_COUNT)
+			count[rec_hdr->tag]++;
+		if (!rec_hdr->ended)
+			pending++;
+		else if (rec_hdr->e_ret)
+			errors++;
+		total++;
+	}
+	if (!total)
+		return;
+
+	printf("\nEFI: %d calls", total);
+	if (errors)
+		printf(", %d returned an error", errors);
+	if (pending)
+		printf(", %d did not return", pending);
+	printf(" (log %x of %x bytes)\n", hdr->upto, hdr->size);
+	if (hdr->missed)
+		printf("     %d call(s) not recorded: increase CONFIG_EFI_LOG_SIZE\n",
+		       hdr->missed);
+
+	for (i = 0; i < EFILT_COUNT; i++) {
+		if (count[i])
+			printf("     %12s %d\n", tag_name[i], count[i]);
+	}
+}
+
 int efi_log_reset(void)
 {
 	struct efil_hdr *hdr = bloblist_find(BLOBLISTT_EFI_LOG, 0);
@@ -483,6 +531,7 @@ int efi_log_reset(void)
 		return -ENOENT;
 	hdr->upto = sizeof(struct efil_hdr);
 	hdr->size = CONFIG_EFI_LOG_SIZE;
+	hdr->missed = 0;
 
 	return 0;
 }
