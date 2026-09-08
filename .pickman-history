@@ -99094,3 +99094,54 @@ Remote confirmed at `45dcec641bba`, 0 commits behind `ci/master`. All steps comp
 
 ---
 
+## 2026-09-08: us/main
+
+Branch: cherry-964ad5b5c91b
+
+Commits:
+- 964ad5b5c91b Prepare v2026.10-rc3
+- fc557ef9fe11 fs/squashfs: bound fragment table accesses in sqfs_frag_lookup()
+- e007b43a272e fs/squashfs: bound the offset returned by sqfs_dir_offset()
+- ced85f31db7a Merge patch series "fs/squashfs: bounds checks on image-controlled offsets"
+
+### Conversation log
+I'll start by checking the repository state.
+
+Tree is clean. Creating the branch.
+
+Identical delta. Building.
+
+Build clean. Next commit.
+
+Now the merge commit, with `-m 1 --allow-empty`.
+
+As expected, the merge is empty since its content came in via the two preceding picks. Preserving it as an empty commit.
+
+All 4 commits present with correct messages. Running the final build.
+
+All 4 cherry-picks completed cleanly on branch `cherry-964ad5b5c91b` (based on ci/master at 78ec57c88f46).
+
+**Final log:**
+```
+76b2938a544e Merge patch series "fs/squashfs: bounds checks on image-controlled offsets"
+a7386eab58ec fs/squashfs: bound the offset returned by sqfs_dir_offset()
+99edf5113137 fs/squashfs: bound fragment table accesses in sqfs_frag_lookup()
+db23ebd3975d Prepare v2026.10-rc3
+78ec57c88f46 Merge branch 'cherry-5c8c261ffce9' into 'master'   <- ci/master
+```
+
+**Build result:** ok — sandbox built successfully after each cherry-pick and on the final tree, with no warnings or errors.
+
+**Fix-ups:** none. No conflicts arose; the two squashfs patches applied with a plain auto-merge, and no commit messages needed amending.
+
+**Deltas:** all three content commits match their originals exactly:
+- `Prepare v2026.10-rc3` — 2 files, 2 insertions(+), 2 deletions(-) — identical
+- `sqfs_frag_lookup()` — fs/squashfs/sqfs.c, 48 insertions(+), 2 deletions(-) — identical
+- `sqfs_dir_offset()` — fs/squashfs/sqfs_dir.c, 36 insertions(+), 6 deletions(-) — identical
+
+**Note on the merge commit:** `ced85f31db7a` cherry-picked empty, as expected — it is the merge of the very patch series whose two commits were just picked individually, so it carried no additional content. Per your instructions it was preserved with `git commit --allow-empty`, keeping the full merge message (series cover letter and Link: tag) and the `(cherry picked from commit ced85f31db7a...)` line for history tracking. This is normal rather than a sign of a bad pick.
+
+No `.pickman-signal` was written — the commits were not already present in ci/master. The branch is left checked out and ready to push; nothing was merged back to any other branch.
+
+---
+
