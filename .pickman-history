@@ -99211,3 +99211,40 @@ f604cae03bda fs/squashfs: bound fragment table accesses in sqfs_frag_lookup()
 
 ---
 
+## 2026-09-08: us/main
+
+Branch: cherry-73ada2f433a9
+
+Commits:
+- 73ada2f433a9 fs/squashfs: bound the inode table walk in sqfs_find_inode()
+- 923f05ed3e23 fs/squashfs: bound fragment offset/size in sqfs_read_nest()
+- d40f495e14d6 Merge patch series "fs/squashfs: fix two out-of-bounds reads on crafted images"
+
+### Conversation log
+Working tree is clean. Creating the branch and cherry-picking the first commit.
+
+Deltas match exactly. Running the build test.
+
+Build OK. Cherry-picking the second commit and comparing stats in one step.
+
+All done. Branch `cherry-73ada2f433a9` (based on `ci/master`) is ready for pushing.
+
+**Final status**
+
+| Original | Cherry-picked | Subject |
+|---|---|---|
+| 73ada2f433a9 | 632c159e2edc | fs/squashfs: bound the inode table walk in sqfs_find_inode() |
+| 923f05ed3e23 | f0b3ad702d28 | fs/squashfs: bound fragment offset/size in sqfs_read_nest() |
+| d40f495e14d6 | eb9a571065f2 | Merge patch series "fs/squashfs: fix two out-of-bounds reads on crafted images" |
+
+- **Build result:** OK — sandbox built cleanly after each commit and in the final run (no warnings or errors).
+- **Fix-ups made:** none. No conflicts; no commit messages were amended beyond the standard `-x` "(cherry picked from commit …)" line.
+- **Commit deltas:** all match the originals exactly.
+  - 632c159e2edc: 3 files, 110+/28- (identical to original)
+  - f0b3ad702d28: 1 file, 24+ (identical to original)
+  - eb9a571065f2: empty commit, as intended. The original merge's first-parent diff (134+/28- across the same 3 files) is exactly the sum of the two picked patches, so nothing was lost. Note that `--allow-empty` alone didn't auto-commit here because git treats a pick that *becomes* empty differently from one that is empty upstream; I completed it with `git commit --allow-empty --no-edit`, which preserved the full merge message including the `Link:` and cherry-pick trailer.
+
+Working tree is clean and the branch has not been merged anywhere.
+
+---
+
