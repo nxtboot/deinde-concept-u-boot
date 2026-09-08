@@ -98476,3 +98476,384 @@ Nothing was unclear or unaddressable this round. As before, if the `samus_tpl` /
 
 ---
 
+## 2026-09-04: us/main
+
+Branch: cherry-5c8c261ffce9
+
+Commits:
+- 5c8c261ffce9 configs: adi: sc598: disable CONFIG_EFI_LOADER
+- 0fe8d8389a36 configs: adi: sc594: disable CONFIG_EFI_LOADER
+- 24635824319b Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"
+
+### Conversation log
+Clean tree. Creating the branch and starting the first cherry-pick.
+
+Delta matches exactly. Running the build test.
+
+Build passes. Cherry-picking the second commit and comparing its delta in one step.
+
+Delta matches. Now building, and if that passes, cherry-picking the merge commit and comparing its stat — all chained so a build failure stops before the merge pick.
+
+All done. Branch `cherry-5c8c261ffce9` (based on `ci/master`) is ready for pushing.
+
+## Final status
+
+**Commits on the branch** (`git log --oneline -n 5`):
+```
+a00c7da948ed Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"
+3c20324cfa88 configs: adi: sc594: disable CONFIG_EFI_LOADER
+2336079f840d configs: adi: sc598: disable CONFIG_EFI_LOADER
+a517eb9b549f Merge branch 'cherry-35432ef6fe2c' into 'master'   (ci/master)
+```
+All 3 requested commits are present, each with a `(cherry picked from commit ...)` line.
+
+**Build result:** OK — `buildman -L --board sandbox -w -o /tmp/pickman` passed after each cherry-pick and on the final tree, with no warnings or errors.
+
+**Delta checks:** Both regular commits match their originals exactly:
+- sc598: 2 files, +2/−2 (identical to original)
+- sc594: 2 files, +2/−1 (identical to original)
+
+**Fix-ups made:** None. No conflicts occurred; no commit messages were amended.
+
+**Notes:**
+- The merge commit `24635824319b` cherry-picked as an empty commit (its content was already carried by the two preceding picks). Git required an explicit `git commit --allow-empty --no-edit` to record it rather than skipping, which I did — the original merge message, cover-letter text and `Link:` tag are preserved intact.
+- These changes only touch ADI sc594/sc598 defconfigs, so the sandbox build exercises the tree's general health rather than these boards specifically.
+
+Nothing was merged back to any other branch.
+
+---
+
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 32bit ARM platforms, vbe, rockpro64, snow, f...
+
+### Conversation log
+## Result: comment is not actionable — no changes made, nothing pushed
+
+The single "review comment" on !1322 is the bot's own **pipeline-fix (attempt 1) report**, echoed back as a discussion note. It contains no request for changes; its conclusion is that all five failed jobs (world 32-bit ARM build, vbe, rockpro64, snow, ff3399) were infrastructure failures — a full runner disk and labgrid places already acquired by another user — and that the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` (local) == `ci/cherry-5c8c261ffce9` (remote) == `2ae9575a823b`. The MR branch is already up to date.
+- `cherry-5c8c261ffce9-fix1` (`fa23044835f7`) differs from the MR branch only by one `.pickman-history` bookkeeping commit — no source or defconfig changes.
+- `buildman -L --board sandbox -w -o /tmp/pickman` on the MR branch: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is nothing to change, so a `-v2` branch would be byte-identical to the current one, and force-pushing the same SHA is a no-op that would not trigger a new pipeline. Doing so would only add noise to the MR history.
+
+### Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report rather than a review request, so no code changes are needed. The branch is unchanged at 2ae9575a823b and still builds cleanly (sandbox, buildman, no warnings).
+>
+> The original failures were infrastructure-only:
+> - **build all 32bit ARM platforms**: runner disk full (`No space left on device`, buildman rc=102 = exceptions, not build errors)
+> - **ff3399 / vbe / rockpro64 / snow**: labgrid place already acquired by another user, failing in `u-boot-test-getrole` before U-Boot ran
+>
+> Please free up `/tmp` on the `single`-tagged runner and release (or `allow ellesmere/gitlab-runner` on) the ff3399, rockpro64 and snow places, then retry the failed jobs.
+
+### Action needed from a human
+
+- Clean up disk on the world-build runner
+- Release the labgrid places, then retry the pipeline
+
+---
+
+### Pipeline fix: 2026-09-04 (attempt 2)
+
+Branch: cherry-5c8c261ffce9
+
+Failed jobs:
+- build all 64bit ARM platforms (world_build)
+- efi-x86_64-uboot-iso (sjg-lab)
+- snow (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+Next I need the three job logs; they're independent, so I'll fetch them all at once.
+
+The world build is disk-full again (same runner). Now the two lab jobs.
+
+Snow is again the labgrid place-acquired error. Now the efi-x86_64-uboot-iso log.
+
+Builds are done and pass; wrapping up with the report.
+
+## Result: infrastructure/intermittent failures only — no code change needed
+
+All three failed jobs are unrelated to MR !1322, which differs from ci/master only by four ADI sc59x defconfigs (`# CONFIG_EFI_LOADER is not set`, plus dropping the redundant `# CONFIG_TOOLS_MKEFICAPSULE is not set`) and `.pickman-history` bookkeeping. I made no source changes. Branch `cherry-5c8c261ffce9-fix2` exists locally and points at the same commit as `cherry-5c8c261ffce9` (1cd3ec8e8c5e), so the caller can retry the pipeline.
+
+### Root cause per job
+
+**build all 64bit ARM platforms (job 637750)** — runner disk full, same as attempt 1.
+- Log contains only `mkdir: cannot create directory '.tmp_NNNN': No space left on device` and `mkdir: cannot create directory 'scripts/kconfig': No space left on device`, which cascade into `syncconfig` / `conf.o` failures for nanopi-neo4/r4s-rk3399 defconfigs. There is no compiler or linker error in any board.
+- Exit code 102 is buildman's "exceptions occurred" return, not a build failure (100).
+- The `single`-tagged runner's `/tmp` was flagged as full in attempt 1 and evidently still has not been cleaned; the retry will fail the same way until it is.
+
+**snow (job 637721)** — labgrid place held by another user, same as attempt 1.
+- Fails in `u-boot-test-getrole snow --configure` before any U-Boot is built or run: `place snow is not acquired by your user, acquired by labgrid` (owner `kea/labgrid`).
+- Needs the place released, or `labgrid-client -p snow allow ellesmere/gitlab-runner`.
+
+**efi-x86_64-uboot-iso (job 637741)** — one-off initrd corruption inside the guest kernel, not a U-Boot problem.
+- U-Boot itself did everything right: the BLS bootmeth found `/loader/entry.conf`, loaded `/casper/vmlinuz` (14.9 MB) and `/casper/initrd` (75 MB) and started the kernel. The failure is the *Linux* message `Initramfs unpacking failed: ZSTD-compressed data is corrupt`, after which userspace never comes up and `Started gdm.service` times out.
+- This test boots `efi-x86_app64` (x86 EFI app + QEMU/OVMF); the MR's changes are to ARM sc594/sc598 defconfigs and cannot affect that build.
+- GitLab history confirms it is intermittent: the same job **passed** on sibling MRs !1321 (job 637601) and !1323 (job 637464) and on `cmd-cov-cbfs-vfs` (637411), all within the hour before this run on the same base. The job is manual on master, so there is no direct master data point.
+- Most likely a corrupted/truncated rebuilt ISO (the `qemu-efi-iso` writer regenerates it via `scripts/ubuntu-iso-to-uboot.py` before each boot) or a hiccup on the loaded `ellesmere` host; the 2-minute initrd retrieval suggests the runner was under heavy load at the time.
+
+### Verification that the MR is sound
+
+- `um build sandbox` — rc=0, clean
+- `buildman -o /tmp/pickman sc594-som-ezkit-spl sc594-som-ezlite-spl sc598-som-ezkit-spl sc598-som-ezlite-spl` — all four build, rc=101 (warnings only: pre-existing `spi_bus_bridge` dtc warnings and the `CONFIG_OF_EMBED` notice, identical to ci/master as established in attempt 1)
+
+### Recommended action
+
+Retry the failed jobs, **after** cleaning `/tmp` on the `single`-tagged world-build runner (second consecutive attempt to hit it) and releasing (or `allow`-ing `ellesmere/gitlab-runner` on) the `snow` labgrid place. efi-x86_64-uboot-iso should simply pass on retry.
+
+---
+
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) build all 64bit ARM platforms, efi-x86_64-uboot-iso, s...
+
+### Conversation log
+I'll check the branch state first, then decide whether the comment is actionable.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The single "review comment" on !1322 is, once again, the bot's own **pipeline-fix (attempt 2) report** echoed back as a discussion note. It requests no changes; its conclusion is that all three failed jobs (64-bit ARM world build, efi-x86_64-uboot-iso, snow) were infrastructure or intermittent failures and that the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out. Local HEAD is `2349a11047f8`, remote `ci/cherry-5c8c261ffce9` is `1cd3ec8e8c5e`. The only difference is one local `.pickman-history` bookkeeping commit (52 lines added to that file, nothing else).
+- Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is nothing to change. A `-v2` branch would be source-identical to the current MR branch, and force-pushing would only publish the `.pickman-history` bookkeeping commit — no defconfig or code differences — which would trigger a new pipeline that hits the same unfixed runner disk and labgrid-place problems. That would just add noise to the MR.
+
+### Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report rather than a review request, so no code changes are needed. The branch is unchanged (source delta vs master is still only the four sc594/sc598 defconfigs) and builds cleanly with buildman for sandbox.
+>
+> The attempt-2 failures remain infrastructure-only:
+> - **build all 64bit ARM platforms**: `/tmp` on the `single`-tagged runner is still full (`No space left on device`, buildman rc=102 = exceptions, not build errors) — second consecutive attempt to hit this
+> - **snow**: labgrid place still held by `kea/labgrid`; fails in `u-boot-test-getrole` before U-Boot runs
+> - **efi-x86_64-uboot-iso**: one-off `Initramfs unpacking failed: ZSTD-compressed data is corrupt` inside the guest kernel; the same job passed on sibling MRs !1321 and !1323 on the same base
+>
+> Please clean `/tmp` on the world-build runner and release (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) the snow place, then retry the failed jobs.
+
+### Action needed from a human
+
+- Clean up disk on the `single`-tagged world-build runner (this has now blocked two attempts)
+- Release the `snow` labgrid place
+- Retry the pipeline — no new push is required
+
+---
+
+### Pipeline fix: 2026-09-04 (attempt 3)
+
+Branch: cherry-5c8c261ffce9
+
+Failed jobs:
+- efi-x86_64-uboot-iso-install (sjg-lab-slow)
+- snow (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and job logs.
+
+## Result: infrastructure failures only — no code change needed
+
+Both failed jobs are unrelated to MR !1322. The CI-tested commit (1cd3ec8e) differs from ci/master only by the four ADI sc594/sc598 defconfigs (+4/−3) plus `.pickman-history` bookkeeping; neither failing job touches those boards. I made no source changes. Branch `cherry-5c8c261ffce9-fix3` exists locally at the same commit as `cherry-5c8c261ffce9` (d2488e970a3d), ready for the caller.
+
+### Root cause per job
+
+**snow (job 637857)** — labgrid place held by another user, same as attempts 1 and 2.
+- Fails in `u-boot-test-getrole snow --configure` before U-Boot is built or run: `place snow is not acquired by your user, acquired by labgrid` (owner `kea/labgrid`).
+- This is the third consecutive attempt blocked by this; it will keep failing until the place is released or `labgrid-client -p snow allow ellesmere/gitlab-runner` is run.
+
+**efi-x86_64-uboot-iso-install (job 637884)** — job killed by a 10-minute execution limit that is not in the tree.
+- The log shows the Ubuntu autoinstall proceeding normally inside the guest: partitioning, image extraction, package installation (`grub-efi-amd64-signed`, `shim-signed`, …) all completed and it was in curthooks (`configuring raid (mdadm) service`) when GitLab reported `Job failed: execution took longer than 10m0s seconds`. There is no U-Boot error; U-Boot had already booted the installer.
+- `.gitlab-ci.yml` (both at HEAD and at the tested commit 1cd3ec8e) sets `timeout: 2h` for this job, and its own comment says the test takes ~30–45 min. The `.sjg_lab_template` adds no timeout override. So the 10-minute cap must be the runner's "Maximum job timeout" (or a project-level setting) overriding the job's 2h value — a runner configuration problem, not something this MR can fix. As configured, this job can never pass regardless of the code.
+- The MR only changes ARM sc59x defconfigs; the job builds and boots `efi-x86_app64`.
+
+### Verification that the MR is sound
+
+- `um build sandbox` — rc=0, clean
+- `buildman -o /tmp/pickman snow efi-x86_app64 sc594-som-ezkit-spl sc594-som-ezlite-spl sc598-som-ezkit-spl sc598-som-ezlite-spl` — all six build. rc=101 is warnings-only: snow and efi-x86_app64 are clean; the sc59x warnings (`spi_bus_bridge` dtc warnings, `CONFIG_OF_EMBED` notice) are pre-existing and identical to ci/master, as established in attempt 1.
+
+### Recommended action
+
+- Release the `snow` labgrid place (or allow `ellesmere/gitlab-runner` on it) — this has now blocked three attempts.
+- Raise the maximum job timeout on the runner that executes `sjg-lab-slow` jobs to at least the job's declared 2h (I could not query the runner directly since `glab` is not installed here, but the 10m0s figure does not appear anywhere in the CI config).
+- Then retry the pipeline; no new push is required, since the fix3 branch is identical to the MR branch.
+
+---
+
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) efi-x86_64-uboot-iso-install, snow.
+
+I'll start by rea...
+
+### Conversation log
+I'll check the branch state first, then decide whether the comment is actionable.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The single "review comment" on !1322 is, for the third time, the bot's own **pipeline-fix (attempt 3) report** echoed back as a discussion note. It requests no changes; its conclusion is that both failed jobs (efi-x86_64-uboot-iso-install, snow) were infrastructure failures — the snow labgrid place still held by `kea/labgrid`, and a 10-minute runner-side job timeout overriding the job's declared 2h — and that the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out. Local HEAD is `d88b7e0b2fc0`; remote `ci/cherry-5c8c261ffce9` and `cherry-5c8c261ffce9-fix3` are both `d2488e970a3d`. The only local difference is one `.pickman-history` bookkeeping commit — the source diff against the remote is empty.
+- Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is nothing to change. A `-v2` branch would be source-identical to the MR branch, and force-pushing would publish only the `.pickman-history` bookkeeping commit — no defconfig or code differences — which would trigger yet another pipeline that hits the same unfixed snow place and runner timeout. That only adds noise to the MR.
+
+### Suggested reply to post on the MR
+
+> This comment is the automated pipeline-fix report rather than a review request, so no code changes are needed. The branch is unchanged (source delta vs master remains only the four sc594/sc598 defconfigs) and still builds cleanly with buildman for sandbox.
+>
+> The attempt-3 failures are infrastructure-only:
+> - **snow**: labgrid place still held by `kea/labgrid`; fails in `u-boot-test-getrole` before U-Boot runs — this has now blocked three consecutive attempts
+> - **efi-x86_64-uboot-iso-install**: the Ubuntu autoinstall was progressing normally when GitLab killed the job at `10m0s`; `.gitlab-ci.yml` declares `timeout: 2h` for this job, so the cap is a runner/project "Maximum job timeout" setting, not something in the tree. As configured, the job cannot pass on any MR.
+>
+> Please release the snow place (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) and raise the maximum job timeout on the runner executing `sjg-lab-slow` jobs to at least 2h, then retry the failed jobs. No new push is required.
+
+### Action needed from a human
+
+- Release the `snow` labgrid place
+- Fix the 10-minute maximum job timeout on the `sjg-lab-slow` runner
+- Retry the pipeline — no new push is required
+
+---
+
+### Review: 2026-09-04
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+I'll check out the branch and check its state before deciding whether anything is actionable.
+
+The tree is clean and the source content is unchanged versus the remote. I'll confirm the build still passes, so the report is backed by a fresh result.
+
+## Result: comment is not actionable — no code changes made, nothing pushed
+
+The only "review comment" on !1322 is the bot's terminal notice: **"Pipeline fix: reached retry limit (3 attempts). Manual intervention required."** It is a status message, not a request for changes. It confirms what the three previous attempts each concluded: every pipeline failure was infrastructure-side, and the MR's code is sound.
+
+### What I checked
+
+- `cherry-5c8c261ffce9` checked out; working tree clean. Local HEAD `4888270cc2e4` differs from remote `ci/cherry-5c8c261ffce9` (`d2488e970a3d`) only by `.pickman-history` bookkeeping commits — the source diff against the remote is **empty**.
+- Source delta vs `ci/master` (excluding `.pickman-history`) remains exactly the four ADI sc594/sc598 defconfigs: +4/−3.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: **rc=0**, no warnings or errors.
+
+### Why I did not create `-v2` or force-push
+
+There is no code change to make. A `-v2` branch would be source-identical to the MR branch, and a force-push would only publish bookkeeping commits, triggering a fourth pipeline that would hit the same unresolved infrastructure problems. The retry-limit message explicitly asks for a human, and no push can substitute for that.
+
+### The manual intervention actually required
+
+Across all three attempts the blockers were the same, none in the tree:
+
+| Blocker | Attempts hit | Fix |
+|---|---|---|
+| `snow` labgrid place held by `kea/labgrid` | 1, 2, 3 | Release it, or `labgrid-client -p snow allow ellesmere/gitlab-runner` |
+| `/tmp` full on the `single`-tagged world-build runner | 1, 2 | Clean the disk |
+| ff3399 / vbe / rockpro64 places held by `sglass` | 1 | Release the places (may already be done — they passed in attempts 2 and 3) |
+| 10-minute max job timeout on the `sjg-lab-slow` runner (job declares `timeout: 2h`) | 3 | Raise the runner/project "Maximum job timeout" to ≥ 2h |
+| `efi-x86_64-uboot-iso` initrd ZSTD corruption in the guest | 2 | Intermittent; passed on sibling MRs — just retry |
+
+### Suggested reply to post on the MR
+
+> The pipeline-fix bot has reached its retry limit, but none of the failures across the three attempts were caused by this MR. The source delta vs master is only the four sc594/sc598 defconfigs, and the branch builds cleanly with buildman for sandbox.
+>
+> Manual steps needed before retrying:
+> 1. Release the `snow` labgrid place (or `labgrid-client -p snow allow ellesmere/gitlab-runner`) — blocked all three attempts.
+> 2. Clean `/tmp` on the `single`-tagged runner used for the world builds.
+> 3. Raise the maximum job timeout on the `sjg-lab-slow` runner to at least the 2h declared in `.gitlab-ci.yml` for `efi-x86_64-uboot-iso-install`; at 10m0s it cannot pass on any MR.
+>
+> Then retry the failed jobs. No new push is required — the branch at d2488e970a3d is current.
+
+### Action needed from a human
+
+- Fix the three infrastructure items above, then retry the pipeline (or merge on the strength of the passing jobs, since the MR only touches ADI sc59x defconfigs that no failing job exercises).
+
+---
+
+### Review: 2026-09-07
+
+Branch: cherry-5c8c261ffce9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) vbe, snow, ff3399.
+
+I'll start by reading the MR descr...
+
+### Conversation log
+I'll check out the branch and look at its state relative to ci/master.
+
+The new ci/master commits touch only cbfs files, none overlapping the ADI defconfigs, so the rebase should be conflict-free. Running it now.
+
+Push landed: `9cb1317aaf6d → bf487f958ea5 (forced update)` on `ci/cherry-5c8c261ffce9`. Nothing further to do — here's the report.
+
+## Result: rebased and pushed; review comment not actionable
+
+### Rebase
+
+`cherry-5c8c261ffce9` was 4 commits behind `ci/master` (the `cmd-cov-cbfs-vfs` merge: cbfs VFS driver, test and doc). `git rebase --keep-empty ci/master` completed with no conflicts — the new master commits touch only `fs/cbfs/`, `doc/`, `test/cmd/cbfs.c` and `include/cbfsfs.h`, none of which overlap this MR's ADI defconfigs.
+
+Rebased branch (on `ci/master` = `b37200bcb895`):
+```
+bf487f958ea5 pickman: Record review handling …   (×6 bookkeeping commits)
+ba8e93da1994 pickman: Record cherry-pick of 3 commits from us/main
+7665f372234f Merge patch series "sc59x: Disable CONFIG_EFI_LOADER"   (empty, preserved)
+af541a273c6b configs: adi: sc594: disable CONFIG_EFI_LOADER
+addf499ddb4f configs: adi: sc598: disable CONFIG_EFI_LOADER
+```
+
+**Delta checks:** `git range-diff` reports all 10 commits as `=` (byte-identical patches) against their pre-rebase counterparts. Stats unchanged: sc598 2 files +2/−2, sc594 2 files +2/−1, merge empty. Source delta vs `ci/master` (excluding `.pickman-history`) is still exactly the four sc594/sc598 defconfigs, +4/−3.
+
+**Builds:** `buildman -L --board sandbox -w -o /tmp/pickman` — rc=0, no warnings, at:
+- `addf499ddb4f` (sc598 commit)
+- `bf487f958ea5` (HEAD; source tree verified identical to the sc594 and merge commits, so this one build covers them and the bookkeeping commits)
+
+### Review comment
+
+The single comment is the bot's own **pipeline-fix (attempt 1) report** for vbe/snow/ff3399, echoed back as a discussion note. It requests no changes; its conclusion is that all three jobs failed in `u-boot-test-getrole` because the labgrid places were held by another user (`snow` by `kea/labgrid`, `ff3399` by `sglass`). No code change was made for it.
+
+### Branches / push
+
+- Local bookmark: `cherry-5c8c261ffce9-v2` at `bf487f958ea5`
+- Force-pushed `cherry-5c8c261ffce9` to `ci`: `9cb1317aaf6d → bf487f958ea5`. GitLab will start a new MR pipeline. MR title untouched.
+
+### Suggested reply to post on the MR
+
+> Rebased onto current master (b37200bcb895, the cbfs VFS merge) with no conflicts; all commits are unchanged (range-diff shows every patch identical). The source delta vs master remains only the four sc594/sc598 defconfigs, and sandbox builds cleanly with buildman at each step.
+>
+> The comment above is the automated pipeline-fix report rather than a review request, so no code changes are needed. Those failures were labgrid place-ownership errors, so before the new pipeline's lab jobs can pass the places still need releasing:
+> ```
+> labgrid-client -p snow allow ellesmere/gitlab-runner
+> labgrid-client -p ff3399 allow ellesmere/gitlab-runner
+> ```
+
+### Action needed from a human
+
+Release (or `allow` the runner on) the `snow` and `ff3399` labgrid places — otherwise the freshly triggered pipeline will hit the same vbe/snow/ff3399 failures for a fifth time.
+
+---
+
