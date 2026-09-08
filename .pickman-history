@@ -98857,3 +98857,240 @@ Release (or `allow` the runner on) the `snow` and `ff3399` labgrid places — ot
 
 ---
 
+## 2026-09-07: us/main
+
+Branch: cherry-6073c36b2c8d
+
+Commits:
+- 6073c36b2c8d test: dm: hash: check digest size before memset
+- fb79a4fcb09b disk: ubi: use a format string when copying the volume name
+- 93e5e5f4cbef lmb: Return -EFAULT when requested region is not part of memory map
+- 480644c06e20 lmb: Return -EFAULT when freeing unallocated memory regions
+- 94a09715bf4c boot: image-fdt: Restore suppression of irrelevant ERROR message
+- 4d757bfe8ee0 Merge patch series "boot: image-fdt: Restore suppression of irrelevant ERROR message"
+
+### Conversation log
+I'll start by checking the repository state.
+
+Clean tree. Creating the branch.
+
+Identical. Next commit.
+
+Conflicts on commit 3. Let me inspect.
+
+Not already applied. Let me look at the conflicts.
+
+The header hunk doesn't apply — ci/master lacks `lmb_alloc_mem()`. Resolving to HEAD there.
+
+All callers use truthiness only, and `lmb_reserve()` already returns -EEXIST here, so the backport is behaviour-compatible. Resolving:
+
+Diagnostics are clang include-path noise. Now the header doc:
+
+Let me verify no markers remain and build.
+
+Now let me commit with a fix-up note and build.
+
+Now let me build and run the lmb test to confirm the resolution is correct.
+
+Build passes. Let me verify the resolution behaves correctly by running the lmb tests.
+
+The test caught a real gap — earlier assertions in the same function still expect -1.
+
+These `-1` assertions predate the missing prerequisite. Let me check what upstream asserts for them.
+
+All five are `-EEXIST` upstream. Updating them to match:
+
+Let me run the full lmb suite and amend.
+
+All 171 lib tests pass. Amending the commit:
+
+Now commit 4.
+
+Only the test file conflicts this time.
+
+Auto-merged hunks match upstream exactly. Let me check for other `-1` free assertions before committing.
+
+No other `-1` free assertions. Committing and building.
+
+Now commit 5 and the merge commit.
+
+Identical change; only surrounding context differs. Let me verify the logic is coherent:
+
+Now the merge commit:
+
+The merge re-applies the series diff we've already landed. Let me verify it introduces nothing extra, then resolve to HEAD.
+
+Merge contains only the three commits' combined diff — no extra resolution. Resolving to HEAD for an empty commit:
+
+The `-x` line is preserved. Committing empty with the original author:
+
+All 6 commits are in. Final verification:
+
+All 6 present, merge commit empty as expected. Final build and test run:
+
+Build clean, all 171 lib tests pass. (`dm_test_hash_provider_selection` isn't registered because sandbox doesn't enable `CONFIG_DM_HASH` — pre-existing, same upstream.)
+
+## Result: all 6 commits applied on `cherry-6073c36b2c8d`
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+**Tests:** `ut lib` — 171 run, 0 failures.
+
+### Commits
+
+| Commit | Status |
+|---|---|
+| `test: dm: hash: check digest size before memset` | clean, stat identical |
+| `disk: ubi: use a format string...` | clean, stat identical |
+| `lmb: Return -EFAULT when requested region is not part of memory map` | **conflicts, fixed up** |
+| `lmb: Return -EFAULT when freeing unallocated memory regions` | minor conflict, fixed up |
+| `boot: image-fdt: Restore suppression of irrelevant ERROR message` | clean, stat identical |
+| `Merge patch series "boot: image-fdt: ..."` | empty commit, message preserved |
+
+### Fix-ups (noted in each commit message)
+
+**Commit 3** — the real work. ci/master predates the `lmb_alloc_mem()` API, so the upstream hunks had no matching context:
+- Dropped the `lmb_alloc_mem()` doc block and function body (don't exist here); applied the `-EFAULT`/`-EINVAL` split to `lmb_alloc_addr()` directly, propagating `lmb_reserve()`'s return code instead of collapsing everything to `-1`.
+- Updated `lmb_alloc_addr()`'s doc comment rather than `lmb_alloc_mem()`'s.
+- **This one wasn't caught by the build.** The test failed at first run (`test/lib/lmb.c:571`) — five pre-existing `-1` assertions (lines 571, 581, 583, 602, 649) were updated by a prerequisite commit missing from ci/master. I checked each against `93e5e5f4cbef^` and changed all five to `-EEXIST` to match upstream. Verified all callers (`efi_memory.c:458`, `fs_legacy.c:774`) test truthiness only, so the wider return values are behaviour-compatible.
+
+**Commit 4** — kept the two-arg `lmb_free()` and the `lmb_free_flags()` name used here; the `include/lmb.h` and `lib/lmb.c` hunks auto-merged identically to upstream.
+
+### One thing worth flagging
+
+Commit 5 suppresses the ERROR when `ret == -EFAULT`. In this tree `boot_fdt_handle_region()` calls `lmb_reserve()` directly on the reserve path, and `lmb_reserve()` never returns `-EFAULT` — only the free path (via `_lmb_free()`) can. Upstream routes the reserve path through `lmb_alloc_mem(LMB_MEM_ALLOC_ADDR, ...)`, which does return `-EFAULT`.
+
+So the half of the fix that suppresses the *reserving fdt memory region failed* message quoted in the commit message is inert here. That's a pre-existing tree divergence, not a bad resolution — fixing it would mean pulling in the `lmb_alloc_mem()` conversion, which is outside this series. Worth knowing if the goal was to silence that specific boot message.
+
+Branch is left checked out and unpushed; nothing merged back.
+
+---
+
+### Review: 2026-09-07
+
+Branch: cherry-6073c36b2c8d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state and the branch.
+
+Clean tree, 7 commits ahead, 8 commits behind. Let me save pre-rebase stats and start the rebase.
+
+The incoming commits are all networking/cmd changes, unrelated to the lmb/ubi/hash/image-fdt files. Rebasing:
+
+Per-commit stats are identical, and the only tree difference vs the pre-rebase branch is the incoming ci/master content. Now building and running the lmb tests:
+
+Build clean, 171 lib tests pass with 0 failures (the zstd lines are expected output from negative-path tests). Now creating the `-v2` local branch and force-pushing to update the MR:
+
+The push output confirms the forced update (`47c85290e57f...4b98db8ab1e0`), but the local remote-tracking ref looks stale. Let me fetch to confirm the remote is actually at the new HEAD.
+
+Remote confirmed at `4b98db8ab1e0`, matching local HEAD. Nothing further is pending — all steps are complete.
+
+## Result: MR !1325 rebased onto ci/master and pushed
+
+**Rebase:** `git rebase --keep-empty ci/master` — 7/7 commits applied with **no conflicts**. The 8 incoming ci/master commits (cmd-cov-net: dns/linklocal getopt conversions, tests, docs) touch none of the files in this series.
+
+**Delta check:** per-commit `git show --stat` output is byte-identical before and after the rebase (excluding hashes). The only tree difference vs the pre-rebase branch is the incoming ci/master content (14 files, all under cmd/, net/, doc/, test/cmd/).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+**Tests:** `ut lib` — 171 run, 0 failures (covers the lmb tests whose `-EEXIST`/`-EFAULT` assertions were fixed up in the original backport).
+
+**Branches:**
+- Local: `cherry-6073c36b2c8d-v2` created at `4b98db8ab1e0` (rebased state)
+- Remote: `ci/cherry-6073c36b2c8d` force-pushed and verified via fetch at `4b98db8ab1e0` — GitLab will trigger the MR pipeline.
+
+| Commit | Rebased |
+|---|---|
+| `4de9aada249e` test: dm: hash: check digest size before memset | clean |
+| `9c5793669003` disk: ubi: use a format string when copying the volume name | clean |
+| `7f154145a851` lmb: Return -EFAULT when requested region is not part of memory map | clean |
+| `d99828ab524b` lmb: Return -EFAULT when freeing unallocated memory regions | clean |
+| `504ed22cea67` boot: image-fdt: Restore suppression of irrelevant ERROR message | clean |
+| `5d51b2640005` Merge patch series "boot: image-fdt: ..." | clean, still empty |
+| `4b98db8ab1e0` pickman: Record cherry-pick of 6 commits from us/main | clean |
+
+Note: the earlier flag still stands — commit 5's suppression of the *reserving fdt memory region failed* message remains inert in this tree because `lmb_reserve()` never returns `-EFAULT` here (upstream goes via `lmb_alloc_mem()`). Nothing in the rebase changes that.
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master (`7b33b839d217`, cmd-cov-net merge). Clean rebase with no conflicts — the incoming commits touch only cmd/net/doc/test files, disjoint from this series. Per-commit stats are identical before and after; the empty merge commit is preserved. Sandbox builds with 0 warnings and `ut lib` passes (171/171). Branch force-pushed; pipeline should be running.
+
+---
+
+### Review: 2026-09-08
+
+Branch: cherry-6073c36b2c8d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state.
+
+Clean tree, but on a different branch. Let me fetch and inspect the target branch.
+
+The branch has an extra pickman commit since last time, and `-v2` already exists. Let me check how far behind it is.
+
+Incoming commits are pickman records and sc59x config changes. Let me save pre-rebase stats and check for file overlap.
+
+Only `.pickman-history` overlaps — that will likely conflict (both sides append records). Rebasing:
+
+The 6 code commits applied cleanly. Only the `.pickman-history` append-log conflicts. Let me inspect it.
+
+Pure append conflict: ci/master appended the `cherry-5c8c261ffce9` record (09-04), our commit appends `cherry-6073c36b2c8d` (09-07). Both must be kept. Let me check the exact separator format.
+
+Format confirmed — records separated by `\n---\n\n`. Resolving to keep both blocks in chronological order:
+
+Both records preserved in chronological order. Verifying the seam and continuing:
+
+Rebase complete, all 8 commits on top of `ci/master`. Now the delta check:
+
+Per-commit stats byte-identical; the only tree difference is incoming ci/master content (sc59x configs + history records) — no code files changed. Verifying the empty merge commit survived, then building:
+
+Build clean, merge commit still empty. Running the lmb tests that the backport's fix-ups touched:
+
+That buildman binary isn't natively runnable here. Let me build via the project's `um` tool to run the tests:
+
+171 tests, 0 failures — matching the previous round. Creating the `-v3` branch and force-pushing:
+
+Force update confirmed (`4b98db8ab1e0...45dcec641bba`). Verifying the remote actually landed there:
+
+Remote confirmed at `45dcec641bba`, 0 commits behind `ci/master`. All steps complete.
+
+## Result: MR !1325 rebased onto ci/master and pushed
+
+**Rebase:** `git rebase --keep-empty ci/master` — 8/8 commits applied. All 6 code commits applied **cleanly**; one conflict, in `.pickman-history` only.
+
+**The conflict (resolved):** `.pickman-history` is an append-only log, and both sides appended a record — ci/master added the `cherry-5c8c261ffce9` entry (2026-09-04), our branch adds the `cherry-6073c36b2c8d` entry (2026-09-07). Resolved by keeping **both** blocks in chronological order, joined with the file's standard `---` separator. No content was dropped from either side and no markers remain. This is a bookkeeping file, not code.
+
+**Delta check:** per-commit `git show --stat` output is byte-identical before and after the rebase. The only tree difference vs the pre-rebase branch is incoming ci/master content — the 4 sc59x defconfigs and the history records. **No source file in the series changed.** The empty merge commit is preserved (parent `2028a518a17c`, no files).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+**Tests:** `ut lib` — 171 run, 0 failures (covers the lmb tests whose `-EEXIST`/`-EFAULT` assertions were fixed up in the original backport).
+
+**Branches:**
+- Local: `cherry-6073c36b2c8d-v3` at `45dcec641bba` (`-v2` already existed, so incremented)
+- Remote: `ci/cherry-6073c36b2c8d` force-pushed and verified via fetch at `45dcec641bba`
+
+| Commit | Rebased |
+|---|---|
+| `41c29741c967` test: dm: hash: check digest size before memset | clean |
+| `4b8dbecffdd3` disk: ubi: use a format string when copying the volume name | clean |
+| `44cf37315aee` lmb: Return -EFAULT when requested region is not part of memory map | clean |
+| `52de81ee0539` lmb: Return -EFAULT when freeing unallocated memory regions | clean |
+| `2028a518a17c` boot: image-fdt: Restore suppression of irrelevant ERROR message | clean |
+| `48871b267b9d` Merge patch series "boot: image-fdt: ..." | clean, still empty |
+| `226dfdb131b2` pickman: Record cherry-pick of 6 commits from us/main | history conflict, both records kept |
+| `45dcec641bba` pickman: Record review handling for cherry-6073c36b2c8d | clean |
+
+**Two notes, neither blocking:**
+1. `buildman -o /tmp/pickman` produces a binary that won't execute natively in this environment (it faults under qemu), so I built separately with `um build sandbox` to run the test suite. The buildman build itself passed cleanly — this only affected *how* I ran the tests.
+2. The earlier flag still stands and is unchanged by this rebase: commit 5's suppression of the *reserving fdt memory region failed* message is inert in this tree, because `lmb_reserve()` never returns `-EFAULT` here (upstream routes that path via `lmb_alloc_mem()`).
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master (`78ec57c88f46`). All six code commits applied cleanly — the incoming commits touch only the sc59x defconfigs, disjoint from this series. The single conflict was in `.pickman-history`, where both branches appended a record; resolved by keeping both entries in date order. Per-commit stats are identical before and after, and the empty merge commit is preserved. Sandbox builds with 0 warnings and `ut lib` passes (171/171). Branch force-pushed; pipeline should be running.
+
+---
+

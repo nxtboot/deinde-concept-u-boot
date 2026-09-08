@@ -162,7 +162,11 @@ phys_addr_t lmb_alloc_base(phys_size_t size, ulong align, phys_addr_t max_addr,
  * parameter. The base parameter is used to specify the base address
  * of the requested region.
  *
- * Return: 0 on success -1 on error
+ * Return: 0 on success, -ve value on failure
+ *
+ * The return value can be -EFAULT if the requested memory region is not
+ * part of the LMB memory map, and -EEXIST if the requested region is
+ * already allocated.
  */
 int lmb_alloc_addr(phys_addr_t base, phys_size_t size, u32 flags);
 
@@ -186,6 +190,8 @@ int lmb_is_reserved_flags(phys_addr_t addr, int flags);
  * @flags: Memory region attributes
  *
  * Return: 0 on success, negative error code on failure.
+ *
+ * The return value can be -EFAULT when the region has not been allocated.
  */
 long lmb_free_flags(phys_addr_t base, phys_size_t size, uint flags);
 
