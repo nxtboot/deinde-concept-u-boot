@@ -99145,3 +99145,69 @@ No `.pickman-signal` was written — the commits were not already present in ci/
 
 ---
 
+### Review: 2026-09-08
+
+Branch: cherry-964ad5b5c91b
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state.
+
+Tree is clean. Let me fetch the latest target branch.
+
+Note there's an extra pickman tracking commit. Let me record the pre-rebase deltas.
+
+Now checking out the branch and rebasing.
+
+The rebase completed with no conflicts. Now verifying the post-rebase deltas match.
+
+All 5 deltas match. Let me verify the patch content is byte-identical, not just the stats.
+
+The empty merge commit was preserved. Now building each rebased commit.
+
+All builds clean. Creating the versioned local branch.
+
+Now force-pushing to the original remote branch to update the MR.
+
+The remote branch now matches local at `a47c49af3c23`, and the tree is clean.
+
+## What was done
+
+Rebased MR !1328 (`cherry-964ad5b5c91b`) onto the latest `ci/master`.
+
+- **Old base:** `78ec57c88f46`
+- **New base:** `598d0a8d7daf` ("Merge branch 'em100-console' into 'master'") — the branch was 9 commits behind
+- **Command:** `git rebase --keep-empty ci/master` — completed with **no conflicts**, no fix-ups needed
+
+Note the branch carried a 5th commit not listed in the MR description: `pickman: Record cherry-pick of 4 commits from us/main` (the `.pickman-history` tracking commit). It rebased cleanly along with the rest.
+
+**Rebased log:**
+```
+a47c49af3c23 pickman: Record cherry-pick of 4 commits from us/main
+949b126376fc Merge patch series "fs/squashfs: bounds checks on image-controlled offsets"
+288e556369c7 fs/squashfs: bound the offset returned by sqfs_dir_offset()
+f604cae03bda fs/squashfs: bound fragment table accesses in sqfs_frag_lookup()
+93e1bce5df16 Prepare v2026.10-rc3
+598d0a8d7daf Merge branch 'em100-console' into 'master'   <- ci/master
+```
+
+**Delta verification:** all five commits are byte-identical to their pre-rebase versions — I compared full patch content *and* commit messages (not just `--stat`), and every one matched exactly. The empty merge commit `949b126376fc` was preserved as empty by `--keep-empty`, as intended.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` ran at each of the 5 rebased commits — all returned rc=0 with no warnings or errors.
+
+**Branches:** local `cherry-964ad5b5c91b-v2` created (no prior `-v*` existed, so v2). Force-pushed to remote `cherry-964ad5b5c91b` to update the MR; GitLab confirmed the forced update and will trigger a pipeline. MR title untouched.
+
+## Suggested MR reply
+
+> Rebased onto the latest `ci/master` (`598d0a8d7daf`, was `78ec57c88f46` — 9 commits behind).
+>
+> Used `git rebase --keep-empty` so the empty merge commit for the squashfs series is preserved. No conflicts arose and no fix-ups were needed.
+>
+> All five commits verified byte-identical to their pre-rebase versions (full patch content and commit messages compared, not just diffstats). Sandbox build with `buildman -L --board sandbox -w` passes at every commit in the series, with no warnings or errors.
+>
+> Local branch: `cherry-964ad5b5c91b-v2`.
+
+---
+
