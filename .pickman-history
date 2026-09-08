@@ -99452,3 +99452,47 @@ One thing to flag: if the new pipeline hits the same labgrid or disk-space error
 
 ---
 
+### Review: 2026-09-08
+
+Branch: cherry-561ae28cb56a
+
+Comments addressed:
+
+
+### Conversation log
+I'll check the current tree state and where the branch sits relative to ci/master.
+
+Only pytest separators, no real markers. Everything checks out, so the one remaining action is the force push to the MR branch.
+
+Pushed: `ci/cherry-561ae28cb56a` moved 410fb906b494 → aa3b994f8a9e (forced), which triggers a fresh MR pipeline. That was the last action; nothing else is outstanding.
+
+## Summary
+
+**Result:** rebase onto ci/master is complete, verified and pushed. Branch `cherry-561ae28cb56a` (and the identical local `cherry-561ae28cb56a-v3`) now sits 6 ahead / 0 behind ci/master at aa3b994f8a9e. MR title untouched.
+
+**State on arrival:** the previous session had already run `git rebase --keep-empty ci/master`, resolved the conflict and created `-v3`, but was cut off while waiting on the builds, so the remote was still at the pre-rebase head 410fb906b494. I picked up from there rather than redoing the rebase.
+
+**Rebased commits:**
+```
+aa3b994f8a9e pickman: Record review handling for cherry-561ae28cb56a
+1b543ef14e29 pickman: Record pipeline fix for cherry-561ae28cb56a
+0c272eda2a65 pickman: Record cherry-pick of 3 commits from us/main
+1e4d27bc7833 Merge patch series "fs/squashfs: fix directory table integer overflow"   (empty, kept)
+734d855fb36d test: squashfs: add directory table overflow regression test
+3d6fff9b8975 fs/squashfs: fix integer overflow in directory table allocation
+```
+
+**Conflict:** only in `.pickman-history` — ci/master gained the `cherry-964ad5b5c91b` squashfs series and its history records, and both sides append to that file. Resolution keeps both sets of records; I confirmed there are no real conflict markers (a first grep flagged `====` lines, but those are pytest separators quoted in the log, not markers) and `git diff --check` is clean.
+
+**Delta checks:** per-commit stats are identical to the pre-rebase commits — 13+/2- in `fs/squashfs/sqfs.c`, 75+ in the new `test_sqfs_overflow.py`, empty merge. The fs/ diff `ci/master..branch` is byte-for-byte the same as commit 1's diff, so the other squashfs series on ci/master did not interfere with the pick.
+
+**Builds:** `buildman -L --board sandbox -w -o /tmp/pickman` passes (0 warnings, 0 errors) at commit 1 (3d6fff9b8975) and at the branch head. The intermediate test/merge/history commits change no compiled code.
+
+**Suggested reply to post on the MR:**
+
+> Rebased onto current master (git rebase --keep-empty). The only conflict was in .pickman-history, where master had picked up the cherry-964ad5b5c91b squashfs series' records alongside this branch's; both are kept. The three code commits applied cleanly and their diffs are unchanged (13+/2- in sqfs.c, 75+ new test, empty merge preserved). Sandbox builds clean at each code commit. The branch has been force-pushed to retry the pipeline — if the lab jobs again report "place is acquired by a different user (kea/labgrid)" or disk-full errors on ellesmere, that runner still needs attention independently of this MR.
+
+One thing to flag: now that master also carries the other squashfs series, if the new pipeline shows a *squashfs* test failure (rather than the earlier infrastructure errors), that would be worth a look as a possible interaction between the two series — nothing in the static diff suggests one, but the tests are the real check.
+
+---
+
