@@ -99018,3 +99018,79 @@ Note: the earlier flag still stands — commit 5's suppression of the *reserving
 
 ---
 
+### Review: 2026-09-08
+
+Branch: cherry-6073c36b2c8d
+
+Comments addressed:
+
+
+### Conversation log
+I'll start by checking the repository state.
+
+Clean tree, but on a different branch. Let me fetch and inspect the target branch.
+
+The branch has an extra pickman commit since last time, and `-v2` already exists. Let me check how far behind it is.
+
+Incoming commits are pickman records and sc59x config changes. Let me save pre-rebase stats and check for file overlap.
+
+Only `.pickman-history` overlaps — that will likely conflict (both sides append records). Rebasing:
+
+The 6 code commits applied cleanly. Only the `.pickman-history` append-log conflicts. Let me inspect it.
+
+Pure append conflict: ci/master appended the `cherry-5c8c261ffce9` record (09-04), our commit appends `cherry-6073c36b2c8d` (09-07). Both must be kept. Let me check the exact separator format.
+
+Format confirmed — records separated by `\n---\n\n`. Resolving to keep both blocks in chronological order:
+
+Both records preserved in chronological order. Verifying the seam and continuing:
+
+Rebase complete, all 8 commits on top of `ci/master`. Now the delta check:
+
+Per-commit stats byte-identical; the only tree difference is incoming ci/master content (sc59x configs + history records) — no code files changed. Verifying the empty merge commit survived, then building:
+
+Build clean, merge commit still empty. Running the lmb tests that the backport's fix-ups touched:
+
+That buildman binary isn't natively runnable here. Let me build via the project's `um` tool to run the tests:
+
+171 tests, 0 failures — matching the previous round. Creating the `-v3` branch and force-pushing:
+
+Force update confirmed (`4b98db8ab1e0...45dcec641bba`). Verifying the remote actually landed there:
+
+Remote confirmed at `45dcec641bba`, 0 commits behind `ci/master`. All steps complete.
+
+## Result: MR !1325 rebased onto ci/master and pushed
+
+**Rebase:** `git rebase --keep-empty ci/master` — 8/8 commits applied. All 6 code commits applied **cleanly**; one conflict, in `.pickman-history` only.
+
+**The conflict (resolved):** `.pickman-history` is an append-only log, and both sides appended a record — ci/master added the `cherry-5c8c261ffce9` entry (2026-09-04), our branch adds the `cherry-6073c36b2c8d` entry (2026-09-07). Resolved by keeping **both** blocks in chronological order, joined with the file's standard `---` separator. No content was dropped from either side and no markers remain. This is a bookkeeping file, not code.
+
+**Delta check:** per-commit `git show --stat` output is byte-identical before and after the rebase. The only tree difference vs the pre-rebase branch is incoming ci/master content — the 4 sc59x defconfigs and the history records. **No source file in the series changed.** The empty merge commit is preserved (parent `2028a518a17c`, no files).
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` — 1 built, 0 warnings, 0 errors.
+**Tests:** `ut lib` — 171 run, 0 failures (covers the lmb tests whose `-EEXIST`/`-EFAULT` assertions were fixed up in the original backport).
+
+**Branches:**
+- Local: `cherry-6073c36b2c8d-v3` at `45dcec641bba` (`-v2` already existed, so incremented)
+- Remote: `ci/cherry-6073c36b2c8d` force-pushed and verified via fetch at `45dcec641bba`
+
+| Commit | Rebased |
+|---|---|
+| `41c29741c967` test: dm: hash: check digest size before memset | clean |
+| `4b8dbecffdd3` disk: ubi: use a format string when copying the volume name | clean |
+| `44cf37315aee` lmb: Return -EFAULT when requested region is not part of memory map | clean |
+| `52de81ee0539` lmb: Return -EFAULT when freeing unallocated memory regions | clean |
+| `2028a518a17c` boot: image-fdt: Restore suppression of irrelevant ERROR message | clean |
+| `48871b267b9d` Merge patch series "boot: image-fdt: ..." | clean, still empty |
+| `226dfdb131b2` pickman: Record cherry-pick of 6 commits from us/main | history conflict, both records kept |
+| `45dcec641bba` pickman: Record review handling for cherry-6073c36b2c8d | clean |
+
+**Two notes, neither blocking:**
+1. `buildman -o /tmp/pickman` produces a binary that won't execute natively in this environment (it faults under qemu), so I built separately with `um build sandbox` to run the test suite. The buildman build itself passed cleanly — this only affected *how* I ran the tests.
+2. The earlier flag still stands and is unchanged by this rebase: commit 5's suppression of the *reserving fdt memory region failed* message is inert in this tree, because `lmb_reserve()` never returns `-EFAULT` here (upstream routes that path via `lmb_alloc_mem()`).
+
+### Suggested MR reply
+
+> Rebased onto latest ci/master (`78ec57c88f46`). All six code commits applied cleanly — the incoming commits touch only the sc59x defconfigs, disjoint from this series. The single conflict was in `.pickman-history`, where both branches appended a record; resolved by keeping both entries in date order. Per-commit stats are identical before and after, and the empty merge commit is preserved. Sandbox builds with 0 warnings and `ut lib` passes (171/171). Branch force-pushed; pipeline should be running.
+
+---
+
