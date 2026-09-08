@@ -2108,9 +2108,12 @@ efi_status_t EFIAPI efi_load_image(bool boot_policy,
 		(struct efi_loaded_image_obj **)image_handle;
 	efi_status_t ret;
 	void *dest_buffer;
+	int ofs;
 
 	EFI_ENTRY("%d, %p, %pD, %p, %zu, %p", boot_policy, parent_image,
 		  file_path, source_buffer, source_size, image_handle);
+	ofs = efi_logs_load_image(boot_policy, parent_image, source_buffer,
+				  source_size, image_handle);
 
 	if (!source_buffer && !file_path) {
 		ret = EFI_NOT_FOUND;
@@ -2156,6 +2159,8 @@ efi_status_t EFIAPI efi_load_image(bool boot_policy,
 						    info,
 						    *image_handle);
 error:
+	efi_loge_load_image(ofs, ret);
+
 	return EFI_EXIT(ret);
 }
 
@@ -2180,8 +2185,10 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 {
 	struct efi_event *evt, *next_event;
 	efi_status_t ret = EFI_SUCCESS;
+	int ofs;
 
 	EFI_ENTRY("%p, %zx", image_handle, map_key);
+	ofs = efi_logs_exit_boot_services(image_handle, map_key);
 
 	/* Check that the caller has read the current memory map */
 	if (map_key != efi_memory_map_key) {
@@ -2261,6 +2268,8 @@ out:
 		if (ret != EFI_SUCCESS)
 			efi_tcg2_notify_exit_boot_services_failed();
 	}
+
+	efi_loge_exit_boot_services(ofs, ret);
 
 	return EFI_EXIT(ret);
 }
@@ -2609,22 +2618,20 @@ efi_status_t EFIAPI efi_locate_handle_buffer(
  *
  * Return: status code
  */
-static efi_status_t EFIAPI efi_locate_protocol(const efi_guid_t *protocol,
-					       void *registration,
-					       void **protocol_interface)
+static efi_status_t efi_locate_protocol_(const efi_guid_t *protocol,
+					 void *registration,
+					 void **protocol_interface)
 {
 	struct efi_handler *handler;
 	efi_status_t ret;
 	struct efi_object *efiobj;
-
-	EFI_ENTRY("%pUs, %p, %p", protocol, registration, protocol_interface);
 
 	/*
 	 * The UEFI spec explicitly requires a protocol even if a registration
 	 * key is provided. This differs from the logic in LocateHandle().
 	 */
 	if (!protocol || !protocol_interface)
-		return EFI_EXIT(EFI_INVALID_PARAMETER);
+		return EFI_INVALID_PARAMETER;
 
 	if (registration) {
 		struct efi_register_notify_event *event;
@@ -2632,7 +2639,7 @@ static efi_status_t EFIAPI efi_locate_protocol(const efi_guid_t *protocol,
 
 		event = efi_check_register_notify_event(registration);
 		if (!event)
-			return EFI_EXIT(EFI_INVALID_PARAMETER);
+			return EFI_INVALID_PARAMETER;
 		/*
 		 * The UEFI spec requires to return EFI_NOT_FOUND if no
 		 * protocol instance matches protocol and registration.
@@ -2661,10 +2668,40 @@ static efi_status_t EFIAPI efi_locate_protocol(const efi_guid_t *protocol,
 	}
 not_found:
 	*protocol_interface = NULL;
-	return EFI_EXIT(EFI_NOT_FOUND);
+	return EFI_NOT_FOUND;
 found:
 	*protocol_interface = handler->protocol_interface;
-	return EFI_EXIT(EFI_SUCCESS);
+
+	return EFI_SUCCESS;
+}
+
+/**
+ * efi_locate_protocol() - find an interface implementing a protocol
+ * @protocol:           GUID of the protocol
+ * @registration:       registration key passed to the notification function
+ * @protocol_interface: protocol interface
+ *
+ * This function implements the LocateProtocol service.
+ *
+ * See the Unified Extensible Firmware Interface (UEFI) specification for
+ * details.
+ *
+ * Return: status code
+ */
+static efi_status_t EFIAPI efi_locate_protocol(const efi_guid_t *protocol,
+					       void *registration,
+					       void **protocol_interface)
+{
+	efi_status_t ret;
+	int ofs;
+
+	EFI_ENTRY("%pUs, %p, %p", protocol, registration, protocol_interface);
+	ofs = efi_logs_locate_protocol(protocol, registration,
+				       protocol_interface);
+	ret = efi_locate_protocol_(protocol, registration, protocol_interface);
+	efi_loge_locate_protocol(ofs, ret);
+
+	return EFI_EXIT(ret);
 }
 
 /**

@@ -22,6 +22,9 @@ static const char *tag_name[EFILT_COUNT] = {
 	"alloc_pool",
 	"free_pool",
 	"open_prot",
+	"locate_prot",
+	"load_image",
+	"exit_bootsvc",
 
 	"testing",
 };
@@ -190,6 +193,97 @@ int efi_loge_open_protocol(int ofs, efi_status_t efi_ret)
 		return -ENOSPC;
 	if (rec->interface)
 		rec->e_interface = *rec->interface;
+
+	return 0;
+}
+
+int efi_logs_locate_protocol(const efi_guid_t *protocol, void *registration,
+			     void **interface)
+{
+	struct efil_locate_protocol *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_LOCATE_PROTOCOL, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	if (protocol)
+		rec->protocol = *protocol;
+	else
+		memset(&rec->protocol, '\0', sizeof(rec->protocol));
+	rec->registration = registration;
+	rec->interface = interface;
+	rec->e_interface = NULL;
+
+	return ret;
+}
+
+int efi_loge_locate_protocol(int ofs, efi_status_t efi_ret)
+{
+	struct efil_locate_protocol *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->interface)
+		rec->e_interface = *rec->interface;
+
+	return 0;
+}
+
+int efi_logs_load_image(bool boot_policy, efi_handle_t parent_image,
+			void *source_buffer, efi_uintn_t source_size,
+			efi_handle_t *image_handle)
+{
+	struct efil_load_image *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_LOAD_IMAGE, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->boot_policy = boot_policy;
+	rec->parent_image = parent_image;
+	rec->source_buffer = source_buffer;
+	rec->source_size = source_size;
+	rec->image_handle = image_handle;
+	rec->e_image_handle = NULL;
+
+	return ret;
+}
+
+int efi_loge_load_image(int ofs, efi_status_t efi_ret)
+{
+	struct efil_load_image *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->image_handle)
+		rec->e_image_handle = *rec->image_handle;
+
+	return 0;
+}
+
+int efi_logs_exit_boot_services(efi_handle_t image_handle, efi_uintn_t map_key)
+{
+	struct efil_exit_boot_services *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_EXIT_BOOT_SERVICES, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->image_handle = image_handle;
+	rec->map_key = map_key;
+
+	return ret;
+}
+
+int efi_loge_exit_boot_services(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
 
 	return 0;
 }
@@ -439,6 +533,45 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 				  (ulong)map_to_sysmem(rec->e_interface));
 			show_ret(rec_hdr->e_ret);
 		}
+		break;
+	}
+	case EFILT_LOCATE_PROTOCOL: {
+		struct efil_locate_protocol *rec = start;
+
+		printf("%pUs ", &rec->protocol);
+		if (rec->registration)
+			show_addr("reg", (ulong)map_to_sysmem(rec->registration));
+		if (rec_hdr->ended) {
+			show_addr("*intf",
+				  (ulong)map_to_sysmem(rec->e_interface));
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_LOAD_IMAGE: {
+		struct efil_load_image *rec = start;
+
+		printf("%s ", rec->boot_policy ? "bootmgr" : "app");
+		show_addr("parent", (ulong)map_to_sysmem(rec->parent_image));
+		if (rec->source_buffer) {
+			show_addr("src",
+				  (ulong)map_to_sysmem(rec->source_buffer));
+			show_ulong("size", (ulong)rec->source_size);
+		}
+		if (rec_hdr->ended) {
+			show_addr("*image",
+				  (ulong)map_to_sysmem(rec->e_image_handle));
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_EXIT_BOOT_SERVICES: {
+		struct efil_exit_boot_services *rec = start;
+
+		show_addr("image", (ulong)map_to_sysmem(rec->image_handle));
+		show_ulong("key", (ulong)rec->map_key);
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
 		break;
 	}
 	case EFILT_TESTING: {

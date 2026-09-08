@@ -21,6 +21,9 @@ enum efil_tag {
 	EFILT_ALLOCATE_POOL,
 	EFILT_FREE_POOL,
 	EFILT_OPEN_PROTOCOL,
+	EFILT_LOCATE_PROTOCOL,
+	EFILT_LOAD_IMAGE,
+	EFILT_EXIT_BOOT_SERVICES,
 
 	EFILT_TESTING,
 
@@ -123,6 +126,38 @@ struct efil_open_protocol {
 	efi_handle_t controller_handle;
 	u32 attributes;
 	void *e_interface;
+};
+
+/**
+ * struct efil_locate_protocol - holds info from efi_locate_protocol() call
+ *
+ * @e_interface: Contains the value of *@interface on return
+ */
+struct efil_locate_protocol {
+	efi_guid_t protocol;
+	void *registration;
+	void **interface;
+	void *e_interface;
+};
+
+/**
+ * struct efil_load_image - holds info from efi_load_image() call
+ *
+ * @e_image_handle: Contains the value of *@image_handle on return
+ */
+struct efil_load_image {
+	bool boot_policy;
+	efi_handle_t parent_image;
+	void *source_buffer;
+	efi_uintn_t source_size;
+	efi_handle_t *image_handle;
+	efi_handle_t e_image_handle;
+};
+
+/** struct efil_exit_boot_services - holds info from the call of that name */
+struct efil_exit_boot_services {
+	efi_handle_t image_handle;
+	efi_uintn_t map_key;
 };
 
 /*
@@ -270,7 +305,107 @@ int efi_logs_open_protocol(efi_handle_t handle, const efi_guid_t *protocol,
  */
 int efi_loge_open_protocol(int ofs, efi_status_t efi_ret);
 
+/**
+ * efi_logs_locate_protocol() - Record a call to efi_locate_protocol()
+ *
+ * @protocol:		GUID of the protocol
+ * @registration:	registration key, or NULL
+ * @interface:		place to hold the protocol interface
+ * Return:		log-offset of this new record, or -ve error code
+ */
+int efi_logs_locate_protocol(const efi_guid_t *protocol, void *registration,
+			     void **interface);
+
+/**
+ * efi_loge_locate_protocol() - Record a return from efi_locate_protocol()
+ *
+ * This stores the value of the interface pointer also
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_locate_protocol(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_load_image() - Record a call to efi_load_image()
+ *
+ * @boot_policy:	true to indicate that the request is from the boot
+ *			manager
+ * @parent_image:	handle of the caller
+ * @source_buffer:	memory holding the image, or NULL
+ * @source_size:	size of @source_buffer
+ * @image_handle:	place to hold the handle for the loaded image
+ * Return:		log-offset of this new record, or -ve error code
+ */
+int efi_logs_load_image(bool boot_policy, efi_handle_t parent_image,
+			void *source_buffer, efi_uintn_t source_size,
+			efi_handle_t *image_handle);
+
+/**
+ * efi_loge_load_image() - Record a return from efi_load_image()
+ *
+ * This stores the value of the image handle also
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_load_image(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_exit_boot_services() - Record a call to efi_exit_boot_services()
+ *
+ * @image_handle:	handle of the loaded image
+ * @map_key:		key of the memory map
+ * Return:		log-offset of this new record, or -ve error code
+ */
+int efi_logs_exit_boot_services(efi_handle_t image_handle,
+				efi_uintn_t map_key);
+
+/**
+ * efi_loge_exit_boot_services() - Record a return from that call
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_exit_boot_services(int ofs, efi_status_t efi_ret);
+
 #else /* !EFI_LOG */
+
+static inline int efi_logs_load_image(bool boot_policy,
+				      efi_handle_t parent_image,
+				      void *source_buffer,
+				      efi_uintn_t source_size,
+				      efi_handle_t *image_handle)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_load_image(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_exit_boot_services(efi_handle_t image_handle,
+					      efi_uintn_t map_key)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_exit_boot_services(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_locate_protocol(const efi_guid_t *protocol,
+					   void *registration, void **interface)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_locate_protocol(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
 
 static inline int efi_logs_open_protocol(efi_handle_t handle,
 					 const efi_guid_t *protocol,
