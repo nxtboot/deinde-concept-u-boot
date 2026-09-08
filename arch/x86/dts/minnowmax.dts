@@ -209,6 +209,11 @@
 						reg = <0x005f0000 0x00010000>;
 					};
 				};
+
+				em100-debug@0 {
+					compatible = "dediprog,em100-debug";
+					reg = <0>;
+				};
 			};
 
 			gpioa {

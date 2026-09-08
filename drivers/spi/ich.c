@@ -1024,3 +1024,108 @@ U_BOOT_DRIVER(intel_fast_spi) = {
 	.remove	= ich_spi_remove,
 	.flags	= DM_FLAG_OS_PREPARE,
 };
+
+#ifdef CONFIG_DEBUG_UART_EM100
+
+#include <debug_uart.h>
+#include <em100.h>
+#include <linux/string.h>
+
+/*
+ * Debug output to a Dediprog EM100Pro through the software sequencer, for
+ * use before driver model is running. Each message is one transaction: the
+ * emulator's command byte, then the EM100 header and the text, so the data
+ * registers bound how much text goes in one go. Nothing here uses writable
+ * global data, since before relocation U-Boot runs from ROM.
+ *
+ * This expects the SPI base address register to be programmed already,
+ * which the boot ROM does on Baytrail, and that the opcode menu is either
+ * unlocked or already holds the emulator's command.
+ */
+
+#define EM100_ICH_MAX_DATA	(sizeof(((struct ich9_spi_regs *)0)->fdata) - \
+				 EM100_HDR_LEN)
+
+/* Spin until the status bits in @mask are set (@set) or clear */
+static inline void em100_ich_wait(struct ich9_spi_regs *regs, u8 mask,
+				  bool set)
+{
+	int timeout = 100000;
+
+	while (!!(readb(&regs->ssfs) & mask) != set && --timeout)
+		;
+}
+
+static inline void _debug_uart_puts(const char *str, int len)
+{
+	struct ich9_spi_regs *regs =
+		(struct ich9_spi_regs *)CONFIG_VAL(DEBUG_UART_BASE);
+	u8 buf[EM100_HDR_LEN + EM100_ICH_MAX_DATA];
+
+	while (len > 0) {
+		int n = min(len, (int)EM100_ICH_MAX_DATA);
+		int total = EM100_HDR_LEN + n;
+		int slot, i;
+
+		/*
+		 * Use menu slot 0 if the menu can be written, as the driver-
+		 * model driver does. If it is locked, the command must already
+		 * be on the menu
+		 */
+		if (readw(&regs->hsfs) & HSFS_FLOCKDN) {
+			for (slot = 0; slot < ARRAY_SIZE(regs->opmenu); slot++) {
+				if (readb(&regs->opmenu[slot]) ==
+				    EM100_DEFAULT_CMD)
+					break;
+			}
+			if (slot == ARRAY_SIZE(regs->opmenu))
+				return;
+		} else {
+			slot = 0;
+			writeb(EM100_DEFAULT_CMD, &regs->opmenu[0]);
+			writew((readw(&regs->optype) & ~3) |
+			       SPI_OPCODE_TYPE_WRITE_NO_ADDRESS, &regs->optype);
+		}
+		writew(0, &regs->preop);
+
+		em100_put_header(buf, n);
+		memcpy(buf + EM100_HDR_LEN, str, n);
+
+		/* let any cycle in progress finish, then clear the status */
+		em100_ich_wait(regs, SPIS_SCIP, false);
+		writeb(SPIS_CDS | SPIS_FCERR, &regs->ssfs);
+
+		for (i = 0; i < total; i += 4) {
+			writel(buf[i] | buf[i + 1] << 8 | buf[i + 2] << 16 |
+			       buf[i + 3] << 24, &regs->fdata[i / 4]);
+		}
+		writew(SPIC_SCGO | slot << 4 | SPIC_DS | (total - 1) << 8,
+		       regs->ssfc);
+
+		em100_ich_wait(regs, SPIS_CDS | SPIS_FCERR, true);
+		writeb(SPIS_CDS | SPIS_FCERR, &regs->ssfs);
+
+		str += n;
+		len -= n;
+	}
+}
+
+static inline void _debug_uart_init(void)
+{
+	/*
+	 * Nothing to do: the base address is set up by the boot ROM and the
+	 * menu is programmed for each message, since the driver-model driver
+	 * changes it once it is running
+	 */
+}
+
+static inline void _debug_uart_putc(int ch)
+{
+	char c = ch;
+
+	_debug_uart_puts(&c, 1);
+}
+
+DEBUG_UART_FUNCS
+
+#endif /* CONFIG_DEBUG_UART_EM100 */

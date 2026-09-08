@@ -407,4 +407,22 @@ void sandbox_mouse_inject(struct udevice *dev, struct mouse_event *event);
  */
 bool sandbox_mouse_get_ptr_visible(struct udevice *dev);
 
+/* Maximum number of characters the sandbox debug device records */
+#define SANDBOX_DEBUG_SIZE	32
+
+/**
+ * sandbox_debug_get() - Get what has been written to a sandbox debug device
+ *
+ * @dev: Sandbox debug device
+ * Return: nul-terminated string of everything written so far
+ */
+const char *sandbox_debug_get(struct udevice *dev);
+
+/**
+ * sandbox_debug_clear() - Discard what a sandbox debug device has recorded
+ *
+ * @dev: Sandbox debug device
+ */
+void sandbox_debug_clear(struct udevice *dev);
+
 #endif

@@ -315,6 +315,22 @@ config DEBUG_UART_NS16550
 	  will need to provide parameters to make this work. The driver will
 	  be available until the real driver model serial is running.
 
+config DEBUG_UART_EM100
+	bool "Dediprog EM100Pro through the Intel ICH SPI controller"
+	depends on ICH_SPI
+	select DEBUG_UART_PUTS
+	help
+	  Send debug output to a Dediprog EM100Pro emulating the boot flash,
+	  driving the ICH SPI controller's software sequencer directly. This
+	  works from the start of board_init_f(), before the FSP has run and
+	  before driver model is up, provided the SPI base address register
+	  is already programmed, which the boot ROM does on Baytrail. Set
+	  CONFIG_DEBUG_UART_BASE to the controller's MMIO base.
+
+	  Each message goes out as a command which the emulator recognises,
+	  0x11 by default, so do not use this with a real flash chip on the
+	  bus, where that may be a real command.
+
 config DEBUG_EFI_CONSOLE
 	bool "EFI"
 	depends on EFI_APP
@@ -548,6 +564,7 @@ config DEBUG_UART_BASE
 	depends on DEBUG_UART
 	default 0x0 if DEBUG_SBI_CONSOLE
 	default 0x0 if DEBUG_UART_SANDBOX
+	default 0xfed01000 if DEBUG_UART_EM100 && INTEL_BAYTRAIL
 	default 0xff000000 if DEBUG_UART_ZYNQ && ARCH_ZYNQMP
 	default 0xe0000000 if DEBUG_UART_ZYNQ && ARCH_ZYNQ
 	default 0xff000000 if DEBUG_UART_PL011 && ARCH_VERSAL
@@ -626,6 +643,14 @@ config DEBUG_UART_ANNOUNCE
 	  U-Boot has the UART ready for use (i.e. your code calls
 	  debug_uart_init()). This can be useful just as a check that
 	  everything is working.
+
+config DEBUG_UART_PUTS
+	bool
+	help
+	  Selected by a debug-UART backend which provides _debug_uart_puts(),
+	  so that printascii() hands it a whole string rather than a character
+	  at a time. This suits a device where each transfer carries a header,
+	  for which per-character output would be wasteful.
 
 config DEBUG_UART_SKIP_INIT
 	bool "Skip UART initialization"

@@ -74,6 +74,7 @@ Debugging
    :maxdepth: 1
 
    crash_dumps
+   debug_devices
    gdb
    trace
 

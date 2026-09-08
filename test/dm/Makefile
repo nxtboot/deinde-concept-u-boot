@@ -110,6 +110,7 @@ obj-$(CONFIG_DM_RESET) += reset.o
 obj-$(CONFIG_SYSRESET) += sysreset.o
 obj-$(CONFIG_DM_REGULATOR) += regulator.o
 obj-$(CONFIG_CMD_RKMTD) += rkmtd.o
+obj-$(CONFIG_$(PHASE_)DEBUG_DEV) += debug.o
 obj-$(CONFIG_$(PHASE_)DM_RNG) += rng.o
 obj-$(CONFIG_DM_RTC) += rtc.o
 obj-$(CONFIG_SCMI_FIRMWARE) += scmi.o

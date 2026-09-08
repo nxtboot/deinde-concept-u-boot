@@ -39,6 +39,10 @@
  * - #include <debug_uart.h>
  * - Define _debug_uart_init(), trying to avoid using the stack
  * - Define _debug_uart_putc() as static inline (avoiding stack usage)
+ * - Optionally define _debug_uart_puts() to write a whole string, and select
+ *     DEBUG_UART_PUTS so that printascii() uses it. The string is passed
+ *     through untranslated, so add a carriage return before each newline
+ *     if the device wants one
  * - Immediately afterwards, add DEBUG_UART_FUNCS to define the rest of the
  *     functionality (printch(), etc.)
  *
@@ -148,6 +152,36 @@ void printdec(unsigned int value);
 #ifdef CONFIG_DEBUG_UART
 
 /*
+ * A backend which can take a whole string gets it in one go; otherwise the
+ * string goes out a character at a time
+ */
+#ifdef CONFIG_DEBUG_UART_PUTS
+#define _DEBUG_UART_PRINTASCII \
+	void printascii(const char *str) \
+	{ \
+		_debug_uart_puts(str, strlen(str)); \
+	} \
+\
+	void printasciin(const char *str, int len) \
+	{ \
+		_debug_uart_puts(str, len); \
+	}
+#else
+#define _DEBUG_UART_PRINTASCII \
+	void printascii(const char *str) \
+	{ \
+		while (*str) \
+			_printch(*str++); \
+	} \
+\
+	void printasciin(const char *str, int len) \
+	{ \
+		while (len--) \
+			_printch(*str++); \
+	}
+#endif
+
+/*
  * Now define some functions - this should be inserted into the serial driver
  */
 #define DEBUG_UART_FUNCS \
@@ -164,17 +198,7 @@ void printdec(unsigned int value);
 		_printch(ch); \
 	} \
 \
-	void printascii(const char *str) \
-	{ \
-		while (*str) \
-			_printch(*str++); \
-	} \
-\
-	void printasciin(const char *str, int len) \
-	{ \
-		while (len--) \
-			_printch(*str++); \
-	} \
+	_DEBUG_UART_PRINTASCII \
 \
 	static inline void printhex1(unsigned int digit) \
 	{ \

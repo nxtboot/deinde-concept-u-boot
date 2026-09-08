@@ -1,0 +1,45 @@
+Debug output through a Dediprog EM100Pro
+======================================
+
+The EM100Pro SPI-flash emulator can watch the bus for a command which is not
+a flash access and pass what follows to the host, where it is shown by
+'em100 --terminal'. This provides a way of getting debug output from boards
+which boot from an emulated flash chip but have no usable UART.
+
+The node sits under the SPI bus which the EM100Pro is attached to, alongside
+the flash node it emulates.
+
+Required properties:
+- compatible: "dediprog,em100-debug"
+- reg: chip select of the EM100Pro, as for any SPI slave
+
+Optional properties:
+- spi-max-frequency: maximum SPI clock, as for any SPI slave
+- dediprog,command: SPI command which the EM100Pro treats as carrying a
+  message rather than a flash access. Defaults to 0x11. This must match the
+  value the host has told the emulator to look for, which is set with
+  'em100 --terminal-command'. It is worth changing if the emulated chip uses
+  0x11 for something, as some do for writing a status register.
+
+This is not a console. It is called explicitly from code being debugged, with
+debug_puts(), so that it works even when the console is unavailable.
+
+Example:
+
+	spi@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		flash@0 {
+			compatible = "jedec,spi-nor";
+			reg = <0>;
+			spi-max-frequency = <20000000>;
+		};
+
+		em100-debug@0 {
+			compatible = "dediprog,em100-debug";
+			reg = <0>;
+			spi-max-frequency = <20000000>;
+			dediprog,command = <0x11>;
+		};
+	};
