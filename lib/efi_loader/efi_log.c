@@ -25,6 +25,16 @@ static const char *tag_name[EFILT_COUNT] = {
 	"locate_prot",
 	"load_image",
 	"exit_bootsvc",
+	"locate_hdl",
+	"locate_hdlbuf",
+	"locate_devp",
+	"close_prot",
+	"inst_prot",
+	"uninst_prot",
+	"reinst_prot",
+	"reg_prot_note",
+	"open_prot_info",
+	"prots_per_hdl",
 
 	"testing",
 };
@@ -94,10 +104,33 @@ static const char *error_name[EFI_ERROR_COUNT] = {
 	"http",
 };
 
+/* names for enum efi_locate_search_type */
+static const char *const locate_search_name[] = {
+	"all",
+	"by-notify",
+	"by-proto",
+};
+
 static const char *test_enum_name[EFI_LOG_TEST_COUNT] = {
 	"test0",
 	"test1",
 };
+
+/**
+ * copy_guid() - Copy a GUID into a record, or zero it if there is none
+ *
+ * The caller's GUID need not outlive the call, so records hold a copy
+ *
+ * @dest: Where to put the GUID
+ * @src: GUID to copy, or NULL
+ */
+static void copy_guid(efi_guid_t *dest, const efi_guid_t *src)
+{
+	if (src)
+		*dest = *src;
+	else
+		memset(dest, '\0', sizeof(*dest));
+}
 
 /**
  * prep_rec() - prepare a new record in the log
@@ -171,10 +204,7 @@ int efi_logs_open_protocol(efi_handle_t handle, const efi_guid_t *protocol,
 		return ret;
 
 	rec->handle = handle;
-	if (protocol)
-		rec->protocol = *protocol;
-	else
-		memset(&rec->protocol, '\0', sizeof(rec->protocol));
+	copy_guid(&rec->protocol, protocol);
 	rec->interface = interface;
 	rec->agent_handle = agent_handle;
 	rec->controller_handle = controller_handle;
@@ -207,10 +237,7 @@ int efi_logs_locate_protocol(const efi_guid_t *protocol, void *registration,
 	if (ret < 0)
 		return ret;
 
-	if (protocol)
-		rec->protocol = *protocol;
-	else
-		memset(&rec->protocol, '\0', sizeof(rec->protocol));
+	copy_guid(&rec->protocol, protocol);
 	rec->registration = registration;
 	rec->interface = interface;
 	rec->e_interface = NULL;
@@ -284,6 +311,317 @@ int efi_loge_exit_boot_services(int ofs, efi_status_t efi_ret)
 {
 	if (!finish_rec(ofs, efi_ret))
 		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_locate_handle(enum efi_locate_search_type search_type,
+			   const efi_guid_t *protocol, void *search_key,
+			   efi_uintn_t *buffer_size)
+{
+	struct efil_locate_handle *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_LOCATE_HANDLE, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->search_type = search_type;
+	copy_guid(&rec->protocol, protocol);
+	rec->search_key = search_key;
+	rec->buffer_size = buffer_size;
+	rec->e_buffer_size = 0;
+
+	return ret;
+}
+
+int efi_loge_locate_handle(int ofs, efi_status_t efi_ret)
+{
+	struct efil_locate_handle *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->buffer_size)
+		rec->e_buffer_size = *rec->buffer_size;
+
+	return 0;
+}
+
+int efi_logs_locate_handle_buffer(enum efi_locate_search_type search_type,
+				  const efi_guid_t *protocol, void *search_key,
+				  efi_uintn_t *no_handles)
+{
+	struct efil_locate_handle_buffer *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_LOCATE_HANDLE_BUFFER, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->search_type = search_type;
+	copy_guid(&rec->protocol, protocol);
+	rec->search_key = search_key;
+	rec->no_handles = no_handles;
+	rec->e_no_handles = 0;
+
+	return ret;
+}
+
+int efi_loge_locate_handle_buffer(int ofs, efi_status_t efi_ret)
+{
+	struct efil_locate_handle_buffer *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->no_handles)
+		rec->e_no_handles = *rec->no_handles;
+
+	return 0;
+}
+
+int efi_logs_locate_device_path(const efi_guid_t *protocol, void *device_path,
+				efi_handle_t *device)
+{
+	struct efil_locate_device_path *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_LOCATE_DEVICE_PATH, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	copy_guid(&rec->protocol, protocol);
+	rec->device_path = device_path;
+	rec->device = device;
+	rec->e_device = NULL;
+
+	return ret;
+}
+
+int efi_loge_locate_device_path(int ofs, efi_status_t efi_ret)
+{
+	struct efil_locate_device_path *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->device)
+		rec->e_device = *rec->device;
+
+	return 0;
+}
+
+int efi_logs_close_protocol(efi_handle_t handle, const efi_guid_t *protocol,
+			    efi_handle_t agent_handle,
+			    efi_handle_t controller_handle)
+{
+	struct efil_close_protocol *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_CLOSE_PROTOCOL, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	copy_guid(&rec->protocol, protocol);
+	rec->agent_handle = agent_handle;
+	rec->controller_handle = controller_handle;
+
+	return ret;
+}
+
+int efi_loge_close_protocol(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_install_protocol_interface(efi_handle_t *handle,
+					const efi_guid_t *protocol,
+					int protocol_interface_type,
+					void *protocol_interface)
+{
+	struct efil_install_protocol_interface *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_INSTALL_PROTOCOL_INTERFACE, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	copy_guid(&rec->protocol, protocol);
+	rec->protocol_interface_type = protocol_interface_type;
+	rec->protocol_interface = protocol_interface;
+	rec->e_handle = NULL;
+
+	return ret;
+}
+
+int efi_loge_install_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	struct efil_install_protocol_interface *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->handle)
+		rec->e_handle = *rec->handle;
+
+	return 0;
+}
+
+int efi_logs_uninstall_protocol_interface(efi_handle_t handle,
+					  const efi_guid_t *protocol,
+					  void *protocol_interface)
+{
+	struct efil_uninstall_protocol_interface *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_UNINSTALL_PROTOCOL_INTERFACE, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	copy_guid(&rec->protocol, protocol);
+	rec->protocol_interface = protocol_interface;
+
+	return ret;
+}
+
+int efi_loge_uninstall_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_reinstall_protocol_interface(efi_handle_t handle,
+					  const efi_guid_t *protocol,
+					  void *old_interface,
+					  void *new_interface)
+{
+	struct efil_reinstall_protocol_interface *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_REINSTALL_PROTOCOL_INTERFACE, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	copy_guid(&rec->protocol, protocol);
+	rec->old_interface = old_interface;
+	rec->new_interface = new_interface;
+
+	return ret;
+}
+
+int efi_loge_reinstall_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_register_protocol_notify(const efi_guid_t *protocol,
+				      struct efi_event *event,
+				      void **registration)
+{
+	struct efil_register_protocol_notify *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_REGISTER_PROTOCOL_NOTIFY, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	copy_guid(&rec->protocol, protocol);
+	rec->event = event;
+	rec->registration = registration;
+	rec->e_registration = NULL;
+
+	return ret;
+}
+
+int efi_loge_register_protocol_notify(int ofs, efi_status_t efi_ret)
+{
+	struct efil_register_protocol_notify *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->registration)
+		rec->e_registration = *rec->registration;
+
+	return 0;
+}
+
+int efi_logs_open_protocol_information(efi_handle_t handle,
+				       const efi_guid_t *protocol,
+				       efi_uintn_t *entry_count)
+{
+	struct efil_open_protocol_information *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_OPEN_PROTOCOL_INFORMATION, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	copy_guid(&rec->protocol, protocol);
+	rec->entry_count = entry_count;
+	rec->e_entry_count = 0;
+
+	return ret;
+}
+
+int efi_loge_open_protocol_information(int ofs, efi_status_t efi_ret)
+{
+	struct efil_open_protocol_information *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->entry_count)
+		rec->e_entry_count = *rec->entry_count;
+
+	return 0;
+}
+
+int efi_logs_protocols_per_handle(efi_handle_t handle,
+				  efi_uintn_t *protocol_buffer_count)
+{
+	struct efil_protocols_per_handle *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_PROTOCOLS_PER_HANDLE, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->handle = handle;
+	rec->protocol_buffer_count = protocol_buffer_count;
+	rec->e_protocol_buffer_count = 0;
+
+	return ret;
+}
+
+int efi_loge_protocols_per_handle(int ofs, efi_status_t efi_ret)
+{
+	struct efil_protocols_per_handle *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+	if (rec->protocol_buffer_count)
+		rec->e_protocol_buffer_count = *rec->protocol_buffer_count;
 
 	return 0;
 }
@@ -434,7 +772,7 @@ int efi_loge_free_pool(int ofs, efi_status_t efi_ret)
 	return 0;
 }
 
-static void show_enum(const char *type_name[], int type)
+static void show_enum(const char *const type_name[], int type)
 {
 	printf("%s ", type_name[type]);
 }
@@ -572,6 +910,107 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 		show_ulong("key", (ulong)rec->map_key);
 		if (rec_hdr->ended)
 			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_LOCATE_HANDLE: {
+		struct efil_locate_handle *rec = start;
+
+		show_enum(locate_search_name, rec->search_type);
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended) {
+			show_ulong("*size", (ulong)rec->e_buffer_size);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_LOCATE_HANDLE_BUFFER: {
+		struct efil_locate_handle_buffer *rec = start;
+
+		show_enum(locate_search_name, rec->search_type);
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended) {
+			show_ulong("*num", (ulong)rec->e_no_handles);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_LOCATE_DEVICE_PATH: {
+		struct efil_locate_device_path *rec = start;
+
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended) {
+			show_addr("*dev", (ulong)map_to_sysmem(rec->e_device));
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_CLOSE_PROTOCOL: {
+		struct efil_close_protocol *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_INSTALL_PROTOCOL_INTERFACE: {
+		struct efil_install_protocol_interface *rec = start;
+
+		printf("%pUs ", &rec->protocol);
+		show_addr("intf", (ulong)map_to_sysmem(rec->protocol_interface));
+		if (rec_hdr->ended) {
+			show_addr("*hdl", (ulong)map_to_sysmem(rec->e_handle));
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_UNINSTALL_PROTOCOL_INTERFACE: {
+		struct efil_uninstall_protocol_interface *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_REINSTALL_PROTOCOL_INTERFACE: {
+		struct efil_reinstall_protocol_interface *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_REGISTER_PROTOCOL_NOTIFY: {
+		struct efil_register_protocol_notify *rec = start;
+
+		printf("%pUs ", &rec->protocol);
+		show_addr("evt", (ulong)map_to_sysmem(rec->event));
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_OPEN_PROTOCOL_INFORMATION: {
+		struct efil_open_protocol_information *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		printf("%pUs ", &rec->protocol);
+		if (rec_hdr->ended) {
+			show_ulong("*num", (ulong)rec->e_entry_count);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_PROTOCOLS_PER_HANDLE: {
+		struct efil_protocols_per_handle *rec = start;
+
+		show_addr("hdl", (ulong)map_to_sysmem(rec->handle));
+		if (rec_hdr->ended) {
+			show_ulong("*num",
+				   (ulong)rec->e_protocol_buffer_count);
+			show_ret(rec_hdr->e_ret);
+		}
 		break;
 	}
 	case EFILT_TESTING: {

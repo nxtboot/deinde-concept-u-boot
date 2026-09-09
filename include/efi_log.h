@@ -24,6 +24,16 @@ enum efil_tag {
 	EFILT_LOCATE_PROTOCOL,
 	EFILT_LOAD_IMAGE,
 	EFILT_EXIT_BOOT_SERVICES,
+	EFILT_LOCATE_HANDLE,
+	EFILT_LOCATE_HANDLE_BUFFER,
+	EFILT_LOCATE_DEVICE_PATH,
+	EFILT_CLOSE_PROTOCOL,
+	EFILT_INSTALL_PROTOCOL_INTERFACE,
+	EFILT_UNINSTALL_PROTOCOL_INTERFACE,
+	EFILT_REINSTALL_PROTOCOL_INTERFACE,
+	EFILT_REGISTER_PROTOCOL_NOTIFY,
+	EFILT_OPEN_PROTOCOL_INFORMATION,
+	EFILT_PROTOCOLS_PER_HANDLE,
 
 	EFILT_TESTING,
 
@@ -158,6 +168,95 @@ struct efil_load_image {
 struct efil_exit_boot_services {
 	efi_handle_t image_handle;
 	efi_uintn_t map_key;
+};
+
+/**
+ * struct efil_locate_handle - holds info from efi_locate_handle() call
+ *
+ * @e_buffer_size: Contains the value of *@buffer_size on return
+ */
+struct efil_locate_handle {
+	enum efi_locate_search_type search_type;
+	efi_guid_t protocol;
+	void *search_key;
+	efi_uintn_t *buffer_size;
+	efi_uintn_t e_buffer_size;
+};
+
+/**
+ * struct efil_locate_handle_buffer - holds info from the call of that name
+ *
+ * @e_no_handles: Contains the value of *@no_handles on return
+ */
+struct efil_locate_handle_buffer {
+	enum efi_locate_search_type search_type;
+	efi_guid_t protocol;
+	void *search_key;
+	efi_uintn_t *no_handles;
+	efi_uintn_t e_no_handles;
+};
+
+/** struct efil_locate_device_path - holds info from the call of that name */
+struct efil_locate_device_path {
+	efi_guid_t protocol;
+	void *device_path;
+	efi_handle_t *device;
+	efi_handle_t e_device;
+};
+
+/** struct efil_close_protocol - holds info from efi_close_protocol() call */
+struct efil_close_protocol {
+	efi_handle_t handle;
+	efi_guid_t protocol;
+	efi_handle_t agent_handle;
+	efi_handle_t controller_handle;
+};
+
+/** struct efil_install_protocol_interface - info from the call of that name */
+struct efil_install_protocol_interface {
+	efi_handle_t *handle;
+	efi_guid_t protocol;
+	int protocol_interface_type;
+	void *protocol_interface;
+	efi_handle_t e_handle;
+};
+
+/** struct efil_uninstall_protocol_interface - info from that call */
+struct efil_uninstall_protocol_interface {
+	efi_handle_t handle;
+	efi_guid_t protocol;
+	void *protocol_interface;
+};
+
+/** struct efil_reinstall_protocol_interface - info from that call */
+struct efil_reinstall_protocol_interface {
+	efi_handle_t handle;
+	efi_guid_t protocol;
+	void *old_interface;
+	void *new_interface;
+};
+
+/** struct efil_register_protocol_notify - info from that call */
+struct efil_register_protocol_notify {
+	efi_guid_t protocol;
+	struct efi_event *event;
+	void **registration;
+	void *e_registration;
+};
+
+/** struct efil_open_protocol_information - info from that call */
+struct efil_open_protocol_information {
+	efi_handle_t handle;
+	efi_guid_t protocol;
+	efi_uintn_t *entry_count;
+	efi_uintn_t e_entry_count;
+};
+
+/** struct efil_protocols_per_handle - info from that call */
+struct efil_protocols_per_handle {
+	efi_handle_t handle;
+	efi_uintn_t *protocol_buffer_count;
+	efi_uintn_t e_protocol_buffer_count;
 };
 
 /*
@@ -369,7 +468,293 @@ int efi_logs_exit_boot_services(efi_handle_t image_handle,
  */
 int efi_loge_exit_boot_services(int ofs, efi_status_t efi_ret);
 
+/**
+ * efi_logs_locate_handle() - Record a call to efi_locate_handle()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_locate_handle(enum efi_locate_search_type search_type, const efi_guid_t *protocol,
+			   void *search_key, efi_uintn_t *buffer_size);
+
+/**
+ * efi_loge_locate_handle() - Record a return from efi_locate_handle()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_locate_handle(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_locate_handle_buffer() - Record a call to efi_locate_handle_buffer()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_locate_handle_buffer(enum efi_locate_search_type search_type,
+				  const efi_guid_t *protocol, void *search_key,
+				  efi_uintn_t *no_handles);
+
+/**
+ * efi_loge_locate_handle_buffer() - Record a return from efi_locate_handle_buffer()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_locate_handle_buffer(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_locate_device_path() - Record a call to efi_locate_device_path()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_locate_device_path(const efi_guid_t *protocol, void *device_path,
+				efi_handle_t *device);
+
+/**
+ * efi_loge_locate_device_path() - Record a return from efi_locate_device_path()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_locate_device_path(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_close_protocol() - Record a call to efi_close_protocol()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_close_protocol(efi_handle_t handle, const efi_guid_t *protocol,
+			    efi_handle_t agent_handle,
+			    efi_handle_t controller_handle);
+
+/**
+ * efi_loge_close_protocol() - Record a return from efi_close_protocol()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_close_protocol(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_install_protocol_interface() - Record a call to efi_install_protocol_interface()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_install_protocol_interface(efi_handle_t *handle, const efi_guid_t *protocol,
+					int protocol_interface_type,
+					void *protocol_interface);
+
+/**
+ * efi_loge_install_protocol_interface() - Record a return from efi_install_protocol_interface()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_install_protocol_interface(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_uninstall_protocol_interface() - Record a call to efi_uninstall_protocol_interface()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_uninstall_protocol_interface(efi_handle_t handle, const efi_guid_t *protocol,
+					  void *protocol_interface);
+
+/**
+ * efi_loge_uninstall_protocol_interface() - Record a return from efi_uninstall_protocol_interface()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_uninstall_protocol_interface(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_reinstall_protocol_interface() - Record a call to efi_reinstall_protocol_interface()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_reinstall_protocol_interface(efi_handle_t handle, const efi_guid_t *protocol,
+					  void *old_interface, void *new_interface);
+
+/**
+ * efi_loge_reinstall_protocol_interface() - Record a return from efi_reinstall_protocol_interface()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_reinstall_protocol_interface(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_register_protocol_notify() - Record a call to efi_register_protocol_notify()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_register_protocol_notify(const efi_guid_t *protocol, struct efi_event *event,
+				      void **registration);
+
+/**
+ * efi_loge_register_protocol_notify() - Record a return from efi_register_protocol_notify()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_register_protocol_notify(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_open_protocol_information() - Record a call to efi_open_protocol_information()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_open_protocol_information(efi_handle_t handle, const efi_guid_t *protocol,
+				       efi_uintn_t *entry_count);
+
+/**
+ * efi_loge_open_protocol_information() - Record a return from efi_open_protocol_information()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_open_protocol_information(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_protocols_per_handle() - Record a call to efi_protocols_per_handle()
+ *
+ * Return: log-offset of this new record, or -ve error code
+ */
+int efi_logs_protocols_per_handle(efi_handle_t handle, efi_uintn_t *protocol_buffer_count);
+
+/**
+ * efi_loge_protocols_per_handle() - Record a return from efi_protocols_per_handle()
+ *
+ * ofs: Offset of the record to end
+ * efi_ret: status code to record
+ */
+int efi_loge_protocols_per_handle(int ofs, efi_status_t efi_ret);
+
 #else /* !EFI_LOG */
+
+static inline int efi_logs_locate_handle(enum efi_locate_search_type search_type,
+					 const efi_guid_t *protocol,
+					 void *search_key,
+					 efi_uintn_t *buffer_size)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_locate_handle(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_locate_handle_buffer(enum efi_locate_search_type search_type,
+						const efi_guid_t *protocol,
+						void *search_key,
+						efi_uintn_t *no_handles)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_locate_handle_buffer(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_locate_device_path(const efi_guid_t *protocol,
+					      void *device_path,
+					      efi_handle_t *device)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_locate_device_path(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_close_protocol(efi_handle_t handle,
+					  const efi_guid_t *protocol,
+					  efi_handle_t agent_handle,
+					  efi_handle_t controller_handle)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_close_protocol(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_install_protocol_interface(efi_handle_t *handle,
+						      const efi_guid_t *protocol,
+						      int protocol_interface_type,
+						      void *protocol_interface)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_install_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_uninstall_protocol_interface(efi_handle_t handle,
+							const efi_guid_t *protocol,
+							void *protocol_interface)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_uninstall_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_reinstall_protocol_interface(efi_handle_t handle,
+							const efi_guid_t *protocol,
+							void *old_interface,
+							void *new_interface)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_reinstall_protocol_interface(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_register_protocol_notify(const efi_guid_t *protocol,
+						    struct efi_event *event,
+						    void **registration)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_register_protocol_notify(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_open_protocol_information(efi_handle_t handle,
+						     const efi_guid_t *protocol,
+						     efi_uintn_t *entry_count)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_open_protocol_information(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_logs_protocols_per_handle(efi_handle_t handle,
+						efi_uintn_t *protocol_buffer_count)
+{
+	return -ENOSYS;
+}
+
+static inline int efi_loge_protocols_per_handle(int ofs, efi_status_t efi_ret)
+{
+	return -ENOSYS;
+}
 
 static inline int efi_logs_load_image(bool boot_policy,
 				      efi_handle_t parent_image,
