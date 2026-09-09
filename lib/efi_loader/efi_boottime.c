@@ -2304,6 +2304,13 @@ out:
 
 	efi_loge_exit_boot_services(ofs, ret);
 
+	/*
+	 * This is the last chance to show the log, since the application does
+	 * not return from here
+	 */
+	if (IS_ENABLED(CONFIG_EFI_LOG_ON_EXIT) && ret == EFI_SUCCESS)
+		efi_log_show();
+
 	return EFI_EXIT(ret);
 }
 

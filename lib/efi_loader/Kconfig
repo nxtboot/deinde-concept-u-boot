@@ -579,6 +579,19 @@ config EFI_LOG
 	  'efidebug log' to show the records and the bootstage report for a
 	  summary.
 
+config EFI_LOG_ON_EXIT
+	bool "Show the EFI log when the app leaves boot services"
+	depends on EFI_LOG
+	help
+	  Show the log when the application calls ExitBootServices(), which is
+	  the last chance to see it: the application does not return, so
+	  'efidebug log' can no longer be used.
+
+	  This is how to trace a full OS boot, where the loader hands over to
+	  a kernel and never comes back. Expect a great deal of output, and
+	  make sure CONFIG_EFI_LOG_SIZE is large enough that the summary does
+	  not report dropped records.
+
 config EFI_LOG_SIZE
 	hex "Size of EFI log"
 	depends on EFI_LOG
