@@ -572,6 +572,7 @@ config EFI_SCROLL_ON_CLEAR_SCREEN
 config EFI_LOG
 	bool "Enable logging of EFI operations"
 	select BLOBLIST
+	imply CMD_EFIDEBUG
 	help
 	  This enables maintaining a log of EFI boot-time services, useful for
 	  debugging. It records the calls which are made, along with their
