@@ -78,6 +78,27 @@ static const char *const simple_fs_method_name[EFILS_COUNT] = {
 	"open_volume",
 };
 
+/* boot services logged with the generic record, in enum efil_boot_method order */
+static const char *const boot_method_name[EFILBS_COUNT] = {
+	"raise_tpl",
+	"restore_tpl",
+	"get_mem_map",
+	"create_event",
+	"create_event_ex",
+	"set_timer",
+	"wait_for_event",
+	"signal_event",
+	"close_event",
+	"check_event",
+	"start_image",
+	"exit",
+	"unload_image",
+	"connect_ctlr",
+	"disconnect_ctlr",
+	"copy_mem",
+	"set_mem",
+};
+
 /* member functions of EFI_BLOCK_IO_PROTOCOL */
 static const char *const block_io_method_name[EFILB_COUNT] = {
 	"reset",
@@ -88,7 +109,7 @@ static const char *const block_io_method_name[EFILB_COUNT] = {
 
 /* method-name table for each protocol, NULL if it has none */
 static const char *const *const prot_method_name[EFILP_COUNT] = {
-	NULL,
+	boot_method_name,
 	file_method_name,
 	simple_fs_method_name,
 	block_io_method_name,
@@ -96,7 +117,7 @@ static const char *const *const prot_method_name[EFILP_COUNT] = {
 
 /* number of entries in each protocol's method-name table */
 static const uint prot_method_count[EFILP_COUNT] = {
-	0,
+	EFILBS_COUNT,
 	EFILF_COUNT,
 	EFILS_COUNT,
 	EFILB_COUNT,
@@ -1042,8 +1063,9 @@ static void show_ret(efi_status_t ret)
 /**
  * call_name() - Get the name of a call held in a generic record
  *
- * A method is named as protocol.method. If either is out of range, the numbers
- * are shown instead.
+ * A boot service is named on its own, since it belongs to no protocol. A
+ * protocol method is named as protocol.method. If either is out of range, the
+ * numbers are shown instead.
  *
  * @rec: Record to look at
  * @buf: Buffer to hold the name
@@ -1057,6 +1079,8 @@ static const char *call_name(const struct efil_call *rec, char *buf, int size)
 	methods = rec->prot < EFILP_COUNT ? prot_method_name[rec->prot] : NULL;
 	if (!methods || rec->method >= prot_method_count[rec->prot])
 		snprintf(buf, size, "%d.%d", rec->prot, rec->method);
+	else if (rec->prot == EFILP_NONE)
+		snprintf(buf, size, "%s", methods[rec->method]);
 	else
 		snprintf(buf, size, "%s.%s", prot_name[rec->prot],
 			 methods[rec->method]);

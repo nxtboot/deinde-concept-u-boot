@@ -242,6 +242,10 @@ static int lib_test_efi_log_call(struct unit_test_state *uts)
 			    (u64)map_to_sysmem(handle), 0x200);
 	ut_assertok(efi_loge_call(ofs, EFI_SUCCESS, 0x100));
 
+	/* a boot service belongs to no protocol, so is named on its own */
+	ofs = efi_logs_call(EFILP_NONE, EFILBS_RAISE_TPL, 1, 4);
+	ut_assertok(efi_loge_call(ofs, EFI_SUCCESS, 0));
+
 	/* an unknown protocol falls back to showing the numbers */
 	ofs = efi_logs_call(98, 99, 1, 0x1234);
 	ut_assertok(efi_loge_call(ofs, EFI_INVALID_PARAMETER, 0));
@@ -253,9 +257,10 @@ static int lib_test_efi_log_call(struct unit_test_state *uts)
 
 	ut_assert_nextlinen("  0 simple_fs.open_volume arg ");
 	ut_assert_nextlinen("  1    file.read arg ");
-	ut_assert_nextlinen("  2        98.99 arg 1234/4660 ret inval_param");
+	ut_assert_nextlinen("  2    raise_tpl arg 4 ret OK");
+	ut_assert_nextlinen("  3        98.99 arg 1234/4660 ret inval_param");
 
-	ut_assert_nextline("3 records");
+	ut_assert_nextline("4 records");
 
 	unmap_sysmem(handle);
 

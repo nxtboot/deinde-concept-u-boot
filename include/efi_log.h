@@ -134,6 +134,34 @@ enum efil_simple_fs_method {
 };
 
 /**
+ * enum efil_boot_method - boot services logged with the generic record
+ *
+ * These are recorded with EFILP_NONE, since they are not part of a protocol.
+ * They must be in the same order as boot_method_name[]
+ */
+enum efil_boot_method {
+	EFILBS_RAISE_TPL,
+	EFILBS_RESTORE_TPL,
+	EFILBS_GET_MEMORY_MAP,
+	EFILBS_CREATE_EVENT,
+	EFILBS_CREATE_EVENT_EX,
+	EFILBS_SET_TIMER,
+	EFILBS_WAIT_FOR_EVENT,
+	EFILBS_SIGNAL_EVENT,
+	EFILBS_CLOSE_EVENT,
+	EFILBS_CHECK_EVENT,
+	EFILBS_START_IMAGE,
+	EFILBS_EXIT,
+	EFILBS_UNLOAD_IMAGE,
+	EFILBS_CONNECT_CONTROLLER,
+	EFILBS_DISCONNECT_CONTROLLER,
+	EFILBS_COPY_MEM,
+	EFILBS_SET_MEM,
+
+	EFILBS_COUNT,
+};
+
+/**
  * enum efil_block_io_method - member functions of EFI_BLOCK_IO_PROTOCOL
  *
  * These must be in the same order as block_io_method_name[]
@@ -1186,6 +1214,25 @@ static inline int efi_loge_call(int ofs, efi_status_t efi_ret, u64 e_arg)
 }
 
 #endif /* EFI_LOG */
+
+/**
+ * efi_logr_call() - Finish a generic record and pass on the status
+ *
+ * This is for functions with several exit points, where wrapping each return
+ * is easier than splitting the function in two:
+ *
+ *	return EFI_EXIT(efi_logr_call(ofs, EFI_INVALID_PARAMETER));
+ *
+ * @ofs: Offset returned by efi_logs_call()
+ * @efi_ret: Status which the function is about to return
+ * Return: @efi_ret
+ */
+static inline efi_status_t efi_logr_call(int ofs, efi_status_t efi_ret)
+{
+	efi_loge_call(ofs, efi_ret, 0);
+
+	return efi_ret;
+}
 
 /* below are some general functions */
 
