@@ -243,7 +243,7 @@ static int lib_test_efi_log_call(struct unit_test_state *uts)
 	ut_assertok(efi_loge_call(ofs, EFI_SUCCESS, 0x100));
 
 	/* an unknown protocol falls back to showing the numbers */
-	ofs = efi_logs_call(EFILP_COUNT, 99, 1, 0x1234);
+	ofs = efi_logs_call(98, 99, 1, 0x1234);
 	ut_assertok(efi_loge_call(ofs, EFI_INVALID_PARAMETER, 0));
 
 	ut_assertok(efi_log_show());
@@ -253,7 +253,7 @@ static int lib_test_efi_log_call(struct unit_test_state *uts)
 
 	ut_assert_nextlinen("  0         call simple_fs.open_volume arg ");
 	ut_assert_nextlinen("  1         call file.read arg ");
-	ut_assert_nextlinen("  2         call 3.99 arg 1234/4660 ret inval_param");
+	ut_assert_nextlinen("  2         call 98.99 arg 1234/4660 ret inval_param");
 
 	ut_assert_nextline("3 records");
 

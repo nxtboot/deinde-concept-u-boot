@@ -52,6 +52,7 @@ static const char *const prot_name[EFILP_COUNT] = {
 	"",
 	"file",
 	"simple_fs",
+	"block_io",
 };
 
 /* member functions of EFI_FILE_PROTOCOL, in enum efil_file_method order */
@@ -77,11 +78,20 @@ static const char *const simple_fs_method_name[EFILS_COUNT] = {
 	"open_volume",
 };
 
+/* member functions of EFI_BLOCK_IO_PROTOCOL */
+static const char *const block_io_method_name[EFILB_COUNT] = {
+	"reset",
+	"read_blocks",
+	"write_blocks",
+	"flush_blocks",
+};
+
 /* method-name table for each protocol, NULL if it has none */
 static const char *const *const prot_method_name[EFILP_COUNT] = {
 	NULL,
 	file_method_name,
 	simple_fs_method_name,
+	block_io_method_name,
 };
 
 /* number of entries in each protocol's method-name table */
@@ -89,6 +99,7 @@ static const uint prot_method_count[EFILP_COUNT] = {
 	0,
 	EFILF_COUNT,
 	EFILS_COUNT,
+	EFILB_COUNT,
 };
 
 /* names for enum efi_allocate_type  */

@@ -93,6 +93,7 @@ enum efil_prot {
 	EFILP_NONE,
 	EFILP_FILE,
 	EFILP_SIMPLE_FS,
+	EFILP_BLOCK_IO,
 
 	EFILP_COUNT,
 };
@@ -130,6 +131,20 @@ enum efil_simple_fs_method {
 	EFILS_OPEN_VOLUME,
 
 	EFILS_COUNT,
+};
+
+/**
+ * enum efil_block_io_method - member functions of EFI_BLOCK_IO_PROTOCOL
+ *
+ * These must be in the same order as block_io_method_name[]
+ */
+enum efil_block_io_method {
+	EFILB_RESET,
+	EFILB_READ_BLOCKS,
+	EFILB_WRITE_BLOCKS,
+	EFILB_FLUSH_BLOCKS,
+
+	EFILB_COUNT,
 };
 
 /**
