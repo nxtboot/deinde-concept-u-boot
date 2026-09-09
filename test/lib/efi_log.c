@@ -34,10 +34,11 @@ static int lib_test_efi_log_base(struct unit_test_state *uts)
 	ut_assertok(efi_loge_testing(ofs1, EFI_SUCCESS));
 
 	ut_assertok(efi_log_show());
-	ut_assert_nextline("EFI log (size 9c)");
-	ut_assert_nextline(
+	ut_assert_nextline("EFI log (size ac)");
+	ut_assert_nextline("times are [start_us +duration_us] since boot");
+	ut_assert_nextlinen(
 		"  0      testing test0 int 7b/123 buf 1000 mem 1010 *buf 1100 *mem 100 ret OK");
-	ut_assert_nextline(
+	ut_assert_nextlinen(
 		"  1      testing test1 int 1c8/456 buf 1008 mem 1018 *buf 1200 *mem 200 ret load");
 	ut_assert_nextline("2 records");
 	ut_assert_console_end();
@@ -72,7 +73,8 @@ static int lib_test_efi_log_mem(struct unit_test_state *uts)
 
 	ut_assertok(efi_log_show());
 
-	ut_assert_nextline("EFI log (size c4)");
+	ut_assert_nextline("EFI log (size e4)");
+	ut_assert_nextline("times are [start_us +duration_us] since boot");
 
 	/*
 	 * We end up with internal sandbox-addresses here since EFI_LOADER

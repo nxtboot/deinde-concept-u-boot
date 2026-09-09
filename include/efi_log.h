@@ -48,12 +48,16 @@ enum efil_tag {
  * @ended: true if record has been completed (i.e. the function returned), false
  *	if it is still pending
  * @e_ret: Records the return function from the logged function
+ * @start_us: Microseconds since boot when the function was called
+ * @dur_us: Microseconds the function took, valid only when @ended
  */
 struct efil_rec_hdr {
 	enum efil_tag tag;
 	int size;
 	bool ended;
 	efi_status_t e_ret;
+	u32 start_us;
+	u32 dur_us;
 };
 
 /**

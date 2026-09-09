@@ -13,6 +13,7 @@
 #include <efi_log.h>
 #include <errno.h>
 #include <log.h>
+#include <time.h>
 #include <linux/string.h>
 
 /* names for enum efil_tag (abbreviated to keep output to a single line) */
@@ -163,6 +164,8 @@ static int prep_rec(enum efil_tag tag, uint str_size, void **recp)
 	rec_hdr->size = size;
 	rec_hdr->tag = tag;
 	rec_hdr->ended = false;
+	rec_hdr->start_us = timer_get_us();
+	rec_hdr->dur_us = 0;
 	*recp = rec_hdr + 1;
 
 	ofs = hdr->upto;
@@ -188,6 +191,7 @@ static void *finish_rec(int ofs, efi_status_t ret)
 	rec_hdr = (void *)hdr + ofs;
 	rec_hdr->ended = true;
 	rec_hdr->e_ret = ret;
+	rec_hdr->dur_us = timer_get_us() - rec_hdr->start_us;
 
 	return rec_hdr + 1;
 }
@@ -1029,7 +1033,15 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 	case EFILT_COUNT:
 		break;
 	}
-	printf("\n");
+
+	/*
+	 * The times come last so that the start of each line depends only on
+	 * the call, which keeps two logs of the same boot comparable
+	 */
+	printf(" [%u", rec_hdr->start_us);
+	if (rec_hdr->ended)
+		printf(" +%u", rec_hdr->dur_us);
+	printf("]\n");
 }
 
 int efi_log_show(void)
@@ -1039,6 +1051,7 @@ int efi_log_show(void)
 	int i;
 
 	printf("EFI log (size %x)\n", hdr->upto);
+	printf("times are [start_us +duration_us] since boot\n");
 	if (!hdr)
 		return -ENOENT;
 	for (i = 0, rec_hdr = (void *)hdr + sizeof(*hdr);
