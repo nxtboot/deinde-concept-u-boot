@@ -251,9 +251,9 @@ static int lib_test_efi_log_call(struct unit_test_state *uts)
 	ut_assert_nextlinen("EFI log (size ");
 	ut_assert_nextline("times are [start_us +duration_us] since boot");
 
-	ut_assert_nextlinen("  0         call simple_fs.open_volume arg ");
-	ut_assert_nextlinen("  1         call file.read arg ");
-	ut_assert_nextlinen("  2         call 98.99 arg 1234/4660 ret inval_param");
+	ut_assert_nextlinen("  0 simple_fs.open_volume arg ");
+	ut_assert_nextlinen("  1    file.read arg ");
+	ut_assert_nextlinen("  2        98.99 arg 1234/4660 ret inval_param");
 
 	ut_assert_nextline("3 records");
 

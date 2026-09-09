@@ -1039,11 +1039,43 @@ static void show_ret(efi_status_t ret)
 		printf("ret %lx", ret);
 }
 
+/**
+ * call_name() - Get the name of a call held in a generic record
+ *
+ * A method is named as protocol.method. If either is out of range, the numbers
+ * are shown instead.
+ *
+ * @rec: Record to look at
+ * @buf: Buffer to hold the name
+ * @size: Size of @buf in bytes
+ * Return: @buf
+ */
+static const char *call_name(const struct efil_call *rec, char *buf, int size)
+{
+	const char *const *methods;
+
+	methods = rec->prot < EFILP_COUNT ? prot_method_name[rec->prot] : NULL;
+	if (!methods || rec->method >= prot_method_count[rec->prot])
+		snprintf(buf, size, "%d.%d", rec->prot, rec->method);
+	else
+		snprintf(buf, size, "%s.%s", prot_name[rec->prot],
+			 methods[rec->method]);
+
+	return buf;
+}
+
 void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 {
 	void *start = (void *)rec_hdr + sizeof(struct efil_rec_hdr);
+	char buf[24];
+	const char *name;
 
-	printf("%3d %12s ", seq, tag_name[rec_hdr->tag]);
+	/* a generic record names the call itself, not just its type */
+	if (rec_hdr->tag == EFILT_CALL)
+		name = call_name(start, buf, sizeof(buf));
+	else
+		name = tag_name[rec_hdr->tag];
+	printf("%3d %12s ", seq, name);
 	switch (rec_hdr->tag) {
 	case EFILT_ALLOCATE_PAGES: {
 		struct efil_allocate_pages *rec = start;
@@ -1302,17 +1334,8 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 	}
 	case EFILT_CALL: {
 		struct efil_call *rec = start;
-		const char *const *methods;
 		uint i;
 
-		methods = rec->prot < EFILP_COUNT ? prot_method_name[rec->prot]
-			: NULL;
-		if (methods && rec->method < prot_method_count[rec->prot]) {
-			printf("%s.%s ", prot_name[rec->prot],
-			       methods[rec->method]);
-		} else {
-			printf("%d.%d ", rec->prot, rec->method);
-		}
 		for (i = 0; i < rec->nargs; i++)
 			show_ulong("arg", (ulong)rec->arg[i]);
 		if (rec_hdr->ended) {
