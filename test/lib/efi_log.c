@@ -5,6 +5,7 @@
  */
 
 #include <efi_api.h>
+#include <efi_loader.h>
 #include <efi_log.h>
 #include <mapmem.h>
 #include <test/lib.h>
@@ -170,3 +171,56 @@ static int lib_test_efi_log_summary(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_log_summary, UTF_CONSOLE);
+
+/* Test the simple boot services which take scalar arguments */
+static int lib_test_efi_log_misc(struct unit_test_state *uts)
+{
+	efi_guid_t guid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+	u64 *count = map_sysmem(0x1000, 0);
+	u32 *crc32_p = map_sysmem(0x1010, 0);
+	void *table = map_sysmem(0x1020, 0);
+	int ofs;
+
+	ut_assertok(efi_log_reset());
+
+	ofs = efi_logs_install_configuration_table(&guid, table);
+	ut_assertok(efi_loge_install_configuration_table(ofs, EFI_SUCCESS));
+
+	*count = 0x42;
+	ofs = efi_logs_get_next_monotonic_count(count);
+	ut_assertok(efi_loge_get_next_monotonic_count(ofs, EFI_SUCCESS));
+
+	ofs = efi_logs_stall(1000);
+	ut_assertok(efi_loge_stall(ofs, EFI_SUCCESS));
+
+	ofs = efi_logs_set_watchdog_timer(5, 0x99, 0, NULL);
+	ut_assertok(efi_loge_set_watchdog_timer(ofs, EFI_UNSUPPORTED));
+
+	*crc32_p = 0xabcd;
+	ofs = efi_logs_calculate_crc32(table, 0x100, crc32_p);
+	ut_assertok(efi_loge_calculate_crc32(ofs, EFI_SUCCESS));
+
+	ut_assertok(efi_log_show());
+
+	ut_assert_nextlinen("EFI log (size ");
+	ut_assert_nextline("times are [start_us +duration_us] since boot");
+
+	/*
+	 * As with the memory tests above, pointers show internal
+	 * sandbox-addresses, so only part of each line is matched
+	 */
+	ut_assert_nextlinen("  0 inst_cfg_tab Device Path table ");
+	ut_assert_nextlinen("  1 next_mono_cnt count ");
+	ut_assert_nextlinen("  2        stall us 3e8/1000 ret OK");
+	ut_assert_nextlinen("  3 set_watchdog timeout 5 code 99/153 size 0 data ");
+	ut_assert_nextlinen("  4   calc_crc32 data ");
+
+	ut_assert_nextline("5 records");
+
+	unmap_sysmem(count);
+	unmap_sysmem(crc32_p);
+	unmap_sysmem(table);
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_log_misc, UTF_CONSOLE);

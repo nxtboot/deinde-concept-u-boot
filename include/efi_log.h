@@ -34,6 +34,11 @@ enum efil_tag {
 	EFILT_REGISTER_PROTOCOL_NOTIFY,
 	EFILT_OPEN_PROTOCOL_INFORMATION,
 	EFILT_PROTOCOLS_PER_HANDLE,
+	EFILT_INSTALL_CONFIGURATION_TABLE,
+	EFILT_GET_NEXT_MONOTONIC_COUNT,
+	EFILT_STALL,
+	EFILT_SET_WATCHDOG_TIMER,
+	EFILT_CALCULATE_CRC32,
 
 	EFILT_TESTING,
 
@@ -71,6 +76,47 @@ struct efil_hdr {
 	int upto;
 	int size;
 	int missed;
+};
+
+/** struct efil_install_configuration_table - holds info from the call */
+struct efil_install_configuration_table {
+	efi_guid_t guid;
+	void *table;
+};
+
+/**
+ * struct efil_get_next_monotonic_count - holds info from the call
+ *
+ * @e_count: Contains the value of *@count on return from the EFI function
+ */
+struct efil_get_next_monotonic_count {
+	u64 *count;
+	u64 e_count;
+};
+
+/** struct efil_stall - holds info from efi_stall() call */
+struct efil_stall {
+	u64 microseconds;
+};
+
+/** struct efil_set_watchdog_timer - holds info from the call */
+struct efil_set_watchdog_timer {
+	u64 timeout;
+	u64 watchdog_code;
+	u64 data_size;
+	u16 *watchdog_data;
+};
+
+/**
+ * struct efil_calculate_crc32 - holds info from efi_calculate_crc32() call
+ *
+ * @e_crc32: Contains the value of *@crc32_p on return from the EFI function
+ */
+struct efil_calculate_crc32 {
+	const void *data;
+	efi_uintn_t data_size;
+	u32 *crc32_p;
+	u32 e_crc32;
 };
 
 enum efil_test_t {
@@ -634,6 +680,99 @@ int efi_logs_protocols_per_handle(efi_handle_t handle, efi_uintn_t *protocol_buf
  */
 int efi_loge_protocols_per_handle(int ofs, efi_status_t efi_ret);
 
+/**
+ * efi_logs_install_configuration_table() - Log a call to InstallConfigurationTable
+ *
+ * @guid: GUID of the table to install
+ * @table: Table to install
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_install_configuration_table(const efi_guid_t *guid, void *table);
+
+/**
+ * efi_loge_install_configuration_table() - Complete the log record
+ *
+ * @ofs: Offset returned by efi_logs_install_configuration_table()
+ * @efi_ret: Status code returned by the EFI function
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_install_configuration_table(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_get_next_monotonic_count() - Log a call to GetNextMonotonicCount
+ *
+ * @count: Pointer which receives the count
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_get_next_monotonic_count(u64 *count);
+
+/**
+ * efi_loge_get_next_monotonic_count() - Complete the log record
+ *
+ * @ofs: Offset returned by efi_logs_get_next_monotonic_count()
+ * @efi_ret: Status code returned by the EFI function
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_get_next_monotonic_count(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_stall() - Log a call to Stall
+ *
+ * @microseconds: Time to stall for
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_stall(u64 microseconds);
+
+/**
+ * efi_loge_stall() - Complete the log record
+ *
+ * @ofs: Offset returned by efi_logs_stall()
+ * @efi_ret: Status code returned by the EFI function
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_stall(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_set_watchdog_timer() - Log a call to SetWatchdogTimer
+ *
+ * @timeout: Seconds before the watchdog resets the system
+ * @watchdog_code: Code to log when resetting
+ * @data_size: Size of @watchdog_data in bytes
+ * @watchdog_data: Data to log when resetting
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_set_watchdog_timer(u64 timeout, u64 watchdog_code, u64 data_size,
+				u16 *watchdog_data);
+
+/**
+ * efi_loge_set_watchdog_timer() - Complete the log record
+ *
+ * @ofs: Offset returned by efi_logs_set_watchdog_timer()
+ * @efi_ret: Status code returned by the EFI function
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_set_watchdog_timer(int ofs, efi_status_t efi_ret);
+
+/**
+ * efi_logs_calculate_crc32() - Log a call to CalculateCrc32
+ *
+ * @data: Data to checksum
+ * @data_size: Size of @data in bytes
+ * @crc32_p: Pointer which receives the checksum
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_calculate_crc32(const void *data, efi_uintn_t data_size,
+			     u32 *crc32_p);
+
+/**
+ * efi_loge_calculate_crc32() - Complete the log record
+ *
+ * @ofs: Offset returned by efi_logs_calculate_crc32()
+ * @efi_ret: Status code returned by the EFI function
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret);
+
 #else /* !EFI_LOG */
 
 static inline int efi_logs_locate_handle(enum efi_locate_search_type search_type,
@@ -864,6 +1003,61 @@ static inline int efi_logs_testing(enum efil_test_t enum_val,
 static inline int efi_loge_testing(int ofs, efi_status_t efi_ret)
 {
 	return -ENOSYS;
+}
+
+static inline int efi_logs_install_configuration_table(const efi_guid_t *guid,
+						       void *table)
+{
+	return 0;
+}
+
+static inline int efi_loge_install_configuration_table(int ofs,
+						       efi_status_t efi_ret)
+{
+	return 0;
+}
+
+static inline int efi_logs_get_next_monotonic_count(u64 *count)
+{
+	return 0;
+}
+
+static inline int efi_loge_get_next_monotonic_count(int ofs,
+						    efi_status_t efi_ret)
+{
+	return 0;
+}
+
+static inline int efi_logs_stall(u64 microseconds)
+{
+	return 0;
+}
+
+static inline int efi_loge_stall(int ofs, efi_status_t efi_ret)
+{
+	return 0;
+}
+
+static inline int efi_logs_set_watchdog_timer(u64 timeout, u64 watchdog_code,
+					      u64 data_size, u16 *watchdog_data)
+{
+	return 0;
+}
+
+static inline int efi_loge_set_watchdog_timer(int ofs, efi_status_t efi_ret)
+{
+	return 0;
+}
+
+static inline int efi_logs_calculate_crc32(const void *data,
+					   efi_uintn_t data_size, u32 *crc32_p)
+{
+	return 0;
+}
+
+static inline int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret)
+{
+	return 0;
 }
 
 #endif /* EFI_LOG */

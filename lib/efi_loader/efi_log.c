@@ -36,6 +36,11 @@ static const char *tag_name[EFILT_COUNT] = {
 	"reg_prot_note",
 	"open_prot_info",
 	"prots_per_hdl",
+	"inst_cfg_tab",
+	"next_mono_cnt",
+	"stall",
+	"set_watchdog",
+	"calc_crc32",
 
 	"testing",
 };
@@ -630,6 +635,138 @@ int efi_loge_protocols_per_handle(int ofs, efi_status_t efi_ret)
 	return 0;
 }
 
+int efi_logs_install_configuration_table(const efi_guid_t *guid, void *table)
+{
+	struct efil_install_configuration_table *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_INSTALL_CONFIGURATION_TABLE, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	copy_guid(&rec->guid, guid);
+	rec->table = table;
+
+	return ret;
+}
+
+int efi_loge_install_configuration_table(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_get_next_monotonic_count(u64 *count)
+{
+	struct efil_get_next_monotonic_count *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_GET_NEXT_MONOTONIC_COUNT, sizeof(*rec),
+		       (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->count = count;
+
+	return ret;
+}
+
+int efi_loge_get_next_monotonic_count(int ofs, efi_status_t efi_ret)
+{
+	struct efil_get_next_monotonic_count *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+
+	if (rec->count)
+		rec->e_count = *rec->count;
+
+	return 0;
+}
+
+int efi_logs_stall(u64 microseconds)
+{
+	struct efil_stall *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_STALL, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->microseconds = microseconds;
+
+	return ret;
+}
+
+int efi_loge_stall(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_set_watchdog_timer(u64 timeout, u64 watchdog_code, u64 data_size,
+				u16 *watchdog_data)
+{
+	struct efil_set_watchdog_timer *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_SET_WATCHDOG_TIMER, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->timeout = timeout;
+	rec->watchdog_code = watchdog_code;
+	rec->data_size = data_size;
+	rec->watchdog_data = watchdog_data;
+
+	return ret;
+}
+
+int efi_loge_set_watchdog_timer(int ofs, efi_status_t efi_ret)
+{
+	if (!finish_rec(ofs, efi_ret))
+		return -ENOSPC;
+
+	return 0;
+}
+
+int efi_logs_calculate_crc32(const void *data, efi_uintn_t data_size,
+			     u32 *crc32_p)
+{
+	struct efil_calculate_crc32 *rec;
+	int ret;
+
+	ret = prep_rec(EFILT_CALCULATE_CRC32, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->data = data;
+	rec->data_size = data_size;
+	rec->crc32_p = crc32_p;
+
+	return ret;
+}
+
+int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret)
+{
+	struct efil_calculate_crc32 *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+
+	if (rec->crc32_p)
+		rec->e_crc32 = *rec->crc32_p;
+
+	return 0;
+}
+
 int efi_logs_testing(enum efil_test_t enum_val, efi_uintn_t int_val,
 		     void *buffer, u64 *memory)
 {
@@ -1013,6 +1150,55 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 		if (rec_hdr->ended) {
 			show_ulong("*num",
 				   (ulong)rec->e_protocol_buffer_count);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_INSTALL_CONFIGURATION_TABLE: {
+		struct efil_install_configuration_table *rec = start;
+
+		printf("%pUs ", &rec->guid);
+		show_addr("table", (ulong)map_to_sysmem(rec->table));
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_GET_NEXT_MONOTONIC_COUNT: {
+		struct efil_get_next_monotonic_count *rec = start;
+
+		show_addr("count", (ulong)map_to_sysmem(rec->count));
+		if (rec_hdr->ended) {
+			show_ulong("*count", (ulong)rec->e_count);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_STALL: {
+		struct efil_stall *rec = start;
+
+		show_ulong("us", (ulong)rec->microseconds);
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_SET_WATCHDOG_TIMER: {
+		struct efil_set_watchdog_timer *rec = start;
+
+		show_ulong("timeout", (ulong)rec->timeout);
+		show_ulong("code", (ulong)rec->watchdog_code);
+		show_ulong("size", (ulong)rec->data_size);
+		show_addr("data", (ulong)map_to_sysmem(rec->watchdog_data));
+		if (rec_hdr->ended)
+			show_ret(rec_hdr->e_ret);
+		break;
+	}
+	case EFILT_CALCULATE_CRC32: {
+		struct efil_calculate_crc32 *rec = start;
+
+		show_addr("data", (ulong)map_to_sysmem((void *)rec->data));
+		show_ulong("size", (ulong)rec->data_size);
+		if (rec_hdr->ended) {
+			show_ulong("*crc32", (ulong)rec->e_crc32);
 			show_ret(rec_hdr->e_ret);
 		}
 		break;

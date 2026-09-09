@@ -1799,8 +1799,15 @@ static efi_status_t
 EFIAPI efi_install_configuration_table_ext(const efi_guid_t *guid,
 					   void *table)
 {
+	efi_status_t ret;
+	int ofs;
+
 	EFI_ENTRY("%pUs, %p", guid, table);
-	return EFI_EXIT(efi_install_configuration_table(guid, table));
+	ofs = efi_logs_install_configuration_table(guid, table);
+	ret = efi_install_configuration_table(guid, table);
+	efi_loge_install_configuration_table(ofs, ret);
+
+	return EFI_EXIT(ret);
 }
 
 /**
@@ -2316,7 +2323,10 @@ static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 	static uint64_t mono;
 	efi_status_t ret;
 
+	int ofs;
+
 	EFI_ENTRY("%p", count);
+	ofs = efi_logs_get_next_monotonic_count(count);
 	if (!count) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
@@ -2324,6 +2334,8 @@ static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 	*count = mono++;
 	ret = EFI_SUCCESS;
 out:
+	efi_loge_get_next_monotonic_count(ofs, ret);
+
 	return EFI_EXIT(ret);
 }
 
@@ -2341,12 +2353,16 @@ out:
 static efi_status_t EFIAPI efi_stall(unsigned long microseconds)
 {
 	u64 end_tick;
+	int ofs;
 
 	EFI_ENTRY("%ld", microseconds);
+	ofs = efi_logs_stall(microseconds);
 
 	end_tick = get_ticks() + usec_to_tick(microseconds);
 	while (get_ticks() < end_tick)
 		efi_timer_check();
+
+	efi_loge_stall(ofs, EFI_SUCCESS);
 
 	return EFI_EXIT(EFI_SUCCESS);
 }
@@ -2370,9 +2386,17 @@ static efi_status_t EFIAPI efi_set_watchdog_timer(unsigned long timeout,
 						  unsigned long data_size,
 						  uint16_t *watchdog_data)
 {
+	efi_status_t ret;
+	int ofs;
+
 	EFI_ENTRY("%ld, 0x%llx, %ld, %p", timeout, watchdog_code,
 		  data_size, watchdog_data);
-	return EFI_EXIT(efi_set_watchdog(timeout));
+	ofs = efi_logs_set_watchdog_timer(timeout, watchdog_code, data_size,
+					  watchdog_data);
+	ret = efi_set_watchdog(timeout);
+	efi_loge_set_watchdog_timer(ofs, ret);
+
+	return EFI_EXIT(ret);
 }
 
 /**
@@ -3010,14 +3034,18 @@ static efi_status_t EFIAPI efi_calculate_crc32(const void *data,
 					       u32 *crc32_p)
 {
 	efi_status_t ret = EFI_SUCCESS;
+	int ofs;
 
 	EFI_ENTRY("%p, %zu", data, data_size);
+	ofs = efi_logs_calculate_crc32(data, data_size, crc32_p);
 	if (!data || !data_size || !crc32_p) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
 	*crc32_p = crc32(0, data, data_size);
 out:
+	efi_loge_calculate_crc32(ofs, ret);
+
 	return EFI_EXIT(ret);
 }
 
