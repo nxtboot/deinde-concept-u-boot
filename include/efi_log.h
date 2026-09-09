@@ -39,6 +39,7 @@ enum efil_tag {
 	EFILT_STALL,
 	EFILT_SET_WATCHDOG_TIMER,
 	EFILT_CALCULATE_CRC32,
+	EFILT_CALL,
 
 	EFILT_TESTING,
 
@@ -76,6 +77,82 @@ struct efil_hdr {
 	int upto;
 	int size;
 	int missed;
+};
+
+/** Maximum number of arguments recorded for a generic call */
+#define EFIL_CALL_MAX_ARGS	4
+
+/**
+ * enum efil_prot - Protocols whose member functions can be logged
+ *
+ * A protocol is identified by an index rather than by its GUID, since a name
+ * table is needed for each protocol anyway and an index keeps the record small
+ * enough to log a full boot
+ */
+enum efil_prot {
+	EFILP_NONE,
+	EFILP_FILE,
+	EFILP_SIMPLE_FS,
+
+	EFILP_COUNT,
+};
+
+/**
+ * enum efil_file_method - member functions of EFI_FILE_PROTOCOL
+ *
+ * These must be in the same order as file_method_name[]
+ */
+enum efil_file_method {
+	EFILF_OPEN,
+	EFILF_CLOSE,
+	EFILF_DELETE,
+	EFILF_READ,
+	EFILF_WRITE,
+	EFILF_GETPOS,
+	EFILF_SETPOS,
+	EFILF_GETINFO,
+	EFILF_SETINFO,
+	EFILF_FLUSH,
+	EFILF_OPEN_EX,
+	EFILF_READ_EX,
+	EFILF_WRITE_EX,
+	EFILF_FLUSH_EX,
+
+	EFILF_COUNT,
+};
+
+/**
+ * enum efil_simple_fs_method - member functions of the simple-file-system
+ *
+ * These must be in the same order as simple_fs_method_name[]
+ */
+enum efil_simple_fs_method {
+	EFILS_OPEN_VOLUME,
+
+	EFILS_COUNT,
+};
+
+/**
+ * struct efil_call - holds info from a call to a protocol member function
+ *
+ * This is a generic record, used where a typed record would cost more than the
+ * decoding is worth. Protocols have hundreds of member functions between them,
+ * so each one costs a single line at the call site rather than a tag, a struct
+ * and a pair of functions
+ *
+ * @prot: Protocol being called (enum efil_prot)
+ * @method: Member function being called, an index into the protocol's name
+ *	table
+ * @nargs: Number of arguments in @arg
+ * @arg: Arguments to the call
+ * @e_arg: Value of interest on return, e.g. the size actually read
+ */
+struct efil_call {
+	u8 prot;
+	u8 method;
+	u8 nargs;
+	u64 arg[EFIL_CALL_MAX_ARGS];
+	u64 e_arg;
 };
 
 /** struct efil_install_configuration_table - holds info from the call */
@@ -773,6 +850,28 @@ int efi_logs_calculate_crc32(const void *data, efi_uintn_t data_size,
  */
 int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret);
 
+/**
+ * efi_logs_call() - Log a call to a protocol member function
+ *
+ * This is the generic record, for calls which do not warrant a typed record
+ *
+ * @prot: Protocol being called
+ * @method: Member function being called
+ * @nargs: Number of arguments which follow, at most EFIL_CALL_MAX_ARGS
+ * Return: Offset of the log record, or -ve error code
+ */
+int efi_logs_call(enum efil_prot prot, uint method, uint nargs, ...);
+
+/**
+ * efi_loge_call() - Complete a generic log record
+ *
+ * @ofs: Offset returned by efi_logs_call()
+ * @efi_ret: Status code returned by the EFI function
+ * @e_arg: Value of interest on return, or 0 if there is none
+ * Return: 0 if OK, -ve on error
+ */
+int efi_loge_call(int ofs, efi_status_t efi_ret, u64 e_arg);
+
 #else /* !EFI_LOG */
 
 static inline int efi_logs_locate_handle(enum efi_locate_search_type search_type,
@@ -1056,6 +1155,17 @@ static inline int efi_logs_calculate_crc32(const void *data,
 }
 
 static inline int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret)
+{
+	return 0;
+}
+
+static inline int efi_logs_call(enum efil_prot prot, uint method, uint nargs,
+				...)
+{
+	return 0;
+}
+
+static inline int efi_loge_call(int ofs, efi_status_t efi_ret, u64 e_arg)
 {
 	return 0;
 }

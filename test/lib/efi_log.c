@@ -224,3 +224,41 @@ static int lib_test_efi_log_misc(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_log_misc, UTF_CONSOLE);
+
+/* Test the generic record used for protocol member functions */
+static int lib_test_efi_log_call(struct unit_test_state *uts)
+{
+	void *handle = map_sysmem(0x1000, 0);
+	int ofs;
+
+	ut_assertok(efi_log_reset());
+
+	ofs = efi_logs_call(EFILP_SIMPLE_FS, EFILS_OPEN_VOLUME, 1,
+			    (u64)map_to_sysmem(handle));
+	ut_assertok(efi_loge_call(ofs, EFI_SUCCESS, 0));
+
+	/* a read of 0x200 bytes which returns only 0x100 */
+	ofs = efi_logs_call(EFILP_FILE, EFILF_READ, 2,
+			    (u64)map_to_sysmem(handle), 0x200);
+	ut_assertok(efi_loge_call(ofs, EFI_SUCCESS, 0x100));
+
+	/* an unknown protocol falls back to showing the numbers */
+	ofs = efi_logs_call(EFILP_COUNT, 99, 1, 0x1234);
+	ut_assertok(efi_loge_call(ofs, EFI_INVALID_PARAMETER, 0));
+
+	ut_assertok(efi_log_show());
+
+	ut_assert_nextlinen("EFI log (size ");
+	ut_assert_nextline("times are [start_us +duration_us] since boot");
+
+	ut_assert_nextlinen("  0         call simple_fs.open_volume arg ");
+	ut_assert_nextlinen("  1         call file.read arg ");
+	ut_assert_nextlinen("  2         call 3.99 arg 1234/4660 ret inval_param");
+
+	ut_assert_nextline("3 records");
+
+	unmap_sysmem(handle);
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_log_call, UTF_CONSOLE);

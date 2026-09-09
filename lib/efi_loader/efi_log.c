@@ -13,6 +13,7 @@
 #include <efi_log.h>
 #include <errno.h>
 #include <log.h>
+#include <stdarg.h>
 #include <time.h>
 #include <linux/string.h>
 
@@ -41,8 +42,53 @@ static const char *tag_name[EFILT_COUNT] = {
 	"stall",
 	"set_watchdog",
 	"calc_crc32",
+	"call",
 
 	"testing",
+};
+
+/* names for enum efil_prot */
+static const char *const prot_name[EFILP_COUNT] = {
+	"",
+	"file",
+	"simple_fs",
+};
+
+/* member functions of EFI_FILE_PROTOCOL, in enum efil_file_method order */
+static const char *const file_method_name[EFILF_COUNT] = {
+	"open",
+	"close",
+	"delete",
+	"read",
+	"write",
+	"getpos",
+	"setpos",
+	"getinfo",
+	"setinfo",
+	"flush",
+	"open_ex",
+	"read_ex",
+	"write_ex",
+	"flush_ex",
+};
+
+/* member functions of the simple-file-system protocol */
+static const char *const simple_fs_method_name[EFILS_COUNT] = {
+	"open_volume",
+};
+
+/* method-name table for each protocol, NULL if it has none */
+static const char *const *const prot_method_name[EFILP_COUNT] = {
+	NULL,
+	file_method_name,
+	simple_fs_method_name,
+};
+
+/* number of entries in each protocol's method-name table */
+static const uint prot_method_count[EFILP_COUNT] = {
+	0,
+	EFILF_COUNT,
+	EFILS_COUNT,
 };
 
 /* names for enum efi_allocate_type  */
@@ -767,6 +813,46 @@ int efi_loge_calculate_crc32(int ofs, efi_status_t efi_ret)
 	return 0;
 }
 
+int efi_logs_call(enum efil_prot prot, uint method, uint nargs, ...)
+{
+	struct efil_call *rec;
+	va_list args;
+	int ret;
+	uint i;
+
+	if (nargs > EFIL_CALL_MAX_ARGS)
+		nargs = EFIL_CALL_MAX_ARGS;
+
+	ret = prep_rec(EFILT_CALL, sizeof(*rec), (void **)&rec);
+	if (ret < 0)
+		return ret;
+
+	rec->prot = prot;
+	rec->method = method;
+	rec->nargs = nargs;
+	rec->e_arg = 0;
+
+	va_start(args, nargs);
+	for (i = 0; i < nargs; i++)
+		rec->arg[i] = va_arg(args, u64);
+	va_end(args);
+
+	return ret;
+}
+
+int efi_loge_call(int ofs, efi_status_t efi_ret, u64 e_arg)
+{
+	struct efil_call *rec;
+
+	rec = finish_rec(ofs, efi_ret);
+	if (!rec)
+		return -ENOSPC;
+
+	rec->e_arg = e_arg;
+
+	return 0;
+}
+
 int efi_logs_testing(enum efil_test_t enum_val, efi_uintn_t int_val,
 		     void *buffer, u64 *memory)
 {
@@ -1199,6 +1285,28 @@ void show_rec(int seq, struct efil_rec_hdr *rec_hdr)
 		show_ulong("size", (ulong)rec->data_size);
 		if (rec_hdr->ended) {
 			show_ulong("*crc32", (ulong)rec->e_crc32);
+			show_ret(rec_hdr->e_ret);
+		}
+		break;
+	}
+	case EFILT_CALL: {
+		struct efil_call *rec = start;
+		const char *const *methods;
+		uint i;
+
+		methods = rec->prot < EFILP_COUNT ? prot_method_name[rec->prot]
+			: NULL;
+		if (methods && rec->method < prot_method_count[rec->prot]) {
+			printf("%s.%s ", prot_name[rec->prot],
+			       methods[rec->method]);
+		} else {
+			printf("%d.%d ", rec->prot, rec->method);
+		}
+		for (i = 0; i < rec->nargs; i++)
+			show_ulong("arg", (ulong)rec->arg[i]);
+		if (rec_hdr->ended) {
+			if (rec->e_arg)
+				show_ulong("*arg", (ulong)rec->e_arg);
 			show_ret(rec_hdr->e_ret);
 		}
 		break;
