@@ -154,13 +154,24 @@ static int lib_test_efi_log_summary(struct unit_test_state *uts)
 				      EFI_BOOT_SERVICES_CODE, 10, addr);
 	ut_assertok(efi_loge_allocate_pages(ofs, EFI_LOAD_ERROR));
 
+	/* a failed allocation obtains no memory, so 20 pages are counted */
+	ofs = efi_logs_allocate_pages(EFI_ALLOCATE_ANY_PAGES,
+				      EFI_BOOT_SERVICES_CODE, 20, addr);
+	ut_assertok(efi_loge_allocate_pages(ofs, 0));
+
+	ofs = efi_logs_free_pages(0x2000, 5);
+	ut_assertok(efi_loge_free_pages(ofs, 0));
+
 	/* this one is left pending, as if the function never returned */
 	efi_logs_free_pool(*buf);
 
 	efi_log_summary();
 	ut_assert_nextline_empty();
-	ut_assert_nextlinen("EFI: 3 calls, 1 returned an error, 1 did not return");
-	ut_assert_nextline("      alloc_pages 1");
+	ut_assert_nextlinen("EFI: 5 calls, 1 returned an error, 1 did not return");
+	ut_assert_nextline("     memory 80 KiB allocated, 20 KiB freed, 60 KiB still in use");
+	ut_assert_nextline("     pools 100 Bytes requested");
+	ut_assert_nextline("      alloc_pages 2");
+	ut_assert_nextline("       free_pages 1");
 	ut_assert_nextline("       alloc_pool 1");
 	ut_assert_nextline("        free_pool 1");
 	ut_assert_console_end();

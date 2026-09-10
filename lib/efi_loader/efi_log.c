@@ -9,6 +9,7 @@
 #define LOG_CATEGORY LOGC_EFI
 
 #include <bloblist.h>
+#include <display_options.h>
 #include <efi_api.h>
 #include <efi_log.h>
 #include <errno.h>
@@ -1421,6 +1422,7 @@ void efi_log_summary(void)
 	int count[EFILT_COUNT];
 	struct efil_rec_hdr *rec_hdr;
 	int total, errors, pending;
+	u64 pages_alloc, pages_free, pool_size;
 	int i;
 
 	if (!hdr)
@@ -1430,15 +1432,50 @@ void efi_log_summary(void)
 	total = 0;
 	errors = 0;
 	pending = 0;
+	pages_alloc = 0;
+	pages_free = 0;
+	pool_size = 0;
 	for (rec_hdr = (void *)hdr + sizeof(*hdr);
 	     (void *)rec_hdr - (void *)hdr < hdr->upto;
 	     rec_hdr = (void *)rec_hdr + rec_hdr->size) {
+		void *start = (void *)rec_hdr + sizeof(*rec_hdr);
+
 		if (rec_hdr->tag < EFILT_COUNT)
 			count[rec_hdr->tag]++;
-		if (!rec_hdr->ended)
+		if (!rec_hdr->ended) {
 			pending++;
-		else if (rec_hdr->e_ret)
+		} else if (rec_hdr->e_ret) {
 			errors++;
+		} else {
+			/*
+			 * Total up the memory, ignoring calls which failed or
+			 * never returned, since they changed nothing. Only the
+			 * pages are counted as memory, since AllocatePool()
+			 * obtains its memory by calling AllocatePages()
+			 */
+			switch (rec_hdr->tag) {
+			case EFILT_ALLOCATE_PAGES: {
+				struct efil_allocate_pages *rec = start;
+
+				pages_alloc += rec->pages;
+				break;
+			}
+			case EFILT_FREE_PAGES: {
+				struct efil_free_pages *rec = start;
+
+				pages_free += rec->pages;
+				break;
+			}
+			case EFILT_ALLOCATE_POOL: {
+				struct efil_allocate_pool *rec = start;
+
+				pool_size += rec->size;
+				break;
+			}
+			default:
+				break;
+			}
+		}
 		total++;
 	}
 	if (!total)
@@ -1453,6 +1490,24 @@ void efi_log_summary(void)
 	if (hdr->missed)
 		printf("     %d call(s) not recorded: increase CONFIG_EFI_LOG_SIZE\n",
 		       hdr->missed);
+
+	if (pages_alloc) {
+		printf("     memory ");
+		if (pages_free) {
+			print_size(pages_alloc << EFI_PAGE_SHIFT,
+				   " allocated, ");
+			print_size(pages_free << EFI_PAGE_SHIFT, " freed, ");
+			print_size((pages_alloc - pages_free) << EFI_PAGE_SHIFT,
+				   " still in use\n");
+		} else {
+			print_size(pages_alloc << EFI_PAGE_SHIFT,
+				   " allocated\n");
+		}
+	}
+	if (pool_size) {
+		printf("     pools ");
+		print_size(pool_size, " requested\n");
+	}
 
 	for (i = 0; i < EFILT_COUNT; i++) {
 		if (count[i])
