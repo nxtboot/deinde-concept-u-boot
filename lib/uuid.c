@@ -10,6 +10,7 @@
 #ifndef USE_HOSTCC
 #include <command.h>
 #include <efi_api.h>
+#include <efi_load_initrd.h>
 #include <env.h>
 #include <rand.h>
 #include <time.h>
@@ -257,6 +258,48 @@ static const struct {
 	{
 		"EFI Debug Image Info Table",
 		EFI_DEBUG_IMAGE_INFO_TABLE_GUID,
+	},
+
+	/*
+	 * Not implemented here, but named so that a log of an application's
+	 * calls is readable. Applications probe for these protocols and Linux
+	 * installs these tables on its way out of boot services
+	 */
+	{
+		"Console Control",
+		EFI_CONSOLE_CONTROL_PROTOCOL_GUID,
+	},
+	{
+		"CC Measurement",
+		EFI_CC_MEASUREMENT_PROTOCOL_GUID,
+	},
+	{
+		"Memory Attribute",
+		EFI_MEMORY_ATTRIBUTE_PROTOCOL_GUID,
+	},
+	{
+		"SMBIOS",
+		EFI_SMBIOS_PROTOCOL_GUID,
+	},
+	{
+		"Linux Loaded Image Fixed",
+		LINUX_EFI_LOADED_IMAGE_FIXED_GUID,
+	},
+	{
+		"Linux Initrd Media",
+		EFI_INITRD_MEDIA_GUID,
+	},
+	{
+		"Linux Random Seed Table",
+		LINUX_EFI_RANDOM_SEED_TABLE_GUID,
+	},
+	{
+		"Linux Memreserve Table",
+		LINUX_EFI_MEMRESERVE_TABLE_GUID,
+	},
+	{
+		"Linux Boot Memmap Table",
+		LINUX_EFI_BOOT_MEMMAP_GUID,
 	},
 #endif /* CONFIG_CMD_EFIDEBUG */
 #ifdef CONFIG_CMD_NVEDIT_EFI
