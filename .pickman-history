@@ -99211,3 +99211,93 @@ f604cae03bda fs/squashfs: bound fragment table accesses in sqfs_frag_lookup()
 
 ---
 
+## 2026-09-08: us/main
+
+Branch: cherry-73ada2f433a9
+
+Commits:
+- 73ada2f433a9 fs/squashfs: bound the inode table walk in sqfs_find_inode()
+- 923f05ed3e23 fs/squashfs: bound fragment offset/size in sqfs_read_nest()
+- d40f495e14d6 Merge patch series "fs/squashfs: fix two out-of-bounds reads on crafted images"
+
+### Conversation log
+Working tree is clean. Creating the branch and cherry-picking the first commit.
+
+Deltas match exactly. Running the build test.
+
+Build OK. Cherry-picking the second commit and comparing stats in one step.
+
+All done. Branch `cherry-73ada2f433a9` (based on `ci/master`) is ready for pushing.
+
+**Final status**
+
+| Original | Cherry-picked | Subject |
+|---|---|---|
+| 73ada2f433a9 | 632c159e2edc | fs/squashfs: bound the inode table walk in sqfs_find_inode() |
+| 923f05ed3e23 | f0b3ad702d28 | fs/squashfs: bound fragment offset/size in sqfs_read_nest() |
+| d40f495e14d6 | eb9a571065f2 | Merge patch series "fs/squashfs: fix two out-of-bounds reads on crafted images" |
+
+- **Build result:** OK — sandbox built cleanly after each commit and in the final run (no warnings or errors).
+- **Fix-ups made:** none. No conflicts; no commit messages were amended beyond the standard `-x` "(cherry picked from commit …)" line.
+- **Commit deltas:** all match the originals exactly.
+  - 632c159e2edc: 3 files, 110+/28- (identical to original)
+  - f0b3ad702d28: 1 file, 24+ (identical to original)
+  - eb9a571065f2: empty commit, as intended. The original merge's first-parent diff (134+/28- across the same 3 files) is exactly the sum of the two picked patches, so nothing was lost. Note that `--allow-empty` alone didn't auto-commit here because git treats a pick that *becomes* empty differently from one that is empty upstream; I completed it with `git commit --allow-empty --no-edit`, which preserved the full merge message including the `Link:` and cherry-pick trailer.
+
+Working tree is clean and the branch has not been merged anywhere.
+
+---
+
+### Review: 2026-09-08
+
+Branch: cherry-73ada2f433a9
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) samus, snow.
+
+I'll start by reading the MR description...
+
+### Conversation log
+I'll start by checking the branch state and how far it is behind ci/master.
+
+The branch shows 0 commits behind the local `ci/master` ref. Let me fetch to make sure the local ref is current, and record the pre-rebase deltas for comparison.
+
+Build passed (1 built, 0 warnings, 0 errors). Now the force push to the original remote branch.
+
+All done. Nothing further is needed — every check is complete, so here is the report.
+
+## What was done
+
+**1. Rebase** — `git rebase --keep-empty ci/master` was a no-op: the branch was already based on the tip of `ci/master` (`7770f7af42a6`, merge of `cherry-964ad5b5c91b`). All four commit hashes and deltas are unchanged:
+
+| Commit | Subject | Delta |
+|---|---|---|
+| 632c159e2edc | fs/squashfs: bound the inode table walk in sqfs_find_inode() | 3 files, 110+/28- |
+| f0b3ad702d28 | fs/squashfs: bound fragment offset/size in sqfs_read_nest() | 1 file, 24+ |
+| eb9a571065f2 | Merge patch series "fs/squashfs: fix two out-of-bounds reads…" | empty (preserved) |
+| fadda68f65f4 | pickman: Record cherry-pick of 3 commits from us/main | 1 file, 37+ |
+
+**2. Review comment** — the only comment is the bot's own "Pipeline fix (attempt 1)" report. It diagnosed both failed jobs as lab-infrastructure problems (`snow`: labgrid place held by `kea/labgrid`; `samus`: no U-Boot prompt after em100 flash) and deliberately made no code changes. It requests nothing, so no code was amended. FS_SQUASHFS is not enabled on either board, so the branch's code is not even compiled into those images.
+
+**3. Build** — `buildman -L --board sandbox -w -o /tmp/pickman`: 1 built, no warnings or errors.
+
+**4. Branches** — local `cherry-73ada2f433a9-v2` created at `fadda68f65f4`; force-pushed to `ci/cherry-73ada2f433a9`, updating MR !1330. Remote and local now both at `fadda68f65f4`.
+
+## One thing worth flagging
+
+The force push replaced a remote head (`7b1d174a0b5a`) that **did not belong to this MR**. The remote-tracking reflog shows the branch was overwritten at 19:05:06 today (about an hour after the original `eb9a571065f2` push) with a 12-commit chain from a different, older base (`f43fdb0b8365`): 10 `pickman: Record …` commits for other MRs plus the two riscv PolarFire commits. This looks like a stray `push-branch` from another session, which would also explain why the MR pipeline ran with unexpected content. I verified nothing was lost by the overwrite:
+
+- That old head contained **no squashfs changes** of its own (`git diff f43fdb0b8365 7b1d174a0b5a -- fs/squashfs` is empty).
+- Both riscv commits are already in `ci/master` with identical patch-ids (`bad531d40f12`, `9608d56e098c`, via the 'mpfs-cpu-repick' merge).
+- The `.pickman-history` entries it carried (e.g. for `cherry-964ad5b5c91b`) are already present in `ci/master`.
+
+So the MR is now back to its intended content; nothing from the stray head needed to be preserved. You may want to check which session pushed it, as it could recur on other MRs.
+
+## Suggested reply to post on the MR
+
+> Rebased onto current ci/master (no-op — branch was already on the tip; all commit deltas unchanged) and force-pushed to retrigger the pipeline. The two earlier failures (samus, snow) were lab-infrastructure problems — labgrid place contention on snow and a serial/boot timeout on samus — not caused by this branch: FS_SQUASHFS is not enabled on either board, so the changed code is not in those images. No code changes were needed. Sandbox build passes with no warnings.
+>
+> Note: the remote branch had been overwritten with an unrelated chain of pickman record commits (7b1d174a0b5a) from a different base; this push restores the intended three-commit squashfs series plus its pickman record. Nothing from the stray head was lost — its riscv commits and history entries are already in master.
+
+---
+
