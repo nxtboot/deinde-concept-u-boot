@@ -99611,3 +99611,27 @@ All 51 commits are on branch `cherry-547b4d3bba7e`, based on ci/master. Nothing 
 
 ---
 
+### Review: 2026-09-11
+
+Branch: cherry-547b4d3bba7e
+
+Comments addressed:
+
+
+### Conversation log
+I rebased the MR !1332 branch `cherry-547b4d3bba7e` onto the latest `ci/master` (`cc153a4ea79e`) and force-pushed it. There were no conflicts, and the sandbox build passes.
+
+- **Upstream changes:** `ci/master` gained 8 commits, all from the `cmd-cov-hwboot` merge (sspi/pmc commands, their docs and tests). None of them touch a file this branch changes, so the rebase applied cleanly.
+- **Deltas:** I saved `git show --stat` for all 52 commits before and after the rebase, and every one is identical. The empty `lib: correct list_guid[] array` commit and the empty `Merge tag 'efi-2026-10-rc4'` commit are both still there, thanks to `--keep-empty`.
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passes at the branch tip. It also passes at `rng: Fix build with SPL/TPL`, the last commit that changes code: the one after it is empty and the rest are doc or binman link/comment changes. I built those two points rather than all 52 commits, since no commit had a conflict or a changed delta.
+- **Branches:** I created `cherry-547b4d3bba7e-v2` locally, and `ci/cherry-547b4d3bba7e` is now at `74e84618a85d`, so GitLab should start a new MR pipeline.
+- **One difference on the MR:** the remote branch used to end at the merge commit. My local branch also had a `pickman: Record cherry-pick of 51 commits from us/main` commit on top, and the push sent the whole branch, so the MR now includes it. Other pickman MR branches and `ci/master` carry these record commits too, so it looks expected, but tell me if you'd rather drop it.
+
+**Suggested MR reply:**
+
+> Rebased onto the latest ci/master (cc153a4ea79e). There were no conflicts: the 8 new upstream commits (the sspi/pmc command work) don't touch any file in this series. `git show --stat` is identical for all 52 commits before and after the rebase, and the empty list_guid[] and efi-2026-10-rc4 merge commits are kept. The sandbox build passes with buildman.
+
+The Gmail and Google Calendar connectors still need authorising in your claude.ai connector settings; I didn't need them for this.
+
+---
+
