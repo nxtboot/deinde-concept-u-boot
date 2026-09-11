@@ -99659,3 +99659,40 @@ All three commits are cherry-picked onto the `cherry-7a347e80b6c3` branch, which
 
 ---
 
+### Review: 2026-09-11
+
+Branch: cherry-7a347e80b6c3
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all 32bit ARM platforms, play, samus_tpl, samus,...
+
+### Conversation log
+MR !1333 is fixed: I force-pushed the correct stm32 commits back to the MR branch, which starts a new pipeline.
+
+**Why it looked behind:** the remote branch `cherry-7a347e80b6c3` had been overwritten with commits that don't belong to this MR. It pointed at `df2c4c65f138`, which is from the `mpfs-cpu-repick` branch: two PolarFire SoC commits (`aab34eb04e50`, `6c40a784c87e`) and 11 pickman record commits for other MRs. That branch is based on `f43fdb0b8365`, 484 commits behind ci/master. It was probably pushed from the wrong checkout during the previous pipeline-fix attempt. The three stm32 commits were no longer on the remote at all.
+
+**Rebase:** my local `cherry-7a347e80b6c3` (`a587d383ad18`) still had the correct commits and was already on ci/master (`cdb69d147480`). `git rebase --keep-empty ci/master` reported "up to date", so nothing changed:
+
+| Commit | Subject | Delta |
+|---|---|---|
+| af7676f45890 | ram: stm32mp1: bound the invalid-argument message in stm32mp1_ddr_subcmd() | 1 file, +2/-2 (same as before) |
+| 6006f2f3b7ce | ARM: stm32mp2: fix TAMP_FWU_BOOT_IDX_MASK/OFFSET definition | 1 file, +3/-3 (same as before) |
+| 9901c0318428 | Merge tag 'u-boot-stm32-20260831' | empty merge, kept |
+| a587d383ad18 | pickman: Record cherry-pick of 3 commits from us/main | pickman record |
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passed.
+
+**Review comment:** the only comment is the bot's pipeline-fix report, which asks for no code change. The fix for that pipeline was to re-run it, and the new pipeline does that on the right code.
+
+**Push:** I created `cherry-7a347e80b6c3-v2` at `a587d383ad18` and force-pushed with `pickman push-branch cherry-7a347e80b6c3 -r ci -f` (`df2c4c65f138...a587d383ad18`, forced update).
+
+Your local `mpfs-cpu-repick` branch has an unpushed commit `97c58f7a6ef8` ("pickman: Record pipeline fix for cherry-7a347e80b6c3") on top of the commits that ended up on this MR's branch. Please check how that branch got pushed here, so the same pickman step doesn't overwrite another MR.
+
+**Suggested reply for the MR:**
+
+> The branch had been overwritten with commits that don't belong to this MR (PolarFire SoC CPU commits and pickman records from another branch, based on a master 484 commits old), so the MR looked behind and no longer contained the stm32 changes. I restored the correct branch: the three cherry-picked commits (af7676f45890, 6006f2f3b7ce and the empty merge 9901c0318428) plus the pickman record, on current ci/master. The rebase was a no-op, the deltas are unchanged and the sandbox build passes. The earlier pipeline failures were runner disk and lab problems, so the pipeline this push starts should show the real result.
+
+The Gmail and Google Calendar connectors need authorising in your claude.ai connector settings before they can be used. They weren't needed for this task.
+
+---
+
