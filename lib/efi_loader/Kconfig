@@ -572,21 +572,45 @@ config EFI_SCROLL_ON_CLEAR_SCREEN
 config EFI_LOG
 	bool "Enable logging of EFI operations"
 	select BLOBLIST
+	imply CMD_EFIDEBUG
 	help
 	  This enables maintaining a log of EFI boot-time services, useful for
-	  debugging. It keeps track of some of the calls which are made, so far
-	  just those related to memory allocation.
+	  debugging. It records the calls which are made, along with their
+	  arguments, what they returned and how long they took. Use
+	  'efidebug log' to show the records and the bootstage report for a
+	  summary.
+
+config EFI_LOG_ON_EXIT
+	bool "Show the EFI log when the app leaves boot services"
+	depends on EFI_LOG
+	help
+	  Show the log when the application calls ExitBootServices(), which is
+	  the last chance to see it: the application does not return, so
+	  'efidebug log' can no longer be used.
+
+	  This is how to trace a full OS boot, where the loader hands over to
+	  a kernel and never comes back. Expect a great deal of output, and
+	  make sure CONFIG_EFI_LOG_SIZE is large enough that the summary does
+	  not report dropped records.
 
 config EFI_LOG_SIZE
 	hex "Size of EFI log"
 	depends on EFI_LOG
-	default 0x4000
+	default 0x10000
 	help
 	   Sets the size of the EFI log in bytes. The log is stored in the
 	   bloblist so if its size is insufficient, U-Boot will raise an error.
+	   It must fit alongside the other blobs, so BLOBLIST_SIZE (or
+	   BLOBLIST_SIZE_RELOC where that is used) has to leave room for it.
 
-	   The amount of space needed depends on the EFI app being run. When
-	   space runes out, further EFI calls will not be logged.
+	   The amount of space needed depends on the EFI app being run. A
+	   record costs around 70 bytes, so the default holds roughly a
+	   thousand calls: enough for a small app, but an operating system
+	   loading a kernel makes far more than that.
+
+	   When space runs out, further EFI calls are not logged. The count of
+	   those is shown by the summary in the bootstage report, so raise this
+	   until that line goes away rather than guessing.
 
 endmenu
 

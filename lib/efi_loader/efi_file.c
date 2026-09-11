@@ -9,6 +9,7 @@
 
 #include <charset.h>
 #include <efi_loader.h>
+#include <efi_log.h>
 #include <log.h>
 #include <malloc.h>
 #include <mapmem.h>
@@ -318,12 +319,17 @@ static efi_status_t EFIAPI efi_file_open(struct efi_file_handle *this,
 					 u64 attributes)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p, \"%ls\", %llx, %llu", this, new_handle,
 		  file_name, open_mode, attributes);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_OPEN, 3,
+			    (u64)map_to_sysmem(this), open_mode, attributes);
 
 	ret = efi_file_open_int(this, new_handle, file_name, open_mode,
 				attributes);
+
+	efi_loge_call(ofs, ret, 0);
 
 	return EFI_EXIT(ret);
 }
@@ -348,9 +354,12 @@ static efi_status_t EFIAPI efi_file_open_ex(struct efi_file_handle *this,
 					    struct efi_file_io_token *token)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p, \"%ls\", %llx, %llu, %p", this, new_handle,
 		  file_name, open_mode, attributes, token);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_OPEN_EX, 3,
+			    (u64)map_to_sysmem(this), open_mode, attributes);
 
 	if (!token) {
 		ret = EFI_INVALID_PARAMETER;
@@ -366,6 +375,8 @@ static efi_status_t EFIAPI efi_file_open_ex(struct efi_file_handle *this,
 	}
 
 out:
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -386,21 +397,34 @@ efi_status_t efi_file_close_int(struct efi_file_handle *file)
 
 static efi_status_t EFIAPI efi_file_close(struct efi_file_handle *file)
 {
+	efi_status_t ret;
+	int ofs;
+
 	EFI_ENTRY("%p", file);
-	return EFI_EXIT(efi_file_close_int(file));
+	ofs = efi_logs_call(EFILP_FILE, EFILF_CLOSE, 1,
+			    (u64)map_to_sysmem(file));
+	ret = efi_file_close_int(file);
+	efi_loge_call(ofs, ret, 0);
+
+	return EFI_EXIT(ret);
 }
 
 static efi_status_t EFIAPI efi_file_delete(struct efi_file_handle *file)
 {
 	struct file_handle *fh = to_fh(file);
 	efi_status_t ret = EFI_SUCCESS;
+	int ofs;
 
 	EFI_ENTRY("%p", file);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_DELETE, 1,
+			    (u64)map_to_sysmem(file));
 
 	if (set_blk_dev(fh) || fs_unlink(fh->path))
 		ret = EFI_WARN_DELETE_FAILURE;
 
 	file_close(fh);
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -616,10 +640,16 @@ static efi_status_t EFIAPI efi_file_read(struct efi_file_handle *this,
 					 efi_uintn_t *buffer_size, void *buffer)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p, %p", this, buffer_size, buffer);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_READ, 2,
+			    (u64)map_to_sysmem(this),
+			    buffer_size ? (u64)*buffer_size : 0);
 
 	ret = efi_file_read_int(this, buffer_size, buffer);
+
+	efi_loge_call(ofs, ret, buffer_size ? (u64)*buffer_size : 0);
 
 	return EFI_EXIT(ret);
 }
@@ -640,8 +670,11 @@ static efi_status_t EFIAPI efi_file_read_ex(struct efi_file_handle *this,
 					    struct efi_file_io_token *token)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p", this, token);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_READ_EX, 1,
+			    (u64)map_to_sysmem(this));
 
 	if (!token) {
 		ret = EFI_INVALID_PARAMETER;
@@ -656,6 +689,8 @@ static efi_status_t EFIAPI efi_file_read_ex(struct efi_file_handle *this,
 	}
 
 out:
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -716,10 +751,16 @@ static efi_status_t EFIAPI efi_file_write(struct efi_file_handle *this,
 					  void *buffer)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p, %p", this, buffer_size, buffer);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_WRITE, 2,
+			    (u64)map_to_sysmem(this),
+			    buffer_size ? (u64)*buffer_size : 0);
 
 	ret = efi_file_write_int(this, buffer_size, buffer);
+
+	efi_loge_call(ofs, ret, buffer_size ? (u64)*buffer_size : 0);
 
 	return EFI_EXIT(ret);
 }
@@ -740,8 +781,11 @@ static efi_status_t EFIAPI efi_file_write_ex(struct efi_file_handle *this,
 					     struct efi_file_io_token *token)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p", this, token);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_WRITE_EX, 1,
+			    (u64)map_to_sysmem(this));
 
 	if (!token) {
 		ret = EFI_INVALID_PARAMETER;
@@ -756,6 +800,8 @@ static efi_status_t EFIAPI efi_file_write_ex(struct efi_file_handle *this,
 	}
 
 out:
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -774,8 +820,11 @@ static efi_status_t EFIAPI efi_file_getpos(struct efi_file_handle *file,
 {
 	efi_status_t ret = EFI_SUCCESS;
 	struct file_handle *fh = to_fh(file);
+	int ofs;
 
 	EFI_ENTRY("%p, %p", file, pos);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_GETPOS, 1,
+			    (u64)map_to_sysmem(file));
 
 	if (fh->isdir) {
 		ret = EFI_UNSUPPORTED;
@@ -784,6 +833,8 @@ static efi_status_t EFIAPI efi_file_getpos(struct efi_file_handle *file,
 
 	*pos = fh->offset;
 out:
+	efi_loge_call(ofs, ret, ret == EFI_SUCCESS ? *pos : 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -830,10 +881,15 @@ static efi_status_t EFIAPI efi_file_setpos(struct efi_file_handle *file,
 					   u64 pos)
 {
 	efi_status_t ret = EFI_SUCCESS;
+	int ofs;
 
 	EFI_ENTRY("%p, %llu", file, pos);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_SETPOS, 2,
+			    (u64)map_to_sysmem(file), pos);
 
 	ret = efi_file_setpos_int(file, pos);
+
+	efi_loge_call(ofs, ret, 0);
 
 	return EFI_EXIT(ret);
 }
@@ -846,8 +902,12 @@ static efi_status_t EFIAPI efi_file_getinfo(struct efi_file_handle *file,
 	struct file_handle *fh = to_fh(file);
 	efi_status_t ret = EFI_SUCCESS;
 	u16 *dst;
+	int ofs;
 
 	EFI_ENTRY("%p, %pUs, %p, %p", file, info_type, buffer_size, buffer);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_GETINFO, 2,
+			    (u64)map_to_sysmem(file),
+			    buffer_size ? (u64)*buffer_size : 0);
 
 	if (!file || !info_type || !buffer_size ||
 	    (*buffer_size && !buffer)) {
@@ -944,6 +1004,8 @@ static efi_status_t EFIAPI efi_file_getinfo(struct efi_file_handle *file,
 	}
 
 error:
+	efi_loge_call(ofs, ret, buffer_size ? (u64)*buffer_size : 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -955,8 +1017,11 @@ static efi_status_t EFIAPI efi_file_setinfo(struct efi_file_handle *file,
 	struct file_handle *fh = to_fh(file);
 	efi_status_t ret = EFI_UNSUPPORTED;
 	char *new_file_name = NULL, *new_path = NULL;
+	int ofs;
 
 	EFI_ENTRY("%p, %pUs, %zu, %p", file, info_type, buffer_size, buffer);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_SETINFO, 2,
+			    (u64)map_to_sysmem(file), (u64)buffer_size);
 
 	if (!guidcmp(info_type, &efi_file_info_guid)) {
 		struct efi_file_info *info = (struct efi_file_info *)buffer;
@@ -1045,6 +1110,8 @@ static efi_status_t EFIAPI efi_file_setinfo(struct efi_file_handle *file,
 out:
 	free(new_path);
 	free(new_file_name);
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -1085,10 +1152,15 @@ static efi_status_t efi_file_flush_int(struct efi_file_handle *this)
 static efi_status_t EFIAPI efi_file_flush(struct efi_file_handle *this)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p", this);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_FLUSH, 1,
+			    (u64)map_to_sysmem(this));
 
 	ret = efi_file_flush_int(this);
+
+	efi_loge_call(ofs, ret, 0);
 
 	return EFI_EXIT(ret);
 }
@@ -1109,8 +1181,11 @@ static efi_status_t EFIAPI efi_file_flush_ex(struct efi_file_handle *this,
 					     struct efi_file_io_token *token)
 {
 	efi_status_t ret;
+	int ofs;
 
 	EFI_ENTRY("%p, %p", this, token);
+	ofs = efi_logs_call(EFILP_FILE, EFILF_FLUSH_EX, 1,
+			    (u64)map_to_sysmem(this));
 
 	if (!token) {
 		ret = EFI_INVALID_PARAMETER;
@@ -1125,6 +1200,8 @@ static efi_status_t EFIAPI efi_file_flush_ex(struct efi_file_handle *this,
 	}
 
 out:
+	efi_loge_call(ofs, ret, 0);
+
 	return EFI_EXIT(ret);
 }
 
@@ -1238,9 +1315,16 @@ static efi_status_t EFIAPI
 efi_open_volume(struct efi_simple_file_system_protocol *this,
 		struct efi_file_handle **root)
 {
-	EFI_ENTRY("%p, %p", this, root);
+	efi_status_t ret;
+	int ofs;
 
-	return EFI_EXIT(efi_open_volume_int(this, root));
+	EFI_ENTRY("%p, %p", this, root);
+	ofs = efi_logs_call(EFILP_SIMPLE_FS, EFILS_OPEN_VOLUME, 1,
+			    (u64)map_to_sysmem(this));
+	ret = efi_open_volume_int(this, root);
+	efi_loge_call(ofs, ret, 0);
+
+	return EFI_EXIT(ret);
 }
 
 efi_status_t

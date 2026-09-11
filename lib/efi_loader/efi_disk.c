@@ -15,6 +15,8 @@
 #include <event.h>
 #include <efi_driver.h>
 #include <efi_loader.h>
+#include <efi_log.h>
+#include <mapmem.h>
 #include <fs_legacy.h>
 #include <log.h>
 #include <part.h>
@@ -65,7 +67,13 @@ struct efi_disk_obj {
 static efi_status_t EFIAPI efi_disk_reset(struct efi_block_io *this,
 			char extended_verification)
 {
+	int ofs;
+
 	EFI_ENTRY("%p, %x", this, extended_verification);
+	ofs = efi_logs_call(EFILP_BLOCK_IO, EFILB_RESET, 1,
+			    (u64)map_to_sysmem(this));
+	efi_loge_call(ofs, EFI_SUCCESS, 0);
+
 	return EFI_EXIT(EFI_SUCCESS);
 }
 
@@ -172,6 +180,7 @@ static efi_status_t EFIAPI efi_disk_read_blocks(struct efi_block_io *this,
 {
 	void *real_buffer = buffer;
 	efi_status_t r;
+	int ofs;
 
 	if (!this)
 		return EFI_INVALID_PARAMETER;
@@ -205,6 +214,8 @@ static efi_status_t EFIAPI efi_disk_read_blocks(struct efi_block_io *this,
 
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,
 		  buffer_size, buffer);
+	ofs = efi_logs_call(EFILP_BLOCK_IO, EFILB_READ_BLOCKS, 3,
+			    (u64)map_to_sysmem(this), lba, (u64)buffer_size);
 
 	r = efi_disk_rw_blocks(this, media_id, lba, buffer_size, real_buffer,
 			       EFI_DISK_READ);
@@ -212,6 +223,8 @@ static efi_status_t EFIAPI efi_disk_read_blocks(struct efi_block_io *this,
 	/* Copy from bounce buffer to real buffer if necessary */
 	if ((r == EFI_SUCCESS) && (real_buffer != buffer))
 		memcpy(buffer, real_buffer, buffer_size);
+
+	efi_loge_call(ofs, r, 0);
 
 	return EFI_EXIT(r);
 }
@@ -238,6 +251,7 @@ static efi_status_t EFIAPI efi_disk_write_blocks(struct efi_block_io *this,
 {
 	void *real_buffer = buffer;
 	efi_status_t r;
+	int ofs;
 
 	if (!this)
 		return EFI_INVALID_PARAMETER;
@@ -274,12 +288,17 @@ static efi_status_t EFIAPI efi_disk_write_blocks(struct efi_block_io *this,
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,
 		  buffer_size, buffer);
 
+	ofs = efi_logs_call(EFILP_BLOCK_IO, EFILB_WRITE_BLOCKS, 3,
+			    (u64)map_to_sysmem(this), lba, (u64)buffer_size);
+
 	/* Populate bounce buffer if necessary */
 	if (real_buffer != buffer)
 		memcpy(real_buffer, buffer, buffer_size);
 
 	r = efi_disk_rw_blocks(this, media_id, lba, buffer_size, real_buffer,
 			       EFI_DISK_WRITE);
+
+	efi_loge_call(ofs, r, 0);
 
 	return EFI_EXIT(r);
 }
@@ -300,7 +319,13 @@ static efi_status_t EFIAPI efi_disk_write_blocks(struct efi_block_io *this,
  */
 static efi_status_t EFIAPI efi_disk_flush_blocks(struct efi_block_io *this)
 {
+	int ofs;
+
 	EFI_ENTRY("%p", this);
+	ofs = efi_logs_call(EFILP_BLOCK_IO, EFILB_FLUSH_BLOCKS, 1,
+			    (u64)map_to_sysmem(this));
+	efi_loge_call(ofs, EFI_SUCCESS, 0);
+
 	return EFI_EXIT(EFI_SUCCESS);
 }
 

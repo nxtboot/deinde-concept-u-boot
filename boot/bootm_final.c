@@ -7,6 +7,7 @@
 
 #include <bootm.h>
 #include <bootstage.h>
+#include <efi_log.h>
 #include <event.h>
 #include <acpi/acpi_table.h>
 #include <dm/root.h>
@@ -36,6 +37,7 @@ void bootm_final(int flag)
 	bootstage_stash_default();
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_REPORT))
 		bootstage_report();
+	efi_log_summary();
 
 	board_quiesce_devices();
 
