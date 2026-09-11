@@ -99301,3 +99301,237 @@ So the MR is now back to its intended content; nothing from the stray head neede
 
 ---
 
+## 2026-09-08: us/main
+
+Branch: cherry-561ae28cb56a
+
+Commits:
+- 561ae28cb56a fs/squashfs: fix integer overflow in directory table allocation
+- 4750bcfe857c test: squashfs: add directory table overflow regression test
+- 658fc6aee957 Merge patch series "fs/squashfs: fix directory table integer overflow"
+
+### Conversation log
+Clean tree. Creating the branch and cherry-picking the first commit.
+
+The first cherry-pick hit conflicts. I need the conflict state, plus the already-applied check on ci/master for all three subjects — these are independent, so I'll run them together.
+
+Function body is identical to upstream, so commit 1 is correct. Commit 2 applied cleanly. Now the stat comparison and build for it — independent, both now.
+
+Commit 2 matches exactly and builds. Only the merge commit remains; the final log check and build depend on it landing, so just the merge pick now.
+
+Merge commit is in with its original message and cherry-pick tag. Final verification: the log check and the full build are independent, so both go together.
+
+All done. Branch `cherry-561ae28cb56a` is checked out, based on ci/master, with all 3 commits present and ready to push.
+
+## Final status
+
+**Build:** ok — sandbox builds clean via buildman after each commit and at the end (0 warnings, 0 errors).
+
+**Commits on the branch:**
+```
+14540e773620 Merge patch series "fs/squashfs: fix directory table integer overflow"
+4296f077db78 test: squashfs: add directory table overflow regression test
+47b500538495 fs/squashfs: fix integer overflow in directory table allocation
+```
+
+**Fix-ups made:**
+- **Commit 1** (`fs/squashfs: fix integer overflow ...`) conflicted in `sqfs_read_directory_table()` in fs/squashfs/sqfs.c. ci/master already has the `metablks_count = -1; goto out;` handling in the two malloc-failure branches (part of what the upstream patch adds), so the two sides overlapped. I resolved it by keeping the incoming `__builtin_mul_overflow()` checks on top of the existing error handling, and amended a one-line note onto the commit message. I confirmed the resulting function body is byte-identical to the upstream version at 561ae28cb56a.
+- **Merge commit** was empty relative to mainline 1 (as expected), so git stopped rather than committing; I committed it with `--allow-empty` using the prepared message, which preserves the original merge text and the `(cherry picked from commit 658fc6ae...)` line.
+
+**Deltas:**
+- Commit 1: 13+/2- vs original 19+/4-. This is more than the 20% threshold on paper, but the difference is exactly the 6 lines of `metablks_count = -1` handling already on ci/master — same file, and the final code matches upstream exactly, so I did not treat it as a failed pick.
+- Commit 2: identical (75+ in the same new test file).
+- Merge: empty, as intended.
+
+Note: the clang diagnostics that appeared on sqfs.c (`asm/unaligned.h` not found, etc.) are just the editor LSP lacking U-Boot's include paths — not real errors; buildman is the authoritative check and it passed.
+
+---
+
+### Pipeline fix: 2026-09-08 (attempt 1)
+
+Branch: cherry-561ae28cb56a
+
+Failed jobs:
+- build all other platforms (world_build)
+- efi-x86_64-uboot-iso (sjg-lab)
+- bpif3 (sjg-lab)
+- nanopi-m5 (sjg-lab)
+- colibrimx8 (sjg-lab)
+- nyan-big (sjg-lab)
+- pcduino3 (sjg-lab)
+- xu3 (sjg-lab)
+- snow (sjg-lab)
+- rpi4 (sjg-lab)
+- kevin (sjg-lab)
+- rpi3z (sjg-lab)
+- coral (sjg-lab)
+- ff3399 (sjg-lab)
+- bob (sjg-lab)
+- rpi2 (sjg-lab)
+- bpi (sjg-lab)
+- opi_pc2 (sjg-lab)
+- minnowmax (sjg-lab)
+- jerry (sjg-lab)
+- link64 (sjg-lab)
+- pcduino3_nano (sjg-lab)
+- opi_pc (sjg-lab)
+- rpi3 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and a few of the job logs to find the root cause.
+
+The world build fails in arch/x86/cpu/ivybridge/sdram.o, which is unrelated to squashfs. Let me get the actual compiler error and look at the lab job logs (these are independent, so all at once).
+
+Quick status: all the evidence is in, so I'm wrapping up with the report — no code change is warranted.
+
+## Result: infrastructure failures, no code change made
+
+Branch `cherry-561ae28cb56a-fix1` is created locally, pointing at the same head as `cherry-561ae28cb56a` (00e45a773be5). Tree is clean, sandbox builds fine.
+
+### Why nothing on this branch is responsible
+
+The branch touches only `fs/squashfs/sqfs.c` (13+/2-) and a new `test_sqfs_overflow.py`. None of the 24 failures involve squashfs, and every one traces to the runner host **ellesmere** having problems in the 22:10–22:32 window.
+
+**1. 22 lab jobs (bob, bpi, bpif3, colibrimx8, coral, ff3399, jerry, kevin, link64, minnowmax, nanopi-m5, nyan-big, opi_pc, opi_pc2, pcduino3, pcduino3_nano, rpi2, rpi3, rpi3z, rpi4, snow, xu3)** — all died before U-Boot ever ran:
+
+```
+labgrid-client: Error: place <board> is acquired by a different user (kea/labgrid), use --kick if you are sure
+```
+
+Every labgrid place was already held by `kea/labgrid`, so `u-boot-test-getrole --configure` failed with exit 3 and no artifacts were produced. Lab lock contention, not a test failure.
+
+**2. build all other platforms** — the runner disk was full. The log has 21 lines of:
+
+```
+mkdir: cannot create directory '.tmp_16364xx': No space left on device
+```
+
+These are the Kbuild `try-run` temp dirs used by `cc-option`/`cc-disable-warning`. U-Boot's Makefile (lines 926 and 1024) does `cc-disable-warning, address-of-packed-member`; when the probe can't create its temp dir it silently fails, the `-Wno-...` flag is dropped, and the pre-existing packed-member accesses in `arch/x86/cpu/ivybridge/sdram.c:78,81` (`&pei_data->scrambler_seed` on `struct __packed pei_data`) become `-Werror` errors. That code hasn't changed since the `<common.h>` removal series, and `chromebook_link` builds cleanly on this branch locally with buildman (gcc 14.2). The error is an artefact of the disk-full condition.
+
+**3. efi-x86_64-uboot-iso** — `test_distro_ubuntu_iso_uboot` timed out waiting for `Started gdm.service`, but the actual failure line is:
+
+```
+[    0.221544] Initramfs unpacking failed: invalid magic at start of compressed archive
+```
+
+U-Boot did its job (found the bootflow, loaded vmlinuz and a 75 MB initrd from the ISO 9660 partition, started the kernel). Per the test's docstring, the `efi-x86_64-uboot-iso` role *rebuilds the destination ISO on the runner* via `scripts/ubuntu-iso-to-uboot.py` before QEMU boots — on ellesmere, whose disk was full at the time. A truncated initrd from that rewrite explains the bad-magic error exactly, and the `/casper/initrd` read taking ~2 minutes is consistent with a struggling host. The kernel/initrd come from ISO 9660, not squashfs, so the squashfs change is not on this path.
+
+### Recommendation
+
+Free space on ellesmere and clear the stale `kea/labgrid` place acquisitions, then retry the pipeline. No commit on the MR needs amending.
+
+---
+
+### Review: 2026-09-08
+
+Branch: cherry-561ae28cb56a
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) build all other platforms, efi-x86_64-uboot-iso, bpif3...
+
+### Conversation log
+The single "review comment" is the bot's own pipeline-fix report (attempt 1), which concluded that all 24 failures were infrastructure problems on the runner host and that no code change is warranted. Let me check the branch state before deciding whether anything needs doing.
+
+Pushed: the MR branch now sits at 410fb906b494 and GitLab will start a fresh pipeline. That was the final step — nothing remains that needs another tool call.
+
+## Summary
+
+**The one review comment is not actionable code-wise.** It is the bot's own "Pipeline fix (attempt 1)" report, which already concluded that all 24 failed jobs were runner-host problems on `ellesmere` (labgrid places held by `kea/labgrid`, disk full breaking the Kbuild `cc-disable-warning` probe, and a corrupt initrd from the ISO rewrite) and recommended retrying the pipeline. The branch only touches `fs/squashfs/sqfs.c` and the new `test_sqfs_overflow.py`; none of the failures involve squashfs. So no source change was made.
+
+**What I did:**
+- Checked out `cherry-561ae28cb56a`. Found that the pipeline-fix record commit (410fb906b494, `.pickman-history` only) had never been pushed — the remote was still at 00e45a773be5, so the pipeline had not actually been retried.
+- Verified the build. First run failed in `examples/rust` because the cargo cache in `/tmp/pickman/examples/rust` had a linker-script path baked in from a `/tmp/pickman-wt` worktree that no longer exists. That is stale local state, unrelated to the branch; after removing that directory, `buildman -L --board sandbox -w -o /tmp/pickman` builds clean (0 warnings, 0 errors).
+- Created local branch `cherry-561ae28cb56a-v2` at HEAD (same content as `cherry-561ae28cb56a` and `-fix1`; no new commits).
+- Force-pushed to `ci/cherry-561ae28cb56a` (00e45a773be5 → 410fb906b494), which triggers a new MR pipeline. MR title untouched.
+
+**Suggested reply to post on the MR:**
+
+> The pipeline-fix report identified all 24 failures as infrastructure problems on the ellesmere runner (labgrid places held by kea/labgrid, disk full breaking the Kbuild cc-disable-warning probe, and a corrupt initrd from the on-runner ISO rewrite). None involve the squashfs change on this branch, so no code change is needed. The branch has been re-pushed unchanged to retry the pipeline; sandbox builds clean locally. If the lab jobs fail again with "place is acquired by a different user", the stale kea/labgrid acquisitions still need clearing on the runner.
+
+One thing to flag: if the new pipeline hits the same labgrid or disk-space errors, that confirms the runner still needs attention, and re-pushing again won't help until it is fixed.
+
+---
+
+### Review: 2026-09-08
+
+Branch: cherry-561ae28cb56a
+
+Comments addressed:
+
+
+### Conversation log
+I'll check the current tree state and where the branch sits relative to ci/master.
+
+Only pytest separators, no real markers. Everything checks out, so the one remaining action is the force push to the MR branch.
+
+Pushed: `ci/cherry-561ae28cb56a` moved 410fb906b494 → aa3b994f8a9e (forced), which triggers a fresh MR pipeline. That was the last action; nothing else is outstanding.
+
+## Summary
+
+**Result:** rebase onto ci/master is complete, verified and pushed. Branch `cherry-561ae28cb56a` (and the identical local `cherry-561ae28cb56a-v3`) now sits 6 ahead / 0 behind ci/master at aa3b994f8a9e. MR title untouched.
+
+**State on arrival:** the previous session had already run `git rebase --keep-empty ci/master`, resolved the conflict and created `-v3`, but was cut off while waiting on the builds, so the remote was still at the pre-rebase head 410fb906b494. I picked up from there rather than redoing the rebase.
+
+**Rebased commits:**
+```
+aa3b994f8a9e pickman: Record review handling for cherry-561ae28cb56a
+1b543ef14e29 pickman: Record pipeline fix for cherry-561ae28cb56a
+0c272eda2a65 pickman: Record cherry-pick of 3 commits from us/main
+1e4d27bc7833 Merge patch series "fs/squashfs: fix directory table integer overflow"   (empty, kept)
+734d855fb36d test: squashfs: add directory table overflow regression test
+3d6fff9b8975 fs/squashfs: fix integer overflow in directory table allocation
+```
+
+**Conflict:** only in `.pickman-history` — ci/master gained the `cherry-964ad5b5c91b` squashfs series and its history records, and both sides append to that file. Resolution keeps both sets of records; I confirmed there are no real conflict markers (a first grep flagged `====` lines, but those are pytest separators quoted in the log, not markers) and `git diff --check` is clean.
+
+**Delta checks:** per-commit stats are identical to the pre-rebase commits — 13+/2- in `fs/squashfs/sqfs.c`, 75+ in the new `test_sqfs_overflow.py`, empty merge. The fs/ diff `ci/master..branch` is byte-for-byte the same as commit 1's diff, so the other squashfs series on ci/master did not interfere with the pick.
+
+**Builds:** `buildman -L --board sandbox -w -o /tmp/pickman` passes (0 warnings, 0 errors) at commit 1 (3d6fff9b8975) and at the branch head. The intermediate test/merge/history commits change no compiled code.
+
+**Suggested reply to post on the MR:**
+
+> Rebased onto current master (git rebase --keep-empty). The only conflict was in .pickman-history, where master had picked up the cherry-964ad5b5c91b squashfs series' records alongside this branch's; both are kept. The three code commits applied cleanly and their diffs are unchanged (13+/2- in sqfs.c, 75+ new test, empty merge preserved). Sandbox builds clean at each code commit. The branch has been force-pushed to retry the pipeline — if the lab jobs again report "place is acquired by a different user (kea/labgrid)" or disk-full errors on ellesmere, that runner still needs attention independently of this MR.
+
+One thing to flag: now that master also carries the other squashfs series, if the new pipeline shows a *squashfs* test failure (rather than the earlier infrastructure errors), that would be worth a look as a possible interaction between the two series — nothing in the static diff suggests one, but the tests are the real check.
+
+---
+
+### Review: 2026-09-11
+
+Branch: cherry-561ae28cb56a
+
+Comments addressed:
+
+
+### Conversation log
+I'll check the tree state and where the branch sits relative to ci/master.
+
+I rebased the branch onto ci/master with no conflicts, and both builds pass. I force-pushed it to `ci/cherry-561ae28cb56a`, moving it from aa3b994f8a9e to 44fbc9ee5bd1, which starts a new MR pipeline. The branch is now 7 commits ahead of ci/master and 0 behind. The local `cherry-561ae28cb56a` is checked out, and `cherry-561ae28cb56a-v4` points to the same commit (-v2 and -v3 already existed). I left the MR title alone.
+
+**What changed on ci/master:** 16 new commits, all from the `efi-log-work` series (the EFI loader, `include/efi_log.h`, `lib/uuid.c`, the sandbox defconfig and an EFI log test). None of it touches squashfs or `.pickman-history`, so `git rebase --keep-empty ci/master` applied all 7 commits cleanly.
+
+**Rebased commits:**
+```
+44fbc9ee5bd1 pickman: Record review handling for cherry-561ae28cb56a
+5d7cdcf8dd3b pickman: Record review handling for cherry-561ae28cb56a
+234aa3772733 pickman: Record pipeline fix for cherry-561ae28cb56a
+9f195227cae2 pickman: Record cherry-pick of 3 commits from us/main
+41f5286f8888 Merge patch series "fs/squashfs: fix directory table integer overflow"   (empty, kept)
+82cdcd23e57f test: squashfs: add directory table overflow regression test
+9383d42895ea fs/squashfs: fix integer overflow in directory table allocation
+```
+
+**Delta check:** each commit's changes match the commit before the rebase exactly:
+- 13+/2- in `fs/squashfs/sqfs.c`
+- 75+ in `test_sqfs_overflow.py`
+- the merge is still empty
+- the four pickman commits add only to `.pickman-history` (195+)
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passes at the squashfs fix commit (9383d42895ea) and at the head. The commits in between change no compiled code.
+
+**Suggested reply to post on the MR:**
+
+> Rebased onto current master (git rebase --keep-empty). Master had only picked up the efi-log-work series, which doesn't touch squashfs, so there were no conflicts. The commits are unchanged: 13+/2- in sqfs.c, the 75-line new test, and the empty merge is kept. Sandbox builds clean. I've force-pushed the branch to start a new pipeline. If the lab jobs fail again with "place is acquired by a different user (kea/labgrid)" or disk-full errors on ellesmere, the runner itself still needs fixing; that isn't caused by this MR.
+
+---
+
