@@ -247,6 +247,8 @@ This second example is running on coral, an x86 Chromebook::
 See also
 --------
 
+* :doc:`sspi<sspi>` for sending commands to a SPI device by hand, when it has
+  no driver
 * :doc:`mtdparts<mtdparts>` for splitting a flash device into named partitions
 * :doc:`cbfsinit<cbfsinit>` for reading a coreboot filesystem out of a flash
   device which the chipset maps into memory

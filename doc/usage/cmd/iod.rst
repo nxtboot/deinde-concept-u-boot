@@ -95,3 +95,5 @@ See also
 * :doc:`md<md>` for displaying memory rather than I/O space
 * :doc:`mm<mm>`, :doc:`nm<nm>` for reading and modifying memory interactively
 * :doc:`axi<axi>` for reading an AXI bus, another separate address space
+* :doc:`pmc<pmc>` for a decoded view of the power-management registers which
+  live in I/O space

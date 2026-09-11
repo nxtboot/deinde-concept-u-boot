@@ -138,3 +138,8 @@ or lowercase hexadecimal format. Both are valid and will be processed
 correctly. Similarly, when reading data with ``i3c read``, the data will be
 retrieved in the specified length and can include multiple bytes, all
 formatted in the same way.
+
+See also
+--------
+
+* :doc:`sspi<sspi>` for the same sort of low-level access to a SPI bus

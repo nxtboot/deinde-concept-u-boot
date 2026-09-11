@@ -7,6 +7,7 @@
 
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 #include <power/acpi_pmc.h>
 
 static int get_pmc_dev(struct udevice **devp)
@@ -61,21 +62,26 @@ static struct cmd_tbl cmd_pmc_sub[] = {
 	U_BOOT_CMD_MKENT(info, 0, 1, do_pmc_info, "", ""),
 };
 
-static int do_pmc(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_pmc(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct cmd_tbl *cp;
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (argc < 2) /* no subcommand */
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	cp = find_cmd_tbl(argv[1], &cmd_pmc_sub[0], ARRAY_SIZE(cmd_pmc_sub));
 	if (!cp)
 		return CMD_RET_USAGE;
 
-	return cmd_invoke(cp, flag, argc, argv);
+	return cmd_invoke(cp, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	pmc, 2, 1, do_pmc, "Power-management controller info",
 	"info - read state and show info about the PMC\n"
 	"pmc init - read state from the PMC\n"

@@ -98,11 +98,13 @@ obj-$(CONFIG_CMD_IO) += io.o
 endif
 obj-$(CONFIG_CMD_MBR) += mbr.o
 obj-$(CONFIG_CMD_PINMUX) += pinmux.o
+obj-$(CONFIG_CMD_PMC) += pmc.o
 obj-$(CONFIG_CMD_PWM) += pwm.o
 obj-$(CONFIG_CMD_READ) += rw.o
 obj-y += sb.o
 obj-$(CONFIG_CMD_SETEXPR) += setexpr.o
 obj-$(CONFIG_CMD_SMBIOS) += smbios.o
+obj-$(CONFIG_CMD_SPI) += sspi.o
 obj-$(CONFIG_CMD_TEMPERATURE) += temperature.o
 obj-$(CONFIG_CMD_TIMER) += timer.o
 obj-$(CONFIG_CMD_TPM_V1) += tpm.o

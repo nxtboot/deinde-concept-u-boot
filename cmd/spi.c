@@ -11,6 +11,7 @@
 #include <command.h>
 #include <dm.h>
 #include <errno.h>
+#include <getopt.h>
 #include <spi.h>
 
 /*-----------------------------------------------------------------------
@@ -96,11 +97,16 @@ done:
  * The command prints out the hexadecimal string received via SPI.
  */
 
-int do_spi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_spi(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	char  *cp = 0;
 	uchar tmp;
 	int   j;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/*
 	 * We use the last specified parameters, unless new ones are
@@ -109,7 +115,7 @@ int do_spi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (freq == 0)
 		freq = 1000000;
 
-	if ((flag & CMD_FLAG_REPEAT) == 0)
+	if ((gs->cmd_flag & CMD_FLAG_REPEAT) == 0)
 	{
 		if (argc < 2)
 			return CMD_RET_USAGE;
@@ -132,6 +138,11 @@ int do_spi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 			bitlen = dectoul(argv[2], NULL);
 		if (argc >= 4) {
 			cp = argv[3];
+			if (strlen(cp) > MAX_SPI_BYTES * 2) {
+				printf("Too many bytes (max %d)\n",
+				       MAX_SPI_BYTES);
+				return 1;
+			}
 			for(j = 0; *cp; j++, cp++) {
 				tmp = *cp - '0';
 				if(tmp > 9)
@@ -163,7 +174,7 @@ int do_spi(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 /***************************************************/
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	sspi,	5,	1,	do_spi,
 	"SPI utility command",
 	"[<bus>:]<cs>[.<mode>][@<freq>] <bit_len> <dout> - Send and receive bits\n"
