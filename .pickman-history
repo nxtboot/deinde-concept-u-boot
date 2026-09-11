@@ -99635,3 +99635,27 @@ The Gmail and Google Calendar connectors still need authorising in your claude.a
 
 ---
 
+## 2026-09-11: us/main
+
+Branch: cherry-7a347e80b6c3
+
+Commits:
+- 7a347e80b6c3 ram: stm32mp1: bound the invalid-argument message in stm32mp1_ddr_subcmd()
+- 62ea65e54ac7 ARM: stm32mp2: fix TAMP_FWU_BOOT_IDX_MASK/OFFSET definition
+- cc8c034e78eb Merge tag 'u-boot-stm32-20260831' of https://git.u-boot-project.org/u-boot/custodians/u-boot-stm
+
+### Conversation log
+All three commits are cherry-picked onto the `cherry-7a347e80b6c3` branch, which is based on `ci/master` and ready to push. The final sandbox build passes with no warnings or errors.
+
+| Original | Cherry-picked | Subject | Delta |
+|---|---|---|---|
+| 7a347e80b6c3 | af7676f45890 | ram: stm32mp1: bound the invalid-argument message in stm32mp1_ddr_subcmd() | 1 file, +2/-2 (identical) |
+| 62ea65e54ac7 | 6006f2f3b7ce | ARM: stm32mp2: fix TAMP_FWU_BOOT_IDX_MASK/OFFSET definition | 1 file, +3/-3 (identical) |
+| cc8c034e78eb | 9901c0318428 | Merge tag 'u-boot-stm32-20260831' of https://git.u-boot-project.org/u-boot/custodians/u-boot-stm | empty |
+
+- **Merge commit:** it came out empty because its only changes are the two commits above, which were already picked. I committed it with `--allow-empty` so the merge message and the `(cherry picked from ...)` line are kept.
+- **Fix-ups:** none were needed and there were no conflicts.
+- **Deltas:** the two regular commits change exactly the same files and line counts as the originals.
+
+---
+
