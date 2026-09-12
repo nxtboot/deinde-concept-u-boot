@@ -152,6 +152,7 @@ See also
 * :doc:`read<read>` for reading blocks from a partition rather than from the
   start of the drive
 * :doc:`write<write>` for writing blocks to a partition
-* *scsi*, *usb* and *nvme* for the same set of sub-commands on other kinds of
-  drive
+* :doc:`nvme<nvme>` for the same set of sub-commands on an NVMe namespace,
+  along with the scan and detail which that interface provides
+* *scsi* and *usb* for the same set of sub-commands on other kinds of drive
 * *diskboot* for loading and starting an image held on an IDE drive

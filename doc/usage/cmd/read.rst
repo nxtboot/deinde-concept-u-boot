@@ -56,3 +56,4 @@ See also
   without passing them through memory first
 * :doc:`ide<ide>` for reading blocks from an IDE drive without going through a
   partition
+* :doc:`nvme<nvme>` for the same on an NVMe namespace
