@@ -78,6 +78,9 @@ endif
 obj-$(CONFIG_CMD_MX_CYCLIC) += mdc.o mwc.o
 obj-$(CONFIG_CMD_RANDOM) += random.o
 endif
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_NVME) += nvme.o
+endif
 obj-$(CONFIG_CMD_PART) += part.o
 ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_OSD) += osd.o
