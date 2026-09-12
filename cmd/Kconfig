@@ -1428,6 +1428,7 @@ config CMD_GPT_RENAME
 config CMD_IDE
 	bool "ide - Support for IDE drivers"
 	depends on !COMPILE_TEST
+	select GETOPT
 	select IDE
 	help
 	  Provides an 'ide' command which allows accessing the IDE drive,
