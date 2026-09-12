@@ -33,6 +33,11 @@ int do_ide(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 			puts("\nReset IDE: ");
 			ret = uclass_find_first_device(UCLASS_IDE, &dev);
+			if (ret || !dev) {
+				printf("No IDE controller\n");
+				return CMD_RET_FAILURE;
+			}
+
 			ret = device_remove(dev, DM_REMOVE_NORMAL);
 			if (!ret)
 				ret = device_chld_unbind(dev, NULL);
