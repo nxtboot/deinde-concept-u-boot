@@ -84,7 +84,20 @@ static int bls_getfile(struct pxe_context *ctx, const char *file_path,
 		       ulong *sizep)
 {
 	struct bls_info *info = ctx->userdata;
+	const char *subdir = info->bflow->subdir;
+	char path[256];
 	int ret;
+
+	/*
+	 * Paths in an entry are relative to the directory which holds
+	 * loader/entries, so put back the prefix the entry was found under.
+	 * The prefix keeps its trailing '/', so drop the leading one here.
+	 */
+	if (subdir && strcmp(subdir, "/")) {
+		snprintf(path, sizeof(path), "%s%s", subdir,
+			 *file_path == '/' ? file_path + 1 : file_path);
+		file_path = path;
+	}
 
 	/* Allow up to 1GB */
 	*sizep = 1 << 30;
@@ -376,6 +389,13 @@ static int bls_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 		return log_msg_ret("try", ret);
 	}
 
+	/* Remember the prefix, so entry paths can be resolved against it */
+	if (prefix) {
+		bflow->subdir = strdup(prefix);
+		if (!bflow->subdir)
+			return log_msg_ret("sub", -ENOMEM);
+	}
+
 	size = bflow->size;
 
 	/* Read the file */
@@ -431,8 +451,23 @@ static int bls_load_files(struct udevice *dev, struct bootflow *bflow,
 		return log_msg_ret("ctx", ret);
 
 	if (!already_loaded) {
+		char *fdtfile = NULL;
+
+		/*
+		 * A BLS entry names its device tree outright, so there is no
+		 * fdtdir to expand.  pxe_load_files() takes ownership of the
+		 * string and only loads an FDT when it is given one.
+		 */
+		if (label->fdt) {
+			fdtfile = strdup(label->fdt);
+			if (!fdtfile) {
+				pxe_destroy_ctx(pxe_ctx);
+				return log_msg_ret("fdt", -ENOMEM);
+			}
+		}
+
 		/* Load files (kernel, initrd, FDT) */
-		ret = pxe_load_files(pxe_ctx, label, NULL);
+		ret = pxe_load_files(pxe_ctx, label, fdtfile);
 		if (ret) {
 			pxe_destroy_ctx(pxe_ctx);
 			return log_msg_ret("load", ret);

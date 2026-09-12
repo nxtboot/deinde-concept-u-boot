@@ -1974,7 +1974,8 @@ static int bootflow_cmd_bls(struct unit_test_state *uts)
 			   test_first ? "Test Boot" : "Rescue Boot");
 	if (IS_ENABLED(CONFIG_BLK_LUKS))
 		ut_assert_nextline("Encrypted: no");
-	ut_assert_nextline("Subdir:    (none)");
+	/* the entry was found at the root of the partition */
+	ut_assert_nextline("Subdir:    /");
 	ut_assert_nextline("Filename:  /loader/entries/%s",
 			   test_first ? "6.8.0.conf" : "6.8.0-rescue.conf");
 	ut_assert_skip_to_line("OS:        %s",
