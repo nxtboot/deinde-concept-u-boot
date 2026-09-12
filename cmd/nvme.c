@@ -29,8 +29,11 @@ static int do_nvme(struct cmd_tbl *cmdtp, int flag, int argc,
 
 			ret = blk_get_device(UCLASS_NVME, nvme_curr_dev,
 					     &udev);
-			if (ret < 0)
+			if (ret < 0) {
+				printf("\nnvme device %d not available\n",
+				       nvme_curr_dev);
 				return CMD_RET_FAILURE;
+			}
 
 			nvme_print_info(udev);
 
