@@ -1745,6 +1745,7 @@ config CMD_NVME
 	bool "nvme"
 	depends on NVME
 	default y if NVME
+	select GETOPT
 	help
 	  NVM Express device support
 
