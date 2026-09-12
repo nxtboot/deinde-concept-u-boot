@@ -99535,3 +99535,103 @@ I rebased the branch onto ci/master with no conflicts, and both builds pass. I f
 
 ---
 
+## 2026-09-11: us/main
+
+Branch: cherry-547b4d3bba7e
+
+Commits:
+- 547b4d3bba7e fix non-existing sysam.it domain
+- 65305d0e4505 MAINTAINERS: Use proper Orphan status marking
+- f92bd784f6ce test: boot: measurement: Fix compilation for non-sandbox builds
+- 67a095a68968 rng: Fix build with SPL/TPL
+- 8932bcad73ed lib: correct list_guid[] array
+- ece567bb1176 doc: arch/mips: update link for Buildroot toolchain
+- 228396e1d3fa doc: arch/x86: fix "link" to IRQ router DT binding
+- 602e7cf2a330 doc: develop: sending_patches: fix links to pw-am.sh
+- e680470aa028 doc: arch/x86: fix URL to em100
+- c97ac8320c03 doc: arch/x86: update link to DediProg SO8 Testclip
+- d3e750326e02 doc: arch/x86: update SFI link
+- faf64eb09d38 doc: arch/x86: update MP link
+- f908d7e194f2 doc: arch/x86: update link to SeaBIOS
+- 3b17ef9f7121 doc: arch/x86: update link to ACPI
+- a4f9127fbece doc: arch/x86: manual_boot: update links to slides
+- ffd5c0b97cef doc: develop: uefi: update link to ipxe git repo
+- f4fbff0ca712 doc: board/amlogic: jethub-j100: update product page
+- 1a33ee41ecd2 doc: board/amlogic: jethub-j80: use redirect link directly
+- 92d1f3a9cfb3 doc: develop: sending_patches: update link to Email Clients and Patches
+- 15047044e948 doc: develop: sending_patches: update link to GPL license
+- fbb5cbcd2b2c doc: usage/pxe: use redirect link
+- be813f05d4c1 doc: board/google: chromebook_link: update link to blobs
+- 600a84021faa doc: arch/sh: remove squatted URL
+- c591468702e8 doc: develop/coccinelle: update links
+- 9fc196b86db0 doc: develop/coccinelle: remove dead link in supplemental documentation
+- f5557884081b doc: board/nxp: mx6ullevk: replace broken link
+- 013b6ad3366d doc: arch/arc: update link
+- 20ce3517c7e9 doc: develop/uefi: stop tripping linkcheck
+- 7b782149cbae doc: board/allwinner: update link to MTD utils
+- 1adeb6092daa doc: chromium: update link to Developer Mode
+- 24482940d843 doc: chromium: update Firmware porting guide link
+- 8da6bfccb1a2 doc: chromium: update links to slides
+- d8c262c67396 doc: develop/driver-model: fs_firmware_loader: update link
+- a825b90a5cab doc: board/tbs: update link to TRM
+- a923eaa5b104 doc: bootstd: update link to BSL
+- 761180c42541 doc: learn/talks: remove dead links to slides
+- 1a0d76fba120 doc: build/gen_compile_commands: update link to point to the right page
+- cbbead5525fe doc: board/highbank: update links to cxmanage and ipmitool tools
+- 85b40750e202 doc: board/siemens: iot2050: update links to files on GitHub
+- 4757678c70cb doc: develop/tests_writing: update links to new GitLab
+- f71f7d7c8b4d doc: board/renesas: update clone instructions to use new GitLab
+- 8794b964d771 doc: fix broken links to mailing lists
+- 43c547d971ea doc: index: update link to mailing list info
+- ba75d9b70193 doc: develop/bootstd: fix link to distro_boot
+- 94d70f58b497 doc: develop/sending_patches: remove mention to the test mailing list
+- 2c359d8eef09 doc: chromium/chainload: update instructions on booting on Snow
+- b6cb1f742b23 doc: develop/sending_patches: use link from ozlabs.org mailman archive
+- c60dee22fcb0 doc: switch to HTTPS for a few links
+- ab7700ce3ce3 binman: btool: bootgen: update link to user guide
+- fadc33895ef5 binman: gbb: update link
+- 3f19667468fb Merge tag 'efi-2026-10-rc4' of https://git.u-boot-project.org/u-boot/custodians/u-boot-efi
+
+### Conversation log
+All 51 commits are on branch `cherry-547b4d3bba7e`, based on ci/master. Nothing has been pushed or merged.
+
+**Build:** the sandbox build passes with no warnings or errors. The buildman self-tests also pass (503 tests), which I ran because one commit changes `tools/buildman/func_test.py`.
+
+**Deltas:** 47 of the regular commits match their originals in files and line counts. The other three differ because of the fix-ups below, and all changes are small.
+
+**Fix-ups (each amended with a one-line `[Fix-up: ...]` note in the commit message):**
+1. **65305d0e4505 MAINTAINERS: Use proper Orphan status marking:** the docstring in `tools/buildman/board.py` is laid out differently in our tree. I kept our version and changed only 'Orphaned' to 'Orphan'. The other files applied unchanged, so the stat still matches.
+2. **67a095a68968 rng: Fix build with SPL/TPL:** our `drivers/Makefile` has an extra `debug/` line next to the one being changed. I kept it and moved the `rng/` line as the commit intends (+1/-1, same as the original).
+3. **8932bcad73ed lib: correct list_guid[] array:** this is now an **empty commit**. Our `lib/uuid.c` has a different `list_guid[]` layout, and its partition-GUID block already ends in the right place, so the bug it fixes isn't present here.
+4. **3f19667468fb Merge tag 'efi-2026-10-rc4':** this is an empty commit, as expected for a merge. It hit the same `lib/uuid.c` conflict, which I resolved by keeping our version.
+
+**Build frequency:** I ran the build once after all the picks rather than after each one. Apart from the first four commits, everything is documentation or binman comment/link changes, which don't affect the sandbox build. The first four are all covered by the final build.
+
+**Note:** the Gmail and Google Calendar connectors need authorising in your claude.ai connector settings before they can be used. They weren't needed for this task.
+
+---
+
+### Review: 2026-09-11
+
+Branch: cherry-547b4d3bba7e
+
+Comments addressed:
+
+
+### Conversation log
+I rebased the MR !1332 branch `cherry-547b4d3bba7e` onto the latest `ci/master` (`cc153a4ea79e`) and force-pushed it. There were no conflicts, and the sandbox build passes.
+
+- **Upstream changes:** `ci/master` gained 8 commits, all from the `cmd-cov-hwboot` merge (sspi/pmc commands, their docs and tests). None of them touch a file this branch changes, so the rebase applied cleanly.
+- **Deltas:** I saved `git show --stat` for all 52 commits before and after the rebase, and every one is identical. The empty `lib: correct list_guid[] array` commit and the empty `Merge tag 'efi-2026-10-rc4'` commit are both still there, thanks to `--keep-empty`.
+- **Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passes at the branch tip. It also passes at `rng: Fix build with SPL/TPL`, the last commit that changes code: the one after it is empty and the rest are doc or binman link/comment changes. I built those two points rather than all 52 commits, since no commit had a conflict or a changed delta.
+- **Branches:** I created `cherry-547b4d3bba7e-v2` locally, and `ci/cherry-547b4d3bba7e` is now at `74e84618a85d`, so GitLab should start a new MR pipeline.
+- **One difference on the MR:** the remote branch used to end at the merge commit. My local branch also had a `pickman: Record cherry-pick of 51 commits from us/main` commit on top, and the push sent the whole branch, so the MR now includes it. Other pickman MR branches and `ci/master` carry these record commits too, so it looks expected, but tell me if you'd rather drop it.
+
+**Suggested MR reply:**
+
+> Rebased onto the latest ci/master (cc153a4ea79e). There were no conflicts: the 8 new upstream commits (the sspi/pmc command work) don't touch any file in this series. `git show --stat` is identical for all 52 commits before and after the rebase, and the empty list_guid[] and efi-2026-10-rc4 merge commits are kept. The sandbox build passes with buildman.
+
+The Gmail and Google Calendar connectors still need authorising in your claude.ai connector settings; I didn't need them for this.
+
+---
+
