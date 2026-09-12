@@ -55,6 +55,9 @@ endif
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
 obj-$(CONFIG_CMD_I3C) += i3c.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_IDE) += ide.o
+endif
 ifdef CONFIG_LEGACY_IMAGE_FORMAT
 obj-$(CONFIG_CMD_IMI) += iminfo.o
 endif
