@@ -24,6 +24,7 @@
 #include <nand.h>
 #include <passage.h>
 #include <serial.h>
+#include <ram.h>
 #include <spl.h>
 #include <spl_load.h>
 #include <system-constants.h>
@@ -737,6 +738,15 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	debug(">>" PHASE_PROMPT "board_init_r()\n");
 
 	spl_set_bd();
+
+	/* Do this before anything at all goes into RAM */
+	if (CONFIG_IS_ENABLED(CLEAR_RAM_ON_INIT)) {
+		ret = ram_clear_all();
+		if (ret) {
+			printf(PHASE_PROMPT "Cannot clear RAM (err=%d)\n", ret);
+			hang();
+		}
+	}
 
 	if (IS_ENABLED(CONFIG_SPL_SYS_MALLOC)) {
 		mem_malloc_init(SPL_SYS_MALLOC_START, SPL_SYS_MALLOC_SIZE);

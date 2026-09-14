@@ -212,6 +212,16 @@ config SPL_SYS_DCACHE_OFF
 	help
 	  Do not enable data cache in SPL.
 
+config TPL_SYS_DCACHE_OFF
+	bool "Do not enable dcache in TPL"
+	depends on TPL
+	default SYS_DCACHE_OFF
+	help
+	  Do not enable the data cache in TPL. This is needed where TPL runs
+	  from memory which the memory map does not describe as normal memory,
+	  such as an SRAM in the middle of the device region, since the MMU
+	  cannot be turned on there.
+
 config SYS_ARM_CACHE_CP15
 	bool "CP15 based cache enabling support"
 	depends on !CPU_V7M

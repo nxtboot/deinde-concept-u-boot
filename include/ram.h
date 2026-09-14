@@ -38,4 +38,17 @@ struct ram_ops {
  */
 int ram_get_info(struct udevice *dev, struct ram_info *info);
 
+/**
+ * ram_clear_all() - Zero the whole of RAM
+ *
+ * This probes each RAM device and clears the region it reports. It is for use
+ * in the phase which sets up RAM, before anything is loaded into it, so that
+ * nothing left behind by a previous OS survives into the next one. The amount
+ * cleared and the time taken are printed.
+ *
+ * Return: 0 if OK, -ve if a RAM device cannot be probed or cannot report its
+ * region
+ */
+int ram_clear_all(void);
+
 #endif

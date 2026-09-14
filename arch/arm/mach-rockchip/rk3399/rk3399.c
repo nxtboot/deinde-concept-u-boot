@@ -30,6 +30,45 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_SD] = "/mmc@fe320000",
 };
 
+/*
+ * TPL runs from the SRAM at 0xff8c0000, which the normal map below has as
+ * device memory, so it cannot turn the MMU on with that map. This one has the
+ * SRAM as normal memory instead, which needs 4KB pages since it is not
+ * 2MB-aligned
+ */
+static struct mm_region rk3399_tpl_mem_map[] = {
+	{
+		.virt = 0x0UL,
+		.phys = 0x0UL,
+		.size = 0xf8000000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			 PTE_BLOCK_INNER_SHARE
+	}, {
+		.virt = 0xf8000000UL,
+		.phys = 0xf8000000UL,
+		.size = 0x078c0000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
+		.virt = 0xff8c0000UL,
+		.phys = 0xff8c0000UL,
+		.size = 0x00030000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			 PTE_BLOCK_INNER_SHARE
+	}, {
+		.virt = 0xff8f0000UL,
+		.phys = 0xff8f0000UL,
+		.size = 0x00710000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
+		/* List terminator */
+		0,
+	}
+};
+
 static struct mm_region rk3399_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -50,7 +89,8 @@ static struct mm_region rk3399_mem_map[] = {
 	}
 };
 
-struct mm_region *mem_map = rk3399_mem_map;
+struct mm_region *mem_map = IS_ENABLED(CONFIG_TPL_BUILD) ?
+	rk3399_tpl_mem_map : rk3399_mem_map;
 
 #ifdef CONFIG_XPL_BUILD
 

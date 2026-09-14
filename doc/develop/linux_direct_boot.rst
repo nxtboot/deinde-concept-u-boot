@@ -127,6 +127,36 @@ devicetree, as the binding recommends, avoids this, since U-Boot then only
 fills in the mode and enables the node. The EFI path has the same limitation,
 as the screen information carries no clock details either.
 
+Clearing memory
+---------------
+
+An OS which holds secrets in memory, such as disk-encryption keys, can ask EFI
+firmware to clear all of RAM on the next reset, so that an attacker cannot
+reset the machine and boot something of their own to read them out. The stub
+asks for this on every boot by setting the MemoryOverwriteRequestControl
+variable, if the firmware offers it. A directly booted OS has no such channel,
+so U-Boot offers to clear all of RAM on every boot instead.
+
+The right moment is just after the RAM has been set up, in whichever phase
+does that (TPL on RK3399, SPL on most other SoCs): nothing is in RAM yet, so
+the whole of it can be cleared without working out what is in use, and it
+happens before anything at all, including TF-A or a falcon-mode kernel, is
+loaded. CONFIG_TPL_CLEAR_RAM_ON_INIT (or the SPL or VPL form) makes that
+phase call ram_clear_all() at the start of its board_init_r(), which zeroes
+the region each RAM driver reports and prints the time taken. A boot which
+cannot clear RAM stops.
+
+The cost is that of memset() in that phase, so the caches and the memset()
+implementation both matter. On a 4GB RK3399 board, TPL with the data cache
+off manages about 1.6MB/s, since every store is a separate uncached write;
+with the cache on (the Rockchip TPL and SPL both turn it on as soon as DRAM
+is up) but the byte-at-a-time memset() which TPL uses to save space, it takes
+35s; with the arm64 assembly memset() (CONFIG_TPL_USE_ARCH_MEMSET, which
+uses 'dc zva') it takes 1.0s. The option is off by default, and only a boot
+which follows a session that held secrets needs it, so a request mechanism
+like EFI's, with a persistent flag which the kernel can set, is the natural
+next step.
+
 Other features of the EFI stub
 ------------------------------
 
@@ -161,7 +191,8 @@ do not apply outside EFI:
        refuses the kernel with an error
    * - Reset-attack mitigation (asks the firmware to wipe RAM on the next
        reset)
-     - Not implemented; it needs a persistent flag and a DRAM wipe in SPL
+     - CONFIG_TPL_CLEAR_RAM_ON_INIT (or SPL/VPL) clears all of RAM in the
+       phase which sets it up (see Clearing memory below)
    * - Runtime services, EFI variables, remapping the image read-only
      - Not applicable: these only exist while the stub itself runs
 

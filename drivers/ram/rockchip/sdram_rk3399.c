@@ -3158,13 +3158,21 @@ static int rk3399_dmc_probe(struct udevice *dev)
 		return 0;
 
 	/*
-	 * There is no point in checking the SDRAM size in TPL as it is not
-	 * used, so avoid the code size increment.
+	 * There is no point in checking the SDRAM size in TPL, unless it is
+	 * needed to clear the RAM, so avoid the code size increment. In that
+	 * case report only what can be addressed, since a 4GB board has DRAM
+	 * hidden behind the I/O region at the top.
 	 */
 	if (!IS_ENABLED(CONFIG_TPL_BUILD)) {
 		priv->info.base = CFG_SYS_SDRAM_BASE;
 		priv->info.size = rockchip_sdram_size(
 			(phys_addr_t)&priv->pmugrf->os_reg2);
+	} else if (CONFIG_IS_ENABLED(CLEAR_RAM_ON_INIT)) {
+		size_t size;
+
+		size = rockchip_sdram_size((phys_addr_t)&priv->pmugrf->os_reg2);
+		priv->info.base = CFG_SYS_SDRAM_BASE;
+		priv->info.size = min_t(size_t, size, SDRAM_MAX_SIZE);
 	}
 
 	return 0;

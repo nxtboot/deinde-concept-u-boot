@@ -37,6 +37,37 @@ config VPL_RAM
 	  VPL, enable this option. It might provide a cleaner interface to
 	  setting up RAM (e.g. SDRAM / DDR) within VPL.
 
+config SPL_CLEAR_RAM_ON_INIT
+	bool "Clear all RAM once it has been set up in SPL"
+	depends on SPL_RAM
+	help
+	  Zero the whole of RAM at the start of SPL's board_init_r(), once
+	  the RAM driver has set it up and before anything is loaded into it,
+	  so that nothing left there by a previous operating system, such as
+	  disk-encryption keys, can be read by whatever is booted next. This
+	  is the equivalent of the reset-attack mitigation which an OS can
+	  request from EFI firmware; since a directly booted OS has no way to
+	  request it, it is done on every boot.
+
+	  Enable this only in the phase which actually sets up the RAM and
+	  runs from somewhere else (typically SRAM), since everything in RAM
+	  is lost. Clearing several GB of RAM can take a long time if that
+	  phase has no data cache, so check the cost on the board concerned.
+
+config TPL_CLEAR_RAM_ON_INIT
+	bool "Clear all RAM once it has been set up in TPL"
+	depends on TPL_RAM
+	help
+	  Zero the whole of RAM at the start of TPL's board_init_r(), once
+	  the RAM driver has set it up. See SPL_CLEAR_RAM_ON_INIT for details.
+
+config VPL_CLEAR_RAM_ON_INIT
+	bool "Clear all RAM once it has been set up in VPL"
+	depends on VPL_RAM
+	help
+	  Zero the whole of RAM at the start of VPL's board_init_r(), once
+	  the RAM driver has set it up. See SPL_CLEAR_RAM_ON_INIT for details.
+
 config STM32_SDRAM
 	bool "Enable STM32 SDRAM support"
 	depends on RAM && ARCH_STM32
