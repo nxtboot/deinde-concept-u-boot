@@ -2364,6 +2364,8 @@ out:
 	 */
 	if (IS_ENABLED(CONFIG_EFI_LOG_ON_EXIT) && ret == EFI_SUCCESS)
 		efi_log_show();
+	if (ret == EFI_SUCCESS)
+		efi_count_show();
 
 	return EFI_EXIT(ret);
 }

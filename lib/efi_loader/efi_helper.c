@@ -565,6 +565,8 @@ out:
 	/* Control is returned to U-Boot, disable EFI watchdog */
 	efi_set_watchdog(0);
 
+	efi_count_show();
+
 	return ret;
 }
 
