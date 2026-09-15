@@ -572,6 +572,7 @@ config BOOT_DEFAULTS_FEATURES
 	imply EFI_PARTITION
 	imply ISO_PARTITION
 	imply FS_EXT4
+	imply FS_FAT
 
 config BOOT_DEFAULTS_CMDS
 	bool
