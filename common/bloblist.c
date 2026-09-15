@@ -623,15 +623,14 @@ int bloblist_init(void)
 		addr = IF_ENABLED_INT(CONFIG_BLOBLIST_FIXED,
 				      CONFIG_BLOBLIST_ADDR);
 
+		/*
+		 * SPL moves the bloblist out of SRAM before running TF-A, since
+		 * that removes access to the SRAM, so look where SPL put it
+		 */
 		if (xpl_phase() == PHASE_BOARD_F &&
-		    IS_ENABLED(CONFIG_SPL_BLOBLIST_RELOC)) {
-			ulong addr = IF_ENABLED_INT(CONFIG_SPL_BLOBLIST_RELOC,
-					    CONFIG_SPL_BLOBLIST_RELOC_ADDR);
-
-			log_debug("Using bloblist at %lx\n", addr);
-			bloblist_reloc(map_sysmem(addr, 0),
-				       bloblist_get_total_size());
-		}
+		    IS_ENABLED(CONFIG_SPL_BLOBLIST_RELOC))
+			addr = IF_ENABLED_INT(CONFIG_SPL_BLOBLIST_RELOC,
+					      CONFIG_SPL_BLOBLIST_RELOC_ADDR);
 		log_debug("bloblist addr=%lx\n", addr);
 	}
 
