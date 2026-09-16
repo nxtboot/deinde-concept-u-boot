@@ -306,6 +306,18 @@ int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 	/* Initialise fs_context fields */
 	fc->fs_private = ctx;
 	fc->sb_flags |= SB_I_VERSION;
+
+	/*
+	 * Leave the journal alone with EXT4L_RDONLY. Replaying it means
+	 * writing, and the write cannot be dropped at the block layer: the
+	 * mount then hangs, since jbd2 waits for a commit which never
+	 * happens. Unrecovered metadata is no worse than what the filesystem
+	 * would look like to any other read-only reader.
+	 */
+	if (IS_ENABLED(CONFIG_EXT4L_RDONLY)) {
+		ctx->mask_s_mount_opt |= EXT4_MOUNT_NOLOAD;
+		ctx->vals_s_mount_opt |= EXT4_MOUNT_NOLOAD;
+	}
 	fc->root = (struct dentry *)sb;	/* Hack: store sb for ext4_fill_super */
 
 	buf = malloc(BLOCK_SIZE + 512);
@@ -343,11 +355,21 @@ int ext4l_mount(struct ext4l_state *state, struct udevice *dev,
 	state->mounted = true;
 
 	/*
-	 * Test if device supports writes by writing back the same data.
-	 * If write returns 0, the device is read-only (e.g. LUKS/blkmap_crypt)
+	 * With EXT4L_RDONLY no write ever reaches the medium, so there is
+	 * nothing to find out here and the test would itself be a write. The
+	 * mount stays read-write: ext4 refuses to recover a journal onto a
+	 * device it believes is read-only, and the recovery is wanted, just
+	 * not on the medium.
+	 *
+	 * Otherwise test if device supports writes by writing back the same
+	 * data. If write returns 0, the device is read-only (e.g.
+	 * LUKS/blkmap_crypt)
 	 */
-	if (blk_write(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
-		      2, buf) != 2) {
+	if (IS_ENABLED(CONFIG_EXT4L_RDONLY)) {
+		sb->s_bdev->drop_writes = true;
+		sb->s_flags |= SB_RDONLY;
+	} else if (blk_write(dev, div_u64(part_offset + BLOCK_SIZE, desc->blksz),
+			     2, buf) != 2) {
 		sb->s_bdev->read_only = true;
 		sb->s_flags |= SB_RDONLY;
 	}

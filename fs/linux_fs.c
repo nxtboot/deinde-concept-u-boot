@@ -115,6 +115,23 @@ static int linux_fs_write_block(struct super_block *sb, sector_t block,
 	return 0;
 }
 
+/**
+ * linux_fs_may_write() - Check whether writes should reach the device
+ * @bdev: Block device to write to
+ *
+ * With drop_writes the changes stay in the buffer cache instead, so that a
+ * journal is replayed in memory and the filesystem reads as it will once
+ * recovered, while the medium is left alone. The filesystem still mounts
+ * read-write, since ext4 refuses to recover onto a device it believes is
+ * read-only.
+ *
+ * Return: true if writes should be issued
+ */
+static bool linux_fs_may_write(struct block_device *bdev)
+{
+	return bdev && !bdev->read_only && !bdev->drop_writes;
+}
+
 /*
  * Buffer cache
  *
@@ -285,6 +302,8 @@ int bh_cache_sync(void)
 				struct buffer_head *bh = entry->bh;
 				int err;
 
+				if (!linux_fs_may_write(bh->b_bdev))
+					continue;
 				err = linux_fs_write_block(bh->b_bdev->bd_super,
 							   bh->b_blocknr,
 							   bh->b_size,
@@ -597,6 +616,13 @@ int submit_bh(int op, struct buffer_head *bh)
 			uptodate = 1;
 		}
 	} else if (op_type == REQ_OP_WRITE) {
+		if (!linux_fs_may_write(bh->b_bdev)) {
+			/* The buffer holds the change; see above */
+			clear_buffer_write_io_error(bh);
+			if (bh->b_end_io)
+				bh->b_end_io(bh, 1);
+			return 0;
+		}
 		ret = linux_fs_write_block(sb, bh->b_blocknr, bh->b_size,
 					   bh->b_data);
 		if (ret) {

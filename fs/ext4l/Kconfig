@@ -29,6 +29,25 @@ config EXT4_JOURNAL
 
 	  If unsure, say Y.
 
+config EXT4L_RDONLY
+	bool "Mount ext4 filesystems read-only"
+	depends on FS_EXT4L
+	default y if !EXT4_MBALLOC
+	help
+	  Never write to an ext4 filesystem. Mounting one normally replays its
+	  journal and cleans up orphan inodes, both of which write to the
+	  medium, so a board which only reads a kernel from it still modifies
+	  it on every boot.
+
+	  With this option the filesystem is mounted read-only, its journal is
+	  left alone (as with the 'noload' mount option) and any write which
+	  the filesystem still attempts stays in the buffer cache. An
+	  unrecovered journal means that recent changes are not seen, which is
+	  no worse than what any other read-only reader sees.
+
+	  Say Y unless the board writes to ext4, which also needs
+	  EXT4_MBALLOC.
+
 config EXT4L_DEBUG
 	bool "Enable ext4l debug messages"
 	depends on FS_EXT4L
