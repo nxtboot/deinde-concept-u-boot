@@ -9,12 +9,14 @@ config FS_EXT4L
 	select FS_LINUX
 	select RBTREE
 	select CRC32C
+	select SYS_64BIT_LBA
 	help
 	  This provides support for reading images from the ext4 filesystem,
 	  using code ported from Linux. This is mutually exclusive with
 	  FS_EXT4 (the existing U-Boot ext4 implementation).
 
-	  This requires 64-bit LBA support for proper block counting.
+	  This requires 64-bit LBA support for proper block counting, so
+	  SYS_64BIT_LBA is selected.
 
 config EXT4_JOURNAL
 	bool "Enable ext4 journal support"
