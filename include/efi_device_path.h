@@ -307,6 +307,19 @@ struct efi_device_path *efi_dp_from_file(const struct efi_device_path *dp,
 struct efi_device_path *efi_dp_from_uart(void);
 
 /**
+ * efi_dp_from_dev() - Create a device path for a device
+ *
+ * Construct a device path representing the given device, walking up through
+ * its parents to the root. The caller is responsible for freeing the allocated
+ * memory (e.g. using efi_free())
+ *
+ * @dev: Device to process
+ *
+ * Return: Pointer to the new device path, or NULL on allocation failure
+ */
+struct efi_device_path *efi_dp_from_dev(struct udevice *dev);
+
+/**
  * efi_dp_from_eth() - Create a device path for an Ethernet device
  *
  * Construct a device path representing the given device. The caller is

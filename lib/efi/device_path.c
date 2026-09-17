@@ -859,7 +859,7 @@ struct efi_device_path *efi_dp_from_uart(void)
 	return buf;
 }
 
-struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
+struct efi_device_path *efi_dp_from_dev(struct udevice *dev)
 {
 	void *buf, *start;
 	uint dpsize = 0;
@@ -877,6 +877,11 @@ struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
 	*((struct efi_device_path *)buf) = EFI_DP_END;
 
 	return start;
+}
+
+struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
+{
+	return efi_dp_from_dev(dev);
 }
 
 /**

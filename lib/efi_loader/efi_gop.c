@@ -8,6 +8,7 @@
 #define LOG_CATEGORY LOGC_EFI
 
 #include <dm.h>
+#include <efi_device_path.h>
 #include <efi_loader.h>
 #include <log.h>
 #include <malloc.h>
@@ -25,6 +26,7 @@ static const efi_guid_t efi_gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
  * @mode:	graphical output mode
  * @vdev:	backing video device
  * @bpix:	bits per pixel
+ * @dp:		device path of the video device, installed on the handle
  * @fb:		frame buffer
  */
 struct efi_gop_obj {
@@ -33,6 +35,7 @@ struct efi_gop_obj {
 	struct efi_gop_mode_info info;
 	struct efi_gop_mode mode;
 	struct udevice *vdev;
+	struct efi_device_path *dp;
 	/* Fields we only have access to during init */
 	u32 bpix;
 	void *fb;
@@ -517,6 +520,21 @@ efi_status_t efi_gop_register(void)
 	if (ret != EFI_SUCCESS) {
 		printf("ERROR: Failure adding GOP protocol\n");
 		return ret;
+	}
+
+	/*
+	 * Give the handle a device path so that applications can find out
+	 * which device the display is. Windows opens this before it will use
+	 * the GOP and falls back to text mode without it
+	 */
+	gopobj->dp = efi_dp_from_dev(vdev);
+	if (gopobj->dp) {
+		ret = efi_add_protocol(&gopobj->header, &efi_guid_device_path,
+				       gopobj->dp);
+		if (ret != EFI_SUCCESS) {
+			printf("ERROR: Failure adding GOP device path\n");
+			return ret;
+		}
 	}
 	gopobj->ops.query_mode = gop_query_mode;
 	gopobj->ops.set_mode = gop_set_mode;
