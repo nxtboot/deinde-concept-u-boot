@@ -670,9 +670,23 @@ struct efi_mac_addr {
 } __packed;
 
 #define DEVICE_PATH_TYPE_HARDWARE_DEVICE	0x01
+#  define DEVICE_PATH_SUB_TYPE_PCI		0x01
 #  define DEVICE_PATH_SUB_TYPE_MEMORY		0x03
 #  define DEVICE_PATH_SUB_TYPE_VENDOR		0x04
 #  define DEVICE_PATH_SUB_TYPE_CONTROLLER	0x05
+
+/**
+ * struct efi_device_path_pci - 'PCI Device Path' object
+ *
+ * @dp: header for device-path protocol
+ * @function: PCI function number
+ * @device: PCI device number
+ */
+struct efi_device_path_pci {
+	struct efi_device_path dp;
+	u8 function;
+	u8 device;
+} __packed;
 
 /**
  * struct efi_device_path_memory - 'Memory Mapped Device Path' object
@@ -715,6 +729,7 @@ struct efi_device_path_controller {
 #define EFI_PNP_ID(ID)				(u32)(((ID) << 16) | 0x41D0)
 #define EISA_PNP_ID(ID)				EFI_PNP_ID(ID)
 #define EISA_PNP_NUM(ID)			((ID) >> 16)
+#define EFI_PNP_PCI_ROOT_BRIDGE			0x0a03
 
 struct efi_device_path_acpi_path {
 	struct efi_device_path dp;
