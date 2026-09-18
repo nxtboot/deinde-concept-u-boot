@@ -44,7 +44,7 @@ void downcase(char *str, size_t len)
 struct blk_desc *cur_dev;
 struct disk_partition cur_part_info;
 
-#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
+/* Sector size of the filesystem, or 0 until the boot sector has been read */
 static int fat_sect_size;
 
 static inline u32 sect_to_block(u32 sect, u32 *off)
@@ -64,13 +64,30 @@ static inline u32 sect_to_block(u32 sect, u32 *off)
 	return sect;
 }
 
-static int disk_rw(u32 sect, u32 nr_sect, void *buf, bool read)
+int disk_rw(u32 sect, u32 nr_sect, void *buf, bool read)
 {
 	int ret = 0;
 	u8 *block = NULL;
 	u32 rem, size, s, n;
 	const ulong blksz = cur_part_info.blksz;
 	const lbaint_t start = cur_part_info.start;
+
+	if (!cur_dev)
+		return -1;
+
+	/*
+	 * A sector is a block unless the filesystem says otherwise, which is
+	 * not known until the boot sector has been read
+	 */
+	if (!CONFIG_IS_ENABLED(FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH) ||
+	    !fat_sect_size || fat_sect_size == blksz) {
+		if (read)
+			ret = blk_dread(cur_dev, start + sect, nr_sect, buf);
+		else
+			ret = blk_dwrite(cur_dev, start + sect, nr_sect, buf);
+
+		return ret == nr_sect ? ret : -1;
+	}
 
 	rem = nr_sect * fat_sect_size;
 	/*
@@ -175,40 +192,16 @@ int disk_read(u32 sect, u32 nr_sect, void *buf)
 	return disk_rw(sect, nr_sect, buf, true);
 }
 
-int disk_write(u32 sect, u32 nr_sect, void *buf)
-{
-	return disk_rw(sect, nr_sect, buf, false);
-}
-#else
-int disk_read(u32 block, u32 nr_blocks, void *buf)
-{
-	ulong ret;
-
-	if (!cur_dev)
-		return -1;
-
-	ret = blk_dread(cur_dev, cur_part_info.start + block, nr_blocks, buf);
-
-	if (ret != nr_blocks)
-		return -1;
-
-	return ret;
-}
-#endif /* CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH */
-
 int fat_set_blk_dev(struct blk_desc *dev_desc, struct disk_partition *info)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, buffer, dev_desc->blksz);
 
 	cur_dev = dev_desc;
 	cur_part_info = *info;
+	fat_sect_size = 0;
 
 	/* Make sure it has a valid FAT header */
-#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
-	if (blk_dread(cur_dev, cur_part_info.start, 1, buffer) != 1) {
-#else
 	if (disk_read(0, 1, buffer) != 1) {
-#endif
 		cur_dev = NULL;
 		return -1;
 	}
@@ -714,12 +707,8 @@ read_bootsectandvi(struct boot_sector *bs, struct volume_info *volinfo, int *fat
 		return -1;
 	}
 
-#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
 	fat_sect_size = 0;
-	if (blk_dread(cur_dev, cur_part_info.start, 1, block) != 1) {
-#else
 	if (disk_read(0, 1, block) < 0) {
-#endif
 		debug("Error: reading block\n");
 		ret = -1;
 		goto out_free;
@@ -789,12 +778,10 @@ static int get_fs_info(struct fsdata *mydata)
 	mydata->rootdir_sect = mydata->fat_sect + mydata->fatlength * bs.fats;
 
 	mydata->sect_size = get_unaligned_le16(bs.sector_size);
-#if IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
 	fat_sect_size = mydata->sect_size;
-#endif
 	mydata->clust_size = bs.cluster_size;
 	if (mydata->sect_size != cur_part_info.blksz) {
-		if (!IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)) {
+		if (!CONFIG_IS_ENABLED(FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)) {
 			log_err("FAT sector size mismatch (fs=%u, dev=%lu)\n",
 				mydata->sect_size, cur_part_info.blksz);
 			return -1;
