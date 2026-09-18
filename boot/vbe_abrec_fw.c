@@ -183,8 +183,16 @@ static int abrec_run_spl(struct udevice *blk, struct spl_image_info *image,
 			   NULL, NULL);
 	if (ret)
 		return log_msg_ret("vbe", ret);
-	image->load_addr = spl_get_image_text_base();
-	image->entry_point = image->load_addr;
+
+	/*
+	 * When the FIT starts with ARM Trusted Firmware, the entry point is
+	 * BL31's and U-Boot is reached through it, so leave that alone. Using
+	 * the text base would jump straight to U-Boot at EL3, skipping BL31
+	 */
+	if (image->os != IH_OS_ARM_TRUSTED_FIRMWARE) {
+		image->load_addr = spl_get_image_text_base();
+		image->entry_point = image->load_addr;
+	}
 
 	return 0;
 }

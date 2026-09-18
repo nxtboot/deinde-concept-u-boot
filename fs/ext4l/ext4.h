@@ -3663,6 +3663,43 @@ struct ext4_group_info {
 #define EXT4_MB_GRP_IBITMAP_CORRUPT(grp)	\
 	(test_bit(EXT4_GROUP_INFO_IBITMAP_CORRUPT_BIT, &((grp)->bb_state)))
 
+/**
+ * ext4_grp_ibitmap_bad() - Check a group's inode-bitmap corruption flag
+ *
+ * @grp: Group info, or NULL if the filesystem has none
+ *
+ * This flag lives in the group info, which only the multi-block allocator
+ * sets up. With EXT4_MBALLOC disabled nothing records corruption, so a
+ * missing group info means 'nothing known' rather than 'corrupt', and the
+ * caller carries on to check the bitmap's own checksum.
+ *
+ * Return: true if the bitmap is known to be bad
+ */
+static inline bool ext4_grp_ibitmap_bad(struct ext4_group_info *grp)
+{
+	if (!grp)
+		return IS_ENABLED(CONFIG_EXT4_MBALLOC);
+
+	return EXT4_MB_GRP_IBITMAP_CORRUPT(grp);
+}
+
+/**
+ * ext4_grp_bbitmap_bad() - Check a group's block-bitmap corruption flag
+ *
+ * @grp: Group info, or NULL if the filesystem has none
+ *
+ * See ext4_grp_ibitmap_bad() for what a missing group info means.
+ *
+ * Return: true if the bitmap is known to be bad
+ */
+static inline bool ext4_grp_bbitmap_bad(struct ext4_group_info *grp)
+{
+	if (!grp)
+		return IS_ENABLED(CONFIG_EXT4_MBALLOC);
+
+	return EXT4_MB_GRP_BBITMAP_CORRUPT(grp);
+}
+
 #define EXT4_MB_GRP_WAS_TRIMMED(grp)	\
 	(test_bit(EXT4_GROUP_INFO_WAS_TRIMMED_BIT, &((grp)->bb_state)))
 #define EXT4_MB_GRP_SET_TRIMMED(grp)	\

@@ -77,7 +77,7 @@ static int ext4_validate_inode_bitmap(struct super_block *sb,
 		return 0;
 
 	grp = ext4_get_group_info(sb, block_group);
-	if (!grp || EXT4_MB_GRP_IBITMAP_CORRUPT(grp))
+	if (ext4_grp_ibitmap_bad(grp))
 		return -EFSCORRUPTED;
 
 	ext4_lock_group(sb, block_group);
@@ -279,7 +279,7 @@ void ext4_free_inode(handle_t *handle, struct inode *inode)
 	}
 	if (!(sbi->s_mount_state & EXT4_FC_REPLAY)) {
 		grp = ext4_get_group_info(sb, block_group);
-		if (!grp || unlikely(EXT4_MB_GRP_IBITMAP_CORRUPT(grp))) {
+		if (unlikely(ext4_grp_ibitmap_bad(grp))) {
 			fatal = -EFSCORRUPTED;
 			goto error_return;
 		}

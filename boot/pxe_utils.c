@@ -679,8 +679,8 @@ static int label_run_boot(struct pxe_context *ctx, struct pxe_label *label,
 	 */
 	fmt = genimg_get_format_comp(buf);
 
-	if (IS_ENABLED(CONFIG_CMD_BOOTM) && (fmt == IMAGE_FORMAT_FIT ||
-	    fmt == IMAGE_FORMAT_LEGACY)) {
+	if (CONFIG_IS_ENABLED(LIB_BOOTM) &&
+	    (fmt == IMAGE_FORMAT_FIT || fmt == IMAGE_FORMAT_LEGACY)) {
 		int states;
 
 		states = ctx->restart ? BOOTM_STATE_RESTART : BOOTM_STATE_START;

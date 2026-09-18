@@ -281,7 +281,8 @@ struct block_device {
 	void *bd_disk;
 	struct super_block *bd_super;
 	dev_t bd_dev;
-	bool read_only;
+	bool read_only;			/* device cannot be written */
+	bool drop_writes;		/* writes stay in the buffer cache */
 	struct udevice *bd_blk;		/* U-Boot block device */
 	unsigned long bd_part_start;	/* partition start (in device sectors) */
 };

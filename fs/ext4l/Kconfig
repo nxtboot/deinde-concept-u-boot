@@ -9,12 +9,14 @@ config FS_EXT4L
 	select FS_LINUX
 	select RBTREE
 	select CRC32C
+	select SYS_64BIT_LBA
 	help
 	  This provides support for reading images from the ext4 filesystem,
 	  using code ported from Linux. This is mutually exclusive with
 	  FS_EXT4 (the existing U-Boot ext4 implementation).
 
-	  This requires 64-bit LBA support for proper block counting.
+	  This requires 64-bit LBA support for proper block counting, so
+	  SYS_64BIT_LBA is selected.
 
 config EXT4_JOURNAL
 	bool "Enable ext4 journal support"
@@ -26,6 +28,25 @@ config EXT4_JOURNAL
 	  before committing them to the filesystem.
 
 	  If unsure, say Y.
+
+config EXT4L_RDONLY
+	bool "Mount ext4 filesystems read-only"
+	depends on FS_EXT4L
+	default y if !EXT4_MBALLOC
+	help
+	  Never write to an ext4 filesystem. Mounting one normally replays its
+	  journal and cleans up orphan inodes, both of which write to the
+	  medium, so a board which only reads a kernel from it still modifies
+	  it on every boot.
+
+	  With this option the filesystem is mounted read-only, its journal is
+	  left alone (as with the 'noload' mount option) and any write which
+	  the filesystem still attempts stays in the buffer cache. An
+	  unrecovered journal means that recent changes are not seen, which is
+	  no worse than what any other read-only reader sees.
+
+	  Say Y unless the board writes to ext4, which also needs
+	  EXT4_MBALLOC.
 
 config EXT4L_DEBUG
 	bool "Enable ext4l debug messages"
