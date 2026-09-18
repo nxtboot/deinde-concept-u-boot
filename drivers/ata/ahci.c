@@ -807,10 +807,36 @@ static int ata_scsiop_test_unit_ready(struct ahci_uc_priv *uc_priv,
 	return (uc_priv->ataid[pccb->target]) ? 0 : -EPERM;
 }
 
+/**
+ * ahci_report_luns() - Answer REPORT LUNS for a device with one logical unit
+ *
+ * @pccb: Command block, with a data buffer of at least 16 bytes
+ * Return: 0 if OK, -EINVAL if the buffer is too small
+ */
+static int ahci_report_luns(struct scsi_cmd *pccb)
+{
+	if (pccb->datalen < 16)
+		return -EINVAL;
+	memset(pccb->pdata, 0, 16);
+	pccb->pdata[3] = 8;	/* list length: one 8-byte LUN entry */
+
+	return 0;
+}
+
 static int ahci_scsi_exec(struct udevice *dev, struct scsi_cmd *pccb)
 {
 	struct ahci_uc_priv *uc_priv = dev_get_uclass_priv(dev->parent);
 	int ret;
+
+	/*
+	 * The SCSI layer counts LUNs with REPORT LUNS, which an ATA device
+	 * knows nothing of, so answer it here: it has exactly one LUN. If the
+	 * command fails, the scan falls back to trying every LUN up to the
+	 * limit and finds the same disk on each, since ata_scsiop_inquiry()
+	 * ignores the LUN
+	 */
+	if (pccb->cmd[0] == SCSI_REPORT_LUNS)
+		return ahci_report_luns(pccb);
 
 	switch (pccb->cmd[0]) {
 	case SCSI_READ16:
