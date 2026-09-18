@@ -613,6 +613,20 @@ efi_status_t efi_init_variables(void)
 			return ret;
 	}
 
+	/* A store which survived a warm reset is newer than the storage */
+	if (EFI_VAR_BUF_ADDR) {
+		struct efi_var_file *buf = efi_var_mem_recovered();
+
+		if (buf) {
+			ret = efi_var_apply(buf);
+			free(buf);
+			if (ret != EFI_SUCCESS)
+				log_err("Cannot apply recovered EFI variables\n");
+			else
+				log_info("Recovered EFI variables from memory\n");
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_EFI_VARIABLES_PRESEED)) {
 		ret = efi_var_restore((struct efi_var_file *)
 				      __efi_var_file_begin, true);

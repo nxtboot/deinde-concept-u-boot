@@ -9,6 +9,7 @@
 
 #include <efi_loader.h>
 #include <efi_variable.h>
+#include <malloc.h>
 #include <mapmem.h>
 #include <u-boot/crc.h>
 
@@ -19,6 +20,9 @@
  * relocation during SetVirtualAddressMap().
  */
 static struct efi_var_file __efi_runtime_data *efi_var_buf;
+
+/* Copy of a store found at CONFIG_EFI_VAR_BUF_ADDR, until it is applied */
+static struct efi_var_file *efi_var_recovered;
 static struct efi_var_entry __efi_runtime_data *efi_current_var;
 static const u16 __efi_runtime_rodata vtf[] = u"VarToFile";
 
@@ -245,13 +249,52 @@ efi_var_mem_notify_virtual_address_map(struct efi_event *event, void *context)
 	efi_current_var = NULL;
 }
 
+/**
+ * efi_var_mem_recover() - Keep a copy of a store left behind by the last boot
+ *
+ * With a fixed buffer address, memory which survived a warm reset may still
+ * hold the variable store as the OS left it, including changes it made at
+ * runtime. If the buffer holds a valid store, copy it so that
+ * efi_var_mem_recovered() can hand it out once the variable services are up.
+ */
+static void efi_var_mem_recover(void)
+{
+	struct efi_var_file *buf = efi_var_buf;
+
+	if (buf->reserved || buf->magic != EFI_VAR_FILE_MAGIC ||
+	    buf->length > EFI_VAR_BUF_SIZE ||
+	    buf->length < sizeof(struct efi_var_file) ||
+	    buf->crc32 != crc32(0, (u8 *)buf->var,
+				buf->length - sizeof(struct efi_var_file)))
+		return;
+
+	efi_var_recovered = malloc(buf->length);
+	if (efi_var_recovered)
+		memcpy(efi_var_recovered, buf, buf->length);
+}
+
+struct efi_var_file *efi_var_mem_get_buf(void)
+{
+	return efi_var_buf;
+}
+
+struct efi_var_file *efi_var_mem_recovered(void)
+{
+	struct efi_var_file *buf = efi_var_recovered;
+
+	efi_var_recovered = NULL;
+
+	return buf;
+}
+
 efi_status_t efi_var_mem_init(void)
 {
-	u64 memory;
+	u64 memory = EFI_VAR_BUF_ADDR;
 	efi_status_t ret;
 	struct efi_event *event;
 
-	ret = efi_allocate_pages(EFI_ALLOCATE_ANY_PAGES,
+	ret = efi_allocate_pages(memory ? EFI_ALLOCATE_ADDRESS :
+				 EFI_ALLOCATE_ANY_PAGES,
 				 EFI_RUNTIME_SERVICES_DATA,
 				 efi_size_in_pages(EFI_VAR_BUF_SIZE),
 				 &memory);
@@ -259,6 +302,8 @@ efi_status_t efi_var_mem_init(void)
 		return ret;
 
 	efi_var_buf = map_sysmem(memory, EFI_VAR_BUF_SIZE);
+	if (EFI_VAR_BUF_ADDR)
+		efi_var_mem_recover();
 	memset(efi_var_buf, '\0', EFI_VAR_BUF_SIZE);
 	efi_var_buf->magic = EFI_VAR_FILE_MAGIC;
 	efi_var_buf->length = (uintptr_t)efi_var_buf->var -

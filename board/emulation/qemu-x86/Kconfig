@@ -23,5 +23,6 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	imply VIRTIO_NET
 	imply VIRTIO_BLK
 	imply CMD_SMBIOS
+	imply EFI_RT_VOLATILE_STORE
 
 endif

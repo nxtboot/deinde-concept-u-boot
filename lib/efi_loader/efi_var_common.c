@@ -7,6 +7,7 @@
 
 #define LOG_CATEGORY LOGC_EFI
 
+#include <charset.h>
 #include <efi_loader.h>
 #include <efi_variable.h>
 #include <stdlib.h>
@@ -485,6 +486,99 @@ efi_status_t __maybe_unused efi_var_collect(struct efi_var_file **bufp, loff_t *
 	buf->length = len;
 	*bufp = buf;
 	*lenp = len;
+
+	return EFI_SUCCESS;
+}
+
+/**
+ * var_next() - Find the entry following a variable
+ *
+ * @var: Variable entry
+ * Return: pointer to the next entry (which may be the end of the list)
+ */
+static struct efi_var_entry *var_next(struct efi_var_entry *var)
+{
+	u16 *data = var->name + u16_strlen(var->name) + 1;
+
+	return (struct efi_var_entry *)ALIGN((uintptr_t)data + var->length, 8);
+}
+
+/**
+ * var_is_persistent() - Check if a variable is one the OS may have changed
+ *
+ * These are the non-volatile variables which are not authenticated and not
+ * shim's, the same set which efi_var_restore() loads from a file.
+ *
+ * @var: Variable entry
+ * Return: true if the variable belongs to that set
+ */
+static bool var_is_persistent(const struct efi_var_entry *var)
+{
+	return (var->attr & EFI_VARIABLE_NON_VOLATILE) &&
+		efi_auth_var_get_type(var->name, &var->guid) ==
+		EFI_AUTH_VAR_NONE &&
+		guidcmp(&var->guid, &shim_lock_guid);
+}
+
+/**
+ * buf_find() - Find a variable in a store held in a buffer
+ *
+ * @buf: Store to search
+ * @guid: Vendor GUID of the variable
+ * @name: Name of the variable
+ * Return: entry, or NULL if not found
+ */
+static struct efi_var_entry *buf_find(struct efi_var_file *buf,
+				      const efi_guid_t *guid, const u16 *name)
+{
+	struct efi_var_entry *var, *last;
+
+	last = (struct efi_var_entry *)((u8 *)buf + buf->length);
+	for (var = buf->var; var < last; var = var_next(var)) {
+		if (!guidcmp(&var->guid, guid) && !u16_strcmp(var->name, name))
+			return var;
+	}
+
+	return NULL;
+}
+
+efi_status_t efi_var_apply(struct efi_var_file *buf)
+{
+	struct efi_var_entry *var, *last, *cur;
+	struct efi_var_file *mine;
+	efi_status_t ret;
+
+	if (buf->reserved || buf->magic != EFI_VAR_FILE_MAGIC ||
+	    buf->length > EFI_VAR_BUF_SIZE ||
+	    buf->length < sizeof(struct efi_var_file) ||
+	    buf->crc32 != crc32(0, (u8 *)buf->var,
+				buf->length - sizeof(struct efi_var_file)))
+		return EFI_INVALID_PARAMETER;
+
+	/* Drop persistent variables which the buffer no longer has */
+	mine = efi_var_mem_get_buf();
+	cur = mine->var;
+	while (cur < (struct efi_var_entry *)((u8 *)mine + mine->length)) {
+		if (var_is_persistent(cur) &&
+		    !buf_find(buf, &cur->guid, cur->name))
+			efi_var_mem_del(cur);	/* moves the rest down */
+		else
+			cur = var_next(cur);
+	}
+
+	/* Take every persistent variable in the buffer, replacing ours */
+	last = (struct efi_var_entry *)((u8 *)buf + buf->length);
+	for (var = buf->var; var < last; var = var_next(var)) {
+		if (!var_is_persistent(var) || !var->length)
+			continue;
+		efi_var_mem_del(efi_var_mem_find(&var->guid, var->name, NULL));
+		ret = efi_var_mem_ins(var->name, &var->guid, var->attr,
+				      var->length,
+				      var->name + u16_strlen(var->name) + 1,
+				      0, NULL, var->time, NULL);
+		if (ret != EFI_SUCCESS)
+			return ret;
+	}
 
 	return EFI_SUCCESS;
 }

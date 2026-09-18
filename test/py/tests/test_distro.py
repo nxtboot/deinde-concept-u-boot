@@ -96,6 +96,83 @@ def test_distro_windows(ubman):
     ubman.restart_uboot()
 
 
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win-installed')
+@pytest.mark.restart
+def test_distro_windows_installed(ubman):
+    """Boot an installed Windows 10 through U-Boot's EFI loader
+
+    The 'qemu-x86_64-win-installed' role attaches a disk holding a Windows
+    10 installation (UEFI/GPT) as a SATA disk, in snapshot mode so that the
+    image is never modified. U-Boot finds the ESP
+    and runs EFI/Boot/bootx64.efi, which is the Windows boot manager; that
+    reads the BCD and loads winload, the kernel and the boot drivers from the
+    NTFS volume over the block-IO protocol, then calls ExitBootServices().
+
+    Windows itself writes nothing to the serial port, so the image has a
+    logon script (installed by its autounattend.xml) which prints a marker to
+    COM1 each time a user logs on, and the account logs on automatically.
+    Seeing that marker means the kernel came up from the NTFS volume, the
+    drivers loaded and the desktop is there, which takes a few minutes on
+    KVM.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(600 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win-install')
+@pytest.mark.restart
+def test_distro_windows_install(ubman):
+    """Install Windows 10 from its ISO with U-Boot as the firmware
+
+    The 'qemu-x86_64-win-install' role attaches a blank SATA disk in
+    snapshot mode as the target, and the installer ISO and an unattend CD as
+    SATA CD-ROMs, which U-Boot can boot from now that its AHCI driver handles
+    ATAPI devices.
+
+    On the first boot the blank disk has nothing to boot, so the boot manager
+    falls through to the ISO and asks for a key press. Setup then runs
+    unattended, writing its boot entries through the runtime SetVariable()
+    service, and reboots several times; each time U-Boot boots the disk.
+    The unattend file's first-logon script prints a marker to COM1, which is
+    the sign that the installation completed and Windows logged on. It then
+    powers the VM off.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('bootmgr'):
+        ubman.expect(['Press any key to boot from CD or DVD'])
+        ubman.send('\r')
+
+    with ubman.log.section('setup'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    # Setup copies Windows, reboots into the specialize and OOBE passes and
+    # finally logs on, which is when the marker appears
+    with ubman.log.section('install'):
+        with ubman.temporary_timeout(20 * 60 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
 @pytest.mark.boardspec('colibri-imx8x')
 @pytest.mark.role('colibrimx8')
 @pytest.mark.restart

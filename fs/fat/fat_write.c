@@ -193,27 +193,16 @@ out:
 }
 
 static int total_sector;
-#if !IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)
+
 int disk_write(u32 block, u32 nr_blocks, void *buf)
 {
-	ulong ret;
-
-	if (!cur_dev)
-		return -1;
-
-	if (cur_part_info.start + block + nr_blocks >
-		cur_part_info.start + total_sector) {
+	if (block + nr_blocks > total_sector) {
 		printf("error: overflow occurs\n");
 		return -1;
 	}
 
-	ret = blk_dwrite(cur_dev, cur_part_info.start + block, nr_blocks, buf);
-	if (nr_blocks && ret == 0)
-		return -1;
-
-	return ret;
+	return disk_rw(block, nr_blocks, buf, false);
 }
-#endif /* CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH */
 
 /*
  * Write fat buffer into block device

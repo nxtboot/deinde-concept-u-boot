@@ -97,6 +97,11 @@ efi_status_t efi_query_variable_info_int(u32 attributes,
 
 #define EFI_VAR_BUF_SIZE CONFIG_EFI_VAR_BUF_SIZE
 
+/* Fixed address of the buffer, or 0: the option only exists with a store */
+#define EFI_VAR_BUF_ADDR \
+	(IS_ENABLED(CONFIG_EFI_RT_VOLATILE_STORE) ? \
+	 CONFIG_IF_ENABLED_INT(EFI_RT_VOLATILE_STORE, EFI_VAR_BUF_ADDR) : 0)
+
 /*
  * This constant identifies the file format for storing UEFI variables in
  * struct efi_var_file.
@@ -175,6 +180,37 @@ efi_status_t __maybe_unused efi_var_collect(struct efi_var_file **bufp, loff_t *
  * Return:	status code
  */
 efi_status_t efi_var_restore(struct efi_var_file *buf, bool safe);
+
+/**
+ * efi_var_apply() - Take over the persistent variables in a buffer
+ *
+ * Make the store's non-volatile, non-authenticated variables the same as
+ * those in @buf: variables it has are set or replaced, variables it lacks are
+ * deleted. Volatile, authenticated and shim variables are left as they are.
+ * Used for a store which survived a warm reset, see CONFIG_EFI_VAR_BUF_ADDR.
+ *
+ * @buf: Store to take the variables from
+ * Return: status code
+ */
+efi_status_t efi_var_apply(struct efi_var_file *buf);
+
+/**
+ * efi_var_mem_get_buf() - Get the in-memory variable store
+ *
+ * Return: pointer to the store
+ */
+struct efi_var_file *efi_var_mem_get_buf(void);
+
+/**
+ * efi_var_mem_recovered() - Get a store which survived a warm reset
+ *
+ * Hands over the copy which efi_var_mem_init() made of a valid store found
+ * at CONFIG_EFI_VAR_BUF_ADDR; the caller must free it.
+ *
+ * Return: pointer to the copy, or NULL if there was none or it was already
+ * handed out
+ */
+struct efi_var_file *efi_var_mem_recovered(void);
 
 /**
  * efi_var_from_storage() - read variables
