@@ -250,6 +250,19 @@ finds Windows through the entries U-Boot generates for each disk.
 Windows writes nothing to the serial port at all, so once the kernel starts
 the video console is the only way to see it.
 
+Windows 11 installs the same way, given the TPM 2.0 which its setup insists
+on. QEMU provides one through swtpm::
+
+   swtpm socket --tpm2 --tpmstate dir=/tmp/tpm --ctrl type=unixio,path=/tmp/tpm/sock &
+   qemu-system-x86_64 ... \
+     -chardev socket,id=chrtpm,path=/tmp/tpm/sock -tpmdev emulator,id=tpm0,chardev=chrtpm \
+     -device tpm-tis,tpmdev=tpm0
+
+U-Boot's TCG2 protocol serves it to the boot manager, which measures the
+boot into it. Its boot manager also takes the key press for booting from
+the CD without showing the prompt on the console: press Enter a few times
+once it starts. The disk should be 64 GB, which setup requires.
+
 Current limitations
 -------------------
 

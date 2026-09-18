@@ -1199,6 +1199,26 @@ qemu-x86_64-win-install:
   resource_group: qemu-x86_64-place
   <<: *sjg_lab_slow_dfn
 
+# Boots an installed Windows 11 (SATA disk, snapshot mode, with a TPM) through
+# U-Boot's EFI loader, as far as the boot manager handing over to the kernel
+qemu-x86_64-win11-installed:
+  variables:
+    ROLE: qemu-x86_64-win11-installed
+    TEST_PY_TEST_SPEC: "and test_distro_windows11_installed"
+  resource_group: qemu-x86_64-place
+  <<: *sjg_lab_dfn
+
+# Installs Windows 11 from its ISO with U-Boot as the firmware, with a TPM,
+# onto a blank SATA disk in snapshot mode. About ten minutes, so it lives in
+# sjg-lab-slow like the other installs
+qemu-x86_64-win11-install:
+  variables:
+    ROLE: qemu-x86_64-win11-install
+    TEST_PY_TEST_SPEC: "and test_distro_windows11_install and not installed"
+  timeout: 1h
+  resource_group: qemu-x86_64-place
+  <<: *sjg_lab_slow_dfn
+
 # Boots a rewritten Ubuntu live ISO via U-Boot + BLS, exercising the
 # qemu-efi-iso labgrid writer and test_distro_ubuntu_iso_uboot.
 efi-x86_64-uboot-iso:
