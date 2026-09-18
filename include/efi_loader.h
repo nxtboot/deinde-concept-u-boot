@@ -215,10 +215,32 @@ const char *__efi_nesting(void);
 const char *__efi_nesting_inc(void);
 const char *__efi_nesting_dec(void);
 
+#if CONFIG_IS_ENABLED(EFI_COUNT_CALLS)
+/** Number of EFI calls made by applications since U-Boot started */
+extern ulong efi_call_count;
+
+/**
+ * efi_count_call() - Note that an application has made an EFI call
+ *
+ * This keeps nothing about the call, so costs an increment
+ */
+static inline void efi_count_call(void)
+{
+	efi_call_count++;
+}
+
+/** efi_count_show() - Show how many EFI calls applications have made */
+void efi_count_show(void);
+#else
+static inline void efi_count_call(void) {}
+static inline void efi_count_show(void) {}
+#endif /* EFI_COUNT_CALLS */
+
 /*
  * Enter the u-boot world from UEFI:
  */
 #define EFI_ENTRY(format, ...) do { \
+	efi_count_call(); \
 	assert(__efi_entry_check()); \
 	debug("%sEFI: Entry %s(" format ")\n", __efi_nesting_inc(), \
 		__func__, ##__VA_ARGS__); \

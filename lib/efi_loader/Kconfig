@@ -612,6 +612,26 @@ config EFI_LOG_SIZE
 	   those is shown by the summary in the bootstage report, so raise this
 	   until that line goes away rather than guessing.
 
+config EFI_COUNT_CALLS
+	bool "Count the EFI calls made by applications"
+	help
+	  This counts the calls which an EFI application makes, keeping no
+	  information about them at all. The total is shown when the
+	  application calls ExitBootServices(), or when it returns to U-Boot.
+
+	  Use this to find out how many calls a boot makes when the log cannot
+	  hold them all: CONFIG_EFI_LOG keeps a record of every call in a
+	  buffer sized in advance and silently stops recording once that is
+	  full, whereas counting needs no memory. It also shows what the log
+	  itself costs, which is little (about 0.15s over 100,000 calls), since
+	  counting adds only an increment to each call.
+
+	  The count is taken at the boot-services interface, so it covers the
+	  calls which applications make, plus the few which U-Boot makes
+	  through that interface itself. It leaves out U-Boot's internal use
+	  of the same functions, which is what the log records, so the two
+	  totals are not directly comparable.
+
 endmenu
 
 menu "EFI bootmanager"

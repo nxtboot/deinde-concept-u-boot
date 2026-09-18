@@ -1017,6 +1017,23 @@ itself, such as memory allocations.
 
 See the :doc:`/usage/cmd/efidebug` (*log* subcommand) for more information.
 
+Counting calls
+--------------
+
+Recording a log costs time, enough that it can hide what it is trying to
+measure. Where only the number of calls matters, U-Boot can count them
+instead, keeping nothing about each one::
+
+    CONFIG_EFI_COUNT_CALLS=y
+
+The total is shown when the application calls ExitBootServices(), which is the
+last chance to see it, and again when an application returns to U-Boot.
+
+Unlike the log, the count is taken at the boot-services interface. It covers
+the calls which applications make, plus the few which U-Boot makes through that
+interface itself, but leaves out U-Boot's internal use of the same functions.
+The two totals are therefore not directly comparable.
+
 Miscellaneous
 -------------
 

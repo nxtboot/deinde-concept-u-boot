@@ -32,6 +32,7 @@ obj-$(CONFIG_EFI_HAVE_CAPSULE_SUPPORT) += efi_capsule.o
 obj-$(CONFIG_EFI_CAPSULE_FIRMWARE) += efi_firmware.o
 obj-$(CONFIG_EFI_CAPSULE_AUTHENTICATE) += efi_capsule_key.o
 obj-y += efi_console.o
+obj-$(CONFIG_EFI_COUNT_CALLS) += efi_count.o
 obj-y += efi_device_path.o
 obj-$(CONFIG_EFI_DEVICE_PATH_TO_TEXT) += efi_device_path_to_text.o
 obj-$(CONFIG_EFI_DEVICE_PATH_UTIL) += efi_device_path_utilities.o
