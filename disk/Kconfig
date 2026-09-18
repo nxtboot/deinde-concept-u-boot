@@ -80,6 +80,8 @@ config ISO_PARTITION
 	default y if BOOT_DEFAULTS
 	default y if MIPS || ARCH_TEGRA
 	select PARTITIONS
+	# an El Torito boot image is a 512-byte-sector FAT on 2048-byte media
+	imply FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH
 
 config SPL_ISO_PARTITION
 	bool "Enable ISO partition table for SPL"
