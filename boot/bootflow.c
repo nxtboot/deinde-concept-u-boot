@@ -616,6 +616,13 @@ static int bootflow_check(struct bootflow_iter *iter, struct bootflow *bflow)
 		if (ret)
 			return log_msg_ret("glob", ret);
 
+		/* a global bootmeth has no bootdev to name the flow after */
+		if (!bflow->name) {
+			bflow->name = strdup(iter->method->name);
+			if (!bflow->name)
+				return log_msg_ret("name", -ENOMEM);
+		}
+
 		return 0;
 	}
 

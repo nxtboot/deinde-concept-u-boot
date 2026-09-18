@@ -527,7 +527,7 @@ static int bootflow_system(struct unit_test_state *uts)
 	bootstd_clear_glob();
 	ut_assertok(run_command("bootflow scan -lH", 0));
 	ut_assert_skip_to_line(
-		"  1  efi_mgr      ready   (none)       0          <NULL>                    ");
+		"  1  efi_mgr      ready   (none)       0          efi_mgr                   ");
 	ut_assert_skip_to_line("No more bootdevs");
 	ut_assert_skip_to_line("(2 bootflows, 2 valid)");
 	ut_assert_console_end();
