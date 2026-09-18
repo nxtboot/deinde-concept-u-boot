@@ -536,6 +536,47 @@ static int bootflow_system(struct unit_test_state *uts)
 }
 BOOTSTD_TEST(bootflow_system, UTF_DM | UTF_SCAN_PDATA | UTF_SCAN_FDT |
 	     UTF_CONSOLE);
+
+/* Check that the efi_mgr bootflow is named after the boot option */
+static int bootflow_system_name(struct unit_test_state *uts)
+{
+	const char *cmd = "efidebug boot add -b 0001 windows mmc 0 /bootx64.efi";
+	struct udevice *bootstd, *dev;
+	struct bootflow_iter iter;
+	struct bootflow bflow;
+	bool found = false;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_EFI_BOOTMGR) || !IS_ENABLED(CONFIG_CMD_EFIDEBUG))
+		return -EAGAIN;
+	ut_assertok(uclass_first_device_err(UCLASS_BOOTSTD, &bootstd));
+	ut_assertok(device_bind(bootstd, DM_DRIVER_GET(bootmeth_3efi_mgr),
+				"efi_mgr", 0, ofnode_null(), &dev));
+	ut_assertok(device_probe(dev));
+
+	/* Set up a boot option and make it the boot order */
+	ut_assertok(run_command(cmd, 0));
+	ut_assertok(run_command("efidebug boot order 0001", 0));
+
+	/* The efi_mgr bootflow should be named after that option's label */
+	bootstd_clear_glob();
+	for (ret = bootflow_scan_first(NULL, NULL, &iter, BOOTFLOWIF_ALL,
+				       &bflow);
+	     ret != -ENODEV && ret != -ESHUTDOWN;
+	     ret = bootflow_scan_next(&iter, &bflow)) {
+		if (!bflow.err && !strcmp("efi_mgr", iter.method->name)) {
+			ut_asserteq_str("windows", bflow.name);
+			found = true;
+		}
+		bootflow_free(&bflow);
+	}
+	bootflow_iter_uninit(&iter);
+	ut_assert(found);
+
+	return 0;
+}
+BOOTSTD_TEST(bootflow_system_name, UTF_DM | UTF_SCAN_PDATA | UTF_SCAN_FDT |
+	     UTF_CONSOLE);
 #endif
 
 /* Check disabling a bootmethod if it requests it */
