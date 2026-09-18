@@ -122,6 +122,24 @@ static int efi_mgr_set_name(struct bootflow *bflow, const u16 *bootorder,
 	return 0;
 }
 
+/**
+ * efi_mgr_hunt() - Probe the block devices
+ *
+ * This is a global bootmeth, so no bootdev has been hunted when it runs, yet
+ * the EFI variable store loads from the EFI system partition when it is set
+ * up and the boot manager can only resolve a boot option's device path once
+ * that device has been probed. Hunt the bootdevs which do not need a slow bus
+ * scan, as a bootdev scan would, before either happens.
+ */
+static void efi_mgr_hunt(void)
+{
+	enum bootdev_prio_t prio;
+
+	for (prio = BOOTDEVP_2_INTERNAL_FAST; prio <= BOOTDEVP_4_SCAN_FAST;
+	     prio++)
+		bootdev_hunt_prio(prio, false);
+}
+
 static int efi_mgr_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 {
 	struct efi_mgr_priv *priv = dev_get_priv(dev);
@@ -135,6 +153,7 @@ static int efi_mgr_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 		return 0;
 	}
 
+	efi_mgr_hunt();
 	ret = efi_init_obj_list();
 	if (ret != EFI_SUCCESS)
 		return log_msg_ret("init", -EIO);
