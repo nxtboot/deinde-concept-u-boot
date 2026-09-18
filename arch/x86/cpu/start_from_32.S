@@ -23,7 +23,7 @@
  * Page-table base address - must be 4KB aligned and below 4GB.
  * Uses 24KB total: PML4 (4KB) + PDPT (4KB) + 4 PD tables (4KB each)
  */
-#define PT_BASE		0x80000
+#define PT_BASE		X86_PAGETABLE_BASE
 
 /* ------------------------------------------------------------------ */
 
@@ -96,7 +96,7 @@ _start:
 	/* Zero 24KB */
 	movl	$PT_BASE, %edi
 	xorl	%eax, %eax
-	movl	$(6 * 4096 / 4), %ecx
+	movl	$(X86_PAGETABLE_SIZE / 4), %ecx
 	rep stosl
 
 	/* PML4[0] -> PDPT */

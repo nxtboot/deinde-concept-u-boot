@@ -566,8 +566,8 @@ int cpu_has_64bit(void)
 }
 
 /* Base address for page tables used for 64-bit mode */
-#define PAGETABLE_BASE		0x80000
-#define PAGETABLE_SIZE		(6 * 4096)
+#define PAGETABLE_BASE		X86_PAGETABLE_BASE
+#define PAGETABLE_SIZE		X86_PAGETABLE_SIZE
 
 #define _PRES BIT(0)	/* present */
 #define _RW   BIT(1)	/* write allowed */
