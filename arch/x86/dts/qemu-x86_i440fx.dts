@@ -85,6 +85,12 @@
 		};
 	};
 
+	/* QEMU's TPM (-device tpm-tis), which is not there unless asked for */
+	tpm@fed40000 {
+		compatible = "tcg,tpm-tis-mmio";
+		reg = <0xfed40000 0x5000>;
+	};
+
 };
 
 #include "bootctl.dtsi"
