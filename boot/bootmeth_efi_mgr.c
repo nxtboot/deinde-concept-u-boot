@@ -47,61 +47,74 @@ static int efi_mgr_check(struct udevice *dev, struct bootflow_iter *iter)
 }
 
 /**
+ * efi_mgr_option_label() - Get the label of a boot option, if it is usable
+ *
+ * @num: Boot option number, e.g. 1 for Boot0001
+ * Return: Label as a new UTF-8 string which the caller must free, NULL if the
+ * option does not exist, is not active or cannot be parsed, or on allocation
+ * failure
+ */
+static char *efi_mgr_option_label(u16 num)
+{
+	struct efi_load_option lo;
+	u16 varname[9];
+	efi_uintn_t size;
+	char *name, *ptr;
+	efi_status_t ret;
+	void *data;
+
+	efi_create_indexed_name(varname, sizeof(varname), "Boot", num);
+	data = efi_get_var(varname, &efi_global_variable_guid, &size);
+	if (!data)
+		return NULL;
+	ret = efi_deserialize_load_option(&lo, data, &size);
+	if (ret != EFI_SUCCESS || !(lo.attributes & LOAD_OPTION_ACTIVE)) {
+		free(data);
+		return NULL;
+	}
+
+	name = malloc(utf16_utf8_strlen(lo.label) + 1);
+	if (name) {
+		ptr = name;
+		utf16_utf8_strcpy(&ptr, lo.label);
+		*ptr = '\0';
+	}
+	free(data);
+
+	return name;
+}
+
+/**
  * efi_mgr_set_name() - Name the bootflow after the boot option it will run
  *
  * The boot manager runs BootNext if that is set, else the entries of
- * BootOrder in turn, so use the label of the first of those, e.g. 'virtio 0'
- * or 'ubuntu'. If the option cannot be read the bootflow keeps whatever name
- * the caller gives it.
+ * BootOrder in turn, so use the label of the first of those which is active
+ * and can be parsed, e.g. 'virtio 0' or 'Windows Boot Manager'. That is also
+ * the check that there is something for the boot manager to run.
  *
  * @bflow: Bootflow to name
  * @bootorder: Value of the BootOrder variable
  * @size: Size of @bootorder in bytes
- * Return: 0 if OK, -ENOMEM if out of memory, -ENOENT if there is no option
+ * Return: 0 if OK, -ENOENT if there is no usable boot option
  */
 static int efi_mgr_set_name(struct bootflow *bflow, const u16 *bootorder,
 			    efi_uintn_t size)
 {
-	struct efi_load_option lo;
-	u16 varname[9];
-	efi_uintn_t lo_size;
+	char *name = NULL;
+	efi_uintn_t next_size;
 	u16 *bootnext;
-	void *data;
-	char *name, *ptr;
-	efi_status_t ret;
-	u16 num;
+	int i;
 
 	bootnext = efi_get_var(u"BootNext", &efi_global_variable_guid,
-			       &lo_size);
-	if (bootnext && lo_size == sizeof(*bootnext)) {
-		num = *bootnext;
-	} else if (size >= sizeof(*bootorder)) {
-		num = bootorder[0];
-	} else {
-		free(bootnext);
-		return -ENOENT;
-	}
+			       &next_size);
+	if (bootnext && next_size == sizeof(*bootnext))
+		name = efi_mgr_option_label(*bootnext);
 	free(bootnext);
 
-	efi_create_indexed_name(varname, sizeof(varname), "Boot", num);
-	data = efi_get_var(varname, &efi_global_variable_guid, &lo_size);
-	if (!data)
+	for (i = 0; !name && i < size / sizeof(*bootorder); i++)
+		name = efi_mgr_option_label(bootorder[i]);
+	if (!name)
 		return -ENOENT;
-	ret = efi_deserialize_load_option(&lo, data, &lo_size);
-	if (ret != EFI_SUCCESS) {
-		free(data);
-		return -ENOENT;
-	}
-
-	name = malloc(utf16_utf8_strlen(lo.label) + 1);
-	if (!name) {
-		free(data);
-		return -ENOMEM;
-	}
-	ptr = name;
-	utf16_utf8_strcpy(&ptr, lo.label);
-	*ptr = '\0';
-	free(data);
 
 	free(bflow->name);
 	bflow->name = name;
@@ -115,6 +128,7 @@ static int efi_mgr_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	efi_status_t ret;
 	efi_uintn_t size;
 	u16 *bootorder;
+	int err;
 
 	if (priv->fake_dev) {
 		bflow->state = BOOTFLOWST_READY;
@@ -125,21 +139,20 @@ static int efi_mgr_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	if (ret != EFI_SUCCESS)
 		return log_msg_ret("init", -EIO);
 
-	/* Enable this method if the "BootOrder" UEFI exists. */
+	/* Enable this method if BootOrder or BootNext names a usable option */
 	bootorder = efi_get_var(u"BootOrder", &efi_global_variable_guid,
 				&size);
-	if (bootorder) {
-		int err;
-
-		err = efi_mgr_set_name(bflow, bootorder, size);
-		free(bootorder);
-		if (err == -ENOMEM)
-			return log_msg_ret("name", err);
-		bflow->state = BOOTFLOWST_READY;
-		return 0;
+	if (!bootorder) {
+		bootorder = NULL;
+		size = 0;
 	}
+	err = efi_mgr_set_name(bflow, bootorder, size);
+	free(bootorder);
+	if (err)
+		return log_msg_ret("opt", err);
+	bflow->state = BOOTFLOWST_READY;
 
-	return -EINVAL;
+	return 0;
 }
 
 static int efi_mgr_read_file(struct udevice *dev, struct bootflow *bflow,
