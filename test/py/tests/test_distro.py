@@ -63,6 +63,39 @@ def test_distro(ubman):
 
     ubman.restart_uboot()
 
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win')
+@pytest.mark.restart
+def test_distro_windows(ubman):
+    """Boot the Windows 10 installer ISO through U-Boot's EFI loader
+
+    The 'qemu-x86_64-win' role attaches the Windows ISO as a virtio disk.
+    U-Boot's ISO_PARTITION support exposes the El Torito boot image as a FAT
+    partition and the efi bootmeth runs its EFI/BOOT/BOOTX64.EFI, which is the
+    Windows boot manager. That asks on the console before it will boot from an
+    optical disc, and gives up with EFI_TIMEOUT if nobody answers, so answer
+    it. Then wait for U-Boot's ExitBootServices() report, which shows that the
+    boot manager and winload have read the kernel, HAL, drivers and boot.wim
+    (several hundred MB over the block-IO protocol) and handed over to the
+    kernel. Windows itself writes nothing to the serial port, so that is the
+    last thing the test can see.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('bootmgr'):
+        ubman.expect(['Press any key to boot from CD or DVD'])
+        ubman.send('\r')
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    ubman.restart_uboot()
+
+
 @pytest.mark.boardspec('colibri-imx8x')
 @pytest.mark.role('colibrimx8')
 @pytest.mark.restart

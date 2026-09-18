@@ -52,6 +52,16 @@ struct idt_ptr {
 /* arch/x86/cpu/interrupts.c */
 void set_vector(u8 intnum, void *routine);
 
+/**
+ * do_irq() - Handle a hardware interrupt
+ *
+ * Calls the handler installed with irq_install_handler(), if any, else counts
+ * it as spurious
+ *
+ * @hw_irq: Interrupt vector number (0x20 + IRQ number with the i8259)
+ */
+void do_irq(int hw_irq);
+
 /* Architecture specific functions */
 void mask_irq(int irq);
 void unmask_irq(int irq);

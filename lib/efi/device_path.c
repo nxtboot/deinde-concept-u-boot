@@ -19,6 +19,7 @@
 #include <usb.h>
 #include <mmc.h>
 #include <nvme.h>
+#include <pci.h>
 #include <efi_loader.h>
 #include <part.h>
 #include <u-boot/uuid.h>
@@ -345,6 +346,27 @@ bool efi_dp_is_multi_instance(const struct efi_device_path *dp)
 	return p->sub_type == DEVICE_PATH_SUB_TYPE_INSTANCE_END;
 }
 
+/**
+ * dp_fill_pci() - Add a PCI node for a device on a PCI bus
+ *
+ * @buf: Buffer to write the node to
+ * @dev: Device on the PCI bus
+ * Return: pointer to the position after the node
+ */
+static void *dp_fill_pci(void *buf, struct udevice *dev)
+{
+	struct efi_device_path_pci *pdp = buf;
+	pci_dev_t bdf = dm_pci_get_bdf(dev);
+
+	pdp->dp.type = DEVICE_PATH_TYPE_HARDWARE_DEVICE;
+	pdp->dp.sub_type = DEVICE_PATH_SUB_TYPE_PCI;
+	pdp->dp.length = sizeof(*pdp);
+	pdp->device = PCI_DEV(bdf);
+	pdp->function = PCI_FUNC(bdf);
+
+	return &pdp[1];
+}
+
 __maybe_unused static unsigned int dp_size(struct udevice *dev)
 {
 	uint parent_size, size = 0;
@@ -353,10 +375,17 @@ __maybe_unused static unsigned int dp_size(struct udevice *dev)
 		return sizeof(struct efi_device_path_udevice);
 
 	parent_size = dev_get_parent(dev) ? dp_size(dev_get_parent(dev)) : 0;
+	if (device_is_on_pci_bus(dev))
+		parent_size += sizeof(struct efi_device_path_pci);
 	switch (device_get_uclass_id(dev)) {
 	case UCLASS_ROOT:
 		/* stop traversing parents at this point: */
 		return sizeof(struct efi_device_path_udevice);
+	case UCLASS_PCI:
+		/* A root bus gets an ACPI node; a bridge has its PCI node */
+		if (!device_is_on_pci_bus(dev))
+			size = sizeof(struct efi_device_path_acpi_path);
+		break;
 	case UCLASS_ETH:
 		return parent_size + sizeof(struct efi_device_path_mac_addr);
 	case UCLASS_BLK:
@@ -392,8 +421,11 @@ __maybe_unused static unsigned int dp_size(struct udevice *dev)
 			/* EFI app */
 			size = sizeof(struct efi_device_path_udevice);
 			break;
+		case UCLASS_VIRTIO:
+			/* The transport device identifies the disk */
+			break;
 		default:
-			/* UCLASS_BLKMAP, UCLASS_HOST, UCLASS_VIRTIO */
+			/* UCLASS_BLKMAP, UCLASS_HOST */
 			size = sizeof(struct efi_device_path_udevice);
 			break;
 		}
@@ -410,7 +442,9 @@ __maybe_unused static unsigned int dp_size(struct udevice *dev)
 		size = sizeof(struct efi_device_path_udevice);
 		break;
 	default:
-		size = sizeof(struct efi_device_path_udevice);
+		/* A device on a PCI bus already has its PCI node */
+		if (!device_is_on_pci_bus(dev))
+			size = sizeof(struct efi_device_path_udevice);
 		break;
 	}
 
@@ -434,8 +468,23 @@ __maybe_unused static void *dp_fill(void *buf, struct udevice *dev)
 	uclass_id = device_get_uclass_id(dev);
 	if (uclass_id != UCLASS_ROOT)
 		buf = dp_fill(buf, dev->parent);
+	if (device_is_on_pci_bus(dev))
+		buf = dp_fill_pci(buf, dev);
 
 	switch (uclass_id) {
+	case UCLASS_PCI: {
+		struct efi_device_path_acpi_path *adp = buf;
+
+		/* A bridge is covered by its PCI node; a root bus needs ACPI */
+		if (device_is_on_pci_bus(dev))
+			return buf;
+		adp->dp.type = DEVICE_PATH_TYPE_ACPI_DEVICE;
+		adp->dp.sub_type = DEVICE_PATH_SUB_TYPE_ACPI_DEVICE;
+		adp->dp.length = sizeof(*adp);
+		adp->hid = EISA_PNP_ID(EFI_PNP_PCI_ROOT_BRIDGE);
+		adp->uid = dev_seq(dev);
+		return &adp[1];
+	}
 	case UCLASS_ETH:
 	if (IS_ENABLED(CONFIG_NETDEVICES)) {
 		struct efi_device_path_mac_addr *dp = buf;
@@ -555,8 +604,11 @@ __maybe_unused static void *dp_fill(void *buf, struct udevice *dev)
 			return &dp[1];
 		}
 			break;
+		case UCLASS_VIRTIO:
+			/* The transport device identifies the disk */
+			return buf;
 		default: {
-			/* UCLASS_BLKMAP, UCLASS_HOST, UCLASS_VIRTIO */
+			/* UCLASS_BLKMAP, UCLASS_HOST */
 			struct efi_device_path_udevice *dp = buf;
 			struct blk_desc *desc = dev_get_uclass_plat(dev);
 
@@ -613,6 +665,9 @@ __maybe_unused static void *dp_fill(void *buf, struct udevice *dev)
 	default: {
 		struct efi_device_path_udevice *vdp = buf;
 
+		/* A device on a PCI bus already has its PCI node */
+		if (device_is_on_pci_bus(dev))
+			return buf;
 		vdp->dp.type = DEVICE_PATH_TYPE_HARDWARE_DEVICE;
 		vdp->dp.sub_type = DEVICE_PATH_SUB_TYPE_VENDOR;
 		vdp->dp.length = sizeof(*vdp);
@@ -859,7 +914,7 @@ struct efi_device_path *efi_dp_from_uart(void)
 	return buf;
 }
 
-struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
+struct efi_device_path *efi_dp_from_dev(struct udevice *dev)
 {
 	void *buf, *start;
 	uint dpsize = 0;
@@ -877,6 +932,11 @@ struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
 	*((struct efi_device_path *)buf) = EFI_DP_END;
 
 	return start;
+}
+
+struct efi_device_path *efi_dp_from_eth(struct udevice *dev)
+{
+	return efi_dp_from_dev(dev);
 }
 
 /**

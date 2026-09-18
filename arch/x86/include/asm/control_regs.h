@@ -23,7 +23,7 @@ static inline unsigned long read_cr0(void)
 {
 	unsigned long val;
 
-	asm volatile ("movl %%cr0, %0" : "=r" (val) : : "memory");
+	asm volatile ("mov %%cr0, %0" : "=r" (val) : : "memory");
 	return val;
 }
 

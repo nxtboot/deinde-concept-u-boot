@@ -7,6 +7,7 @@
 
 #include <efi_loader.h>
 #include <lmb.h>
+#include <asm/processor.h>
 #include <log.h>
 #include <asm/e820.h>
 #include <asm/global_data.h>
@@ -142,6 +143,11 @@ void efi_add_known_memory(void)
 		if (type != EFI_CONVENTIONAL_MEMORY)
 			efi_add_memory_map(start, e820[i].size, type);
 	}
+
+	/* The 64-bit page tables are in low memory, which is otherwise free */
+	if (IS_ENABLED(CONFIG_X86_64))
+		efi_add_memory_map(X86_PAGETABLE_BASE, X86_PAGETABLE_SIZE,
+				   EFI_BOOT_SERVICES_DATA);
 }
 #endif /* CONFIG_IS_ENABLED(EFI_LOADER) */
 
@@ -175,5 +181,9 @@ void lmb_arch_add_memory(void)
 			lmb_add(start, size);
 		}
 	}
+
+	/* Keep images away from the 64-bit page tables in low memory */
+	if (IS_ENABLED(CONFIG_X86_64))
+		lmb_reserve(X86_PAGETABLE_BASE, X86_PAGETABLE_SIZE, LMB_NONE);
 }
 #endif /* CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP) */

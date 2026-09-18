@@ -25,6 +25,14 @@
 
 #define X86_GDT_SIZE		(X86_GDT_NUM_ENTRIES * X86_GDT_ENTRY_SIZE)
 
+/*
+ * Identity-mapped page tables used to enter 64-bit mode, built in low memory
+ * by the 32-bit code which jumps to 64-bit U-Boot. They stay in use until the
+ * OS installs its own, so must not be handed out to anyone else.
+ */
+#define X86_PAGETABLE_BASE	0x80000
+#define X86_PAGETABLE_SIZE	(6 * 4096)
+
 /* Length of the public header on Intel microcode blobs */
 #define UCODE_HEADER_LEN	0x30
 

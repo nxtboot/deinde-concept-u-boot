@@ -5,8 +5,11 @@
  * Copyright (c) 2020 Heinrich Schuchardt <xypron.glpk@gmx.de>
  */
 
+#include <dm.h>
 #include <efi_device_path.h>
 #include <efi_loader.h>
+#include <pci.h>
+#include <dm/device-internal.h>
 #include <test/lib.h>
 #include <test/test.h>
 #include <test/ut.h>
@@ -47,3 +50,84 @@ static int lib_test_efi_dp_check_length(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_dp_check_length, 0);
+
+/**
+ * check_dp_text() - Check the text form of a device's device path
+ *
+ * @uts: Test state
+ * @dev: Device to build a path for
+ * @expect: Expected text form
+ * Return: 0 if OK, 1 on failure
+ */
+static int check_dp_text(struct unit_test_state *uts, struct udevice *dev,
+			 const char *expect)
+{
+	struct efi_device_path *dp;
+	u16 *str;
+
+	dp = efi_dp_from_dev(dev);
+	ut_assertnonnull(dp);
+	str = efi_dp_str(dp);
+	ut_assertnonnull(str);
+	printf("%ls\n", str);
+	ut_assert_nextline("%s", expect);
+	efi_free_pool(str);
+	efi_free_pool(dp);
+
+	return 0;
+}
+
+/**
+ * hex_le32() - Write a 32-bit value as the hex bytes of its little-endian form
+ *
+ * This is how the vendor-data bytes of a vendor node appear in text
+ *
+ * @buf: Buffer of at least 9 bytes to write to
+ * @val: Value to write
+ * Return: @buf
+ */
+static const char *hex_le32(char *buf, u32 val)
+{
+	sprintf(buf, "%02x%02x%02x%02x", val & 0xff, (val >> 8) & 0xff,
+		(val >> 16) & 0xff, val >> 24);
+
+	return buf;
+}
+
+/* Vendor node for the root device, which starts every device path */
+#define ROOT_NODE "/VenHw(e61d73b9-a384-4acc-aeab-82e828f3628b,0000000000000000)"
+
+/* Test device paths for devices on a PCI bus */
+static int lib_test_efi_dp_pci(struct unit_test_state *uts)
+{
+	char expect[128], uclass[9], seq[9];
+	struct udevice *bus, *dev;
+
+	/* This needs sandbox's PCI buses and virtio device */
+	if (!IS_ENABLED(CONFIG_SANDBOX))
+		return -EAGAIN;
+
+	/* The root device is a vendor node with U-Boot's GUID */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0, &bus));
+	ut_assertok(check_dp_text(uts, bus, ROOT_NODE "/PciRoot(0x0)"));
+
+	/* A device on the bus gets a PCI node rather than a vendor one */
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(0, 0x1f, 0), &dev));
+	ut_assertok(check_dp_text(uts, dev,
+				  ROOT_NODE "/PciRoot(0x0)/Pci(0x1f,0x0)"));
+
+	/* A second root bus has its own ACPI node */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 1, &bus));
+	ut_assertok(check_dp_text(uts, bus, ROOT_NODE "/PciRoot(0x1)"));
+
+	/* A device which is not on PCI still gets a vendor node */
+	ut_assertok(uclass_get_device_by_name(UCLASS_VIRTIO, "sandbox-virtio-blk",
+					      &dev));
+	snprintf(expect, sizeof(expect), ROOT_NODE
+		 "/VenHw(e61d73b9-a384-4acc-aeab-82e828f3628b,%s%s)",
+		 hex_le32(uclass, UCLASS_VIRTIO), hex_le32(seq, dev_seq(dev)));
+	ut_assertok(check_dp_text(uts, dev, expect));
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_dp_pci, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);

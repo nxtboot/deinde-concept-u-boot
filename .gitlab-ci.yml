@@ -1165,6 +1165,18 @@ qemu-x86_64:
   variables:
     ROLE: qemu-x86_64
     TEST_PY_TEST_SPEC: "and not sleep"
+  # Shares the 'qemu-x86_64' labgrid place with the -win job below, so
+  # serialise them
+  resource_group: qemu-x86_64-place
+  <<: *sjg_lab_dfn
+
+# Boots the Windows 10 installer ISO through U-Boot's EFI loader, as far as
+# the boot manager handing over to the kernel
+qemu-x86_64-win:
+  variables:
+    ROLE: qemu-x86_64-win
+    TEST_PY_TEST_SPEC: "and test_distro_windows"
+  resource_group: qemu-x86_64-place
   <<: *sjg_lab_dfn
 
 # Boots a rewritten Ubuntu live ISO via U-Boot + BLS, exercising the

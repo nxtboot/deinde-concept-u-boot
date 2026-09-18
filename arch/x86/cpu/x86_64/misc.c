@@ -9,11 +9,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-void arch_setup_gd(gd_t *new_gd)
-{
-	set_gd(new_gd);
-}
-
 int misc_init_r(void)
 {
 	return 0;

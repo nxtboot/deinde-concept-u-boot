@@ -53,6 +53,13 @@ static char *dp_unknown(char *s, struct efi_device_path *dp)
 static char *dp_hardware(char *s, struct efi_device_path *dp)
 {
 	switch (dp->sub_type) {
+	case DEVICE_PATH_SUB_TYPE_PCI: {
+		struct efi_device_path_pci *pdp =
+			(struct efi_device_path_pci *)dp;
+
+		s += sprintf(s, "Pci(0x%x,0x%x)", pdp->device, pdp->function);
+		break;
+	}
 	case DEVICE_PATH_SUB_TYPE_MEMORY: {
 		struct efi_device_path_memory *mdp =
 			(struct efi_device_path_memory *)dp;
@@ -99,8 +106,11 @@ static char *dp_acpi(char *s, struct efi_device_path *dp)
 		struct efi_device_path_acpi_path *adp =
 			(struct efi_device_path_acpi_path *)dp;
 
-		s += sprintf(s, "Acpi(PNP%04X,%d)", EISA_PNP_NUM(adp->hid),
-			     adp->uid);
+		if (adp->hid == EISA_PNP_ID(EFI_PNP_PCI_ROOT_BRIDGE))
+			s += sprintf(s, "PciRoot(0x%x)", adp->uid);
+		else
+			s += sprintf(s, "Acpi(PNP%04X,%d)",
+				     EISA_PNP_NUM(adp->hid), adp->uid);
 		break;
 	}
 	default:
