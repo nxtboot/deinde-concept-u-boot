@@ -243,6 +243,25 @@ config EFI_VAR_SEED_FILE
 
 endif
 
+config EFI_VAR_BUF_ADDR
+	hex "Address of the UEFI variable store in memory"
+	depends on EFI_RT_VOLATILE_STORE
+	default 0
+	help
+	  Address at which the in-memory variable store is placed, or 0 to let
+	  it be allocated anywhere.
+
+	  A fixed address lets U-Boot find the store again after a warm reset.
+	  With CONFIG_EFI_RT_VOLATILE_STORE the OS can change variables at
+	  runtime, when U-Boot cannot write its storage, so those changes are
+	  normally lost at reset. If the memory survives the reset, U-Boot
+	  finds the store where it left it, takes over the non-volatile
+	  variables in it and writes them to storage when the next OS boots.
+
+	  The region must be free when the variable services start and must
+	  not be used by earlier boot phases. On x86, low memory below the
+	  page tables is suitable.
+
 config EFI_VAR_BUF_SIZE
 	int "Memory size of the UEFI variable store"
 	default 131072
