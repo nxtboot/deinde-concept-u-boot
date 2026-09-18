@@ -59,7 +59,7 @@ static int efi_mgr_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 
 	ret = efi_init_obj_list();
 	if (ret != EFI_SUCCESS)
-		return ret;
+		return log_msg_ret("init", -EIO);
 
 	/* Enable this method if the "BootOrder" UEFI exists. */
 	bootorder = efi_get_var(u"BootOrder", &efi_global_variable_guid,
@@ -84,10 +84,12 @@ static int efi_mgr_read_file(struct udevice *dev, struct bootflow *bflow,
 
 static int efi_mgr_boot(struct udevice *dev, struct bootflow *bflow)
 {
-	int ret;
+	efi_status_t ret;
 
 	/* Booting is handled by the 'bootefi bootmgr' command */
 	ret = efi_bootmgr_run(EFI_FDT_USE_INTERNAL);
+	if (ret != EFI_SUCCESS)
+		return log_msg_ret("run", -EIO);
 
 	return 0;
 }
