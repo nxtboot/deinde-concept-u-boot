@@ -221,9 +221,9 @@ If the memory survives a warm reset, as on QEMU and many boards, the change
 can be kept. Set CONFIG_EFI_VAR_BUF_ADDR to place the store at a fixed
 address which no earlier boot phase uses. On the next boot U-Boot finds a
 valid store there, takes over its non-volatile, unauthenticated variables,
-replacing or deleting its own to match, and writes them to the file when the
-next OS boots. Windows relies on this for the boot entries it writes during
-installation.
+replacing or deleting its own to match, and writes them to the file at once,
+so that they survive a cold boot as well. Windows relies on this for the boot
+entries it writes during installation.
 
 Using OP-TEE for EFI variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

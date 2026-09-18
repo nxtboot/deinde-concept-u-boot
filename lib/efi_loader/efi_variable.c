@@ -620,10 +620,16 @@ efi_status_t efi_init_variables(void)
 		if (buf) {
 			ret = efi_var_apply(buf);
 			free(buf);
-			if (ret != EFI_SUCCESS)
+			if (ret != EFI_SUCCESS) {
 				log_err("Cannot apply recovered EFI variables\n");
-			else
+			} else {
 				log_info("Recovered EFI variables from memory\n");
+				/*
+				 * The OS wrote these at runtime, when the storage
+				 * could not be updated, so do that now
+				 */
+				efi_var_to_storage();
+			}
 		}
 	}
 
