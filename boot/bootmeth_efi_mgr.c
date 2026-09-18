@@ -11,6 +11,7 @@
 #include <bootdev.h>
 #include <bootflow.h>
 #include <bootmeth.h>
+#include <bootstd.h>
 #include <charset.h>
 #include <command.h>
 #include <dm.h>
@@ -185,10 +186,28 @@ static int efi_mgr_read_file(struct udevice *dev, struct bootflow *bflow,
 
 static int efi_mgr_boot(struct udevice *dev, struct bootflow *bflow)
 {
+	struct bootstd_priv *std;
 	efi_status_t ret;
+	uint hunted;
+	int err;
+
+	err = bootstd_get_priv(&std);
+	if (err)
+		return log_msg_ret("std", err);
 
 	/* Booting is handled by the 'bootefi bootmgr' command */
 	ret = efi_bootmgr_run(EFI_FDT_USE_INTERNAL);
+	if (ret != EFI_SUCCESS) {
+		/*
+		 * The option's device may be on a bus which is slow to scan, so
+		 * left out of the hunt at discovery, e.g. USB: hunt those buses
+		 * now and try again, if that turned up anything new
+		 */
+		hunted = std->hunters_used;
+		bootdev_hunt_prio(BOOTDEVP_5_SCAN_SLOW, false);
+		if (std->hunters_used != hunted)
+			ret = efi_bootmgr_run(EFI_FDT_USE_INTERNAL);
+	}
 	if (ret != EFI_SUCCESS)
 		return log_msg_ret("run", -EIO);
 
