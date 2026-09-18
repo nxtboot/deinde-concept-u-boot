@@ -1175,7 +1175,7 @@ qemu-x86_64:
 qemu-x86_64-win:
   variables:
     ROLE: qemu-x86_64-win
-    TEST_PY_TEST_SPEC: "and test_distro_windows and not installed"
+    TEST_PY_TEST_SPEC: "and test_distro_windows and not install"
   resource_group: qemu-x86_64-place
   <<: *sjg_lab_dfn
 
@@ -1187,6 +1187,17 @@ qemu-x86_64-win-installed:
     TEST_PY_TEST_SPEC: "and test_distro_windows_installed"
   resource_group: qemu-x86_64-place
   <<: *sjg_lab_dfn
+
+# Installs Windows 10 from its ISO with U-Boot as the firmware, onto a blank
+# virtio disk in snapshot mode. About ten minutes, so it lives in
+# sjg-lab-slow like the Ubuntu install
+qemu-x86_64-win-install:
+  variables:
+    ROLE: qemu-x86_64-win-install
+    TEST_PY_TEST_SPEC: "and test_distro_windows_install and not installed"
+  timeout: 1h
+  resource_group: qemu-x86_64-place
+  <<: *sjg_lab_slow_dfn
 
 # Boots a rewritten Ubuntu live ISO via U-Boot + BLS, exercising the
 # qemu-efi-iso labgrid writer and test_distro_ubuntu_iso_uboot.
