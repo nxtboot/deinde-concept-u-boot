@@ -421,8 +421,11 @@ __maybe_unused static unsigned int dp_size(struct udevice *dev)
 			/* EFI app */
 			size = sizeof(struct efi_device_path_udevice);
 			break;
+		case UCLASS_VIRTIO:
+			/* The transport device identifies the disk */
+			break;
 		default:
-			/* UCLASS_BLKMAP, UCLASS_HOST, UCLASS_VIRTIO */
+			/* UCLASS_BLKMAP, UCLASS_HOST */
 			size = sizeof(struct efi_device_path_udevice);
 			break;
 		}
@@ -601,8 +604,11 @@ __maybe_unused static void *dp_fill(void *buf, struct udevice *dev)
 			return &dp[1];
 		}
 			break;
+		case UCLASS_VIRTIO:
+			/* The transport device identifies the disk */
+			return buf;
 		default: {
-			/* UCLASS_BLKMAP, UCLASS_HOST, UCLASS_VIRTIO */
+			/* UCLASS_BLKMAP, UCLASS_HOST */
 			struct efi_device_path_udevice *dp = buf;
 			struct blk_desc *desc = dev_get_uclass_plat(dev);
 
