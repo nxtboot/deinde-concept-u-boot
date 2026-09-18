@@ -1175,7 +1175,16 @@ qemu-x86_64:
 qemu-x86_64-win:
   variables:
     ROLE: qemu-x86_64-win
-    TEST_PY_TEST_SPEC: "and test_distro_windows"
+    TEST_PY_TEST_SPEC: "and test_distro_windows and not installed"
+  resource_group: qemu-x86_64-place
+  <<: *sjg_lab_dfn
+
+# Boots an installed Windows 10 (virtio disk, snapshot mode) through U-Boot's
+# EFI loader, as far as the boot manager handing over to the kernel
+qemu-x86_64-win-installed:
+  variables:
+    ROLE: qemu-x86_64-win-installed
+    TEST_PY_TEST_SPEC: "and test_distro_windows_installed"
   resource_group: qemu-x86_64-place
   <<: *sjg_lab_dfn
 

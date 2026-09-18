@@ -96,6 +96,42 @@ def test_distro_windows(ubman):
     ubman.restart_uboot()
 
 
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win-installed')
+@pytest.mark.restart
+def test_distro_windows_installed(ubman):
+    """Boot an installed Windows 10 through U-Boot's EFI loader
+
+    The 'qemu-x86_64-win-installed' role attaches a disk holding a Windows
+    10 installation (UEFI/GPT) as a SATA disk, in snapshot mode so that the
+    image is never modified. U-Boot finds the ESP
+    and runs EFI/Boot/bootx64.efi, which is the Windows boot manager; that
+    reads the BCD and loads winload, the kernel and the boot drivers from the
+    NTFS volume over the block-IO protocol, then calls ExitBootServices().
+
+    Windows itself writes nothing to the serial port, so the image has a
+    logon script (installed by its autounattend.xml) which prints a marker to
+    COM1 each time a user logs on, and the account logs on automatically.
+    Seeing that marker means the kernel came up from the NTFS volume, the
+    drivers loaded and the desktop is there, which takes a few minutes on
+    KVM.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(600 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
 @pytest.mark.boardspec('colibri-imx8x')
 @pytest.mark.role('colibrimx8')
 @pytest.mark.restart
