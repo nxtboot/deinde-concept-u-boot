@@ -273,7 +273,7 @@ static void efi_var_mem_recover(void)
 		memcpy(efi_var_recovered, buf, buf->length);
 }
 
-struct efi_var_file *efi_var_mem_get_buf(void)
+struct efi_var_file __efi_runtime *efi_var_mem_get_buf(void)
 {
 	return efi_var_buf;
 }

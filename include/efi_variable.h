@@ -150,6 +150,15 @@ struct efi_var_file {
 efi_status_t efi_var_to_storage(void);
 
 /**
+ * efi_var_flash_sync() - Write the in-memory variable store to the flash
+ *
+ * Only with CONFIG_EFI_VARIABLE_FLASH_STORE. This can be called at runtime.
+ *
+ * Return:	status code
+ */
+efi_status_t __efi_runtime efi_var_flash_sync(void);
+
+/**
  * efi_var_collect() - collect variables in buffer
  *
  * A buffer is allocated and filled with variables in a format ready to be
@@ -199,7 +208,7 @@ efi_status_t efi_var_apply(struct efi_var_file *buf);
  *
  * Return: pointer to the store
  */
-struct efi_var_file *efi_var_mem_get_buf(void);
+struct efi_var_file __efi_runtime *efi_var_mem_get_buf(void);
 
 /**
  * efi_var_mem_recovered() - Get a store which survived a warm reset

@@ -576,6 +576,13 @@ efi_set_variable_runtime(u16 *variable_name, const efi_guid_t *vendor,
 
 	efi_var_mem_del(var);
 
+	/*
+	 * Keep the change across a cold boot if the storage allows. The store
+	 * in memory is updated either way, so a failure here is not reported
+	 */
+	if (IS_ENABLED(CONFIG_EFI_VARIABLE_FLASH_STORE))
+		efi_var_flash_sync();
+
 	return EFI_SUCCESS;
 }
 

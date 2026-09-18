@@ -225,6 +225,14 @@ replacing or deleting its own to match, and writes them to the file at once,
 so that they survive a cold boot as well. Windows relies on this for the boot
 entries it writes during installation.
 
+With the flash store, CONFIG_EFI_VARIABLE_FLASH_STORE, none of that is needed:
+the variables live in a memory-mapped NOR flash which the runtime service can
+program itself, so a variable set at runtime is in the flash before
+SetVariable() returns and survives a cold boot. The flash must use the Intel
+command set and be at CONFIG_EFI_VARIABLE_FLASH_ADDR; U-Boot adds it to the
+memory map as runtime MMIO, so that the OS maps it. qemu-x86_64 uses this
+store with the flash which QEMU provides as pflash.
+
 Using OP-TEE for EFI variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
