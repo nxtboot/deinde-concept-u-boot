@@ -180,6 +180,43 @@ and you can work through the installer flow normally.
 Note that standard boot will not find 32-bit distros, since it looks for a
 different filename.
 
+Booting Windows
+---------------
+
+Windows 10 can be installed and booted in the same way. Its boot manager
+needs nothing beyond what U-Boot provides. Windows setup expects its install
+media to be a CD-ROM and Windows has drivers for SATA but not for virtio, so
+use the q35 machine and put both the disk and the ISO on its SATA
+controller::
+
+   qemu-img create -f qcow2 win.qcow2 32G
+   qemu-system-x86_64 -M q35 -m 4G -smp 4 -enable-kvm \
+     -bios /tmp/b/qemu-x86_64/u-boot.rom \
+     -drive if=none,id=hd0,file=win.qcow2 -device ide-hd,drive=hd0,bus=ide.0 \
+     -drive if=none,id=cd0,media=cdrom,file=Win10.iso,format=raw,readonly=on \
+     -device ide-cd,drive=cd0,bus=ide.1 \
+     -serial mon:stdio
+
+Virtio disks are faster, but Windows only sees them once the ``viostor``
+driver from the virtio-win ISO has been given to setup, through the setup UI
+or ``DriverPaths`` in an ``autounattend.xml``.
+
+The boot manager asks for a key press before it will boot from the
+installer; the serial console works for that. Setup then runs as it would on
+any other machine and reboots a few times; each time U-Boot's boot manager
+starts Windows from the disk. The whole install takes about six minutes on a
+fast host.
+
+At the end of the first phase, setup writes its boot entries with the runtime
+SetVariable() service and refuses to continue if that fails, so
+``CONFIG_EFI_RT_VOLATILE_STORE`` is enabled for QEMU. U-Boot keeps those
+variables in memory only, which is enough for setup; on the next boot the
+boot manager finds Windows through the entries U-Boot generates for each
+disk.
+
+Windows writes nothing to the serial port at all, so once the kernel starts
+the video console is the only way to see it.
+
 Current limitations
 -------------------
 
