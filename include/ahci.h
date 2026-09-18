@@ -14,6 +14,7 @@
 #define AHCI_CMD_SLOT_SZ	32
 #define AHCI_MAX_CMD_SLOT	32
 #define AHCI_RX_FIS_SZ		256
+#define AHCI_CMD_TBL_CDB	0x40	/* ATAPI command (CDB) in the table */
 #define AHCI_CMD_TBL_HDR	0x80
 #define AHCI_CMD_TBL_CDB	0x40
 #define AHCI_CMD_TBL_SZ		AHCI_CMD_TBL_HDR + (AHCI_MAX_SG * 16)
@@ -50,6 +51,7 @@
 #define PORT_CMD		0x18 /* port command */
 #define PORT_TFDATA		0x20 /* taskfile data */
 #define PORT_SIG		0x24 /* device TF signature */
+#define SATA_SIG_ATAPI		0xeb140101 /* PORT_SIG of an ATAPI device */
 #define PORT_CMD_ISSUE		0x38 /* command issue */
 #define PORT_SCR		0x28 /* SATA phy register block */
 #define PORT_SCR_STAT		0x28 /* SATA phy register: SStatus */
@@ -139,6 +141,7 @@ struct ahci_ioports {
 	struct ahci_sg		*cmd_tbl_sg;
 	void *cmd_tbl;
 	void *rx_fis;
+	bool atapi;	/* device speaks SCSI through ATA PACKET commands */
 };
 
 /**

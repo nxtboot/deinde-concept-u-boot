@@ -513,18 +513,69 @@ static int ahci_port_start(struct ahci_uc_priv *uc_priv, u8 port)
 	 * Make sure interface is not busy based on error and status
 	 * information from task file data register before proceeding
 	 */
-	return wait_spinup(port_mmio);
+	if (wait_spinup(port_mmio))
+		return -ETIMEDOUT;
+
+	/*
+	 * Now that FIS receive is on, the device's signature FIS has arrived
+	 * and says what kind of device it is
+	 */
+	pp->atapi = readl(port_mmio + PORT_SIG) == SATA_SIG_ATAPI;
+	if (pp->atapi)
+		debug("port %d: ATAPI device\n", port);
+
+	return 0;
 }
 
-static int ahci_device_data_io(struct ahci_uc_priv *uc_priv, u8 port, u8 *fis,
-			       int fis_len, u8 *buf, int buf_len, u8 is_write)
+/**
+ * ahci_port_restart() - Restart a port after a device error
+ *
+ * A task-file error stops the port's command list, so clear the error state
+ * and toggle the start bit, as the AHCI spec requires before any further
+ * command can be issued.
+ *
+ * @pp: Port to restart
+ */
+static void ahci_port_restart(struct ahci_ioports *pp)
 {
+	void __iomem *port_mmio = pp->port_mmio;
+	u32 tmp;
 
+	tmp = readl(port_mmio + PORT_CMD);
+	writel_with_flush(tmp & ~PORT_CMD_START, port_mmio + PORT_CMD);
+	waiting_for_cmd_completed(port_mmio + PORT_CMD, WAIT_MS_DATAIO,
+				  PORT_CMD_LIST_ON);
+	writel(readl(port_mmio + PORT_SCR_ERR), port_mmio + PORT_SCR_ERR);
+	writel(readl(port_mmio + PORT_IRQ_STAT), port_mmio + PORT_IRQ_STAT);
+	writel_with_flush(tmp | PORT_CMD_START, port_mmio + PORT_CMD);
+}
+
+/**
+ * ahci_device_io() - Issue a command with an optional data transfer
+ *
+ * @uc_priv: Controller
+ * @port: Port to use
+ * @fis: Host-to-device FIS to send
+ * @fis_len: Length of @fis in bytes
+ * @cdb: ATAPI command to place in the command table, or NULL for an ATA
+ *	command
+ * @cdb_len: Length of @cdb in bytes (12 or 16)
+ * @buf: Data buffer, or NULL if there is no data
+ * @buf_len: Length of data to transfer
+ * @is_write: true if data goes to the device
+ * Return: 0 if OK, -ETIMEDOUT if the command did not complete, -EIO if the
+ * device reported an error (in which case the port has been restarted)
+ */
+static int ahci_device_io(struct ahci_uc_priv *uc_priv, u8 port, u8 *fis,
+			  int fis_len, const u8 *cdb, int cdb_len, u8 *buf,
+			  int buf_len, u8 is_write)
+{
 	struct ahci_ioports *pp = &(uc_priv->port[port]);
 	void __iomem *port_mmio = pp->port_mmio;
 	u32 opts;
 	u32 port_status;
 	int sg_count;
+	int i;
 
 	debug("Enter %s: for port %d\n", __func__, port);
 
@@ -540,28 +591,59 @@ static int ahci_device_data_io(struct ahci_uc_priv *uc_priv, u8 port, u8 *fis,
 	}
 
 	memcpy((unsigned char *)pp->cmd_tbl, fis, fis_len);
+	opts = (fis_len >> 2) | (is_write << 6);
+	if (cdb) {
+		memset(pp->cmd_tbl + AHCI_CMD_TBL_CDB, 0, 16);
+		memcpy(pp->cmd_tbl + AHCI_CMD_TBL_CDB, cdb, cdb_len);
+		opts |= AHCI_CMD_ATAPI;
+	}
 
-	sg_count = ahci_fill_sg(uc_priv, port, buf, buf_len);
-	opts = (fis_len >> 2) | (sg_count << 16) | (is_write << 6);
+	sg_count = buf_len ? ahci_fill_sg(uc_priv, port, buf, buf_len) : 0;
+	opts |= sg_count << 16;
 	ahci_fill_cmd_slot(pp, opts);
 
 	ahci_dcache_flush_sata_cmd(pp);
-	ahci_dcache_flush_range((unsigned long)buf, (unsigned long)buf_len);
+	if (buf_len)
+		ahci_dcache_flush_range((unsigned long)buf,
+					(unsigned long)buf_len);
 
 	writel_with_flush(1, port_mmio + PORT_CMD_ISSUE);
 
-	if (waiting_for_cmd_completed(port_mmio + PORT_CMD_ISSUE,
-				WAIT_MS_DATAIO, 0x1)) {
+	for (i = 0; i < WAIT_MS_DATAIO; i++) {
+		if (!(readl(port_mmio + PORT_CMD_ISSUE) & 1))
+			break;
+		/* a task-file error halts the command list, so PxCI stays set */
+		if (readl(port_mmio + PORT_IRQ_STAT) & PORT_IRQ_TF_ERR)
+			break;
+		udelay(1000);
+	}
+	if (i == WAIT_MS_DATAIO) {
 		printf("timeout exit!\n");
-		return -1;
+		return -ETIMEDOUT;
 	}
 
-	ahci_dcache_invalidate_range((unsigned long)buf,
-				     (unsigned long)buf_len);
+	if (readl(port_mmio + PORT_TFDATA) & ATA_ERR ||
+	    readl(port_mmio + PORT_IRQ_STAT) & PORT_IRQ_TF_ERR) {
+		debug("%s: device error, status %x\n", __func__,
+		      readl(port_mmio + PORT_TFDATA));
+		ahci_port_restart(pp);
+		return -EIO;
+	}
+
+	if (buf_len)
+		ahci_dcache_invalidate_range((unsigned long)buf,
+					     (unsigned long)buf_len);
 	debug("%s: %d byte transferred.\n", __func__,
 	      le32_to_cpu(pp->cmd_slot->status));
 
 	return 0;
+}
+
+static int ahci_device_data_io(struct ahci_uc_priv *uc_priv, u8 port, u8 *fis,
+			       int fis_len, u8 *buf, int buf_len, u8 is_write)
+{
+	return ahci_device_io(uc_priv, port, fis, fis_len, NULL, 0, buf,
+			      buf_len, is_write);
 }
 
 static char *ata_id_strcpy(u16 *target, u16 *src, int len)
@@ -823,6 +905,59 @@ static int ahci_report_luns(struct scsi_cmd *pccb)
 	return 0;
 }
 
+/**
+ * ahci_atapi_exec() - Pass a SCSI command to an ATAPI device
+ *
+ * An ATAPI device takes SCSI commands directly, wrapped in an ATA PACKET
+ * command, so there is nothing to emulate: the CDB goes into the command
+ * table and the data phase uses the scatter/gather list as usual. If the
+ * device reports an error, fetch the sense data so that the caller can see
+ * why, as a SCSI host adapter would.
+ *
+ * @uc_priv: Controller
+ * @pccb: Command to execute
+ * Return: 0 if OK, -ve on error
+ */
+static int ahci_atapi_exec(struct ahci_uc_priv *uc_priv, struct scsi_cmd *pccb)
+{
+	static const u8 sense_cdb[12] = { SCSI_REQ_SENSE, 0, 0, 0,
+					  SENSE_BUF_LEN };
+	u8 fis[20];
+	int ret;
+
+	if (pccb->target >= uc_priv->n_ports ||
+	    !(uc_priv->port_map & (1 << pccb->target)))
+		return -ENODEV;
+
+	memset(fis, 0, sizeof(fis));
+	fis[0] = 0x27;			/* Host to device FIS */
+	fis[1] = 1 << 7;		/* Command FIS */
+	fis[2] = ATA_CMD_PACKET;
+	if (pccb->datalen)
+		fis[3] = ATAPI_PKT_DMA;	/* features: DMA for the data phase */
+	fis[5] = 0xfe;			/* byte count limit, for PIO devices */
+	fis[6] = 0xff;
+	ret = ahci_device_io(uc_priv, pccb->target, fis, sizeof(fis),
+			     pccb->cmd, pccb->cmdlen, pccb->pdata,
+			     pccb->datalen, pccb->dma_dir == DMA_TO_DEVICE);
+	if (ret != -EIO)
+		return ret;
+
+	/* The device said CHECK CONDITION: collect the sense data */
+	memset(pccb->sense_buf, 0, SENSE_BUF_LEN);
+	fis[3] = ATAPI_PKT_DMA;
+	if (ahci_device_io(uc_priv, pccb->target, fis, sizeof(fis), sense_cdb,
+			   sizeof(sense_cdb), pccb->sense_buf, SENSE_BUF_LEN, 0))
+		debug("%s: cannot get sense data\n", __func__);
+	else
+		debug("%s: sense key %x asc %x ascq %x\n", __func__,
+		      pccb->sense_buf[2] & 0xf, pccb->sense_buf[12],
+		      pccb->sense_buf[13]);
+	pccb->status = S_CHECK_COND;
+
+	return -EIO;
+}
+
 static int ahci_scsi_exec(struct udevice *dev, struct scsi_cmd *pccb)
 {
 	struct ahci_uc_priv *uc_priv = dev_get_uclass_priv(dev->parent);
@@ -830,13 +965,17 @@ static int ahci_scsi_exec(struct udevice *dev, struct scsi_cmd *pccb)
 
 	/*
 	 * The SCSI layer counts LUNs with REPORT LUNS, which an ATA device
-	 * knows nothing of, so answer it here: it has exactly one LUN. If the
-	 * command fails, the scan falls back to trying every LUN up to the
-	 * limit and finds the same disk on each, since ata_scsiop_inquiry()
-	 * ignores the LUN
+	 * knows nothing of and an ATAPI device generally rejects, so answer
+	 * it here: both have exactly one LUN. If the command fails, the scan
+	 * falls back to trying every LUN up to the limit and finds the same
+	 * drive on each
 	 */
 	if (pccb->cmd[0] == SCSI_REPORT_LUNS)
 		return ahci_report_luns(pccb);
+
+	if (pccb->target < uc_priv->n_ports &&
+	    uc_priv->port[pccb->target].atapi)
+		return ahci_atapi_exec(uc_priv, pccb);
 
 	switch (pccb->cmd[0]) {
 	case SCSI_READ16:
