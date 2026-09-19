@@ -252,8 +252,13 @@ efi_status_t efi_var_from_storage(void)
 		log_info("No EFI variables loaded\n");
 		return EFI_SUCCESS;
 	}
-	/* this checks the rest of the header and reports a bad store */
-	efi_var_restore((struct efi_var_file *)buf, false);
+	/*
+	 * This checks the rest of the header and reports a bad store. Unlike a
+	 * file on the EFI system partition, the flash is the firmware's own
+	 * storage, as it is for OVMF, so the authenticated variables which
+	 * enable secure boot (PK, KEK, db, dbx) are restored from it too.
+	 */
+	efi_var_restore((struct efi_var_file *)buf, true);
 
 	return EFI_SUCCESS;
 }
