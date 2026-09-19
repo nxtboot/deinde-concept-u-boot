@@ -311,7 +311,6 @@ static inline void efi_count_show(void) {}
 #define BOOTMENU_DEVICE_NAME_MAX 16
 
 /* Key identifying current memory map */
-extern efi_uintn_t efi_memory_map_key;
 
 extern struct efi_runtime_services efi_runtime_services;
 
@@ -566,6 +565,18 @@ struct efi_bs {
 };
 
 /**
+ * struct efi_mem - state of the memory map
+ *
+ * @map: The memory map, as a list of struct efi_mem_list
+ * @map_key: Key of the current memory map, which changes with every
+ *	allocation and is checked by ExitBootServices()
+ */
+struct efi_mem {
+	struct list_head map;
+	efi_uintn_t map_key;
+};
+
+/**
  * struct efi_state - state of the EFI subsystem
  *
  * The EFI subsystem keeps its state here rather than in file-scope variables,
@@ -581,6 +592,7 @@ struct efi_bs {
  * @con: State of the console
  * @bs: State of the boot services
  * @systab: The EFI system table handed to the payload
+ * @mem: State of the memory map
  * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
  *	until it has run, then its return value, so that a failure is not
  *	retried
@@ -589,6 +601,7 @@ struct efi_state {
 	struct efi_console con;
 	struct efi_bs bs;
 	struct efi_system_table systab;
+	struct efi_mem mem;
 	efi_status_t obj_list_initialized;
 };
 
@@ -601,8 +614,9 @@ extern struct efi_state *efis;
 /**
  * efi_state_init_default() - Set up the default EFI state
  *
- * This runs right after relocation, before anything adds to the state. It
- * cannot run before efi_runtime_relocate(), since the state is runtime data.
+ * This runs right after relocation, before anything adds to the state: the
+ * LMB reports its reservations to the memory map soon after. It cannot run
+ * before efi_runtime_relocate(), since the state is runtime data.
  *
  * Return: 0
  */
@@ -623,8 +637,11 @@ void efi_state_init(struct efi_state *st);
  *
  * This is for a state which is about to be discarded, e.g. by a test: select
  * another state once this returns. It frees what the state has taken from
- * malloc(): the handles with their protocol handlers and the console's key
- * notifications.
+ * malloc(): the handles with their protocol handlers, the memory map and the
+ * console's key notifications.
+ *
+ * It leaves alone the pages and pool memory allocated for the state, which
+ * come from LMB, and anything which a protocol interface points to.
  */
 void efi_state_uninit(void);
 
@@ -652,6 +669,16 @@ void efi_console_uninit_state(struct efi_console *con);
  * @bs: Boot-services state to clean up, which must be in the state in use
  */
 void efi_bs_uninit_state(struct efi_bs *bs);
+
+/**
+ * efi_mem_uninit_state() - Free the memory held by the memory-map state
+ *
+ * This frees the memory map itself. The pages which have been allocated come
+ * from LMB and are not given back.
+ *
+ * @mem: Memory-map state to clean up
+ */
+void efi_mem_uninit_state(struct efi_mem *mem);
 
 /**
  * efi_state_set() - Select the EFI state to use
@@ -686,6 +713,13 @@ void efi_bs_init_state(struct efi_bs *bs);
  * @systab: System table to set up
  */
 void efi_systab_init_state(struct efi_system_table *systab);
+
+/**
+ * efi_mem_init_state() - Set up the memory-map part of an EFI state
+ *
+ * @mem: Memory-map state to set up
+ */
+void efi_mem_init_state(struct efi_mem *mem);
 
 /**
  * struct efi_loaded_image_obj - handle of a loaded image

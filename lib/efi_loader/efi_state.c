@@ -23,6 +23,7 @@ void efi_state_init(struct efi_state *st)
 	efi_bs_init_state(&st->bs);
 	efi_systab_init_state(&st->systab);
 	st->obj_list_initialized = EFI_OBJ_LIST_NOT_INIT;
+	efi_mem_init_state(&st->mem);
 }
 
 int efi_state_init_default(void)
@@ -45,4 +46,5 @@ void efi_state_uninit(void)
 {
 	efi_console_uninit_state(&efis->con);
 	efi_bs_uninit_state(&efis->bs);
+	efi_mem_uninit_state(&efis->mem);
 }

@@ -2265,7 +2265,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	ofs = efi_logs_exit_boot_services(image_handle, map_key);
 
 	/* Check that the caller has read the current memory map */
-	if (map_key != efi_memory_map_key) {
+	if (map_key != efis->mem.map_key) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}

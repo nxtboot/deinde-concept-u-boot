@@ -27,8 +27,6 @@ DECLARE_GLOBAL_DATA_PTR;
 /* Magic number identifying memory allocated from pool */
 #define EFI_ALLOC_POOL_MAGIC 0x1fe67ddf6491caa2
 
-efi_uintn_t efi_memory_map_key;
-
 /**
  * struct mem_node - defines an EFI memory record
  *
@@ -55,9 +53,6 @@ struct mem_node {
 #define EFI_CARVE_LOOP_AGAIN		-2
 #define EFI_CARVE_OVERLAPS_NONRAM	-3
 #define EFI_CARVE_OUT_OF_RESOURCES	-4
-
-/* This list contains all memory map items */
-static LIST_HEAD(efi_mem);
 
 #ifdef CONFIG_EFI_LOADER_BOUNCE_BUFFER
 void *efi_bounce_buffer;
@@ -148,14 +143,15 @@ static uint64_t desc_get_end(struct mem_node *node)
  */
 static void efi_mem_sort(void)
 {
+	struct efi_mem *mem = &efis->mem;
 	struct mem_node *curmem, *nextmem = NULL;
 
-	list_sort(NULL, &efi_mem, efi_mem_cmp);
+	list_sort(NULL, &mem->map, efi_mem_cmp);
 
 	/* Now merge entries that can be merged */
-	list_for_each_entry_safe(curmem, nextmem, &efi_mem, link) {
+	list_for_each_entry_safe(curmem, nextmem, &mem->map, link) {
 		/* Exit when we've got nothing to compare with */
-		if (&nextmem->link == &efi_mem)
+		if (&nextmem->link == &mem->map)
 			break;
 
 		if ((curmem->base == desc_get_end(nextmem)) &&
@@ -257,6 +253,7 @@ static s64 efi_mem_carve_out(struct mem_node *map, struct mem_node *carve_desc,
 efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 				   bool overlap_conventional, bool remove)
 {
+	struct efi_mem *mem = &efis->mem;
 	struct mem_node *lmem;
 	struct mem_node *newlist;
 	bool carve_again;
@@ -273,7 +270,7 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 	if (!pages)
 		return EFI_SUCCESS;
 
-	++efi_memory_map_key;
+	++mem->map_key;
 	newlist = calloc(1, sizeof(*newlist));
 	if (!newlist)
 		return EFI_OUT_OF_RESOURCES;
@@ -297,7 +294,7 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 	/* Add our new map */
 	do {
 		carve_again = false;
-		list_for_each_entry(lmem, &efi_mem, link) {
+		list_for_each_entry(lmem, &mem->map, link) {
 			s64 r;
 
 			r = efi_mem_carve_out(lmem, newlist,
@@ -348,7 +345,7 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 
 	/* Add our new map */
 	if (!remove)
-		list_add_tail(&newlist->link, &efi_mem);
+		list_add_tail(&newlist->link, &mem->map);
 	else
 		free(newlist);
 
@@ -397,7 +394,7 @@ static efi_status_t efi_check_allocated(u64 addr, bool must_be_allocated)
 {
 	struct mem_node *item;
 
-	list_for_each_entry(item, &efi_mem, link) {
+	list_for_each_entry(item, &efis->mem.map, link) {
 		u64 start = item->base;
 		u64 end = start + (item->num_pages << EFI_PAGE_SHIFT);
 
@@ -745,6 +742,7 @@ efi_status_t efi_get_memory_map(efi_uintn_t *memory_map_size,
 				efi_uintn_t *descriptor_size,
 				uint32_t *descriptor_version)
 {
+	struct efi_mem *mem = &efis->mem;
 	size_t map_entries;
 	efi_uintn_t map_size = 0;
 	struct mem_node *lmem;
@@ -755,7 +753,7 @@ efi_status_t efi_get_memory_map(efi_uintn_t *memory_map_size,
 
 	provided_map_size = *memory_map_size;
 
-	map_entries = list_count_nodes(&efi_mem);
+	map_entries = list_count_nodes(&mem->map);
 
 	map_size = map_entries * sizeof(struct efi_mem_desc);
 
@@ -776,7 +774,7 @@ efi_status_t efi_get_memory_map(efi_uintn_t *memory_map_size,
 	/* Copy list into array */
 	/* Return the list in ascending order */
 	memory_map = &memory_map[map_entries - 1];
-	list_for_each_entry(lmem, &efi_mem, link) {
+	list_for_each_entry(lmem, &mem->map, link) {
 		memory_map->type = lmem->type;
 		memory_map->reserved = 0;
 		memory_map->physical_start = (u64)(ulong)map_sysmem(lmem->base,
@@ -790,7 +788,7 @@ efi_status_t efi_get_memory_map(efi_uintn_t *memory_map_size,
 	}
 
 	if (map_key)
-		*map_key = efi_memory_map_key;
+		*map_key = mem->map_key;
 
 	return EFI_SUCCESS;
 }
@@ -884,6 +882,12 @@ static void add_u_boot_and_runtime(void)
 	}
 }
 
+void efi_mem_init_state(struct efi_mem *mem)
+{
+	INIT_LIST_HEAD(&mem->map);
+	mem->map_key = 0;
+}
+
 int efi_memory_init(void)
 {
 	efi_add_known_memory();
@@ -933,4 +937,13 @@ int efi_map_update_notify(phys_addr_t addr, phys_size_t size,
 	unmap_sysmem((void *)(uintptr_t)efi_addr);
 
 	return 0;
+}
+
+void efi_mem_uninit_state(struct efi_mem *mem)
+{
+	struct mem_node *lmem, *next;
+
+	list_for_each_entry_safe(lmem, next, &mem->map, link)
+		free(lmem);
+	INIT_LIST_HEAD(&mem->map);
 }
