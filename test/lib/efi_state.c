@@ -21,14 +21,27 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	old = efis;
 	ut_assertnonnull(old);
 
-	/* Select a new state and check that it is the one in use */
+	/* The new state starts out as at boot, whatever the old one holds */
 	efi_state_init(&st);
+	ut_asserteq(1, st.con.mode.max_mode);
+	ut_asserteq(80, st.con.modes[0].columns);
+	ut_asserteq(25, st.con.modes[0].rows);
+	ut_asserteq_ptr(&st.con.mode, st.con.con_out.mode);
+	ut_assert(list_empty(&st.con.cin_notify));
+
+	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));
 	ut_asserteq_ptr(&st, efis);
+	efi_console_set_ansi(false);
+	ut_assert(st.con.no_ansi);
+	ut_assert(!old->con.no_ansi);
 
-	/* The old state comes back */
+	/* The old state comes back untouched */
 	ut_asserteq_ptr(&st, efi_state_set(old));
 	ut_asserteq_ptr(old, efis);
+	ut_assert(!efis->con.no_ansi);
+	efi_console_set_ansi(true);
+	ut_assert(st.con.no_ansi);
 
 	return 0;
 }

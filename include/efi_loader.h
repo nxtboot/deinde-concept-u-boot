@@ -322,8 +322,6 @@ extern efi_uintn_t efi_memory_map_key;
 extern struct efi_runtime_services efi_runtime_services;
 extern struct efi_system_table systab;
 
-extern struct efi_simple_text_output_protocol efi_con_out;
-extern struct efi_simple_text_input_protocol efi_con_in;
 extern struct efi_console_control_protocol efi_console_control;
 extern const struct efi_device_path_to_text_protocol efi_device_path_to_text;
 /* implementation of the EFI_DEVICE_PATH_UTILITIES_PROTOCOL */
@@ -493,15 +491,65 @@ enum efi_image_auth_status {
 	EFI_IMAGE_AUTH_PASSED,
 };
 
+/* number of text modes the console offers: 80x25, 80x50 and the real size */
+#define EFI_MAX_COUT_MODE	3
+
+/**
+ * struct efi_cout_mode - a text mode of the console
+ *
+ * @columns: Number of columns
+ * @rows: Number of rows
+ * @present: true if the mode can be selected
+ */
+struct efi_cout_mode {
+	unsigned long columns;
+	unsigned long rows;
+	int present;
+};
+
+/**
+ * struct efi_console - state of the EFI console
+ *
+ * This holds everything the simple text input and output protocols keep
+ * between calls, so that it can be part of struct efi_state.
+ *
+ * @modes: The text modes on offer, indexed by mode number
+ * @mode: Mode information of the simple text output protocol
+ * @con_out: The simple text output protocol
+ * @next_key: The key read ahead from the console
+ * @cin_notify: List of registered key-notification functions
+ * @con_in_ex: The extended simple text input protocol
+ * @con_in: The simple text input protocol
+ * @uart_obj: EFI handle for the UART, carrying its device path
+ * @timer_event: Timer event used to poll the console for input
+ * @no_ansi: Suppress ANSI escape sequences, for unit tests
+ * @key_available: true if @next_key holds a key which has not been read
+ */
+struct efi_console {
+	struct efi_cout_mode modes[EFI_MAX_COUT_MODE];
+	struct simple_text_output_mode mode;
+	struct efi_simple_text_output_protocol con_out;
+	struct efi_key_data next_key;
+	struct list_head cin_notify;
+	struct efi_simple_text_input_ex_protocol con_in_ex;
+	struct efi_simple_text_input_protocol con_in;
+	struct efi_object uart_obj;
+	struct efi_event *timer_event;
+	bool no_ansi;
+	bool key_available;
+};
+
 /**
  * struct efi_state - state of the EFI subsystem
  *
- * The EFI subsystem is to keep its state here rather than in file-scope
- * variables, so that a test can set up a state of its own, run with it and
- * switch back, leaving the state it found untouched. Nothing has moved here
- * yet.
+ * The EFI subsystem keeps its state here rather than in file-scope variables,
+ * so that a test can set up a state of its own, run with it and switch back,
+ * leaving the state it found untouched. For now this covers the console.
+ *
+ * @con: State of the console
  */
 struct efi_state {
+	struct efi_console con;
 };
 
 /* The state in use; see efi_state_set() */
@@ -531,10 +579,18 @@ void efi_state_init(struct efi_state *st);
  *
  * This is for a state which is about to be discarded, e.g. by a test: select
  * another state once this returns. It frees what the state has taken from
- * malloc(). There is nothing to free yet; the patches which move state in add
- * to this as they go.
+ * malloc(): for now the console's key notifications.
  */
 void efi_state_uninit(void);
+
+/**
+ * efi_console_uninit_state() - Free the memory held by the console's state
+ *
+ * This frees the key notifications registered by the payload.
+ *
+ * @con: Console state to clean up
+ */
+void efi_console_uninit_state(struct efi_console *con);
 
 /**
  * efi_state_set() - Select the EFI state to use
@@ -544,6 +600,13 @@ void efi_state_uninit(void);
  * Return: the state which was in use, so that it can be restored
  */
 struct efi_state *efi_state_set(struct efi_state *st);
+
+/**
+ * efi_console_init_state() - Set up the console part of an EFI state
+ *
+ * @con: Console state to set up
+ */
+void efi_console_init_state(struct efi_console *con);
 
 /**
  * struct efi_loaded_image_obj - handle of a loaded image

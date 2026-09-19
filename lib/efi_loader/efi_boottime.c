@@ -4235,6 +4235,7 @@ struct efi_system_table __efi_runtime_data systab = {
  */
 efi_status_t efi_initialize_system_table(void)
 {
+	struct efi_console *con = &efis->con;
 	efi_status_t ret;
 
 	/* Allocate configuration table array */
@@ -4248,11 +4249,11 @@ efi_status_t efi_initialize_system_table(void)
 	 * relocation in SetVirtualAddressMap(), set them dynamically.
 	 */
 	systab.con_in_handle = efi_root;
-	systab.con_in = &efi_con_in;
+	systab.con_in = &con->con_in;
 	systab.con_out_handle = efi_root;
-	systab.con_out = &efi_con_out;
+	systab.con_out = &con->con_out;
 	systab.stderr_handle = efi_root;
-	systab.std_err = &efi_con_out;
+	systab.std_err = &con->con_out;
 	systab.boottime = &efi_boot_services;
 
 	/* Set CRC32 field in table headers */
