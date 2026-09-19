@@ -28,23 +28,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/* Task priority level */
-static efi_uintn_t efi_tpl = TPL_APPLICATION;
-
 /* List of all events */
 __efi_runtime_data LIST_HEAD(efi_events);
 
-/* List of queued events */
-static LIST_HEAD(efi_event_queue);
-
-/* Flag to disable timer activity in ExitBootServices() */
-static bool timers_enabled = true;
-
 /* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
 bool efi_st_keep_devices;
-
-/* List of all events registered by RegisterProtocolNotify() */
-static LIST_HEAD(efi_register_notify_events);
 
 /* Handle of the currently executing image */
 static efi_handle_t current_image;
@@ -67,6 +55,10 @@ void efi_bs_init_state(struct efi_bs *bs)
 {
 	memset(bs, '\0', sizeof(*bs));
 	INIT_LIST_HEAD(&bs->obj_list);
+	bs->tpl = TPL_APPLICATION;
+	INIT_LIST_HEAD(&bs->event_queue);
+	bs->timers_enabled = true;
+	INIT_LIST_HEAD(&bs->register_notify_events);
 }
 
 /* 1 if inside U-Boot code, 0 if inside EFI payload code */
@@ -223,7 +215,7 @@ static efi_status_t efi_purge_handle(efi_handle_t handle)
 	if (!list_empty(&handle->protocols))
 		return EFI_ACCESS_DENIED;
 	/* The handle is about to be freed. Remove it from events */
-	list_for_each_entry(item, &efi_register_notify_events, link) {
+	list_for_each_entry(item, &efis->bs.register_notify_events, link) {
 		struct efi_protocol_notification *hitem, *hnext;
 
 		list_for_each_entry_safe(hitem, hnext, &item->handles, link) {
@@ -245,23 +237,25 @@ static efi_status_t efi_purge_handle(efi_handle_t handle)
  */
 static void efi_process_event_queue(void)
 {
-	while (!list_empty(&efi_event_queue)) {
+	struct efi_bs *bs = &efis->bs;
+
+	while (!list_empty(&bs->event_queue)) {
 		struct efi_event *event;
 		efi_uintn_t old_tpl;
 
-		event = list_first_entry(&efi_event_queue, struct efi_event,
+		event = list_first_entry(&bs->event_queue, struct efi_event,
 					 queue_link);
-		if (efi_tpl >= event->notify_tpl)
+		if (bs->tpl >= event->notify_tpl)
 			return;
 		list_del(&event->queue_link);
 		event->queue_link.next = NULL;
 		event->queue_link.prev = NULL;
 		/* Events must be executed at the event's TPL */
-		old_tpl = efi_tpl;
-		efi_tpl = event->notify_tpl;
+		old_tpl = bs->tpl;
+		bs->tpl = event->notify_tpl;
 		EFI_CALL_VOID(event->notify_function(event,
 						     event->notify_context));
-		efi_tpl = old_tpl;
+		bs->tpl = old_tpl;
 		if (event->type == EVT_NOTIFY_SIGNAL)
 			event->is_signaled = 0;
 	}
@@ -277,6 +271,7 @@ static void efi_process_event_queue(void)
  */
 static void efi_queue_event(struct efi_event *event)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *item;
 
 	if (!event->notify_function)
@@ -287,7 +282,7 @@ static void efi_queue_event(struct efi_event *event)
 		 * Events must be notified in order of decreasing task priority
 		 * level. Insert the new event accordingly.
 		 */
-		list_for_each_entry(item, &efi_event_queue, queue_link) {
+		list_for_each_entry(item, &bs->event_queue, queue_link) {
 			if (item->notify_tpl < event->notify_tpl) {
 				list_add_tail(&event->queue_link,
 					      &item->queue_link);
@@ -296,7 +291,7 @@ static void efi_queue_event(struct efi_event *event)
 			}
 		}
 		if (event)
-			list_add_tail(&event->queue_link, &efi_event_queue);
+			list_add_tail(&event->queue_link, &bs->event_queue);
 		efi_process_event_queue();
 	}
 }
@@ -371,17 +366,18 @@ void efi_signal_event(struct efi_event *event)
  */
 static unsigned long EFIAPI efi_raise_tpl(efi_uintn_t new_tpl)
 {
-	efi_uintn_t old_tpl = efi_tpl;
+	struct efi_bs *bs = &efis->bs;
+	efi_uintn_t old_tpl = bs->tpl;
 	int ofs;
 
 	EFI_ENTRY("0x%zx", new_tpl);
 	ofs = efi_logs_call(EFILP_NONE, EFILBS_RAISE_TPL, 1, (u64)new_tpl);
 
-	if (new_tpl < efi_tpl)
+	if (new_tpl < bs->tpl)
 		EFI_PRINT("WARNING: new_tpl < current_tpl in %s\n", __func__);
-	efi_tpl = new_tpl;
-	if (efi_tpl > TPL_HIGH_LEVEL)
-		efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = new_tpl;
+	if (bs->tpl > TPL_HIGH_LEVEL)
+		bs->tpl = TPL_HIGH_LEVEL;
 
 	efi_loge_call(ofs, EFI_SUCCESS, (u64)old_tpl);
 	EFI_EXIT(EFI_SUCCESS);
@@ -399,16 +395,17 @@ static unsigned long EFIAPI efi_raise_tpl(efi_uintn_t new_tpl)
  */
 static void EFIAPI efi_restore_tpl(efi_uintn_t old_tpl)
 {
+	struct efi_bs *bs = &efis->bs;
 	int ofs;
 
 	EFI_ENTRY("0x%zx", old_tpl);
 	ofs = efi_logs_call(EFILP_NONE, EFILBS_RESTORE_TPL, 1, (u64)old_tpl);
 
-	if (old_tpl > efi_tpl)
+	if (old_tpl > bs->tpl)
 		EFI_PRINT("WARNING: old_tpl > current_tpl in %s\n", __func__);
-	efi_tpl = old_tpl;
-	if (efi_tpl > TPL_HIGH_LEVEL)
-		efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = old_tpl;
+	if (bs->tpl > TPL_HIGH_LEVEL)
+		bs->tpl = TPL_HIGH_LEVEL;
 
 	/*
 	 * Lowering the TPL may have made queued events eligible for execution.
@@ -902,7 +899,7 @@ void efi_timer_check(void)
 	u64 now = timer_get_us();
 
 	list_for_each_entry(evt, &efi_events, link) {
-		if (!timers_enabled)
+		if (!efis->bs.timers_enabled)
 			continue;
 		if (!(evt->type & EVT_TIMER) || now < evt->trigger_next)
 			continue;
@@ -1023,7 +1020,7 @@ static efi_status_t EFIAPI efi_wait_for_event(efi_uintn_t num_events,
 	if (!num_events || !event)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_INVALID_PARAMETER));
 	/* Check TPL */
-	if (efi_tpl != TPL_APPLICATION)
+	if (efis->bs.tpl != TPL_APPLICATION)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_UNSUPPORTED));
 	for (i = 0; i < num_events; ++i) {
 		if (efi_is_event(event[i]) != EFI_SUCCESS)
@@ -1110,7 +1107,7 @@ efi_status_t EFIAPI efi_close_event(struct efi_event *event)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_INVALID_PARAMETER));
 
 	/* Remove protocol notify registrations for the event */
-	list_for_each_entry_safe(item, next, &efi_register_notify_events,
+	list_for_each_entry_safe(item, next, &efis->bs.register_notify_events,
 				 link) {
 		if (event == item->event) {
 			struct efi_protocol_notification *hitem, *hnext;
@@ -1258,7 +1255,7 @@ efi_status_t efi_add_protocol(const efi_handle_t handle,
 	list_add_tail(&handler->link, &efiobj->protocols);
 
 	/* Notify registered events */
-	list_for_each_entry(event, &efi_register_notify_events, link) {
+	list_for_each_entry(event, &efis->bs.register_notify_events, link) {
 		if (!guidcmp(protocol, &event->protocol)) {
 			struct efi_protocol_notification *notif;
 
@@ -1583,7 +1580,7 @@ efi_status_t EFIAPI efi_register_protocol_notify(const efi_guid_t *protocol,
 	guidcpy(&item->protocol, protocol);
 	INIT_LIST_HEAD(&item->handles);
 
-	list_add_tail(&item->link, &efi_register_notify_events);
+	list_add_tail(&item->link, &efis->bs.register_notify_events);
 
 	*registration = item;
 out:
@@ -1634,7 +1631,7 @@ static struct efi_register_notify_event *efi_check_register_notify_event
 {
 	struct efi_register_notify_event *event;
 
-	list_for_each_entry(event, &efi_register_notify_events, link) {
+	list_for_each_entry(event, &efis->bs.register_notify_events, link) {
 		if (event == (struct efi_register_notify_event *)key)
 			return event;
 	}
@@ -2274,6 +2271,7 @@ error:
 static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 						  efi_uintn_t map_key)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *evt, *next_event;
 	efi_status_t ret = EFI_SUCCESS;
 	int ofs;
@@ -2302,7 +2300,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	}
 
 	/* Stop all timer related activities */
-	timers_enabled = false;
+	bs->timers_enabled = false;
 
 	/* Add related events to the event group */
 	list_for_each_entry(evt, &efi_events, link) {
@@ -2320,7 +2318,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	}
 
 	/* Make sure that notification functions are not called anymore */
-	efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = TPL_HIGH_LEVEL;
 
 	/* Notify variable services */
 	efi_variables_boot_exit_notify();
@@ -4281,6 +4279,7 @@ struct efi_boot_services *efi_get_boot(void)
 
 void efi_bs_uninit_state(struct efi_bs *bs)
 {
+	struct efi_register_notify_event *item, *next_item;
 	struct efi_object *obj, *next_obj;
 	struct efi_handler *root_dp;
 
@@ -4309,4 +4308,16 @@ void efi_bs_uninit_state(struct efi_bs *bs)
 			free(obj);
 	}
 	bs->root = NULL;
+
+	list_for_each_entry_safe(item, next_item, &bs->register_notify_events,
+				 link) {
+		struct efi_protocol_notification *hitem, *next_hitem;
+
+		list_for_each_entry_safe(hitem, next_hitem, &item->handles,
+					 link)
+			free(hitem);
+		free(item);
+	}
+	INIT_LIST_HEAD(&bs->register_notify_events);
+	INIT_LIST_HEAD(&bs->event_queue);
 }

@@ -30,6 +30,10 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assert(list_empty(&st.con.cin_notify));
 	ut_assert(list_empty(&st.bs.obj_list));
 	ut_assertnull(st.bs.root);
+	ut_asserteq(TPL_APPLICATION, st.bs.tpl);
+	ut_assert(list_empty(&st.bs.event_queue));
+	ut_assert(st.bs.timers_enabled);
+	ut_assert(list_empty(&st.bs.register_notify_events));
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

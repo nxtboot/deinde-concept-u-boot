@@ -541,11 +541,19 @@ struct efi_console {
  *
  * @obj_list: All the EFI objects (handles) the payload has access to while
  *	the boot services are active; nothing uses it after ExitBootServices()
+ * @event_queue: Events queued for their notification function to run
+ * @register_notify_events: Events registered by RegisterProtocolNotify()
  * @root: The root node, on which the console and other protocols are installed
+ * @tpl: Current task priority level
+ * @timers_enabled: false once ExitBootServices() has stopped the timers
  */
 struct efi_bs {
 	struct list_head obj_list;
+	struct list_head event_queue;
+	struct list_head register_notify_events;
 	efi_handle_t root;
+	efi_uintn_t tpl;
+	bool timers_enabled;
 };
 
 /**
@@ -609,8 +617,9 @@ void efi_console_uninit_state(struct efi_console *con);
  * efi_bs_uninit_state() - Free the memory held by the boot-services state
  *
  * This frees the handles, along with their protocol handlers and open-protocol
- * information. It does not free what a protocol interface points to, since
- * many of those are not allocated.
+ * information, as well as the protocol-notification records. It does not free
+ * what a protocol interface points to, since many of those are not allocated,
+ * nor the events, which are in pool memory.
  *
  * Anything else which refers to a handle must be gone first: in particular the
  * block devices, which keep their handle in a device tag, must have been
