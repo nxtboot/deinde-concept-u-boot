@@ -11,16 +11,6 @@
 
 struct efi_system_table_pointer __efi_runtime_data * systab_pointer = NULL;
 
-struct efi_debug_image_info_table_header efi_m_debug_info_table_header = {
-	0,
-	0,
-	NULL
-};
-
-/* efi_m_max_table_entries is the maximum entries allocated for
- * the efi_m_debug_info_table_header.efi_debug_image_info_table.
- */
-static u32 efi_m_max_table_entries;
 
 #define EFI_DEBUG_TABLE_ENTRY_SIZE  (sizeof(union efi_debug_image_info))
 
@@ -70,6 +60,7 @@ efi_status_t efi_core_new_debug_image_info_entry(u32 image_info_type,
 						 struct efi_loaded_image *loaded_image,
 						 efi_handle_t image_handle)
 {
+	struct efi_debug *debug = &efis->debug;
 	union efi_debug_image_info **table;
 	u32 index;
 	u32 table_size;
@@ -78,21 +69,21 @@ efi_status_t efi_core_new_debug_image_info_entry(u32 image_info_type,
 	/* Set the flag indicating that we're in the process of updating
 	 * the table.
 	 */
-	efi_m_debug_info_table_header.update_status |=
+	debug->table.update_status |=
 		EFI_DEBUG_IMAGE_INFO_UPDATE_IN_PROGRESS;
 
-	table = &efi_m_debug_info_table_header.efi_debug_image_info_table;
+	table = &debug->table.efi_debug_image_info_table;
 
-	if (efi_m_debug_info_table_header.table_size >= efi_m_max_table_entries) {
+	if (debug->table.table_size >= debug->max_entries) {
 		/* table is full, re-allocate the buffer increasing the size
 		 * by 4 KiB.
 		 */
-		table_size = efi_m_max_table_entries * EFI_DEBUG_TABLE_ENTRY_SIZE;
+		table_size = debug->max_entries * EFI_DEBUG_TABLE_ENTRY_SIZE;
 
 		ret = efi_realloc((void **)table, table_size + EFI_PAGE_SIZE);
 
 		if (ret != EFI_SUCCESS) {
-			efi_m_debug_info_table_header.update_status &=
+			debug->table.update_status &=
 				~EFI_DEBUG_IMAGE_INFO_UPDATE_IN_PROGRESS;
 			return ret;
 		}
@@ -100,14 +91,14 @@ efi_status_t efi_core_new_debug_image_info_entry(u32 image_info_type,
 		/* Enlarge the max table entries and set the first empty
 		 * entry index to be the original max table entries.
 		 */
-		efi_m_max_table_entries +=
+		debug->max_entries +=
 			EFI_PAGE_SIZE / EFI_DEBUG_TABLE_ENTRY_SIZE;
 	}
 
 	/* We always put the next entry at the end of the currently consumed
 	 * table (i.e. first free entry)
 	 */
-	index = efi_m_debug_info_table_header.table_size;
+	index = debug->table.table_size;
 
 	/* Allocate data for new entry. */
 	ret = efi_allocate_pool(EFI_BOOT_SERVICES_DATA,
@@ -121,17 +112,17 @@ efi_status_t efi_core_new_debug_image_info_entry(u32 image_info_type,
 		(*table)[index].normal_image->image_handle = image_handle;
 
 		/* Increase the number of EFI_DEBUG_IMAGE_INFO elements and
-		 * set the efi_m_debug_info_table_header in modified status.
+		 * set the debug->table in modified status.
 		 */
-		efi_m_debug_info_table_header.table_size++;
-		efi_m_debug_info_table_header.update_status |=
+		debug->table.table_size++;
+		debug->table.update_status |=
 			EFI_DEBUG_IMAGE_INFO_TABLE_MODIFIED;
 	} else {
 		log_err("Adding new efi_debug_image_info failed\n");
 		return ret;
 	}
 
-	efi_m_debug_info_table_header.update_status &=
+	debug->table.update_status &=
 		~EFI_DEBUG_IMAGE_INFO_UPDATE_IN_PROGRESS;
 
 	return EFI_SUCCESS;
@@ -144,15 +135,16 @@ efi_status_t efi_core_new_debug_image_info_entry(u32 image_info_type,
  **/
 void efi_core_remove_debug_image_info_entry(efi_handle_t image_handle)
 {
+	struct efi_debug *debug = &efis->debug;
 	union efi_debug_image_info *table;
 	u32 index;
 
-	efi_m_debug_info_table_header.update_status |=
+	debug->table.update_status |=
 		EFI_DEBUG_IMAGE_INFO_UPDATE_IN_PROGRESS;
 
-	table = efi_m_debug_info_table_header.efi_debug_image_info_table;
+	table = debug->table.efi_debug_image_info_table;
 
-	for (index = 0; index < efi_m_max_table_entries; index++) {
+	for (index = 0; index < debug->max_entries; index++) {
 		if (table[index].normal_image &&
 		    table[index].normal_image->image_handle == image_handle) {
 			/* Found a match. Free up the table entry.
@@ -162,22 +154,22 @@ void efi_core_remove_debug_image_info_entry(efi_handle_t image_handle)
 
 			memmove(&table[index],
 				&table[index + 1],
-				(efi_m_debug_info_table_header.table_size -
+				(debug->table.table_size -
 				 index - 1) * EFI_DEBUG_TABLE_ENTRY_SIZE);
 
 			/* Decrease the number of EFI_DEBUG_IMAGE_INFO
-			 * elements and set the efi_m_debug_info_table_header
+			 * elements and set the debug->table
 			 * in modified status.
 			 */
-			efi_m_debug_info_table_header.table_size--;
-			table[efi_m_debug_info_table_header.table_size].normal_image =
+			debug->table.table_size--;
+			table[debug->table.table_size].normal_image =
 				NULL;
-			efi_m_debug_info_table_header.update_status |=
+			debug->table.update_status |=
 				EFI_DEBUG_IMAGE_INFO_TABLE_MODIFIED;
 			break;
 		}
 	}
 
-	efi_m_debug_info_table_header.update_status &=
+	debug->table.update_status &=
 		~EFI_DEBUG_IMAGE_INFO_UPDATE_IN_PROGRESS;
 }

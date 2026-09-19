@@ -293,7 +293,7 @@ efi_status_t efi_init_obj_list(void)
 			goto out;
 
 		ret = efi_install_configuration_table(&debug_image_info_table_guid,
-						      &efi_m_debug_info_table_header);
+						      &efis->debug.table);
 		if (ret != EFI_SUCCESS)
 			goto out;
 	}

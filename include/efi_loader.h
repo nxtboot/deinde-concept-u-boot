@@ -228,6 +228,17 @@ struct efi_initrd {
 };
 
 /**
+ * struct efi_debug - the debug-image-info table
+ *
+ * @table: The table header, installed as a configuration table
+ * @max_entries: Number of entries allocated for the table
+ */
+struct efi_debug {
+	struct efi_debug_image_info_table_header table;
+	u32 max_entries;
+};
+
+/**
  * struct efi_system_partition - the first EFI system partition found
  *
  * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
@@ -359,7 +370,6 @@ extern const struct efi_hii_config_access_protocol efi_hii_config_access;
 extern const struct efi_hii_database_protocol efi_hii_database;
 extern const struct efi_hii_string_protocol efi_hii_string;
 /* structure for EFI_DEBUG_SUPPORT_PROTOCOL */
-extern struct efi_debug_image_info_table_header efi_m_debug_info_table_header;
 
 /* GUID for the auto generated boot menu entry */
 extern const efi_guid_t efi_guid_bootmenu_auto_generated;
@@ -628,6 +638,7 @@ struct efi_mem {
  * @system_partition: The first EFI system partition found, which holds
  *	the variable file
  * @initrd: The initial ramdisk registered for the OS
+ * @debug: The debug-image-info table
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -648,6 +659,7 @@ struct efi_state {
 	struct efi_mem mem;
 	struct efi_system_partition system_partition;
 	struct efi_initrd initrd;
+	struct efi_debug debug;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
