@@ -245,6 +245,37 @@ def test_distro_windows11_install(ubman):
     ubman.restart_uboot()
 
 
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win11-sb')
+@pytest.mark.restart
+def test_distro_windows11_secure(ubman):
+    """Boot Windows 11 with secure boot enabled
+
+    As test_distro_windows11_installed(), but the 'qemu-x86_64-win11-sb'
+    role's variable flash holds a platform key with Microsoft's KEK and db
+    certificates, so U-Boot is in secure-boot mode and verifies the boot
+    manager's signature against db before running it. The image's logon
+    script also reports what Windows made of it: its kernel records secure
+    boot as enabled in the registry (UEFISecureBootEnabled), which is what
+    msinfo32 shows as the Secure Boot State.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(600 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+            ubman.expect([r'UBOOT-WINDOWS-SECUREBOOT [^\r\n]*reg=1'])
+
+    ubman.restart_uboot()
+
+
 @pytest.mark.boardspec('colibri-imx8x')
 @pytest.mark.role('colibrimx8')
 @pytest.mark.restart
