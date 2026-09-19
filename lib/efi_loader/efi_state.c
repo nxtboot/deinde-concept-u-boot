@@ -7,6 +7,7 @@
 
 #include <efi_loader.h>
 #include <string.h>
+#include <dm/uclass-id.h>
 
 /*
  * The state used from boot; a test can select another with efi_state_set().
@@ -24,6 +25,7 @@ void efi_state_init(struct efi_state *st)
 	efi_systab_init_state(&st->systab);
 	st->obj_list_initialized = EFI_OBJ_LIST_NOT_INIT;
 	efi_mem_init_state(&st->mem);
+	st->system_partition.uclass_id = UCLASS_INVALID;
 }
 
 int efi_state_init_default(void)

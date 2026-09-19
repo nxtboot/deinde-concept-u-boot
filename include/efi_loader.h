@@ -201,12 +201,18 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 /* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
 extern bool efi_st_keep_devices;
 
-/* EFI system partition */
-extern struct efi_system_partition {
+/**
+ * struct efi_system_partition - the first EFI system partition found
+ *
+ * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
+ * @devnum: Device number of the block device
+ * @part: Partition number
+ */
+struct efi_system_partition {
 	enum uclass_id uclass_id;
 	int devnum;
 	u8 part;
-} efi_system_partition;
+};
 
 int __efi_entry_check(void);
 int __efi_exit_check(void);
@@ -593,6 +599,8 @@ struct efi_mem {
  * @bs: State of the boot services
  * @systab: The EFI system table handed to the payload
  * @mem: State of the memory map
+ * @system_partition: The first EFI system partition found, which holds
+ *	the variable file
  * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
  *	until it has run, then its return value, so that a failure is not
  *	retried
@@ -602,6 +610,7 @@ struct efi_state {
 	struct efi_bs bs;
 	struct efi_system_table systab;
 	struct efi_mem mem;
+	struct efi_system_partition system_partition;
 	efi_status_t obj_list_initialized;
 };
 
