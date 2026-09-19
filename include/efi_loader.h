@@ -628,6 +628,8 @@ struct efi_mem {
  * @system_partition: The first EFI system partition found, which holds
  *	the variable file
  * @initrd: The initial ramdisk registered for the OS
+ * @capsule_root: Root directory of the system partition, opened for
+ *	capsules on disk, or NULL
  * @watchdog_event: Timer event which implements the watchdog, or NULL until
  *	efi_init_obj_list() has registered it. It is only used through the
  *	SetWatchdogTimer() service and at ExitBootServices(), both of which
@@ -646,6 +648,7 @@ struct efi_state {
 	struct efi_system_partition system_partition;
 	struct efi_initrd initrd;
 	struct efi_event *watchdog_event;
+	struct efi_file_handle *capsule_root;
 	efi_status_t obj_list_initialized;
 	enum efi_secure_mode secure_mode;
 	bool secure_boot;
