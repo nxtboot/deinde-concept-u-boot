@@ -103,8 +103,9 @@ def test_distro_windows_installed(ubman):
     """Boot an installed Windows 10 through U-Boot's EFI loader
 
     The 'qemu-x86_64-win-installed' role attaches a disk holding a Windows
-    10 installation (UEFI/GPT) as a SATA disk, in snapshot mode so that the
-    image is never modified. U-Boot finds the ESP
+    10 installation (UEFI/GPT, with the virtio-win drivers) as a virtio
+    disk, in snapshot mode so that the image is never modified. U-Boot finds
+    the ESP
     and runs EFI/Boot/bootx64.efi, which is the Windows boot manager; that
     reads the BCD and loads winload, the kernel and the boot drivers from the
     NTFS volume over the block-IO protocol, then calls ExitBootServices().
@@ -138,10 +139,11 @@ def test_distro_windows_installed(ubman):
 def test_distro_windows_install(ubman):
     """Install Windows 10 from its ISO with U-Boot as the firmware
 
-    The 'qemu-x86_64-win-install' role attaches a blank SATA disk in
-    snapshot mode as the target, and the installer ISO and an unattend CD as
-    SATA CD-ROMs, which U-Boot can boot from now that its AHCI driver handles
-    ATAPI devices.
+    The 'qemu-x86_64-win-install' role attaches a blank virtio disk in
+    snapshot mode as the target and the installer ISO as a second virtio
+    disk for U-Boot to boot from, plus the same ISO and an unattend CD (with
+    the virtio-win drivers, which setup needs to see the target) as SATA
+    CD-ROMs for Windows setup, which only reads its media from a CD-ROM.
 
     On the first boot the blank disk has nothing to boot, so the boot manager
     falls through to the ISO and asks for a key press. Setup then runs

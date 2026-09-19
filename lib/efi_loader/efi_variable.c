@@ -576,6 +576,13 @@ efi_set_variable_runtime(u16 *variable_name, const efi_guid_t *vendor,
 
 	efi_var_mem_del(var);
 
+	/*
+	 * Keep the change across a cold boot if the storage allows. The store
+	 * in memory is updated either way, so a failure here is not reported
+	 */
+	if (IS_ENABLED(CONFIG_EFI_VARIABLE_FLASH_STORE))
+		efi_var_flash_sync();
+
 	return EFI_SUCCESS;
 }
 
@@ -620,10 +627,16 @@ efi_status_t efi_init_variables(void)
 		if (buf) {
 			ret = efi_var_apply(buf);
 			free(buf);
-			if (ret != EFI_SUCCESS)
+			if (ret != EFI_SUCCESS) {
 				log_err("Cannot apply recovered EFI variables\n");
-			else
+			} else {
 				log_info("Recovered EFI variables from memory\n");
+				/*
+				 * The OS wrote these at runtime, when the storage
+				 * could not be updated, so do that now
+				 */
+				efi_var_to_storage();
+			}
 		}
 	}
 

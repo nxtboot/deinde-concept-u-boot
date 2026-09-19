@@ -116,6 +116,19 @@ config EFI_VARIABLE_FILE_STORE
 	  Select this option if you want non-volatile UEFI variables to be
 	  stored as file /ubootefi.var on the EFI system partition.
 
+config EFI_VARIABLE_FLASH_STORE
+	bool "Store non-volatile UEFI variables in memory-mapped flash"
+	help
+	  Select this option if you want non-volatile UEFI variables to be
+	  stored in a memory-mapped NOR flash which uses the Intel command
+	  set, such as QEMU's pflash on x86. Unlike a file, the flash can be
+	  written at runtime as well, so with CONFIG_EFI_RT_VOLATILE_STORE
+	  a variable which the OS sets stays set across a cold boot.
+
+	  CONFIG_EFI_VARIABLE_FLASH_ADDR gives the address of the store, which
+	  must have CONFIG_EFI_VAR_BUF_SIZE bytes of flash behind it. If no
+	  flash answers there, variables are not persisted.
+
 config EFI_VARIABLE_SF_STORE
 	bool "Store non-volatile UEFI variables in SPI Flash"
 	depends on SPI_FLASH
@@ -163,7 +176,7 @@ endchoice
 
 config EFI_RT_VOLATILE_STORE
 	bool "Allow variable runtime services in volatile storage (e.g RAM)"
-	depends on EFI_VARIABLE_FILE_STORE
+	depends on EFI_VARIABLE_FILE_STORE || EFI_VARIABLE_FLASH_STORE
 	help
 	  When EFI variables are stored on file we don't allow SetVariableRT,
 	  since the OS doesn't know how to write that file. At the same time
@@ -172,7 +185,8 @@ config EFI_RT_VOLATILE_STORE
 	  Enable this option to allow SetVariableRT on the RAM backend of
 	  the EFI variable storage. The OS will be responsible for syncing
 	  the RAM contents to the file, otherwise any changes made during
-	  runtime won't persist reboots.
+	  runtime won't persist reboots. With the flash store the change is
+	  written to the flash at once, so it does persist.
 	  Authenticated variables are not supported. Note that this will
 	  violate the EFI spec since writing auth variables will return
 	  EFI_INVALID_PARAMETER
@@ -203,6 +217,22 @@ config FFA_SHARED_MM_BUF_ADDR
 	  used for communication between the MM feature in U-Boot and
 	  the MM SP in secure world.
 	  It is assumed that the MM SP knows the address of the shared MM communication buffer.
+
+config EFI_VARIABLE_FLASH_ADDR
+	hex "Address of the flash holding the EFI variables"
+	depends on EFI_VARIABLE_FLASH_STORE
+	help
+	  Address at which the variable store starts in the memory-mapped
+	  flash. It must be the start of an erase block, and the flash must
+	  extend for at least CONFIG_EFI_VAR_BUF_SIZE bytes from there.
+
+config EFI_VARIABLE_FLASH_SECTOR_SIZE
+	hex "Erase-block size of the flash holding the EFI variables"
+	depends on EFI_VARIABLE_FLASH_STORE
+	default 0x1000
+	help
+	  Size of the flash's erase blocks. Writing the store erases as many
+	  blocks as it needs from CONFIG_EFI_VARIABLE_FLASH_ADDR onwards.
 
 config EFI_VARIABLE_SF_OFFSET
 	hex "EFI variables in SPI flash offset"

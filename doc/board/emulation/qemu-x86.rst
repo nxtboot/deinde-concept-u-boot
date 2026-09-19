@@ -180,6 +180,23 @@ and you can work through the installer flow normally.
 Note that standard boot will not find 32-bit distros, since it looks for a
 different filename.
 
+EFI variables
+-------------
+
+On qemu-x86_64, U-Boot keeps its EFI variables in a flash, which QEMU
+provides as pflash. QEMU only takes a variable flash behind a code flash, so
+the ROM goes in as pflash unit 0 and the variables as unit 1, a 512 KiB image
+which then sits just below the ROM, at 0xffd80000::
+
+   qemu-img create -f raw vars.img 512K
+   qemu-system-x86_64 -M q35 -m 4G -enable-kvm -nographic \
+     -drive if=pflash,unit=0,file=/tmp/b/qemu-x86_64/u-boot.rom,format=raw,readonly=on \
+     -drive if=pflash,unit=1,file=vars.img,format=raw
+
+Variables set at boot time, and at runtime by the OS, are written to the
+flash at once and so survive a cold boot. Without the flash, U-Boot keeps
+them in memory, where they last for a warm reset only.
+
 Booting Windows
 ---------------
 
@@ -197,9 +214,25 @@ controller::
      -device ide-cd,drive=cd0,bus=ide.1 \
      -serial mon:stdio
 
-Virtio disks are faster, but Windows only sees them once the ``viostor``
-driver from the virtio-win ISO has been given to setup, through the setup UI
-or ``DriverPaths`` in an ``autounattend.xml``.
+Virtio disks are faster: U-Boot reaches the kernel about 0.6 s sooner from a
+virtio disk and 2 s sooner from a virtio ISO than through AHCI. Windows has
+no virtio driver of its own, though, so setup must be given the ``viostor``
+driver from the virtio-win ISO, through the setup UI or ``DriverPaths`` in
+an ``autounattend.xml``, and it still wants the install media on a CD-ROM,
+so the ISO is attached both ways::
+
+   qemu-system-x86_64 -M q35 -m 4G -smp 4 -enable-kvm \
+     -bios /tmp/b/qemu-x86_64/u-boot.rom \
+     -drive if=none,id=hd0,file=win.qcow2 -device virtio-blk-pci,drive=hd0 \
+     -drive if=none,id=iso0,file=Win10.iso,format=raw,readonly=on \
+     -device virtio-blk-pci,drive=iso0 \
+     -drive if=none,id=cd0,media=cdrom,file=Win10.iso,format=raw,readonly=on \
+     -device ide-cd,drive=cd0,bus=ide.1 \
+     -drive if=none,id=cd1,media=cdrom,file=virtio-win.iso,format=raw,readonly=on \
+     -device ide-cd,drive=cd1,bus=ide.2 \
+     -serial mon:stdio
+
+Once installed that way, Windows boots from the virtio disk alone.
 
 The boot manager asks for a key press before it will boot from the
 installer; the serial console works for that. Setup then runs as it would on
@@ -209,10 +242,10 @@ fast host.
 
 At the end of the first phase, setup writes its boot entries with the runtime
 SetVariable() service and refuses to continue if that fails, so
-``CONFIG_EFI_RT_VOLATILE_STORE`` is enabled for QEMU. U-Boot keeps those
-variables in memory only, which is enough for setup; on the next boot the
-boot manager finds Windows through the entries U-Boot generates for each
-disk.
+``CONFIG_EFI_RT_VOLATILE_STORE`` is enabled for QEMU. With the variable flash
+attached those entries go straight to the flash; without it U-Boot keeps them
+in memory, which is enough for setup, since on the next boot the boot manager
+finds Windows through the entries U-Boot generates for each disk.
 
 Windows writes nothing to the serial port at all, so once the kernel starts
 the video console is the only way to see it.
