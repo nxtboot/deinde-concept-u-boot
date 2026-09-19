@@ -317,7 +317,6 @@ static inline void efi_count_show(void) {}
 extern efi_uintn_t efi_memory_map_key;
 
 extern struct efi_runtime_services efi_runtime_services;
-extern struct efi_system_table systab;
 
 extern struct efi_console_control_protocol efi_console_control;
 extern const struct efi_device_path_to_text_protocol efi_device_path_to_text;
@@ -574,15 +573,22 @@ struct efi_bs {
  *
  * The EFI subsystem keeps its state here rather than in file-scope variables,
  * so that a test can set up a state of its own, run with it and switch back,
- * leaving the state it found untouched. For now this covers the console and
- * the boot services.
+ * leaving the state it found untouched. For now this covers the console, the
+ * boot services and the system table.
+ *
+ * The state in use when the OS is started must stay accessible at runtime,
+ * since the OS keeps a pointer to the system table, so the default state and
+ * the pointer to it are runtime data. Runtime code may only use them while
+ * the physical mapping is still in place, i.e. up to SetVirtualAddressMap().
  *
  * @con: State of the console
  * @bs: State of the boot services
+ * @systab: The EFI system table handed to the payload
  */
 struct efi_state {
 	struct efi_console con;
 	struct efi_bs bs;
+	struct efi_system_table systab;
 };
 
 /* The state in use; see efi_state_set() */
@@ -591,7 +597,8 @@ extern struct efi_state *efis;
 /**
  * efi_state_init_default() - Set up the default EFI state
  *
- * This runs right after relocation, before anything adds to the state.
+ * This runs right after relocation, before anything adds to the state. It
+ * cannot run before efi_runtime_relocate(), since the state is runtime data.
  *
  * Return: 0
  */
@@ -664,6 +671,17 @@ void efi_console_init_state(struct efi_console *con);
  * @bs: Boot-services state to set up
  */
 void efi_bs_init_state(struct efi_bs *bs);
+
+/**
+ * efi_systab_init_state() - Set up the system table of an EFI state
+ *
+ * This fills in what is known before the boot services start: the header, the
+ * firmware vendor and revision and the runtime services. The rest is set by
+ * efi_initialize_system_table().
+ *
+ * @systab: System table to set up
+ */
+void efi_systab_init_state(struct efi_system_table *systab);
 
 /**
  * struct efi_loaded_image_obj - handle of a loaded image

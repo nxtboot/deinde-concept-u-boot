@@ -1753,12 +1753,13 @@ static efi_status_t EFIAPI efi_locate_handle_ext(
  */
 static void efi_remove_configuration_table(int i)
 {
-	struct efi_configuration_table *this = &systab.tables[i];
-	struct efi_configuration_table *next = &systab.tables[i + 1];
-	struct efi_configuration_table *end = &systab.tables[systab.nr_tables];
+	struct efi_system_table *systab = &efis->systab;
+	struct efi_configuration_table *this = &systab->tables[i];
+	struct efi_configuration_table *next = &systab->tables[i + 1];
+	struct efi_configuration_table *end = &systab->tables[systab->nr_tables];
 
 	memmove(this, next, (ulong)end - (ulong)next);
-	systab.nr_tables--;
+	systab->nr_tables--;
 }
 
 /**
@@ -1775,6 +1776,7 @@ static void efi_remove_configuration_table(int i)
 efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 					     void *table)
 {
+	struct efi_system_table *systab = &efis->systab;
 	struct efi_event *evt;
 	int i;
 
@@ -1782,10 +1784,10 @@ efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 		return EFI_INVALID_PARAMETER;
 
 	/* Check for GUID override */
-	for (i = 0; i < systab.nr_tables; i++) {
-		if (!guidcmp(guid, &systab.tables[i].guid)) {
+	for (i = 0; i < systab->nr_tables; i++) {
+		if (!guidcmp(guid, &systab->tables[i].guid)) {
 			if (table)
-				systab.tables[i].table = table;
+				systab->tables[i].table = table;
 			else
 				efi_remove_configuration_table(i);
 			goto out;
@@ -1800,13 +1802,13 @@ efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 		return EFI_OUT_OF_RESOURCES;
 
 	/* Add a new entry */
-	guidcpy(&systab.tables[i].guid, guid);
-	systab.tables[i].table = table;
-	systab.nr_tables = i + 1;
+	guidcpy(&systab->tables[i].guid, guid);
+	systab->tables[i].table = table;
+	systab->nr_tables = i + 1;
 
 out:
-	/* systab.nr_tables may have changed. So we need to update the CRC32 */
-	efi_update_table_header_crc32(&systab.hdr);
+	/* systab->nr_tables may have changed. So we need to update the CRC32 */
+	efi_update_table_header_crc32(&systab->hdr);
 
 	/* Notify that the configuration table was changed */
 	list_for_each_entry(evt, &efi_events, link) {
@@ -1891,7 +1893,7 @@ efi_status_t efi_setup_loaded_image(struct efi_device_path *device_path,
 
 	info->revision =  EFI_LOADED_IMAGE_PROTOCOL_REVISION;
 	info->file_path = file_path;
-	info->system_table = &systab;
+	info->system_table = &efis->systab;
 
 	if (device_path) {
 		info->device_handle = efi_dp_find_obj(device_path, NULL, NULL);
@@ -2215,7 +2217,7 @@ efi_status_t EFIAPI efi_load_image(bool boot_policy,
 		efi_free_pages(map_to_sysmem(dest_buffer),
 			       efi_size_in_pages(source_size));
 	if (ret == EFI_SUCCESS || ret == EFI_SECURITY_VIOLATION) {
-		info->system_table = &systab;
+		info->system_table = &efis->systab;
 		info->parent_handle = parent_image;
 	} else {
 		/* The image is invalid. Release all associated resources. */
@@ -2253,6 +2255,7 @@ error:
 static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 						  efi_uintn_t map_key)
 {
+	struct efi_system_table *systab = &efis->systab;
 	struct efi_bs *bs = &efis->bs;
 	struct efi_event *evt, *next_event;
 	efi_status_t ret = EFI_SUCCESS;
@@ -2268,7 +2271,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	}
 
 	/* Check if ExitBootServices has already been called */
-	if (!systab.boottime)
+	if (!systab->boottime)
 		goto out;
 
 	/* Notify EFI_EVENT_GROUP_BEFORE_EXIT_BOOT_SERVICES event group. */
@@ -2320,16 +2323,16 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	efi_runtime_detach();
 
 	/* Disable boot time services */
-	systab.con_in_handle = NULL;
-	systab.con_in = NULL;
-	systab.con_out_handle = NULL;
-	systab.con_out = NULL;
-	systab.stderr_handle = NULL;
-	systab.std_err = NULL;
-	systab.boottime = NULL;
+	systab->con_in_handle = NULL;
+	systab->con_in = NULL;
+	systab->con_out_handle = NULL;
+	systab->con_out = NULL;
+	systab->stderr_handle = NULL;
+	systab->std_err = NULL;
+	systab->boottime = NULL;
 
 	/* Recalculate CRC32 */
-	efi_update_table_header_crc32(&systab.hdr);
+	efi_update_table_header_crc32(&systab->hdr);
 
 	/* Give the payload some time to boot */
 	efi_set_watchdog(0);
@@ -3447,7 +3450,7 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 	image_obj->header.type = EFI_OBJECT_TYPE_STARTED_IMAGE;
 	EFI_PRINT("Starting image loaded at 0x%p, entry point 0x%p\n",
 		  info->image_base, image_obj->entry);
-	ret = EFI_CALL(image_obj->entry(image_handle, &systab));
+	ret = EFI_CALL(image_obj->entry(image_handle, &efis->systab));
 
 	/*
 	 * Control is returned from a started UEFI image either by calling
@@ -3456,7 +3459,7 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 	 * image.
 	 */
 	return efi_logr_call(ofs,
-		EFI_CALL(systab.boottime->exit(image_handle, ret, 0, NULL)));
+		EFI_CALL(efis->systab.boottime->exit(image_handle, ret, 0, NULL)));
 }
 
 /**
@@ -4201,18 +4204,16 @@ static struct efi_boot_services efi_boot_services = {
 
 static u16 __efi_runtime_data firmware_vendor[] = u"Deinde Concept U-Boot";
 
-struct efi_system_table __efi_runtime_data systab = {
-	.hdr = {
-		.signature = EFI_SYSTEM_TABLE_SIGNATURE,
-		.revision = EFI_SPECIFICATION_VERSION,
-		.headersize = sizeof(struct efi_system_table),
-	},
-	.fw_vendor = firmware_vendor,
-	.fw_revision = FW_VERSION << 16 | FW_PATCHLEVEL << 8,
-	.runtime = &efi_runtime_services,
-	.nr_tables = 0,
-	.tables = NULL,
-};
+void efi_systab_init_state(struct efi_system_table *systab)
+{
+	memset(systab, '\0', sizeof(*systab));
+	systab->hdr.signature = EFI_SYSTEM_TABLE_SIGNATURE;
+	systab->hdr.revision = EFI_SPECIFICATION_VERSION;
+	systab->hdr.headersize = sizeof(struct efi_system_table);
+	systab->fw_vendor = firmware_vendor;
+	systab->fw_revision = FW_VERSION << 16 | FW_PATCHLEVEL << 8;
+	systab->runtime = &efi_runtime_services;
+}
 
 /**
  * efi_initialize_system_table() - Initialize system table
@@ -4222,6 +4223,7 @@ struct efi_system_table __efi_runtime_data systab = {
 efi_status_t efi_initialize_system_table(void)
 {
 	struct efi_console *con = &efis->con;
+	struct efi_system_table *systab = &efis->systab;
 	const struct efi_bs *bs = &efis->bs;
 	efi_status_t ret;
 
@@ -4229,22 +4231,22 @@ efi_status_t efi_initialize_system_table(void)
 	ret = efi_allocate_pool(EFI_RUNTIME_SERVICES_DATA,
 				EFI_MAX_CONFIGURATION_TABLES *
 				sizeof(struct efi_configuration_table),
-				(void **)&systab.tables);
+				(void **)&systab->tables);
 
 	/*
 	 * These entries will be set to NULL in ExitBootServices(). To avoid
 	 * relocation in SetVirtualAddressMap(), set them dynamically.
 	 */
-	systab.con_in_handle = bs->root;
-	systab.con_in = &con->con_in;
-	systab.con_out_handle = bs->root;
-	systab.con_out = &con->con_out;
-	systab.stderr_handle = bs->root;
-	systab.std_err = &con->con_out;
-	systab.boottime = &efi_boot_services;
+	systab->con_in_handle = bs->root;
+	systab->con_in = &con->con_in;
+	systab->con_out_handle = bs->root;
+	systab->con_out = &con->con_out;
+	systab->stderr_handle = bs->root;
+	systab->std_err = &con->con_out;
+	systab->boottime = &efi_boot_services;
 
 	/* Set CRC32 field in table headers */
-	efi_update_table_header_crc32(&systab.hdr);
+	efi_update_table_header_crc32(&systab->hdr);
 	efi_update_table_header_crc32(&efi_runtime_services.hdr);
 	efi_update_table_header_crc32(&efi_boot_services.hdr);
 
@@ -4253,12 +4255,12 @@ efi_status_t efi_initialize_system_table(void)
 
 struct efi_system_table *efi_get_sys_table(void)
 {
-	return &systab;
+	return &efis->systab;
 }
 
 struct efi_boot_services *efi_get_boot(void)
 {
-	return systab.boottime;
+	return efis->systab.boottime;
 }
 
 void efi_bs_uninit_state(struct efi_bs *bs)

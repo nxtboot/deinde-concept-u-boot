@@ -766,13 +766,14 @@ error:
  */
 efi_status_t efi_bootmgr_load(efi_handle_t *handle, void **load_options)
 {
+	const struct efi_system_table *systab = &efis->systab;
 	u16 bootnext, *bootorder;
 	efi_uintn_t size;
 	int i, num;
 	efi_status_t ret;
 
-	bs = systab.boottime;
-	rs = systab.runtime;
+	bs = systab->boottime;
+	rs = systab->runtime;
 
 	/* BootNext */
 	size = sizeof(bootnext);

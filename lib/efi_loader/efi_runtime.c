@@ -851,6 +851,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 			uint32_t descriptor_version,
 			struct efi_mem_desc *virtmap)
 {
+	struct efi_system_table *systab = &efis->systab;
 	efi_uintn_t n = memory_map_size / descriptor_size;
 	efi_uintn_t i;
 	efi_status_t ret = EFI_INVALID_PARAMETER;
@@ -935,12 +936,12 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 				*lmmio->ptr = (void *)new_addr;
 			}
 		}
-		if ((map_start <= (uintptr_t)systab.tables) &&
-		    (map_end >= (uintptr_t)systab.tables)) {
-			char *ptr = (char *)systab.tables;
+		if (map_start <= (uintptr_t)systab->tables &&
+		    map_end >= (uintptr_t)systab->tables) {
+			char *ptr = (char *)systab->tables;
 
 			ptr += off;
-			systab.tables = (struct efi_configuration_table *)ptr;
+			systab->tables = (struct efi_configuration_table *)ptr;
 		}
 	}
 

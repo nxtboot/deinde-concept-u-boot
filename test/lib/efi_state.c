@@ -15,6 +15,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 {
 	struct efi_console *con;
 	struct efi_bs *bs;
+	struct efi_system_table *systab;
 	struct efi_state st, *old;
 
 	if (!IS_ENABLED(CONFIG_EFI_LOADER))
@@ -27,6 +28,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	efi_state_init(&st);
 	con = &st.con;
 	bs = &st.bs;
+	systab = &st.systab;
 	ut_asserteq(1, con->mode.max_mode);
 	ut_asserteq(80, con->modes[0].columns);
 	ut_asserteq(25, con->modes[0].rows);
@@ -41,6 +43,11 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(bs->current_image);
 	ut_asserteq(1, bs->entry_count);
 	ut_asserteq(0, bs->nesting_level);
+	ut_asserteq_64(EFI_SYSTEM_TABLE_SIGNATURE, systab->hdr.signature);
+	ut_assertnonnull(systab->fw_vendor);
+	ut_assertnonnull(systab->runtime);
+	ut_assertnull(systab->boottime);
+	ut_asserteq(0, systab->nr_tables);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

@@ -44,7 +44,7 @@ efi_status_t efi_initialize_system_table_pointer(void)
 	systab_pointer->crc32 = 0;
 
 	systab_pointer->signature = EFI_SYSTEM_TABLE_SIGNATURE;
-	systab_pointer->efi_system_table_base = (uintptr_t)&systab;
+	systab_pointer->efi_system_table_base = (uintptr_t)&efis->systab;
 	systab_pointer->crc32 = crc32(0,
 				      (const unsigned char *)systab_pointer,
 				      sizeof(struct efi_system_table_pointer));

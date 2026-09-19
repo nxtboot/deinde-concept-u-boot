@@ -1501,7 +1501,7 @@ static int bootflow_efi(struct unit_test_state *uts)
 	ut_assertok(run_command("bootflow select 1", 0));
 	ut_assert_console_end();
 
-	systab.fw_vendor = test_vendor;
+	efis->systab.fw_vendor = test_vendor;
 
 	/* the USB block-device should have beeen probed */
 	ut_assertok(uclass_find_device_by_seq(UCLASS_USB, 1, &usb));

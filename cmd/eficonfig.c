@@ -2415,13 +2415,14 @@ static efi_status_t eficonfig_process_delete_boot_option(void *data)
  */
 static efi_status_t eficonfig_init(void)
 {
+	const struct efi_system_table *systab = &efis->systab;
 	efi_status_t ret = EFI_SUCCESS;
 	static bool init;
 	unsigned long columns, rows;
 
 	if (!init) {
-		cout = systab.con_out;
-		cin = systab.con_in;
+		cout = systab->con_out;
+		cin = systab->con_in;
 
 		cout->query_mode(cout, cout->mode->mode, &columns, &rows);
 		avail_row = rows - (EFICONFIG_MENU_HEADER_ROW_NUM +

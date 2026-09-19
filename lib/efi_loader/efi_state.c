@@ -8,16 +8,20 @@
 #include <efi_loader.h>
 #include <string.h>
 
-/* The state used from boot; a test can select another with efi_state_set() */
-static struct efi_state efi_default_state;
+/*
+ * The state used from boot; a test can select another with efi_state_set().
+ * The OS keeps a pointer to the system table in here, so it is runtime data.
+ */
+static struct efi_state __efi_runtime_data efi_default_state;
 
-struct efi_state *efis = &efi_default_state;
+struct efi_state *efis __efi_runtime_data = &efi_default_state;
 
 void efi_state_init(struct efi_state *st)
 {
 	memset(st, '\0', sizeof(*st));
 	efi_console_init_state(&st->con);
 	efi_bs_init_state(&st->bs);
+	efi_systab_init_state(&st->systab);
 }
 
 int efi_state_init_default(void)

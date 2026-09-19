@@ -365,11 +365,12 @@ static efi_status_t copy_fdt(void **fdtp)
  */
 void *efi_get_configuration_table(const efi_guid_t *guid)
 {
+	struct efi_system_table *systab = &efis->systab;
 	size_t i;
 
-	for (i = 0; i < systab.nr_tables; i++) {
-		if (!guidcmp(guid, &systab.tables[i].guid))
-			return systab.tables[i].table;
+	for (i = 0; i < systab->nr_tables; i++) {
+		if (!guidcmp(guid, &systab->tables[i].guid))
+			return systab->tables[i].table;
 	}
 	return NULL;
 }
@@ -569,7 +570,7 @@ out:
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_return_to_efibootmgr)) {
 			efi_signal_event(evt);
-			EFI_CALL(systab.boottime->close_event(evt));
+			EFI_CALL(efis->systab.boottime->close_event(evt));
 			break;
 		}
 	}

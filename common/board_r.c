@@ -599,6 +599,7 @@ static void initcall_run_r(void)
 	 */
 #endif
 	INITCALL(initr_reloc_global_data);
+	/* the state is runtime data, relocated just above */
 	INITCALL(efi_state_init_default);
 #if CONFIG_IS_ENABLED(SYS_INIT_RAM_LOCK) && CONFIG_IS_ENABLED(E500)
 	INITCALL(initr_unlock_ram_in_cache);

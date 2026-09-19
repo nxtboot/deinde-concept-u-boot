@@ -1168,6 +1168,7 @@ tcg2_measure_gpt_data(struct udevice *dev,
 	gpt_header *gpt_h;
 	gpt_entry *entry = NULL;
 	gpt_entry *gpt_e;
+	struct efi_boot_services *bs = efis->systab.boottime;
 	u32 num_of_valid_entry = 0;
 	u32 event_size;
 	u32 i;
@@ -1198,8 +1199,8 @@ tcg2_measure_gpt_data(struct udevice *dev,
 	dp->type = DEVICE_PATH_TYPE_END;
 	dp->sub_type = DEVICE_PATH_SUB_TYPE_END;
 	dp = device_path;
-	ret = EFI_CALL(systab.boottime->locate_device_path(&efi_block_io_guid,
-							   &dp, &handle));
+	ret = EFI_CALL(bs->locate_device_path(&efi_block_io_guid, &dp,
+					      &handle));
 	if (ret != EFI_SUCCESS)
 		goto out1;
 

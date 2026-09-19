@@ -892,6 +892,7 @@ out:
  */
 efi_handle_t get_esp_handle(struct efi_device_path *dp)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_handle_t handle, dev_handle;
 	struct udevice *child_dev;
 	struct efi_device_path *rem;
@@ -913,9 +914,10 @@ efi_handle_t get_esp_handle(struct efi_device_path *dp)
 		if (dev_tag_get_ptr(child_dev, DM_TAG_EFI, (void **)&handle))
 			continue;
 
-		ret = EFI_CALL(systab.boottime->open_protocol(
-			       handle, &efi_system_partition_guid, NULL, NULL,
-			       NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL));
+		ret = EFI_CALL(bs->open_protocol(handle,
+						 &efi_system_partition_guid,
+						 NULL, NULL, NULL,
+						 EFI_OPEN_PROTOCOL_TEST_PROTOCOL));
 		if (ret != EFI_SUCCESS)
 			continue;
 
