@@ -45,9 +45,12 @@ struct table_info {
 	int align;
 };
 
-/* QEMU's tables include quite a bit of empty space */
+/*
+ * QEMU's tables include quite a bit of empty space, and with a TPM attached
+ * they come with a 64KB event log as well
+ */
 #ifdef CONFIG_ARCH_QEMU_X86
-#define ACPI_SIZE	(192 << 10)
+#define ACPI_SIZE	(256 << 10)
 #else
 #define ACPI_SIZE	SZ_64K
 #endif

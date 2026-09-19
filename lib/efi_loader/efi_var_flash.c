@@ -39,6 +39,7 @@
 #define CFI_CMD_READ_QUERY	0x98
 #define CFI_CMD_CLEAR_STATUS	0x50
 #define CFI_CMD_PROGRAM		0x40
+#define CFI_CMD_WRITE_BUFFER	0xe8
 #define CFI_CMD_ERASE		0x20
 #define CFI_CMD_CONFIRM		0xd0
 
@@ -46,14 +47,18 @@
 /* erase error, program error, VPP low, block locked */
 #define CFI_STATUS_ERROR	(BIT(5) | BIT(4) | BIT(3) | BIT(1))
 
-/* offset of the "QRY" string in the query data, with an 8-bit bus */
-#define CFI_QUERY_OFFSET	0x10
+/* offsets in the query data, with an 8-bit bus */
+#define CFI_QUERY_OFFSET	0x10	/* "QRY" */
+#define CFI_QUERY_BUF_SIZE	0x2a	/* log2 of the write-buffer size */
 
 /* how many status reads to allow before giving up on an operation */
 #define CFI_TIMEOUT		10000000
 
 /* the flash, or NULL if none was found; converted at SetVirtualAddressMap */
 static u8 *__efi_runtime_data efi_var_flash;
+
+/* size of the flash's write buffer, or 0 if it has none */
+static uint __efi_runtime_data efi_var_flash_bufsize;
 
 /**
  * efi_var_flash_wait() - Wait for an operation to complete
@@ -112,6 +117,39 @@ static efi_status_t __efi_runtime efi_var_flash_program(u8 *addr, u8 val)
 }
 
 /**
+ * efi_var_flash_program_buf() - Program a run of bytes through the write buffer
+ *
+ * @addr: Address to program, which must be erased
+ * @data: Bytes to program
+ * @len: Number of bytes, at most the buffer size and not crossing a
+ *	buffer-size boundary
+ * Return: status code
+ */
+static efi_status_t __efi_runtime efi_var_flash_program_buf(u8 *addr,
+							    const u8 *data,
+							    uint len)
+{
+	int i;
+
+	/* the flash says when the buffer is free */
+	for (i = 0; i < CFI_TIMEOUT; i++) {
+		writeb(CFI_CMD_WRITE_BUFFER, addr);
+		if (readb(addr) & CFI_STATUS_READY)
+			break;
+	}
+	if (i == CFI_TIMEOUT) {
+		writeb(CFI_CMD_READ_ARRAY, addr);
+		return EFI_DEVICE_ERROR;
+	}
+	writeb(len - 1, addr);
+	for (i = 0; i < len; i++)
+		writeb(data[i], addr + i);
+	writeb(CFI_CMD_CONFIRM, addr);
+
+	return efi_var_flash_wait(addr);
+}
+
+/**
  * efi_var_flash_write() - Write a variable store to the flash
  *
  * Erases the blocks the store needs and programs the store into them. Nothing
@@ -140,13 +178,33 @@ static efi_status_t __efi_runtime efi_var_flash_write(const void *buf,
 			return ret;
 	}
 
-	/* an erased byte reads as 0xff, so those need no programming */
-	for (i = 0; i < len; i++) {
-		if (data[i] == 0xff)
+	/*
+	 * Program through the write buffer where there is one, since the
+	 * emulated flash of a VM may well update its backing file on every
+	 * operation, and byte by byte otherwise. An erased byte reads as
+	 * 0xff, so a run of those needs no programming
+	 */
+	for (i = 0; i < len;) {
+		uint n = efi_var_flash_bufsize ? : 1;
+		uint j;
+
+		n -= i & (n - 1);
+		if (i + n > len)
+			n = len - i;
+		for (j = 0; j < n && data[i + j] == 0xff; j++)
+			;
+		if (j == n) {
+			i += n;
 			continue;
-		ret = efi_var_flash_program(efi_var_flash + i, data[i]);
+		}
+		if (n == 1)
+			ret = efi_var_flash_program(efi_var_flash + i, data[i]);
+		else
+			ret = efi_var_flash_program_buf(efi_var_flash + i,
+							data + i, n);
 		if (ret != EFI_SUCCESS)
 			return ret;
+		i += n;
 	}
 
 	for (i = 0; i < len; i++) {
@@ -191,6 +249,8 @@ static efi_status_t efi_var_flash_init(void)
 	found = readb(flash + CFI_QUERY_OFFSET) == 'Q' &&
 		readb(flash + CFI_QUERY_OFFSET + 1) == 'R' &&
 		readb(flash + CFI_QUERY_OFFSET + 2) == 'Y';
+	if (found && readb(flash + CFI_QUERY_BUF_SIZE))
+		efi_var_flash_bufsize = 1 << readb(flash + CFI_QUERY_BUF_SIZE);
 	writeb(CFI_CMD_READ_ARRAY, flash);
 	if (!found) {
 		log_info("No EFI variables loaded: no flash at %x\n",
@@ -252,8 +312,13 @@ efi_status_t efi_var_from_storage(void)
 		log_info("No EFI variables loaded\n");
 		return EFI_SUCCESS;
 	}
-	/* this checks the rest of the header and reports a bad store */
-	efi_var_restore((struct efi_var_file *)buf, false);
+	/*
+	 * This checks the rest of the header and reports a bad store. Unlike a
+	 * file on the EFI system partition, the flash is the firmware's own
+	 * storage, as it is for OVMF, so the authenticated variables which
+	 * enable secure boot (PK, KEK, db, dbx) are restored from it too.
+	 */
+	efi_var_restore((struct efi_var_file *)buf, true);
 
 	return EFI_SUCCESS;
 }

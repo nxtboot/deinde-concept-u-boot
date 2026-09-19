@@ -197,6 +197,44 @@ Variables set at boot time, and at runtime by the OS, are written to the
 flash at once and so survive a cold boot. Without the flash, U-Boot keeps
 them in memory, where they last for a warm reset only.
 
+Secure boot
+~~~~~~~~~~~
+
+qemu-x86_64 has ``CONFIG_EFI_SECURE_BOOT``, so once a platform key is
+enrolled U-Boot verifies every EFI image it loads against the db and dbx
+variables, and the variable flash keeps the keys. To boot Windows that way,
+enroll Microsoft's certificates, its KEK CA in KEK and its Windows Production
+PCA and UEFI CA in db, under a platform key of your own. The certificates
+are at https://go.microsoft.com/fwlink/?LinkId=321185 (KEK CA 2011),
+LinkId=321192 (Windows Production PCA 2011) and LinkId=321194 (UEFI CA 2011),
+and efitools makes the signed lists::
+
+   openssl req -new -x509 -newkey rsa:2048 -subj '/CN=my PK/' -nodes \
+     -keyout PK.key -out PK.crt -days 3650
+   GUID=$(uuidgen)
+   cert-to-efi-sig-list -g $GUID PK.crt PK.esl
+   cert-to-efi-sig-list -g $GUID MicCorKEKCA2011.pem KEK.esl
+   cert-to-efi-sig-list -g $GUID MicWinProPCA2011.pem db1.esl
+   cert-to-efi-sig-list -g $GUID MicCorUEFCA2011.pem db2.esl
+   cat db1.esl db2.esl > db.esl
+   for v in PK KEK db; do
+     sign-efi-sig-list -g $GUID -k PK.key -c PK.crt $v $v.esl $v.auth
+   done
+
+U-Boot enrolls them from a disk holding the .auth files, db and KEK first
+and PK last, which is what turns secure boot on::
+
+   => load virtio 0 ${loadaddr} db.auth
+   => setenv -e -nv -bs -rt -at -i ${loadaddr}:${filesize} db
+   => load virtio 0 ${loadaddr} KEK.auth
+   => setenv -e -nv -bs -rt -at -i ${loadaddr}:${filesize} KEK
+   => load virtio 0 ${loadaddr} PK.auth
+   => setenv -e -nv -bs -rt -at -i ${loadaddr}:${filesize} PK
+
+From then on the Windows boot manager is verified against db before it
+runs, unsigned images are refused and Windows records secure boot as
+enabled.
+
 Booting Windows
 ---------------
 
@@ -249,6 +287,19 @@ finds Windows through the entries U-Boot generates for each disk.
 
 Windows writes nothing to the serial port at all, so once the kernel starts
 the video console is the only way to see it.
+
+Windows 11 installs the same way, given the TPM 2.0 which its setup insists
+on. QEMU provides one through swtpm::
+
+   swtpm socket --tpm2 --tpmstate dir=/tmp/tpm --ctrl type=unixio,path=/tmp/tpm/sock &
+   qemu-system-x86_64 ... \
+     -chardev socket,id=chrtpm,path=/tmp/tpm/sock -tpmdev emulator,id=tpm0,chardev=chrtpm \
+     -device tpm-tis,tpmdev=tpm0
+
+U-Boot's TCG2 protocol serves it to the boot manager, which measures the
+boot into it. Its boot manager also takes the key press for booting from
+the CD without showing the prompt on the console: press Enter a few times
+once it starts. The disk should be 64 GB, which setup requires.
 
 Current limitations
 -------------------

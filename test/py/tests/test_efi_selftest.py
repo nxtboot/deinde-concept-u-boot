@@ -194,8 +194,11 @@ def test_efi_selftest_tcg2(ubman):
 
     ubman -- U-Boot console
 
-    This function executes the 'tcg2' unit test.
+    This function executes the 'tcg2' unit test. The protocol needs a TPM,
+    so the test is skipped where the board has none.
     """
+    if ubman.config.env.get('env__tpm_device_test_skip', False):
+        pytest.skip('skip TPM device test')
     ubman.restart_uboot()
     ubman.run_command(cmd='setenv efi_selftest list')
     output = ubman.run_command('bootefi selftest')

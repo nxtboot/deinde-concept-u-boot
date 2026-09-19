@@ -5,6 +5,8 @@
 import pytest
 import utils
 
+from console_base import Timeout
+
 # Enable early console so that the test can see if something goes wrong
 CONSOLE = 'earlycon=uart8250,io,0x3f8 console=uart8250,io,0x3f8'
 
@@ -171,6 +173,105 @@ def test_distro_windows_install(ubman):
     with ubman.log.section('install'):
         with ubman.temporary_timeout(20 * 60 * 1000):
             ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win11-installed')
+@pytest.mark.restart
+def test_distro_windows11_installed(ubman):
+    """Boot an installed Windows 11 through U-Boot's EFI loader
+
+    As test_distro_windows_installed(), for Windows 11: the
+    'qemu-x86_64-win11-installed' role attaches the installation as a SATA
+    disk in snapshot mode and gives the machine a TPM 2.0 (through swtpm),
+    which Windows 11 expects to find, along with the EFI variable flash.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(600 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win11-install')
+@pytest.mark.restart
+def test_distro_windows11_install(ubman):
+    """Install Windows 11 from its ISO with U-Boot as the firmware
+
+    As test_distro_windows_install(), for Windows 11, which adds two things.
+    Setup refuses to install without a TPM 2.0, so the
+    'qemu-x86_64-win11-install' role gives the machine one through swtpm,
+    which U-Boot's TCG2 protocol serves to the boot manager. And that boot
+    manager takes the key press for booting from the CD without ever showing
+    the prompt on the console, so the test presses Enter every second for a
+    while after the boot manager starts rather than waiting for the prompt.
+    Everything is on SATA, which needs no drivers from Windows' side.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('bootmgr'):
+        for _ in range(30):
+            try:
+                with ubman.temporary_timeout(1000):
+                    ubman.expect(['Starting kernel'])
+                break
+            except Timeout:
+                ubman.send('\r')
+        else:
+            with ubman.temporary_timeout(180 * 1000):
+                ubman.expect(['Starting kernel'])
+
+    # Setup copies Windows, reboots into the specialize and OOBE passes and
+    # finally logs on, which is when the marker appears
+    with ubman.log.section('install'):
+        with ubman.temporary_timeout(20 * 60 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
+@pytest.mark.boardspec('qemu-x86_64')
+@pytest.mark.role('qemu-x86_64-win11-sb')
+@pytest.mark.restart
+def test_distro_windows11_secure(ubman):
+    """Boot Windows 11 with secure boot enabled
+
+    As test_distro_windows11_installed(), but the 'qemu-x86_64-win11-sb'
+    role's variable flash holds a platform key with Microsoft's KEK and db
+    certificates, so U-Boot is in secure-boot mode and verifies the boot
+    manager's signature against db before running it. The image's logon
+    script also reports what Windows made of it: its kernel records secure
+    boot as enabled in the registry (UEFISecureBootEnabled), which is what
+    msinfo32 shows as the Secure Boot State.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(60 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(180 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(600 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+            ubman.expect([r'UBOOT-WINDOWS-SECUREBOOT [^\r\n]*reg=1'])
 
     ubman.restart_uboot()
 
