@@ -239,6 +239,17 @@ struct efi_debug {
 };
 
 /**
+ * struct efi_hii - state of the HII database
+ *
+ * @package_lists: Package lists added to the database
+ * @keyboard_layouts: Keyboard layouts
+ */
+struct efi_hii {
+	struct list_head package_lists;
+	struct list_head keyboard_layouts;
+};
+
+/**
  * struct efi_system_partition - the first EFI system partition found
  *
  * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
@@ -639,6 +650,7 @@ struct efi_mem {
  *	the variable file
  * @initrd: The initial ramdisk registered for the OS
  * @debug: The debug-image-info table
+ * @hii: State of the HII database
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -660,6 +672,7 @@ struct efi_state {
 	struct efi_system_partition system_partition;
 	struct efi_initrd initrd;
 	struct efi_debug debug;
+	struct efi_hii hii;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;

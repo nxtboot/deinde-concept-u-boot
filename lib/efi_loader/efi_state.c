@@ -25,6 +25,8 @@ void efi_state_init(struct efi_state *st)
 	efi_systab_init_state(&st->systab);
 	st->obj_list_initialized = EFI_OBJ_LIST_NOT_INIT;
 	efi_mem_init_state(&st->mem);
+	INIT_LIST_HEAD(&st->hii.package_lists);
+	INIT_LIST_HEAD(&st->hii.keyboard_layouts);
 	st->system_partition.uclass_id = UCLASS_INVALID;
 }
 
