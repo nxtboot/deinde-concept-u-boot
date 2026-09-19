@@ -12,8 +12,6 @@
 /* Conversion factor from seconds to multiples of 100ns */
 #define EFI_SECONDS_TO_100NS 10000000ULL
 
-static struct efi_event *watchdog_timer_event;
-
 /**
  * efi_watchdog_timer_notify() - resets system upon watchdog event
  *
@@ -47,11 +45,11 @@ efi_status_t efi_set_watchdog(unsigned long timeout)
 
 	if (timeout)
 		/* Reset watchdog */
-		r = efi_set_timer(watchdog_timer_event, EFI_TIMER_RELATIVE,
+		r = efi_set_timer(efis->watchdog_event, EFI_TIMER_RELATIVE,
 				  EFI_SECONDS_TO_100NS * timeout);
 	else
 		/* Deactivate watchdog */
-		r = efi_set_timer(watchdog_timer_event, EFI_TIMER_STOP, 0);
+		r = efi_set_timer(efis->watchdog_event, EFI_TIMER_STOP, 0);
 	return r;
 }
 
@@ -71,7 +69,7 @@ efi_status_t efi_watchdog_register(void)
 	 */
 	r = efi_create_event(EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK,
 			     efi_watchdog_timer_notify, NULL, NULL,
-			     &watchdog_timer_event);
+			     &efis->watchdog_event);
 	if (r != EFI_SUCCESS) {
 		printf("ERROR: Failed to register watchdog event\n");
 		return r;

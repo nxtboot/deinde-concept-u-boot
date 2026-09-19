@@ -601,6 +601,10 @@ struct efi_mem {
  * @mem: State of the memory map
  * @system_partition: The first EFI system partition found, which holds
  *	the variable file
+ * @watchdog_event: Timer event which implements the watchdog, or NULL until
+ *	efi_init_obj_list() has registered it. It is only used through the
+ *	SetWatchdogTimer() service and at ExitBootServices(), both of which
+ *	come after that
  * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
  *	until it has run, then its return value, so that a failure is not
  *	retried
@@ -611,6 +615,7 @@ struct efi_state {
 	struct efi_system_table systab;
 	struct efi_mem mem;
 	struct efi_system_partition system_partition;
+	struct efi_event *watchdog_event;
 	efi_status_t obj_list_initialized;
 };
 
