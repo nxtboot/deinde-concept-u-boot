@@ -166,7 +166,7 @@ efi_status_t efi_rng_register(void)
 		log_warning("Missing RNG device for EFI_RNG_PROTOCOL\n");
 		return EFI_SUCCESS;
 	}
-	ret = efi_add_protocol(efi_root, &efi_guid_rng_protocol,
+	ret = efi_add_protocol(efis->bs.root, &efi_guid_rng_protocol,
 			       (void *)&efi_rng_protocol);
 	if (ret != EFI_SUCCESS)
 		log_err("Cannot install EFI_RNG_PROTOCOL\n");

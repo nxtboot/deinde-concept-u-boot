@@ -144,7 +144,7 @@ static efi_status_t try_load_from_file_path(efi_handle_t *fs_handles,
 		if (!dp)
 			continue;
 
-		ret = EFI_CALL(efi_load_image(true, efi_root, dp, NULL, 0,
+		ret = EFI_CALL(efi_load_image(true, efis->bs.root, dp, NULL, 0,
 					      handle));
 		efi_free_pool(dp);
 		if (ret == EFI_SUCCESS)
@@ -241,6 +241,7 @@ static struct udevice *mount_image(u16 *lo_label, ulong addr, ulong size)
 static efi_status_t search_default_file(struct udevice *dev,
 					struct efi_device_path **loaded_dp)
 {
+	const struct efi_bs *bsp = &efis->bs;
 	efi_status_t ret;
 	efi_handle_t handle;
 	u16 *default_file_name = NULL;
@@ -255,13 +256,13 @@ static efi_status_t search_default_file(struct udevice *dev,
 	}
 
 	ret = EFI_CALL(bs->open_protocol(handle, &efi_guid_device_path,
-					 (void **)&device_path, efi_root, NULL,
+					 (void **)&device_path, bsp->root, NULL,
 					 EFI_OPEN_PROTOCOL_GET_PROTOCOL));
 	if (ret != EFI_SUCCESS)
 		return ret;
 
 	ret = EFI_CALL(bs->open_protocol(handle, &efi_simple_file_system_protocol_guid,
-					 (void **)&file_system, efi_root, NULL,
+					 (void **)&file_system, bsp->root, NULL,
 					 EFI_OPEN_PROTOCOL_GET_PROTOCOL));
 	if (ret != EFI_SUCCESS)
 		return ret;
@@ -579,7 +580,7 @@ static efi_status_t try_load_from_uri_path(struct efi_device_path_uri *uridp,
 	ctx->ramdisk_blk_dev = blk;
 	ctx->mem_handle = mem_handle;
 
-	ret = EFI_CALL(efi_load_image(false, efi_root, loaded_dp, source_buffer,
+	ret = EFI_CALL(efi_load_image(false, efis->bs.root, loaded_dp, source_buffer,
 				      source_size, handle));
 	if (ret != EFI_SUCCESS)
 		goto err;
@@ -639,7 +640,7 @@ static efi_status_t try_load_from_media(struct efi_device_path *file_path,
 		}
 	}
 
-	ret = EFI_CALL(efi_load_image(true, efi_root, final_dp, NULL, 0, handle_img));
+	ret = EFI_CALL(efi_load_image(true, efis->bs.root, final_dp, NULL, 0, handle_img));
 
 	efi_free_pool(dp);
 
@@ -868,7 +869,7 @@ efi_bootmgr_enumerate_boot_options(struct eficonfig_media_boot_option *opt,
 		if (ret != EFI_SUCCESS)
 			continue;
 		ret = efi_protocol_open(handler, (void **)&device_path,
-					efi_root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+					efis->bs.root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (ret != EFI_SUCCESS)
 			continue;
 

@@ -86,7 +86,7 @@ static bool is_tcg2_protocol_installed(void)
 	struct efi_handler *handler;
 	efi_status_t ret;
 
-	ret = efi_search_protocol(efi_root, &efi_guid_tcg2_protocol, &handler);
+	ret = efi_search_protocol(efis->bs.root, &efi_guid_tcg2_protocol, &handler);
 	return ret == EFI_SUCCESS;
 }
 
@@ -807,7 +807,7 @@ static void tcg2_uninit(void)
 	if (!is_tcg2_protocol_installed())
 		return;
 
-	ret = efi_uninstall_multiple_protocol_interfaces(efi_root, &efi_guid_tcg2_protocol,
+	ret = efi_uninstall_multiple_protocol_interfaces(efis->bs.root, &efi_guid_tcg2_protocol,
 							 &efi_tcg2_protocol, NULL);
 	if (ret != EFI_SUCCESS)
 		log_err("Failed to remove EFI TCG2 protocol\n");
@@ -1611,7 +1611,7 @@ efi_status_t efi_tcg2_register(void)
 		goto fail;
 	}
 
-	ret = efi_install_multiple_protocol_interfaces(&efi_root, &efi_guid_tcg2_protocol,
+	ret = efi_install_multiple_protocol_interfaces(&efis->bs.root, &efi_guid_tcg2_protocol,
 						       &efi_tcg2_protocol, NULL);
 	if (ret != EFI_SUCCESS) {
 		tcg2_uninit();

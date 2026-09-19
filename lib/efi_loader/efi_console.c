@@ -1178,7 +1178,7 @@ efi_status_t efi_console_register(void)
 	struct efi_device_path *dp;
 
 	/* Install protocols on root node */
-	r = efi_install_multiple_protocol_interfaces(&efi_root,
+	r = efi_install_multiple_protocol_interfaces(&efis->bs.root,
 						     &efi_guid_text_output_protocol,
 						     &con->con_out,
 						     &efi_guid_text_input_protocol,

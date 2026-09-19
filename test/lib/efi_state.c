@@ -29,6 +29,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq_ptr(&st.con.mode, st.con.con_out.mode);
 	ut_assert(list_empty(&st.con.cin_notify));
 	ut_assert(list_empty(&st.bs.obj_list));
+	ut_assertnull(st.bs.root);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

@@ -198,9 +198,6 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 	EFI_GUID(0xb2ac5fc9, 0x92b7, 0x4acd, \
 		 0xae, 0xac, 0x11, 0xe8, 0x18, 0xc3, 0x13, 0x0c)
 
-/* Root node */
-extern efi_handle_t efi_root;
-
 /* Set to EFI_SUCCESS when initialized */
 extern efi_status_t efi_obj_list_initialized;
 
@@ -544,9 +541,11 @@ struct efi_console {
  *
  * @obj_list: All the EFI objects (handles) the payload has access to while
  *	the boot services are active; nothing uses it after ExitBootServices()
+ * @root: The root node, on which the console and other protocols are installed
  */
 struct efi_bs {
 	struct list_head obj_list;
+	efi_handle_t root;
 };
 
 /**

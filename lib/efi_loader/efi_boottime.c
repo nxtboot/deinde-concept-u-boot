@@ -2161,7 +2161,7 @@ efi_status_t efi_load_image_from_path(bool boot_policy,
 	if (ret != EFI_SUCCESS)
 		efi_free_pages(addr, pages);
 out:
-	efi_close_protocol(device, guid, efi_root, NULL);
+	efi_close_protocol(device, guid, efis->bs.root, NULL);
 	if (ret == EFI_SUCCESS) {
 		*buffer = buf;
 		*size = buffer_size;
@@ -3748,7 +3748,7 @@ efi_status_t EFIAPI efi_handle_protocol(efi_handle_t handle,
 					const efi_guid_t *protocol,
 					void **protocol_interface)
 {
-	return efi_open_protocol(handle, protocol, protocol_interface, efi_root,
+	return efi_open_protocol(handle, protocol, protocol_interface, efis->bs.root,
 				 NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 }
 
@@ -4240,6 +4240,7 @@ struct efi_system_table __efi_runtime_data systab = {
 efi_status_t efi_initialize_system_table(void)
 {
 	struct efi_console *con = &efis->con;
+	const struct efi_bs *bs = &efis->bs;
 	efi_status_t ret;
 
 	/* Allocate configuration table array */
@@ -4252,11 +4253,11 @@ efi_status_t efi_initialize_system_table(void)
 	 * These entries will be set to NULL in ExitBootServices(). To avoid
 	 * relocation in SetVirtualAddressMap(), set them dynamically.
 	 */
-	systab.con_in_handle = efi_root;
+	systab.con_in_handle = bs->root;
 	systab.con_in = &con->con_in;
-	systab.con_out_handle = efi_root;
+	systab.con_out_handle = bs->root;
 	systab.con_out = &con->con_out;
-	systab.stderr_handle = efi_root;
+	systab.stderr_handle = bs->root;
 	systab.std_err = &con->con_out;
 	systab.boottime = &efi_boot_services;
 
@@ -4281,6 +4282,12 @@ struct efi_boot_services *efi_get_boot(void)
 void efi_bs_uninit_state(struct efi_bs *bs)
 {
 	struct efi_object *obj, *next_obj;
+	struct efi_handler *root_dp;
+
+	/* the device path of the root node is from malloc() */
+	if (bs->root && efi_search_protocol(bs->root, &efi_guid_device_path,
+					    &root_dp) == EFI_SUCCESS)
+		free(root_dp->protocol_interface);
 
 	list_for_each_entry_safe(obj, next_obj, &bs->obj_list, link) {
 		struct efi_handler *handler, *next_handler;
@@ -4301,4 +4308,5 @@ void efi_bs_uninit_state(struct efi_bs *bs)
 		    (void *)obj >= (void *)(efis + 1))
 			free(obj);
 	}
+	bs->root = NULL;
 }

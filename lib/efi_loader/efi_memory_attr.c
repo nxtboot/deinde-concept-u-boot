@@ -191,7 +191,7 @@ efi_status_t efi_memory_attr_register(void)
 {
 	efi_status_t ret;
 
-	ret = efi_add_protocol(efi_root, &efi_guid_memory_attribute,
+	ret = efi_add_protocol(efis->bs.root, &efi_guid_memory_attribute,
 			       (void *)&efi_memory_attr_protocol);
 	if (ret != EFI_SUCCESS)
 		log_err("Cannot install EFI_MEMORY_ATTRIBUTE_PROTOCOL\n");

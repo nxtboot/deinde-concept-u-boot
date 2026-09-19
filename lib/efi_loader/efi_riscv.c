@@ -52,7 +52,7 @@ efi_status_t efi_riscv_register(void)
 {
 	efi_status_t ret = EFI_SUCCESS;
 
-	ret = efi_add_protocol(efi_root, &efi_guid_riscv_boot_protocol,
+	ret = efi_add_protocol(efis->bs.root, &efi_guid_riscv_boot_protocol,
 			       (void *)&riscv_efi_boot_prot);
 	if (ret != EFI_SUCCESS)
 		log_err("Cannot install RISCV_EFI_BOOT_PROTOCOL\n");

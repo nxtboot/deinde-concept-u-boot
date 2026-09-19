@@ -11,8 +11,6 @@
 #include <efi_dt_fixup.h>
 #include <efi_loader.h>
 
-efi_handle_t efi_root = NULL;
-
 struct efi_root_dp {
 	struct efi_device_path_vendor vendor;
 	struct efi_device_path end;
@@ -28,6 +26,7 @@ struct efi_root_dp {
  */
 efi_status_t efi_root_node_register(void)
 {
+	struct efi_bs *bs = &efis->bs;
 	efi_status_t ret;
 	struct efi_root_dp *dp;
 
@@ -49,7 +48,7 @@ efi_status_t efi_root_node_register(void)
 
 	/* Create root node and install protocols */
 	ret = efi_install_multiple_protocol_interfaces
-		(&efi_root,
+		(&bs->root,
 		 /* Device path protocol */
 		 &efi_guid_device_path, dp,
 #if CONFIG_IS_ENABLED(EFI_DEVICE_PATH_TO_TEXT)
@@ -83,6 +82,6 @@ efi_status_t efi_root_node_register(void)
 		 &efi_hii_config_routing,
 #endif
 		 NULL);
-	efi_root->type = EFI_OBJECT_TYPE_U_BOOT_FIRMWARE;
+	bs->root->type = EFI_OBJECT_TYPE_U_BOOT_FIRMWARE;
 	return ret;
 }
