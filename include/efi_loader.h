@@ -217,6 +217,17 @@ enum efi_secure_mode {
 };
 
 /**
+ * struct efi_initrd - the initial ramdisk registered for the OS to load
+ *
+ * @handle: Handle carrying the load-file2 protocol which serves it, or NULL
+ * @dp: Device path installed on that handle
+ */
+struct efi_initrd {
+	efi_handle_t handle;
+	struct efi_device_path *dp;
+};
+
+/**
  * struct efi_system_partition - the first EFI system partition found
  *
  * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
@@ -616,6 +627,7 @@ struct efi_mem {
  * @mem: State of the memory map
  * @system_partition: The first EFI system partition found, which holds
  *	the variable file
+ * @initrd: The initial ramdisk registered for the OS
  * @watchdog_event: Timer event which implements the watchdog, or NULL until
  *	efi_init_obj_list() has registered it. It is only used through the
  *	SetWatchdogTimer() service and at ExitBootServices(), both of which
@@ -632,6 +644,7 @@ struct efi_state {
 	struct efi_system_table systab;
 	struct efi_mem mem;
 	struct efi_system_partition system_partition;
+	struct efi_initrd initrd;
 	struct efi_event *watchdog_event;
 	efi_status_t obj_list_initialized;
 	enum efi_secure_mode secure_mode;

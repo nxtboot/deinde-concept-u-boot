@@ -41,9 +41,6 @@ static const struct efi_lo_dp_prefix dp_lf2_handle = {
 	}
 };
 
-static efi_handle_t efi_initrd_handle;
-static struct efi_device_path *efi_initrd_dp;
-
 /**
  * get_initrd_fp() - Get initrd device path from a FilePathList device path
  *
@@ -77,7 +74,7 @@ static efi_status_t get_initrd_fp(struct efi_device_path **initrd_fp)
  * efi_initrd_from_mem() - load initial RAM disk from memory
  *
  * This function copies the initrd from the memory mapped device
- * path pointed to by efi_initrd_dp
+ * path pointed to by efis->initrd.dp
  *
  * @buffer_size:		size of allocated buffer
  * @buffer:			buffer to load the file
@@ -90,7 +87,7 @@ static efi_status_t efi_initrd_from_mem(efi_uintn_t *buffer_size, void *buffer)
 	efi_uintn_t bs;
 	struct efi_device_path_memory *mdp;
 
-	mdp = (struct efi_device_path_memory *)efi_initrd_dp;
+	mdp = (struct efi_device_path_memory *)efis->initrd.dp;
 	if (!mdp)
 		return ret;
 
@@ -154,7 +151,7 @@ efi_load_file2_initrd(struct efi_load_file_protocol *this,
 		goto out;
 	}
 
-	if (efi_initrd_dp)
+	if (efis->initrd.dp)
 		return EFI_EXIT(efi_initrd_from_mem(buffer_size, buffer));
 
 	ret = get_initrd_fp(&initrd_fp);
@@ -233,12 +230,13 @@ out:
  */
 efi_status_t efi_initrd_deregister(void)
 {
+	struct efi_initrd *initrd = &efis->initrd;
 	efi_status_t ret;
 
-	if (!efi_initrd_handle)
+	if (!initrd->handle)
 		return EFI_SUCCESS;
 
-	ret = efi_uninstall_multiple_protocol_interfaces(efi_initrd_handle,
+	ret = efi_uninstall_multiple_protocol_interfaces(initrd->handle,
 							 /* initramfs */
 							 &efi_guid_device_path,
 							 &dp_lf2_handle,
@@ -246,10 +244,10 @@ efi_status_t efi_initrd_deregister(void)
 							 &efi_guid_load_file2_protocol,
 							 &efi_lf2_protocol,
 							 NULL);
-	efi_initrd_handle = NULL;
+	initrd->handle = NULL;
 
-	efi_free_pool(efi_initrd_dp);
-	efi_initrd_dp = NULL;
+	efi_free_pool(initrd->dp);
+	initrd->dp = NULL;
 
 	return ret;
 }
@@ -285,11 +283,12 @@ static void EFIAPI efi_initrd_return_notify(struct efi_event *event,
  */
 efi_status_t efi_initrd_register(struct efi_device_path *dp_initrd)
 {
+	struct efi_initrd *initrd = &efis->initrd;
 	efi_status_t ret;
 	struct efi_event *event;
 
 	if (dp_initrd) {
-		efi_initrd_dp = dp_initrd;
+		initrd->dp = dp_initrd;
 	} else {
 		/*
 		* Allow the user to continue if Boot#### file path is not set for
@@ -302,7 +301,7 @@ efi_status_t efi_initrd_register(struct efi_device_path *dp_initrd)
 			return ret;
 	}
 
-	ret = efi_install_multiple_protocol_interfaces(&efi_initrd_handle,
+	ret = efi_install_multiple_protocol_interfaces(&initrd->handle,
 						       /* initramfs */
 						       &efi_guid_device_path, &dp_lf2_handle,
 						       /* LOAD_FILE2 */
