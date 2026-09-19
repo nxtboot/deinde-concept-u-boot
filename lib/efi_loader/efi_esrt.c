@@ -14,8 +14,6 @@
 
 const efi_guid_t efi_esrt_guid = EFI_SYSTEM_RESOURCE_TABLE_GUID;
 
-static struct efi_system_resource_table *esrt;
-
 #define EFI_ESRT_VERSION 1
 
 /**
@@ -139,10 +137,10 @@ efi_status_t efi_esrt_allocate_install(u32 num_entries)
 	}
 
 	/* If there was a previous ESRT, deallocate its memory now. */
-	if (esrt)
-		ret = efi_free_pool(esrt);
+	if (efis->esrt)
+		ret = efi_free_pool(efis->esrt);
 
-	esrt = new_esrt;
+	efis->esrt = new_esrt;
 
 	return EFI_SUCCESS;
 }
@@ -170,13 +168,13 @@ struct efi_system_resource_entry *esrt_find_entry(efi_guid_t *img_fw_class)
 	u32 max_entries;
 	struct efi_system_resource_entry *entry;
 
-	if (!esrt) {
+	if (!efis->esrt) {
 		EFI_PRINT("ESRT access before initialized\n");
 		return NULL;
 	}
 
-	filled_entries = esrt->fw_resource_count;
-	entry = esrt->entries;
+	filled_entries = efis->esrt->fw_resource_count;
+	entry = efis->esrt->entries;
 
 	/* Check if the image with img_fw_class is already in the ESRT. */
 	for (u32 idx = 0; idx < filled_entries; idx++) {
@@ -187,7 +185,7 @@ struct efi_system_resource_entry *esrt_find_entry(efi_guid_t *img_fw_class)
 		}
 	}
 
-	max_entries = esrt->fw_resource_count_max;
+	max_entries = efis->esrt->fw_resource_count_max;
 	/*
 	 * Since the image with img_fw_class is not present in the ESRT, check
 	 * if ESRT is full before appending the new entry to it.
@@ -201,7 +199,7 @@ struct efi_system_resource_entry *esrt_find_entry(efi_guid_t *img_fw_class)
 	 * This is a new entry for a fw image, increment the element
 	 * number in the table and set the fw_class field.
 	 */
-	esrt->fw_resource_count++;
+	efis->esrt->fw_resource_count++;
 	entry[filled_entries].fw_class = *img_fw_class;
 	EFI_PRINT("ESRT allocated new entry for image %pUs at index %u\n",
 		  img_fw_class, filled_entries);
@@ -342,7 +340,7 @@ efi_status_t efi_esrt_populate(void)
 		return EFI_SUCCESS;
 	}
 
-	EFI_PRINT("ESRT populate esrt from (%zd) available FMP handles\n",
+	EFI_PRINT("ESRT populate efis->esrt from (%zd) available FMP handles\n",
 		  no_handles);
 
 	/*
