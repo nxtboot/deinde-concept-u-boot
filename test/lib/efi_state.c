@@ -48,6 +48,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnonnull(systab->runtime);
 	ut_assertnull(systab->boottime);
 	ut_asserteq(0, systab->nr_tables);
+	ut_asserteq(EFI_OBJ_LIST_NOT_INIT, st.obj_list_initialized);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

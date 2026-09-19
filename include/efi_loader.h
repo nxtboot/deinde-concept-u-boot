@@ -198,9 +198,6 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 	EFI_GUID(0xb2ac5fc9, 0x92b7, 0x4acd, \
 		 0xae, 0xac, 0x11, 0xe8, 0x18, 0xc3, 0x13, 0x0c)
 
-/* Set to EFI_SUCCESS when initialized */
-extern efi_status_t efi_obj_list_initialized;
-
 /* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
 extern bool efi_st_keep_devices;
 
@@ -584,12 +581,19 @@ struct efi_bs {
  * @con: State of the console
  * @bs: State of the boot services
  * @systab: The EFI system table handed to the payload
+ * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
+ *	until it has run, then its return value, so that a failure is not
+ *	retried
  */
 struct efi_state {
 	struct efi_console con;
 	struct efi_bs bs;
 	struct efi_system_table systab;
+	efi_status_t obj_list_initialized;
 };
+
+/* efi_init_obj_list() has not run yet; not a status code */
+#define EFI_OBJ_LIST_NOT_INIT	1
 
 /* The state in use; see efi_state_set() */
 extern struct efi_state *efis;

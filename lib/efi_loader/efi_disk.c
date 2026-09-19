@@ -756,7 +756,7 @@ int efi_disk_probe(void *ctx, struct event *event)
 	}
 
 	/* only do the boot option management when UEFI sub-system is initialized */
-	if (IS_ENABLED(CONFIG_CMD_BOOTEFI_BOOTMGR) && efi_obj_list_initialized == EFI_SUCCESS) {
+	if (IS_ENABLED(CONFIG_CMD_BOOTEFI_BOOTMGR) && efis->obj_list_initialized == EFI_SUCCESS) {
 		ret = efi_bootmgr_update_media_device_boot_option();
 		if (ret != EFI_SUCCESS)
 			return -1;

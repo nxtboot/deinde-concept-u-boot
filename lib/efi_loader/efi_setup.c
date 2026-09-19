@@ -14,11 +14,6 @@
 #include <asm-generic/unaligned.h>
 #include <net.h>
 
-#define OBJ_LIST_INITIALIZED 0
-#define OBJ_LIST_NOT_INITIALIZED 1
-
-efi_status_t efi_obj_list_initialized = OBJ_LIST_NOT_INITIALIZED;
-
 const efi_guid_t efi_debug_image_info_table_guid =
 	EFI_DEBUG_IMAGE_INFO_TABLE_GUID;
 
@@ -215,7 +210,7 @@ int efi_init_early(void)
 	return 0;
 out:
 	/* never re-init UEFI subsystem */
-	efi_obj_list_initialized = ret;
+	efis->obj_list_initialized = ret;
 
 	return -1;
 }
@@ -245,10 +240,10 @@ efi_status_t efi_init_obj_list(void)
 	efi_status_t ret = EFI_SUCCESS;
 
 	/* Initialize only once, but start every time if correctly initialized*/
-	if (efi_obj_list_initialized == OBJ_LIST_INITIALIZED)
+	if (efis->obj_list_initialized == EFI_SUCCESS)
 		return efi_start_obj_list();
-	if (efi_obj_list_initialized != OBJ_LIST_NOT_INITIALIZED)
-		return efi_obj_list_initialized;
+	if (efis->obj_list_initialized != EFI_OBJ_LIST_NOT_INIT)
+		return efis->obj_list_initialized;
 
 	/* Set up console modes */
 	efi_setup_console_size();
@@ -404,7 +399,7 @@ efi_status_t efi_init_obj_list(void)
 
 	ret = efi_start_obj_list();
 out:
-	efi_obj_list_initialized = ret;
+	efis->obj_list_initialized = ret;
 	if (ret != EFI_SUCCESS)
 		log_err("Cannot initialize UEFI sub-system\n");
 	return ret;

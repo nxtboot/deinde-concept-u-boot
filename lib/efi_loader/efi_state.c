@@ -22,6 +22,7 @@ void efi_state_init(struct efi_state *st)
 	efi_console_init_state(&st->con);
 	efi_bs_init_state(&st->bs);
 	efi_systab_init_state(&st->systab);
+	st->obj_list_initialized = EFI_OBJ_LIST_NOT_INIT;
 }
 
 int efi_state_init_default(void)
