@@ -13,17 +13,6 @@
 #include <mapmem.h>
 #include <u-boot/crc.h>
 
-/*
- * The variables efi_var_file and efi_var_entry must be static to avoid
- * referencing them via the global offset table (section .got). The GOT
- * is neither mapped as EfiRuntimeServicesData nor do we support its
- * relocation during SetVirtualAddressMap().
- */
-static struct efi_var_file __efi_runtime_data *efi_var_buf;
-
-/* Copy of a store found at CONFIG_EFI_VAR_BUF_ADDR, until it is applied */
-static struct efi_var_file *efi_var_recovered;
-static struct efi_var_entry __efi_runtime_data *efi_current_var;
 static const u16 __efi_runtime_rodata vtf[] = u"VarToFile";
 
 /**
@@ -64,7 +53,7 @@ efi_var_mem_compare(struct efi_var_entry *var, const efi_guid_t *guid,
 			ALIGN((uintptr_t)data + var->length, 8);
 
 	if (match)
-		efi_current_var = var;
+		efis->var.current = var;
 
 	return match;
 }
@@ -90,27 +79,28 @@ struct efi_var_entry __efi_runtime
 *efi_var_mem_find(const efi_guid_t *guid, const u16 *name,
 		  struct efi_var_entry **next)
 {
+	const struct efi_var *evar = &efis->var;
 	struct efi_var_entry *var, *last;
 
 	last = (struct efi_var_entry *)
-	       ((uintptr_t)efi_var_buf + efi_var_buf->length);
+	       ((uintptr_t)evar->buf + evar->buf->length);
 
 	if (!*name) {
 		if (next) {
-			*next = efi_var_buf->var;
+			*next = evar->buf->var;
 			if (*next >= last)
 				*next = NULL;
 		}
 		return NULL;
 	}
-	if (efi_current_var &&
-	    efi_var_mem_compare(efi_current_var, guid, name, next)) {
+	if (evar->current &&
+	    efi_var_mem_compare(evar->current, guid, name, next)) {
 		if (next && *next >= last)
 			*next = NULL;
-		return efi_current_var;
+		return evar->current;
 	}
 
-	var = efi_var_buf->var;
+	var = evar->buf->var;
 	if (var < last) {
 		for (; var;) {
 			struct efi_var_entry *pos;
@@ -134,6 +124,7 @@ struct efi_var_entry __efi_runtime
 
 void __efi_runtime efi_var_mem_del(struct efi_var_entry *var)
 {
+	struct efi_var *evar = &efis->var;
 	u16 *data;
 	struct efi_var_entry *next, *last;
 
@@ -141,22 +132,22 @@ void __efi_runtime efi_var_mem_del(struct efi_var_entry *var)
 		return;
 
 	last = (struct efi_var_entry *)
-	       ((uintptr_t)efi_var_buf + efi_var_buf->length);
-	if (var <= efi_current_var)
-		efi_current_var = NULL;
+	       ((uintptr_t)evar->buf + evar->buf->length);
+	if (var <= evar->current)
+		evar->current = NULL;
 
 	for (data = var->name; *data; ++data)
 		;
 	++data;
 	next = (struct efi_var_entry *)
 	       ALIGN((uintptr_t)data + var->length, 8);
-	efi_var_buf->length -= (uintptr_t)next - (uintptr_t)var;
+	evar->buf->length -= (uintptr_t)next - (uintptr_t)var;
 
 	/* efi_memcpy_runtime() can be used because next >= var. */
 	efi_memcpy_runtime(var, next, (uintptr_t)last - (uintptr_t)next);
-	efi_var_buf->crc32 = crc32(0, (u8 *)efi_var_buf->var,
-				   efi_var_buf->length -
-				   sizeof(struct efi_var_file));
+	evar->buf->crc32 = crc32(0, (u8 *)evar->buf->var,
+				 evar->buf->length -
+				 sizeof(struct efi_var_file));
 }
 
 efi_status_t __efi_runtime efi_var_mem_ins(
@@ -166,6 +157,7 @@ efi_status_t __efi_runtime efi_var_mem_ins(
 				const efi_uintn_t size2, const void *data2,
 				const u64 time, bool *changep)
 {
+	struct efi_var *evar = &efis->var;
 	u16 *data;
 	struct efi_var_entry *var;
 	u32 var_name_len;
@@ -198,11 +190,11 @@ efi_status_t __efi_runtime efi_var_mem_ins(
 	}
 
 	var = (struct efi_var_entry *)
-	      ((uintptr_t)efi_var_buf + efi_var_buf->length);
+	      ((uintptr_t)evar->buf + evar->buf->length);
 	var_name_len = u16_strlen(variable_name) + 1;
 	data = var->name + var_name_len;
 
-	if ((uintptr_t)data - (uintptr_t)efi_var_buf + size1 + size2 >
+	if ((uintptr_t)data - (uintptr_t)evar->buf + size1 + size2 >
 	    EFI_VAR_BUF_SIZE)
 		return EFI_OUT_OF_RESOURCES;
 
@@ -218,21 +210,23 @@ efi_status_t __efi_runtime efi_var_mem_ins(
 
 	var = (struct efi_var_entry *)
 	      ALIGN((uintptr_t)data + var->length, 8);
-	efi_var_buf->length = (uintptr_t)var - (uintptr_t)efi_var_buf;
-	efi_var_buf->crc32 = crc32(0, (u8 *)efi_var_buf->var,
-				   efi_var_buf->length -
-				   sizeof(struct efi_var_file));
+	evar->buf->length = (uintptr_t)var - (uintptr_t)evar->buf;
+	evar->buf->crc32 = crc32(0, (u8 *)evar->buf->var,
+				 evar->buf->length -
+				 sizeof(struct efi_var_file));
 
 	return EFI_SUCCESS;
 }
 
 u64 __efi_runtime efi_var_mem_free(void)
 {
-	if (efi_var_buf->length + sizeof(struct efi_var_entry) >=
+	const struct efi_var *evar = &efis->var;
+
+	if (evar->buf->length + sizeof(struct efi_var_entry) >=
 	    EFI_VAR_BUF_SIZE)
 		return 0;
 
-	return EFI_VAR_BUF_SIZE - efi_var_buf->length -
+	return EFI_VAR_BUF_SIZE - evar->buf->length -
 	       sizeof(struct efi_var_entry);
 }
 
@@ -245,8 +239,10 @@ u64 __efi_runtime efi_var_mem_free(void)
 static void EFIAPI __efi_runtime
 efi_var_mem_notify_virtual_address_map(struct efi_event *event, void *context)
 {
-	efi_convert_pointer(0, (void **)&efi_var_buf);
-	efi_current_var = NULL;
+	struct efi_var *evar = &efis->var;
+
+	efi_convert_pointer(0, (void **)&evar->buf);
+	evar->current = NULL;
 }
 
 /**
@@ -259,7 +255,8 @@ efi_var_mem_notify_virtual_address_map(struct efi_event *event, void *context)
  */
 static void efi_var_mem_recover(void)
 {
-	struct efi_var_file *buf = efi_var_buf;
+	struct efi_var *evar = &efis->var;
+	struct efi_var_file *buf = evar->buf;
 
 	if (buf->reserved || buf->magic != EFI_VAR_FILE_MAGIC ||
 	    buf->length > EFI_VAR_BUF_SIZE ||
@@ -268,27 +265,29 @@ static void efi_var_mem_recover(void)
 				buf->length - sizeof(struct efi_var_file)))
 		return;
 
-	efi_var_recovered = malloc(buf->length);
-	if (efi_var_recovered)
-		memcpy(efi_var_recovered, buf, buf->length);
+	evar->recovered = malloc(buf->length);
+	if (evar->recovered)
+		memcpy(evar->recovered, buf, buf->length);
 }
 
 struct efi_var_file __efi_runtime *efi_var_mem_get_buf(void)
 {
-	return efi_var_buf;
+	return efis->var.buf;
 }
 
 struct efi_var_file *efi_var_mem_recovered(void)
 {
-	struct efi_var_file *buf = efi_var_recovered;
+	struct efi_var *evar = &efis->var;
+	struct efi_var_file *buf = evar->recovered;
 
-	efi_var_recovered = NULL;
+	evar->recovered = NULL;
 
 	return buf;
 }
 
 efi_status_t efi_var_mem_init(void)
 {
+	struct efi_var *evar = &efis->var;
 	u64 memory = EFI_VAR_BUF_ADDR;
 	efi_status_t ret;
 	struct efi_event *event;
@@ -301,13 +300,13 @@ efi_status_t efi_var_mem_init(void)
 	if (ret != EFI_SUCCESS)
 		return ret;
 
-	efi_var_buf = map_sysmem(memory, EFI_VAR_BUF_SIZE);
+	evar->buf = map_sysmem(memory, EFI_VAR_BUF_SIZE);
 	if (EFI_VAR_BUF_ADDR)
 		efi_var_mem_recover();
-	memset(efi_var_buf, '\0', EFI_VAR_BUF_SIZE);
-	efi_var_buf->magic = EFI_VAR_FILE_MAGIC;
-	efi_var_buf->length = (uintptr_t)efi_var_buf->var -
-			      (uintptr_t)efi_var_buf;
+	memset(evar->buf, '\0', EFI_VAR_BUF_SIZE);
+	evar->buf->magic = EFI_VAR_FILE_MAGIC;
+	evar->buf->length = (uintptr_t)evar->buf->var -
+			      (uintptr_t)evar->buf;
 
 	ret = efi_create_event(EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE, TPL_CALLBACK,
 			       efi_var_mem_notify_virtual_address_map, NULL,
@@ -319,7 +318,7 @@ efi_status_t efi_var_mem_init(void)
 
 /**
  * efi_var_collect_mem() - Copy EFI variables matching attributes mask from
- *                         efi_var_buf
+ *                         efis->var.buf
  *
  * @buf:	buffer containing variable collection
  * @lenp:	buffer length
@@ -330,6 +329,8 @@ efi_status_t efi_var_mem_init(void)
 efi_status_t __efi_runtime
 efi_var_collect_mem(struct efi_var_file *buf, efi_uintn_t *lenp, u32 mask)
 {
+	const struct efi_var *evar = &efis->var;
+
 	static struct efi_var_file __efi_runtime_data hdr = {
 		.magic = EFI_VAR_FILE_MAGIC,
 	};
@@ -337,9 +338,9 @@ efi_var_collect_mem(struct efi_var_file *buf, efi_uintn_t *lenp, u32 mask)
 
 	hdr.length = sizeof(struct efi_var_file);
 
-	var = efi_var_buf->var;
+	var = evar->buf->var;
 	last = (struct efi_var_entry *)
-	       ((uintptr_t)efi_var_buf + efi_var_buf->length);
+	       ((uintptr_t)evar->buf + evar->buf->length);
 	if (buf)
 		var_to = buf->var;
 
@@ -472,5 +473,5 @@ skip:
 
 void efi_var_buf_update(struct efi_var_file *var_buf)
 {
-	memcpy(efi_var_buf, var_buf, EFI_VAR_BUF_SIZE);
+	memcpy(efis->var.buf, var_buf, EFI_VAR_BUF_SIZE);
 }

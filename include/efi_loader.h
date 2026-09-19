@@ -250,6 +250,23 @@ struct efi_hii {
 };
 
 /**
+ * struct efi_var - state of the variable store
+ *
+ * The buffer and the current entry are used by the runtime services, so this
+ * is where the runtime dereferences the state: see
+ * efi_var_mem_notify_virtual_address_map().
+ *
+ * @buf: The variable store, in runtime-services data
+ * @current: The entry found by the last lookup, checked first by the next
+ * @recovered: Copy of a store which survived a warm reset, until it is applied
+ */
+struct efi_var {
+	struct efi_var_file *buf;
+	struct efi_var_entry *current;
+	struct efi_var_file *recovered;
+};
+
+/**
  * struct efi_system_partition - the first EFI system partition found
  *
  * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
@@ -638,9 +655,10 @@ struct efi_mem {
  * boot services and the system table.
  *
  * The state in use when the OS is started must stay accessible at runtime,
- * since the OS keeps a pointer to the system table, so the default state and
- * the pointer to it are runtime data. Runtime code may only use them while
- * the physical mapping is still in place, i.e. up to SetVirtualAddressMap().
+ * since the OS keeps a pointer to the system table and the runtime services
+ * use the variable store, so the default state and the pointer to it are
+ * runtime data. SetVirtualAddressMap() converts the pointer along with the
+ * variable store, after which the runtime services can go on using it.
  *
  * @con: State of the console
  * @bs: State of the boot services
@@ -651,6 +669,7 @@ struct efi_mem {
  * @initrd: The initial ramdisk registered for the OS
  * @debug: The debug-image-info table
  * @hii: State of the HII database
+ * @var: State of the variable store
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -673,6 +692,7 @@ struct efi_state {
 	struct efi_initrd initrd;
 	struct efi_debug debug;
 	struct efi_hii hii;
+	struct efi_var var;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
@@ -684,8 +704,14 @@ struct efi_state {
 /* efi_init_obj_list() has not run yet; not a status code */
 #define EFI_OBJ_LIST_NOT_INIT	1
 
-/* The state in use; see efi_state_set() */
-extern struct efi_state *efis;
+/*
+ * The state in use; see efi_state_set(). The runtime services reach the
+ * variable store through this pointer, so it must not be addressed through
+ * the global offset table, which is neither mapped as runtime-services data
+ * nor relocated by SetVirtualAddressMap(): hidden visibility makes the
+ * compiler address it relative to the code instead.
+ */
+extern struct efi_state *efis __attribute__((visibility("hidden")));
 
 /**
  * efi_state_init_default() - Set up the default EFI state
