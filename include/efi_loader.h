@@ -202,6 +202,21 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 extern bool efi_st_keep_devices;
 
 /**
+ * enum efi_secure_mode - secure-boot mode, as defined by the UEFI specification
+ *
+ * @EFI_MODE_SETUP: Setup mode: no platform key is enrolled
+ * @EFI_MODE_USER: User mode: a platform key is enrolled and images are verified
+ * @EFI_MODE_AUDIT: Audit mode: images are checked but not rejected
+ * @EFI_MODE_DEPLOYED: Deployed mode: as user mode, with the modes locked down
+ */
+enum efi_secure_mode {
+	EFI_MODE_SETUP,
+	EFI_MODE_USER,
+	EFI_MODE_AUDIT,
+	EFI_MODE_DEPLOYED,
+};
+
+/**
  * struct efi_system_partition - the first EFI system partition found
  *
  * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
@@ -608,6 +623,8 @@ struct efi_mem {
  * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
  *	until it has run, then its return value, so that a failure is not
  *	retried
+ * @secure_mode: The secure-boot mode: setup, user, audit or deployed
+ * @secure_boot: true if secure boot is enabled, i.e. a platform key is set
  */
 struct efi_state {
 	struct efi_console con;
@@ -617,6 +634,8 @@ struct efi_state {
 	struct efi_system_partition system_partition;
 	struct efi_event *watchdog_event;
 	efi_status_t obj_list_initialized;
+	enum efi_secure_mode secure_mode;
+	bool secure_boot;
 };
 
 /* efi_init_obj_list() has not run yet; not a status code */

@@ -13,12 +13,6 @@
 #include <stdlib.h>
 #include <u-boot/crc.h>
 
-enum efi_secure_mode {
-	EFI_MODE_SETUP,
-	EFI_MODE_USER,
-	EFI_MODE_AUDIT,
-	EFI_MODE_DEPLOYED,
-};
 
 struct efi_auth_var_name_type {
 	const u16 *name;
@@ -37,8 +31,6 @@ static const struct efi_auth_var_name_type name_type[] = {
 	{u"DeployedMode", &efi_global_variable_guid, EFI_AUTH_MODE},
 };
 
-static bool efi_secure_boot;
-static enum efi_secure_mode efi_secure_mode;
 static const efi_guid_t shim_lock_guid = SHIM_LOCK_GUID;
 
 /**
@@ -216,7 +208,7 @@ static efi_status_t efi_set_secure_state(u8 secure_boot, u8 setup_mode,
 	const u32 attributes_rw = EFI_VARIABLE_BOOTSERVICE_ACCESS |
 				  EFI_VARIABLE_RUNTIME_ACCESS;
 
-	efi_secure_boot = secure_boot;
+	efis->secure_boot = secure_boot;
 
 	ret = efi_set_variable_int(u"SecureBoot", &efi_global_variable_guid,
 				   attributes_ro, sizeof(secure_boot),
@@ -261,7 +253,7 @@ static efi_status_t efi_transfer_secure_state(enum efi_secure_mode mode)
 {
 	efi_status_t ret;
 
-	EFI_PRINT("Switching secure state from %d to %d\n", efi_secure_mode,
+	EFI_PRINT("Switching secure state from %d to %d\n", efis->secure_mode,
 		  mode);
 
 	if (mode == EFI_MODE_DEPLOYED) {
@@ -291,7 +283,7 @@ static efi_status_t efi_transfer_secure_state(enum efi_secure_mode mode)
 		return EFI_INVALID_PARAMETER;
 	}
 
-	efi_secure_mode = mode;
+	efis->secure_mode = mode;
 
 	return EFI_SUCCESS;
 
@@ -360,7 +352,7 @@ efi_status_t efi_init_secure_state(void)
  */
 bool efi_secure_boot_enabled(void)
 {
-	return efi_secure_boot;
+	return efis->secure_boot;
 }
 
 enum efi_auth_var_type efi_auth_var_get_type(const u16 *name,
