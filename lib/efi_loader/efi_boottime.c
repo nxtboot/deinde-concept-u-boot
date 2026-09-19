@@ -31,9 +31,6 @@ DECLARE_GLOBAL_DATA_PTR;
 /* Task priority level */
 static efi_uintn_t efi_tpl = TPL_APPLICATION;
 
-/* This list contains all the EFI objects our payload has access to */
-LIST_HEAD(efi_obj_list);
-
 /* List of all events */
 __efi_runtime_data LIST_HEAD(efi_events);
 
@@ -65,6 +62,12 @@ static gd_t *efi_gd, *app_gd;
 efi_status_t efi_uninstall_protocol
 		(efi_handle_t handle, const efi_guid_t *protocol,
 		 void *protocol_interface, bool preserve);
+
+void efi_bs_init_state(struct efi_bs *bs)
+{
+	memset(bs, '\0', sizeof(*bs));
+	INIT_LIST_HEAD(&bs->obj_list);
+}
 
 /* 1 if inside U-Boot code, 0 if inside EFI payload code */
 static int entry_count = 1;
@@ -573,7 +576,7 @@ void efi_add_handle(efi_handle_t handle)
 	if (!handle)
 		return;
 	INIT_LIST_HEAD(&handle->protocols);
-	list_add_tail(&handle->link, &efi_obj_list);
+	list_add_tail(&handle->link, &efis->bs.obj_list);
 }
 
 /**
@@ -1181,7 +1184,7 @@ struct efi_object *efi_search_obj(const efi_handle_t handle)
 	if (!handle)
 		return NULL;
 
-	list_for_each_entry(efiobj, &efi_obj_list, link) {
+	list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 		if (efiobj == handle)
 			return efiobj;
 	}
@@ -1657,6 +1660,7 @@ static efi_status_t efi_locate_handle(
 			const efi_guid_t *protocol, void *search_key,
 			efi_uintn_t *buffer_size, efi_handle_t *buffer)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_object *efiobj;
 	efi_uintn_t size = 0;
 	struct efi_register_notify_event *event;
@@ -1692,7 +1696,7 @@ static efi_status_t efi_locate_handle(
 		efiobj = handle->handle;
 		size += sizeof(void *);
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &bs->obj_list, link) {
 			if (!efi_search(search_type, protocol, efiobj))
 				size += sizeof(void *);
 		}
@@ -1719,7 +1723,7 @@ static efi_status_t efi_locate_handle(
 		*buffer = efiobj;
 		list_del(&handle->link);
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &bs->obj_list, link) {
 			if (!efi_search(search_type, protocol, efiobj))
 				*buffer++ = efiobj;
 		}
@@ -2795,7 +2799,7 @@ static efi_status_t efi_locate_protocol_(const efi_guid_t *protocol,
 		if (ret == EFI_SUCCESS)
 			goto found;
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 			ret = efi_search_protocol(efiobj, protocol, &handler);
 			if (ret == EFI_SUCCESS)
 				goto found;
@@ -3487,7 +3491,7 @@ static efi_status_t efi_delete_image
 	efi_status_t r, ret = EFI_SUCCESS;
 
 close_next:
-	list_for_each_entry(efiobj, &efi_obj_list, link) {
+	list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 		struct efi_handler *protocol;
 
 		list_for_each_entry(protocol, &efiobj->protocols, link) {
@@ -4272,4 +4276,29 @@ struct efi_system_table *efi_get_sys_table(void)
 struct efi_boot_services *efi_get_boot(void)
 {
 	return systab.boottime;
+}
+
+void efi_bs_uninit_state(struct efi_bs *bs)
+{
+	struct efi_object *obj, *next_obj;
+
+	list_for_each_entry_safe(obj, next_obj, &bs->obj_list, link) {
+		struct efi_handler *handler, *next_handler;
+
+		list_for_each_entry_safe(handler, next_handler,
+					 &obj->protocols, link) {
+			struct efi_open_protocol_info_item *info, *next_info;
+
+			list_for_each_entry_safe(info, next_info,
+						 &handler->open_infos, link)
+				free(info);
+			free(handler);
+		}
+		list_del(&obj->link);
+
+		/* a handle within the state itself is not from malloc() */
+		if ((void *)obj < (void *)efis ||
+		    (void *)obj >= (void *)(efis + 1))
+			free(obj);
+	}
 }

@@ -17,6 +17,7 @@ void efi_state_init(struct efi_state *st)
 {
 	memset(st, '\0', sizeof(*st));
 	efi_console_init_state(&st->con);
+	efi_bs_init_state(&st->bs);
 }
 
 int efi_state_init_default(void)
@@ -38,4 +39,5 @@ struct efi_state *efi_state_set(struct efi_state *st)
 void efi_state_uninit(void)
 {
 	efi_console_uninit_state(&efis->con);
+	efi_bs_uninit_state(&efis->bs);
 }

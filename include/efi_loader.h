@@ -540,16 +540,29 @@ struct efi_console {
 };
 
 /**
+ * struct efi_bs - state of the boot services
+ *
+ * @obj_list: All the EFI objects (handles) the payload has access to while
+ *	the boot services are active; nothing uses it after ExitBootServices()
+ */
+struct efi_bs {
+	struct list_head obj_list;
+};
+
+/**
  * struct efi_state - state of the EFI subsystem
  *
  * The EFI subsystem keeps its state here rather than in file-scope variables,
  * so that a test can set up a state of its own, run with it and switch back,
- * leaving the state it found untouched. For now this covers the console.
+ * leaving the state it found untouched. For now this covers the console and
+ * the boot services.
  *
  * @con: State of the console
+ * @bs: State of the boot services
  */
 struct efi_state {
 	struct efi_console con;
+	struct efi_bs bs;
 };
 
 /* The state in use; see efi_state_set() */
@@ -579,7 +592,8 @@ void efi_state_init(struct efi_state *st);
  *
  * This is for a state which is about to be discarded, e.g. by a test: select
  * another state once this returns. It frees what the state has taken from
- * malloc(): for now the console's key notifications.
+ * malloc(): the handles with their protocol handlers and the console's key
+ * notifications.
  */
 void efi_state_uninit(void);
 
@@ -591,6 +605,21 @@ void efi_state_uninit(void);
  * @con: Console state to clean up
  */
 void efi_console_uninit_state(struct efi_console *con);
+
+/**
+ * efi_bs_uninit_state() - Free the memory held by the boot-services state
+ *
+ * This frees the handles, along with their protocol handlers and open-protocol
+ * information. It does not free what a protocol interface points to, since
+ * many of those are not allocated.
+ *
+ * Anything else which refers to a handle must be gone first: in particular the
+ * block devices, which keep their handle in a device tag, must have been
+ * removed, or their tags are left pointing at freed memory.
+ *
+ * @bs: Boot-services state to clean up, which must be in the state in use
+ */
+void efi_bs_uninit_state(struct efi_bs *bs);
 
 /**
  * efi_state_set() - Select the EFI state to use
@@ -607,6 +636,13 @@ struct efi_state *efi_state_set(struct efi_state *st);
  * @con: Console state to set up
  */
 void efi_console_init_state(struct efi_console *con);
+
+/**
+ * efi_bs_init_state() - Set up the boot-services part of an EFI state
+ *
+ * @bs: Boot-services state to set up
+ */
+void efi_bs_init_state(struct efi_bs *bs);
 
 /**
  * struct efi_loaded_image_obj - handle of a loaded image
@@ -661,8 +697,6 @@ struct efi_event {
 	bool is_signaled;
 };
 
-/* This list contains all UEFI objects we know of */
-extern struct list_head efi_obj_list;
 /* List of all events */
 extern struct list_head efi_events;
 

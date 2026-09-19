@@ -44,7 +44,7 @@ static efi_handle_t find_handle(struct efi_device_path *dp,
 
 	len = efi_dp_instance_size(dp);
 
-	list_for_each_entry(handle, &efi_obj_list, link) {
+	list_for_each_entry(handle, &efis->bs.obj_list, link) {
 		struct efi_handler *handler;
 		struct efi_device_path *dp_current;
 		efi_uintn_t len_current;
