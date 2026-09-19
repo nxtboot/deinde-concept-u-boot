@@ -34,19 +34,6 @@ __efi_runtime_data LIST_HEAD(efi_events);
 /* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
 bool efi_st_keep_devices;
 
-/* Handle of the currently executing image */
-static efi_handle_t current_image;
-
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-/*
- * The "gd" pointer lives in a register on ARM and RISC-V that we declare
- * fixed when compiling U-Boot. However, the payload does not know about that
- * restriction so we need to manually swap its and our view of that register on
- * EFI callback entry/exit.
- */
-static gd_t *efi_gd, *app_gd;
-#endif
-
 efi_status_t efi_uninstall_protocol
 		(efi_handle_t handle, const efi_guid_t *protocol,
 		 void *protocol_interface, bool preserve);
@@ -59,11 +46,16 @@ void efi_bs_init_state(struct efi_bs *bs)
 	INIT_LIST_HEAD(&bs->event_queue);
 	bs->timers_enabled = true;
 	INIT_LIST_HEAD(&bs->register_notify_events);
+	/* we start out inside U-Boot code */
+	bs->entry_count = 1;
+	/*
+	 * gd is mapped to a fixed register on some architectures, which an EFI
+	 * payload may overwrite, so record it here to restore it on every
+	 * callback entered
+	 */
+	if (IS_ENABLED(CONFIG_ARM) || IS_ENABLED(CONFIG_RISCV))
+		bs->efi_gd = gd;
 }
-
-/* 1 if inside U-Boot code, 0 if inside EFI payload code */
-static int entry_count = 1;
-static int nesting_level;
 
 /* event group ExitBootServices() invoked */
 const efi_guid_t efi_guid_event_group_exit_boot_services =
@@ -105,11 +97,13 @@ efi_status_t EFIAPI efi_connect_controller(efi_handle_t controller_handle,
 /* Called on every callback entry */
 int __efi_entry_check(void)
 {
-	int ret = entry_count++ == 0;
+	struct efi_bs *bs = &efis->bs;
+	int ret = bs->entry_count++ == 0;
+
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	assert(efi_gd);
-	app_gd = gd;
-	set_gd(efi_gd);
+	assert(bs->efi_gd);
+	bs->app_gd = gd;
+	set_gd(bs->efi_gd);
 #endif
 	return ret;
 }
@@ -117,43 +111,31 @@ int __efi_entry_check(void)
 /* Called on every callback exit */
 int __efi_exit_check(void)
 {
-	int ret = --entry_count == 0;
+	struct efi_bs *bs = &efis->bs;
+	int ret = --bs->entry_count == 0;
+
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	set_gd(app_gd);
+	set_gd(bs->app_gd);
 #endif
 	return ret;
-}
-
-/**
- * efi_save_gd() - save global data register
- *
- * On the ARM and RISC-V architectures gd is mapped to a fixed register.
- * As this register may be overwritten by an EFI payload we save it here
- * and restore it on every callback entered.
- *
- * This function is called after relocation from initr_reloc_global_data().
- */
-void efi_save_gd(void)
-{
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	efi_gd = gd;
-#endif
 }
 
 /**
  * efi_restore_gd() - restore global data register
  *
  * On the ARM and RISC-V architectures gd is mapped to a fixed register.
- * Restore it after returning from the UEFI world to the value saved via
- * efi_save_gd().
+ * Restore it after returning from the UEFI world to the value recorded by
+ * efi_bs_init_state().
  */
 void efi_restore_gd(void)
 {
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
+	const struct efi_bs *bs = &efis->bs;
+
 	/* Only restore if we're already in EFI context */
-	if (!efi_gd)
+	if (!bs->efi_gd)
 		return;
-	set_gd(efi_gd);
+	set_gd(bs->efi_gd);
 #endif
 }
 
@@ -178,17 +160,17 @@ static const char *indent_string(int level)
 
 const char *__efi_nesting(void)
 {
-	return indent_string(nesting_level);
+	return indent_string(efis->bs.nesting_level);
 }
 
 const char *__efi_nesting_inc(void)
 {
-	return indent_string(nesting_level++);
+	return indent_string(efis->bs.nesting_level++);
 }
 
 const char *__efi_nesting_dec(void)
 {
-	return indent_string(--nesting_level);
+	return indent_string(--efis->bs.nesting_level);
 }
 
 /**
@@ -3384,11 +3366,13 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 				    efi_uintn_t *exit_data_size,
 				    u16 **exit_data)
 {
+	struct efi_bs *bs = &efis->bs;
+
 	struct efi_loaded_image_obj *image_obj =
 		(struct efi_loaded_image_obj *)image_handle;
 	efi_status_t ret;
 	struct efi_loaded_image *info;
-	efi_handle_t parent_image = current_image;
+	efi_handle_t parent_image = bs->current_image;
 	efi_status_t exit_status;
 	jmp_buf exit_jmp;
 	int ofs;
@@ -3444,9 +3428,9 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 		/*
 		 * efi_exit() called efi_restore_gd(). We have to undo this
 		 * otherwise __efi_entry_check() will put the wrong value into
-		 * app_gd.
+		 * bs->app_gd.
 		 */
-		set_gd(app_gd);
+		set_gd(bs->app_gd);
 #endif
 		/*
 		 * To get ready to call EFI_EXIT below we have to execute the
@@ -3454,12 +3438,12 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 		 */
 		EFI_RETURN(exit_status);
 
-		current_image = parent_image;
+		bs->current_image = parent_image;
 
 		return EFI_EXIT(efi_logr_call(ofs, exit_status));
 	}
 
-	current_image = image_handle;
+	bs->current_image = image_handle;
 	image_obj->header.type = EFI_OBJECT_TYPE_STARTED_IMAGE;
 	EFI_PRINT("Starting image loaded at 0x%p, entry point 0x%p\n",
 		  info->image_base, image_obj->entry);
@@ -3680,7 +3664,7 @@ static efi_status_t EFIAPI efi_exit(efi_handle_t image_handle,
 		goto out;
 	}
 	/* A started image can only be unloaded it is the last one started. */
-	if (image_handle != current_image) {
+	if (image_handle != efis->bs.current_image) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}

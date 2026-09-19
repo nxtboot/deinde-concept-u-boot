@@ -13,6 +13,8 @@
 /* Check that a test can use an EFI state of its own and switch back */
 static int lib_test_efi_state(struct unit_test_state *uts)
 {
+	struct efi_console *con;
+	struct efi_bs *bs;
 	struct efi_state st, *old;
 
 	if (!IS_ENABLED(CONFIG_EFI_LOADER))
@@ -23,23 +25,28 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 
 	/* The new state starts out as at boot, whatever the old one holds */
 	efi_state_init(&st);
-	ut_asserteq(1, st.con.mode.max_mode);
-	ut_asserteq(80, st.con.modes[0].columns);
-	ut_asserteq(25, st.con.modes[0].rows);
-	ut_asserteq_ptr(&st.con.mode, st.con.con_out.mode);
-	ut_assert(list_empty(&st.con.cin_notify));
-	ut_assert(list_empty(&st.bs.obj_list));
-	ut_assertnull(st.bs.root);
-	ut_asserteq(TPL_APPLICATION, st.bs.tpl);
-	ut_assert(list_empty(&st.bs.event_queue));
-	ut_assert(st.bs.timers_enabled);
-	ut_assert(list_empty(&st.bs.register_notify_events));
+	con = &st.con;
+	bs = &st.bs;
+	ut_asserteq(1, con->mode.max_mode);
+	ut_asserteq(80, con->modes[0].columns);
+	ut_asserteq(25, con->modes[0].rows);
+	ut_asserteq_ptr(&con->mode, con->con_out.mode);
+	ut_assert(list_empty(&con->cin_notify));
+	ut_assert(list_empty(&bs->obj_list));
+	ut_assertnull(bs->root);
+	ut_asserteq(TPL_APPLICATION, bs->tpl);
+	ut_assert(list_empty(&bs->event_queue));
+	ut_assert(bs->timers_enabled);
+	ut_assert(list_empty(&bs->register_notify_events));
+	ut_assertnull(bs->current_image);
+	ut_asserteq(1, bs->entry_count);
+	ut_asserteq(0, bs->nesting_level);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));
 	ut_asserteq_ptr(&st, efis);
 	efi_console_set_ansi(false);
-	ut_assert(st.con.no_ansi);
+	ut_assert(con->no_ansi);
 	ut_assert(!old->con.no_ansi);
 
 	/* The old state comes back untouched */
@@ -47,7 +54,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq_ptr(old, efis);
 	ut_assert(!efis->con.no_ansi);
 	efi_console_set_ansi(true);
-	ut_assert(st.con.no_ansi);
+	ut_assert(con->no_ansi);
 
 	return 0;
 }

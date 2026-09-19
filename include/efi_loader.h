@@ -536,6 +536,8 @@ struct efi_console {
 	bool key_available;
 };
 
+struct global_data;
+
 /**
  * struct efi_bs - state of the boot services
  *
@@ -544,7 +546,13 @@ struct efi_console {
  * @event_queue: Events queued for their notification function to run
  * @register_notify_events: Events registered by RegisterProtocolNotify()
  * @root: The root node, on which the console and other protocols are installed
+ * @current_image: Handle of the image being executed, or NULL
+ * @efi_gd: U-Boot's global data pointer, saved while the payload runs, on
+ *	architectures which keep it in a register
+ * @app_gd: The payload's value of that register, restored on returning to it
  * @tpl: Current task priority level
+ * @entry_count: 1 while inside U-Boot code, 0 while inside the payload
+ * @nesting_level: Depth of nested boot-service calls, for the log
  * @timers_enabled: false once ExitBootServices() has stopped the timers
  */
 struct efi_bs {
@@ -552,7 +560,12 @@ struct efi_bs {
 	struct list_head event_queue;
 	struct list_head register_notify_events;
 	efi_handle_t root;
+	efi_handle_t current_image;
+	struct global_data *efi_gd;
+	struct global_data *app_gd;
 	efi_uintn_t tpl;
+	int entry_count;
+	int nesting_level;
 	bool timers_enabled;
 };
 
@@ -903,8 +916,6 @@ efi_status_t efi_check_pe(void *buffer, size_t size, void **nt_header);
 efi_status_t efi_load_pe(struct efi_loaded_image_obj *handle,
 			 void *efi, size_t efi_size,
 			 struct efi_loaded_image *loaded_image_info);
-/* Called once to store the pristine gd pointer */
-void efi_save_gd(void);
 /* Call this to relocate the runtime section to an address space */
 void efi_runtime_relocate(ulong offset, struct efi_mem_desc *map);
 /* Call this to get image parameters */
