@@ -204,6 +204,38 @@ def test_distro_windows11_installed(ubman):
     ubman.restart_uboot()
 
 
+@pytest.mark.boardspec('qemu_arm64_acpi')
+@pytest.mark.role('qemu-arm64-win11-installed')
+@pytest.mark.restart
+def test_distro_windows11_arm64_installed(ubman):
+    """Boot an installed Windows 11 Arm64 through U-Boot's EFI loader
+
+    As test_distro_windows11_installed(), on QEMU's Arm 'virt' machine: the
+    'qemu-arm64-win11-installed' role attaches the installation as an NVMe
+    disk in snapshot mode, with a TPM 2.0, and U-Boot hands Windows the ACPI
+    tables which QEMU provides.
+
+    Windows on Arm never offers the PL011 as a COM port, so the marker comes
+    over an FTDI USB serial port, which the role adds and which shares the
+    console; the image has FTDI's driver installed. There is no Arm host in
+    the lab, so the machine is emulated and the boot takes a few minutes.
+    """
+    with ubman.log.section('boot'):
+        with ubman.temporary_timeout(120 * 1000):
+            ubman.run_command('boot', wait_for_prompt=False)
+            ubman.expect([r"Booting bootflow '[^']+' with efi"])
+
+    with ubman.log.section('winload'):
+        with ubman.temporary_timeout(300 * 1000):
+            ubman.expect(['Starting kernel'])
+
+    with ubman.log.section('Windows'):
+        with ubman.temporary_timeout(1200 * 1000):
+            ubman.expect(['UBOOT-WINDOWS-LOGON'])
+
+    ubman.restart_uboot()
+
+
 @pytest.mark.boardspec('qemu-x86_64')
 @pytest.mark.role('qemu-x86_64-win11-install')
 @pytest.mark.restart
