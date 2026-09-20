@@ -502,6 +502,16 @@ config EFI_RNG_PROTOCOL
 	  Provide a EFI_RNG_PROTOCOL implementation using the hardware random
 	  number generator of the platform.
 
+config EFI_MEMORY_ATTRIBUTE_PROTOCOL
+	bool "EFI_MEMORY_ATTRIBUTE_PROTOCOL support"
+	depends on ARM64 && !SYS_DCACHE_OFF
+	default y
+	help
+	  Provide the EFI_MEMORY_ATTRIBUTE_PROTOCOL, which lets a payload make
+	  memory it has loaded read-only or non-executable and read those
+	  attributes back. The Windows loader on Arm64 uses it for the images
+	  it loads.
+
 config EFI_TCG2_PROTOCOL
 	bool "EFI_TCG2_PROTOCOL support"
 	default y

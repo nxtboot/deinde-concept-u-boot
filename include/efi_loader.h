@@ -678,6 +678,8 @@ efi_status_t efi_console_register(void);
 efi_status_t efi_disks_register(void);
 /* Called by efi_init_obj_list() to install EFI_RNG_PROTOCOL */
 efi_status_t efi_rng_register(void);
+/* Called by efi_init_obj_list() to install EFI_MEMORY_ATTRIBUTE_PROTOCOL */
+efi_status_t efi_memory_attr_register(void);
 /* Called by efi_init_obj_list() to install EFI_TCG2_PROTOCOL */
 efi_status_t efi_tcg2_register(void);
 /* Called by efi_init_obj_list() to install RISCV_EFI_BOOT_PROTOCOL */

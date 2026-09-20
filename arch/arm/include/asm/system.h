@@ -329,6 +329,24 @@ void mmu_change_region_attr(phys_addr_t start, size_t size, u64 attrs);
  */
 void mmu_change_region_attr_nobreak(phys_addr_t addr, size_t size, u64 attrs);
 
+/**
+ * mmu_get_page_attrs() - Read the attributes of the page holding an address
+ *
+ * @addr: Address to look up
+ * @attrsp: Returns the PTE attribute bits (PMD_ATTRMASK), i.e. the memory
+ *	type, PTE_BLOCK_RO, PTE_BLOCK_PXN and PTE_BLOCK_UXN
+ * Return: 0 if OK, -ENOENT if the address is not mapped
+ */
+int mmu_get_page_attrs(phys_addr_t addr, u64 *attrsp);
+
+/**
+ * get_effective_el() - Get the exception level of the translation regime
+ *
+ * Return: 1 for an EL1 regime (EL1, or EL2 with HCR_EL2.E2H set), else the
+ *	current exception level
+ */
+int get_effective_el(void);
+
 /*
  * smc_call() - issue a secure monitor call
  *
