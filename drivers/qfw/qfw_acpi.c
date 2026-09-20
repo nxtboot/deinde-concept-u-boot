@@ -309,19 +309,31 @@ void acpi_write_rsdp(struct acpi_rsdp *rsdp, struct acpi_rsdt *rsdt,
 }
 
 #ifndef CONFIG_X86
+/* Space to reserve for the ACPI tables */
+#define QFW_ACPI_SIZE	SZ_256K
+
 static int evt_write_acpi_tables(void)
 {
 	ulong addr, end;
 	void *ptr;
 
-	/* Reserve 64K for ACPI tables, aligned to a 4K boundary */
-	ptr = bloblist_add(BLOBLISTT_ACPI_TABLES, SZ_64K, 12);
+	/*
+	 * Reserve space for the ACPI tables, aligned to a 4K boundary. QEMU's
+	 * tables vary in size: with a TPM they come with a 64K event log, for
+	 * example
+	 */
+	ptr = bloblist_add(BLOBLISTT_ACPI_TABLES, QFW_ACPI_SIZE, 12);
 	if (!ptr)
 		return -ENOBUFS;
 	addr = map_to_sysmem(ptr);
 
 	/* Generate ACPI tables */
 	end = write_acpi_tables(addr);
+	if (end > addr + QFW_ACPI_SIZE) {
+		log_err("ACPI tables need %#lx bytes but only %#x are reserved\n",
+			end - addr, QFW_ACPI_SIZE);
+		return -ENOSPC;
+	}
 	gd->arch.table_start = addr;
 	gd->arch.table_end = end;
 
