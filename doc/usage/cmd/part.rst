@@ -242,3 +242,6 @@ See also
 
 * :doc:`clone<clone>` for copying a whole device, partition table and all,
   without regard to the partitions listed here
+* :doc:`ide<ide>` for the partition table of an IDE drive alone, along with
+  the other operations that interface provides
+* :doc:`nvme<nvme>` for the same on an NVMe namespace

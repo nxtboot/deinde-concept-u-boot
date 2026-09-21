@@ -51,3 +51,6 @@ See also
 * :doc:`read<read>` for the opposite direction, from a device to memory
 * :doc:`clone<clone>` for copying blocks straight from one device to another,
   without passing them through memory first
+* :doc:`ide<ide>` for writing blocks to an IDE drive without going through a
+  partition
+* :doc:`nvme<nvme>` for the same on an NVMe namespace

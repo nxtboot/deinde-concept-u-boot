@@ -7,14 +7,19 @@
 #include <blk.h>
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 #include <nvme.h>
 
 static int nvme_curr_dev;
 
-static int do_nvme(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_nvme(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc == 2) {
 		if (strncmp(argv[1], "scan", 4) == 0) {
@@ -29,8 +34,11 @@ static int do_nvme(struct cmd_tbl *cmdtp, int flag, int argc,
 
 			ret = blk_get_device(UCLASS_NVME, nvme_curr_dev,
 					     &udev);
-			if (ret < 0)
+			if (ret < 0) {
+				printf("\nnvme device %d not available\n",
+				       nvme_curr_dev);
 				return CMD_RET_FAILURE;
+			}
 
 			nvme_print_info(udev);
 
@@ -41,7 +49,7 @@ static int do_nvme(struct cmd_tbl *cmdtp, int flag, int argc,
 	return blk_common_cmd(argc, argv, UCLASS_NVME, &nvme_curr_dev);
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	nvme, 8, 1, do_nvme,
 	"NVM Express sub-system",
 	"scan - scan NVMe devices\n"

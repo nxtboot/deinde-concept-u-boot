@@ -55,6 +55,9 @@ endif
 obj-$(CONFIG_CMD_HASH) += hash.o
 obj-$(CONFIG_CMD_HISTORY) += history.o
 obj-$(CONFIG_CMD_I3C) += i3c.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_IDE) += ide.o
+endif
 ifdef CONFIG_LEGACY_IMAGE_FORMAT
 obj-$(CONFIG_CMD_IMI) += iminfo.o
 endif
@@ -74,6 +77,9 @@ obj-$(CONFIG_CMD_MTDPARTS) += chpart.o mtdparts.o
 endif
 obj-$(CONFIG_CMD_MX_CYCLIC) += mdc.o mwc.o
 obj-$(CONFIG_CMD_RANDOM) += random.o
+endif
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_NVME) += nvme.o
 endif
 obj-$(CONFIG_CMD_PART) += part.o
 ifdef CONFIG_CONSOLE_RECORD

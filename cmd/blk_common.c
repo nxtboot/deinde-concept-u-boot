@@ -63,6 +63,29 @@ int blk_common_cmd(int argc, char *const argv[], enum uclass_id uclass_id,
 		return CMD_RET_USAGE;
 
 	default: /* at least 4 args */
+		if (!strcmp(argv[1], "erase")) {
+			lbaint_t blk = hextoul(argv[2], NULL);
+			ulong cnt = hextoul(argv[3], NULL);
+			struct blk_desc *desc;
+			ulong n;
+
+			printf("\n%s erase: device %d block # "LBAFU", count %lu ... ",
+			       if_name, *cur_devnump, blk, cnt);
+
+			if (blk_get_desc(uclass_id, *cur_devnump, &desc))
+				return CMD_RET_FAILURE;
+
+			n = blk_derase(desc, blk, cnt);
+
+			printf("%ld blocks erased: %s\n", n,
+			       n == cnt ? "OK" : "ERROR");
+			return n == cnt ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+		}
+
+		/* the rest need a count, which erase does not */
+		if (argc < 5)
+			return CMD_RET_USAGE;
+
 		if (strcmp(argv[1], "read") == 0) {
 			phys_addr_t paddr = hextoul(argv[2], NULL);
 			lbaint_t blk = hextoul(argv[3], NULL);
@@ -105,23 +128,6 @@ int blk_common_cmd(int argc, char *const argv[], enum uclass_id uclass_id,
 			unmap_sysmem(vaddr);
 
 			printf("%ld blocks written: %s\n", n,
-			       n == cnt ? "OK" : "ERROR");
-			return n == cnt ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
-		} else if (strcmp(argv[1], "erase") == 0) {
-			lbaint_t blk = hextoul(argv[2], NULL);
-			ulong cnt = hextoul(argv[3], NULL);
-			struct blk_desc *desc;
-			ulong n;
-
-			printf("\n%s erase: device %d block # "LBAFU", count %lu ... ",
-			       if_name, *cur_devnump, blk, cnt);
-
-			if (blk_get_desc(uclass_id, *cur_devnump, &desc))
-				return CMD_RET_FAILURE;
-
-			n = blk_derase(desc, blk, cnt);
-
-			printf("%ld blocks erased: %s\n", n,
 			       n == cnt ? "OK" : "ERROR");
 			return n == cnt ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 		} else {
