@@ -90,6 +90,11 @@ efi_status_t efi_launch_capsules(void);
 
 #else /* CONFIG_IS_ENABLED(EFI_LOADER) */
 
+static inline int efi_state_init_default(void)
+{
+	return 0;
+}
+
 /* Without CONFIG_EFI_LOADER we don't have a runtime section, stub it out */
 #define __efi_runtime_data
 #define __efi_runtime_rodata
@@ -487,6 +492,58 @@ enum efi_image_auth_status {
 	EFI_IMAGE_AUTH_FAILED = 0,
 	EFI_IMAGE_AUTH_PASSED,
 };
+
+/**
+ * struct efi_state - state of the EFI subsystem
+ *
+ * The EFI subsystem is to keep its state here rather than in file-scope
+ * variables, so that a test can set up a state of its own, run with it and
+ * switch back, leaving the state it found untouched. Nothing has moved here
+ * yet.
+ */
+struct efi_state {
+};
+
+/* The state in use; see efi_state_set() */
+extern struct efi_state *efis;
+
+/**
+ * efi_state_init_default() - Set up the default EFI state
+ *
+ * This runs right after relocation, before anything adds to the state.
+ *
+ * Return: 0
+ */
+int efi_state_init_default(void);
+
+/**
+ * efi_state_init() - Set up an EFI state
+ *
+ * Sets @st up as a fresh state, as at boot: the protocols point to their
+ * implementations and everything else is at its default.
+ *
+ * @st: State to set up
+ */
+void efi_state_init(struct efi_state *st);
+
+/**
+ * efi_state_uninit() - Free the memory held by the EFI state in use
+ *
+ * This is for a state which is about to be discarded, e.g. by a test: select
+ * another state once this returns. It frees what the state has taken from
+ * malloc(). There is nothing to free yet; the patches which move state in add
+ * to this as they go.
+ */
+void efi_state_uninit(void);
+
+/**
+ * efi_state_set() - Select the EFI state to use
+ *
+ * @st: State to use from now on, which must have been set up with
+ *	efi_state_init()
+ * Return: the state which was in use, so that it can be restored
+ */
+struct efi_state *efi_state_set(struct efi_state *st);
 
 /**
  * struct efi_loaded_image_obj - handle of a loaded image
