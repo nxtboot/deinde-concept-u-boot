@@ -205,7 +205,7 @@ static efi_status_t EFIAPI efi_disk_read_blocks(struct efi_block_io *this,
 			buffer + EFI_LOADER_BOUNCE_BUFFER_SIZE);
 	}
 
-	real_buffer = efi_bounce_buffer;
+	real_buffer = efis->mem.bounce_buffer;
 #endif
 
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,
@@ -278,7 +278,7 @@ static efi_status_t EFIAPI efi_disk_write_blocks(struct efi_block_io *this,
 			buffer + EFI_LOADER_BOUNCE_BUFFER_SIZE);
 	}
 
-	real_buffer = efi_bounce_buffer;
+	real_buffer = efis->mem.bounce_buffer;
 #endif
 
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,

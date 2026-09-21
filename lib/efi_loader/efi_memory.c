@@ -54,10 +54,6 @@ struct mem_node {
 #define EFI_CARVE_OVERLAPS_NONRAM	-3
 #define EFI_CARVE_OUT_OF_RESOURCES	-4
 
-#ifdef CONFIG_EFI_LOADER_BOUNCE_BUFFER
-void *efi_bounce_buffer;
-#endif
-
 /**
  * struct efi_pool_allocation - memory block allocated from pool
  *
@@ -907,7 +903,7 @@ int efi_memory_init(void)
 			       &efi_bounce_buffer_addr) != EFI_SUCCESS)
 		return -1;
 
-	efi_bounce_buffer = map_sysmem(efi_bounce_buffer_addr, SZ_64M);
+	efis->mem.bounce_buffer = map_sysmem(efi_bounce_buffer_addr, SZ_64M);
 #endif
 
 	return 0;

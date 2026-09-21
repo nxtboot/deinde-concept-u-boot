@@ -19,6 +19,8 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	struct efi_mem *mem;
 	struct efi_var *var;
 	struct efi_rt *rt;
+	struct efi_net *net;
+	struct efi_tcg2 *tcg2;
 	struct efi_state st, *old;
 
 	if (!IS_ENABLED(CONFIG_EFI_LOADER))
@@ -35,6 +37,8 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	mem = &st.mem;
 	var = &st.var;
 	rt = &st.rt;
+	net = &st.net;
+	tcg2 = &st.tcg2;
 	ut_asserteq(1, con->mode.max_mode);
 	ut_asserteq(80, con->modes[0].columns);
 	ut_asserteq(25, con->modes[0].rows);
@@ -62,19 +66,20 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(rt->virtmap);
 	ut_assert(list_empty(&rt->mmio));
 	ut_assertnull(var->flash);
+	ut_assertnull(mem->bounce_buffer);
 	ut_assertnull(st.debug.systab_pointer);
 	ut_assert(list_empty(&st.hii.package_lists));
 	ut_assertnull(st.initrd.handle);
 	ut_assert(!st.secure_boot);
 	ut_assertnull(st.watchdog_event);
 	ut_asserteq(UCLASS_INVALID, st.system_partition.uclass_id);
-	ut_assertnull(st.net.objs[0]);
-	ut_assert(!st.net.dp_cache[0].is_valid);
-	ut_assert(!st.net.dhcp_cache[0].is_valid);
-	ut_asserteq(EFI_IP4_CONFIG2_POLICY_STATIC, st.net.ip4_policy);
-	ut_asserteq(0, st.net.http_instances);
-	ut_assertnull(st.tcg2.log.buffer);
-	ut_assert(!st.tcg2.app_invoked);
+	ut_assertnull(net->objs[0]);
+	ut_assert(!net->dp_cache[0].is_valid);
+	ut_assert(!net->dhcp_cache[0].is_valid);
+	ut_asserteq(EFI_IP4_CONFIG2_POLICY_STATIC, net->ip4_policy);
+	ut_asserteq(0, net->http_instances);
+	ut_assertnull(tcg2->log.buffer);
+	ut_assert(!tcg2->app_invoked);
 	ut_assertnull(st.bootefi.device_path);
 
 	/* Select it and check that changes go into it, not the old one */

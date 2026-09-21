@@ -652,11 +652,14 @@ struct efi_bs {
  * struct efi_mem - state of the memory map
  *
  * @map: The memory map, as a list of struct efi_mem_list
+ * @bounce_buffer: Buffer below 4GB which block I/O goes through, with
+ *	CONFIG_EFI_LOADER_BOUNCE_BUFFER, of EFI_LOADER_BOUNCE_BUFFER_SIZE bytes
  * @map_key: Key of the current memory map, which changes with every
  *	allocation and is checked by ExitBootServices()
  */
 struct efi_mem {
 	struct list_head map;
+	void *bounce_buffer;
 	efi_uintn_t map_key;
 };
 
@@ -1519,7 +1522,6 @@ efi_status_t efi_setup_loaded_image(struct efi_device_path *device_path,
 				    struct efi_loaded_image **info_ptr);
 
 #ifdef CONFIG_EFI_LOADER_BOUNCE_BUFFER
-extern void *efi_bounce_buffer;
 #define EFI_LOADER_BOUNCE_BUFFER_SIZE (64 * 1024 * 1024)
 #endif
 
