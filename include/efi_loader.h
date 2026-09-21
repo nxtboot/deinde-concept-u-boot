@@ -663,18 +663,41 @@ struct efi_mem {
 /* Number of network interfaces which can have an EFI object */
 #define EFI_NET_MAX_OBJS	4
 
+/* Number of entries in the cache of network device paths */
+#define EFI_NET_MAX_DP_ENTRIES	4
+
 struct efi_net_obj;
+
+/**
+ * struct efi_net_dp_entry - entry in the cache of network device paths
+ *
+ * @net_dp: Device path of the file which was downloaded
+ * @dev: Network device which downloaded it
+ * @is_valid: true if this entry is in use
+ */
+struct efi_net_dp_entry {
+	struct efi_device_path *net_dp;
+	struct udevice *dev;
+	bool is_valid;
+};
 
 /**
  * struct efi_net - state of the network protocols
  *
  * @objs: EFI objects for the network interfaces, indexed by the sequence number
  *	of the network device, with NULL for those not registered
+ * @dp_cache: Cache of network device paths. An entry is added when a file is
+ *	downloaded from the network. If the file is then loaded as an EFI
+ *	image, the most recent entry for the device is passed as the device
+ *	path of the loaded image
  * @curr_obj: Index in @objs of the interface which receives packets
+ * @next_dp_entry: Index in @dp_cache of the next entry to write
  */
 struct efi_net {
 	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
+	struct efi_net_dp_entry dp_cache[EFI_NET_MAX_DP_ENTRIES];
 	int curr_obj;
+	int next_dp_entry;
 };
 
 /**

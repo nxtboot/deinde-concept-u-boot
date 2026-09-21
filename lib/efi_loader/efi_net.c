@@ -27,26 +27,10 @@
 #include <net.h>
 
 #define MAX_NUM_DHCP_ENTRIES 4
-#define MAX_NUM_DP_ENTRIES 4
 
 const efi_guid_t efi_net_guid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
 static const efi_guid_t efi_pxe_base_code_protocol_guid =
 					EFI_PXE_BASE_CODE_PROTOCOL_GUID;
-
-struct dp_entry {
-	struct efi_device_path *net_dp;
-	struct udevice *dev;
-	bool is_valid;
-};
-
-/*
- * The network device path cache. An entry is added when a new bootfile
- * is downloaded from the network. If the bootfile is then loaded as an
- * efi image, the most recent entry corresponding to the device is passed
- * as the device path of the loaded image.
- */
-static struct dp_entry dp_cache[MAX_NUM_DP_ENTRIES];
-static int next_dp_entry;
 
 #if IS_ENABLED(CONFIG_EFI_HTTP_PROTOCOL)
 static struct wget_http_info efi_wget_info = {
@@ -1331,19 +1315,21 @@ out_of_resources:
  */
 efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice *udev)
 {
-	const struct efi_net *net = &efis->net;
+	struct efi_net *net = &efis->net;
 	efi_status_t ret;
 	struct efi_net_obj *netobj;
 	struct efi_device_path *old_net_dp, *new_net_dp;
+	struct efi_net_dp_entry *entry;
 	struct efi_device_path **dp;
 	int i;
 
-	dp = &dp_cache[next_dp_entry].net_dp;
+	entry = &net->dp_cache[net->next_dp_entry];
+	dp = &entry->net_dp;
 
-	dp_cache[next_dp_entry].dev = udev;
-	dp_cache[next_dp_entry].is_valid = true;
-	next_dp_entry++;
-	next_dp_entry %= MAX_NUM_DP_ENTRIES;
+	entry->dev = udev;
+	entry->is_valid = true;
+	net->next_dp_entry++;
+	net->next_dp_entry %= EFI_NET_MAX_DP_ENTRIES;
 
 	old_net_dp = *dp;
 	new_net_dp = NULL;
@@ -1410,11 +1396,13 @@ void efi_net_dp_from_dev(struct efi_device_path **dp, struct udevice *udev, bool
 	}
 cache:
 	// Search in the cache
-	i = (next_dp_entry + MAX_NUM_DP_ENTRIES - 1) % MAX_NUM_DP_ENTRIES;
-	for (j = 0; dp_cache[i].is_valid && j < MAX_NUM_DP_ENTRIES;
-		i = (i + MAX_NUM_DP_ENTRIES - 1) % MAX_NUM_DP_ENTRIES, j++) {
-		if (dp_cache[i].dev == udev) {
-			*dp = efi_dp_dup(dp_cache[i].net_dp);
+	i = (net->next_dp_entry + EFI_NET_MAX_DP_ENTRIES - 1) %
+		EFI_NET_MAX_DP_ENTRIES;
+	for (j = 0; net->dp_cache[i].is_valid && j < EFI_NET_MAX_DP_ENTRIES;
+	     i = (i + EFI_NET_MAX_DP_ENTRIES - 1) % EFI_NET_MAX_DP_ENTRIES,
+	     j++) {
+		if (net->dp_cache[i].dev == udev) {
+			*dp = efi_dp_dup(net->dp_cache[i].net_dp);
 			return;
 		}
 	}
