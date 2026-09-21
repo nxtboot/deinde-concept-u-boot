@@ -83,6 +83,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(tcg2->log.buffer);
 	ut_assert(!tcg2->app_invoked);
 	ut_assertnull(st.bootefi.device_path);
+	ut_asserteq_64(0, st.fdt.addr);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

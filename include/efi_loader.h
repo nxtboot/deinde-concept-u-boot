@@ -666,6 +666,20 @@ struct efi_mem {
 };
 
 /**
+ * struct efi_fdt_copy - the copy of the devicetree passed to the payload
+ *
+ * The devicetree is copied to memory of its own before each boot, so the copy
+ * from an earlier attempt is freed first.
+ *
+ * @addr: Address of the copy, or 0 if there is none
+ * @pages: Number of pages allocated for it
+ */
+struct efi_fdt_copy {
+	u64 addr;
+	efi_uintn_t pages;
+};
+
+/**
  * struct efi_bootefi - the image which was last loaded, for 'bootefi' to run
  *
  * efi_set_bootdev() records this when a file is loaded, since the device it
@@ -835,6 +849,7 @@ struct efi_rt {
  * @net: State of the network protocols
  * @tcg2: State of the TCG2 protocol
  * @bootefi: The image which was last loaded, for 'bootefi' to run
+ * @fdt: The copy of the devicetree passed to the payload
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -862,6 +877,7 @@ struct efi_state {
 	struct efi_net net;
 	struct efi_tcg2 tcg2;
 	struct efi_bootefi bootefi;
+	struct efi_fdt_copy fdt;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
