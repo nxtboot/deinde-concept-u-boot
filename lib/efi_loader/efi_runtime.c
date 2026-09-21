@@ -94,9 +94,11 @@ struct elf_rela {
 	long addend;
 };
 
-static __efi_runtime_data struct efi_mem_desc *efi_virtmap;
-static __efi_runtime_data efi_uintn_t efi_descriptor_count;
-static __efi_runtime_data efi_uintn_t efi_descriptor_size;
+/*
+ * Address which U-Boot is relocated to. This is not in struct efi_state since
+ * it belongs to U-Boot rather than to an EFI state, and efi_runtime_relocate()
+ * needs it while the pointer to the state is itself being relocated
+ */
 static __efi_runtime_data ulong efi_relocaddr;
 
 /*
@@ -662,11 +664,12 @@ static __efi_runtime efi_status_t EFIAPI efi_convert_pointer_runtime(
 __efi_runtime efi_status_t EFIAPI
 efi_convert_pointer(efi_uintn_t debug_disposition, void **address)
 {
+	const struct efi_rt *rt = &efis->rt;
 	efi_physical_addr_t addr;
 	efi_uintn_t i;
 	efi_status_t ret = EFI_NOT_FOUND;
 
-	if (!efi_virtmap) {
+	if (!rt->virtmap) {
 		ret = EFI_UNSUPPORTED;
 		goto out;
 	}
@@ -683,9 +686,9 @@ efi_convert_pointer(efi_uintn_t debug_disposition, void **address)
 	}
 
 	addr = (uintptr_t)*address;
-	for (i = 0; i < efi_descriptor_count; i++) {
-		struct efi_mem_desc *map = (void *)efi_virtmap +
-					   (efi_descriptor_size * i);
+	for (i = 0; i < rt->descriptor_count; i++) {
+		struct efi_mem_desc *map = (void *)rt->virtmap +
+					   (rt->descriptor_size * i);
 
 		if (addr >= map->physical_start &&
 		    (addr < map->physical_start
@@ -851,6 +854,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 			uint32_t descriptor_version,
 			struct efi_mem_desc *virtmap)
 {
+	struct efi_rt *rt = &efis->rt;
 	struct efi_system_table *systab = &efis->systab;
 	efi_uintn_t n = memory_map_size / descriptor_size;
 	efi_uintn_t i;
@@ -865,9 +869,9 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 	    descriptor_size < sizeof(struct efi_mem_desc))
 		goto out;
 
-	efi_virtmap = virtmap;
-	efi_descriptor_size = descriptor_size;
-	efi_descriptor_count = n;
+	rt->virtmap = virtmap;
+	rt->descriptor_size = descriptor_size;
+	rt->descriptor_count = n;
 
 	/*
 	 * TODO:

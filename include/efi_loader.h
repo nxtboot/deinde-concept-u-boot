@@ -647,6 +647,20 @@ struct efi_mem {
 };
 
 /**
+ * struct efi_rt - state of the runtime services
+ *
+ * @virtmap: Map passed to SetVirtualAddressMap(), used by ConvertPointer()
+ *	while that call is in progress, or NULL before then
+ * @descriptor_count: Number of entries in @virtmap
+ * @descriptor_size: Size of each entry in @virtmap, in bytes
+ */
+struct efi_rt {
+	struct efi_mem_desc *virtmap;
+	efi_uintn_t descriptor_count;
+	efi_uintn_t descriptor_size;
+};
+
+/**
  * struct efi_state - state of the EFI subsystem
  *
  * The EFI subsystem keeps its state here rather than in file-scope variables,
@@ -670,6 +684,7 @@ struct efi_mem {
  * @debug: The debug-image-info table
  * @hii: State of the HII database
  * @var: State of the variable store
+ * @rt: State of the runtime services
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -693,6 +708,7 @@ struct efi_state {
 	struct efi_debug debug;
 	struct efi_hii hii;
 	struct efi_var var;
+	struct efi_rt rt;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
