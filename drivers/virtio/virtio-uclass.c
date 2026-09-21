@@ -107,9 +107,18 @@ int virtio_reset(struct udevice *vdev)
 
 int virtio_remove(struct udevice *vdev)
 {
+	int ret;
+
+	/*
+	 * Reset the device first, so that it stops using the virtqueues
+	 * before their memory is freed: a network device still has receive
+	 * buffers posted, and a packet arriving after the free would land in
+	 * memory which malloc() has already handed on
+	 */
+	ret = virtio_reset(vdev);
 	virtio_del_vqs(vdev);
 
-	return virtio_reset(vdev);
+	return ret;
 }
 
 int virtio_get_features(struct udevice *vdev, u64 *features)

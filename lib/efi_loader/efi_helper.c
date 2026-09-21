@@ -432,6 +432,18 @@ efi_status_t efi_install_fdt(void *fdt)
 	}
 
 	if (CONFIG_IS_ENABLED(GENERATE_ACPI_TABLE)) {
+		efi_status_t ret;
+
+		/*
+		 * The payload gets ACPI tables rather than this devicetree,
+		 * but a later boot attempt reads it again, so keep the payload
+		 * from allocating over it
+		 */
+		ret = efi_add_memory_map(map_to_sysmem(fdt), fdt_totalsize(fdt),
+					 EFI_BOOT_SERVICES_DATA);
+		if (ret != EFI_SUCCESS)
+			log_warning("Cannot reserve the device tree\n");
+
 		/* Create memory reservations as indicated by the device tree */
 		efi_carve_out_dt_rsv(fdt);
 		return EFI_SUCCESS;

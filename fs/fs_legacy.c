@@ -829,6 +829,9 @@ int fs_write(const char *filename, ulong addr, loff_t offset, loff_t len,
 
 	if (ret < 0 && len != *actwrite) {
 		log_err("** Unable to write file %s **\n", filename);
+		log_debug("offset %llx len %llx ret %d\n",
+			  (unsigned long long)offset, (unsigned long long)len,
+			  ret);
 		ret = -1;
 	}
 	fs_close();

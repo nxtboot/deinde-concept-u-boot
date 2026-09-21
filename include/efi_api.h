@@ -2618,6 +2618,18 @@ struct efi_component_name2_protocol {
 	EFI_GUID(0xf4560cf6, 0x40ec, 0x4b4a, \
 		 0xa1, 0x92, 0xbf, 0x1d, 0x57, 0xd0, 0xb1, 0x89)
 
+struct efi_memory_attribute_protocol {
+	efi_status_t (EFIAPI *get_memory_attributes)
+		(struct efi_memory_attribute_protocol *this,
+		 efi_physical_addr_t base, u64 length, u64 *attributes);
+	efi_status_t (EFIAPI *set_memory_attributes)
+		(struct efi_memory_attribute_protocol *this,
+		 efi_physical_addr_t base, u64 length, u64 attributes);
+	efi_status_t (EFIAPI *clear_memory_attributes)
+		(struct efi_memory_attribute_protocol *this,
+		 efi_physical_addr_t base, u64 length, u64 attributes);
+};
+
 #define EFI_SMBIOS_PROTOCOL_GUID \
 	EFI_GUID(0x03583ff6, 0xcb36, 0x4940, \
 		 0x94, 0x7e, 0xb9, 0xb3, 0x9f, 0x4a, 0xfa, 0xf7)

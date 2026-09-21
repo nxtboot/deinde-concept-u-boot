@@ -264,6 +264,40 @@ and you can work through the installer flow normally.
 After the installation, you can boot into the installed system by running QEMU
 again without the drive argument corresponding to the installer CD image.
 
+Booting Windows
+---------------
+
+Windows 11 for Arm64 boots with the qemu_arm64_acpi build, which passes on the
+ACPI tables that QEMU provides: Windows on Arm does not take a devicetree. It
+needs a TPM 2.0 (see below), a disk Windows has a driver for, such as NVMe, a
+USB controller and a display, and at least Armv8.1, so not the cortex-a57::
+
+    qemu-system-aarch64 -machine virt,gic-version=3 -cpu cortex-a76 -smp 8 \
+        -m 6G -nographic -bios u-boot.bin \
+        -drive if=none,id=hd0,file=win11-arm64.qcow2,format=qcow2 \
+        -device nvme,drive=hd0,serial=win11 \
+        -device qemu-xhci -device usb-kbd -device bochs-display \
+        -chardev socket,id=chrtpm,path=/tmp/mytpm1/swtpm-sock \
+        -tpmdev emulator,id=tpm0,chardev=chrtpm \
+        -device tpm-tis-device,tpmdev=tpm0
+
+On an Arm host use `-accel kvm -cpu host -machine virt,gic-version=host`
+instead, which is several times faster. An installed disk boots through its
+`EFI/BOOT/BOOTAA64.EFI`. To install, attach the Windows ISO as a USB CD-ROM
+(`-device usb-storage`) and press a key when the boot manager starts, as on
+x86; see :doc:`qemu-x86` for the unattended-install approach.
+
+Windows on Arm claims the PL011 for its kernel and never offers it as a COM
+port, so a script in Windows has no serial port to write to. QEMU's
+`-device usb-serial` is an FTDI FT232, for which FTDI provides an Arm64 driver.
+To see its output on U-Boot's console, let both ports share one chardev::
+
+    -display none -chardev stdio,mux=on,id=con,signal=off -serial chardev:con \
+        -device qemu-xhci -device usb-serial,chardev=con
+
+Input goes to the port attached last, the USB one, until Ctrl-A c is typed.
+This is how the lab test sees Windows reach its logon.
+
 Enabling TPMv2 support
 ----------------------
 

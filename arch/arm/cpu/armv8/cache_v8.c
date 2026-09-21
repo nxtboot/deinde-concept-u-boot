@@ -39,7 +39,7 @@ DECLARE_GLOBAL_DATA_PTR;
  *    off:          FFF
  */
 
-static int get_effective_el(void)
+int get_effective_el(void)
 {
 	int el = current_el();
 
@@ -1158,6 +1158,29 @@ int pgprot_set_attrs(phys_addr_t addr, size_t size, enum pgprot_attrs perm)
 	mmu_change_region_attr_nobreak(addr, size, attrs);
 
 	return 0;
+}
+
+int mmu_get_page_attrs(phys_addr_t addr, u64 *attrsp)
+{
+	int level;
+
+	for (level = 1; level <= 3; level++) {
+		u64 *pte = find_pte(addr, level);
+		int type;
+
+		if (!pte)
+			continue;
+		type = pte_type(pte);
+		if (type == PTE_TYPE_FAULT)
+			return -ENOENT;
+		if (level < 3 && type == PTE_TYPE_TABLE)
+			continue;
+		*attrsp = *pte & PMD_ATTRMASK;
+
+		return 0;
+	}
+
+	return -ENOENT;
 }
 
 #else	/* !CONFIG_IS_ENABLED(SYS_DCACHE_OFF) */

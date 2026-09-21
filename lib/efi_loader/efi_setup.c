@@ -332,6 +332,12 @@ efi_status_t efi_init_obj_list(void)
 			goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_EFI_MEMORY_ATTRIBUTE_PROTOCOL)) {
+		ret = efi_memory_attr_register();
+		if (ret != EFI_SUCCESS)
+			goto out;
+	}
+
 	if (IS_ENABLED(CONFIG_EFI_RISCV_BOOT_PROTOCOL)) {
 		ret = efi_riscv_register();
 		if (ret != EFI_SUCCESS)

@@ -1229,6 +1229,16 @@ qemu-x86_64-win11-install:
   resource_group: qemu-x86_64-place
   <<: *sjg_lab_slow_dfn
 
+# Boots an installed Windows 11 Arm64 (NVMe disk, snapshot mode, with a TPM)
+# through U-Boot's EFI loader on QEMU's virt machine, to the logon. The machine
+# is emulated, so this takes about five minutes
+qemu-arm64-win11-installed:
+  variables:
+    ROLE: qemu-arm64-win11-installed
+    TEST_PY_TEST_SPEC: "and test_distro_windows11_arm64_installed"
+  resource_group: qemu-arm-place
+  <<: *sjg_lab_dfn
+
 # Boots a rewritten Ubuntu live ISO via U-Boot + BLS, exercising the
 # qemu-efi-iso labgrid writer and test_distro_ubuntu_iso_uboot.
 efi-x86_64-uboot-iso:
