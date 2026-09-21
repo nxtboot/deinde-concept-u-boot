@@ -716,6 +716,8 @@ struct efi_net_dhcp_entry {
  * @next_dhcp_entry: Index in @dhcp_cache of the next entry to write
  * @ip4_policy: Policy set through the IPv4 Config2 protocol: static or DHCP
  * @mac_addr: MAC address reported through the IPv4 Config2 protocol
+ * @http_instances: Number of HTTP protocol instances which the HTTP service
+ *	binding protocol has created and not yet destroyed
  */
 struct efi_net {
 	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
@@ -727,6 +729,7 @@ struct efi_net {
 	int next_dhcp_entry;
 	enum efi_ip4_config2_policy ip4_policy;
 	char mac_addr[32];
+	int http_instances;
 };
 
 /**

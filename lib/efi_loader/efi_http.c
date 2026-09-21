@@ -47,8 +47,6 @@ struct efi_http_instance {
 	char headers_buffer[MAX_HTTP_HEADERS_SIZE];
 };
 
-static int num_instances;
-
 /*
  * efi_u32_to_httpstatus() - convert u32 to status
  *
@@ -425,7 +423,7 @@ install:
 	new_instance->http.cancel = efi_http_cancel;
 	new_instance->http.response = efi_http_response;
 	new_instance->http.poll = efi_http_poll;
-	++num_instances;
+	++efis->net.http_instances;
 
 	return EFI_EXIT(EFI_SUCCESS);
 
@@ -449,12 +447,14 @@ static efi_status_t EFIAPI efi_http_service_binding_destroy_child(
 			struct efi_service_binding_protocol *this,
 			efi_handle_t child_handle)
 {
+	struct efi_net *net = &efis->net;
+
 	EFI_ENTRY("%p, %p", this, child_handle);
 	efi_status_t ret = EFI_SUCCESS;
 	struct efi_http_instance *http_instance;
 	struct efi_handler *phandler;
 
-	if (num_instances == 0)
+	if (net->http_instances == 0)
 		return EFI_EXIT(EFI_NOT_FOUND);
 
 	if (!child_handle)
@@ -477,7 +477,7 @@ static efi_status_t EFIAPI efi_http_service_binding_destroy_child(
 
 	free(phandler->protocol_interface);
 
-	num_instances--;
+	net->http_instances--;
 out:
 	return EFI_EXIT(ret);
 }
