@@ -293,27 +293,6 @@ const char *__efi_nesting(void);
 const char *__efi_nesting_inc(void);
 const char *__efi_nesting_dec(void);
 
-#if CONFIG_IS_ENABLED(EFI_COUNT_CALLS)
-/** Number of EFI calls made by applications since U-Boot started */
-extern ulong efi_call_count;
-
-/**
- * efi_count_call() - Note that an application has made an EFI call
- *
- * This keeps nothing about the call, so costs an increment
- */
-static inline void efi_count_call(void)
-{
-	efi_call_count++;
-}
-
-/** efi_count_show() - Show how many EFI calls applications have made */
-void efi_count_show(void);
-#else
-static inline void efi_count_call(void) {}
-static inline void efi_count_show(void) {}
-#endif /* EFI_COUNT_CALLS */
-
 /*
  * Enter the u-boot world from UEFI:
  */
@@ -627,6 +606,8 @@ struct global_data;
  * @app_gd: The payload's value of that register, restored on returning to it
  * @mono_count: Next value for GetNextMonotonicCount() to return
  * @tpl: Current task priority level
+ * @call_count: Number of EFI calls which applications have made, counted with
+ *	CONFIG_EFI_COUNT_CALLS
  * @entry_count: 1 while inside U-Boot code, 0 while inside the payload
  * @nesting_level: Depth of nested boot-service calls, for the log
  * @timers_enabled: false once ExitBootServices() has stopped the timers
@@ -644,6 +625,7 @@ struct efi_bs {
 	struct global_data *app_gd;
 	u64 mono_count;
 	efi_uintn_t tpl;
+	ulong call_count;
 	int entry_count;
 	int nesting_level;
 	bool timers_enabled;
@@ -900,6 +882,24 @@ struct efi_state {
  * compiler address it relative to the code instead.
  */
 extern struct efi_state *efis __attribute__((visibility("hidden")));
+
+#if CONFIG_IS_ENABLED(EFI_COUNT_CALLS)
+/**
+ * efi_count_call() - Note that an application has made an EFI call
+ *
+ * This keeps nothing about the call, so costs an increment
+ */
+static inline void efi_count_call(void)
+{
+	efis->bs.call_count++;
+}
+
+/** efi_count_show() - Show how many EFI calls applications have made */
+void efi_count_show(void);
+#else
+static inline void efi_count_call(void) {}
+static inline void efi_count_show(void) {}
+#endif /* EFI_COUNT_CALLS */
 
 /**
  * efi_state_init_default() - Set up the default EFI state
