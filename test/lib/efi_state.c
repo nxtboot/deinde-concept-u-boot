@@ -75,6 +75,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq(0, st.net.http_instances);
 	ut_assertnull(st.tcg2.log.buffer);
 	ut_assert(!st.tcg2.app_invoked);
+	ut_assertnull(st.bootefi.device_path);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

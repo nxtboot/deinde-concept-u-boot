@@ -661,6 +661,24 @@ struct efi_mem {
 };
 
 /**
+ * struct efi_bootefi - the image which was last loaded, for 'bootefi' to run
+ *
+ * efi_set_bootdev() records this when a file is loaded, since the device it
+ * came from is not known by the time the image is started.
+ *
+ * @device_path: EFI device path of the device the image was loaded from
+ * @image_path: EFI device path of the image file, or NULL
+ * @image_addr: Address of the image in memory
+ * @image_size: Size of the image in bytes
+ */
+struct efi_bootefi {
+	struct efi_device_path *device_path;
+	struct efi_device_path *image_path;
+	void *image_addr;
+	size_t image_size;
+};
+
+/**
  * struct efi_tcg2_log - management of the TCG2 event log
  *
  * @buffer: Event-log buffer
@@ -811,6 +829,7 @@ struct efi_rt {
  * @rt: State of the runtime services
  * @net: State of the network protocols
  * @tcg2: State of the TCG2 protocol
+ * @bootefi: The image which was last loaded, for 'bootefi' to run
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -837,6 +856,7 @@ struct efi_state {
 	struct efi_rt rt;
 	struct efi_net net;
 	struct efi_tcg2 tcg2;
+	struct efi_bootefi bootefi;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
