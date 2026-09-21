@@ -104,3 +104,72 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	return 0;
 }
 LIB_TEST(lib_test_efi_state, 0);
+
+/* State which was in use before lib_test_efi_state_flag() ran */
+static struct efi_state *flag_test_old;
+
+/* Check that UTF_EFI gives a test a fresh state of its own */
+static int lib_test_efi_state_flag(struct unit_test_state *uts)
+{
+	if (!IS_ENABLED(CONFIG_EFI_LOADER))
+		return -EAGAIN;
+
+	ut_assertnonnull(uts->efi_state);
+	ut_assertnonnull(uts->saved_efi_state);
+	ut_assert(uts->efi_state != uts->saved_efi_state);
+	ut_asserteq_ptr(uts->efi_state, efis);
+
+	/* it is as U-Boot leaves it at boot, whatever earlier tests did */
+	ut_asserteq(EFI_OBJ_LIST_NOT_INIT, efis->obj_list_initialized);
+	ut_assertnonnull(efis->bs.root);
+	ut_assert(efis->bs.root != uts->saved_efi_state->bs.root);
+	ut_assert(!list_empty(&efis->mem.map));
+	ut_assert(!efis->con.no_ansi);
+
+	/* change it, for lib_test_efi_state_flag_after() to look for */
+	efi_console_set_ansi(false);
+	ut_assert(efis->con.no_ansi);
+	ut_assert(!uts->saved_efi_state->con.no_ansi);
+	flag_test_old = uts->saved_efi_state;
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_state_flag, UTF_EFI);
+
+/* Check that the state which a UTF_EFI test replaced is put back untouched */
+static int lib_test_efi_state_flag_after(struct unit_test_state *uts)
+{
+	if (!IS_ENABLED(CONFIG_EFI_LOADER))
+		return -EAGAIN;
+
+	ut_assertnull(uts->efi_state);
+	ut_assertnull(uts->saved_efi_state);
+
+	/* this only means something if the test above has just run */
+	if (flag_test_old) {
+		ut_asserteq_ptr(flag_test_old, efis);
+		ut_assert(!efis->con.no_ansi);
+		flag_test_old = NULL;
+	}
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_state_flag_after, 0);
+
+/* Check that the EFI subsystem can be started in a state of its own */
+static int lib_test_efi_state_start(struct unit_test_state *uts)
+{
+	efi_handle_t old_root = uts->saved_efi_state->bs.root;
+
+	ut_asserteq(EFI_SUCCESS, efi_init_obj_list());
+	ut_asserteq(EFI_SUCCESS, efis->obj_list_initialized);
+	ut_assertnonnull(efis->systab.boottime);
+	ut_assertnonnull(efis->var.buf);
+
+	/* the state which was in use has not been touched */
+	ut_asserteq_ptr(old_root, uts->saved_efi_state->bs.root);
+	ut_assert(uts->saved_efi_state->var.buf != efis->var.buf);
+
+	return 0;
+}
+LIB_TEST(lib_test_efi_state_start, UTF_EFI | UTF_SCAN_FDT);

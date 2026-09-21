@@ -45,6 +45,9 @@ enum ut_arg_type {
 	UT_ARG_STR,
 };
 
+struct efi_state;
+struct lmb;
+
 /**
  * struct ut_arg - Parsed unit test argument value
  *
@@ -101,6 +104,10 @@ struct ut_arg {
  * @worker_id: ID of this worker (0 to workers-1)
  * @old_bootstage_count: bootstage record count saved before each test
  * @old_bloblist: stores the old gd->bloblist pointer
+ * @efi_state: EFI state allocated for a UTF_EFI test, or NULL
+ * @saved_efi_state: EFI state swapped out while a UTF_EFI test runs
+ * @saved_lmb: Copy of the LMB state made before a UTF_EFI test runs, so that
+ *	the memory which the test allocates can be given back, or NULL
  * @soft_fail: continue execution of the test even after it fails
  * @expect_str: Temporary string used to hold expected string value
  * @actual_str: Temporary string used to hold actual string value
@@ -142,6 +149,9 @@ struct unit_test_state {
 	int worker_id;
 	uint old_bootstage_count;
 	void *old_bloblist;
+	struct efi_state *efi_state;
+	struct efi_state *saved_efi_state;
+	struct lmb *saved_lmb;
 	bool soft_fail;
 	char expect_str[1024];
 	char actual_str[1024];
@@ -179,7 +189,16 @@ enum ut_flags {
 	UFT_BLOBLIST	= BIT(12),	/* test changes gd->bloblist */
 	UTF_INIT	= BIT(13),	/* test inits a suite */
 	UTF_UNINIT	= BIT(14),	/* test uninits a suite */
+	/*
+	 * Give the test an EFI state of its own, as at boot, and put back the
+	 * state which was in use once the test finishes. This implies UTF_DM,
+	 * since EFI handles refer to devices
+	 */
+	UTF_EFI		= BIT(15),
 };
+
+/* Add the flags which others imply */
+#define UT_FLAGS(_flags)	((_flags) | ((_flags) & UTF_EFI ? UTF_DM : 0))
 
 /**
  * enum ut_arg_flags - Flags for unit test arguments
@@ -255,7 +274,7 @@ struct unit_test {
 	ll_entry_declare(struct unit_test, _name, ut_ ## _suite) = {	\
 		.file = __FILE__,					\
 		.name = #_name,						\
-		.flags = _flags,					\
+		.flags = UT_FLAGS(_flags),				\
 		.func = _name,						\
 	}
 
@@ -264,7 +283,7 @@ struct unit_test {
 	ll_entry_declare(struct unit_test, A ## _name, ut_ ## _suite) = {	\
 		.file = __FILE__,					\
 		.name = #_name,						\
-		.flags = (_flags) | UTF_INIT,				\
+		.flags = UT_FLAGS(_flags) | UTF_INIT,			\
 		.func = _name,						\
 	}
 
@@ -273,7 +292,7 @@ struct unit_test {
 	ll_entry_declare(struct unit_test, zzz ## _name, ut_ ## _suite) = { \
 		.file = __FILE__,					\
 		.name = #_name,						\
-		.flags = (_flags) | UTF_UNINIT,				\
+		.flags = UT_FLAGS(_flags) | UTF_UNINIT,			\
 		.func = _name,						\
 	}
 
@@ -299,7 +318,7 @@ struct unit_test {
 	ll_entry_declare(struct unit_test, _name, ut_ ## _suite) = {	\
 		.file = __FILE__,					\
 		.name = #_name,						\
-		.flags = _flags,					\
+		.flags = UT_FLAGS(_flags),				\
 		.func = _name,						\
 		.arg_defs = _name##_args,				\
 	}
