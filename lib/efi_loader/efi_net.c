@@ -26,7 +26,6 @@
 #include <vsprintf.h>
 #include <net.h>
 
-#define MAX_NUM_DHCP_ENTRIES 4
 
 const efi_guid_t efi_net_guid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
 static const efi_guid_t efi_pxe_base_code_protocol_guid =
@@ -39,15 +38,6 @@ static struct wget_http_info efi_wget_info = {
 	.silent = true,
 };
 #endif
-
-struct dhcp_entry {
-	struct efi_pxe_packet *dhcp_ack;
-	struct udevice *dev;
-	bool is_valid;
-};
-
-static struct dhcp_entry dhcp_cache[MAX_NUM_DHCP_ENTRIES];
-static int next_dhcp_entry;
 
 /**
  * struct efi_net_obj - EFI object representing a network interface
@@ -755,11 +745,13 @@ out:
 void efi_net_set_dhcp_ack(void *pkt, int len)
 {
 	struct efi_net *net = &efis->net;
+	struct efi_net_dhcp_entry *entry;
 	struct efi_pxe_packet **dhcp_ack;
 	struct udevice *dev;
 	int i;
 
-	dhcp_ack = &dhcp_cache[next_dhcp_entry].dhcp_ack;
+	entry = &net->dhcp_cache[net->next_dhcp_entry];
+	dhcp_ack = &entry->dhcp_ack;
 
 	/* For now this function gets called only by the current device */
 	dev = eth_get_dev();
@@ -774,10 +766,10 @@ void efi_net_set_dhcp_ack(void *pkt, int len)
 	memset(*dhcp_ack, 0, maxsize);
 	memcpy(*dhcp_ack, pkt, min(len, maxsize));
 
-	dhcp_cache[next_dhcp_entry].is_valid = true;
-	dhcp_cache[next_dhcp_entry].dev = dev;
-	next_dhcp_entry++;
-	next_dhcp_entry %= MAX_NUM_DHCP_ENTRIES;
+	entry->is_valid = true;
+	entry->dev = dev;
+	net->next_dhcp_entry++;
+	net->next_dhcp_entry %= EFI_NET_MAX_DHCP_ENTRIES;
 
 	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
 		if (net->objs[i] && net->objs[i]->dev == dev)
@@ -1230,11 +1222,15 @@ efi_status_t efi_net_register(struct udevice *dev)
 	 * Scan dhcp entries for one corresponding
 	 * to this udevice, from newest to oldest
 	 */
-	i = (next_dhcp_entry + MAX_NUM_DHCP_ENTRIES - 1) % MAX_NUM_DHCP_ENTRIES;
-	for (j = 0; dhcp_cache[i].is_valid && j < MAX_NUM_DHCP_ENTRIES;
-	     i = (i + MAX_NUM_DHCP_ENTRIES - 1) % MAX_NUM_DHCP_ENTRIES, j++) {
-		if (dev == dhcp_cache[i].dev) {
-			netobj->pxe_mode.dhcp_ack = *dhcp_cache[i].dhcp_ack;
+	i = (net->next_dhcp_entry + EFI_NET_MAX_DHCP_ENTRIES - 1) %
+		EFI_NET_MAX_DHCP_ENTRIES;
+	for (j = 0;
+	     net->dhcp_cache[i].is_valid && j < EFI_NET_MAX_DHCP_ENTRIES;
+	     i = (i + EFI_NET_MAX_DHCP_ENTRIES - 1) % EFI_NET_MAX_DHCP_ENTRIES,
+	     j++) {
+		if (dev == net->dhcp_cache[i].dev) {
+			netobj->pxe_mode.dhcp_ack =
+				*net->dhcp_cache[i].dhcp_ack;
 			break;
 		}
 	}
@@ -1727,5 +1723,11 @@ void efi_net_uninit_state(struct efi_net *net)
 
 		/* the object itself is a handle, freed with the others */
 		net->objs[i] = NULL;
+	}
+
+	for (i = 0; i < EFI_NET_MAX_DHCP_ENTRIES; i++) {
+		free(net->dhcp_cache[i].dhcp_ack);
+		net->dhcp_cache[i].dhcp_ack = NULL;
+		net->dhcp_cache[i].is_valid = false;
 	}
 }

@@ -70,6 +70,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq(UCLASS_INVALID, st.system_partition.uclass_id);
 	ut_assertnull(st.net.objs[0]);
 	ut_assert(!st.net.dp_cache[0].is_valid);
+	ut_assert(!st.net.dhcp_cache[0].is_valid);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

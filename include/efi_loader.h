@@ -666,7 +666,11 @@ struct efi_mem {
 /* Number of entries in the cache of network device paths */
 #define EFI_NET_MAX_DP_ENTRIES	4
 
+/* Number of entries in the cache of DHCP acknowledgements */
+#define EFI_NET_MAX_DHCP_ENTRIES	4
+
 struct efi_net_obj;
+struct efi_pxe_packet;
 
 /**
  * struct efi_net_dp_entry - entry in the cache of network device paths
@@ -682,6 +686,19 @@ struct efi_net_dp_entry {
 };
 
 /**
+ * struct efi_net_dhcp_entry - entry in the cache of DHCP acknowledgements
+ *
+ * @dhcp_ack: Copy of the DHCP ACK packet, allocated when first needed
+ * @dev: Network device which received it
+ * @is_valid: true if this entry is in use
+ */
+struct efi_net_dhcp_entry {
+	struct efi_pxe_packet *dhcp_ack;
+	struct udevice *dev;
+	bool is_valid;
+};
+
+/**
  * struct efi_net - state of the network protocols
  *
  * @objs: EFI objects for the network interfaces, indexed by the sequence number
@@ -690,14 +707,19 @@ struct efi_net_dp_entry {
  *	downloaded from the network. If the file is then loaded as an EFI
  *	image, the most recent entry for the device is passed as the device
  *	path of the loaded image
+ * @dhcp_cache: Cache of DHCP ACK packets, which the PXE base code protocol
+ *	reports for an interface
  * @curr_obj: Index in @objs of the interface which receives packets
  * @next_dp_entry: Index in @dp_cache of the next entry to write
+ * @next_dhcp_entry: Index in @dhcp_cache of the next entry to write
  */
 struct efi_net {
 	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
 	struct efi_net_dp_entry dp_cache[EFI_NET_MAX_DP_ENTRIES];
+	struct efi_net_dhcp_entry dhcp_cache[EFI_NET_MAX_DHCP_ENTRIES];
 	int curr_obj;
 	int next_dp_entry;
+	int next_dhcp_entry;
 };
 
 /**
@@ -860,9 +882,9 @@ void efi_mem_uninit_state(struct efi_mem *mem);
 /**
  * efi_net_uninit_state() - Free the memory held by the network state
  *
- * This frees the packet buffers of each interface. The interface objects
- * themselves are handles, so efi_bs_uninit_state() frees them, which must
- * therefore happen afterwards.
+ * This frees the packet buffers of each interface and the DHCP packets. The
+ * interface objects themselves are handles, so efi_bs_uninit_state() frees
+ * them, which must therefore happen afterwards.
  *
  * @net: Network state to clean up
  */
