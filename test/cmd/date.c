@@ -6,7 +6,9 @@
  */
 
 #include <dm.h>
+#include <i2c.h>
 #include <rtc.h>
+#include <asm/test.h>
 #include <test/cmd.h>
 #include <test/ut.h>
 
@@ -15,21 +17,44 @@
 #define SET_DATE_OUT	"Date: 2026-12-25 (Friday)    Time: 12:00:30"
 
 /**
- * save_time() - Read the current time so it can be put back afterwards
+ * save_time() - Read the current time and stop the clock
  *
  * Setting the clock changes sandbox state which outlives the test, so every
- * test here restores what it found
+ * test here restores what it found with restore_time(). The emulated RTC
+ * follows the host clock, so a second could tick between a test setting the
+ * date and reading it back: the clock is stopped until restore_time().
  *
  * @uts: Test state
  * @devp: Returns the RTC device used by the date command
+ * @emulp: Returns the emulator behind it
  * @timep: Returns the time read from it
  * Return: 0 if OK, -ve on error
  */
 static int save_time(struct unit_test_state *uts, struct udevice **devp,
-		     struct rtc_time *timep)
+		     struct udevice **emulp, struct rtc_time *timep)
 {
 	ut_assertok(uclass_get_device(UCLASS_RTC, 0, devp));
 	ut_assertok(dm_rtc_get(*devp, timep));
+	ut_assertok(i2c_emul_find(*devp, emulp));
+	sandbox_i2c_rtc_set_offset(*emulp, false, 0);
+
+	return 0;
+}
+
+/**
+ * restore_time() - Start the clock again and put the saved time back
+ *
+ * @uts: Test state
+ * @dev: RTC device from save_time()
+ * @emul: Emulator from save_time()
+ * @time: Time from save_time()
+ * Return: 0 if OK, -ve on error
+ */
+static int restore_time(struct unit_test_state *uts, struct udevice *dev,
+			struct udevice *emul, struct rtc_time *time)
+{
+	sandbox_i2c_rtc_set_offset(emul, true, -1);
+	ut_assertok(dm_rtc_set(dev, time));
 
 	return 0;
 }
@@ -38,9 +63,9 @@ static int save_time(struct unit_test_state *uts, struct udevice **devp,
 static int cmd_test_date_base(struct unit_test_state *uts)
 {
 	struct rtc_time old;
-	struct udevice *dev;
+	struct udevice *dev, *emul;
 
-	ut_assertok(save_time(uts, &dev, &old));
+	ut_assertok(save_time(uts, &dev, &emul, &old));
 
 	/* the date is shown in full, with the weekday worked out from it */
 	ut_assertok(run_command("date " SET_DATE, 0));
@@ -52,7 +77,7 @@ static int cmd_test_date_base(struct unit_test_state *uts)
 	ut_assert_nextline(SET_DATE_OUT);
 	ut_assert_console_end();
 
-	ut_assertok(dm_rtc_set(dev, &old));
+	ut_assertok(restore_time(uts, dev, emul, &old));
 
 	return 0;
 }
@@ -63,9 +88,9 @@ CMD_TEST(cmd_test_date_base, UTF_CONSOLE | UTF_DM | UTF_SCAN_PDATA |
 static int cmd_test_date_short(struct unit_test_state *uts)
 {
 	struct rtc_time old;
-	struct udevice *dev;
+	struct udevice *dev, *emul;
 
-	ut_assertok(save_time(uts, &dev, &old));
+	ut_assertok(save_time(uts, &dev, &emul, &old));
 
 	ut_assertok(run_command("date " SET_DATE, 0));
 	ut_assert_nextline(SET_DATE_OUT);
@@ -83,7 +108,7 @@ static int cmd_test_date_short(struct unit_test_state *uts)
 	ut_assert_nextline("Date: 2026-11-12 (Thursday)    Time: 13:14:00");
 	ut_assert_console_end();
 
-	ut_assertok(dm_rtc_set(dev, &old));
+	ut_assertok(restore_time(uts, dev, emul, &old));
 
 	return 0;
 }
@@ -94,9 +119,9 @@ CMD_TEST(cmd_test_date_short, UTF_CONSOLE | UTF_DM | UTF_SCAN_PDATA |
 static int cmd_test_date_reset(struct unit_test_state *uts)
 {
 	struct rtc_time old;
-	struct udevice *dev;
+	struct udevice *dev, *emul;
 
-	ut_assertok(save_time(uts, &dev, &old));
+	ut_assertok(save_time(uts, &dev, &emul, &old));
 
 	ut_assertok(run_command("date " SET_DATE, 0));
 	ut_assert_nextline(SET_DATE_OUT);
@@ -107,7 +132,7 @@ static int cmd_test_date_reset(struct unit_test_state *uts)
 	ut_assert_nextline("Date: 2000-01-01 (Saturday)    Time:  0:00:00");
 	ut_assert_console_end();
 
-	ut_assertok(dm_rtc_set(dev, &old));
+	ut_assertok(restore_time(uts, dev, emul, &old));
 
 	return 0;
 }
@@ -118,9 +143,9 @@ CMD_TEST(cmd_test_date_reset, UTF_CONSOLE | UTF_DM | UTF_SCAN_PDATA |
 static int cmd_test_date_bad(struct unit_test_state *uts)
 {
 	struct rtc_time old;
-	struct udevice *dev;
+	struct udevice *dev, *emul;
 
-	ut_assertok(save_time(uts, &dev, &old));
+	ut_assertok(save_time(uts, &dev, &emul, &old));
 
 	ut_assertok(run_command("date " SET_DATE, 0));
 	ut_assert_nextline(SET_DATE_OUT);
@@ -153,7 +178,7 @@ static int cmd_test_date_bad(struct unit_test_state *uts)
 	ut_assert_nextline(SET_DATE_OUT);
 	ut_assert_console_end();
 
-	ut_assertok(dm_rtc_set(dev, &old));
+	ut_assertok(restore_time(uts, dev, emul, &old));
 
 	return 0;
 }
