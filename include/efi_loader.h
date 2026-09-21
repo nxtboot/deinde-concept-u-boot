@@ -608,6 +608,8 @@ struct global_data;
  *
  * @obj_list: All the EFI objects (handles) the payload has access to while
  *	the boot services are active; nothing uses it after ExitBootServices()
+ * @events: List of all events. The SetVirtualAddressMap() and ResetSystem()
+ *	services use this after ExitBootServices()
  * @event_queue: Events queued for their notification function to run
  * @register_notify_events: Events registered by RegisterProtocolNotify()
  * @root: The root node, on which the console and other protocols are installed
@@ -622,6 +624,7 @@ struct global_data;
  */
 struct efi_bs {
 	struct list_head obj_list;
+	struct list_head events;
 	struct list_head event_queue;
 	struct list_head register_notify_events;
 	efi_handle_t root;
@@ -894,9 +897,6 @@ struct efi_event {
 	enum efi_timer_delay trigger_type;
 	bool is_signaled;
 };
-
-/* List of all events */
-extern struct list_head efi_events;
 
 /**
  * struct efi_protocol_notification - handle for notified protocol

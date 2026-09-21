@@ -353,7 +353,7 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 	efi_mem_sort();
 
 	/* Notify that the memory map was changed */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_memory_map_change)) {

@@ -565,7 +565,7 @@ out:
 	free(load_options);
 
 	/* Notify EFI_EVENT_GROUP_RETURN_TO_EFIBOOTMGR event group. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_return_to_efibootmgr)) {

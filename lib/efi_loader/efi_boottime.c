@@ -28,9 +28,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/* List of all events */
-__efi_runtime_data LIST_HEAD(efi_events);
-
 /* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
 bool efi_st_keep_devices;
 
@@ -43,6 +40,7 @@ void efi_bs_init_state(struct efi_bs *bs)
 	memset(bs, '\0', sizeof(*bs));
 	INIT_LIST_HEAD(&bs->obj_list);
 	bs->tpl = TPL_APPLICATION;
+	INIT_LIST_HEAD(&bs->events);
 	INIT_LIST_HEAD(&bs->event_queue);
 	bs->timers_enabled = true;
 	INIT_LIST_HEAD(&bs->register_notify_events);
@@ -308,6 +306,8 @@ static efi_status_t is_valid_tpl(efi_uintn_t tpl)
  */
 void efi_signal_event(struct efi_event *event)
 {
+	struct efi_bs *bs = &efis->bs;
+
 	if (event->is_signaled)
 		return;
 	if (event->group) {
@@ -317,14 +317,14 @@ void efi_signal_event(struct efi_event *event)
 		 * The signaled state has to set before executing any
 		 * notification function
 		 */
-		list_for_each_entry(evt, &efi_events, link) {
+		list_for_each_entry(evt, &bs->events, link) {
 			if (!evt->group || guidcmp(evt->group, event->group))
 				continue;
 			if (evt->is_signaled)
 				continue;
 			evt->is_signaled = true;
 		}
-		list_for_each_entry(evt, &efi_events, link) {
+		list_for_each_entry(evt, &bs->events, link) {
 			if (!evt->group || guidcmp(evt->group, event->group))
 				continue;
 			efi_queue_event(evt);
@@ -694,7 +694,7 @@ static efi_status_t efi_is_event(const struct efi_event *event)
 
 	if (!event)
 		return EFI_INVALID_PARAMETER;
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt == event)
 			return EFI_SUCCESS;
 	}
@@ -772,7 +772,7 @@ efi_status_t efi_create_event(uint32_t type, efi_uintn_t notify_tpl,
 	evt->group = group;
 	/* Disable timers on boot up */
 	evt->trigger_next = -1ULL;
-	list_add_tail(&evt->link, &efi_events);
+	list_add_tail(&evt->link, &efis->bs.events);
 	*event = evt;
 	return EFI_SUCCESS;
 }
@@ -877,11 +877,12 @@ static efi_status_t EFIAPI efi_create_event_ext(
  */
 void efi_timer_check(void)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *evt;
 	u64 now = timer_get_us();
 
-	list_for_each_entry(evt, &efi_events, link) {
-		if (!efis->bs.timers_enabled)
+	list_for_each_entry(evt, &bs->events, link) {
+		if (!bs->timers_enabled)
 			continue;
 		if (!(evt->type & EVT_TIMER) || now < evt->trigger_next)
 			continue;
@@ -1811,7 +1812,7 @@ out:
 	efi_update_table_header_crc32(&systab->hdr);
 
 	/* Notify that the configuration table was changed */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group && !guidcmp(evt->group, guid)) {
 			efi_signal_event(evt);
 			break;
@@ -2275,7 +2276,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 		goto out;
 
 	/* Notify EFI_EVENT_GROUP_BEFORE_EXIT_BOOT_SERVICES event group. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_before_exit_boot_services)) {
@@ -2288,12 +2289,12 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	bs->timers_enabled = false;
 
 	/* Add related events to the event group */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->type == EVT_SIGNAL_EXIT_BOOT_SERVICES)
 			evt->group = &efi_guid_event_group_exit_boot_services;
 	}
 	/* Notify that ExitBootServices is invoked. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_exit_boot_services)) {
@@ -2309,7 +2310,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	efi_variables_boot_exit_notify();
 
 	/* Remove all events except EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE */
-	list_for_each_entry_safe(evt, next_event, &efi_events, link) {
+	list_for_each_entry_safe(evt, next_event, &bs->events, link) {
 		if (evt->type != EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE)
 			list_del(&evt->link);
 	}
@@ -4305,5 +4306,8 @@ void efi_bs_uninit_state(struct efi_bs *bs)
 		free(item);
 	}
 	INIT_LIST_HEAD(&bs->register_notify_events);
+
+	/* the events are in pool memory, so just forget them */
+	INIT_LIST_HEAD(&bs->events);
 	INIT_LIST_HEAD(&bs->event_queue);
 }

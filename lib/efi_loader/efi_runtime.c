@@ -271,7 +271,7 @@ static void EFIAPI efi_reset_system_boottime(
 		  reset_data);
 
 	/* Notify reset */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_reset_system)) {
@@ -575,10 +575,8 @@ static efi_status_t __efi_runtime EFIAPI efi_query_capsule_caps_unsupported(
  */
 static bool efi_is_runtime_service_pointer(void *p)
 {
-	return (p >= (void *)&efi_runtime_services.get_time &&
-		p <= (void *)&efi_runtime_services.query_variable_info) ||
-	       p == (void *)&efi_events.prev ||
-	       p == (void *)&efi_events.next;
+	return p >= (void *)&efi_runtime_services.get_time &&
+	       p <= (void *)&efi_runtime_services.query_variable_info;
 }
 
 /**
@@ -908,7 +906,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 	}
 
 	/* Notify EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE */
-	list_for_each_entry(event, &efi_events, link) {
+	list_for_each_entry(event, &efis->bs.events, link) {
 		if (event->notify_function)
 			EFI_CALL_VOID(event->notify_function(
 					event, event->notify_context));
