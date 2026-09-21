@@ -71,6 +71,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(st.net.objs[0]);
 	ut_assert(!st.net.dp_cache[0].is_valid);
 	ut_assert(!st.net.dhcp_cache[0].is_valid);
+	ut_asserteq(EFI_IP4_CONFIG2_POLICY_STATIC, st.net.ip4_policy);
 
 	/* Select it and check that changes go into it, not the old one */
 	ut_asserteq_ptr(old, efi_state_set(&st));

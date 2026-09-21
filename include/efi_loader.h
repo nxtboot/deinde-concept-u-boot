@@ -709,17 +709,24 @@ struct efi_net_dhcp_entry {
  *	path of the loaded image
  * @dhcp_cache: Cache of DHCP ACK packets, which the PXE base code protocol
  *	reports for an interface
+ * @ip4_addr: Address and subnet mask set or reported through the IPv4 Config2
+ *	protocol
  * @curr_obj: Index in @objs of the interface which receives packets
  * @next_dp_entry: Index in @dp_cache of the next entry to write
  * @next_dhcp_entry: Index in @dhcp_cache of the next entry to write
+ * @ip4_policy: Policy set through the IPv4 Config2 protocol: static or DHCP
+ * @mac_addr: MAC address reported through the IPv4 Config2 protocol
  */
 struct efi_net {
 	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
 	struct efi_net_dp_entry dp_cache[EFI_NET_MAX_DP_ENTRIES];
 	struct efi_net_dhcp_entry dhcp_cache[EFI_NET_MAX_DHCP_ENTRIES];
+	struct efi_ip4_config2_manual_address ip4_addr;
 	int curr_obj;
 	int next_dp_entry;
 	int next_dhcp_entry;
+	enum efi_ip4_config2_policy ip4_policy;
+	char mac_addr[32];
 };
 
 /**
