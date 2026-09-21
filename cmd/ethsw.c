@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <env_flags.h>
 #include <ethsw.h>
+#include <getopt.h>
 #include <net.h>
 #include <vsprintf.h>
 
@@ -1065,11 +1066,15 @@ static void command_def_init(struct ethsw_command_def *parsed_cmd)
 }
 
 /* function to interpret commands starting with "ethsw " */
-static int do_ethsw(struct cmd_tbl *cmdtp, int flag, int argc,
-		    char *const argv[])
+static int do_ethsw(struct getopt_state *gs)
 {
 	struct ethsw_command_def parsed_cmd;
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int rc = CMD_RET_SUCCESS;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc == 1 || argc >= ETHSW_MAX_CMD_PARAMS)
 		return CMD_RET_USAGE;
@@ -1087,17 +1092,17 @@ static int do_ethsw(struct cmd_tbl *cmdtp, int flag, int argc,
 #define ETHSW_PORT_CONF_HELP "[port <port_no>] { enable | disable | show } " \
 "- enable/disable a port; show a port's configuration"
 
-U_BOOT_CMD(ethsw, ETHSW_MAX_CMD_PARAMS, 0, do_ethsw,
-	   "Ethernet l2 switch commands",
-	   ETHSW_PORT_CONF_HELP"\n"
-	   ETHSW_PORT_STATS_HELP"\n"
-	   ETHSW_LEARN_HELP"\n"
-	   ETHSW_FDB_HELP"\n"
-	   ETHSW_PVID_HELP"\n"
-	   ETHSW_VLAN_HELP"\n"
-	   ETHSW_PORT_UNTAG_HELP"\n"
-	   ETHSW_EGR_VLAN_TAG_HELP"\n"
-	   ETHSW_VLAN_FDB_HELP"\n"
-	   ETHSW_PORT_INGR_FLTR_HELP"\n"
-	   ETHSW_PORT_AGGR_HELP"\n"
+U_BOOT_CMD_GETOPT(ethsw, ETHSW_MAX_CMD_PARAMS, 0, do_ethsw,
+		  "Ethernet l2 switch commands",
+		  ETHSW_PORT_CONF_HELP "\n"
+		  ETHSW_PORT_STATS_HELP "\n"
+		  ETHSW_LEARN_HELP "\n"
+		  ETHSW_FDB_HELP "\n"
+		  ETHSW_PVID_HELP "\n"
+		  ETHSW_VLAN_HELP "\n"
+		  ETHSW_PORT_UNTAG_HELP "\n"
+		  ETHSW_EGR_VLAN_TAG_HELP "\n"
+		  ETHSW_VLAN_FDB_HELP "\n"
+		  ETHSW_PORT_INGR_FLTR_HELP "\n"
+		  ETHSW_PORT_AGGR_HELP "\n"
 );

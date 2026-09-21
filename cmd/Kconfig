@@ -2293,6 +2293,7 @@ config IPV6_ROUTER_DISCOVERY
 
 config CMD_ETHSW
 	bool "ethsw"
+	select GETOPT
 	help
 	  Allow control of L2 Ethernet switch commands. These are supported
 	  by the vsc9953 Ethernet driver at present. Sub-commands allow
