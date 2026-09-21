@@ -35,9 +35,6 @@ struct efi_runtime_mmio_list {
 	u64 len;
 };
 
-/* This list contains all runtime available mmio regions */
-static LIST_HEAD(efi_runtime_mmio);
-
 static efi_status_t __efi_runtime EFIAPI efi_unimplemented(void);
 
 /*
@@ -928,7 +925,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 		u64 off = map->virtual_start - map_start;
 
 		/* Adjust all mmio pointers in this region */
-		list_for_each(lhandle, &efi_runtime_mmio) {
+		list_for_each(lhandle, &rt->mmio) {
 			struct efi_runtime_mmio_list *lmmio;
 
 			lmmio = list_entry(lhandle,
@@ -996,7 +993,7 @@ efi_status_t efi_add_runtime_mmio(void **mmio_ptr, u64 len)
 	newmmio->ptr = mmio_ptr;
 	newmmio->paddr = (uintptr_t)*(void **)mmio_ptr;
 	newmmio->len = len;
-	list_add_tail(&newmmio->link, &efi_runtime_mmio);
+	list_add_tail(&newmmio->link, &efis->rt.mmio);
 
 	return EFI_SUCCESS;
 }
