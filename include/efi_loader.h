@@ -625,6 +625,7 @@ struct global_data;
  * @efi_gd: U-Boot's global data pointer, saved while the payload runs, on
  *	architectures which keep it in a register
  * @app_gd: The payload's value of that register, restored on returning to it
+ * @mono_count: Next value for GetNextMonotonicCount() to return
  * @tpl: Current task priority level
  * @entry_count: 1 while inside U-Boot code, 0 while inside the payload
  * @nesting_level: Depth of nested boot-service calls, for the log
@@ -641,6 +642,7 @@ struct efi_bs {
 	efi_handle_t current_image;
 	struct global_data *efi_gd;
 	struct global_data *app_gd;
+	u64 mono_count;
 	efi_uintn_t tpl;
 	int entry_count;
 	int nesting_level;

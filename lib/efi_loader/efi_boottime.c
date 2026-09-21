@@ -2368,7 +2368,6 @@ out:
  */
 static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 {
-	static uint64_t mono;
 	efi_status_t ret;
 
 	int ofs;
@@ -2379,7 +2378,7 @@ static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
-	*count = mono++;
+	*count = efis->bs.mono_count++;
 	ret = EFI_SUCCESS;
 out:
 	efi_loge_get_next_monotonic_count(ofs, ret);
