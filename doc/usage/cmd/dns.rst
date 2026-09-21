@@ -82,5 +82,7 @@ See also
 * :doc:`linklocal<linklocal>` for setting up the network without a server
 * :doc:`sntp<sntp>` for setting the time from a network server
 * :doc:`wget<wget>` for downloading a file over HTTP
+* :doc:`ethsw<ethsw>` for configuring the Ethernet switch which carries the
+  link a lookup travels over
 * *dhcp* for obtaining the name-server address automatically
 * *ping* for checking that a host answers

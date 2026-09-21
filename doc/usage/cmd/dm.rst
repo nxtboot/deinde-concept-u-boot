@@ -527,3 +527,5 @@ See also
 * :doc:`regulator<regulator>` for the voltage and current of each supply
 * :doc:`demo<demo>` for the example uclass used to show how driver model
   works
+* :doc:`ethsw<ethsw>` for configuring an Ethernet switch, whose driver
+  registers its sub-commands directly rather than through a uclass
