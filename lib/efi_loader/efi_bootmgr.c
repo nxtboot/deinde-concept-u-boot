@@ -25,9 +25,6 @@
 #include <linux/kernel.h>
 #include <linux/sizes.h>
 
-static const struct efi_boot_services *bs;
-static const struct efi_runtime_services *rs;
-
 /**
  * struct uridp_context - uri device path resource
  *
@@ -242,6 +239,7 @@ static efi_status_t search_default_file(struct udevice *dev,
 					struct efi_device_path **loaded_dp)
 {
 	const struct efi_bs *bsp = &efis->bs;
+	const struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t ret;
 	efi_handle_t handle;
 	u16 *default_file_name = NULL;
@@ -501,7 +499,7 @@ static efi_status_t try_load_from_uri_path(struct efi_device_path_uri *uridp,
 	struct efi_event *event = NULL;
 	efi_handle_t mem_handle = NULL;
 	struct efi_device_path *loaded_dp;
-	static ulong image_size, image_addr;
+	ulong image_size, image_addr;
 
 	ctx = calloc(1, sizeof(struct uridp_context));
 	if (!ctx)
@@ -766,14 +764,10 @@ error:
  */
 efi_status_t efi_bootmgr_load(efi_handle_t *handle, void **load_options)
 {
-	const struct efi_system_table *systab = &efis->systab;
 	u16 bootnext, *bootorder;
 	efi_uintn_t size;
 	int i, num;
 	efi_status_t ret;
-
-	bs = systab->boottime;
-	rs = systab->runtime;
 
 	/* BootNext */
 	size = sizeof(bootnext);
