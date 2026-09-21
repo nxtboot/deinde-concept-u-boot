@@ -49,6 +49,9 @@ struct efi_state *efi_state_set(struct efi_state *st)
 
 void efi_state_uninit(void)
 {
+	/* this needs the interface objects, which are handles */
+	if (IS_ENABLED(CONFIG_NETDEVICES))
+		efi_net_uninit_state(&efis->net);
 	efi_console_uninit_state(&efis->con);
 	efi_bs_uninit_state(&efis->bs);
 	efi_mem_uninit_state(&efis->mem);

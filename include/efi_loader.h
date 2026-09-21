@@ -660,6 +660,23 @@ struct efi_mem {
 	efi_uintn_t map_key;
 };
 
+/* Number of network interfaces which can have an EFI object */
+#define EFI_NET_MAX_OBJS	4
+
+struct efi_net_obj;
+
+/**
+ * struct efi_net - state of the network protocols
+ *
+ * @objs: EFI objects for the network interfaces, indexed by the sequence number
+ *	of the network device, with NULL for those not registered
+ * @curr_obj: Index in @objs of the interface which receives packets
+ */
+struct efi_net {
+	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
+	int curr_obj;
+};
+
 /**
  * struct efi_rt - state of the runtime services
  *
@@ -699,12 +716,13 @@ struct efi_rt {
  *	the variable file
  * @initrd: The initial ramdisk registered for the OS
  * @debug: The debug-image-info table
- * @capsule_root: Root directory of the system partition, opened for
- *	capsules on disk, or NULL
- * @esrt: The system resource table, once installed
  * @hii: State of the HII database
  * @var: State of the variable store
  * @rt: State of the runtime services
+ * @net: State of the network protocols
+ * @capsule_root: Root directory of the system partition, opened for
+ *	capsules on disk, or NULL
+ * @esrt: The system resource table, once installed
  * @watchdog_event: Timer event which implements the watchdog, or NULL until
  *	efi_init_obj_list() has registered it. It is only used through the
  *	SetWatchdogTimer() service and at ExitBootServices(), both of which
@@ -726,6 +744,7 @@ struct efi_state {
 	struct efi_hii hii;
 	struct efi_var var;
 	struct efi_rt rt;
+	struct efi_net net;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
@@ -772,8 +791,8 @@ void efi_state_init(struct efi_state *st);
  *
  * This is for a state which is about to be discarded, e.g. by a test: select
  * another state once this returns. It frees what the state has taken from
- * malloc(): the handles with their protocol handlers, the memory map and the
- * console's key notifications.
+ * malloc(): the handles with their protocol handlers, the memory map, the
+ * network buffers and the console's key notifications.
  *
  * It leaves alone the pages and pool memory allocated for the state, which
  * come from LMB, and anything which a protocol interface points to.
@@ -814,6 +833,17 @@ void efi_bs_uninit_state(struct efi_bs *bs);
  * @mem: Memory-map state to clean up
  */
 void efi_mem_uninit_state(struct efi_mem *mem);
+
+/**
+ * efi_net_uninit_state() - Free the memory held by the network state
+ *
+ * This frees the packet buffers of each interface. The interface objects
+ * themselves are handles, so efi_bs_uninit_state() frees them, which must
+ * therefore happen afterwards.
+ *
+ * @net: Network state to clean up
+ */
+void efi_net_uninit_state(struct efi_net *net);
 
 /**
  * efi_state_set() - Select the EFI state to use

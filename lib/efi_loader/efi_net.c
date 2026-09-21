@@ -26,7 +26,6 @@
 #include <vsprintf.h>
 #include <net.h>
 
-#define MAX_EFI_NET_OBJS 4
 #define MAX_NUM_DHCP_ENTRIES 4
 #define MAX_NUM_DP_ENTRIES 4
 
@@ -111,9 +110,6 @@ struct efi_net_obj {
 	int efi_seq_num;
 };
 
-static int curr_efi_net_obj;
-static struct efi_net_obj *net_objs[MAX_EFI_NET_OBJS];
-
 /**
  * efi_netobj_is_active() - checks if a netobj is active in the efi subsystem
  *
@@ -137,12 +133,13 @@ static bool efi_netobj_is_active(struct efi_net_obj *netobj)
  */
 static struct efi_net_obj *efi_netobj_from_snp(struct efi_simple_network *snp)
 {
+	struct efi_net *net = &efis->net;
 	int i;
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && &net_objs[i]->net == snp) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && &net->objs[i]->net == snp) {
 			// Do not register duplicate devices
-			return net_objs[i];
+			return net->objs[i];
 		}
 	}
 	return NULL;
@@ -773,6 +770,7 @@ out:
  */
 void efi_net_set_dhcp_ack(void *pkt, int len)
 {
+	struct efi_net *net = &efis->net;
 	struct efi_pxe_packet **dhcp_ack;
 	struct udevice *dev;
 	int i;
@@ -797,10 +795,9 @@ void efi_net_set_dhcp_ack(void *pkt, int len)
 	next_dhcp_entry++;
 	next_dhcp_entry %= MAX_NUM_DHCP_ENTRIES;
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
-			net_objs[i]->pxe_mode.dhcp_ack = **dhcp_ack;
-		}
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev)
+			net->objs[i]->pxe_mode.dhcp_ack = **dhcp_ack;
 	}
 }
 
@@ -814,10 +811,11 @@ void efi_net_set_dhcp_ack(void *pkt, int len)
  */
 static void efi_net_push(void *pkt, int len)
 {
+	const struct efi_net *net = &efis->net;
 	int rx_packet_next;
 	struct efi_net_obj *nt;
 
-	nt = net_objs[curr_efi_net_obj];
+	nt = net->objs[net->curr_obj];
 	if (!nt)
 		return;
 
@@ -865,7 +863,7 @@ static void EFIAPI efi_network_timer_notify(struct efi_event *event,
 		goto out;
 
 	nt = efi_netobj_from_snp(this);
-	curr_efi_net_obj = nt->efi_seq_num;
+	efis->net.curr_obj = nt->efi_seq_num;
 
 	if (!nt->rx_packet_num) {
 		eth_set_dev(nt->dev);
@@ -1073,15 +1071,16 @@ static struct efi_device_path *efi_netobj_get_dp(struct efi_net_obj *netobj)
  */
 efi_status_t efi_net_do_start(struct udevice *dev)
 {
+	const struct efi_net *net = &efis->net;
 	efi_status_t r = EFI_SUCCESS;
 	struct efi_net_obj *netobj;
 	struct efi_device_path *net_dp;
 	int i;
 
 	netobj = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
-			netobj = net_objs[i];
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev) {
+			netobj = net->objs[i];
 			break;
 		}
 	}
@@ -1128,6 +1127,7 @@ set_addr:
  */
 efi_status_t efi_net_register(struct udevice *dev)
 {
+	struct efi_net *net = &efis->net;
 	efi_status_t r;
 	int seq_num;
 	struct efi_net_obj *netobj;
@@ -1141,16 +1141,16 @@ efi_status_t efi_net_register(struct udevice *dev)
 		return EFI_SUCCESS;
 	}
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev) {
 			// Do not register duplicate devices
 			return EFI_SUCCESS;
 		}
 	}
 
 	seq_num = -1;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (!net_objs[i]) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (!net->objs[i]) {
 			seq_num = i;
 			break;
 		}
@@ -1300,7 +1300,7 @@ efi_status_t efi_net_register(struct udevice *dev)
 		goto failure_to_add_protocol;
 #endif
 	netobj->efi_seq_num = seq_num;
-	net_objs[seq_num] = netobj;
+	net->objs[seq_num] = netobj;
 	return EFI_SUCCESS;
 failure_to_add_protocol:
 	printf("ERROR: Failure to add protocol\n");
@@ -1331,6 +1331,7 @@ out_of_resources:
  */
 efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice *udev)
 {
+	const struct efi_net *net = &efis->net;
 	efi_status_t ret;
 	struct efi_net_obj *netobj;
 	struct efi_device_path *old_net_dp, *new_net_dp;
@@ -1358,9 +1359,9 @@ efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice 
 	efi_free_pool(old_net_dp);
 
 	netobj = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == udev) {
-			netobj = net_objs[i];
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == udev) {
+			netobj = net->objs[i];
 			break;
 		}
 	}
@@ -1388,6 +1389,7 @@ efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice 
  */
 void efi_net_dp_from_dev(struct efi_device_path **dp, struct udevice *udev, bool cache_only)
 {
+	const struct efi_net *net = &efis->net;
 	int i, j;
 
 	if (!dp)
@@ -1399,9 +1401,9 @@ void efi_net_dp_from_dev(struct efi_device_path **dp, struct udevice *udev, bool
 		goto cache;
 
 	// If a netobj matches:
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == udev) {
-			*dp = efi_netobj_get_dp(net_objs[i]);
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == udev) {
+			*dp = efi_netobj_get_dp(net->objs[i]);
 			if (*dp)
 				return;
 		}
@@ -1659,9 +1661,11 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 
 	// Set corresponding udevice
 	dev = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && &net_objs[i]->http_service_binding == parent)
-			dev = net_objs[i]->dev;
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		struct efi_net_obj *netobj = efis->net.objs[i];
+
+		if (netobj && &netobj->http_service_binding == parent)
+			dev = netobj->dev;
 	}
 	if (!dev)
 		return EFI_ABORTED;
@@ -1717,3 +1721,23 @@ out:
 	return ret;
 }
 #endif
+
+void efi_net_uninit_state(struct efi_net *net)
+{
+	int i, j;
+
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		struct efi_net_obj *netobj = net->objs[i];
+
+		if (!netobj)
+			continue;
+		free(netobj->transmit_buffer);
+		for (j = 0; j < ETH_PACKETS_BATCH_RECV; j++)
+			free(netobj->receive_buffer[j]);
+		free(netobj->receive_buffer);
+		free(netobj->receive_lengths);
+
+		/* the object itself is a handle, freed with the others */
+		net->objs[i] = NULL;
+	}
+}
