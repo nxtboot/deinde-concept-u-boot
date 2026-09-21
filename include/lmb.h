@@ -226,6 +226,27 @@ struct lmb *lmb_get(void);
 int lmb_push(struct lmb *store);
 void lmb_pop(struct lmb *store);
 
+/**
+ * lmb_save() - Save a copy of the LMB state, for a test
+ *
+ * Unlike lmb_push() this leaves LMB as it is, so that the test sees the same
+ * memory and reservations as before. Use lmb_restore() afterwards to drop
+ * any reservations which the test has made.
+ *
+ * @store: Place to put the copy
+ * Return: 0 if OK, -ENOMEM if out of memory
+ */
+int lmb_save(struct lmb *store);
+
+/**
+ * lmb_restore() - Put back the LMB state saved by lmb_save()
+ *
+ * This discards every change made to LMB since then, without telling anyone.
+ *
+ * @store: Copy made by lmb_save(), which this takes over
+ */
+void lmb_restore(struct lmb *store);
+
 static inline int lmb_read_check(phys_addr_t addr, phys_size_t len)
 {
 	return lmb_alloc_addr(addr, len, LMB_NONE);
