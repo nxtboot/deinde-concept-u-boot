@@ -259,11 +259,17 @@ struct efi_hii {
  * @buf: The variable store, in runtime-services data
  * @current: The entry found by the last lookup, checked first by the next
  * @recovered: Copy of a store which survived a warm reset, until it is applied
+ * @flash: Flash which holds the variables, or NULL if none was found; used with
+ *	CONFIG_EFI_VARIABLE_FLASH_STORE. The runtime services program this, so
+ *	it is converted by SetVirtualAddressMap() too
+ * @flash_bufsize: Size of the flash's write buffer, or 0 if it has none
  */
 struct efi_var {
 	struct efi_var_file *buf;
 	struct efi_var_entry *current;
 	struct efi_var_file *recovered;
+	u8 *flash;
+	uint flash_bufsize;
 };
 
 /**

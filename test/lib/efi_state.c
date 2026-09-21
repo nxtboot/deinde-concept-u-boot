@@ -17,6 +17,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	struct efi_bs *bs;
 	struct efi_system_table *systab;
 	struct efi_mem *mem;
+	struct efi_var *var;
 	struct efi_rt *rt;
 	struct efi_state st, *old;
 
@@ -32,6 +33,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	bs = &st.bs;
 	systab = &st.systab;
 	mem = &st.mem;
+	var = &st.var;
 	rt = &st.rt;
 	ut_asserteq(1, con->mode.max_mode);
 	ut_asserteq(80, con->modes[0].columns);
@@ -56,9 +58,10 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq(EFI_OBJ_LIST_NOT_INIT, st.obj_list_initialized);
 	ut_assert(list_empty(&mem->map));
 	ut_asserteq(0, mem->map_key);
-	ut_assertnull(st.var.buf);
+	ut_assertnull(var->buf);
 	ut_assertnull(rt->virtmap);
 	ut_assert(list_empty(&rt->mmio));
+	ut_assertnull(var->flash);
 	ut_assert(list_empty(&st.hii.package_lists));
 	ut_assertnull(st.initrd.handle);
 	ut_assert(!st.secure_boot);

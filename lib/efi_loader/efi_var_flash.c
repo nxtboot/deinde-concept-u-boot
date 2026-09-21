@@ -54,12 +54,6 @@
 /* how many status reads to allow before giving up on an operation */
 #define CFI_TIMEOUT		10000000
 
-/* the flash, or NULL if none was found; converted at SetVirtualAddressMap */
-static u8 *__efi_runtime_data efi_var_flash;
-
-/* size of the flash's write buffer, or 0 if it has none */
-static uint __efi_runtime_data efi_var_flash_bufsize;
-
 /**
  * efi_var_flash_wait() - Wait for an operation to complete
  *
@@ -163,17 +157,18 @@ static efi_status_t __efi_runtime efi_var_flash_program_buf(u8 *addr,
 static efi_status_t __efi_runtime efi_var_flash_write(const void *buf,
 						      efi_uintn_t len)
 {
+	const struct efi_var *var = &efis->var;
 	const u8 *data = buf;
 	efi_status_t ret;
 	efi_uintn_t i;
 
-	if (!efi_var_flash)
+	if (!var->flash)
 		return EFI_UNSUPPORTED;
 	if (len > EFI_VAR_BUF_SIZE)
 		return EFI_OUT_OF_RESOURCES;
 
 	for (i = 0; i < len; i += CONFIG_EFI_VARIABLE_FLASH_SECTOR_SIZE) {
-		ret = efi_var_flash_erase(efi_var_flash + i);
+		ret = efi_var_flash_erase(var->flash + i);
 		if (ret != EFI_SUCCESS)
 			return ret;
 	}
@@ -185,7 +180,7 @@ static efi_status_t __efi_runtime efi_var_flash_write(const void *buf,
 	 * 0xff, so a run of those needs no programming
 	 */
 	for (i = 0; i < len;) {
-		uint n = efi_var_flash_bufsize ? : 1;
+		uint n = var->flash_bufsize ? : 1;
 		uint j;
 
 		n -= i & (n - 1);
@@ -198,9 +193,9 @@ static efi_status_t __efi_runtime efi_var_flash_write(const void *buf,
 			continue;
 		}
 		if (n == 1)
-			ret = efi_var_flash_program(efi_var_flash + i, data[i]);
+			ret = efi_var_flash_program(var->flash + i, data[i]);
 		else
-			ret = efi_var_flash_program_buf(efi_var_flash + i,
+			ret = efi_var_flash_program_buf(var->flash + i,
 							data + i, n);
 		if (ret != EFI_SUCCESS)
 			return ret;
@@ -208,7 +203,7 @@ static efi_status_t __efi_runtime efi_var_flash_write(const void *buf,
 	}
 
 	for (i = 0; i < len; i++) {
-		if (readb(efi_var_flash + i) != data[i])
+		if (readb(var->flash + i) != data[i])
 			return EFI_DEVICE_ERROR;
 	}
 
@@ -225,7 +220,7 @@ static void EFIAPI __efi_runtime
 efi_var_flash_notify_virtual_address_map(struct efi_event *event,
 					 void *context)
 {
-	efi_convert_pointer(0, (void **)&efi_var_flash);
+	efi_convert_pointer(0, (void **)&efis->var.flash);
 }
 
 /**
@@ -239,6 +234,7 @@ efi_var_flash_notify_virtual_address_map(struct efi_event *event,
  */
 static efi_status_t efi_var_flash_init(void)
 {
+	struct efi_var *evar = &efis->var;
 	struct efi_event *event;
 	efi_status_t ret;
 	bool found;
@@ -250,7 +246,8 @@ static efi_status_t efi_var_flash_init(void)
 		readb(flash + CFI_QUERY_OFFSET + 1) == 'R' &&
 		readb(flash + CFI_QUERY_OFFSET + 2) == 'Y';
 	if (found && readb(flash + CFI_QUERY_BUF_SIZE))
-		efi_var_flash_bufsize = 1 << readb(flash + CFI_QUERY_BUF_SIZE);
+		evar->flash_bufsize =
+			1 << readb(flash + CFI_QUERY_BUF_SIZE);
 	writeb(CFI_CMD_READ_ARRAY, flash);
 	if (!found) {
 		log_info("No EFI variables loaded: no flash at %x\n",
@@ -267,7 +264,7 @@ static efi_status_t efi_var_flash_init(void)
 			       NULL, &event);
 	if (ret != EFI_SUCCESS)
 		return ret;
-	efi_var_flash = flash;
+	evar->flash = flash;
 
 	return EFI_SUCCESS;
 }
@@ -279,7 +276,7 @@ efi_status_t efi_var_to_storage(void)
 	efi_status_t ret;
 	loff_t len;
 
-	if (!efi_var_flash) {
+	if (!efis->var.flash) {
 		if (!once) {
 			log_warning("Cannot persist EFI variables without a flash\n");
 			once = true;
@@ -307,7 +304,7 @@ efi_status_t efi_var_from_storage(void)
 	if (efi_var_flash_init() != EFI_SUCCESS)
 		return EFI_SUCCESS;
 
-	buf = (const struct efi_var_file *)efi_var_flash;
+	buf = (const struct efi_var_file *)efis->var.flash;
 	if (buf->magic != EFI_VAR_FILE_MAGIC) {
 		log_info("No EFI variables loaded\n");
 		return EFI_SUCCESS;
