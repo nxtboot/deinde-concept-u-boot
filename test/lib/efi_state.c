@@ -62,6 +62,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(rt->virtmap);
 	ut_assert(list_empty(&rt->mmio));
 	ut_assertnull(var->flash);
+	ut_assertnull(st.debug.systab_pointer);
 	ut_assert(list_empty(&st.hii.package_lists));
 	ut_assertnull(st.initrd.handle);
 	ut_assert(!st.secure_boot);

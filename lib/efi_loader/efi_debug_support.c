@@ -9,9 +9,6 @@
 #include <linux/sizes.h>
 #include <u-boot/crc.h>
 
-struct efi_system_table_pointer __efi_runtime_data * systab_pointer = NULL;
-
-
 #define EFI_DEBUG_TABLE_ENTRY_SIZE  (sizeof(union efi_debug_image_info))
 
 /**
@@ -21,8 +18,10 @@ struct efi_system_table_pointer __efi_runtime_data * systab_pointer = NULL;
  */
 efi_status_t efi_initialize_system_table_pointer(void)
 {
+	struct efi_system_table_pointer *systab_pointer;
+
 	/* Allocate efi_system_table_pointer structure with 4MB alignment. */
-	systab_pointer = efi_alloc_aligned_pages(sizeof(struct efi_system_table_pointer),
+	systab_pointer = efi_alloc_aligned_pages(sizeof(*systab_pointer),
 						 EFI_RUNTIME_SERVICES_DATA,
 						 SZ_4M);
 
@@ -38,6 +37,7 @@ efi_status_t efi_initialize_system_table_pointer(void)
 	systab_pointer->crc32 = crc32(0,
 				      (const unsigned char *)systab_pointer,
 				      sizeof(struct efi_system_table_pointer));
+	efis->debug.systab_pointer = systab_pointer;
 
 	return EFI_SUCCESS;
 }

@@ -228,13 +228,18 @@ struct efi_initrd {
 };
 
 /**
- * struct efi_debug - the debug-image-info table
+ * struct efi_debug - state of the debug support
  *
- * @table: The table header, installed as a configuration table
+ * @table: Header of the debug-image-info table, installed as a configuration
+ *	table
+ * @systab_pointer: Record which a debugger scans memory for, to find the system
+ *	table. It is in runtime-services data on a 4MB boundary, or NULL before
+ *	efi_initialize_system_table_pointer() has run
  * @max_entries: Number of entries allocated for the table
  */
 struct efi_debug {
 	struct efi_debug_image_info_table_header table;
+	struct efi_system_table_pointer *systab_pointer;
 	u32 max_entries;
 };
 
@@ -694,12 +699,12 @@ struct efi_rt {
  *	the variable file
  * @initrd: The initial ramdisk registered for the OS
  * @debug: The debug-image-info table
- * @hii: State of the HII database
- * @var: State of the variable store
- * @rt: State of the runtime services
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
+ * @hii: State of the HII database
+ * @var: State of the variable store
+ * @rt: State of the runtime services
  * @watchdog_event: Timer event which implements the watchdog, or NULL until
  *	efi_init_obj_list() has registered it. It is only used through the
  *	SetWatchdogTimer() service and at ExitBootServices(), both of which
