@@ -1631,9 +1631,9 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 				u32 *status_code, ulong *file_size, char *headers_buffer,
 				struct efi_service_binding_protocol *parent)
 {
+	struct efi_net *net = &efis->net;
 	efi_status_t ret = EFI_SUCCESS;
 	int wget_ret;
-	static bool last_head;
 	struct udevice *dev;
 	int i;
 
@@ -1646,7 +1646,7 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 	// Set corresponding udevice
 	dev = NULL;
 	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
-		struct efi_net_obj *netobj = efis->net.objs[i];
+		struct efi_net_obj *netobj = net->objs[i];
 
 		if (netobj && &netobj->http_service_binding == parent)
 			dev = netobj->dev;
@@ -1656,7 +1656,8 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 
 	switch (method) {
 	case HTTP_METHOD_GET:
-		ret = efi_net_set_buffer(buffer, last_head ? (size_t)efi_wget_info.hdr_cont_len : 0);
+		ret = efi_net_set_buffer(buffer, net->http_last_head ?
+					 (size_t)efi_wget_info.hdr_cont_len : 0);
 		if (ret != EFI_SUCCESS)
 			goto out;
 		eth_set_dev(dev);
@@ -1683,7 +1684,7 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 		// Pass the actual number of received bytes to the application
 		*file_size = efi_wget_info.file_size;
 		*status_code = efi_wget_info.status_code;
-		last_head = false;
+		net->http_last_head = false;
 		break;
 	case HTTP_METHOD_HEAD:
 		ret = efi_net_set_buffer(buffer, 0);
@@ -1694,7 +1695,7 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 		wget_request((ulong)*buffer, url, &efi_wget_info);
 		*file_size = 0;
 		*status_code = efi_wget_info.status_code;
-		last_head = true;
+		net->http_last_head = true;
 		break;
 	default:
 		ret = EFI_UNSUPPORTED;

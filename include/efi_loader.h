@@ -790,6 +790,8 @@ struct efi_net_dhcp_entry {
  * @mac_addr: MAC address reported through the IPv4 Config2 protocol
  * @http_instances: Number of HTTP protocol instances which the HTTP service
  *	binding protocol has created and not yet destroyed
+ * @http_last_head: true if the last HTTP request was a HEAD request, in which
+ *	case the content length it reported sizes the buffer for a GET request
  */
 struct efi_net {
 	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
@@ -802,6 +804,7 @@ struct efi_net {
 	enum efi_ip4_config2_policy ip4_policy;
 	char mac_addr[32];
 	int http_instances;
+	bool http_last_head;
 };
 
 /**

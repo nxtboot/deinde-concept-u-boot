@@ -82,6 +82,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_asserteq(0, net->http_instances);
 	ut_assertnull(tcg2->log.buffer);
 	ut_assert(!tcg2->app_invoked);
+	ut_assert(!net->http_last_head);
 	ut_assertnull(st.bootefi.device_path);
 	ut_asserteq_64(0, st.fdt.addr);
 
