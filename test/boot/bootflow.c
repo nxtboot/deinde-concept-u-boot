@@ -1465,6 +1465,14 @@ static int bootflow_efi(struct unit_test_state *uts)
 	if (IS_ENABLED(CONFIG_EFI_LOG))
 		efi_log_reset();
 
+	/*
+	 * This test has an EFI state of its own, so start the EFI subsystem
+	 * now, to keep what it prints while it looks at each partition out of
+	 * the output from the scan
+	 */
+	ut_asserteq(EFI_SUCCESS, efi_init_obj_list());
+	console_record_reset_enable();
+
 	ut_assertok(uclass_first_device_err(UCLASS_BOOTSTD, &bootstd));
 	std = dev_get_priv(bootstd);
 	old_order = std->bootdev_order;
@@ -1541,6 +1549,8 @@ static int bootflow_efi(struct unit_test_state *uts)
 	ut_assertok(uclass_find_device_by_seq(UCLASS_USB, 1, &usb));
 	ut_assert(!device_active(usb));
 
+	std->bootdev_order = old_order;
+
 	/* check memory allocations are as expected */
 	hdr = bloblist_find(BLOBLISTT_EFI_LOG, 0);
 	if (!hdr)
@@ -1603,7 +1613,7 @@ static int bootflow_efi(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_efi, UTF_CONSOLE);
+BOOTSTD_TEST(bootflow_efi, UTF_CONSOLE | UTF_SCAN_FDT | UTF_EFI);
 
 /* Test RAUC bootmeth */
 static int bootflow_rauc(struct unit_test_state *uts)
