@@ -1166,10 +1166,10 @@ efi_status_t efi_net_register(struct udevice *dev)
 	netobj->dev = dev;
 
 	/* Allocate an aligned transmit buffer */
-	transmit_buffer = calloc(1, PKTSIZE_ALIGN + PKTALIGN);
+	transmit_buffer = memalign(PKTALIGN, PKTSIZE_ALIGN);
 	if (!transmit_buffer)
 		goto out_of_resources;
-	transmit_buffer = (void *)ALIGN((uintptr_t)transmit_buffer, PKTALIGN);
+	memset(transmit_buffer, '\0', PKTSIZE_ALIGN);
 	netobj->transmit_buffer = transmit_buffer;
 
 	/* Allocate a number of receive buffers */
