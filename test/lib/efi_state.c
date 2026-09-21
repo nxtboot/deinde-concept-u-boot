@@ -59,6 +59,7 @@ static int lib_test_efi_state(struct unit_test_state *uts)
 	ut_assertnull(systab->boottime);
 	ut_asserteq(0, systab->nr_tables);
 	ut_assert(list_empty(&bs->events));
+	ut_assert(!bs->keep_devices);
 	ut_asserteq(EFI_OBJ_LIST_NOT_INIT, st.obj_list_initialized);
 	ut_assert(list_empty(&mem->map));
 	ut_asserteq(0, mem->map_key);

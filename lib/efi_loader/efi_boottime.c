@@ -28,9 +28,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
-bool efi_st_keep_devices;
-
 efi_status_t efi_uninstall_protocol
 		(efi_handle_t handle, const efi_guid_t *protocol,
 		 void *protocol_interface, bool preserve);
@@ -2315,7 +2312,7 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 			list_del(&evt->link);
 	}
 
-	if (!efi_st_keep_devices) {
+	if (!bs->keep_devices) {
 		bootm_disable_interrupts();
 		bootm_final(0);
 	}

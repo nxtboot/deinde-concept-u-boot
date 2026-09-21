@@ -198,9 +198,6 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 	EFI_GUID(0xb2ac5fc9, 0x92b7, 0x4acd, \
 		 0xae, 0xac, 0x11, 0xe8, 0x18, 0xc3, 0x13, 0x0c)
 
-/* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
-extern bool efi_st_keep_devices;
-
 /**
  * enum efi_secure_mode - secure-boot mode, as defined by the UEFI specification
  *
@@ -632,6 +629,8 @@ struct global_data;
  * @entry_count: 1 while inside U-Boot code, 0 while inside the payload
  * @nesting_level: Depth of nested boot-service calls, for the log
  * @timers_enabled: false once ExitBootServices() has stopped the timers
+ * @keep_devices: true to leave the devices attached in ExitBootServices(),
+ *	which the selftest sets since it needs the console afterwards
  */
 struct efi_bs {
 	struct list_head obj_list;
@@ -646,6 +645,7 @@ struct efi_bs {
 	int entry_count;
 	int nesting_level;
 	bool timers_enabled;
+	bool keep_devices;
 };
 
 /**
