@@ -660,6 +660,41 @@ struct efi_mem {
 	efi_uintn_t map_key;
 };
 
+/**
+ * struct efi_tcg2_log - management of the TCG2 event log
+ *
+ * @buffer: Event-log buffer
+ * @final_buffer: Buffer for the final-events configuration table
+ * @pos: Current position in @buffer
+ * @final_pos: Current position in @final_buffer
+ * @last_event_size: Size of the last event added to @buffer
+ * @get_event_called: true if GetEventLog() has been invoked at least once
+ * @ebs_called: true if ExitBootServices() has been invoked
+ * @truncated: true if @buffer is truncated
+ */
+struct efi_tcg2_log {
+	void *buffer;
+	void *final_buffer;
+	size_t pos;
+	size_t final_pos;
+	size_t last_event_size;
+	bool get_event_called;
+	bool ebs_called;
+	bool truncated;
+};
+
+/**
+ * struct efi_tcg2 - state of the TCG2 protocol
+ *
+ * @log: The event log
+ * @app_invoked: true once the first EFI application has been measured, so that
+ *	the events which precede it are recorded only once
+ */
+struct efi_tcg2 {
+	struct efi_tcg2_log log;
+	bool app_invoked;
+};
+
 /* Number of network interfaces which can have an EFI object */
 #define EFI_NET_MAX_OBJS	4
 
@@ -775,6 +810,7 @@ struct efi_rt {
  * @var: State of the variable store
  * @rt: State of the runtime services
  * @net: State of the network protocols
+ * @tcg2: State of the TCG2 protocol
  * @capsule_root: Root directory of the system partition, opened for
  *	capsules on disk, or NULL
  * @esrt: The system resource table, once installed
@@ -800,6 +836,7 @@ struct efi_state {
 	struct efi_var var;
 	struct efi_rt rt;
 	struct efi_net net;
+	struct efi_tcg2 tcg2;
 	struct efi_event *watchdog_event;
 	struct efi_file_handle *capsule_root;
 	struct efi_system_resource_table *esrt;
