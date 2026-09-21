@@ -828,6 +828,46 @@ __weak void efi_add_known_memory(void)
 }
 
 /**
+ * add_lmb_list() - Add a list of LMB regions to the memory map
+ *
+ * @lst: List of struct lmb_region
+ * @type: EFI memory type to give the regions
+ * Return: status code
+ */
+static efi_status_t add_lmb_list(const struct alist *lst,
+				 enum efi_memory_type type)
+{
+	const struct lmb_region *rgn;
+	efi_status_t ret;
+
+	alist_for_each(rgn, lst) {
+		u64 start = rgn->base & ~(u64)EFI_PAGE_MASK;
+		u64 pages = efi_size_in_pages(rgn->size +
+					      (rgn->base & EFI_PAGE_MASK));
+
+		ret = efi_update_memory_map(start, pages, type, false, false);
+		if (ret != EFI_SUCCESS)
+			return ret;
+	}
+
+	return EFI_SUCCESS;
+}
+
+int efi_memory_add_lmb(void)
+{
+	const struct lmb *lmb = lmb_get();
+	efi_status_t ret;
+
+	ret = add_lmb_list(&lmb->available_mem, EFI_CONVENTIONAL_MEMORY);
+	if (ret == EFI_SUCCESS)
+		ret = add_lmb_list(&lmb->used_mem, EFI_BOOT_SERVICES_DATA);
+	if (ret != EFI_SUCCESS)
+		return -ENOMEM;
+
+	return 0;
+}
+
+/**
  * add_u_boot_and_runtime() - add U-Boot code to memory map
  *
  * Add memory regions for U-Boot's memory and for the runtime services code.

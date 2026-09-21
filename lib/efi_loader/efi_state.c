@@ -38,6 +38,22 @@ int efi_state_init_default(void)
 	return 0;
 }
 
+int efi_state_start(void)
+{
+	int ret;
+
+	/* LMB told the default state about memory as U-Boot started */
+	ret = efi_memory_add_lmb();
+	if (ret)
+		return ret;
+	ret = efi_memory_init();
+	if (ret)
+		return ret;
+
+	/* the rest of efi_init_early() is for U-Boot as a whole */
+	return efi_init_early_state();
+}
+
 struct efi_state *efi_state_set(struct efi_state *st)
 {
 	struct efi_state *old = efis;
@@ -53,6 +69,8 @@ void efi_state_uninit(void)
 	if (IS_ENABLED(CONFIG_NETDEVICES))
 		efi_net_uninit_state(&efis->net);
 	efi_console_uninit_state(&efis->con);
+	efi_driver_uninit();
 	efi_bs_uninit_state(&efis->bs);
 	efi_mem_uninit_state(&efis->mem);
+	efis->obj_list_initialized = EFI_OBJ_LIST_NOT_INIT;
 }

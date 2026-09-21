@@ -173,25 +173,9 @@ static efi_status_t efi_init_os_indications(void)
 				    &os_indications_supported, false);
 }
 
-/**
- * efi_init_early() - handle initialization at early stage
- *
- * expected to be called in board_init_r().
- *
- * Return:	status code
- */
-int efi_init_early(void)
+int efi_init_early_state(void)
 {
 	efi_status_t ret;
-
-	/* Allow unaligned memory access */
-	allow_unaligned();
-
-	if (IS_ENABLED(CONFIG_EFI_LOG)) {
-		ret = efi_log_init();
-		if (ret)
-			return -ENOSPC;
-	}
 
 	/* Initialize root node */
 	ret = efi_root_node_register();
@@ -213,6 +197,29 @@ out:
 	efis->obj_list_initialized = ret;
 
 	return -1;
+}
+
+/**
+ * efi_init_early() - handle initialization at early stage
+ *
+ * expected to be called in board_init_r().
+ *
+ * Return:	status code
+ */
+int efi_init_early(void)
+{
+	int ret;
+
+	/* Allow unaligned memory access */
+	allow_unaligned();
+
+	if (IS_ENABLED(CONFIG_EFI_LOG)) {
+		ret = efi_log_init();
+		if (ret)
+			return -ENOSPC;
+	}
+
+	return efi_init_early_state();
 }
 
 /**

@@ -923,6 +923,18 @@ int efi_state_init_default(void);
 void efi_state_init(struct efi_state *st);
 
 /**
+ * efi_state_start() - Bring a fresh EFI state to where U-Boot leaves it at boot
+ *
+ * For the default state, U-Boot sets up the memory map, the root node, the
+ * console and the EFI driver as it starts, before any command runs. This does
+ * the same for the state in use, which must have come from efi_state_init(),
+ * so that efi_init_obj_list() can then start the EFI subsystem in it.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+int efi_state_start(void);
+
+/**
  * efi_state_uninit() - Free the memory held by the EFI state in use
  *
  * This is for a state which is about to be discarded, e.g. by a test: select
@@ -1112,6 +1124,18 @@ struct efi_register_notify_event {
 
 /* called at pre-initialization */
 int efi_init_early(void);
+
+/**
+ * efi_init_early_state() - Set up the parts of a state which are needed early
+ *
+ * This registers the root node, the console and the EFI driver. It is the part
+ * of efi_init_early() which belongs to the state in use, as opposed to the
+ * U-Boot run as a whole.
+ *
+ * Return: 0 if OK, -1 on error, with the status code recorded so that
+ *	efi_init_obj_list() reports it
+ */
+int efi_init_early_state(void);
 /* Initialize efi execution environment */
 efi_status_t efi_init_obj_list(void);
 /* Append new boot option in BootOrder variable */
@@ -1528,12 +1552,34 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 
 /* Called by board init to initialize the EFI drivers */
 efi_status_t efi_driver_init(void);
+
+/**
+ * efi_driver_uninit() - Free the driver-binding protocols of the EFI drivers
+ *
+ * This frees what efi_driver_init() allocated for the state in use. The
+ * handles which the protocols are on remain, for efi_bs_uninit_state() to
+ * free.
+ */
+void efi_driver_uninit(void);
 /* Called when a block device is added */
 int efi_disk_probe(void *ctx, struct event *event);
 /* Called when a block device is removed */
 int efi_disk_remove(void *ctx, struct event *event);
 /* Called by board init to initialize the EFI memory map */
 int efi_memory_init(void);
+
+/**
+ * efi_memory_add_lmb() - Add the memory which LMB knows about to the memory map
+ *
+ * LMB tells the EFI subsystem about memory as it is added and reserved, which
+ * happens when U-Boot starts. A state which is set up later has missed all of
+ * that, so this adds the memory from LMB's lists: what is available becomes
+ * conventional memory and what is reserved becomes boot-services data,
+ * including anything which another EFI state has allocated.
+ *
+ * Return: 0 if OK, -ENOMEM if out of memory
+ */
+int efi_memory_add_lmb(void);
 /* Adds new or overrides configuration table entry to the system table */
 efi_status_t efi_install_configuration_table(const efi_guid_t *guid, void *table);
 /* Sets up a loaded image */

@@ -371,3 +371,24 @@ UCLASS_DRIVER(efi) = {
 	.init		= efi_uc_init,
 	.destroy	= efi_uc_destroy,
 };
+
+void efi_driver_uninit(void)
+{
+	struct efi_object *obj;
+
+	list_for_each_entry(obj, &efis->bs.obj_list, link) {
+		struct efi_driver_binding_extended_protocol *bp;
+		struct efi_handler *handler;
+
+		if (efi_search_protocol(obj, &efi_guid_driver_binding_protocol,
+					&handler) != EFI_SUCCESS)
+			continue;
+
+		/* leave alone any driver which a payload has installed */
+		bp = handler->protocol_interface;
+		if (bp->bp.supported != efi_uc_supported)
+			continue;
+		free(bp);
+		handler->protocol_interface = NULL;
+	}
+}
