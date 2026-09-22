@@ -16,6 +16,7 @@ dtb-y += bayleybay.dtb \
 	efi-x86_app.dtb \
 	efi-x86_payload.dtb \
 	galileo.dtb \
+	gigabyte_mz33_ar1_cb.dtb \
 	minnowmax.dtb \
 	qemu-x86_i440fx.dtb \
 	qemu-x86_q35.dtb \

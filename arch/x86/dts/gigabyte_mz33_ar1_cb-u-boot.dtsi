@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass
+ *
+ * Build a complete MZ33-AR1 flash image (u-boot.rom): the Dasharo coreboot
+ * build provides everything up to the payload as a ready-made image, into
+ * which binman inserts U-Boot. The payload is u-boot.bin itself, entered in
+ * 32-bit mode at its start, so there is no SPL to add
+ */
+
+/ {
+	binman {
+		filename = "u-boot.rom";
+		coreboot-rom {
+			cbfs-name = "fallback/payload";
+
+			u-boot {
+			};
+		};
+	};
+};
