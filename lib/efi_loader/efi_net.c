@@ -26,9 +26,9 @@
 #include <vsprintf.h>
 #include <net.h>
 
-#define MAX_EFI_NET_OBJS 10
-#define MAX_NUM_DHCP_ENTRIES 10
-#define MAX_NUM_DP_ENTRIES 10
+#define MAX_EFI_NET_OBJS 4
+#define MAX_NUM_DHCP_ENTRIES 4
+#define MAX_NUM_DP_ENTRIES 4
 
 const efi_guid_t efi_net_guid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
 static const efi_guid_t efi_pxe_base_code_protocol_guid =
