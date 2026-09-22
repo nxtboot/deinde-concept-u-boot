@@ -159,3 +159,5 @@ See also
   start of the namespace
 * :doc:`write<write>` for writing blocks to a partition
 * *scsi* and *usb* for the same set of sub-commands on other kinds of drive
+* :doc:`scsiboot<scsiboot>` for loading and starting an image held on a SCSI
+  drive, there being no such command for NVMe
