@@ -40,10 +40,6 @@ const efi_guid_t fwu_guid_os_request_fw_accept =
 
 #define FW_ACCEPT_OS	(u32)0x8000
 
-#ifdef CONFIG_EFI_CAPSULE_ON_DISK
-/* for file system access */
-static struct efi_file_handle *bootdev_root;
-#endif
 
 static __maybe_unused unsigned int get_capsule_index(const u16 *variable_name)
 {
@@ -892,6 +888,7 @@ out:
  */
 efi_handle_t get_esp_handle(struct efi_device_path *dp)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_handle_t handle, dev_handle;
 	struct udevice *child_dev;
 	struct efi_device_path *rem;
@@ -913,9 +910,10 @@ efi_handle_t get_esp_handle(struct efi_device_path *dp)
 		if (dev_tag_get_ptr(child_dev, DM_TAG_EFI, (void **)&handle))
 			continue;
 
-		ret = EFI_CALL(systab.boottime->open_protocol(
-			       handle, &efi_system_partition_guid, NULL, NULL,
-			       NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL));
+		ret = EFI_CALL(bs->open_protocol(handle,
+						 &efi_system_partition_guid,
+						 NULL, NULL, NULL,
+						 EFI_OPEN_PROTOCOL_TEST_PROTOCOL));
 		if (ret != EFI_SUCCESS)
 			continue;
 
@@ -929,7 +927,7 @@ efi_handle_t get_esp_handle(struct efi_device_path *dp)
  * find_boot_device - identify the boot device
  *
  * Identify the boot device from boot-related variables as UEFI
- * specification describes and put its handle into bootdev_root.
+ * specification describes and put its handle into efis->capsule_root.
  *
  * Return:	status code
  */
@@ -1010,7 +1008,7 @@ found:
 		if (ret == EFI_SUCCESS) {
 			volume = handler->protocol_interface;
 			ret = EFI_CALL(volume->open_volume(volume,
-							   &bootdev_root));
+							   &efis->capsule_root));
 		}
 	}
 
@@ -1050,9 +1048,9 @@ static efi_status_t efi_capsule_scan_dir(u16 ***files, unsigned int *num)
 	}
 
 	/* count capsule files */
-	ret = EFI_CALL((*bootdev_root->open)(bootdev_root, &dirh,
-					     EFI_CAPSULE_DIR,
-					     EFI_FILE_MODE_READ, 0));
+	ret = EFI_CALL((*efis->capsule_root->open)(efis->capsule_root, &dirh,
+						   EFI_CAPSULE_DIR,
+						   EFI_FILE_MODE_READ, 0));
 	if (ret != EFI_SUCCESS) {
 		*num = 0;
 		return EFI_SUCCESS;
@@ -1152,9 +1150,9 @@ static efi_status_t efi_capsule_read_file(const u16 *filename,
 	efi_uintn_t size;
 	efi_status_t ret;
 
-	ret = EFI_CALL((*bootdev_root->open)(bootdev_root, &dirh,
-					     EFI_CAPSULE_DIR,
-					     EFI_FILE_MODE_READ, 0));
+	ret = EFI_CALL((*efis->capsule_root->open)(efis->capsule_root, &dirh,
+						   EFI_CAPSULE_DIR,
+						   EFI_FILE_MODE_READ, 0));
 	if (ret != EFI_SUCCESS)
 		return ret;
 	ret = EFI_CALL((*dirh->open)(dirh, &fh, (u16 *)filename,
@@ -1218,9 +1216,9 @@ static efi_status_t efi_capsule_delete_file(const u16 *filename)
 	struct efi_file_handle *dirh, *fh;
 	efi_status_t ret;
 
-	ret = EFI_CALL((*bootdev_root->open)(bootdev_root, &dirh,
-					     EFI_CAPSULE_DIR,
-					     EFI_FILE_MODE_READ, 0));
+	ret = EFI_CALL((*efis->capsule_root->open)(efis->capsule_root, &dirh,
+						   EFI_CAPSULE_DIR,
+						   EFI_FILE_MODE_READ, 0));
 	if (ret != EFI_SUCCESS)
 		return ret;
 	ret = EFI_CALL((*dirh->open)(dirh, &fh, (u16 *)filename,
@@ -1241,8 +1239,8 @@ static efi_status_t efi_capsule_delete_file(const u16 *filename)
  */
 static void efi_capsule_scan_done(void)
 {
-	EFI_CALL((*bootdev_root->close)(bootdev_root));
-	bootdev_root = NULL;
+	EFI_CALL((*efis->capsule_root->close)(efis->capsule_root));
+	efis->capsule_root = NULL;
 }
 
 /**

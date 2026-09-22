@@ -988,4 +988,77 @@ void lmb_pop(struct lmb *store)
 	alist_uninit(&lmb.used_mem);
 	lmb = *store;
 }
+
+/**
+ * lmb_copy_list() - Make a copy of a list of regions
+ *
+ * @dst: List to set up, which must not be in use
+ * @src: List to copy
+ * Return: 0 if OK, -ENOMEM if out of memory
+ */
+static int lmb_copy_list(struct alist *dst, const struct alist *src)
+{
+	const struct lmb_region *rgn;
+
+	if (!alist_init(dst, sizeof(struct lmb_region),
+			max((uint)src->count, (uint)LMB_ALIST_INITIAL_SIZE)))
+		return -ENOMEM;
+	alist_for_each(rgn, src) {
+		struct lmb_region copy = *rgn;
+
+		if (!alist_add(dst, copy)) {
+			alist_uninit(dst);
+			return -ENOMEM;
+		}
+	}
+
+	return 0;
+}
+
+int lmb_save(struct lmb *store)
+{
+	int ret;
+
+	ret = lmb_copy_list(&store->available_mem, &lmb.available_mem);
+	if (ret)
+		return ret;
+	ret = lmb_copy_list(&store->used_mem, &lmb.used_mem);
+	if (ret) {
+		alist_uninit(&store->available_mem);
+		return ret;
+	}
+	store->test = lmb.test;
+
+	return 0;
+}
+
+/**
+ * lmb_restore_list() - Put back the contents of a list of regions
+ *
+ * This keeps the memory which @dst has, so that restoring does not look like
+ * a memory leak to a test. There is always room, since @src was copied from
+ * @dst and a list does not shrink.
+ *
+ * @dst: List to restore
+ * @src: Copy to take the regions from, which is freed
+ */
+static void lmb_restore_list(struct alist *dst, struct alist *src)
+{
+	const struct lmb_region *rgn;
+
+	alist_empty(dst);
+	alist_for_each(rgn, src) {
+		struct lmb_region copy = *rgn;
+
+		alist_add(dst, copy);
+	}
+	alist_uninit(src);
+}
+
+void lmb_restore(struct lmb *store)
+{
+	lmb_restore_list(&lmb.available_mem, &store->available_mem);
+	lmb_restore_list(&lmb.used_mem, &store->used_mem);
+	lmb.test = store->test;
+}
 #endif /* UNIT_TEST */

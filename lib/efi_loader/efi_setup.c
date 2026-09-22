@@ -14,11 +14,6 @@
 #include <asm-generic/unaligned.h>
 #include <net.h>
 
-#define OBJ_LIST_INITIALIZED 0
-#define OBJ_LIST_NOT_INITIALIZED 1
-
-efi_status_t efi_obj_list_initialized = OBJ_LIST_NOT_INITIALIZED;
-
 const efi_guid_t efi_debug_image_info_table_guid =
 	EFI_DEBUG_IMAGE_INFO_TABLE_GUID;
 
@@ -178,25 +173,9 @@ static efi_status_t efi_init_os_indications(void)
 				    &os_indications_supported, false);
 }
 
-/**
- * efi_init_early() - handle initialization at early stage
- *
- * expected to be called in board_init_r().
- *
- * Return:	status code
- */
-int efi_init_early(void)
+int efi_init_early_state(void)
 {
 	efi_status_t ret;
-
-	/* Allow unaligned memory access */
-	allow_unaligned();
-
-	if (IS_ENABLED(CONFIG_EFI_LOG)) {
-		ret = efi_log_init();
-		if (ret)
-			return -ENOSPC;
-	}
 
 	/* Initialize root node */
 	ret = efi_root_node_register();
@@ -215,9 +194,32 @@ int efi_init_early(void)
 	return 0;
 out:
 	/* never re-init UEFI subsystem */
-	efi_obj_list_initialized = ret;
+	efis->obj_list_initialized = ret;
 
 	return -1;
+}
+
+/**
+ * efi_init_early() - handle initialization at early stage
+ *
+ * expected to be called in board_init_r().
+ *
+ * Return:	status code
+ */
+int efi_init_early(void)
+{
+	int ret;
+
+	/* Allow unaligned memory access */
+	allow_unaligned();
+
+	if (IS_ENABLED(CONFIG_EFI_LOG)) {
+		ret = efi_log_init();
+		if (ret)
+			return -ENOSPC;
+	}
+
+	return efi_init_early_state();
 }
 
 /**
@@ -245,10 +247,10 @@ efi_status_t efi_init_obj_list(void)
 	efi_status_t ret = EFI_SUCCESS;
 
 	/* Initialize only once, but start every time if correctly initialized*/
-	if (efi_obj_list_initialized == OBJ_LIST_INITIALIZED)
+	if (efis->obj_list_initialized == EFI_SUCCESS)
 		return efi_start_obj_list();
-	if (efi_obj_list_initialized != OBJ_LIST_NOT_INITIALIZED)
-		return efi_obj_list_initialized;
+	if (efis->obj_list_initialized != EFI_OBJ_LIST_NOT_INIT)
+		return efis->obj_list_initialized;
 
 	/* Set up console modes */
 	efi_setup_console_size();
@@ -298,7 +300,7 @@ efi_status_t efi_init_obj_list(void)
 			goto out;
 
 		ret = efi_install_configuration_table(&debug_image_info_table_guid,
-						      &efi_m_debug_info_table_header);
+						      &efis->debug.table);
 		if (ret != EFI_SUCCESS)
 			goto out;
 	}
@@ -404,7 +406,7 @@ efi_status_t efi_init_obj_list(void)
 
 	ret = efi_start_obj_list();
 out:
-	efi_obj_list_initialized = ret;
+	efis->obj_list_initialized = ret;
 	if (ret != EFI_SUCCESS)
 		log_err("Cannot initialize UEFI sub-system\n");
 	return ret;

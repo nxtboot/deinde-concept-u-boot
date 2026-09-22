@@ -35,9 +35,6 @@ struct efi_runtime_mmio_list {
 	u64 len;
 };
 
-/* This list contains all runtime available mmio regions */
-static LIST_HEAD(efi_runtime_mmio);
-
 static efi_status_t __efi_runtime EFIAPI efi_unimplemented(void);
 
 /*
@@ -94,9 +91,11 @@ struct elf_rela {
 	long addend;
 };
 
-static __efi_runtime_data struct efi_mem_desc *efi_virtmap;
-static __efi_runtime_data efi_uintn_t efi_descriptor_count;
-static __efi_runtime_data efi_uintn_t efi_descriptor_size;
+/*
+ * Address which U-Boot is relocated to. This is not in struct efi_state since
+ * it belongs to U-Boot rather than to an EFI state, and efi_runtime_relocate()
+ * needs it while the pointer to the state is itself being relocated
+ */
 static __efi_runtime_data ulong efi_relocaddr;
 
 /*
@@ -272,7 +271,7 @@ static void EFIAPI efi_reset_system_boottime(
 		  reset_data);
 
 	/* Notify reset */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_reset_system)) {
@@ -576,10 +575,8 @@ static efi_status_t __efi_runtime EFIAPI efi_query_capsule_caps_unsupported(
  */
 static bool efi_is_runtime_service_pointer(void *p)
 {
-	return (p >= (void *)&efi_runtime_services.get_time &&
-		p <= (void *)&efi_runtime_services.query_variable_info) ||
-	       p == (void *)&efi_events.prev ||
-	       p == (void *)&efi_events.next;
+	return p >= (void *)&efi_runtime_services.get_time &&
+	       p <= (void *)&efi_runtime_services.query_variable_info;
 }
 
 /**
@@ -662,11 +659,12 @@ static __efi_runtime efi_status_t EFIAPI efi_convert_pointer_runtime(
 __efi_runtime efi_status_t EFIAPI
 efi_convert_pointer(efi_uintn_t debug_disposition, void **address)
 {
+	const struct efi_rt *rt = &efis->rt;
 	efi_physical_addr_t addr;
 	efi_uintn_t i;
 	efi_status_t ret = EFI_NOT_FOUND;
 
-	if (!efi_virtmap) {
+	if (!rt->virtmap) {
 		ret = EFI_UNSUPPORTED;
 		goto out;
 	}
@@ -683,9 +681,9 @@ efi_convert_pointer(efi_uintn_t debug_disposition, void **address)
 	}
 
 	addr = (uintptr_t)*address;
-	for (i = 0; i < efi_descriptor_count; i++) {
-		struct efi_mem_desc *map = (void *)efi_virtmap +
-					   (efi_descriptor_size * i);
+	for (i = 0; i < rt->descriptor_count; i++) {
+		struct efi_mem_desc *map = (void *)rt->virtmap +
+					   (rt->descriptor_size * i);
 
 		if (addr >= map->physical_start &&
 		    (addr < map->physical_start
@@ -851,6 +849,8 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 			uint32_t descriptor_version,
 			struct efi_mem_desc *virtmap)
 {
+	struct efi_rt *rt = &efis->rt;
+	struct efi_system_table *systab = &efis->systab;
 	efi_uintn_t n = memory_map_size / descriptor_size;
 	efi_uintn_t i;
 	efi_status_t ret = EFI_INVALID_PARAMETER;
@@ -864,9 +864,9 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 	    descriptor_size < sizeof(struct efi_mem_desc))
 		goto out;
 
-	efi_virtmap = virtmap;
-	efi_descriptor_size = descriptor_size;
-	efi_descriptor_count = n;
+	rt->virtmap = virtmap;
+	rt->descriptor_size = descriptor_size;
+	rt->descriptor_count = n;
 
 	/*
 	 * TODO:
@@ -906,7 +906,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 	}
 
 	/* Notify EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE */
-	list_for_each_entry(event, &efi_events, link) {
+	list_for_each_entry(event, &efis->bs.events, link) {
 		if (event->notify_function)
 			EFI_CALL_VOID(event->notify_function(
 					event, event->notify_context));
@@ -923,7 +923,7 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 		u64 off = map->virtual_start - map_start;
 
 		/* Adjust all mmio pointers in this region */
-		list_for_each(lhandle, &efi_runtime_mmio) {
+		list_for_each(lhandle, &rt->mmio) {
 			struct efi_runtime_mmio_list *lmmio;
 
 			lmmio = list_entry(lhandle,
@@ -935,12 +935,12 @@ static efi_status_t EFIAPI efi_set_virtual_address_map(
 				*lmmio->ptr = (void *)new_addr;
 			}
 		}
-		if ((map_start <= (uintptr_t)systab.tables) &&
-		    (map_end >= (uintptr_t)systab.tables)) {
-			char *ptr = (char *)systab.tables;
+		if (map_start <= (uintptr_t)systab->tables &&
+		    map_end >= (uintptr_t)systab->tables) {
+			char *ptr = (char *)systab->tables;
 
 			ptr += off;
-			systab.tables = (struct efi_configuration_table *)ptr;
+			systab->tables = (struct efi_configuration_table *)ptr;
 		}
 	}
 
@@ -991,7 +991,7 @@ efi_status_t efi_add_runtime_mmio(void **mmio_ptr, u64 len)
 	newmmio->ptr = mmio_ptr;
 	newmmio->paddr = (uintptr_t)*(void **)mmio_ptr;
 	newmmio->len = len;
-	list_add_tail(&newmmio->link, &efi_runtime_mmio);
+	list_add_tail(&newmmio->link, &efis->rt.mmio);
 
 	return EFI_SUCCESS;
 }

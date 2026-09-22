@@ -35,13 +35,14 @@
  */
 static efi_status_t check_node_type(efi_handle_t handle)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t r, ret = EFI_SUCCESS;
 	const struct efi_device_path *dp;
 
 	/* Open the device path protocol */
-	r = EFI_CALL(systab.boottime->open_protocol(
-			handle, &efi_guid_device_path, (void **)&dp,
-			NULL, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL));
+	r = EFI_CALL(bs->open_protocol(handle, &efi_guid_device_path,
+				       (void **)&dp, NULL, NULL,
+				       EFI_OPEN_PROTOCOL_GET_PROTOCOL));
 	if (r == EFI_SUCCESS && dp) {
 		/* Get the last node */
 		const struct efi_device_path *node = efi_dp_last_node(dp);
@@ -65,6 +66,7 @@ static efi_status_t EFIAPI efi_uc_supported(
 		efi_handle_t controller_handle,
 		struct efi_device_path *remaining_device_path)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t r, ret;
 	void *interface;
 	struct efi_driver_binding_extended_protocol *bp =
@@ -82,10 +84,10 @@ static efi_status_t EFIAPI efi_uc_supported(
 		goto out;
 	}
 
-	ret = EFI_CALL(systab.boottime->open_protocol(
-			controller_handle, bp->ops->protocol,
-			&interface, this->driver_binding_handle,
-			controller_handle, EFI_OPEN_PROTOCOL_BY_DRIVER));
+	ret = EFI_CALL(bs->open_protocol(controller_handle, bp->ops->protocol,
+					 &interface, this->driver_binding_handle,
+					 controller_handle,
+					 EFI_OPEN_PROTOCOL_BY_DRIVER));
 	switch (ret) {
 	case EFI_ACCESS_DENIED:
 	case EFI_ALREADY_STARTED:
@@ -121,6 +123,7 @@ static efi_status_t EFIAPI efi_uc_start(
 		efi_handle_t controller_handle,
 		struct efi_device_path *remaining_device_path)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t r, ret;
 	void *interface = NULL;
 	struct efi_driver_binding_extended_protocol *bp =
@@ -130,10 +133,10 @@ static efi_status_t EFIAPI efi_uc_start(
 		  efi_dp_str(remaining_device_path));
 
 	/* Attach driver to controller */
-	ret = EFI_CALL(systab.boottime->open_protocol(
-			controller_handle, bp->ops->protocol,
-			&interface, this->driver_binding_handle,
-			controller_handle, EFI_OPEN_PROTOCOL_BY_DRIVER));
+	ret = EFI_CALL(bs->open_protocol(controller_handle, bp->ops->protocol,
+					 &interface, this->driver_binding_handle,
+					 controller_handle,
+					 EFI_OPEN_PROTOCOL_BY_DRIVER));
 	switch (ret) {
 	case EFI_ACCESS_DENIED:
 	case EFI_ALREADY_STARTED:
@@ -173,6 +176,7 @@ out:
 static efi_status_t disconnect_child(efi_handle_t controller_handle,
 				     efi_handle_t child_handle)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t ret;
 	efi_guid_t *guid_controller = NULL;
 	efi_guid_t *guid_child_controller = NULL;
@@ -183,8 +187,9 @@ static efi_status_t disconnect_child(efi_handle_t controller_handle,
 		EFI_PRINT("Cannot close protocol\n");
 		return ret;
 	}
-	ret = EFI_CALL(systab.boottime->uninstall_protocol_interface(
-				child_handle, guid_child_controller, NULL));
+	ret = EFI_CALL(bs->uninstall_protocol_interface(child_handle,
+							guid_child_controller,
+							NULL));
 	if (ret != EFI_SUCCESS) {
 		EFI_PRINT("Cannot uninstall protocol interface\n");
 		return ret;
@@ -207,6 +212,7 @@ static efi_status_t EFIAPI efi_uc_stop(
 		size_t number_of_children,
 		efi_handle_t *child_handle_buffer)
 {
+	struct efi_boot_services *bs = efis->systab.boottime;
 	efi_status_t ret;
 	efi_uintn_t count;
 	struct efi_open_protocol_info_entry *entry_buffer;
@@ -231,9 +237,9 @@ static efi_status_t EFIAPI efi_uc_stop(
 	}
 
 	/* Destroy all children */
-	ret = EFI_CALL(systab.boottime->open_protocol_information(
-					controller_handle, bp->ops->protocol,
-					&entry_buffer, &count));
+	ret = EFI_CALL(bs->open_protocol_information(controller_handle,
+						     bp->ops->protocol,
+						     &entry_buffer, &count));
 	if (ret != EFI_SUCCESS)
 		goto out;
 	while (count) {
@@ -365,3 +371,24 @@ UCLASS_DRIVER(efi) = {
 	.init		= efi_uc_init,
 	.destroy	= efi_uc_destroy,
 };
+
+void efi_driver_uninit(void)
+{
+	struct efi_object *obj;
+
+	list_for_each_entry(obj, &efis->bs.obj_list, link) {
+		struct efi_driver_binding_extended_protocol *bp;
+		struct efi_handler *handler;
+
+		if (efi_search_protocol(obj, &efi_guid_driver_binding_protocol,
+					&handler) != EFI_SUCCESS)
+			continue;
+
+		/* leave alone any driver which a payload has installed */
+		bp = handler->protocol_interface;
+		if (bp->bp.supported != efi_uc_supported)
+			continue;
+		free(bp);
+		handler->protocol_interface = NULL;
+	}
+}

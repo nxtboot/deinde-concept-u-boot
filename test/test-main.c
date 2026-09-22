@@ -12,7 +12,10 @@
 #include <console.h>
 #include <cyclic.h>
 #include <dm.h>
+#include <efi_loader.h>
 #include <event.h>
+#include <lmb.h>
+#include <malloc.h>
 #include <net.h>
 #include <of_live.h>
 #include <os.h>
@@ -477,6 +480,65 @@ static int dm_test_restore(struct device_node *of_root)
 }
 
 /**
+ * efi_test_pre_run() - Give a test an EFI state of its own
+ *
+ * This sets up a fresh EFI state and selects it, so that the test neither sees
+ * what earlier tests did with the EFI subsystem nor affects the tests which
+ * follow. The state is as U-Boot leaves it at boot, i.e. efi_init_obj_list()
+ * has not run yet.
+ *
+ * @uts: Test state
+ * Return: 0 if OK, -ve on error
+ */
+static int efi_test_pre_run(struct unit_test_state *uts)
+{
+	struct efi_state *st;
+	struct lmb *lmb;
+	int ret;
+
+	/* EFI memory comes from LMB, which must get it all back afterwards */
+	lmb = malloc(sizeof(*lmb));
+	if (!lmb)
+		return -ENOMEM;
+	ret = lmb_save(lmb);
+	if (ret) {
+		free(lmb);
+		return ret;
+	}
+	uts->saved_lmb = lmb;
+
+	st = malloc(sizeof(*st));
+	if (!st)
+		return -ENOMEM;
+	efi_state_init(st);
+	uts->efi_state = st;
+	uts->saved_efi_state = efi_state_set(st);
+
+	return efi_state_start();
+}
+
+/**
+ * efi_test_post_run() - Put back the EFI state which a test replaced
+ *
+ * @uts: Test state
+ */
+static void efi_test_post_run(struct unit_test_state *uts)
+{
+	if (uts->efi_state) {
+		efi_state_uninit();
+		efi_state_set(uts->saved_efi_state);
+		free(uts->efi_state);
+		uts->efi_state = NULL;
+		uts->saved_efi_state = NULL;
+	}
+	if (uts->saved_lmb) {
+		lmb_restore(uts->saved_lmb);
+		free(uts->saved_lmb);
+		uts->saved_lmb = NULL;
+	}
+}
+
+/**
  * test_pre_run() - Handle any preparation needed to run a test
  *
  * @uts: Test state
@@ -536,6 +598,9 @@ static int test_pre_run(struct unit_test_state *uts, struct unit_test *test)
 
 	if (test->flags & UTF_DM)
 		ut_assertok(dm_test_pre_run(uts));
+
+	if (CONFIG_IS_ENABLED(EFI_LOADER) && (test->flags & UTF_EFI))
+		ut_assertok(efi_test_pre_run(uts));
 
 	ut_set_skip_delays(uts, false);
 
@@ -614,6 +679,13 @@ static int test_post_run(struct unit_test_state *uts, struct unit_test *test)
 	ut_unsilence_console(uts);
 	if (test->flags & UTF_DM)
 		ut_assertok(dm_test_post_run(uts));
+
+	/*
+	 * Drop the EFI state once the devices are gone, since removing a
+	 * device deletes its EFI handle, which is in that state
+	 */
+	if (CONFIG_IS_ENABLED(EFI_LOADER))
+		efi_test_post_run(uts);
 
 	/*
 	 * Drop any reference to the currently selected bootflow. The bootflow

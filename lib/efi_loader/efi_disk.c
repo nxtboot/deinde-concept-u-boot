@@ -22,10 +22,6 @@
 #include <part.h>
 #include <malloc.h>
 
-struct efi_system_partition efi_system_partition = {
-	.uclass_id = UCLASS_INVALID,
-};
-
 const efi_guid_t efi_block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
 const efi_guid_t efi_system_partition_guid = PARTITION_SYSTEM_GUID;
 const efi_guid_t efi_partition_info_guid = EFI_PARTITION_INFO_PROTOCOL_GUID;
@@ -209,7 +205,7 @@ static efi_status_t EFIAPI efi_disk_read_blocks(struct efi_block_io *this,
 			buffer + EFI_LOADER_BOUNCE_BUFFER_SIZE);
 	}
 
-	real_buffer = efi_bounce_buffer;
+	real_buffer = efis->mem.bounce_buffer;
 #endif
 
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,
@@ -282,7 +278,7 @@ static efi_status_t EFIAPI efi_disk_write_blocks(struct efi_block_io *this,
 			buffer + EFI_LOADER_BOUNCE_BUFFER_SIZE);
 	}
 
-	real_buffer = efi_bounce_buffer;
+	real_buffer = efis->mem.bounce_buffer;
 #endif
 
 	EFI_ENTRY("%p, %x, %llx, %zx, %p", this, media_id, lba,
@@ -436,6 +432,7 @@ static efi_status_t efi_disk_add_dev(
 				struct efi_disk_obj **disk,
 				efi_handle_t agent_handle)
 {
+	struct efi_system_partition *esp = &efis->system_partition;
 	struct efi_disk_obj *diskobj;
 	struct efi_object *handle;
 	const efi_guid_t *esp_guid = NULL;
@@ -595,12 +592,12 @@ static efi_status_t efi_disk_add_dev(
 		  diskobj->media.last_block);
 
 	/* Store first EFI system partition */
-	if (part && efi_system_partition.uclass_id == UCLASS_INVALID) {
+	if (part && esp->uclass_id == UCLASS_INVALID) {
 		if (part_info &&
 		    part_info->bootable & PART_EFI_SYSTEM_PARTITION) {
-			efi_system_partition.uclass_id = desc->uclass_id;
-			efi_system_partition.devnum = desc->devnum;
-			efi_system_partition.part = part;
+			esp->uclass_id = desc->uclass_id;
+			esp->devnum = desc->devnum;
+			esp->part = part;
 			EFI_PRINT("EFI system partition: %s %x:%x\n",
 				  blk_get_uclass_name(desc->uclass_id),
 				  desc->devnum, part);
@@ -756,7 +753,7 @@ int efi_disk_probe(void *ctx, struct event *event)
 	}
 
 	/* only do the boot option management when UEFI sub-system is initialized */
-	if (IS_ENABLED(CONFIG_CMD_BOOTEFI_BOOTMGR) && efi_obj_list_initialized == EFI_SUCCESS) {
+	if (IS_ENABLED(CONFIG_CMD_BOOTEFI_BOOTMGR) && efis->obj_list_initialized == EFI_SUCCESS) {
 		ret = efi_bootmgr_update_media_device_boot_option();
 		if (ret != EFI_SUCCESS)
 			return -1;

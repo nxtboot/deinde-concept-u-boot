@@ -21,7 +21,7 @@ efi_status_t efi_run_image(void *source_buffer, efi_uintn_t source_size,
 
 	log_info("Booting %pD\n", msg_path);
 
-	ret = EFI_CALL(efi_load_image(false, efi_root, file_path, source_buffer,
+	ret = EFI_CALL(efi_load_image(false, efis->bs.root, file_path, source_buffer,
 				      source_size, &handle));
 	if (ret != EFI_SUCCESS) {
 		log_err("Loading image failed\n");

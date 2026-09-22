@@ -19,11 +19,6 @@
 #include <mapmem.h>
 #include <net.h>
 
-static struct efi_device_path *bootefi_image_path;
-static struct efi_device_path *bootefi_device_path;
-static void *image_addr;
-static size_t image_size;
-
 /**
  * efi_get_image_parameters() - return image parameters
  *
@@ -32,8 +27,9 @@ static size_t image_size;
  */
 void efi_get_image_parameters(void **img_addr, size_t *img_size)
 {
-	*img_addr = image_addr;
-	*img_size = image_size;
+	const struct efi_bootefi *boot = &efis->bootefi;
+	*img_addr = boot->image_addr;
+	*img_size = boot->image_size;
 }
 
 /**
@@ -41,12 +37,14 @@ void efi_get_image_parameters(void **img_addr, size_t *img_size)
  */
 void efi_clear_bootdev(void)
 {
-	efi_free_pool(bootefi_device_path);
-	efi_free_pool(bootefi_image_path);
-	bootefi_device_path = NULL;
-	bootefi_image_path = NULL;
-	image_addr = NULL;
-	image_size = 0;
+	struct efi_bootefi *boot = &efis->bootefi;
+
+	efi_free_pool(boot->device_path);
+	efi_free_pool(boot->image_path);
+	boot->device_path = NULL;
+	boot->image_path = NULL;
+	boot->image_addr = NULL;
+	boot->image_size = 0;
 }
 
 /**
@@ -55,11 +53,11 @@ void efi_clear_bootdev(void)
  * This function is called when a file is loaded, e.g. via the 'load' command.
  * We use the path to this file to inform the UEFI binary about the boot device.
  *
- * For a valid image, it sets:
+ * For a valid image, it sets these members of struct efi_bootefi in the state:
  *    - image_addr to the provided buffer
  *    - image_size to the provided buffer_size
- *    - bootefi_device_path to the EFI device-path
- *    - bootefi_image_path to the EFI image-path
+ *    - device_path to the EFI device-path
+ *    - image_path to the EFI image-path
  *
  * @dev:		device, e.g. "MMC"
  * @devnr:		number of the device, e.g. "1:2"
@@ -70,14 +68,15 @@ void efi_clear_bootdev(void)
 void efi_set_bootdev(const char *dev, const char *devnr, const char *path,
 		     void *buffer, size_t buffer_size)
 {
+	struct efi_bootefi *boot = &efis->bootefi;
 	efi_status_t ret;
 
 	log_debug("dev=%s, devnr=%s, path=%s, buffer=%p, size=%zx\n", dev,
 		  devnr, path, buffer, buffer_size);
 
 	/* Forget overwritten image */
-	if (buffer + buffer_size >= image_addr &&
-	    image_addr + image_size >= buffer)
+	if (buffer + buffer_size >= boot->image_addr &&
+	    boot->image_addr + boot->image_size >= buffer)
 		efi_clear_bootdev();
 
 	/* Remember only PE-COFF and FIT images */
@@ -100,11 +99,11 @@ void efi_set_bootdev(const char *dev, const char *devnr, const char *path,
 	/* efi_set_bootdev() is typically called repeatedly, recover memory */
 	efi_clear_bootdev();
 
-	image_addr = buffer;
-	image_size = buffer_size;
+	boot->image_addr = buffer;
+	boot->image_size = buffer_size;
 
-	ret = calculate_paths(dev, devnr, path, &bootefi_device_path,
-			      &bootefi_image_path);
+	ret = calculate_paths(dev, devnr, path, &boot->device_path,
+			      &boot->image_path);
 	if (ret) {
 		log_debug("- efi_dp_from_name() failed, err=%lx\n", ret);
 		efi_clear_bootdev();
@@ -127,11 +126,12 @@ void efi_set_bootdev(const char *dev, const char *devnr, const char *path,
  */
 efi_status_t efi_binary_run(void *image, size_t size, void *fdt, void *initrd, size_t initrd_sz)
 {
+	struct efi_bootefi *boot = &efis->bootefi;
 	efi_handle_t mem_handle = NULL;
 	struct efi_device_path *file_path = NULL;
 	efi_status_t ret;
 
-	if (!bootefi_device_path || !bootefi_image_path) {
+	if (!boot->device_path || !boot->image_path) {
 		log_debug("Not loaded from disk\n");
 		/*
 		 * Special case for efi payload not loaded from disk,
@@ -150,14 +150,14 @@ efi_status_t efi_binary_run(void *image, size_t size, void *fdt, void *initrd, s
 		if (ret != EFI_SUCCESS)
 			goto out;
 
-		bootefi_device_path = file_path;
-		bootefi_image_path = NULL;
+		boot->device_path = file_path;
+		boot->image_path = NULL;
 	} else {
 		log_debug("Loaded from disk\n");
 	}
 
-	ret = efi_binary_run_dp(image, size, fdt, initrd, initrd_sz, bootefi_device_path,
-				bootefi_image_path);
+	ret = efi_binary_run_dp(image, size, fdt, initrd, initrd_sz,
+				boot->device_path, boot->image_path);
 out:
 	if (mem_handle) {
 		efi_status_t r;

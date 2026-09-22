@@ -26,28 +26,10 @@
 #include <vsprintf.h>
 #include <net.h>
 
-#define MAX_EFI_NET_OBJS 10
-#define MAX_NUM_DHCP_ENTRIES 10
-#define MAX_NUM_DP_ENTRIES 10
 
 const efi_guid_t efi_net_guid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
 static const efi_guid_t efi_pxe_base_code_protocol_guid =
 					EFI_PXE_BASE_CODE_PROTOCOL_GUID;
-
-struct dp_entry {
-	struct efi_device_path *net_dp;
-	struct udevice *dev;
-	bool is_valid;
-};
-
-/*
- * The network device path cache. An entry is added when a new bootfile
- * is downloaded from the network. If the bootfile is then loaded as an
- * efi image, the most recent entry corresponding to the device is passed
- * as the device path of the loaded image.
- */
-static struct dp_entry dp_cache[MAX_NUM_DP_ENTRIES];
-static int next_dp_entry;
 
 #if IS_ENABLED(CONFIG_EFI_HTTP_PROTOCOL)
 static struct wget_http_info efi_wget_info = {
@@ -56,15 +38,6 @@ static struct wget_http_info efi_wget_info = {
 	.silent = true,
 };
 #endif
-
-struct dhcp_entry {
-	struct efi_pxe_packet *dhcp_ack;
-	struct udevice *dev;
-	bool is_valid;
-};
-
-static struct dhcp_entry dhcp_cache[MAX_NUM_DHCP_ENTRIES];
-static int next_dhcp_entry;
 
 /**
  * struct efi_net_obj - EFI object representing a network interface
@@ -111,9 +84,6 @@ struct efi_net_obj {
 	int efi_seq_num;
 };
 
-static int curr_efi_net_obj;
-static struct efi_net_obj *net_objs[MAX_EFI_NET_OBJS];
-
 /**
  * efi_netobj_is_active() - checks if a netobj is active in the efi subsystem
  *
@@ -137,12 +107,13 @@ static bool efi_netobj_is_active(struct efi_net_obj *netobj)
  */
 static struct efi_net_obj *efi_netobj_from_snp(struct efi_simple_network *snp)
 {
+	struct efi_net *net = &efis->net;
 	int i;
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && &net_objs[i]->net == snp) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && &net->objs[i]->net == snp) {
 			// Do not register duplicate devices
-			return net_objs[i];
+			return net->objs[i];
 		}
 	}
 	return NULL;
@@ -773,11 +744,14 @@ out:
  */
 void efi_net_set_dhcp_ack(void *pkt, int len)
 {
+	struct efi_net *net = &efis->net;
+	struct efi_net_dhcp_entry *entry;
 	struct efi_pxe_packet **dhcp_ack;
 	struct udevice *dev;
 	int i;
 
-	dhcp_ack = &dhcp_cache[next_dhcp_entry].dhcp_ack;
+	entry = &net->dhcp_cache[net->next_dhcp_entry];
+	dhcp_ack = &entry->dhcp_ack;
 
 	/* For now this function gets called only by the current device */
 	dev = eth_get_dev();
@@ -792,15 +766,14 @@ void efi_net_set_dhcp_ack(void *pkt, int len)
 	memset(*dhcp_ack, 0, maxsize);
 	memcpy(*dhcp_ack, pkt, min(len, maxsize));
 
-	dhcp_cache[next_dhcp_entry].is_valid = true;
-	dhcp_cache[next_dhcp_entry].dev = dev;
-	next_dhcp_entry++;
-	next_dhcp_entry %= MAX_NUM_DHCP_ENTRIES;
+	entry->is_valid = true;
+	entry->dev = dev;
+	net->next_dhcp_entry++;
+	net->next_dhcp_entry %= EFI_NET_MAX_DHCP_ENTRIES;
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
-			net_objs[i]->pxe_mode.dhcp_ack = **dhcp_ack;
-		}
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev)
+			net->objs[i]->pxe_mode.dhcp_ack = **dhcp_ack;
 	}
 }
 
@@ -814,10 +787,11 @@ void efi_net_set_dhcp_ack(void *pkt, int len)
  */
 static void efi_net_push(void *pkt, int len)
 {
+	const struct efi_net *net = &efis->net;
 	int rx_packet_next;
 	struct efi_net_obj *nt;
 
-	nt = net_objs[curr_efi_net_obj];
+	nt = net->objs[net->curr_obj];
 	if (!nt)
 		return;
 
@@ -865,7 +839,7 @@ static void EFIAPI efi_network_timer_notify(struct efi_event *event,
 		goto out;
 
 	nt = efi_netobj_from_snp(this);
-	curr_efi_net_obj = nt->efi_seq_num;
+	efis->net.curr_obj = nt->efi_seq_num;
 
 	if (!nt->rx_packet_num) {
 		eth_set_dev(nt->dev);
@@ -1073,15 +1047,16 @@ static struct efi_device_path *efi_netobj_get_dp(struct efi_net_obj *netobj)
  */
 efi_status_t efi_net_do_start(struct udevice *dev)
 {
+	const struct efi_net *net = &efis->net;
 	efi_status_t r = EFI_SUCCESS;
 	struct efi_net_obj *netobj;
 	struct efi_device_path *net_dp;
 	int i;
 
 	netobj = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
-			netobj = net_objs[i];
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev) {
+			netobj = net->objs[i];
 			break;
 		}
 	}
@@ -1128,6 +1103,7 @@ set_addr:
  */
 efi_status_t efi_net_register(struct udevice *dev)
 {
+	struct efi_net *net = &efis->net;
 	efi_status_t r;
 	int seq_num;
 	struct efi_net_obj *netobj;
@@ -1141,16 +1117,16 @@ efi_status_t efi_net_register(struct udevice *dev)
 		return EFI_SUCCESS;
 	}
 
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == dev) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == dev) {
 			// Do not register duplicate devices
 			return EFI_SUCCESS;
 		}
 	}
 
 	seq_num = -1;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (!net_objs[i]) {
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (!net->objs[i]) {
 			seq_num = i;
 			break;
 		}
@@ -1166,10 +1142,10 @@ efi_status_t efi_net_register(struct udevice *dev)
 	netobj->dev = dev;
 
 	/* Allocate an aligned transmit buffer */
-	transmit_buffer = calloc(1, PKTSIZE_ALIGN + PKTALIGN);
+	transmit_buffer = memalign(PKTALIGN, PKTSIZE_ALIGN);
 	if (!transmit_buffer)
 		goto out_of_resources;
-	transmit_buffer = (void *)ALIGN((uintptr_t)transmit_buffer, PKTALIGN);
+	memset(transmit_buffer, '\0', PKTSIZE_ALIGN);
 	netobj->transmit_buffer = transmit_buffer;
 
 	/* Allocate a number of receive buffers */
@@ -1246,11 +1222,15 @@ efi_status_t efi_net_register(struct udevice *dev)
 	 * Scan dhcp entries for one corresponding
 	 * to this udevice, from newest to oldest
 	 */
-	i = (next_dhcp_entry + MAX_NUM_DHCP_ENTRIES - 1) % MAX_NUM_DHCP_ENTRIES;
-	for (j = 0; dhcp_cache[i].is_valid && j < MAX_NUM_DHCP_ENTRIES;
-	     i = (i + MAX_NUM_DHCP_ENTRIES - 1) % MAX_NUM_DHCP_ENTRIES, j++) {
-		if (dev == dhcp_cache[i].dev) {
-			netobj->pxe_mode.dhcp_ack = *dhcp_cache[i].dhcp_ack;
+	i = (net->next_dhcp_entry + EFI_NET_MAX_DHCP_ENTRIES - 1) %
+		EFI_NET_MAX_DHCP_ENTRIES;
+	for (j = 0;
+	     net->dhcp_cache[i].is_valid && j < EFI_NET_MAX_DHCP_ENTRIES;
+	     i = (i + EFI_NET_MAX_DHCP_ENTRIES - 1) % EFI_NET_MAX_DHCP_ENTRIES,
+	     j++) {
+		if (dev == net->dhcp_cache[i].dev) {
+			netobj->pxe_mode.dhcp_ack =
+				*net->dhcp_cache[i].dhcp_ack;
 			break;
 		}
 	}
@@ -1300,7 +1280,7 @@ efi_status_t efi_net_register(struct udevice *dev)
 		goto failure_to_add_protocol;
 #endif
 	netobj->efi_seq_num = seq_num;
-	net_objs[seq_num] = netobj;
+	net->objs[seq_num] = netobj;
 	return EFI_SUCCESS;
 failure_to_add_protocol:
 	printf("ERROR: Failure to add protocol\n");
@@ -1331,18 +1311,21 @@ out_of_resources:
  */
 efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice *udev)
 {
+	struct efi_net *net = &efis->net;
 	efi_status_t ret;
 	struct efi_net_obj *netobj;
 	struct efi_device_path *old_net_dp, *new_net_dp;
+	struct efi_net_dp_entry *entry;
 	struct efi_device_path **dp;
 	int i;
 
-	dp = &dp_cache[next_dp_entry].net_dp;
+	entry = &net->dp_cache[net->next_dp_entry];
+	dp = &entry->net_dp;
 
-	dp_cache[next_dp_entry].dev = udev;
-	dp_cache[next_dp_entry].is_valid = true;
-	next_dp_entry++;
-	next_dp_entry %= MAX_NUM_DP_ENTRIES;
+	entry->dev = udev;
+	entry->is_valid = true;
+	net->next_dp_entry++;
+	net->next_dp_entry %= EFI_NET_MAX_DP_ENTRIES;
 
 	old_net_dp = *dp;
 	new_net_dp = NULL;
@@ -1358,9 +1341,9 @@ efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice 
 	efi_free_pool(old_net_dp);
 
 	netobj = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == udev) {
-			netobj = net_objs[i];
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == udev) {
+			netobj = net->objs[i];
 			break;
 		}
 	}
@@ -1388,6 +1371,7 @@ efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice 
  */
 void efi_net_dp_from_dev(struct efi_device_path **dp, struct udevice *udev, bool cache_only)
 {
+	const struct efi_net *net = &efis->net;
 	int i, j;
 
 	if (!dp)
@@ -1399,20 +1383,22 @@ void efi_net_dp_from_dev(struct efi_device_path **dp, struct udevice *udev, bool
 		goto cache;
 
 	// If a netobj matches:
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && net_objs[i]->dev == udev) {
-			*dp = efi_netobj_get_dp(net_objs[i]);
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		if (net->objs[i] && net->objs[i]->dev == udev) {
+			*dp = efi_netobj_get_dp(net->objs[i]);
 			if (*dp)
 				return;
 		}
 	}
 cache:
 	// Search in the cache
-	i = (next_dp_entry + MAX_NUM_DP_ENTRIES - 1) % MAX_NUM_DP_ENTRIES;
-	for (j = 0; dp_cache[i].is_valid && j < MAX_NUM_DP_ENTRIES;
-		i = (i + MAX_NUM_DP_ENTRIES - 1) % MAX_NUM_DP_ENTRIES, j++) {
-		if (dp_cache[i].dev == udev) {
-			*dp = efi_dp_dup(dp_cache[i].net_dp);
+	i = (net->next_dp_entry + EFI_NET_MAX_DP_ENTRIES - 1) %
+		EFI_NET_MAX_DP_ENTRIES;
+	for (j = 0; net->dp_cache[i].is_valid && j < EFI_NET_MAX_DP_ENTRIES;
+	     i = (i + EFI_NET_MAX_DP_ENTRIES - 1) % EFI_NET_MAX_DP_ENTRIES,
+	     j++) {
+		if (net->dp_cache[i].dev == udev) {
+			*dp = efi_dp_dup(net->dp_cache[i].net_dp);
 			return;
 		}
 	}
@@ -1645,9 +1631,9 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 				u32 *status_code, ulong *file_size, char *headers_buffer,
 				struct efi_service_binding_protocol *parent)
 {
+	struct efi_net *net = &efis->net;
 	efi_status_t ret = EFI_SUCCESS;
 	int wget_ret;
-	static bool last_head;
 	struct udevice *dev;
 	int i;
 
@@ -1659,16 +1645,19 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 
 	// Set corresponding udevice
 	dev = NULL;
-	for (i = 0; i < MAX_EFI_NET_OBJS; i++) {
-		if (net_objs[i] && &net_objs[i]->http_service_binding == parent)
-			dev = net_objs[i]->dev;
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		struct efi_net_obj *netobj = net->objs[i];
+
+		if (netobj && &netobj->http_service_binding == parent)
+			dev = netobj->dev;
 	}
 	if (!dev)
 		return EFI_ABORTED;
 
 	switch (method) {
 	case HTTP_METHOD_GET:
-		ret = efi_net_set_buffer(buffer, last_head ? (size_t)efi_wget_info.hdr_cont_len : 0);
+		ret = efi_net_set_buffer(buffer, net->http_last_head ?
+					 (size_t)efi_wget_info.hdr_cont_len : 0);
 		if (ret != EFI_SUCCESS)
 			goto out;
 		eth_set_dev(dev);
@@ -1695,7 +1684,7 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 		// Pass the actual number of received bytes to the application
 		*file_size = efi_wget_info.file_size;
 		*status_code = efi_wget_info.status_code;
-		last_head = false;
+		net->http_last_head = false;
 		break;
 	case HTTP_METHOD_HEAD:
 		ret = efi_net_set_buffer(buffer, 0);
@@ -1706,7 +1695,7 @@ efi_status_t efi_net_do_request(u8 *url, enum efi_http_method method, void **buf
 		wget_request((ulong)*buffer, url, &efi_wget_info);
 		*file_size = 0;
 		*status_code = efi_wget_info.status_code;
-		last_head = true;
+		net->http_last_head = true;
 		break;
 	default:
 		ret = EFI_UNSUPPORTED;
@@ -1717,3 +1706,29 @@ out:
 	return ret;
 }
 #endif
+
+void efi_net_uninit_state(struct efi_net *net)
+{
+	int i, j;
+
+	for (i = 0; i < EFI_NET_MAX_OBJS; i++) {
+		struct efi_net_obj *netobj = net->objs[i];
+
+		if (!netobj)
+			continue;
+		free(netobj->transmit_buffer);
+		for (j = 0; j < ETH_PACKETS_BATCH_RECV; j++)
+			free(netobj->receive_buffer[j]);
+		free(netobj->receive_buffer);
+		free(netobj->receive_lengths);
+
+		/* the object itself is a handle, freed with the others */
+		net->objs[i] = NULL;
+	}
+
+	for (i = 0; i < EFI_NET_MAX_DHCP_ENTRIES; i++) {
+		free(net->dhcp_cache[i].dhcp_ack);
+		net->dhcp_cache[i].dhcp_ack = NULL;
+		net->dhcp_cache[i].is_valid = false;
+	}
+}

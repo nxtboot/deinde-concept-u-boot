@@ -16,8 +16,6 @@ const efi_guid_t efi_guid_hii_database_protocol
 		= EFI_HII_DATABASE_PROTOCOL_GUID;
 const efi_guid_t efi_guid_hii_string_protocol = EFI_HII_STRING_PROTOCOL_GUID;
 
-static LIST_HEAD(efi_package_lists);
-static LIST_HEAD(efi_keyboard_layout_list);
 
 struct efi_hii_packagelist {
 	struct list_head link;
@@ -36,7 +34,7 @@ static int efi_hii_packagelist_exists(efi_hii_handle_t package_list)
 	struct efi_hii_packagelist *hii;
 	int found = 0;
 
-	list_for_each_entry(hii, &efi_package_lists, link) {
+	list_for_each_entry(hii, &efis->hii.package_lists, link) {
 		if (hii == package_list) {
 			found = 1;
 			break;
@@ -322,7 +320,7 @@ add_keyboard_package(struct efi_hii_packagelist *hii,
 		list_add_tail(&layout_data->link,
 			      &package_data->keyboard_layout_list);
 		list_add_tail(&layout_data->link_sys,
-			      &efi_keyboard_layout_list);
+			      &efis->hii.keyboard_layouts);
 
 		layout = (struct efi_hii_keyboard_layout *)
 			 ((uintptr_t)layout + layout_length);
@@ -347,7 +345,7 @@ static struct efi_hii_packagelist *new_packagelist(void)
 	if (!hii)
 		return NULL;
 
-	list_add_tail(&hii->link, &efi_package_lists);
+	list_add_tail(&hii->link, &efis->hii.package_lists);
 	hii->max_string_id = 0;
 	INIT_LIST_HEAD(&hii->string_tables);
 	INIT_LIST_HEAD(&hii->guid_list);
@@ -608,7 +606,7 @@ list_package_lists(const struct efi_hii_database_protocol *this,
 
 	package_cnt = 0;
 	package_max = *handle_buffer_length / sizeof(*handle);
-	list_for_each_entry(hii, &efi_package_lists, link) {
+	list_for_each_entry(hii, &efis->hii.package_lists, link) {
 		switch (package_type) {
 		case EFI_HII_PACKAGE_TYPE_ALL:
 			break;
@@ -703,7 +701,7 @@ find_keyboard_layouts(const struct efi_hii_database_protocol *this,
 
 	package_cnt = 0;
 	package_max = *key_guid_buffer_length / sizeof(*key_guid_buffer);
-	list_for_each_entry(layout_data, &efi_keyboard_layout_list, link_sys) {
+	list_for_each_entry(layout_data, &efis->hii.keyboard_layouts, link_sys) {
 		package_cnt++;
 		if (package_cnt <= package_max)
 			memcpy(key_guid_buffer++,
@@ -737,7 +735,7 @@ get_keyboard_layout(const struct efi_hii_database_protocol *this,
 	if (!key_guid)
 		return EFI_EXIT(EFI_INVALID_PARAMETER);
 
-	list_for_each_entry(layout_data, &efi_keyboard_layout_list, link_sys) {
+	list_for_each_entry(layout_data, &efis->hii.keyboard_layouts, link_sys) {
 		if (!guidcmp(&layout_data->keyboard_layout.guid, key_guid))
 			goto found;
 	}
@@ -781,7 +779,7 @@ get_package_list_handle(const struct efi_hii_database_protocol *this,
 	if (!driver_handle)
 		return EFI_EXIT(EFI_INVALID_PARAMETER);
 
-	list_for_each_entry(hii, &efi_package_lists, link) {
+	list_for_each_entry(hii, &efis->hii.package_lists, link) {
 		if (hii == package_list_handle) {
 			*driver_handle = hii->driver_handle;
 			return EFI_EXIT(EFI_SUCCESS);

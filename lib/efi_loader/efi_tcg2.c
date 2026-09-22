@@ -25,30 +25,6 @@
 #include <linux/unaligned/generic.h>
 #include <hexdump.h>
 
-/**
- * struct event_log_buffer - internal eventlog management structure
- *
- * @buffer:		eventlog buffer
- * @final_buffer:	finalevent config table buffer
- * @pos:		current position of 'buffer'
- * @final_pos:		current position of 'final_buffer'
- * @get_event_called:	true if GetEventLog has been invoked at least once
- * @ebs_called:		true if ExitBootServices has been invoked
- * @truncated:		true if the 'buffer' is truncated
- */
-struct event_log_buffer {
-	void *buffer;
-	void *final_buffer;
-	size_t pos; /* eventlog position */
-	size_t final_pos; /* final events config table position */
-	size_t last_event_size;
-	bool get_event_called;
-	bool ebs_called;
-	bool truncated;
-};
-
-static struct event_log_buffer event_log;
-static bool tcg2_efi_app_invoked;
 /*
  * When requesting TPM2_CAP_TPM_PROPERTIES the value is on a standard offset.
  * Since the current tpm2_get_capability() response buffers starts at
@@ -86,7 +62,7 @@ static bool is_tcg2_protocol_installed(void)
 	struct efi_handler *handler;
 	efi_status_t ret;
 
-	ret = efi_search_protocol(efi_root, &efi_guid_tcg2_protocol, &handler);
+	ret = efi_search_protocol(efis->bs.root, &efi_guid_tcg2_protocol, &handler);
 	return ret == EFI_SUCCESS;
 }
 
@@ -105,36 +81,37 @@ static efi_status_t tcg2_agile_log_append(u32 pcr_index, u32 event_type,
 					  struct tpml_digest_values *digest_list,
 					  u32 size, u8 event[])
 {
-	void *log = (void *)((uintptr_t)event_log.buffer + event_log.pos);
+	struct efi_tcg2_log *elog = &efis->tcg2.log;
+	void *log = (void *)((uintptr_t)elog->buffer + elog->pos);
 	u32 event_size = size + tcg2_event_get_size(digest_list);
 	struct efi_tcg2_final_events_table *final_event;
 	efi_status_t ret = EFI_SUCCESS;
 
 	/* if ExitBootServices hasn't been called update the normal log */
-	if (!event_log.ebs_called) {
-		if (event_log.truncated ||
-		    event_log.pos + event_size > CONFIG_TPM2_EVENT_LOG_SIZE) {
-			event_log.truncated = true;
+	if (!elog->ebs_called) {
+		if (elog->truncated ||
+		    elog->pos + event_size > CONFIG_TPM2_EVENT_LOG_SIZE) {
+			elog->truncated = true;
 			return EFI_VOLUME_FULL;
 		}
 		tcg2_log_append(pcr_index, event_type, digest_list, size, event, log);
-		event_log.pos += event_size;
-		event_log.last_event_size = event_size;
+		elog->pos += event_size;
+		elog->last_event_size = event_size;
 	}
 
-	if (!event_log.get_event_called)
+	if (!elog->get_event_called)
 		return ret;
 
 	/* if GetEventLog has been called update FinalEventLog as well */
-	if (event_log.final_pos + event_size > CONFIG_TPM2_EVENT_LOG_SIZE)
+	if (elog->final_pos + event_size > CONFIG_TPM2_EVENT_LOG_SIZE)
 		return EFI_VOLUME_FULL;
 
-	log = (void *)((uintptr_t)event_log.final_buffer + event_log.final_pos);
+	log = (void *)((uintptr_t)elog->final_buffer + elog->final_pos);
 	tcg2_log_append(pcr_index, event_type, digest_list, size, event, log);
 
-	final_event = event_log.final_buffer;
+	final_event = elog->final_buffer;
 	final_event->number_of_events++;
-	event_log.final_pos += event_size;
+	elog->final_pos += event_size;
 
 	return ret;
 }
@@ -333,6 +310,7 @@ efi_tcg2_get_eventlog(struct efi_tcg2_protocol *this,
 		      u64 *event_log_location, u64 *event_log_last_entry,
 		      bool *event_log_truncated)
 {
+	struct efi_tcg2_log *elog = &efis->tcg2.log;
 	efi_status_t ret = EFI_SUCCESS;
 	struct udevice *dev;
 
@@ -358,11 +336,11 @@ efi_tcg2_get_eventlog(struct efi_tcg2_protocol *this,
 		ret = EFI_SUCCESS;
 		goto out;
 	}
-	*event_log_location = (uintptr_t)event_log.buffer;
-	*event_log_last_entry = (uintptr_t)(event_log.buffer + event_log.pos -
-					    event_log.last_event_size);
-	*event_log_truncated = event_log.truncated;
-	event_log.get_event_called = true;
+	*event_log_location = (uintptr_t)elog->buffer;
+	*event_log_last_entry = (uintptr_t)(elog->buffer + elog->pos -
+					    elog->last_event_size);
+	*event_log_truncated = elog->truncated;
+	elog->get_event_called = true;
 
 out:
 	return EFI_EXIT(ret);
@@ -640,7 +618,7 @@ efi_tcg2_hash_log_extend_event(struct efi_tcg2_protocol *this, u64 flags,
 	}
 
 	if (flags & EFI_TCG2_EXTEND_ONLY) {
-		if (event_log.truncated)
+		if (efis->tcg2.log.truncated)
 			ret = EFI_VOLUME_FULL;
 		goto out;
 	}
@@ -793,21 +771,22 @@ static const struct efi_tcg2_protocol efi_tcg2_protocol = {
  */
 static void tcg2_uninit(void)
 {
+	struct efi_tcg2 *tcg2 = &efis->tcg2;
 	efi_status_t ret;
 
 	ret = efi_install_configuration_table(&efi_guid_final_events, NULL);
 	if (ret != EFI_SUCCESS && ret != EFI_NOT_FOUND)
 		log_err("Failed to delete final events config table\n");
 
-	efi_free_pool(event_log.buffer);
-	event_log.buffer = NULL;
-	efi_free_pool(event_log.final_buffer);
-	event_log.final_buffer = NULL;
+	efi_free_pool(tcg2->log.buffer);
+	tcg2->log.buffer = NULL;
+	efi_free_pool(tcg2->log.final_buffer);
+	tcg2->log.final_buffer = NULL;
 
 	if (!is_tcg2_protocol_installed())
 		return;
 
-	ret = efi_uninstall_multiple_protocol_interfaces(efi_root, &efi_guid_tcg2_protocol,
+	ret = efi_uninstall_multiple_protocol_interfaces(efis->bs.root, &efi_guid_tcg2_protocol,
 							 &efi_tcg2_protocol, NULL);
 	if (ret != EFI_SUCCESS)
 		log_err("Failed to remove EFI TCG2 protocol\n");
@@ -819,6 +798,7 @@ static void tcg2_uninit(void)
  */
 static efi_status_t create_final_event(void)
 {
+	struct efi_tcg2 *tcg2 = &efis->tcg2;
 	struct efi_tcg2_final_events_table *final_event;
 	efi_status_t ret;
 
@@ -828,20 +808,20 @@ static efi_status_t create_final_event(void)
 	 * EFI_CONFIGURATION_TABLE
 	 */
 	ret = efi_allocate_pool(EFI_ACPI_MEMORY_NVS, CONFIG_TPM2_EVENT_LOG_SIZE,
-				&event_log.final_buffer);
+				&tcg2->log.final_buffer);
 	if (ret != EFI_SUCCESS)
 		goto out;
 
-	memset(event_log.final_buffer, 0xff, CONFIG_TPM2_EVENT_LOG_SIZE);
-	final_event = event_log.final_buffer;
+	memset(tcg2->log.final_buffer, 0xff, CONFIG_TPM2_EVENT_LOG_SIZE);
+	final_event = tcg2->log.final_buffer;
 	final_event->number_of_events = 0;
 	final_event->version = EFI_TCG2_FINAL_EVENTS_TABLE_VERSION;
-	event_log.final_pos = sizeof(*final_event);
+	tcg2->log.final_pos = sizeof(*final_event);
 	ret = efi_install_configuration_table(&efi_guid_final_events,
 					      final_event);
 	if (ret != EFI_SUCCESS) {
-		efi_free_pool(event_log.final_buffer);
-		event_log.final_buffer = NULL;
+		efi_free_pool(tcg2->log.final_buffer);
+		tcg2->log.final_buffer = NULL;
 	}
 
 out:
@@ -906,6 +886,8 @@ static efi_status_t efi_append_scrtm_version(struct udevice *dev)
  */
 static efi_status_t efi_init_event_log(void)
 {
+	struct efi_tcg2 *tcg2 = &efis->tcg2;
+
 	/*
 	 * vendor_info_size is currently set to 0, we need to change the length
 	 * and allocate the flexible array member if this changes
@@ -920,7 +902,7 @@ static efi_status_t efi_init_event_log(void)
 
 	ret = efi_allocate_pool(EFI_BOOT_SERVICES_DATA,
 				CONFIG_TPM2_EVENT_LOG_SIZE,
-				(void **)&event_log.buffer);
+				(void **)&tcg2->log.buffer);
 	if (ret != EFI_SUCCESS)
 		return ret;
 
@@ -928,23 +910,23 @@ static efi_status_t efi_init_event_log(void)
 	 * initialize log area as 0xff so the OS can easily figure out the
 	 * last log entry
 	 */
-	memset(event_log.buffer, 0xff, CONFIG_TPM2_EVENT_LOG_SIZE);
+	memset(tcg2->log.buffer, 0xff, CONFIG_TPM2_EVENT_LOG_SIZE);
 
 	/*
 	 * The log header is defined to be in SHA1 event log entry format.
 	 * Setup event header
 	 */
-	event_log.pos = 0;
-	event_log.last_event_size = 0;
-	event_log.get_event_called = false;
-	event_log.ebs_called = false;
-	event_log.truncated = false;
+	tcg2->log.pos = 0;
+	tcg2->log.last_event_size = 0;
+	tcg2->log.get_event_called = false;
+	tcg2->log.ebs_called = false;
+	tcg2->log.truncated = false;
 
 	/*
 	 * Check if earlier firmware have passed any eventlog. Different
 	 * platforms can use different ways to do so.
 	 */
-	elog.log = event_log.buffer;
+	elog.log = tcg2->log.buffer;
 	elog.log_size = CONFIG_TPM2_EVENT_LOG_SIZE;
 	rc = tcg2_log_prepare_buffer(dev, &elog, false);
 	if (rc) {
@@ -952,7 +934,7 @@ static efi_status_t efi_init_event_log(void)
 		goto free_pool;
 	}
 
-	event_log.pos = elog.log_position;
+	tcg2->log.pos = elog.log_position;
 
 	/*
 	 * Add SCRTM version to the log if previous firmmware
@@ -971,8 +953,8 @@ static efi_status_t efi_init_event_log(void)
 	return ret;
 
 free_pool:
-	efi_free_pool(event_log.buffer);
-	event_log.buffer = NULL;
+	efi_free_pool(tcg2->log.buffer);
+	tcg2->log.buffer = NULL;
 	return ret;
 }
 
@@ -1168,6 +1150,7 @@ tcg2_measure_gpt_data(struct udevice *dev,
 	gpt_header *gpt_h;
 	gpt_entry *entry = NULL;
 	gpt_entry *gpt_e;
+	struct efi_boot_services *bs = efis->systab.boottime;
 	u32 num_of_valid_entry = 0;
 	u32 event_size;
 	u32 i;
@@ -1198,8 +1181,8 @@ tcg2_measure_gpt_data(struct udevice *dev,
 	dp->type = DEVICE_PATH_TYPE_END;
 	dp->sub_type = DEVICE_PATH_SUB_TYPE_END;
 	dp = device_path;
-	ret = EFI_CALL(systab.boottime->locate_device_path(&efi_block_io_guid,
-							   &dp, &handle));
+	ret = EFI_CALL(bs->locate_device_path(&efi_block_io_guid, &dp,
+					      &handle));
 	if (ret != EFI_SUCCESS)
 		goto out1;
 
@@ -1362,6 +1345,7 @@ efi_status_t efi_tcg2_measure_dtb(void *dtb)
  */
 efi_status_t efi_tcg2_measure_efi_app_invocation(struct efi_loaded_image_obj *handle)
 {
+	struct efi_tcg2 *tcg2 = &efis->tcg2;
 	efi_status_t ret;
 	u32 pcr_index;
 	struct udevice *dev;
@@ -1371,7 +1355,7 @@ efi_status_t efi_tcg2_measure_efi_app_invocation(struct efi_loaded_image_obj *ha
 	if (!is_tcg2_protocol_installed())
 		return EFI_SUCCESS;
 
-	if (tcg2_efi_app_invoked)
+	if (tcg2->app_invoked)
 		return EFI_SUCCESS;
 
 	if (tcg2_platform_get_tpm2(&dev))
@@ -1405,7 +1389,7 @@ efi_status_t efi_tcg2_measure_efi_app_invocation(struct efi_loaded_image_obj *ha
 			goto out;
 	}
 
-	tcg2_efi_app_invoked = true;
+	tcg2->app_invoked = true;
 out:
 	return ret;
 }
@@ -1446,7 +1430,7 @@ efi_tcg2_notify_exit_boot_services(struct efi_event *event, void *context)
 
 	EFI_ENTRY("%p, %p", event, context);
 
-	event_log.ebs_called = true;
+	efis->tcg2.log.ebs_called = true;
 
 	if (!is_tcg2_protocol_installed()) {
 		ret = EFI_SUCCESS;
@@ -1611,7 +1595,7 @@ efi_status_t efi_tcg2_register(void)
 		goto fail;
 	}
 
-	ret = efi_install_multiple_protocol_interfaces(&efi_root, &efi_guid_tcg2_protocol,
+	ret = efi_install_multiple_protocol_interfaces(&efis->bs.root, &efi_guid_tcg2_protocol,
 						       &efi_tcg2_protocol, NULL);
 	if (ret != EFI_SUCCESS) {
 		tcg2_uninit();

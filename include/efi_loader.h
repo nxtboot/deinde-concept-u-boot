@@ -90,6 +90,11 @@ efi_status_t efi_launch_capsules(void);
 
 #else /* CONFIG_IS_ENABLED(EFI_LOADER) */
 
+static inline int efi_state_init_default(void)
+{
+	return 0;
+}
+
 /* Without CONFIG_EFI_LOADER we don't have a runtime section, stub it out */
 #define __efi_runtime_data
 #define __efi_runtime_rodata
@@ -193,48 +198,100 @@ static inline void efi_net_set_addr(struct efi_ipv4_address *ip,
 	EFI_GUID(0xb2ac5fc9, 0x92b7, 0x4acd, \
 		 0xae, 0xac, 0x11, 0xe8, 0x18, 0xc3, 0x13, 0x0c)
 
-/* Root node */
-extern efi_handle_t efi_root;
+/**
+ * enum efi_secure_mode - secure-boot mode, as defined by the UEFI specification
+ *
+ * @EFI_MODE_SETUP: Setup mode: no platform key is enrolled
+ * @EFI_MODE_USER: User mode: a platform key is enrolled and images are verified
+ * @EFI_MODE_AUDIT: Audit mode: images are checked but not rejected
+ * @EFI_MODE_DEPLOYED: Deployed mode: as user mode, with the modes locked down
+ */
+enum efi_secure_mode {
+	EFI_MODE_SETUP,
+	EFI_MODE_USER,
+	EFI_MODE_AUDIT,
+	EFI_MODE_DEPLOYED,
+};
 
-/* Set to EFI_SUCCESS when initialized */
-extern efi_status_t efi_obj_list_initialized;
+/**
+ * struct efi_initrd - the initial ramdisk registered for the OS to load
+ *
+ * @handle: Handle carrying the load-file2 protocol which serves it, or NULL
+ * @dp: Device path installed on that handle
+ */
+struct efi_initrd {
+	efi_handle_t handle;
+	struct efi_device_path *dp;
+};
 
-/* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
-extern bool efi_st_keep_devices;
+/**
+ * struct efi_debug - state of the debug support
+ *
+ * @table: Header of the debug-image-info table, installed as a configuration
+ *	table
+ * @systab_pointer: Record which a debugger scans memory for, to find the system
+ *	table. It is in runtime-services data on a 4MB boundary, or NULL before
+ *	efi_initialize_system_table_pointer() has run
+ * @max_entries: Number of entries allocated for the table
+ */
+struct efi_debug {
+	struct efi_debug_image_info_table_header table;
+	struct efi_system_table_pointer *systab_pointer;
+	u32 max_entries;
+};
 
-/* EFI system partition */
-extern struct efi_system_partition {
+/**
+ * struct efi_hii - state of the HII database
+ *
+ * @package_lists: Package lists added to the database
+ * @keyboard_layouts: Keyboard layouts
+ */
+struct efi_hii {
+	struct list_head package_lists;
+	struct list_head keyboard_layouts;
+};
+
+/**
+ * struct efi_var - state of the variable store
+ *
+ * The buffer and the current entry are used by the runtime services, so this
+ * is where the runtime dereferences the state: see
+ * efi_var_mem_notify_virtual_address_map().
+ *
+ * @buf: The variable store, in runtime-services data
+ * @current: The entry found by the last lookup, checked first by the next
+ * @recovered: Copy of a store which survived a warm reset, until it is applied
+ * @flash: Flash which holds the variables, or NULL if none was found; used with
+ *	CONFIG_EFI_VARIABLE_FLASH_STORE. The runtime services program this, so
+ *	it is converted by SetVirtualAddressMap() too
+ * @flash_bufsize: Size of the flash's write buffer, or 0 if it has none
+ */
+struct efi_var {
+	struct efi_var_file *buf;
+	struct efi_var_entry *current;
+	struct efi_var_file *recovered;
+	u8 *flash;
+	uint flash_bufsize;
+};
+
+/**
+ * struct efi_system_partition - the first EFI system partition found
+ *
+ * @uclass_id: Uclass of the block device, UCLASS_INVALID if none was found
+ * @devnum: Device number of the block device
+ * @part: Partition number
+ */
+struct efi_system_partition {
 	enum uclass_id uclass_id;
 	int devnum;
 	u8 part;
-} efi_system_partition;
+};
 
 int __efi_entry_check(void);
 int __efi_exit_check(void);
 const char *__efi_nesting(void);
 const char *__efi_nesting_inc(void);
 const char *__efi_nesting_dec(void);
-
-#if CONFIG_IS_ENABLED(EFI_COUNT_CALLS)
-/** Number of EFI calls made by applications since U-Boot started */
-extern ulong efi_call_count;
-
-/**
- * efi_count_call() - Note that an application has made an EFI call
- *
- * This keeps nothing about the call, so costs an increment
- */
-static inline void efi_count_call(void)
-{
-	efi_call_count++;
-}
-
-/** efi_count_show() - Show how many EFI calls applications have made */
-void efi_count_show(void);
-#else
-static inline void efi_count_call(void) {}
-static inline void efi_count_show(void) {}
-#endif /* EFI_COUNT_CALLS */
 
 /*
  * Enter the u-boot world from UEFI:
@@ -312,13 +369,9 @@ static inline void efi_count_show(void) {}
 #define BOOTMENU_DEVICE_NAME_MAX 16
 
 /* Key identifying current memory map */
-extern efi_uintn_t efi_memory_map_key;
 
 extern struct efi_runtime_services efi_runtime_services;
-extern struct efi_system_table systab;
 
-extern struct efi_simple_text_output_protocol efi_con_out;
-extern struct efi_simple_text_input_protocol efi_con_in;
 extern struct efi_console_control_protocol efi_console_control;
 extern const struct efi_device_path_to_text_protocol efi_device_path_to_text;
 /* implementation of the EFI_DEVICE_PATH_UTILITIES_PROTOCOL */
@@ -332,7 +385,6 @@ extern const struct efi_hii_config_access_protocol efi_hii_config_access;
 extern const struct efi_hii_database_protocol efi_hii_database;
 extern const struct efi_hii_string_protocol efi_hii_string;
 /* structure for EFI_DEBUG_SUPPORT_PROTOCOL */
-extern struct efi_debug_image_info_table_header efi_m_debug_info_table_header;
 
 /* GUID for the auto generated boot menu entry */
 extern const efi_guid_t efi_guid_bootmenu_auto_generated;
@@ -488,6 +540,500 @@ enum efi_image_auth_status {
 	EFI_IMAGE_AUTH_PASSED,
 };
 
+/* number of text modes the console offers: 80x25, 80x50 and the real size */
+#define EFI_MAX_COUT_MODE	3
+
+/**
+ * struct efi_cout_mode - a text mode of the console
+ *
+ * @columns: Number of columns
+ * @rows: Number of rows
+ * @present: true if the mode can be selected
+ */
+struct efi_cout_mode {
+	unsigned long columns;
+	unsigned long rows;
+	int present;
+};
+
+/**
+ * struct efi_console - state of the EFI console
+ *
+ * This holds everything the simple text input and output protocols keep
+ * between calls, so that it can be part of struct efi_state.
+ *
+ * @modes: The text modes on offer, indexed by mode number
+ * @mode: Mode information of the simple text output protocol
+ * @con_out: The simple text output protocol
+ * @next_key: The key read ahead from the console
+ * @cin_notify: List of registered key-notification functions
+ * @con_in_ex: The extended simple text input protocol
+ * @con_in: The simple text input protocol
+ * @uart_obj: EFI handle for the UART, carrying its device path
+ * @timer_event: Timer event used to poll the console for input
+ * @no_ansi: Suppress ANSI escape sequences, for unit tests
+ * @key_available: true if @next_key holds a key which has not been read
+ */
+struct efi_console {
+	struct efi_cout_mode modes[EFI_MAX_COUT_MODE];
+	struct simple_text_output_mode mode;
+	struct efi_simple_text_output_protocol con_out;
+	struct efi_key_data next_key;
+	struct list_head cin_notify;
+	struct efi_simple_text_input_ex_protocol con_in_ex;
+	struct efi_simple_text_input_protocol con_in;
+	struct efi_object uart_obj;
+	struct efi_event *timer_event;
+	bool no_ansi;
+	bool key_available;
+};
+
+struct global_data;
+
+/**
+ * struct efi_bs - state of the boot services
+ *
+ * @obj_list: All the EFI objects (handles) the payload has access to while
+ *	the boot services are active; nothing uses it after ExitBootServices()
+ * @events: List of all events. The SetVirtualAddressMap() and ResetSystem()
+ *	services use this after ExitBootServices()
+ * @event_queue: Events queued for their notification function to run
+ * @register_notify_events: Events registered by RegisterProtocolNotify()
+ * @root: The root node, on which the console and other protocols are installed
+ * @current_image: Handle of the image being executed, or NULL
+ * @efi_gd: U-Boot's global data pointer, saved while the payload runs, on
+ *	architectures which keep it in a register
+ * @app_gd: The payload's value of that register, restored on returning to it
+ * @mono_count: Next value for GetNextMonotonicCount() to return
+ * @tpl: Current task priority level
+ * @call_count: Number of EFI calls which applications have made, counted with
+ *	CONFIG_EFI_COUNT_CALLS
+ * @entry_count: 1 while inside U-Boot code, 0 while inside the payload
+ * @nesting_level: Depth of nested boot-service calls, for the log
+ * @timers_enabled: false once ExitBootServices() has stopped the timers
+ * @keep_devices: true to leave the devices attached in ExitBootServices(),
+ *	which the selftest sets since it needs the console afterwards
+ */
+struct efi_bs {
+	struct list_head obj_list;
+	struct list_head events;
+	struct list_head event_queue;
+	struct list_head register_notify_events;
+	efi_handle_t root;
+	efi_handle_t current_image;
+	struct global_data *efi_gd;
+	struct global_data *app_gd;
+	u64 mono_count;
+	efi_uintn_t tpl;
+	ulong call_count;
+	int entry_count;
+	int nesting_level;
+	bool timers_enabled;
+	bool keep_devices;
+};
+
+/**
+ * struct efi_mem - state of the memory map
+ *
+ * @map: The memory map, as a list of struct efi_mem_list
+ * @bounce_buffer: Buffer below 4GB which block I/O goes through, with
+ *	CONFIG_EFI_LOADER_BOUNCE_BUFFER, of EFI_LOADER_BOUNCE_BUFFER_SIZE bytes
+ * @map_key: Key of the current memory map, which changes with every
+ *	allocation and is checked by ExitBootServices()
+ */
+struct efi_mem {
+	struct list_head map;
+	void *bounce_buffer;
+	efi_uintn_t map_key;
+};
+
+/**
+ * struct efi_fdt_copy - the copy of the devicetree passed to the payload
+ *
+ * The devicetree is copied to memory of its own before each boot, so the copy
+ * from an earlier attempt is freed first.
+ *
+ * @addr: Address of the copy, or 0 if there is none
+ * @pages: Number of pages allocated for it
+ */
+struct efi_fdt_copy {
+	u64 addr;
+	efi_uintn_t pages;
+};
+
+/**
+ * struct efi_bootefi - the image which was last loaded, for 'bootefi' to run
+ *
+ * efi_set_bootdev() records this when a file is loaded, since the device it
+ * came from is not known by the time the image is started.
+ *
+ * @device_path: EFI device path of the device the image was loaded from
+ * @image_path: EFI device path of the image file, or NULL
+ * @image_addr: Address of the image in memory
+ * @image_size: Size of the image in bytes
+ */
+struct efi_bootefi {
+	struct efi_device_path *device_path;
+	struct efi_device_path *image_path;
+	void *image_addr;
+	size_t image_size;
+};
+
+/**
+ * struct efi_tcg2_log - management of the TCG2 event log
+ *
+ * @buffer: Event-log buffer
+ * @final_buffer: Buffer for the final-events configuration table
+ * @pos: Current position in @buffer
+ * @final_pos: Current position in @final_buffer
+ * @last_event_size: Size of the last event added to @buffer
+ * @get_event_called: true if GetEventLog() has been invoked at least once
+ * @ebs_called: true if ExitBootServices() has been invoked
+ * @truncated: true if @buffer is truncated
+ */
+struct efi_tcg2_log {
+	void *buffer;
+	void *final_buffer;
+	size_t pos;
+	size_t final_pos;
+	size_t last_event_size;
+	bool get_event_called;
+	bool ebs_called;
+	bool truncated;
+};
+
+/**
+ * struct efi_tcg2 - state of the TCG2 protocol
+ *
+ * @log: The event log
+ * @app_invoked: true once the first EFI application has been measured, so that
+ *	the events which precede it are recorded only once
+ */
+struct efi_tcg2 {
+	struct efi_tcg2_log log;
+	bool app_invoked;
+};
+
+/* Number of network interfaces which can have an EFI object */
+#define EFI_NET_MAX_OBJS	4
+
+/* Number of entries in the cache of network device paths */
+#define EFI_NET_MAX_DP_ENTRIES	4
+
+/* Number of entries in the cache of DHCP acknowledgements */
+#define EFI_NET_MAX_DHCP_ENTRIES	4
+
+struct efi_net_obj;
+struct efi_pxe_packet;
+
+/**
+ * struct efi_net_dp_entry - entry in the cache of network device paths
+ *
+ * @net_dp: Device path of the file which was downloaded
+ * @dev: Network device which downloaded it
+ * @is_valid: true if this entry is in use
+ */
+struct efi_net_dp_entry {
+	struct efi_device_path *net_dp;
+	struct udevice *dev;
+	bool is_valid;
+};
+
+/**
+ * struct efi_net_dhcp_entry - entry in the cache of DHCP acknowledgements
+ *
+ * @dhcp_ack: Copy of the DHCP ACK packet, allocated when first needed
+ * @dev: Network device which received it
+ * @is_valid: true if this entry is in use
+ */
+struct efi_net_dhcp_entry {
+	struct efi_pxe_packet *dhcp_ack;
+	struct udevice *dev;
+	bool is_valid;
+};
+
+/**
+ * struct efi_net - state of the network protocols
+ *
+ * @objs: EFI objects for the network interfaces, indexed by the sequence number
+ *	of the network device, with NULL for those not registered
+ * @dp_cache: Cache of network device paths. An entry is added when a file is
+ *	downloaded from the network. If the file is then loaded as an EFI
+ *	image, the most recent entry for the device is passed as the device
+ *	path of the loaded image
+ * @dhcp_cache: Cache of DHCP ACK packets, which the PXE base code protocol
+ *	reports for an interface
+ * @ip4_addr: Address and subnet mask set or reported through the IPv4 Config2
+ *	protocol
+ * @curr_obj: Index in @objs of the interface which receives packets
+ * @next_dp_entry: Index in @dp_cache of the next entry to write
+ * @next_dhcp_entry: Index in @dhcp_cache of the next entry to write
+ * @ip4_policy: Policy set through the IPv4 Config2 protocol: static or DHCP
+ * @mac_addr: MAC address reported through the IPv4 Config2 protocol
+ * @http_instances: Number of HTTP protocol instances which the HTTP service
+ *	binding protocol has created and not yet destroyed
+ * @http_last_head: true if the last HTTP request was a HEAD request, in which
+ *	case the content length it reported sizes the buffer for a GET request
+ */
+struct efi_net {
+	struct efi_net_obj *objs[EFI_NET_MAX_OBJS];
+	struct efi_net_dp_entry dp_cache[EFI_NET_MAX_DP_ENTRIES];
+	struct efi_net_dhcp_entry dhcp_cache[EFI_NET_MAX_DHCP_ENTRIES];
+	struct efi_ip4_config2_manual_address ip4_addr;
+	int curr_obj;
+	int next_dp_entry;
+	int next_dhcp_entry;
+	enum efi_ip4_config2_policy ip4_policy;
+	char mac_addr[32];
+	int http_instances;
+	bool http_last_head;
+};
+
+/**
+ * struct efi_rt - state of the runtime services
+ *
+ * @mmio: List of memory-mapped I/O regions which the runtime services use,
+ *	each a struct efi_runtime_mmio_list
+ * @virtmap: Map passed to SetVirtualAddressMap(), used by ConvertPointer()
+ *	while that call is in progress, or NULL before then
+ * @descriptor_count: Number of entries in @virtmap
+ * @descriptor_size: Size of each entry in @virtmap, in bytes
+ */
+struct efi_rt {
+	struct list_head mmio;
+	struct efi_mem_desc *virtmap;
+	efi_uintn_t descriptor_count;
+	efi_uintn_t descriptor_size;
+};
+
+/**
+ * struct efi_state - state of the EFI subsystem
+ *
+ * The EFI subsystem keeps its state here rather than in file-scope variables,
+ * so that a test can set up a state of its own, run with it and switch back,
+ * leaving the state it found untouched. For now this covers the console, the
+ * boot services and the system table.
+ *
+ * The state in use when the OS is started must stay accessible at runtime,
+ * since the OS keeps a pointer to the system table and the runtime services
+ * use the variable store, so the default state and the pointer to it are
+ * runtime data. SetVirtualAddressMap() converts the pointer along with the
+ * variable store, after which the runtime services can go on using it.
+ *
+ * @con: State of the console
+ * @bs: State of the boot services
+ * @systab: The EFI system table handed to the payload
+ * @mem: State of the memory map
+ * @system_partition: The first EFI system partition found, which holds
+ *	the variable file
+ * @initrd: The initial ramdisk registered for the OS
+ * @debug: The debug-image-info table
+ * @hii: State of the HII database
+ * @var: State of the variable store
+ * @rt: State of the runtime services
+ * @net: State of the network protocols
+ * @tcg2: State of the TCG2 protocol
+ * @bootefi: The image which was last loaded, for 'bootefi' to run
+ * @fdt: The copy of the devicetree passed to the payload
+ * @capsule_root: Root directory of the system partition, opened for
+ *	capsules on disk, or NULL
+ * @esrt: The system resource table, once installed
+ * @watchdog_event: Timer event which implements the watchdog, or NULL until
+ *	efi_init_obj_list() has registered it. It is only used through the
+ *	SetWatchdogTimer() service and at ExitBootServices(), both of which
+ *	come after that
+ * @obj_list_initialized: Result of efi_init_obj_list(): EFI_OBJ_LIST_NOT_INIT
+ *	until it has run, then its return value, so that a failure is not
+ *	retried
+ * @secure_mode: The secure-boot mode: setup, user, audit or deployed
+ * @secure_boot: true if secure boot is enabled, i.e. a platform key is set
+ */
+struct efi_state {
+	struct efi_console con;
+	struct efi_bs bs;
+	struct efi_system_table systab;
+	struct efi_mem mem;
+	struct efi_system_partition system_partition;
+	struct efi_initrd initrd;
+	struct efi_debug debug;
+	struct efi_hii hii;
+	struct efi_var var;
+	struct efi_rt rt;
+	struct efi_net net;
+	struct efi_tcg2 tcg2;
+	struct efi_bootefi bootefi;
+	struct efi_fdt_copy fdt;
+	struct efi_event *watchdog_event;
+	struct efi_file_handle *capsule_root;
+	struct efi_system_resource_table *esrt;
+	efi_status_t obj_list_initialized;
+	enum efi_secure_mode secure_mode;
+	bool secure_boot;
+};
+
+/* efi_init_obj_list() has not run yet; not a status code */
+#define EFI_OBJ_LIST_NOT_INIT	1
+
+/*
+ * The state in use; see efi_state_set(). The runtime services reach the
+ * variable store through this pointer, so it must not be addressed through
+ * the global offset table, which is neither mapped as runtime-services data
+ * nor relocated by SetVirtualAddressMap(): hidden visibility makes the
+ * compiler address it relative to the code instead.
+ */
+extern struct efi_state *efis __attribute__((visibility("hidden")));
+
+#if CONFIG_IS_ENABLED(EFI_COUNT_CALLS)
+/**
+ * efi_count_call() - Note that an application has made an EFI call
+ *
+ * This keeps nothing about the call, so costs an increment
+ */
+static inline void efi_count_call(void)
+{
+	efis->bs.call_count++;
+}
+
+/** efi_count_show() - Show how many EFI calls applications have made */
+void efi_count_show(void);
+#else
+static inline void efi_count_call(void) {}
+static inline void efi_count_show(void) {}
+#endif /* EFI_COUNT_CALLS */
+
+/**
+ * efi_state_init_default() - Set up the default EFI state
+ *
+ * This runs right after relocation, before anything adds to the state: the
+ * LMB reports its reservations to the memory map soon after. It cannot run
+ * before efi_runtime_relocate(), since the state is runtime data.
+ *
+ * Return: 0
+ */
+int efi_state_init_default(void);
+
+/**
+ * efi_state_init() - Set up an EFI state
+ *
+ * Sets @st up as a fresh state, as at boot: the protocols point to their
+ * implementations and everything else is at its default.
+ *
+ * @st: State to set up
+ */
+void efi_state_init(struct efi_state *st);
+
+/**
+ * efi_state_start() - Bring a fresh EFI state to where U-Boot leaves it at boot
+ *
+ * For the default state, U-Boot sets up the memory map, the root node, the
+ * console and the EFI driver as it starts, before any command runs. This does
+ * the same for the state in use, which must have come from efi_state_init(),
+ * so that efi_init_obj_list() can then start the EFI subsystem in it.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+int efi_state_start(void);
+
+/**
+ * efi_state_uninit() - Free the memory held by the EFI state in use
+ *
+ * This is for a state which is about to be discarded, e.g. by a test: select
+ * another state once this returns. It frees what the state has taken from
+ * malloc(): the handles with their protocol handlers, the memory map, the
+ * network buffers and the console's key notifications.
+ *
+ * It leaves alone the pages and pool memory allocated for the state, which
+ * come from LMB, and anything which a protocol interface points to.
+ */
+void efi_state_uninit(void);
+
+/**
+ * efi_console_uninit_state() - Free the memory held by the console's state
+ *
+ * This frees the key notifications registered by the payload.
+ *
+ * @con: Console state to clean up
+ */
+void efi_console_uninit_state(struct efi_console *con);
+
+/**
+ * efi_bs_uninit_state() - Free the memory held by the boot-services state
+ *
+ * This frees the handles, along with their protocol handlers and open-protocol
+ * information, as well as the protocol-notification records. It does not free
+ * what a protocol interface points to, since many of those are not allocated,
+ * nor the events, which are in pool memory.
+ *
+ * Anything else which refers to a handle must be gone first: in particular the
+ * block devices, which keep their handle in a device tag, must have been
+ * removed, or their tags are left pointing at freed memory.
+ *
+ * @bs: Boot-services state to clean up, which must be in the state in use
+ */
+void efi_bs_uninit_state(struct efi_bs *bs);
+
+/**
+ * efi_mem_uninit_state() - Free the memory held by the memory-map state
+ *
+ * This frees the memory map itself. The pages which have been allocated come
+ * from LMB and are not given back.
+ *
+ * @mem: Memory-map state to clean up
+ */
+void efi_mem_uninit_state(struct efi_mem *mem);
+
+/**
+ * efi_net_uninit_state() - Free the memory held by the network state
+ *
+ * This frees the packet buffers of each interface and the DHCP packets. The
+ * interface objects themselves are handles, so efi_bs_uninit_state() frees
+ * them, which must therefore happen afterwards.
+ *
+ * @net: Network state to clean up
+ */
+void efi_net_uninit_state(struct efi_net *net);
+
+/**
+ * efi_state_set() - Select the EFI state to use
+ *
+ * @st: State to use from now on, which must have been set up with
+ *	efi_state_init()
+ * Return: the state which was in use, so that it can be restored
+ */
+struct efi_state *efi_state_set(struct efi_state *st);
+
+/**
+ * efi_console_init_state() - Set up the console part of an EFI state
+ *
+ * @con: Console state to set up
+ */
+void efi_console_init_state(struct efi_console *con);
+
+/**
+ * efi_bs_init_state() - Set up the boot-services part of an EFI state
+ *
+ * @bs: Boot-services state to set up
+ */
+void efi_bs_init_state(struct efi_bs *bs);
+
+/**
+ * efi_systab_init_state() - Set up the system table of an EFI state
+ *
+ * This fills in what is known before the boot services start: the header, the
+ * firmware vendor and revision and the runtime services. The rest is set by
+ * efi_initialize_system_table().
+ *
+ * @systab: System table to set up
+ */
+void efi_systab_init_state(struct efi_system_table *systab);
+
+/**
+ * efi_mem_init_state() - Set up the memory-map part of an EFI state
+ *
+ * @mem: Memory-map state to set up
+ */
+void efi_mem_init_state(struct efi_mem *mem);
+
 /**
  * struct efi_loaded_image_obj - handle of a loaded image
  *
@@ -541,11 +1087,6 @@ struct efi_event {
 	bool is_signaled;
 };
 
-/* This list contains all UEFI objects we know of */
-extern struct list_head efi_obj_list;
-/* List of all events */
-extern struct list_head efi_events;
-
 /**
  * struct efi_protocol_notification - handle for notified protocol
  *
@@ -583,6 +1124,18 @@ struct efi_register_notify_event {
 
 /* called at pre-initialization */
 int efi_init_early(void);
+
+/**
+ * efi_init_early_state() - Set up the parts of a state which are needed early
+ *
+ * This registers the root node, the console and the EFI driver. It is the part
+ * of efi_init_early() which belongs to the state in use, as opposed to the
+ * U-Boot run as a whole.
+ *
+ * Return: 0 if OK, -1 on error, with the status code recorded so that
+ *	efi_init_obj_list() reports it
+ */
+int efi_init_early_state(void);
 /* Initialize efi execution environment */
 efi_status_t efi_init_obj_list(void);
 /* Append new boot option in BootOrder variable */
@@ -741,8 +1294,6 @@ efi_status_t efi_check_pe(void *buffer, size_t size, void **nt_header);
 efi_status_t efi_load_pe(struct efi_loaded_image_obj *handle,
 			 void *efi, size_t efi_size,
 			 struct efi_loaded_image *loaded_image_info);
-/* Called once to store the pristine gd pointer */
-void efi_save_gd(void);
 /* Call this to relocate the runtime section to an address space */
 void efi_runtime_relocate(ulong offset, struct efi_mem_desc *map);
 /* Call this to get image parameters */
@@ -1001,12 +1552,34 @@ efi_status_t efi_update_memory_map(u64 start, u64 pages, int memory_type,
 
 /* Called by board init to initialize the EFI drivers */
 efi_status_t efi_driver_init(void);
+
+/**
+ * efi_driver_uninit() - Free the driver-binding protocols of the EFI drivers
+ *
+ * This frees what efi_driver_init() allocated for the state in use. The
+ * handles which the protocols are on remain, for efi_bs_uninit_state() to
+ * free.
+ */
+void efi_driver_uninit(void);
 /* Called when a block device is added */
 int efi_disk_probe(void *ctx, struct event *event);
 /* Called when a block device is removed */
 int efi_disk_remove(void *ctx, struct event *event);
 /* Called by board init to initialize the EFI memory map */
 int efi_memory_init(void);
+
+/**
+ * efi_memory_add_lmb() - Add the memory which LMB knows about to the memory map
+ *
+ * LMB tells the EFI subsystem about memory as it is added and reserved, which
+ * happens when U-Boot starts. A state which is set up later has missed all of
+ * that, so this adds the memory from LMB's lists: what is available becomes
+ * conventional memory and what is reserved becomes boot-services data,
+ * including anything which another EFI state has allocated.
+ *
+ * Return: 0 if OK, -ENOMEM if out of memory
+ */
+int efi_memory_add_lmb(void);
 /* Adds new or overrides configuration table entry to the system table */
 efi_status_t efi_install_configuration_table(const efi_guid_t *guid, void *table);
 /* Sets up a loaded image */
@@ -1016,7 +1589,6 @@ efi_status_t efi_setup_loaded_image(struct efi_device_path *device_path,
 				    struct efi_loaded_image **info_ptr);
 
 #ifdef CONFIG_EFI_LOADER_BOUNCE_BUFFER
-extern void *efi_bounce_buffer;
 #define EFI_LOADER_BOUNCE_BUFFER_SIZE (64 * 1024 * 1024)
 #endif
 

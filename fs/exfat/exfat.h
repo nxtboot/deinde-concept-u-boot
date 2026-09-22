@@ -150,10 +150,10 @@ extern int exfat_errors;
 extern int exfat_errors_fixed;
 
 #ifdef __UBOOT__
-#define exfat_bug(fmt, args...)		log_crit(fmt, ##args)
-#define exfat_error(fmt, args...)	log_err(fmt, ##args)
-#define exfat_warn(fmt, args...)	log_warning(fmt, ##args)
-#define exfat_debug(fmt, args...)	log_debug(fmt, ##args)
+#define exfat_bug(fmt, args...)		log_crit(fmt "\n", ##args)
+#define exfat_error(fmt, args...)	log_err(fmt "\n", ##args)
+#define exfat_warn(fmt, args...)	log_warning(fmt "\n", ##args)
+#define exfat_debug(fmt, args...)	log_debug(fmt "\n", ##args)
 #else
 void exfat_bug(const char* format, ...) PRINTF NORETURN;
 void exfat_error(const char* format, ...) PRINTF;

@@ -38,7 +38,6 @@ static const char *mm_sp_svc_uuid = MM_SP_UUID;
 static u16 mm_sp_id;
 #endif
 
-extern struct efi_var_file __efi_runtime_data *efi_var_buf;
 static efi_uintn_t max_buffer_size;	/* comm + var + func + data */
 static efi_uintn_t max_payload_size;	/* func + data */
 static const u16 __efi_runtime_rodata pk[] = u"PK";

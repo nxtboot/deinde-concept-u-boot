@@ -552,6 +552,28 @@ data. This avoids the need to allocate memory or use global variables::
       return 0;
    }
 
+EFI state
+~~~~~~~~~
+
+The EFI subsystem keeps its state in ``struct efi_state``, reached through the
+``efis`` pointer. A test which changes that state, or which needs to start from
+a known one, can set the ``UTF_EFI`` flag. The test then runs with a fresh
+state, as U-Boot leaves it at boot, and the state which was in use is put back
+afterwards::
+
+   static int my_efi_test(struct unit_test_state *uts)
+   {
+      /* nothing has been set up yet in this state */
+      ut_asserteq(EFI_OBJ_LIST_NOT_INIT, efis->obj_list_initialized);
+
+      return 0;
+   }
+   LIB_TEST(my_efi_test, UTF_EFI);
+
+EFI handles refer to driver model devices, so ``UTF_EFI`` implies ``UTF_DM``:
+the test gets devices of its own, which are removed before its EFI state is
+freed.
+
 
 Writing Python tests
 --------------------

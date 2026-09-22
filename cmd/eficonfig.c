@@ -651,6 +651,7 @@ static efi_status_t eficonfig_file_selected(void *data)
  */
 static efi_status_t eficonfig_select_volume(struct eficonfig_select_file_info *file_info)
 {
+	const struct efi_bs *bs = &efis->bs;
 	u32 i;
 	efi_status_t ret;
 	efi_uintn_t count;
@@ -686,7 +687,7 @@ static efi_status_t eficonfig_select_volume(struct eficonfig_select_file_info *f
 					  &efi_simple_file_system_protocol_guid, &handler);
 		if (ret != EFI_SUCCESS)
 			continue;
-		ret = efi_protocol_open(handler, (void **)&v, efi_root, NULL,
+		ret = efi_protocol_open(handler, (void **)&v, bs->root, NULL,
 					EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (ret != EFI_SUCCESS)
 			continue;
@@ -695,7 +696,7 @@ static efi_status_t eficonfig_select_volume(struct eficonfig_select_file_info *f
 		if (ret != EFI_SUCCESS)
 			continue;
 		ret = efi_protocol_open(handler, (void **)&device_path,
-					efi_root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+					bs->root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (ret != EFI_SUCCESS)
 			continue;
 
@@ -703,7 +704,7 @@ static efi_status_t eficonfig_select_volume(struct eficonfig_select_file_info *f
 		if (ret != EFI_SUCCESS)
 			continue;
 		ret = efi_protocol_open(handler, (void **)&block_io,
-					efi_root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+					bs->root, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (ret != EFI_SUCCESS)
 			continue;
 
@@ -2414,13 +2415,14 @@ static efi_status_t eficonfig_process_delete_boot_option(void *data)
  */
 static efi_status_t eficonfig_init(void)
 {
+	const struct efi_system_table *systab = &efis->systab;
 	efi_status_t ret = EFI_SUCCESS;
 	static bool init;
 	unsigned long columns, rows;
 
 	if (!init) {
-		cout = systab.con_out;
-		cin = systab.con_in;
+		cout = systab->con_out;
+		cin = systab->con_in;
 
 		cout->query_mode(cout, cout->mode->mode, &columns, &rows);
 		avail_row = rows - (EFICONFIG_MENU_HEADER_ROW_NUM +

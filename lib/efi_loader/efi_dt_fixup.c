@@ -58,7 +58,7 @@ void efi_try_purge_rng_seed(void *fdt)
 	int nodeoff = 0;
 	int err = 0;
 
-	ret = efi_search_protocol(efi_root, &efi_guid_rng_protocol, &handler);
+	ret = efi_search_protocol(efis->bs.root, &efi_guid_rng_protocol, &handler);
 	if (ret != EFI_SUCCESS)
 		return;
 

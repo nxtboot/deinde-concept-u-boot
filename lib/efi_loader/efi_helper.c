@@ -305,10 +305,9 @@ efi_status_t efi_env_set_load_options(efi_handle_t handle,
  */
 static efi_status_t copy_fdt(void **fdtp)
 {
+	struct efi_fdt_copy *copy = &efis->fdt;
 	efi_status_t ret = 0;
 	void *fdt, *new_fdt;
-	static u64 new_fdt_addr;
-	static efi_uintn_t fdt_pages;
 	ulong fdt_size;
 
 	/*
@@ -318,16 +317,16 @@ static efi_status_t copy_fdt(void **fdtp)
 	 */
 	efi_install_configuration_table(&efi_guid_fdt, NULL);
 
-	if (new_fdt_addr) {
+	if (copy->addr) {
 		log_debug("%s: Found allocated memory at %#llx, with %#zx pages\n",
-			  __func__, new_fdt_addr, fdt_pages);
+			  __func__, copy->addr, copy->pages);
 
-		ret = efi_free_pages(new_fdt_addr, fdt_pages);
+		ret = efi_free_pages(copy->addr, copy->pages);
 		if (ret != EFI_SUCCESS)
 			log_err("Unable to free up existing FDT memory region\n");
 
-		new_fdt_addr = 0;
-		fdt_pages = 0;
+		copy->addr = 0;
+		copy->pages = 0;
 	}
 
 	/*
@@ -335,19 +334,19 @@ static efi_status_t copy_fdt(void **fdtp)
 	 * needs to be expanded later.
 	 */
 	fdt = *fdtp;
-	fdt_pages = efi_size_in_pages(fdt_totalsize(fdt) + CONFIG_SYS_FDT_PAD);
-	fdt_size = fdt_pages << EFI_PAGE_SHIFT;
+	copy->pages = efi_size_in_pages(fdt_totalsize(fdt) + CONFIG_SYS_FDT_PAD);
+	fdt_size = copy->pages << EFI_PAGE_SHIFT;
 
 	ret = efi_allocate_pages(EFI_ALLOCATE_ANY_PAGES,
-				 EFI_ACPI_RECLAIM_MEMORY, fdt_pages,
-				 &new_fdt_addr);
+				 EFI_ACPI_RECLAIM_MEMORY, copy->pages,
+				 &copy->addr);
 	if (ret != EFI_SUCCESS) {
 		log_err("Failed to reserve space for FDT\n");
 		return ret;
 	}
-	new_fdt = map_sysmem(new_fdt_addr, fdt_size);
+	new_fdt = map_sysmem(copy->addr, fdt_size);
 	log_debug("%s: Allocated memory at %#llx, with %#zx pages\n",
-		  __func__, new_fdt_addr, fdt_pages);
+		  __func__, copy->addr, copy->pages);
 
 	memcpy(new_fdt, fdt, fdt_totalsize(fdt));
 	fdt_set_totalsize(new_fdt, fdt_size);
@@ -365,11 +364,12 @@ static efi_status_t copy_fdt(void **fdtp)
  */
 void *efi_get_configuration_table(const efi_guid_t *guid)
 {
+	struct efi_system_table *systab = &efis->systab;
 	size_t i;
 
-	for (i = 0; i < systab.nr_tables; i++) {
-		if (!guidcmp(guid, &systab.tables[i].guid))
-			return systab.tables[i].table;
+	for (i = 0; i < systab->nr_tables; i++) {
+		if (!guidcmp(guid, &systab->tables[i].guid))
+			return systab->tables[i].table;
 	}
 	return NULL;
 }
@@ -564,12 +564,12 @@ out:
 	free(load_options);
 
 	/* Notify EFI_EVENT_GROUP_RETURN_TO_EFIBOOTMGR event group. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_return_to_efibootmgr)) {
 			efi_signal_event(evt);
-			EFI_CALL(systab.boottime->close_event(evt));
+			EFI_CALL(efis->systab.boottime->close_event(evt));
 			break;
 		}
 	}

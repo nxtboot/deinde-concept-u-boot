@@ -216,6 +216,7 @@ void event_show_spy_list(void)
 static void spy_free(struct event_spy *spy)
 {
 	list_del(&spy->sibling_node);
+	free(spy);
 }
 
 int event_register(const char *id, enum event_t type, event_handler_t func, void *ctx)

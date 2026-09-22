@@ -28,47 +28,29 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/* Task priority level */
-static efi_uintn_t efi_tpl = TPL_APPLICATION;
-
-/* This list contains all the EFI objects our payload has access to */
-LIST_HEAD(efi_obj_list);
-
-/* List of all events */
-__efi_runtime_data LIST_HEAD(efi_events);
-
-/* List of queued events */
-static LIST_HEAD(efi_event_queue);
-
-/* Flag to disable timer activity in ExitBootServices() */
-static bool timers_enabled = true;
-
-/* Flag used by the selftest to avoid detaching devices in ExitBootServices() */
-bool efi_st_keep_devices;
-
-/* List of all events registered by RegisterProtocolNotify() */
-static LIST_HEAD(efi_register_notify_events);
-
-/* Handle of the currently executing image */
-static efi_handle_t current_image;
-
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-/*
- * The "gd" pointer lives in a register on ARM and RISC-V that we declare
- * fixed when compiling U-Boot. However, the payload does not know about that
- * restriction so we need to manually swap its and our view of that register on
- * EFI callback entry/exit.
- */
-static gd_t *efi_gd, *app_gd;
-#endif
-
 efi_status_t efi_uninstall_protocol
 		(efi_handle_t handle, const efi_guid_t *protocol,
 		 void *protocol_interface, bool preserve);
 
-/* 1 if inside U-Boot code, 0 if inside EFI payload code */
-static int entry_count = 1;
-static int nesting_level;
+void efi_bs_init_state(struct efi_bs *bs)
+{
+	memset(bs, '\0', sizeof(*bs));
+	INIT_LIST_HEAD(&bs->obj_list);
+	bs->tpl = TPL_APPLICATION;
+	INIT_LIST_HEAD(&bs->events);
+	INIT_LIST_HEAD(&bs->event_queue);
+	bs->timers_enabled = true;
+	INIT_LIST_HEAD(&bs->register_notify_events);
+	/* we start out inside U-Boot code */
+	bs->entry_count = 1;
+	/*
+	 * gd is mapped to a fixed register on some architectures, which an EFI
+	 * payload may overwrite, so record it here to restore it on every
+	 * callback entered
+	 */
+	if (IS_ENABLED(CONFIG_ARM) || IS_ENABLED(CONFIG_RISCV))
+		bs->efi_gd = gd;
+}
 
 /* event group ExitBootServices() invoked */
 const efi_guid_t efi_guid_event_group_exit_boot_services =
@@ -110,11 +92,13 @@ efi_status_t EFIAPI efi_connect_controller(efi_handle_t controller_handle,
 /* Called on every callback entry */
 int __efi_entry_check(void)
 {
-	int ret = entry_count++ == 0;
+	struct efi_bs *bs = &efis->bs;
+	int ret = bs->entry_count++ == 0;
+
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	assert(efi_gd);
-	app_gd = gd;
-	set_gd(efi_gd);
+	assert(bs->efi_gd);
+	bs->app_gd = gd;
+	set_gd(bs->efi_gd);
 #endif
 	return ret;
 }
@@ -122,43 +106,31 @@ int __efi_entry_check(void)
 /* Called on every callback exit */
 int __efi_exit_check(void)
 {
-	int ret = --entry_count == 0;
+	struct efi_bs *bs = &efis->bs;
+	int ret = --bs->entry_count == 0;
+
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	set_gd(app_gd);
+	set_gd(bs->app_gd);
 #endif
 	return ret;
-}
-
-/**
- * efi_save_gd() - save global data register
- *
- * On the ARM and RISC-V architectures gd is mapped to a fixed register.
- * As this register may be overwritten by an EFI payload we save it here
- * and restore it on every callback entered.
- *
- * This function is called after relocation from initr_reloc_global_data().
- */
-void efi_save_gd(void)
-{
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
-	efi_gd = gd;
-#endif
 }
 
 /**
  * efi_restore_gd() - restore global data register
  *
  * On the ARM and RISC-V architectures gd is mapped to a fixed register.
- * Restore it after returning from the UEFI world to the value saved via
- * efi_save_gd().
+ * Restore it after returning from the UEFI world to the value recorded by
+ * efi_bs_init_state().
  */
 void efi_restore_gd(void)
 {
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
+	const struct efi_bs *bs = &efis->bs;
+
 	/* Only restore if we're already in EFI context */
-	if (!efi_gd)
+	if (!bs->efi_gd)
 		return;
-	set_gd(efi_gd);
+	set_gd(bs->efi_gd);
 #endif
 }
 
@@ -183,17 +155,17 @@ static const char *indent_string(int level)
 
 const char *__efi_nesting(void)
 {
-	return indent_string(nesting_level);
+	return indent_string(efis->bs.nesting_level);
 }
 
 const char *__efi_nesting_inc(void)
 {
-	return indent_string(nesting_level++);
+	return indent_string(efis->bs.nesting_level++);
 }
 
 const char *__efi_nesting_dec(void)
 {
-	return indent_string(--nesting_level);
+	return indent_string(--efis->bs.nesting_level);
 }
 
 /**
@@ -220,7 +192,7 @@ static efi_status_t efi_purge_handle(efi_handle_t handle)
 	if (!list_empty(&handle->protocols))
 		return EFI_ACCESS_DENIED;
 	/* The handle is about to be freed. Remove it from events */
-	list_for_each_entry(item, &efi_register_notify_events, link) {
+	list_for_each_entry(item, &efis->bs.register_notify_events, link) {
 		struct efi_protocol_notification *hitem, *hnext;
 
 		list_for_each_entry_safe(hitem, hnext, &item->handles, link) {
@@ -242,23 +214,25 @@ static efi_status_t efi_purge_handle(efi_handle_t handle)
  */
 static void efi_process_event_queue(void)
 {
-	while (!list_empty(&efi_event_queue)) {
+	struct efi_bs *bs = &efis->bs;
+
+	while (!list_empty(&bs->event_queue)) {
 		struct efi_event *event;
 		efi_uintn_t old_tpl;
 
-		event = list_first_entry(&efi_event_queue, struct efi_event,
+		event = list_first_entry(&bs->event_queue, struct efi_event,
 					 queue_link);
-		if (efi_tpl >= event->notify_tpl)
+		if (bs->tpl >= event->notify_tpl)
 			return;
 		list_del(&event->queue_link);
 		event->queue_link.next = NULL;
 		event->queue_link.prev = NULL;
 		/* Events must be executed at the event's TPL */
-		old_tpl = efi_tpl;
-		efi_tpl = event->notify_tpl;
+		old_tpl = bs->tpl;
+		bs->tpl = event->notify_tpl;
 		EFI_CALL_VOID(event->notify_function(event,
 						     event->notify_context));
-		efi_tpl = old_tpl;
+		bs->tpl = old_tpl;
 		if (event->type == EVT_NOTIFY_SIGNAL)
 			event->is_signaled = 0;
 	}
@@ -274,6 +248,7 @@ static void efi_process_event_queue(void)
  */
 static void efi_queue_event(struct efi_event *event)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *item;
 
 	if (!event->notify_function)
@@ -284,7 +259,7 @@ static void efi_queue_event(struct efi_event *event)
 		 * Events must be notified in order of decreasing task priority
 		 * level. Insert the new event accordingly.
 		 */
-		list_for_each_entry(item, &efi_event_queue, queue_link) {
+		list_for_each_entry(item, &bs->event_queue, queue_link) {
 			if (item->notify_tpl < event->notify_tpl) {
 				list_add_tail(&event->queue_link,
 					      &item->queue_link);
@@ -293,7 +268,7 @@ static void efi_queue_event(struct efi_event *event)
 			}
 		}
 		if (event)
-			list_add_tail(&event->queue_link, &efi_event_queue);
+			list_add_tail(&event->queue_link, &bs->event_queue);
 		efi_process_event_queue();
 	}
 }
@@ -328,6 +303,8 @@ static efi_status_t is_valid_tpl(efi_uintn_t tpl)
  */
 void efi_signal_event(struct efi_event *event)
 {
+	struct efi_bs *bs = &efis->bs;
+
 	if (event->is_signaled)
 		return;
 	if (event->group) {
@@ -337,14 +314,14 @@ void efi_signal_event(struct efi_event *event)
 		 * The signaled state has to set before executing any
 		 * notification function
 		 */
-		list_for_each_entry(evt, &efi_events, link) {
+		list_for_each_entry(evt, &bs->events, link) {
 			if (!evt->group || guidcmp(evt->group, event->group))
 				continue;
 			if (evt->is_signaled)
 				continue;
 			evt->is_signaled = true;
 		}
-		list_for_each_entry(evt, &efi_events, link) {
+		list_for_each_entry(evt, &bs->events, link) {
 			if (!evt->group || guidcmp(evt->group, event->group))
 				continue;
 			efi_queue_event(evt);
@@ -368,17 +345,18 @@ void efi_signal_event(struct efi_event *event)
  */
 static unsigned long EFIAPI efi_raise_tpl(efi_uintn_t new_tpl)
 {
-	efi_uintn_t old_tpl = efi_tpl;
+	struct efi_bs *bs = &efis->bs;
+	efi_uintn_t old_tpl = bs->tpl;
 	int ofs;
 
 	EFI_ENTRY("0x%zx", new_tpl);
 	ofs = efi_logs_call(EFILP_NONE, EFILBS_RAISE_TPL, 1, (u64)new_tpl);
 
-	if (new_tpl < efi_tpl)
+	if (new_tpl < bs->tpl)
 		EFI_PRINT("WARNING: new_tpl < current_tpl in %s\n", __func__);
-	efi_tpl = new_tpl;
-	if (efi_tpl > TPL_HIGH_LEVEL)
-		efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = new_tpl;
+	if (bs->tpl > TPL_HIGH_LEVEL)
+		bs->tpl = TPL_HIGH_LEVEL;
 
 	efi_loge_call(ofs, EFI_SUCCESS, (u64)old_tpl);
 	EFI_EXIT(EFI_SUCCESS);
@@ -396,16 +374,17 @@ static unsigned long EFIAPI efi_raise_tpl(efi_uintn_t new_tpl)
  */
 static void EFIAPI efi_restore_tpl(efi_uintn_t old_tpl)
 {
+	struct efi_bs *bs = &efis->bs;
 	int ofs;
 
 	EFI_ENTRY("0x%zx", old_tpl);
 	ofs = efi_logs_call(EFILP_NONE, EFILBS_RESTORE_TPL, 1, (u64)old_tpl);
 
-	if (old_tpl > efi_tpl)
+	if (old_tpl > bs->tpl)
 		EFI_PRINT("WARNING: old_tpl > current_tpl in %s\n", __func__);
-	efi_tpl = old_tpl;
-	if (efi_tpl > TPL_HIGH_LEVEL)
-		efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = old_tpl;
+	if (bs->tpl > TPL_HIGH_LEVEL)
+		bs->tpl = TPL_HIGH_LEVEL;
 
 	/*
 	 * Lowering the TPL may have made queued events eligible for execution.
@@ -573,7 +552,7 @@ void efi_add_handle(efi_handle_t handle)
 	if (!handle)
 		return;
 	INIT_LIST_HEAD(&handle->protocols);
-	list_add_tail(&handle->link, &efi_obj_list);
+	list_add_tail(&handle->link, &efis->bs.obj_list);
 }
 
 /**
@@ -712,7 +691,7 @@ static efi_status_t efi_is_event(const struct efi_event *event)
 
 	if (!event)
 		return EFI_INVALID_PARAMETER;
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt == event)
 			return EFI_SUCCESS;
 	}
@@ -790,7 +769,7 @@ efi_status_t efi_create_event(uint32_t type, efi_uintn_t notify_tpl,
 	evt->group = group;
 	/* Disable timers on boot up */
 	evt->trigger_next = -1ULL;
-	list_add_tail(&evt->link, &efi_events);
+	list_add_tail(&evt->link, &efis->bs.events);
 	*event = evt;
 	return EFI_SUCCESS;
 }
@@ -895,11 +874,12 @@ static efi_status_t EFIAPI efi_create_event_ext(
  */
 void efi_timer_check(void)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *evt;
 	u64 now = timer_get_us();
 
-	list_for_each_entry(evt, &efi_events, link) {
-		if (!timers_enabled)
+	list_for_each_entry(evt, &bs->events, link) {
+		if (!bs->timers_enabled)
 			continue;
 		if (!(evt->type & EVT_TIMER) || now < evt->trigger_next)
 			continue;
@@ -1020,7 +1000,7 @@ static efi_status_t EFIAPI efi_wait_for_event(efi_uintn_t num_events,
 	if (!num_events || !event)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_INVALID_PARAMETER));
 	/* Check TPL */
-	if (efi_tpl != TPL_APPLICATION)
+	if (efis->bs.tpl != TPL_APPLICATION)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_UNSUPPORTED));
 	for (i = 0; i < num_events; ++i) {
 		if (efi_is_event(event[i]) != EFI_SUCCESS)
@@ -1107,7 +1087,7 @@ efi_status_t EFIAPI efi_close_event(struct efi_event *event)
 		return EFI_EXIT(efi_logr_call(ofs, EFI_INVALID_PARAMETER));
 
 	/* Remove protocol notify registrations for the event */
-	list_for_each_entry_safe(item, next, &efi_register_notify_events,
+	list_for_each_entry_safe(item, next, &efis->bs.register_notify_events,
 				 link) {
 		if (event == item->event) {
 			struct efi_protocol_notification *hitem, *hnext;
@@ -1181,7 +1161,7 @@ struct efi_object *efi_search_obj(const efi_handle_t handle)
 	if (!handle)
 		return NULL;
 
-	list_for_each_entry(efiobj, &efi_obj_list, link) {
+	list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 		if (efiobj == handle)
 			return efiobj;
 	}
@@ -1255,7 +1235,7 @@ efi_status_t efi_add_protocol(const efi_handle_t handle,
 	list_add_tail(&handler->link, &efiobj->protocols);
 
 	/* Notify registered events */
-	list_for_each_entry(event, &efi_register_notify_events, link) {
+	list_for_each_entry(event, &efis->bs.register_notify_events, link) {
 		if (!guidcmp(protocol, &event->protocol)) {
 			struct efi_protocol_notification *notif;
 
@@ -1580,7 +1560,7 @@ efi_status_t EFIAPI efi_register_protocol_notify(const efi_guid_t *protocol,
 	guidcpy(&item->protocol, protocol);
 	INIT_LIST_HEAD(&item->handles);
 
-	list_add_tail(&item->link, &efi_register_notify_events);
+	list_add_tail(&item->link, &efis->bs.register_notify_events);
 
 	*registration = item;
 out:
@@ -1631,7 +1611,7 @@ static struct efi_register_notify_event *efi_check_register_notify_event
 {
 	struct efi_register_notify_event *event;
 
-	list_for_each_entry(event, &efi_register_notify_events, link) {
+	list_for_each_entry(event, &efis->bs.register_notify_events, link) {
 		if (event == (struct efi_register_notify_event *)key)
 			return event;
 	}
@@ -1657,6 +1637,7 @@ static efi_status_t efi_locate_handle(
 			const efi_guid_t *protocol, void *search_key,
 			efi_uintn_t *buffer_size, efi_handle_t *buffer)
 {
+	struct efi_bs *bs = &efis->bs;
 	struct efi_object *efiobj;
 	efi_uintn_t size = 0;
 	struct efi_register_notify_event *event;
@@ -1692,7 +1673,7 @@ static efi_status_t efi_locate_handle(
 		efiobj = handle->handle;
 		size += sizeof(void *);
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &bs->obj_list, link) {
 			if (!efi_search(search_type, protocol, efiobj))
 				size += sizeof(void *);
 		}
@@ -1719,7 +1700,7 @@ static efi_status_t efi_locate_handle(
 		*buffer = efiobj;
 		list_del(&handle->link);
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &bs->obj_list, link) {
 			if (!efi_search(search_type, protocol, efiobj))
 				*buffer++ = efiobj;
 		}
@@ -1770,12 +1751,13 @@ static efi_status_t EFIAPI efi_locate_handle_ext(
  */
 static void efi_remove_configuration_table(int i)
 {
-	struct efi_configuration_table *this = &systab.tables[i];
-	struct efi_configuration_table *next = &systab.tables[i + 1];
-	struct efi_configuration_table *end = &systab.tables[systab.nr_tables];
+	struct efi_system_table *systab = &efis->systab;
+	struct efi_configuration_table *this = &systab->tables[i];
+	struct efi_configuration_table *next = &systab->tables[i + 1];
+	struct efi_configuration_table *end = &systab->tables[systab->nr_tables];
 
 	memmove(this, next, (ulong)end - (ulong)next);
-	systab.nr_tables--;
+	systab->nr_tables--;
 }
 
 /**
@@ -1792,6 +1774,7 @@ static void efi_remove_configuration_table(int i)
 efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 					     void *table)
 {
+	struct efi_system_table *systab = &efis->systab;
 	struct efi_event *evt;
 	int i;
 
@@ -1799,10 +1782,10 @@ efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 		return EFI_INVALID_PARAMETER;
 
 	/* Check for GUID override */
-	for (i = 0; i < systab.nr_tables; i++) {
-		if (!guidcmp(guid, &systab.tables[i].guid)) {
+	for (i = 0; i < systab->nr_tables; i++) {
+		if (!guidcmp(guid, &systab->tables[i].guid)) {
 			if (table)
-				systab.tables[i].table = table;
+				systab->tables[i].table = table;
 			else
 				efi_remove_configuration_table(i);
 			goto out;
@@ -1817,16 +1800,16 @@ efi_status_t efi_install_configuration_table(const efi_guid_t *guid,
 		return EFI_OUT_OF_RESOURCES;
 
 	/* Add a new entry */
-	guidcpy(&systab.tables[i].guid, guid);
-	systab.tables[i].table = table;
-	systab.nr_tables = i + 1;
+	guidcpy(&systab->tables[i].guid, guid);
+	systab->tables[i].table = table;
+	systab->nr_tables = i + 1;
 
 out:
-	/* systab.nr_tables may have changed. So we need to update the CRC32 */
-	efi_update_table_header_crc32(&systab.hdr);
+	/* systab->nr_tables may have changed. So we need to update the CRC32 */
+	efi_update_table_header_crc32(&systab->hdr);
 
 	/* Notify that the configuration table was changed */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &efis->bs.events, link) {
 		if (evt->group && !guidcmp(evt->group, guid)) {
 			efi_signal_event(evt);
 			break;
@@ -1908,7 +1891,7 @@ efi_status_t efi_setup_loaded_image(struct efi_device_path *device_path,
 
 	info->revision =  EFI_LOADED_IMAGE_PROTOCOL_REVISION;
 	info->file_path = file_path;
-	info->system_table = &systab;
+	info->system_table = &efis->systab;
 
 	if (device_path) {
 		info->device_handle = efi_dp_find_obj(device_path, NULL, NULL);
@@ -2157,7 +2140,7 @@ efi_status_t efi_load_image_from_path(bool boot_policy,
 	if (ret != EFI_SUCCESS)
 		efi_free_pages(addr, pages);
 out:
-	efi_close_protocol(device, guid, efi_root, NULL);
+	efi_close_protocol(device, guid, efis->bs.root, NULL);
 	if (ret == EFI_SUCCESS) {
 		*buffer = buf;
 		*size = buffer_size;
@@ -2232,7 +2215,7 @@ efi_status_t EFIAPI efi_load_image(bool boot_policy,
 		efi_free_pages(map_to_sysmem(dest_buffer),
 			       efi_size_in_pages(source_size));
 	if (ret == EFI_SUCCESS || ret == EFI_SECURITY_VIOLATION) {
-		info->system_table = &systab;
+		info->system_table = &efis->systab;
 		info->parent_handle = parent_image;
 	} else {
 		/* The image is invalid. Release all associated resources. */
@@ -2270,6 +2253,8 @@ error:
 static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 						  efi_uintn_t map_key)
 {
+	struct efi_system_table *systab = &efis->systab;
+	struct efi_bs *bs = &efis->bs;
 	struct efi_event *evt, *next_event;
 	efi_status_t ret = EFI_SUCCESS;
 	int ofs;
@@ -2278,17 +2263,17 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	ofs = efi_logs_exit_boot_services(image_handle, map_key);
 
 	/* Check that the caller has read the current memory map */
-	if (map_key != efi_memory_map_key) {
+	if (map_key != efis->mem.map_key) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
 
 	/* Check if ExitBootServices has already been called */
-	if (!systab.boottime)
+	if (!systab->boottime)
 		goto out;
 
 	/* Notify EFI_EVENT_GROUP_BEFORE_EXIT_BOOT_SERVICES event group. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_before_exit_boot_services)) {
@@ -2298,15 +2283,15 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	}
 
 	/* Stop all timer related activities */
-	timers_enabled = false;
+	bs->timers_enabled = false;
 
 	/* Add related events to the event group */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->type == EVT_SIGNAL_EXIT_BOOT_SERVICES)
 			evt->group = &efi_guid_event_group_exit_boot_services;
 	}
 	/* Notify that ExitBootServices is invoked. */
-	list_for_each_entry(evt, &efi_events, link) {
+	list_for_each_entry(evt, &bs->events, link) {
 		if (evt->group &&
 		    !guidcmp(evt->group,
 			     &efi_guid_event_group_exit_boot_services)) {
@@ -2316,18 +2301,18 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	}
 
 	/* Make sure that notification functions are not called anymore */
-	efi_tpl = TPL_HIGH_LEVEL;
+	bs->tpl = TPL_HIGH_LEVEL;
 
 	/* Notify variable services */
 	efi_variables_boot_exit_notify();
 
 	/* Remove all events except EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE */
-	list_for_each_entry_safe(evt, next_event, &efi_events, link) {
+	list_for_each_entry_safe(evt, next_event, &bs->events, link) {
 		if (evt->type != EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE)
 			list_del(&evt->link);
 	}
 
-	if (!efi_st_keep_devices) {
+	if (!bs->keep_devices) {
 		bootm_disable_interrupts();
 		bootm_final(0);
 	}
@@ -2336,16 +2321,16 @@ static efi_status_t EFIAPI efi_exit_boot_services(efi_handle_t image_handle,
 	efi_runtime_detach();
 
 	/* Disable boot time services */
-	systab.con_in_handle = NULL;
-	systab.con_in = NULL;
-	systab.con_out_handle = NULL;
-	systab.con_out = NULL;
-	systab.stderr_handle = NULL;
-	systab.std_err = NULL;
-	systab.boottime = NULL;
+	systab->con_in_handle = NULL;
+	systab->con_in = NULL;
+	systab->con_out_handle = NULL;
+	systab->con_out = NULL;
+	systab->stderr_handle = NULL;
+	systab->std_err = NULL;
+	systab->boottime = NULL;
 
 	/* Recalculate CRC32 */
-	efi_update_table_header_crc32(&systab.hdr);
+	efi_update_table_header_crc32(&systab->hdr);
 
 	/* Give the payload some time to boot */
 	efi_set_watchdog(0);
@@ -2383,7 +2368,6 @@ out:
  */
 static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 {
-	static uint64_t mono;
 	efi_status_t ret;
 
 	int ofs;
@@ -2394,7 +2378,7 @@ static efi_status_t EFIAPI efi_get_next_monotonic_count(uint64_t *count)
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
-	*count = mono++;
+	*count = efis->bs.mono_count++;
 	ret = EFI_SUCCESS;
 out:
 	efi_loge_get_next_monotonic_count(ofs, ret);
@@ -2795,7 +2779,7 @@ static efi_status_t efi_locate_protocol_(const efi_guid_t *protocol,
 		if (ret == EFI_SUCCESS)
 			goto found;
 	} else {
-		list_for_each_entry(efiobj, &efi_obj_list, link) {
+		list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 			ret = efi_search_protocol(efiobj, protocol, &handler);
 			if (ret == EFI_SUCCESS)
 				goto found;
@@ -3382,11 +3366,13 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 				    efi_uintn_t *exit_data_size,
 				    u16 **exit_data)
 {
+	struct efi_bs *bs = &efis->bs;
+
 	struct efi_loaded_image_obj *image_obj =
 		(struct efi_loaded_image_obj *)image_handle;
 	efi_status_t ret;
 	struct efi_loaded_image *info;
-	efi_handle_t parent_image = current_image;
+	efi_handle_t parent_image = bs->current_image;
 	efi_status_t exit_status;
 	jmp_buf exit_jmp;
 	int ofs;
@@ -3442,9 +3428,9 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 		/*
 		 * efi_exit() called efi_restore_gd(). We have to undo this
 		 * otherwise __efi_entry_check() will put the wrong value into
-		 * app_gd.
+		 * bs->app_gd.
 		 */
-		set_gd(app_gd);
+		set_gd(bs->app_gd);
 #endif
 		/*
 		 * To get ready to call EFI_EXIT below we have to execute the
@@ -3452,16 +3438,16 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 		 */
 		EFI_RETURN(exit_status);
 
-		current_image = parent_image;
+		bs->current_image = parent_image;
 
 		return EFI_EXIT(efi_logr_call(ofs, exit_status));
 	}
 
-	current_image = image_handle;
+	bs->current_image = image_handle;
 	image_obj->header.type = EFI_OBJECT_TYPE_STARTED_IMAGE;
 	EFI_PRINT("Starting image loaded at 0x%p, entry point 0x%p\n",
 		  info->image_base, image_obj->entry);
-	ret = EFI_CALL(image_obj->entry(image_handle, &systab));
+	ret = EFI_CALL(image_obj->entry(image_handle, &efis->systab));
 
 	/*
 	 * Control is returned from a started UEFI image either by calling
@@ -3470,7 +3456,7 @@ efi_status_t EFIAPI efi_start_image(efi_handle_t image_handle,
 	 * image.
 	 */
 	return efi_logr_call(ofs,
-		EFI_CALL(systab.boottime->exit(image_handle, ret, 0, NULL)));
+		EFI_CALL(efis->systab.boottime->exit(image_handle, ret, 0, NULL)));
 }
 
 /**
@@ -3487,7 +3473,7 @@ static efi_status_t efi_delete_image
 	efi_status_t r, ret = EFI_SUCCESS;
 
 close_next:
-	list_for_each_entry(efiobj, &efi_obj_list, link) {
+	list_for_each_entry(efiobj, &efis->bs.obj_list, link) {
 		struct efi_handler *protocol;
 
 		list_for_each_entry(protocol, &efiobj->protocols, link) {
@@ -3678,7 +3664,7 @@ static efi_status_t EFIAPI efi_exit(efi_handle_t image_handle,
 		goto out;
 	}
 	/* A started image can only be unloaded it is the last one started. */
-	if (image_handle != current_image) {
+	if (image_handle != efis->bs.current_image) {
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
@@ -3744,7 +3730,7 @@ efi_status_t EFIAPI efi_handle_protocol(efi_handle_t handle,
 					const efi_guid_t *protocol,
 					void **protocol_interface)
 {
-	return efi_open_protocol(handle, protocol, protocol_interface, efi_root,
+	return efi_open_protocol(handle, protocol, protocol_interface, efis->bs.root,
 				 NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 }
 
@@ -4215,18 +4201,16 @@ static struct efi_boot_services efi_boot_services = {
 
 static u16 __efi_runtime_data firmware_vendor[] = u"Deinde Concept U-Boot";
 
-struct efi_system_table __efi_runtime_data systab = {
-	.hdr = {
-		.signature = EFI_SYSTEM_TABLE_SIGNATURE,
-		.revision = EFI_SPECIFICATION_VERSION,
-		.headersize = sizeof(struct efi_system_table),
-	},
-	.fw_vendor = firmware_vendor,
-	.fw_revision = FW_VERSION << 16 | FW_PATCHLEVEL << 8,
-	.runtime = &efi_runtime_services,
-	.nr_tables = 0,
-	.tables = NULL,
-};
+void efi_systab_init_state(struct efi_system_table *systab)
+{
+	memset(systab, '\0', sizeof(*systab));
+	systab->hdr.signature = EFI_SYSTEM_TABLE_SIGNATURE;
+	systab->hdr.revision = EFI_SPECIFICATION_VERSION;
+	systab->hdr.headersize = sizeof(struct efi_system_table);
+	systab->fw_vendor = firmware_vendor;
+	systab->fw_revision = FW_VERSION << 16 | FW_PATCHLEVEL << 8;
+	systab->runtime = &efi_runtime_services;
+}
 
 /**
  * efi_initialize_system_table() - Initialize system table
@@ -4235,28 +4219,31 @@ struct efi_system_table __efi_runtime_data systab = {
  */
 efi_status_t efi_initialize_system_table(void)
 {
+	struct efi_console *con = &efis->con;
+	struct efi_system_table *systab = &efis->systab;
+	const struct efi_bs *bs = &efis->bs;
 	efi_status_t ret;
 
 	/* Allocate configuration table array */
 	ret = efi_allocate_pool(EFI_RUNTIME_SERVICES_DATA,
 				EFI_MAX_CONFIGURATION_TABLES *
 				sizeof(struct efi_configuration_table),
-				(void **)&systab.tables);
+				(void **)&systab->tables);
 
 	/*
 	 * These entries will be set to NULL in ExitBootServices(). To avoid
 	 * relocation in SetVirtualAddressMap(), set them dynamically.
 	 */
-	systab.con_in_handle = efi_root;
-	systab.con_in = &efi_con_in;
-	systab.con_out_handle = efi_root;
-	systab.con_out = &efi_con_out;
-	systab.stderr_handle = efi_root;
-	systab.std_err = &efi_con_out;
-	systab.boottime = &efi_boot_services;
+	systab->con_in_handle = bs->root;
+	systab->con_in = &con->con_in;
+	systab->con_out_handle = bs->root;
+	systab->con_out = &con->con_out;
+	systab->stderr_handle = bs->root;
+	systab->std_err = &con->con_out;
+	systab->boottime = &efi_boot_services;
 
 	/* Set CRC32 field in table headers */
-	efi_update_table_header_crc32(&systab.hdr);
+	efi_update_table_header_crc32(&systab->hdr);
 	efi_update_table_header_crc32(&efi_runtime_services.hdr);
 	efi_update_table_header_crc32(&efi_boot_services.hdr);
 
@@ -4265,10 +4252,58 @@ efi_status_t efi_initialize_system_table(void)
 
 struct efi_system_table *efi_get_sys_table(void)
 {
-	return &systab;
+	return &efis->systab;
 }
 
 struct efi_boot_services *efi_get_boot(void)
 {
-	return systab.boottime;
+	return efis->systab.boottime;
+}
+
+void efi_bs_uninit_state(struct efi_bs *bs)
+{
+	struct efi_register_notify_event *item, *next_item;
+	struct efi_object *obj, *next_obj;
+	struct efi_handler *root_dp;
+
+	/* the device path of the root node is from malloc() */
+	if (bs->root && efi_search_protocol(bs->root, &efi_guid_device_path,
+					    &root_dp) == EFI_SUCCESS)
+		free(root_dp->protocol_interface);
+
+	list_for_each_entry_safe(obj, next_obj, &bs->obj_list, link) {
+		struct efi_handler *handler, *next_handler;
+
+		list_for_each_entry_safe(handler, next_handler,
+					 &obj->protocols, link) {
+			struct efi_open_protocol_info_item *info, *next_info;
+
+			list_for_each_entry_safe(info, next_info,
+						 &handler->open_infos, link)
+				free(info);
+			free(handler);
+		}
+		list_del(&obj->link);
+
+		/* a handle within the state itself is not from malloc() */
+		if ((void *)obj < (void *)efis ||
+		    (void *)obj >= (void *)(efis + 1))
+			free(obj);
+	}
+	bs->root = NULL;
+
+	list_for_each_entry_safe(item, next_item, &bs->register_notify_events,
+				 link) {
+		struct efi_protocol_notification *hitem, *next_hitem;
+
+		list_for_each_entry_safe(hitem, next_hitem, &item->handles,
+					 link)
+			free(hitem);
+		free(item);
+	}
+	INIT_LIST_HEAD(&bs->register_notify_events);
+
+	/* the events are in pool memory, so just forget them */
+	INIT_LIST_HEAD(&bs->events);
+	INIT_LIST_HEAD(&bs->event_queue);
 }
