@@ -8,6 +8,7 @@
 #include <cpu_func.h>
 #include <image.h>
 #include <log.h>
+#include <mapmem.h>
 #include <part.h>
 
 int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
@@ -22,6 +23,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	struct legacy_img_hdr *hdr;
 #endif
 	struct blk_desc *dev_desc;
+	void *buf;
 
 #if CONFIG_IS_ENABLED(FIT)
 	const void *fit_hdr = NULL;
@@ -57,23 +59,27 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	      ", Block Size: %ld\n",
 	      info.start, info.size, info.blksz);
 
-	if (blk_dread(dev_desc, info.start, 1, (ulong *)addr) != 1) {
+	/* the size is not known until the header is read, so map without it */
+	buf = map_sysmem(addr, 0);
+	if (blk_dread(dev_desc, info.start, 1, buf) != 1) {
 		printf("** Read error on %d:%d\n", dev, part);
 		bootstage_error(BOOTSTAGE_ID_IDE_PART_READ);
+		unmap_sysmem(buf);
 		return 1;
 	}
 	bootstage_mark(BOOTSTAGE_ID_IDE_PART_READ);
 
-	switch (genimg_get_format((void *) addr)) {
+	switch (genimg_get_format(buf)) {
 #if defined(CONFIG_LEGACY_IMAGE_FORMAT)
 	case IMAGE_FORMAT_LEGACY:
-		hdr = (struct legacy_img_hdr *)addr;
+		hdr = buf;
 
 		bootstage_mark(BOOTSTAGE_ID_IDE_FORMAT);
 
 		if (!image_check_hcrc(hdr)) {
 			puts("\n** Bad Header Checksum **\n");
 			bootstage_error(BOOTSTAGE_ID_IDE_CHECKSUM);
+			unmap_sysmem(buf);
 			return 1;
 		}
 		bootstage_mark(BOOTSTAGE_ID_IDE_CHECKSUM);
@@ -85,7 +91,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 #endif
 #if CONFIG_IS_ENABLED(FIT)
 	case IMAGE_FORMAT_FIT:
-		fit_hdr = (const void *) addr;
+		fit_hdr = buf;
 		puts("Fit image detected...\n");
 
 		cnt = fit_get_size(fit_hdr);
@@ -94,6 +100,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	default:
 		bootstage_error(BOOTSTAGE_ID_IDE_FORMAT);
 		puts("** Unknown image type\n");
+		unmap_sysmem(buf);
 		return 1;
 	}
 
@@ -102,9 +109,10 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	cnt -= 1;
 
 	if (blk_dread(dev_desc, info.start + 1, cnt,
-		      (ulong *)(addr + info.blksz)) != cnt) {
+		      buf + info.blksz) != cnt) {
 		printf("** Read error on %d:%d\n", dev, part);
 		bootstage_error(BOOTSTAGE_ID_IDE_READ);
+		unmap_sysmem(buf);
 		return 1;
 	}
 	bootstage_mark(BOOTSTAGE_ID_IDE_READ);
@@ -112,15 +120,17 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 #if CONFIG_IS_ENABLED(FIT)
 	/* This cannot be done earlier,
 	 * we need complete FIT image in RAM first */
-	if (genimg_get_format((void *) addr) == IMAGE_FORMAT_FIT) {
+	if (genimg_get_format(buf) == IMAGE_FORMAT_FIT) {
 		if (fit_check_format(fit_hdr, IMAGE_SIZE_INVAL)) {
 			bootstage_error(BOOTSTAGE_ID_IDE_FIT_READ);
 			puts("** Bad FIT image format\n");
+			unmap_sysmem(buf);
 			return 1;
 		}
 		bootstage_mark(BOOTSTAGE_ID_IDE_FIT_READ_OK);
 	}
 #endif
+	unmap_sysmem(buf);
 
 	flush_cache(addr, (cnt+1)*info.blksz);
 
