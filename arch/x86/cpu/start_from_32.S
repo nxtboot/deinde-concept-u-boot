@@ -182,7 +182,7 @@ start64:
 	mov	%rsp, %rdi
 	call	board_init_f_alloc_reserve
 	mov	%rax, %rsp
-
+	mov	%rsp, %rdi
 	call	board_init_f_init_reserve
 
 	xor	%rdi, %rdi
