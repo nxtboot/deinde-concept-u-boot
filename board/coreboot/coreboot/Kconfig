@@ -16,6 +16,15 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	def_bool y
 	select BOARD_EARLY_INIT_R
 
+config COREBOOT_ROM
+	bool "Build a complete flash image with U-Boot as the coreboot payload"
+	select BINMAN
+	help
+	  Produce u-boot.rom, a complete flash image, by inserting U-Boot as
+	  the payload of a ready-made coreboot image provided in one of the
+	  binman input directories (see the coreboot-rom binman entry type).
+	  The board's devicetree must describe the image in a binman node.
+
 config SYS_CAR_ADDR
 	hex "Board specific Cache-As-RAM (CAR) address"
 	default 0x01920000
