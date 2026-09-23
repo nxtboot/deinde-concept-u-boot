@@ -2,8 +2,10 @@
 /*
  * 64-bit x86 Startup Code with integrated 32-bit init
  *
- * Entry point _start is .code32, called from start16.S after the
- * 16-to-32-bit transition.  This sets up an identity-mapped page table
+ * Entry point _start is .code32, called either from start16.S after the
+ * 16-to-32-bit transition or, with X86_32BIT_ENTRY, directly by a previous
+ * boot stage such as coreboot which enters payloads in 32-bit protected
+ * mode.  This loads its own GDT, sets up an identity-mapped page table
  * and transitions to 64-bit mode before calling into the normal
  * board_init_f() flow.
  *
@@ -32,23 +34,16 @@
 .globl _start
 .type _start, @function
 _start:
-	/* Load the segment registers to match the GDT loaded in start16.S */
-	movl	$(X86_GDT_ENTRY_32BIT_DS * X86_GDT_ENTRY_SIZE), %eax
-	movl	%eax, %ds
-	movl	%eax, %es
-	movl	%eax, %gs
-	movl	%eax, %ss
+	cli
 
-	/* Set up the stack in the CAR/SRAM region */
+	/*
+	 * The caller's %ds, %es and %ss are flat data segments: start16.S
+	 * loads them before jumping here and coreboot enters payloads with
+	 * %cs 0x08 and %ds 0x10 from its own GDT. Their selectors differ, so
+	 * nothing here loads a segment register until our own GDT is in
+	 * place; the stack and the GDT copy below use the caller's.
+	 */
 	movl	$(CONFIG_SYS_CAR_ADDR + CONFIG_SYS_CAR_SIZE - 4), %esp
-
-	/* Clear IDT */
-	subl	$8, %esp
-	movl	$0, 4(%esp)		/* base = 0 */
-	movw	$0, 2(%esp)		/* padding */
-	movw	$0, (%esp)		/* limit = 0 */
-	lidt	(%esp)
-	addl	$8, %esp
 
 	/*
 	 * Get our runtime address into %ebx so we can reference data
@@ -61,7 +56,10 @@ _start:
 	 * Copy the boot GDT from ROM to RAM and load it from there.
 	 * KVM's EPT may not allow data reads from the ROM region, so
 	 * the GDT must be in RAM for the far jump to read the 64-bit
-	 * CS descriptor.
+	 * CS descriptor. When entered from a previous boot stage
+	 * (X86_32BIT_ENTRY) this also replaces its GDT with ours; %cs is
+	 * not reloaded until the switch to 64-bit mode, which is fine since
+	 * the CPU keeps using the descriptor it has cached.
 	 */
 #define GDT_RAM		0x2000
 	leal	(boot_gdt - 2b)(%ebx), %esi
@@ -74,7 +72,20 @@ _start:
 	movl	$GDT_RAM, 2(%esp)	/* base in RAM */
 	movw	$(boot_gdt_end - boot_gdt - 1), (%esp)	/* limit */
 	lgdt	(%esp)
+
+	/* Clear IDT */
+	movl	$0, 4(%esp)		/* base = 0 */
+	movw	$0, 2(%esp)		/* padding */
+	movw	$0, (%esp)		/* limit = 0 */
+	lidt	(%esp)
 	addl	$8, %esp
+
+	/* Load the segment registers from the GDT just loaded */
+	movl	$(X86_GDT_ENTRY_32BIT_DS * X86_GDT_ENTRY_SIZE), %eax
+	movl	%eax, %ds
+	movl	%eax, %es
+	movl	%eax, %gs
+	movl	%eax, %ss
 
 	/*
 	 * Build identity-mapped page tables at PT_BASE (maps 4GB with
