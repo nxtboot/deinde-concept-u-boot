@@ -127,5 +127,5 @@ See also
 * :doc:`part<part>` for listing the partitions a drive offers
 * :doc:`read<read>` for reading blocks from a partition without treating them
   as an image
-* *diskboot* and *usbboot* for the same command on an IDE drive and on a USB
-  storage device
+* :doc:`usbboot<usbboot>` for the same command on a USB storage device
+* *diskboot* for the same command on an IDE drive

@@ -157,4 +157,5 @@ See also
 * *scsi* and *usb* for the same set of sub-commands on other kinds of drive
 * :doc:`scsiboot<scsiboot>` for loading and starting an image held on a SCSI
   drive, which is the same command as diskboot with another interface
+* :doc:`usbboot<usbboot>` for the same on a USB storage device
 * *diskboot* for loading and starting an image held on an IDE drive
