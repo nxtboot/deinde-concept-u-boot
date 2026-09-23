@@ -25,7 +25,8 @@ class Entry_coreboot_rom(Entry_section):
         - cbfs-name: Name of the payload file in CBFS, defaulting to
             "fallback/payload"
         - cbfs-load-addr: Address to which the payload is loaded. This is
-            optional; when omitted it is taken from the payload's SPL ELF
+            optional; when omitted it is taken from the ELF of the payload's
+            first stage (SPL, or U-Boot itself when there is no SPL)
         - cbfs-entry-addr: Entry-point address. This is optional; it defaults
             to the SPL ELF's entry point, or to cbfs-load-addr when that is
             given explicitly
@@ -95,6 +96,10 @@ class Entry_coreboot_rom(Entry_section):
         """
         if entry.elf_fname:
             return entry.elf_fname
+        # U-Boot proper's entries do not record their ELF, but it is always
+        # 'u-boot': this covers a payload with no SPL, entered directly
+        if entry.etype in ('u-boot', 'u-boot-nodtb'):
+            return 'u-boot'
         entries = entry.GetEntries()
         if entries:
             for subent in entries.values():
@@ -106,11 +111,12 @@ class Entry_coreboot_rom(Entry_section):
     def _GetPayloadAddrs(self):
         """Work out the load and entry addresses for the payload
 
-        The payload is entered via SPL, so when the addresses are not given
-        explicitly they are taken from the payload's SPL ELF: the load address
-        is the lowest load address in the ELF and the entry address is its
-        entry point. This avoids having to hard-code CONFIG_SPL_TEXT_BASE in
-        the devicetree.
+        When the addresses are not given explicitly they are taken from the
+        ELF of the first stage in the payload, i.e. SPL when there is one and
+        otherwise U-Boot itself: the load address is the lowest load address
+        in the ELF and the entry address is its entry point. This avoids
+        having to hard-code CONFIG_SPL_TEXT_BASE or CONFIG_TEXT_BASE in the
+        devicetree.
 
         Returns:
             tuple:

@@ -2841,6 +2841,17 @@ class TestFunctional(unittest.TestCase):
         out = self._CheckCorebootRom(data)
         self.assertIn('fallback/payload', out)
 
+    def testCorebootRomUBoot(self):
+        """Test a coreboot ROM whose payload is U-Boot with no SPL
+
+        With no SPL the load address must come from U-Boot's own ELF, the
+        'u-boot' input file
+        """
+        self._MakeCorebootRom()
+        data = self._DoReadFile('cbfs/coreboot_rom_u_boot.dts')
+        out = self._CheckCorebootRom(data)
+        self.assertIn('fallback/payload', out)
+
     def testCorebootRomNestedSpl(self):
         """Test deriving the load address from an SPL ELF within a subsection
 
