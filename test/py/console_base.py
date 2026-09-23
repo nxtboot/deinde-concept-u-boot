@@ -28,7 +28,10 @@ pattern_error_please_reset = re.compile('### ERROR ### Please RESET the board ##
 pattern_ready_prompt = re.compile('{lab ready in (.*)s: (.*)}')
 pattern_lab_mode = re.compile('{lab mode.*}')
 
-# Timeout before expecting the console to be ready (in milliseconds)
+# Timeout before expecting the console to be ready (in milliseconds). A board
+# with a slow console (e.g. one shared with a large video console) can raise
+# this for itself via the 'console_timeout' role setting, picked up by
+# ubconfig.console_timeout
 TIMEOUT_MS = 30000                  # Standard timeout
 TIMEOUT_CMD_MS = 10000              # Command-echo timeout
 
@@ -279,12 +282,17 @@ class ConsoleBase():
         Subclasses can override this to provide a different timeout.
         For example, sandbox may need a longer timeout when mcheck is enabled.
 
+        A board with a slow console may override the default (TIMEOUT_MS) by
+        providing a 'console_timeout' in seconds via its lab role, surfaced
+        as ubconfig.console_timeout.
+
         Returns:
             int: Timeout in milliseconds, or None if timeout is disabled
         """
         if self.config.gdbserver or self.config.no_timeout:
             return None
-        return TIMEOUT_MS
+        secs = getattr(self.config, 'console_timeout', None)
+        return secs * 1000 if secs else TIMEOUT_MS
 
     def eval_patterns(self):
         """Set up lists of regexes for patterns we don't expect on console"""

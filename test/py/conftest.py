@@ -231,8 +231,10 @@ def get_details(config):
          default_build_dir_extra) = (vals['board'],
             vals['board_extra'], vals['build_dir'], vals['build_dir_extra'])
 
-        # An optional per-board override for the lab-mode prepare timeout
+        # Optional per-board overrides for the lab-mode prepare timeout and
+        # the per-command console timeout
         prepare_timeout = vals.get('prepare_timeout') or None
+        console_timeout = vals.get('console_timeout') or None
     else:
         board_type = config.getoption('board_type')
         board_type_extra = config.getoption('board_type_extra')
@@ -241,6 +243,7 @@ def get_details(config):
         default_build_dir = source_dir + '/build-' + board_type
         default_build_dir_extra = source_dir + '/build-' + board_type_extra
         prepare_timeout = None
+        console_timeout = None
 
     # Use the provided command-line arguments if present, else fall back to
     if not build_dir:
@@ -249,7 +252,7 @@ def get_details(config):
         build_dir_extra = default_build_dir_extra
 
     return (board_type, board_type_extra, board_identity, build_dir,
-            build_dir_extra, source_dir, prepare_timeout)
+            build_dir_extra, source_dir, prepare_timeout, console_timeout)
 
 def pytest_xdist_setupnodes(config, specs):
     """Clear out any 'done' file from a previous build"""
@@ -300,7 +303,7 @@ def pytest_configure(config):
     global ubconfig
 
     (board_type, board_type_extra, board_identity, build_dir, build_dir_extra,
-     source_dir, prepare_timeout) = get_details(config)
+     source_dir, prepare_timeout, console_timeout) = get_details(config)
 
     board_type_filename = board_type.replace('-', '_')
     board_identity_filename = board_identity.replace('-', '_')
@@ -391,6 +394,7 @@ def pytest_configure(config):
     ubconfig.persist = config.getoption('persist')
     ubconfig.role = config.getoption('role')
     ubconfig.prepare_timeout = int(prepare_timeout) if prepare_timeout else None
+    ubconfig.console_timeout = int(console_timeout) if console_timeout else None
     ubconfig.allow_exceptions = config.getoption('allow_exceptions')
     ubconfig.no_timeout = config.getoption('no_timeout')
     ubconfig.no_full = config.getoption('no_full')
