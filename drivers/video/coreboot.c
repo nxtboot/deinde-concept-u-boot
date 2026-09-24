@@ -5,9 +5,13 @@
 
 #include <dm.h>
 #include <init.h>
+#include <log.h>
 #include <vesa.h>
 #include <video.h>
 #include <asm/cb_sysinfo.h>
+#include <asm/mtrr.h>
+#include <linux/log2.h>
+#include <linux/sizes.h>
 
 static int save_vesa_mode(struct cb_framebuffer *fb,
 			  struct vesa_mode_info *vesa)
@@ -34,6 +38,33 @@ static int save_vesa_mode(struct cb_framebuffer *fb,
 	vesa->reserved_mask_pos = fb->reserved_mask_pos;
 
 	return 0;
+}
+
+/**
+ * coreboot_set_wrcomb() - Use write-combining for the hardware framebuffer
+ *
+ * The framebuffer typically sits on a PCI device (on a server, the BMC's VGA
+ * controller), where uncached stores go out one at a time. With
+ * CONFIG_VIDEO_COPY every scroll copies the whole frame there, so this makes
+ * a large difference to console speed. MTRRs need a power-of-two size with
+ * the base aligned to it, so leave the cache type alone if that does not hold
+ *
+ * @plat: Video uclass platform data, set up by vesa_setup_video_priv()
+ */
+static void coreboot_set_wrcomb(struct video_uc_plat *plat)
+{
+	ulong base, size;
+	int ret;
+
+	base = IS_ENABLED(CONFIG_VIDEO_COPY) ? plat->copy_base : plat->base;
+	size = roundup_pow_of_two(plat->size);
+	if (size < SZ_4K || (base & (size - 1))) {
+		log_debug("framebuffer %lx size %lx not aligned\n", base, size);
+		return;
+	}
+	ret = mtrr_set_next_var(MTRR_TYPE_WRCOMB, base, size);
+	if (ret)
+		log_debug("cannot set write-combining (err %d)\n", ret);
 }
 
 static int coreboot_video_probe(struct udevice *dev)
@@ -64,6 +95,8 @@ static int coreboot_video_probe(struct udevice *dev)
 
 	printf("%dx%dx%d\n", uc_priv->xsize, uc_priv->ysize,
 	       vesa->bits_per_pixel);
+
+	coreboot_set_wrcomb(plat);
 
 	return 0;
 

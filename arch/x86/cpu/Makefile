@@ -7,7 +7,7 @@
 # Daniel Engström, Omicron Ceti AB, daniel@omicron.se.
 
 ifeq ($(CONFIG_$(PHASE_)X86_64),y)
-ifeq ($(CONFIG_$(PHASE_)X86_16BIT_INIT),y)
+ifneq ($(CONFIG_$(PHASE_)X86_16BIT_INIT)$(CONFIG_X86_32BIT_ENTRY),)
 extra-y	= start_from_32.o
 else
 extra-y	= start64.o

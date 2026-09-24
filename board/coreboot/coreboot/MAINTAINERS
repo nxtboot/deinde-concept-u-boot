@@ -8,3 +8,11 @@ COREBOOT64 BOARD
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
 F:	configs/coreboot64_defconfig
+
+GIGABYTE MZ33-AR1 COREBOOT-PAYLOAD BOARD
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	arch/x86/dts/gigabyte_mz33_ar1_cb.dts
+F:	arch/x86/dts/gigabyte_mz33_ar1_cb-u-boot.dtsi
+F:	configs/gigabyte_mz33_ar1_cb_defconfig
+F:	doc/board/gigabyte/

@@ -451,7 +451,13 @@ static void tsc_timer_ensure_setup(bool early)
 			return;
 
 done:
-		fast_calibrate = min(fast_calibrate, 4000UL);
+		/*
+		 * The rate is held in an unsigned long in Hz, so a 32-bit build
+		 * cannot represent more than 4294MHz. Cap it there rather than
+		 * letting it wrap; a 64-bit build has no such limit
+		 */
+		if (sizeof(ulong) == 4)
+			fast_calibrate = min(fast_calibrate, 4294UL);
 		if (!gd->arch.clock_rate)
 			gd->arch.clock_rate = fast_calibrate * 1000000;
 	}

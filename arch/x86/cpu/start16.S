@@ -9,6 +9,7 @@
  * Daniel Engström, Omicron Ceti AB, <daniel@omicron.se>
  */
 
+#include <asm/processor.h>
 #include <asm/processor-flags.h>
 
 #define BOOT_SEG	0xffff0000	/* linear segment of boot code */
@@ -41,6 +42,16 @@ data32 cs	lgdt	gdt_ptr
 	/* Flush the prefetch queue */
 	jmp	ff
 ff:
+
+	/*
+	 * Load flat data segments from the GDT above, so that the 32-bit
+	 * code is entered with usable %ds, %es and %ss rather than the
+	 * real-mode descriptors, which have a 64KB limit
+	 */
+	movw	$(X86_GDT_ENTRY_32BIT_DS * X86_GDT_ENTRY_SIZE), %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %ss
 
 	/* Finally restore BIST and jump to the 32-bit initialization code */
 	movl	%ecx, %eax

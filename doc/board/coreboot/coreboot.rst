@@ -84,6 +84,28 @@ build in `$CBDIR`::
 This allows booting and installing various distros, many of which are
 64-bit-only, so cannot work with the 32-bit 'coreboot' build.
 
+64-bit U-Boot without SPL
+-------------------------
+
+Since coreboot has already set up the memory, the SPL in the 'coreboot64'
+build does nothing but switch the CPU to 64-bit mode. A board can instead
+select CONFIG_X86_RUN_64BIT_NO_SPL together with CONFIG_X86_32BIT_ENTRY to
+get a single 64-bit U-Boot which starts with 32-bit code of its own: it
+loads a GDT, builds identity-mapped page tables and enters long mode before
+running board_init_f(). The payload is then just u-boot.bin, entered at
+CONFIG_TEXT_BASE::
+
+   cbfstool coreboot.rom add-flat-binary -f u-boot.bin \
+      -n fallback/payload -c lzma -l 0x1110000 -e 0x1110000
+
+The gigabyte_mz33_ar1_cb board is built this way. Without
+CONFIG_X86_32BIT_ENTRY a CONFIG_X86_RUN_64BIT_NO_SPL build must be entered
+in 64-bit mode, which coreboot does not do for its payloads.
+
+A board which selects CONFIG_COREBOOT_ROM produces u-boot.rom as well, a
+complete flash image with U-Boot inserted into a coreboot image found via
+the binman input directories (see the coreboot-rom binman entry type).
+
 USB keyboard
 ------------
 

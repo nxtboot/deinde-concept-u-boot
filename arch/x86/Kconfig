@@ -52,6 +52,16 @@ config X86_RUN_64BIT_NO_SPL
 
 endchoice
 
+config X86_32BIT_ENTRY
+	bool "Enter from 32-bit protected mode"
+	depends on X86_RUN_64BIT_NO_SPL && !X86_RESET_VECTOR
+	help
+	  Start the 64-bit binary with 32-bit code which sets up page tables
+	  and switches to long mode itself, so that it can be entered in
+	  32-bit protected mode by a previous boot stage, as coreboot does
+	  with its payloads. This gives a 64-bit U-Boot with no SPL. Without
+	  this option the binary must be entered in 64-bit mode.
+
 config X86_64
 	bool
 	select 64BIT

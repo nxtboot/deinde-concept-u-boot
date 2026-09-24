@@ -30,6 +30,7 @@ Board-specific doc
    emcraft/index
    emulation/index
    gateworks/index
+   gigabyte/index
    google/index
    highbank/index
    hisilicon/index

@@ -1135,6 +1135,20 @@ felwinter:
   resource_group: felwinter-board
   <<: *sjg_lab_dfn
 
+# Gigabyte MZ33-AR1 (AMD EPYC Turin), booting U-Boot as the payload of
+# Dasharo coreboot+openSIL, flashed through the board's BMC. The BMC takes a
+# while to write the 32MB flash and the PSP's memory training takes several
+# minutes whenever it cannot restore its saved context, so this runs with
+# the slow jobs
+epyc-cb:
+  variables:
+    ROLE: epyc-cb
+  # Shares the physical board with the 'epyc' job, so serialise them
+  resource_group: epyc-board
+  # Build, BMC flash and memory training add up to well over the default
+  timeout: 30m
+  <<: *sjg_lab_slow_dfn
+
 # Chromebook Pixel 2015 (samus, Broadwell), booting from an EM100 flash
 # emulator
 samus:

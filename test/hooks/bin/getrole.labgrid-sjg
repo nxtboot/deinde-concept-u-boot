@@ -33,5 +33,5 @@
 #
 
 exec labgrid-client -r "${target}" ${vars} -a query -n \
-	UBootProviderDriver:board,board_extra,source_dir,build_dir,build_dir_extra,prepare_timeout${config_arg} \
+	UBootProviderDriver:board,board_extra,source_dir,build_dir,build_dir_extra,prepare_timeout,console_timeout${config_arg} \
 	2>"${U_BOOT_GETROLE_STDERR:-/dev/null}"
