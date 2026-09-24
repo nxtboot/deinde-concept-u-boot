@@ -150,6 +150,83 @@ int icache_status(void)
 	return 1;
 }
 
+/*
+ * List of cpu vendor strings along with their normalized
+ * id values.
+ */
+static const struct {
+	int vendor;
+	const char *name;
+} x86_vendors[] = {
+	{ X86_VENDOR_INTEL,     "GenuineIntel", },
+	{ X86_VENDOR_CYRIX,     "CyrixInstead", },
+	{ X86_VENDOR_AMD,       "AuthenticAMD", },
+	{ X86_VENDOR_UMC,       "UMC UMC UMC ", },
+	{ X86_VENDOR_NEXGEN,    "NexGenDriven", },
+	{ X86_VENDOR_CENTAUR,   "CentaurHauls", },
+	{ X86_VENDOR_RISE,      "RiseRiseRise", },
+	{ X86_VENDOR_TRANSMETA, "GenuineTMx86", },
+	{ X86_VENDOR_TRANSMETA, "TransmetaCPU", },
+	{ X86_VENDOR_NSC,       "Geode by NSC", },
+	{ X86_VENDOR_SIS,       "SiS SiS SiS ", },
+};
+
+int x86_vendor_from_name(const char *name)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(x86_vendors); i++) {
+		if (!memcmp(name, x86_vendors[i].name, 12))
+			return x86_vendors[i].vendor;
+	}
+
+	return X86_VENDOR_UNKNOWN;
+}
+
+void x86_decode_fms(u32 tfms, u8 *familyp, u8 *modelp, u8 *maskp)
+{
+	u8 family = (tfms >> 8) & 0xf;
+	u8 model = (tfms >> 4) & 0xf;
+
+	if (family == 0xf)
+		family += (tfms >> 20) & 0xff;
+	if (family >= 0x6)
+		model += ((tfms >> 16) & 0xf) << 4;
+	*familyp = family;
+	*modelp = model;
+	*maskp = tfms & 0xf;
+}
+
+void x86_setup_identity_cpuid(void)
+{
+	struct cpuid_result res;
+	char name[13];
+	u32 tfms = 0;
+
+	res = cpuid(0);
+	memcpy(name, &res.ebx, 4);
+	memcpy(name + 4, &res.edx, 4);
+	memcpy(name + 8, &res.ecx, 4);
+	name[12] = '\0';
+	gd->arch.x86_vendor = x86_vendor_from_name(name);
+	if (res.eax >= 1)
+		tfms = cpuid_eax(1);
+	gd->arch.x86_device = tfms;
+	x86_decode_fms(tfms, &gd->arch.x86, &gd->arch.x86_model,
+		       &gd->arch.x86_mask);
+	gd->arch.has_mtrr = tfms ? cpuid_edx(1) & (1 << 12) : false;
+}
+
+u32 cpu_get_family_model(void)
+{
+	return gd->arch.x86_device & 0x0fff0ff0;
+}
+
+u32 cpu_get_stepping(void)
+{
+	return gd->arch.x86_mask;
+}
+
 #ifndef CONFIG_TPL_BUILD
 const char *cpu_vendor_name(int vendor)
 {

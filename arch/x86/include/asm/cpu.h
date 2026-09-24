@@ -254,6 +254,33 @@ int cpu_jump_to_64bit(ulong setup_base, ulong target);
 int cpu_jump_to_64bit_uboot(ulong target);
 
 /**
+ * x86_vendor_from_name() - Look up a CPU vendor from its cpuid string
+ *
+ * @name: 12-character vendor string from cpuid leaf 0 (ebx, edx, ecx)
+ * Return: X86_VENDOR_... value, or X86_VENDOR_UNKNOWN if not recognised
+ */
+int x86_vendor_from_name(const char *name);
+
+/**
+ * x86_decode_fms() - Decode the family, model and stepping from cpuid
+ *
+ * @tfms: eax value from cpuid leaf 1
+ * @familyp: Returns the family, including the extended family
+ * @modelp: Returns the model, including the extended model
+ * @maskp: Returns the stepping
+ */
+void x86_decode_fms(u32 tfms, u8 *familyp, u8 *modelp, u8 *maskp);
+
+/**
+ * x86_setup_identity_cpuid() - Fill in the CPU identity in gd->arch from cpuid
+ *
+ * For CPUs which are known to support cpuid (e.g. any running in 64-bit mode)
+ * this sets gd->arch.x86_vendor, x86, x86_model, x86_mask, x86_device and
+ * has_mtrr, as the 32-bit identification code does.
+ */
+void x86_setup_identity_cpuid(void);
+
+/**
  * cpu_get_family_model() - Get the family and model for the CPU
  *
  * Return: the CPU ID masked with 0x0fff0ff0
