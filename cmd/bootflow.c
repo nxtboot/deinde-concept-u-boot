@@ -53,6 +53,15 @@ __maybe_unused static int bootflow_handle_menu(struct bootstd_priv *std,
 	struct bootflow *bflow;
 	int ret, seq;
 
+	/*
+	 * A menu with nothing in it would just sit waiting for a keypress,
+	 * which stalls an unattended boot command with no bootable devices
+	 */
+	if (!std->bootflows.count) {
+		printf("No bootflows\n");
+		return -ENOENT;
+	}
+
 	ret = bootflow_menu_start(std, text_mode, &exp);
 	if (ret)
 		return log_msg_ret("bhs", ret);
