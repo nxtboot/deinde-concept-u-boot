@@ -90,6 +90,19 @@ U-Boot. U-Boot then reports the memory from the coreboot tables (all of it,
 including the bank above 4GB), finds the framebuffer set up by coreboot and
 reaches a prompt.
 
+Later boots can skip the training, but only if two things hold. The ABL
+restores its saved memory context only when the image carries no 'RW'
+APCB (the small instance 0 and 1 blobs, data_snp.apcb and data_snp1.apcb
+in the coreboot tree): Dasharo v0.9.0 still includes them, so that release
+retrains on every boot, and a rebuild with APCB_SOURCES and APCB_SOURCES1
+left unset in the mainboard Makefile fixes it. coreboot keeps the saved
+context (the APOB, about 300KB) in the RW_MRC_CACHE region of the flash,
+and a BMC firmware update rewrites that region with whatever the image
+holds there, so an image meant for repeated flashing should carry a copy
+of the APOB at that offset (0xf30000 in the 32MB image); the raw APOB can
+be read from DRAM at 0x7010000 with 'md'. With both in place the prompt
+appears about a minute after power-on instead of five.
+
 Known limitations
 -----------------
 
