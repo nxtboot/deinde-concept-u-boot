@@ -549,20 +549,21 @@ static int do_pci(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 				goto usage;
 		}
 		if (busnum == -1) {
-			if (cmd != 'r') {
-				for (busnum = 0;
-				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
-				     busnum++)
+			/*
+			 * Probe every bus first, which also binds and probes
+			 * the buses behind bridges, so all are numbered; a bus
+			 * which fails is just left out. Then show them in
+			 * order, skipping any gaps in the numbering
+			 */
+			uclass_probe_all(UCLASS_PCI);
+			for (busnum = 0; busnum <= pci_last_busno(); busnum++) {
+				if (uclass_get_device_by_seq(UCLASS_PCI, busnum,
+							     &bus))
+					continue;
+				if (cmd != 'r')
 					pciinfo(bus, value, true);
-			} else {
-				for (busnum = 0;
-				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
-				     busnum++) {
-					/* Regions are controller specific so skip non-root buses */
-					if (device_is_on_pci_bus(bus))
-						continue;
+				else if (!device_is_on_pci_bus(bus))
 					pci_show_regions(bus);
-				}
 			}
 			return 0;
 		}

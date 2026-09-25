@@ -1533,7 +1533,7 @@
 		#address-cells = <3>;
 		#size-cells = <2>;
 		/* room for the bridge's windows, aligned to 1MB and 4KB */
-		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x200000
+		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x400000
 				0x01000000 0 0x60000000 0x60000000 0 0x10000>;
 		sandbox,dev-info = <0x08 0x00 0x1234 0x5678>;
 		pci@1f,0 {
@@ -1543,8 +1543,8 @@
 		};
 
 		/*
-		 * A bridge with nothing behind it, whose bus must not take the
-		 * number of another controller, e.g. pci3
+		 * A bridge whose bus must not take the number of another
+		 * controller, e.g. pci3, with a device behind it
 		 */
 		pci@2,0 {
 			compatible = "pci-bridge";
@@ -1552,6 +1552,12 @@
 			#address-cells = <3>;
 			#size-cells = <2>;
 			sandbox,emul = <&bridge_emul2_2>;
+
+			pci@0,0 {
+				compatible = "pci-generic";
+				reg = <0x0000 0 0 0 0>;
+				sandbox,emul = <&swap_case_emul2b_0>;
+			};
 		};
 	};
 
@@ -1562,6 +1568,9 @@
 		};
 		bridge_emul2_2: emul2@2,0 {
 			compatible = "sandbox,pci-bridge-emul";
+		};
+		swap_case_emul2b_0: emul2b@0,0 {
+			compatible = "sandbox,swap-case";
 		};
 	};
 

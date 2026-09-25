@@ -90,6 +90,7 @@ endif
 obj-$(CONFIG_CMD_PART_FIND) += part_find.o
 ifdef CONFIG_CMD_PCI
 obj-$(CONFIG_CMD_PCI_MPS) += pci_mps.o
+obj-$(CONFIG_SANDBOX) += pci.o
 endif
 obj-$(CONFIG_CMD_QFW) += qfw.o
 ifdef CONFIG_CONSOLE_RECORD
