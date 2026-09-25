@@ -24,7 +24,12 @@ struct bootm_info;
 #define COMMAND_LINE_MAGIC  0xA33F
 
 /* limits */
-#define BZIMAGE_MAX_SIZE   15*1024*1024     /* 15MB */
+/*
+ * A bzImage is loaded at 1MB and the kernel then decompresses itself where it
+ * likes, so the old 15MB limit (the ISA hole) no longer applies; distro kernels
+ * are larger than that now
+ */
+#define BZIMAGE_MAX_SIZE   (64 << 20)
 #define ZIMAGE_MAX_SIZE    512*1024         /* 512k */
 #define SETUP_MAX_SIZE     32768
 
