@@ -1690,6 +1690,7 @@ static int bnxt_eth_remove(struct udevice *dev)
 
 static struct pci_device_id bnxt_nics[] = {
 	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_NXT_57320)},
+	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_NXT_57416)},
 	{}
 };
 

@@ -107,7 +107,7 @@ union dma_addr64_t {
 #define TX_RING_QID                             ((u16)bp->port_idx * 10)
 #define RX_RING_QID                             0
 #define LM_PAGE_SIZE                            LM_PAGE_BITS
-#define virt_to_bus(a)                          ((dma_addr_t)(a))
+#define virt_to_bus(a)                          ((dma_addr_t)(ulong)(a))
 #define REQ_BUF_SIZE_ALIGNED  ALIGN(REQ_BUFFER_SIZE,  BNXT_DMA_ALIGNMENT)
 #define RESP_BUF_SIZE_ALIGNED ALIGN(RESP_BUFFER_SIZE, BNXT_DMA_ALIGNMENT)
 #define DMA_BUF_SIZE_ALIGNED  ALIGN(DMA_BUFFER_SIZE,  BNXT_DMA_ALIGNMENT)
