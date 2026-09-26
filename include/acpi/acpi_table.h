@@ -777,14 +777,19 @@ struct __packed acpi_bgrt {
 /**
  * struct acpi_fpdt - Firmware Performance Data Table (FPDT) header
  *
- * See ACPI Spec v6.5 section 5.2.24 for details
+ * The table holds only pointer records, each giving the address of a
+ * performance table which holds the records themselves: the Firmware Basic
+ * Boot Performance Table (FBPT) and, for S3, the S3PT. See ACPI Spec v6.5
+ * section 5.2.24 for details
  */
 struct acpi_fpdt {
 	struct acpi_table_header header;
 };
 
 /* FPDT Performance Record Types */
-#define FPDT_REC_BOOT		0
+#define FPDT_REC_PTR_BOOT	0	/* pointer to the FBPT */
+#define FPDT_REC_PTR_S3		1	/* pointer to the S3PT */
+#define FPDT_REC_BOOT		2	/* Firmware Basic Boot Performance Data */
 
 /* FPDT Performance Record Header */
 struct acpi_fpdt_hdr {
@@ -794,10 +799,38 @@ struct acpi_fpdt_hdr {
 } __packed;
 
 /**
- * struct acpi_fpdt_boot - Firmware Basic Boot Performance Record
+ * struct acpi_fpdt_ptr - Performance Pointer Record, in the FPDT
+ *
+ * @hdr: Record header
+ * @reserved: Reserved, must be zero
+ * @addr: Physical address of the performance table (FBPT or S3PT)
+ */
+struct acpi_fpdt_ptr {
+	struct acpi_fpdt_hdr hdr;
+	u32 reserved;
+	u64 addr;
+} __packed;
+
+/**
+ * struct acpi_fbpt - Firmware Basic Boot Performance Table (FBPT) header
+ *
+ * The boot performance record follows this. Unlike an ACPI table, this has
+ * no checksum and is not listed in the XSDT: the FPDT points to it
+ *
+ * @signature: "FBPT"
+ * @length: Length of the table, including this header
+ */
+struct acpi_fbpt {
+	char signature[ACPI_NAME_LEN];
+	u32 length;
+} __packed;
+
+/**
+ * struct acpi_fpdt_boot - Firmware Basic Boot Performance Data Record
  *
  * This record describes the boot performance from power-on to OS handoff.
- * All timing values are in microseconds since system reset.
+ * All timing values are in nanoseconds since system reset, as the spec
+ * requires; U-Boot's timers count in microseconds, so its values are scaled.
  *
  * @hdr: Record header
  * @reserved: Reserved, must be zero
@@ -1377,7 +1410,9 @@ int acpi_write_bgrt(struct acpi_ctx *ctx);
 int acpi_write_fpdt(struct acpi_ctx *ctx, u64 uboot_start);
 
 /**
- * acpi_get_fpdt_boot() - Get pointer to FPDT boot performance record
+ * acpi_get_fpdt_boot() - Get pointer to the FPDT's boot performance record
+ *
+ * This follows the FPDT's pointer record to the FBPT which holds the record
  *
  * This allows the caller to update the boot performance timing fields
  * after the FPDT table has been created. After updating, call
