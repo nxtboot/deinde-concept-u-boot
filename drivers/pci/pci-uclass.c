@@ -1197,6 +1197,39 @@ static int decode_regions(struct pci_controller *hose, ofnode parent_node,
 	return 0;
 }
 
+/**
+ * pci_get_fw_busno() - Get the bus number which firmware gave a bridge
+ *
+ * When U-Boot does not configure PCI itself, the bus behind a bridge must
+ * keep the number the firmware gave it, if its root bus has absolute bus
+ * numbers, since the hardware only routes that number to it
+ *
+ * @bus: Bridge to check, whose root bus must be probed
+ * Return: U-Boot's number for the bridge's secondary bus, -ENOENT if the
+ *	root bus does not use absolute bus numbers or the bridge's
+ *	secondary-bus register is not within its range, -EEXIST if the number
+ *	is already in use
+ */
+static int pci_get_fw_busno(struct udevice *bus)
+{
+	struct pci_controller *ctlr;
+	struct udevice *dev;
+	u8 sec;
+	int seq;
+
+	ctlr = dev_get_uclass_priv(pci_get_controller(bus));
+	if (!ctlr->abs_bus)
+		return -ENOENT;
+	dm_pci_read_config8(bus, PCI_SECONDARY_BUS, &sec);
+	if (sec <= ctlr->bus_base || sec > ctlr->bus_limit)
+		return -ENOENT;
+	seq = sec - ctlr->bus_base + ctlr->first_busno;
+	if (!uclass_find_device_by_seq(UCLASS_PCI, seq, &dev))
+		return -EEXIST;
+
+	return seq;
+}
+
 static int pci_uclass_pre_probe(struct udevice *bus)
 {
 	struct pci_controller *hose;
@@ -1220,6 +1253,12 @@ static int pci_uclass_pre_probe(struct udevice *bus)
 		/* keep clear of ranges reserved for absolute bus numbers */
 		bus->seq_ = max(uclass_find_next_free_seq(uc),
 				pci_get_bus_max() + 1);
+
+		if (device_is_on_pci_bus(bus) && !ll_boot_init()) {
+			ret = pci_get_fw_busno(bus);
+			if (ret >= 0)
+				bus->seq_ = ret;
+		}
 	}
 
 	/* For bridges, use the top-level PCI controller */

@@ -149,6 +149,12 @@ order in which they are probed. If the range runs out, probing the root bus
 fails with -ENOSPC. The config-space driver receives U-Boot's bus numbers
 either way and does its own translation, if the hardware needs one.
 
+When U-Boot does not configure PCI itself, e.g. when it runs as a coreboot
+payload, the firmware has already numbered the buses. Below a root bus with
+absolute bus numbers, the bus behind a bridge then takes the number in the
+bridge's secondary-bus register, as long as it is within the range and not
+already in use. Otherwise it takes the next free number, as usual.
+
 
 Sandbox
 -------

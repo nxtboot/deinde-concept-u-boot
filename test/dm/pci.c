@@ -4,6 +4,7 @@
  */
 
 #include <dm.h>
+#include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/sandbox_pci.h>
 #include <asm/test.h>
@@ -12,6 +13,8 @@
 #include <dm/uclass-internal.h>
 #include <test/test.h>
 #include <test/ut.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 /* Test that sandbox PCI works correctly */
 static int dm_test_pci_base(struct unit_test_state *uts)
@@ -699,3 +702,77 @@ static int dm_test_pci_bus_abs_errors(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_pci_bus_abs_errors, UTF_SCAN_PDATA | UTF_SCAN_FDT |
 	UTF_LIVE_TREE);
+
+/**
+ * probe_fw_bridge() - Probe a bridge as if firmware had set up PCI
+ *
+ * @uts: Test state
+ * @bridge: Bridge to probe, whose root bus must already be probed
+ * @sec: Secondary bus number which the firmware gave the bridge
+ * Return: 0 if OK, -ve on error
+ */
+static int probe_fw_bridge(struct unit_test_state *uts, struct udevice *bridge,
+			   int sec)
+{
+	/* start again, as if the bridge were newly bound */
+	if (device_active(bridge))
+		ut_assertok(device_remove(bridge, DM_REMOVE_NORMAL));
+	bridge->seq_ = -1;
+
+	ut_assertok(dm_pci_write_config8(bridge, PCI_SECONDARY_BUS, sec));
+	ut_assertok(device_probe(bridge));
+
+	return 0;
+}
+
+static int check_fw_numbering(struct unit_test_state *uts)
+{
+	struct udevice *bus, *bridge2, *bridge4;
+
+	/* bus 2 does not have absolute numbers, so the register is ignored */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(device_find_first_child_by_uclass(bus, UCLASS_PCI,
+						      &bridge2));
+	ut_assert(!device_active(bridge2));
+	ut_assertok(probe_fw_bridge(uts, bridge2, 3));
+	ut_asserteq(0x20, dev_seq(bridge2));
+
+	/* pci4's bridge keeps the number the firmware gave it */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(device_find_first_child_by_uclass(bus, UCLASS_PCI,
+						      &bridge4));
+	ut_assert(!device_active(bridge4));
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x15));
+	ut_asserteq(0x15, dev_seq(bridge4));
+
+	/* unless it is outside the range, or not set up */
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x20));
+	ut_asserteq(0x21, dev_seq(bridge4));
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0));
+	ut_asserteq(0x21, dev_seq(bridge4));
+
+	/* or already in use */
+	ut_assertok(device_remove(bridge2, DM_REMOVE_NORMAL));
+	bridge2->seq_ = 0x15;
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x15));
+	ut_asserteq(0x20, dev_seq(bridge4));
+
+	return 0;
+}
+
+/*
+ * Test numbering the buses behind bridges which firmware has set up, as when
+ * U-Boot runs as a coreboot payload and does not configure PCI itself
+ */
+static int dm_test_pci_bus_fw(struct unit_test_state *uts)
+{
+	ulong flags = gd->flags;
+	int ret;
+
+	gd->flags |= GD_FLG_SKIP_LL_INIT;
+	ret = check_fw_numbering(uts);
+	gd->flags = flags;
+
+	return ret;
+}
+DM_TEST(dm_test_pci_bus_fw, UTF_SCAN_PDATA | UTF_SCAN_FDT);
