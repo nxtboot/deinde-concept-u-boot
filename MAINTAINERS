@@ -1152,6 +1152,7 @@ S:	Maintained
 T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-dfu.git
 F:	cmd/fastboot.c
 F:	doc/android/fastboot*.rst
+F:	doc/usage/cmd/fastboot.rst
 F:	include/fastboot.h
 F:	include/fastboot-internal.h
 F:	include/net/fastboot_tcp.h
