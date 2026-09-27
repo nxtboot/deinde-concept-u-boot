@@ -170,10 +170,10 @@ int x86_cpu_init_f(void)
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_UART_BOARD_INIT
+#if defined(CONFIG_DEBUG_UART_BOARD_INIT) && defined(CONFIG_SPL)
+/* SPL has already set up the debug UART; a board without SPL does its own */
 void board_debug_uart_init(void)
 {
-	/* this was already done in SPL */
 }
 #endif
 
