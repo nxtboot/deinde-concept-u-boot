@@ -184,6 +184,13 @@ static int sandbox_swap_case_read_config(const struct udevice *emul,
 		else
 			*valuep = 0;
 		break;
+	case PCI_CAP_ID_MSIX_OFFSET + PCI_MSIX_TABLE:
+		/* one entry (the control register reads as zero), in BAR1 */
+		*valuep = 1;
+		break;
+	case PCI_CAP_ID_MSIX_OFFSET + PCI_MSIX_PBA:
+		*valuep = 1 | 0x800;
+		break;
 	case PCI_CAP_ID_EA_OFFSET:
 		*valuep = (PCI_CAP_ID_EA_ENTRY_CNT << 16) | PCI_CAP_ID_EA;
 		break;

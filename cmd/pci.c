@@ -490,6 +490,85 @@ static void pci_show_regions(struct udevice *bus)
  *      pci modify[.b, .w, .l] bus.device.function [addr]
  *      pci write[.b, .w, .l] bus.device.function addr value
  */
+/**
+ * pci_show_intr() - Show how a device signals interrupts
+ *
+ * Shows the legacy interrupt pin and line, the MSI capability and the MSI-X
+ * capability, along with the MSI-X table entries which are in use
+ *
+ * @dev: Device to show
+ * Return: 0 if OK, -ENOENT if the device is not found
+ */
+static int pci_show_intr(struct udevice *dev)
+{
+	u32 ctrl, tab, addr_lo, addr_hi, data;
+	u8 pin, line;
+	int cap, i;
+
+	dm_pci_read_config8(dev, PCI_INTERRUPT_PIN, &pin);
+	dm_pci_read_config8(dev, PCI_INTERRUPT_LINE, &line);
+	printf("INTx: pin %c line %d\n", pin >= 1 && pin <= 4 ? '@' + pin : '-',
+	       line);
+
+	cap = dm_pci_find_capability(dev, PCI_CAP_ID_MSI);
+	if (cap) {
+		dm_pci_read_config32(dev, cap, &ctrl);
+		ctrl >>= 16;
+		dm_pci_read_config32(dev, cap + 4, &addr_lo);
+		addr_hi = 0;
+		if (ctrl & PCI_MSI_FLAGS_64BIT) {
+			dm_pci_read_config32(dev, cap + 8, &addr_hi);
+			dm_pci_read_config32(dev, cap + 12, &data);
+		} else {
+			dm_pci_read_config32(dev, cap + 8, &data);
+		}
+		printf("MSI:  %s, %d of %d vectors, address %08x%08x data %04x\n",
+		       ctrl & PCI_MSI_FLAGS_ENABLE ? "enabled" : "disabled",
+		       1 << ((ctrl >> 4) & 7), 1 << ((ctrl >> 1) & 7), addr_hi,
+		       addr_lo, data & 0xffff);
+	}
+
+	cap = dm_pci_find_capability(dev, PCI_CAP_ID_MSIX);
+	if (cap) {
+		int count, bir, bar_off;
+		void *table;
+		u32 pba;
+
+		dm_pci_read_config32(dev, cap, &ctrl);
+		ctrl >>= 16;
+		dm_pci_read_config32(dev, cap + PCI_MSIX_TABLE, &tab);
+		dm_pci_read_config32(dev, cap + PCI_MSIX_PBA, &pba);
+		count = (ctrl & PCI_MSIX_FLAGS_QSIZE) + 1;
+		bir = tab & 7;
+		bar_off = tab & ~7;
+		printf("MSI-X: %s%s, %d entries, table BAR%d+%x, PBA BAR%d+%x\n",
+		       ctrl & PCI_MSIX_FLAGS_ENABLE ? "enabled" : "disabled",
+		       ctrl & PCI_MSIX_FLAGS_MASKALL ? " (all masked)" : "",
+		       count, bir, bar_off, pba & 7, pba & ~7);
+		table = dm_pci_map_bar(dev, PCI_BASE_ADDRESS_0 + 4 * bir,
+				       bar_off, count * 16, PCI_REGION_TYPE,
+				       PCI_REGION_MEM);
+		if (!table) {
+			printf("  (table not mapped)\n");
+			return 0;
+		}
+		for (i = 0; i < count; i++) {
+			addr_lo = readl(table + 16 * i);
+			addr_hi = readl(table + 16 * i + 4);
+			data = readl(table + 16 * i + 8);
+			ctrl = readl(table + 16 * i + 12);
+			/* an entry with no address is not in use */
+			if (!addr_lo && !addr_hi)
+				continue;
+			printf("  %3d: address %08x%08x data %08x%s\n", i,
+			       addr_hi, addr_lo, data,
+			       ctrl & 1 ? " masked" : "");
+		}
+	}
+
+	return 0;
+}
+
 static int do_pci(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	ulong addr = 0, value = 0, cmd_size = 0;
@@ -519,6 +598,7 @@ static int do_pci(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		fallthrough;
 	case 'h':		/* header */
 	case 'b':		/* bars */
+	case 'i':		/* intr */
 		if (argc < 3)
 			goto usage;
 		if ((bdf = get_pci_dev(argv[2])) == -1)
@@ -608,6 +688,8 @@ static int do_pci(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		break;
 	case 'b':		/* bars */
 		return pci_bar_show(dev);
+	case 'i':		/* intr */
+		return pci_show_intr(dev);
 	default:
 		ret = CMD_RET_USAGE;
 		break;
@@ -629,6 +711,8 @@ U_BOOT_LONGHELP(pci,
 	"    - show header of PCI device 'bus.device.function'\n"
 	"pci bar b.d.f\n"
 	"    - show BARs base and size for device b.d.f'\n"
+	"pci intr b.d.f\n"
+	"    - show the interrupt pin, MSI and MSI-X of device b.d.f\n"
 	"pci regions [bus|*]\n"
 	"    - show PCI regions\n"
 	"pci display[.b, .w, .l] b.d.f [address] [# of objects]\n"

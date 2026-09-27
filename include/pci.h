@@ -283,6 +283,12 @@
 
 #define PCI_MSI_FLAGS		2	/* Various flags */
 #define  PCI_MSI_FLAGS_64BIT	0x80	/* 64-bit addresses allowed */
+#define PCI_MSIX_FLAGS		2	/* Message Control */
+#define  PCI_MSIX_FLAGS_QSIZE	0x7ff	/* Table size */
+#define  PCI_MSIX_FLAGS_MASKALL	0x4000	/* Mask all vectors */
+#define  PCI_MSIX_FLAGS_ENABLE	0x8000	/* MSI-X enable */
+#define PCI_MSIX_TABLE		4	/* Table offset and BIR */
+#define PCI_MSIX_PBA		8	/* Pending-bit array offset and BIR */
 #define  PCI_MSI_FLAGS_QSIZE	0x70	/* Message queue size configured */
 #define  PCI_MSI_FLAGS_QMASK	0x0e	/* Maximum queue size available */
 #define  PCI_MSI_FLAGS_ENABLE	0x01	/* MSI feature enabled */

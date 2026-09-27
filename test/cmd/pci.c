@@ -41,3 +41,15 @@ static int cmd_test_pci_list(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_pci_list, UTF_CONSOLE);
+
+/* Test 'pci intr' on the swap-case device, which has MSI-X but no INTx */
+static int cmd_test_pci_intr(struct unit_test_state *uts)
+{
+	ut_assertok(run_command("pci intr 0.1f.0", 0));
+	ut_assert_nextline("INTx: pin - line 255");
+	ut_assert_nextline("MSI-X: disabled, 1 entries, table BAR1+0, PBA BAR1+800");
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_pci_intr, UTF_CONSOLE);
