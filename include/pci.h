@@ -283,6 +283,12 @@
 
 #define PCI_MSI_FLAGS		2	/* Various flags */
 #define  PCI_MSI_FLAGS_64BIT	0x80	/* 64-bit addresses allowed */
+#define PCI_MSIX_FLAGS		2	/* Message Control */
+#define  PCI_MSIX_FLAGS_QSIZE	0x7ff	/* Table size */
+#define  PCI_MSIX_FLAGS_MASKALL	0x4000	/* Mask all vectors */
+#define  PCI_MSIX_FLAGS_ENABLE	0x8000	/* MSI-X enable */
+#define PCI_MSIX_TABLE		4	/* Table offset and BIR */
+#define PCI_MSIX_PBA		8	/* Pending-bit array offset and BIR */
 #define  PCI_MSI_FLAGS_QSIZE	0x70	/* Message queue size configured */
 #define  PCI_MSI_FLAGS_QMASK	0x0e	/* Maximum queue size available */
 #define  PCI_MSI_FLAGS_ENABLE	0x01	/* MSI feature enabled */
@@ -629,6 +635,15 @@ extern void pci_cfgfunc_config_device(struct pci_controller* hose, pci_dev_t dev
  *	before relocation also. Some platforms set up static configuration in
  *	TPL/SPL to reduce code size and boot time, since these phases only know
  *	about a small subset of PCI devices. This is normally false.
+ * @first_busno: U-Boot's number for the root bus (its sequence number)
+ * @last_busno: Highest bus number allocated below this bus so far
+ * @abs_bus: true if the root bus has absolute bus numbers, from the
+ *	'u-boot,absolute-bus-numbers' property: its bridges are numbered
+ *	within its bus-range and programmed with the numbers the hardware uses
+ * @bus_base: First number in the bus-range, as the hardware sees it, if
+ *	@abs_bus, else 0. Bridges are programmed with U-Boot's bus numbers
+ *	offset from @first_busno to this
+ * @bus_limit: Last number in the bus-range, if @abs_bus
  */
 struct pci_controller {
 	struct udevice *bus;
@@ -638,6 +653,9 @@ struct pci_controller {
 
 	int first_busno;
 	int last_busno;
+	bool abs_bus;
+	int bus_base;
+	int bus_limit;
 
 	volatile unsigned int *cfg_addr;
 	volatile unsigned char *cfg_data;
@@ -1634,7 +1652,8 @@ struct dm_pci_emul_ops {
  * Searches for a suitable emulator for the given PCI bus device
  *
  * @bus:	PCI bus to search
- * @find_devfn:	PCI device and function address (PCI_DEVFN())
+ * @find_devfn:	PCI address (PCI_BDF()); if the bus number is not that of
+ *		@bus, the bus behind a bridge with that number is searched
  * @containerp:	Returns container device if found
  * @emulp:	Returns emulated device if found
  * Return: 0 if found, -ENODEV if not found

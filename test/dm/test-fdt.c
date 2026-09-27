@@ -191,7 +191,7 @@ static int dm_test_alias_highest_id(struct unit_test_state *uts)
 	ut_asserteq(3, ret);
 
 	ret = dev_read_alias_highest_id("pci");
-	ut_asserteq(3, ret);
+	ut_asserteq(16, ret);
 
 	ret = dev_read_alias_highest_id("i2c");
 	ut_asserteq(0, ret);

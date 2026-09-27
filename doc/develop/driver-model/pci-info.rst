@@ -109,6 +109,53 @@ U_BOOT_PCI_DEVICE is provided, the built-in driver (either pci_bridge_drv or
 pci_generic_drv) will be used.
 
 
+Bus numbers
+-----------
+
+Each PCI bus has a number, its sequence number in driver model, which is
+used in its devices' PCI_BDF() addresses. A root bus takes its number from
+its 'pciN' alias, if it has one. Otherwise, and for the bus behind each
+bridge, U-Boot allocates the next number above all the buses it knows about,
+when the bus is probed. The bridge's primary, secondary and subordinate
+bus-number registers are then written relative to the root bus, so that each
+controller's buses start again from 0 on the wire. This suits SoCs with
+several PCIe controllers, each with its own configuration space.
+
+Some hardware instead has several root buses sharing one configuration space,
+each with a fixed range of bus numbers, such as the root complexes of a
+server processor. The hardware only sends a root bus the numbers in its
+range, so the buses behind its bridges must be numbered within that range
+and the bridges must be programmed with those same numbers. For this, add
+the 'u-boot,absolute-bus-numbers' property to each such root bus, give the
+range with the standard 'bus-range' property and give the bus an alias,
+normally matching the start of the range::
+
+	aliases {
+		pci0 = &pci0;
+		pci64 = &pci2;
+	};
+
+	pci2: pci@40 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x40 0x5f>;
+		u-boot,absolute-bus-numbers;
+		...
+	};
+
+The first bridge below pci2 is then bus 0x41, both in U-Boot and on the wire.
+Since the bus has an alias, U-Boot reserves its whole range before it is
+probed, so buses under other controllers are numbered above it, whatever the
+order in which they are probed. If the range runs out, probing the root bus
+fails with -ENOSPC. The config-space driver receives U-Boot's bus numbers
+either way and does its own translation, if the hardware needs one.
+
+When U-Boot does not configure PCI itself, e.g. when it runs as a coreboot
+payload, the firmware has already numbered the buses. Below a root bus with
+absolute bus numbers, the bus behind a bridge then takes the number in the
+bridge's secondary-bus register, as long as it is within the range and not
+already in use. Otherwise it takes the next free number, as usual.
+
+
 Sandbox
 -------
 
@@ -144,6 +191,12 @@ When this bus is scanned we will end up with something like this::
    `-   emul@1f,0 @ 05c662c8
 
 When accesses go to the pci@1f,0 device they are forwarded to its emulator.
+
+Bridges can be emulated too, with the 'sandbox,pci-bridge-emul' driver, whose
+registers read back what was written, so that tests can check how U-Boot
+programmed them. A device behind a bridge goes in a subnode of the bridge's
+node. Its emulator is found using its bus number, which is that of the
+bridge's secondary bus. See pci4 in arch/sandbox/dts/test.dts for an example.
 
 The sandbox PCI drivers also support dynamic driver binding, allowing device
 driver to declare the driver binding information via U_BOOT_PCI_DEVICE(),

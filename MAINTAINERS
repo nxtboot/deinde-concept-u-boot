@@ -1534,9 +1534,11 @@ PCI
 M:	Neil Armstrong <neil.armstrong@linaro.org>
 S:	Maintained
 F:	cmd/pci.c
+F:	doc/usage/cmd/pci.rst
 F:	drivers/pci
 F:	include/pci.h
 F:	include/pci_ids.h
+F:	test/cmd/pci.c
 F:	test/dm/pci.c
 N:	pci
 

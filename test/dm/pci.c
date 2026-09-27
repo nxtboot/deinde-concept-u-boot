@@ -4,12 +4,17 @@
  */
 
 #include <dm.h>
+#include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/sandbox_pci.h>
 #include <asm/test.h>
+#include <dm/device-internal.h>
 #include <dm/test.h>
+#include <dm/uclass-internal.h>
 #include <test/test.h>
 #include <test/ut.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 /* Test that sandbox PCI works correctly */
 static int dm_test_pci_base(struct unit_test_state *uts)
@@ -529,3 +534,245 @@ static int dm_test_pci_no_autoconfig(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_no_autoconfig, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Check a bridge's primary, secondary and subordinate bus numbers */
+static int check_bus_regs(struct unit_test_state *uts, struct udevice *bridge,
+			  int primary, int secondary, int subordinate)
+{
+	u8 val;
+
+	ut_assertok(dm_pci_read_config8(bridge, PCI_PRIMARY_BUS, &val));
+	ut_asserteq(primary, val);
+	ut_assertok(dm_pci_read_config8(bridge, PCI_SECONDARY_BUS, &val));
+	ut_asserteq(secondary, val);
+	ut_assertok(dm_pci_read_config8(bridge, PCI_SUBORDINATE_BUS, &val));
+	ut_asserteq(subordinate, val);
+
+	return 0;
+}
+
+/* Test bridges and the devices behind them */
+static int dm_test_pci_bridge(struct unit_test_state *uts)
+{
+	ulong mem_base, mem_limit, io_base, io_limit;
+	struct udevice *bus, *bridge, *swap, *dev;
+	u16 base16, limit16, vendor, device;
+	u8 base8, limit8;
+	u32 addr;
+
+	/*
+	 * The bridge on bus 2 takes the next number after all the buses,
+	 * including the range reserved by pci4 (bus 16), so not 3, which is
+	 * pci3. Its registers are relative to the controller
+	 */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x20, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0, 0x1e, 0x1e));
+
+	/*
+	 * pci4 has absolute bus numbers, so its bridge is numbered within its
+	 * range and its registers hold the same numbers
+	 */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x11, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_DEVICE_ID, &device));
+	ut_asserteq(SANDBOX_PCI_BRIDGE_EMUL_ID, device);
+	ut_assertok(check_bus_regs(uts, bridge, 0x10, 0x11, 0x11));
+
+	/* the device behind the bridge, which is its only child */
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(0x11, 0, 0), &swap));
+	ut_asserteq_ptr(bridge, dev_get_parent(swap));
+	ut_assertok(device_find_first_child(bridge, &dev));
+	ut_asserteq_ptr(swap, dev);
+	ut_assertok(device_find_next_child(&dev));
+	ut_assertnull(dev);
+	ut_assertok(dm_pci_read_config16(swap, PCI_VENDOR_ID, &vendor));
+	ut_asserteq(SANDBOX_PCI_VENDOR_ID, vendor);
+	ut_assertok(dm_pci_read_config16(swap, PCI_DEVICE_ID, &device));
+	ut_asserteq(SANDBOX_PCI_SWAP_CASE_EMUL_ID, device);
+
+	/* its memory BAR is inside the bridge's memory window */
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_BASE, &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_LIMIT, &limit16));
+	mem_base = (ulong)(base16 & PCI_MEMORY_RANGE_MASK) << 16;
+	mem_limit = (ulong)(limit16 & PCI_MEMORY_RANGE_MASK) << 16 | 0xfffff;
+	ut_asserteq(0xa0000000, mem_base);
+	addr = dm_pci_read_bar32(swap, 1);
+	ut_assert(addr >= mem_base && addr <= mem_limit);
+
+	/* and its I/O BAR inside the I/O window */
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_BASE, &base8));
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_LIMIT, &limit8));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_BASE_UPPER16,
+					 &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_LIMIT_UPPER16,
+					 &limit16));
+	io_base = (ulong)base16 << 16 | (base8 & PCI_IO_RANGE_MASK) << 8;
+	io_limit = (ulong)limit16 << 16 | (limit8 & PCI_IO_RANGE_MASK) << 8 |
+		0xfff;
+	ut_asserteq(0xa1000000, io_base);
+	addr = dm_pci_read_bar32(swap, 0);
+	ut_assert(addr >= io_base && addr <= io_limit);
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bridge, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Test the last bus number, including when there are no buses */
+static int dm_test_pci_last_busno(struct unit_test_state *uts)
+{
+	struct udevice *bus;
+
+	/* pci4 is bus 0x10 and reserves its range, up to 0x1f */
+	ut_asserteq(0x1f, pci_last_busno());
+
+	ut_assertok(uclass_find_first_device(UCLASS_PCI, &bus));
+	while (bus) {
+		ut_assertok(device_unbind(bus));
+		ut_assertok(uclass_find_first_device(UCLASS_PCI, &bus));
+	}
+	ut_asserteq(-1, pci_last_busno());
+
+	return 0;
+}
+DM_TEST(dm_test_pci_last_busno, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+/*
+ * Test that a root bus with absolute bus numbers reserves its range before
+ * it is probed, so the order of probing does not matter
+ */
+static int dm_test_pci_bus_abs_order(struct unit_test_state *uts)
+{
+	struct udevice *bus, *bridge;
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x11, &bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0x10, 0x11, 0x11));
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x20, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0, 0x1e, 0x1e));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bus_abs_order, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Probe pci4 with a different bus-range and restore it afterwards */
+static int probe_with_range(const fdt32_t *range, int len)
+{
+	fdt32_t old[2];
+	struct udevice *bus;
+	const void *prop;
+	ofnode node;
+	int ret, ret2;
+
+	ret = uclass_find_device_by_seq(UCLASS_PCI, 0x10, &bus);
+	if (ret)
+		return ret;
+	node = dev_ofnode(bus);
+	prop = ofnode_read_prop(node, "bus-range", NULL);
+	if (!prop)
+		return -ENOENT;
+	memcpy(old, prop, sizeof(old));
+	ret = ofnode_write_prop(node, "bus-range", range, len, true);
+	if (ret)
+		return ret;
+	ret = device_probe(bus);
+	ret2 = ofnode_write_prop(node, "bus-range", old, sizeof(old), true);
+
+	return ret2 ? ret2 : ret;
+}
+
+/* Test the errors from a root bus with absolute bus numbers */
+static int dm_test_pci_bus_abs_errors(struct unit_test_state *uts)
+{
+	fdt32_t range[2] = { cpu_to_fdt32(0x10), cpu_to_fdt32(0x10) };
+
+	/* no room for the bridge's bus */
+	ut_asserteq(-ENOSPC, probe_with_range(range, sizeof(range)));
+
+	/* a range with only one cell, or which ends before it starts */
+	ut_asserteq(-EINVAL, probe_with_range(range, sizeof(fdt32_t)));
+	range[1] = cpu_to_fdt32(0xf);
+	ut_asserteq(-EINVAL, probe_with_range(range, sizeof(range)));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bus_abs_errors, UTF_SCAN_PDATA | UTF_SCAN_FDT |
+	UTF_LIVE_TREE);
+
+/**
+ * probe_fw_bridge() - Probe a bridge as if firmware had set up PCI
+ *
+ * @uts: Test state
+ * @bridge: Bridge to probe, whose root bus must already be probed
+ * @sec: Secondary bus number which the firmware gave the bridge
+ * Return: 0 if OK, -ve on error
+ */
+static int probe_fw_bridge(struct unit_test_state *uts, struct udevice *bridge,
+			   int sec)
+{
+	/* start again, as if the bridge were newly bound */
+	if (device_active(bridge))
+		ut_assertok(device_remove(bridge, DM_REMOVE_NORMAL));
+	bridge->seq_ = -1;
+
+	ut_assertok(dm_pci_write_config8(bridge, PCI_SECONDARY_BUS, sec));
+	ut_assertok(device_probe(bridge));
+
+	return 0;
+}
+
+static int check_fw_numbering(struct unit_test_state *uts)
+{
+	struct udevice *bus, *bridge2, *bridge4;
+
+	/* bus 2 does not have absolute numbers, so the register is ignored */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(device_find_first_child_by_uclass(bus, UCLASS_PCI,
+						      &bridge2));
+	ut_assert(!device_active(bridge2));
+	ut_assertok(probe_fw_bridge(uts, bridge2, 3));
+	ut_asserteq(0x20, dev_seq(bridge2));
+
+	/* pci4's bridge keeps the number the firmware gave it */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(device_find_first_child_by_uclass(bus, UCLASS_PCI,
+						      &bridge4));
+	ut_assert(!device_active(bridge4));
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x15));
+	ut_asserteq(0x15, dev_seq(bridge4));
+
+	/* unless it is outside the range, or not set up */
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x20));
+	ut_asserteq(0x21, dev_seq(bridge4));
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0));
+	ut_asserteq(0x21, dev_seq(bridge4));
+
+	/* or already in use */
+	ut_assertok(device_remove(bridge2, DM_REMOVE_NORMAL));
+	bridge2->seq_ = 0x15;
+	ut_assertok(probe_fw_bridge(uts, bridge4, 0x15));
+	ut_asserteq(0x20, dev_seq(bridge4));
+
+	return 0;
+}
+
+/*
+ * Test numbering the buses behind bridges which firmware has set up, as when
+ * U-Boot runs as a coreboot payload and does not configure PCI itself
+ */
+static int dm_test_pci_bus_fw(struct unit_test_state *uts)
+{
+	ulong flags = gd->flags;
+	int ret;
+
+	gd->flags |= GD_FLG_SKIP_LL_INIT;
+	ret = check_fw_numbering(uts);
+	gd->flags = flags;
+
+	return ret;
+}
+DM_TEST(dm_test_pci_bus_fw, UTF_SCAN_PDATA | UTF_SCAN_FDT);

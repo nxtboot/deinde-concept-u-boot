@@ -60,6 +60,7 @@
 		pci1 = &pci1;
 		pci2 = &pci2;
 		pci3 = &pci3;
+		pci16 = &pci4;
 		remoteproc0 = &rproc_1;
 		remoteproc1 = &rproc_2;
 		rtc0 = &rtc_0;
@@ -1531,19 +1532,44 @@
 		bus-range = <0x00 0xff>;
 		#address-cells = <3>;
 		#size-cells = <2>;
-		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x2000
-				0x01000000 0 0x60000000 0x60000000 0 0x2000>;
+		/* room for the bridge's windows, aligned to 1MB and 4KB */
+		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x400000
+				0x01000000 0 0x60000000 0x60000000 0 0x10000>;
 		sandbox,dev-info = <0x08 0x00 0x1234 0x5678>;
 		pci@1f,0 {
 			compatible = "pci-generic";
 			reg = <0xf800 0 0 0 0>;
 			sandbox,emul = <&swap_case_emul2_1f>;
 		};
+
+		/*
+		 * A bridge whose bus must not take the number of another
+		 * controller, e.g. pci3, with a device behind it
+		 */
+		pci@2,0 {
+			compatible = "pci-bridge";
+			reg = <0x1000 0 0 0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			sandbox,emul = <&bridge_emul2_2>;
+
+			pci@0,0 {
+				compatible = "pci-generic";
+				reg = <0x0000 0 0 0 0>;
+				sandbox,emul = <&swap_case_emul2b_0>;
+			};
+		};
 	};
 
 	pci-emul2 {
 		compatible = "sandbox,pci-emul-parent";
 		swap_case_emul2_1f: emul2@1f,0 {
+			compatible = "sandbox,swap-case";
+		};
+		bridge_emul2_2: emul2@2,0 {
+			compatible = "sandbox,pci-bridge-emul";
+		};
+		swap_case_emul2b_0: emul2b@0,0 {
 			compatible = "sandbox,swap-case";
 		};
 	};
@@ -1568,6 +1594,44 @@
 	pci-emul3 {
 		compatible = "sandbox,pci-emul-parent";
 		swap_case_emul3_0: emul3@0,0 {
+			compatible = "sandbox,swap-case";
+		};
+	};
+
+	/*
+	 * A bus with absolute bus numbers, with a bridge and a device behind
+	 * the bridge
+	 */
+	pci4: pci@4 {
+		compatible = "sandbox,pci";
+		device_type = "pci";
+		bus-range = <0x10 0x1f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges = <0x02000000 0 0xa0000000 0xa0000000 0 0x1000000
+				0x01000000 0 0xa1000000 0xa1000000 0 0x10000>;
+		pci@0,0 {
+			compatible = "pci-bridge";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			sandbox,emul = <&bridge_emul4_0>;
+
+			pci@0,0 {
+				compatible = "pci-generic";
+				reg = <0x0000 0 0 0 0>;
+				sandbox,emul = <&swap_case_emul4b_0>;
+			};
+		};
+	};
+
+	pci-emul4 {
+		compatible = "sandbox,pci-emul-parent";
+		bridge_emul4_0: emul4@0,0 {
+			compatible = "sandbox,pci-bridge-emul";
+		};
+		swap_case_emul4b_0: emul4b@0,0 {
 			compatible = "sandbox,swap-case";
 		};
 	};
