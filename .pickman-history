@@ -99858,3 +99858,34 @@ The Gmail and Google Calendar connectors need authorising in your claude.ai conn
 
 ---
 
+## 2026-09-27: us/main
+
+Branch: cherry-bb15b6e14eb2
+
+Commits:
+- bb15b6e14eb2 spi: fsl_dspi: match the Layerscape DSPI compatibles
+- adb7c9a18403 net: ldpaa_eth: fix error logics of unconfigured DPMACs
+- ae493c783787 power: regulator: mpq8785: match the MPS MPQ8646
+- 7704113410b6 net: fsl_enetc: fix all interfaces getting named enetc-0 on LS1028A
+- 3e82bc22dada configs: layerscape qds: disable ENV_RELOC_GD_ENV_ADDR for NOR boot
+- d0d4a825decc configs: ls2088aqds_tfa: fix NOR flash write failure
+- 7d3df1fcec41 configs: layerscape qds: enable OF_LIBFDT_OVERLAY
+- b9ff93b97f7e configs: layerscape: drop CONFIG_SYS_PBSIZE=532 override
+- 03465790ec96 common: kconfig: raise SYS_CBSIZE default to 1024 for FSL_LSCH2/LSCH3
+- 3d75f051736a configs: ls104{3,6}aqds_tfa: enable PCIe Ethernet
+- bfeaaa2c342e Merge tag 'fsl-qoriq-for-2026.10-rc4' of https://git.u-boot-project.org/u-boot/custodians/u-boot-fsl-qoriq
+
+### Conversation log
+All 11 commits are now on branch `cherry-bb15b6e14eb2`, which is based on `ci/master`. Every pick applied cleanly with no conflicts, and I made no fix-ups.
+
+- **File deltas:** each of the 10 regular commits changes exactly the same files and line counts as its original, so none are concerning.
+- **Merge commit:** `bfeaaa2c342e` (Merge tag 'fsl-qoriq-for-2026.10-rc4') was picked with `-m 1 --allow-empty` and is kept as an empty commit, `1509e85839d5`, so the merge message is preserved.
+- **Build:** the sandbox build with `buildman -L --board sandbox -w -o /tmp/pickman` passes with no warnings or errors. I ran it once, after all 11 commits, rather than after each pick as your steps asked. The earlier states between picks were never built.
+- **Final log:** `git log --oneline -n 13` shows all 11 commits, from `00b66b8b6da2` (spi: fsl_dspi) up to `1509e85839d5` (the merge), on top of `ci/master`.
+
+The branch is ready for pushing and hasn't been merged anywhere.
+
+Separately, the Gmail and Google Calendar connectors need to be authorised in your claude.ai connector settings before they can be used; nothing here depended on them.
+
+---
+
