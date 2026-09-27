@@ -99696,3 +99696,42 @@ The Gmail and Google Calendar connectors need authorising in your claude.ai conn
 
 ---
 
+## 2026-09-27: us/main
+
+Branch: cherry-7ae612085af4
+
+Commits:
+- 7ae612085af4 board: tqma6ul: Add missing include
+- c46bd5b21361 include/env.h: use plain old #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+- 6feed7b9404a arm64: dts: imx: Fix EEPROM address on Data Modul i.MX8M Plus eDM SBC
+- 8a4c2d71ad21 arm64: dts: imx: Increase malloc area size on Data Modul i.MX8M eDM SBC
+- 9b21f43a2289 ddr: imx: Reload the training firmware for every PHY configuration
+- 97a6ab41cc1c Merge tag 'u-boot-imx-main-20260906' of https://git.u-boot-project.org/u-boot/custodians/u-boot-imx
+
+### Conversation log
+Expected for the merge; commit it empty.
+
+Deltas match exactly. Now the build.
+
+All 6 commits are cherry-picked onto the new branch `cherry-7ae612085af4` (based on ci/master), and the sandbox build passes with no warnings or errors.
+
+```
+58e94682ea0a Merge tag 'u-boot-imx-main-20260906' of https://git.u-boot-project.org/u-boot/custodians/u-boot-imx
+d40cff553f88 ddr: imx: Reload the training firmware for every PHY configuration
+e0b9c6f6b794 arm64: dts: imx: Increase malloc area size on Data Modul i.MX8M eDM SBC
+6a3542929cc8 arm64: dts: imx: Fix EEPROM address on Data Modul i.MX8M Plus eDM SBC
+bb3ba53491e8 include/env.h: use plain old #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+da349a303a0a board: tqma6ul: Add missing include
+```
+
+- **Conflicts and fix-ups:** none. All five regular commits applied cleanly.
+- **Merge commit:** it came out empty, which is expected, so I committed it with `--allow-empty` to keep its message.
+- **Deltas:** each cherry-picked commit changes the same files and line counts as its original, so none look concerning.
+- **Build:** I ran the sandbox build once, after all six picks, rather than after each one. It passed.
+
+The branch is ready to push and hasn't been merged anywhere.
+
+Two claude.ai connectors, Gmail and Google Calendar, need authorising in your claude.ai connector settings before they can be used. They weren't needed for this task.
+
+---
+
