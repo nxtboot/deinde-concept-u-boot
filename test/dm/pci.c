@@ -558,25 +558,28 @@ static int dm_test_pci_bridge(struct unit_test_state *uts)
 	u32 addr;
 
 	/*
-	 * The bridge on bus 2 takes the next number after all the buses, so
-	 * not 3, which is pci3. Its registers are relative to the controller
+	 * The bridge on bus 2 takes the next number after all the buses,
+	 * including the range reserved by pci4 (bus 16), so not 3, which is
+	 * pci3. Its registers are relative to the controller
 	 */
 	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
-	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 4, &bridge));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x20, &bridge));
 	ut_asserteq_ptr(bus, dev_get_parent(bridge));
-	ut_assertok(check_bus_regs(uts, bridge, 0, 2, 2));
+	ut_assertok(check_bus_regs(uts, bridge, 0, 0x1e, 0x1e));
 
-	/* pci4 has no alias, so takes the next number when probed */
-	ut_assertok(uclass_get_device_by_name(UCLASS_PCI, "pci@4", &bus));
-	ut_asserteq(5, dev_seq(bus));
-	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 6, &bridge));
+	/*
+	 * pci4 has absolute bus numbers, so its bridge is numbered within its
+	 * range and its registers hold the same numbers
+	 */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x11, &bridge));
 	ut_asserteq_ptr(bus, dev_get_parent(bridge));
 	ut_assertok(dm_pci_read_config16(bridge, PCI_DEVICE_ID, &device));
 	ut_asserteq(SANDBOX_PCI_BRIDGE_EMUL_ID, device);
-	ut_assertok(check_bus_regs(uts, bridge, 0, 1, 1));
+	ut_assertok(check_bus_regs(uts, bridge, 0x10, 0x11, 0x11));
 
 	/* the device behind the bridge, which is its only child */
-	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(6, 0, 0), &swap));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(0x11, 0, 0), &swap));
 	ut_asserteq_ptr(bridge, dev_get_parent(swap));
 	ut_assertok(device_find_first_child(bridge, &dev));
 	ut_asserteq_ptr(swap, dev);
@@ -619,8 +622,8 @@ static int dm_test_pci_last_busno(struct unit_test_state *uts)
 {
 	struct udevice *bus;
 
-	/* pci3 has the highest alias; pci4 is not numbered until probed */
-	ut_asserteq(3, pci_last_busno());
+	/* pci4 is bus 0x10 and reserves its range, up to 0x1f */
+	ut_asserteq(0x1f, pci_last_busno());
 
 	ut_assertok(uclass_find_first_device(UCLASS_PCI, &bus));
 	while (bus) {
@@ -632,3 +635,67 @@ static int dm_test_pci_last_busno(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_last_busno, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+/*
+ * Test that a root bus with absolute bus numbers reserves its range before
+ * it is probed, so the order of probing does not matter
+ */
+static int dm_test_pci_bus_abs_order(struct unit_test_state *uts)
+{
+	struct udevice *bus, *bridge;
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x11, &bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0x10, 0x11, 0x11));
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x20, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0, 0x1e, 0x1e));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bus_abs_order, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Probe pci4 with a different bus-range and restore it afterwards */
+static int probe_with_range(const fdt32_t *range, int len)
+{
+	fdt32_t old[2];
+	struct udevice *bus;
+	const void *prop;
+	ofnode node;
+	int ret, ret2;
+
+	ret = uclass_find_device_by_seq(UCLASS_PCI, 0x10, &bus);
+	if (ret)
+		return ret;
+	node = dev_ofnode(bus);
+	prop = ofnode_read_prop(node, "bus-range", NULL);
+	if (!prop)
+		return -ENOENT;
+	memcpy(old, prop, sizeof(old));
+	ret = ofnode_write_prop(node, "bus-range", range, len, true);
+	if (ret)
+		return ret;
+	ret = device_probe(bus);
+	ret2 = ofnode_write_prop(node, "bus-range", old, sizeof(old), true);
+
+	return ret2 ? ret2 : ret;
+}
+
+/* Test the errors from a root bus with absolute bus numbers */
+static int dm_test_pci_bus_abs_errors(struct unit_test_state *uts)
+{
+	fdt32_t range[2] = { cpu_to_fdt32(0x10), cpu_to_fdt32(0x10) };
+
+	/* no room for the bridge's bus */
+	ut_asserteq(-ENOSPC, probe_with_range(range, sizeof(range)));
+
+	/* a range with only one cell, or which ends before it starts */
+	ut_asserteq(-EINVAL, probe_with_range(range, sizeof(fdt32_t)));
+	range[1] = cpu_to_fdt32(0xf);
+	ut_asserteq(-EINVAL, probe_with_range(range, sizeof(range)));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bus_abs_errors, UTF_SCAN_PDATA | UTF_SCAN_FDT |
+	UTF_LIVE_TREE);

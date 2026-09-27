@@ -629,6 +629,15 @@ extern void pci_cfgfunc_config_device(struct pci_controller* hose, pci_dev_t dev
  *	before relocation also. Some platforms set up static configuration in
  *	TPL/SPL to reduce code size and boot time, since these phases only know
  *	about a small subset of PCI devices. This is normally false.
+ * @first_busno: U-Boot's number for the root bus (its sequence number)
+ * @last_busno: Highest bus number allocated below this bus so far
+ * @abs_bus: true if the root bus has absolute bus numbers, from the
+ *	'u-boot,absolute-bus-numbers' property: its bridges are numbered
+ *	within its bus-range and programmed with the numbers the hardware uses
+ * @bus_base: First number in the bus-range, as the hardware sees it, if
+ *	@abs_bus, else 0. Bridges are programmed with U-Boot's bus numbers
+ *	offset from @first_busno to this
+ * @bus_limit: Last number in the bus-range, if @abs_bus
  */
 struct pci_controller {
 	struct udevice *bus;
@@ -638,6 +647,9 @@ struct pci_controller {
 
 	int first_busno;
 	int last_busno;
+	bool abs_bus;
+	int bus_base;
+	int bus_limit;
 
 	volatile unsigned int *cfg_addr;
 	volatile unsigned char *cfg_data;

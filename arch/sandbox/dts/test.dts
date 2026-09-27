@@ -60,6 +60,7 @@
 		pci1 = &pci1;
 		pci2 = &pci2;
 		pci3 = &pci3;
+		pci16 = &pci4;
 		remoteproc0 = &rproc_1;
 		remoteproc1 = &rproc_2;
 		rtc0 = &rtc_0;
@@ -1588,11 +1589,15 @@
 		};
 	};
 
-	/* A bus with a bridge, and a device behind the bridge */
+	/*
+	 * A bus with absolute bus numbers, with a bridge and a device behind
+	 * the bridge
+	 */
 	pci4: pci@4 {
 		compatible = "sandbox,pci";
 		device_type = "pci";
-		bus-range = <0x00 0xff>;
+		bus-range = <0x10 0x1f>;
+		u-boot,absolute-bus-numbers;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges = <0x02000000 0 0xa0000000 0xa0000000 0 0x1000000

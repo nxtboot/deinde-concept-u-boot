@@ -15,6 +15,13 @@ Optional properties:
 	until the silicon has been set up, which happens later in boot. Devices
 	in the devicetree are still bound, so they can be used beforehand.
 
+- u-boot,absolute-bus-numbers : The root bus has a fixed range of bus
+	numbers, given by the 'bus-range' property, which the hardware uses
+	as they are, as with several root complexes sharing a configuration
+	space. The buses behind its bridges are numbered within that range and
+	the bridges are programmed with the same numbers. The bus should have a
+	'pciN' alias. See doc/develop/driver-model/pci-info.rst for details.
+
 For PCI devices the following optional property is available:
 
 - pci,no-autoconfig : Don't automatically configure this PCI device at all.

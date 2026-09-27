@@ -109,6 +109,47 @@ U_BOOT_PCI_DEVICE is provided, the built-in driver (either pci_bridge_drv or
 pci_generic_drv) will be used.
 
 
+Bus numbers
+-----------
+
+Each PCI bus has a number, its sequence number in driver model, which is
+used in its devices' PCI_BDF() addresses. A root bus takes its number from
+its 'pciN' alias, if it has one. Otherwise, and for the bus behind each
+bridge, U-Boot allocates the next number above all the buses it knows about,
+when the bus is probed. The bridge's primary, secondary and subordinate
+bus-number registers are then written relative to the root bus, so that each
+controller's buses start again from 0 on the wire. This suits SoCs with
+several PCIe controllers, each with its own configuration space.
+
+Some hardware instead has several root buses sharing one configuration space,
+each with a fixed range of bus numbers, such as the root complexes of a
+server processor. The hardware only sends a root bus the numbers in its
+range, so the buses behind its bridges must be numbered within that range
+and the bridges must be programmed with those same numbers. For this, add
+the 'u-boot,absolute-bus-numbers' property to each such root bus, give the
+range with the standard 'bus-range' property and give the bus an alias,
+normally matching the start of the range::
+
+	aliases {
+		pci0 = &pci0;
+		pci64 = &pci2;
+	};
+
+	pci2: pci@40 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x40 0x5f>;
+		u-boot,absolute-bus-numbers;
+		...
+	};
+
+The first bridge below pci2 is then bus 0x41, both in U-Boot and on the wire.
+Since the bus has an alias, U-Boot reserves its whole range before it is
+probed, so buses under other controllers are numbered above it, whatever the
+order in which they are probed. If the range runs out, probing the root bus
+fails with -ENOSPC. The config-space driver receives U-Boot's bus numbers
+either way and does its own translation, if the hardware needs one.
+
+
 Sandbox
 -------
 
