@@ -99766,3 +99766,59 @@ The Gmail and Google Calendar connectors need authorising in your claude.ai conn
 
 ---
 
+## 2026-09-27: us/main
+
+Branch: cherry-4231d50c0670
+
+Commits:
+- 4231d50c0670 board: ti: sort file entries in MAINTAINERS files
+- f1a98de73e3a board: ti: correct names in MAINTAINERS file
+- 81e8aa8d426e board: ti: am62x: split board variants into separate maintainer entries
+- 8944fe913561 board: ti: am64x: split the EVM and SK board entries
+- 5a08a113fed2 board: ti: j721e: split boards into separate maintainer entries
+- 7ce170d9507d board: ti: j721s2: split boards into separate maintainer entries
+- 774e11aaebd3 board: ti: am62x: add files to MAINTAINERS entries
+- 2954465b7de8 board: ti: am62ax: update MAINTAINERS entries
+- 7ee8164bd068 board: ti: am62dx: update MAINTAINERS entries
+- c305e0cd6155 board: ti: am62px: update MAINTAINERS entries
+- f2e95ad4b02a board: ti: j7200: update MAINTAINERS entries
+- 5579e96029bb board: ti: j721e: update MAINTAINERS entries
+- f6959b909fa5 board: ti: j721s2: update MAINTAINERS entries
+- 23c2aedbd786 board: ti: j722s: update the MAINTAINERS entry
+- 509312dc5386 Merge patch series "board: ti: update and correct files MAINTAINERS entries"
+
+### Conversation log
+Clean. Now cherry-pick sequentially, checking stats.
+
+The first pick conflicts because board/ti/am62dx is missing from ci/master. Before going further, I'll check whether the series is already applied.
+
+Nothing is applied yet. The am62dx directory does exist, so I'll look at the conflict itself.
+
+ci/master has no board/ti/am62dx/MAINTAINERS file at all. I'll find out where the file came from upstream.
+
+Same am62dx-only conflict, so I'm resolving it the same way. I'll repeat this for each commit that hits it.
+
+Everything applied. 7ee8164bd068 (am62dx only) ended up empty as expected. Now the merge commit:
+
+The merge pick hit the same am62dx conflict. I'm resolving it the same way; the result should be an empty commit.
+
+The merge commit message picked up the "# Conflicts" comment lines, so I'll check and clean it.
+
+I'll strip the trailing blank lines left by the verbatim cleanup.
+
+All 15 commits are cherry-picked onto branch `cherry-4231d50c0670` (based on ci/master), and the sandbox build passes with no warnings or errors. The branch is ready to push and has not been merged anywhere.
+
+**Why there were conflicts:** ci/master doesn't have the AM62D2-EVM board support from upstream (14dfa6b86187). That means `board/ti/am62dx/MAINTAINERS` and the am62dx defconfigs don't exist here. The series wasn't already applied through another route; I checked the subject of each commit against ci/master.
+
+**Fix-ups:** In each case I dropped the am62dx part and kept the rest. Each affected commit has this note at the end of its message: `[Fix-up: drop board/ti/am62dx/MAINTAINERS change; file not present]`
+- **4231d50c0670** (sort file entries): 8 of 9 files applied, 54+/48- against the original 56+/50-.
+- **f1a98de73e3a** (correct names): 9 of 10 files applied, 11+/11- against the original 12+/12-.
+- **7ee8164bd068** (am62dx: update MAINTAINERS entries): this commit only touches am62dx, so it is an **empty commit**. I kept it to preserve the sequence.
+- **509312dc5386** (the merge): empty, as expected. I also removed the `# Conflicts:` comment lines that git added to its message.
+
+**Deltas:** The other 11 commits match the originals exactly (same files, same line counts). The only differences are the am62dx drops above.
+
+If AM62D2-EVM support is picked up later, the am62dx MAINTAINERS changes from this series will need to be applied along with it.
+
+---
+
