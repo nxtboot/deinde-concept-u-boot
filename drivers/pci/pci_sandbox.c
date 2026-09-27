@@ -52,7 +52,8 @@ static int sandbox_pci_read_config(const struct udevice *bus, pci_dev_t devfn,
 	*valuep = pci_get_ff(size);
 	ret = sandbox_pci_get_emul(bus, devfn, &container, &emul);
 	if (ret) {
-		if (!container) {
+		/* devices listed in sandbox,dev-info are on the root bus */
+		if (!container && PCI_BUS(devfn) == dev_seq(bus)) {
 			u16 vendor, device;
 
 			devfn = SANDBOX_PCI_DEVFN(PCI_DEV(devfn),
@@ -111,6 +112,15 @@ static int sandbox_pci_probe(struct udevice *dev)
 	return 0;
 }
 
+static int sandbox_pci_child_post_bind(struct udevice *dev)
+{
+	/* A bridge's uclass binds its children, so don't bind them twice */
+	if (device_get_uclass_id(dev) == UCLASS_PCI)
+		return 0;
+
+	return dm_scan_fdt_dev(dev);
+}
+
 static const struct dm_pci_ops sandbox_pci_ops = {
 	.read_config = sandbox_pci_read_config,
 	.write_config = sandbox_pci_write_config,
@@ -130,6 +140,6 @@ U_BOOT_DRIVER(pci_sandbox) = {
 	.priv_auto	= sizeof(struct sandbox_pci_priv),
 
 	/* Attach an emulator if we can */
-	.child_post_bind = dm_scan_fdt_dev,
+	.child_post_bind = sandbox_pci_child_post_bind,
 	.per_child_plat_auto	= sizeof(struct pci_child_plat),
 };

@@ -145,6 +145,12 @@ When this bus is scanned we will end up with something like this::
 
 When accesses go to the pci@1f,0 device they are forwarded to its emulator.
 
+Bridges can be emulated too, with the 'sandbox,pci-bridge-emul' driver, whose
+registers read back what was written, so that tests can check how U-Boot
+programmed them. A device behind a bridge goes in a subnode of the bridge's
+node. Its emulator is found using its bus number, which is that of the
+bridge's secondary bus. See pci4 in arch/sandbox/dts/test.dts for an example.
+
 The sandbox PCI drivers also support dynamic driver binding, allowing device
 driver to declare the driver binding information via U_BOOT_PCI_DEVICE(),
 eliminating the need to provide any device tree node under the host controller

@@ -10,6 +10,7 @@
 #include <pci.h>
 #include <asm/sandbox_pci.h>
 #include <dm/lists.h>
+#include <dm/uclass-internal.h>
 #include <linux/libfdt.h>
 
 struct sandbox_pci_emul_priv {
@@ -24,6 +25,22 @@ int sandbox_pci_get_emul(const struct udevice *bus, pci_dev_t find_devfn,
 	int ret;
 
 	*containerp = NULL;
+
+	/*
+	 * A device behind a bridge is a child of the bus with its bus number,
+	 * which must sit below the same controller
+	 */
+	if (PCI_BUS(find_devfn) != dev_seq(bus)) {
+		struct udevice *sub;
+
+		if (uclass_find_device_by_seq(UCLASS_PCI, PCI_BUS(find_devfn),
+					      &sub) ||
+		    pci_get_controller(sub) !=
+		    pci_get_controller((struct udevice *)bus))
+			return -ENODEV;
+		bus = sub;
+	}
+
 	ret = pci_bus_find_devfn(bus, PCI_MASK_BUS(find_devfn), &dev);
 	if (ret) {
 		debug("%s: Could not find emulator for dev %x\n", __func__,

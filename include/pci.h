@@ -1634,7 +1634,8 @@ struct dm_pci_emul_ops {
  * Searches for a suitable emulator for the given PCI bus device
  *
  * @bus:	PCI bus to search
- * @find_devfn:	PCI device and function address (PCI_DEVFN())
+ * @find_devfn:	PCI address (PCI_BDF()); if the bus number is not that of
+ *		@bus, the bus behind a bridge with that number is searched
  * @containerp:	Returns container device if found
  * @emulp:	Returns emulated device if found
  * Return: 0 if found, -ENODEV if not found

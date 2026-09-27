@@ -529,3 +529,85 @@ static int dm_test_pci_no_autoconfig(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_no_autoconfig, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Check a bridge's primary, secondary and subordinate bus numbers */
+static int check_bus_regs(struct unit_test_state *uts, struct udevice *bridge,
+			  int primary, int secondary, int subordinate)
+{
+	u8 val;
+
+	ut_assertok(dm_pci_read_config8(bridge, PCI_PRIMARY_BUS, &val));
+	ut_asserteq(primary, val);
+	ut_assertok(dm_pci_read_config8(bridge, PCI_SECONDARY_BUS, &val));
+	ut_asserteq(secondary, val);
+	ut_assertok(dm_pci_read_config8(bridge, PCI_SUBORDINATE_BUS, &val));
+	ut_asserteq(subordinate, val);
+
+	return 0;
+}
+
+/* Test bridges and the devices behind them */
+static int dm_test_pci_bridge(struct unit_test_state *uts)
+{
+	ulong mem_base, mem_limit, io_base, io_limit;
+	struct udevice *bus, *bridge, *swap, *dev;
+	u16 base16, limit16, vendor, device;
+	u8 base8, limit8;
+	u32 addr;
+
+	/*
+	 * The bridge on bus 2 takes the next number after all the buses, so
+	 * not 3, which is pci3. Its registers are relative to the controller
+	 */
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 4, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(check_bus_regs(uts, bridge, 0, 2, 2));
+
+	/* pci4 has no alias, so takes the next number when probed */
+	ut_assertok(uclass_get_device_by_name(UCLASS_PCI, "pci@4", &bus));
+	ut_asserteq(5, dev_seq(bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 6, &bridge));
+	ut_asserteq_ptr(bus, dev_get_parent(bridge));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_DEVICE_ID, &device));
+	ut_asserteq(SANDBOX_PCI_BRIDGE_EMUL_ID, device);
+	ut_assertok(check_bus_regs(uts, bridge, 0, 1, 1));
+
+	/* the device behind the bridge, which is its only child */
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(6, 0, 0), &swap));
+	ut_asserteq_ptr(bridge, dev_get_parent(swap));
+	ut_assertok(device_find_first_child(bridge, &dev));
+	ut_asserteq_ptr(swap, dev);
+	ut_assertok(device_find_next_child(&dev));
+	ut_assertnull(dev);
+	ut_assertok(dm_pci_read_config16(swap, PCI_VENDOR_ID, &vendor));
+	ut_asserteq(SANDBOX_PCI_VENDOR_ID, vendor);
+	ut_assertok(dm_pci_read_config16(swap, PCI_DEVICE_ID, &device));
+	ut_asserteq(SANDBOX_PCI_SWAP_CASE_EMUL_ID, device);
+
+	/* its memory BAR is inside the bridge's memory window */
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_BASE, &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_LIMIT, &limit16));
+	mem_base = (ulong)(base16 & PCI_MEMORY_RANGE_MASK) << 16;
+	mem_limit = (ulong)(limit16 & PCI_MEMORY_RANGE_MASK) << 16 | 0xfffff;
+	ut_asserteq(0xa0000000, mem_base);
+	addr = dm_pci_read_bar32(swap, 1);
+	ut_assert(addr >= mem_base && addr <= mem_limit);
+
+	/* and its I/O BAR inside the I/O window */
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_BASE, &base8));
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_LIMIT, &limit8));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_BASE_UPPER16,
+					 &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_LIMIT_UPPER16,
+					 &limit16));
+	io_base = (ulong)base16 << 16 | (base8 & PCI_IO_RANGE_MASK) << 8;
+	io_limit = (ulong)limit16 << 16 | (limit8 & PCI_IO_RANGE_MASK) << 8 |
+		0xfff;
+	ut_asserteq(0xa1000000, io_base);
+	addr = dm_pci_read_bar32(swap, 0);
+	ut_assert(addr >= io_base && addr <= io_limit);
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bridge, UTF_SCAN_PDATA | UTF_SCAN_FDT);
