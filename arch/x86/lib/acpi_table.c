@@ -28,8 +28,7 @@
 #include <dm/acpi.h>
 #include <linux/err.h>
 
-static int acpi_create_madt_lapic(struct acpi_madt_lapic *lapic,
-				  u8 cpu, u8 apic)
+int acpi_create_madt_lapic(struct acpi_madt_lapic *lapic, u8 cpu, u8 apic)
 {
 	lapic->type = ACPI_APIC_LAPIC;
 	lapic->length = sizeof(struct acpi_madt_lapic);
