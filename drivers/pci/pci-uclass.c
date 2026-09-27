@@ -85,7 +85,8 @@ static int pci_get_bus_max(void)
 	struct uclass *uc;
 	int ret = -1;
 
-	ret = uclass_get(UCLASS_PCI, &uc);
+	if (uclass_get(UCLASS_PCI, &uc))
+		return -1;
 	uclass_foreach_dev(bus, uc) {
 		if (dev_seq(bus) > ret)
 			ret = dev_seq(bus);

@@ -7,7 +7,9 @@
 #include <asm/io.h>
 #include <asm/sandbox_pci.h>
 #include <asm/test.h>
+#include <dm/device-internal.h>
 #include <dm/test.h>
+#include <dm/uclass-internal.h>
 #include <test/test.h>
 #include <test/ut.h>
 
@@ -611,3 +613,22 @@ static int dm_test_pci_bridge(struct unit_test_state *uts)
 	return 0;
 }
 DM_TEST(dm_test_pci_bridge, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/* Test the last bus number, including when there are no buses */
+static int dm_test_pci_last_busno(struct unit_test_state *uts)
+{
+	struct udevice *bus;
+
+	/* pci3 has the highest alias; pci4 is not numbered until probed */
+	ut_asserteq(3, pci_last_busno());
+
+	ut_assertok(uclass_find_first_device(UCLASS_PCI, &bus));
+	while (bus) {
+		ut_assertok(device_unbind(bus));
+		ut_assertok(uclass_find_first_device(UCLASS_PCI, &bus));
+	}
+	ut_asserteq(-1, pci_last_busno());
+
+	return 0;
+}
+DM_TEST(dm_test_pci_last_busno, UTF_SCAN_PDATA | UTF_SCAN_FDT);
