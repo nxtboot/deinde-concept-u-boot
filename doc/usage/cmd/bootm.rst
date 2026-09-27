@@ -411,6 +411,8 @@ See also
 
 * :doc:`iminfo<iminfo>` for checking an image before booting it
 * :doc:`go<go>` for starting an application which returns to U-Boot
+* :doc:`fastboot<fastboot>` for downloading an image from a host and booting
+  it, which uses this command to start what it has downloaded
 
 .. sectionauthor:: Bartlomiej Sieka <tur@semihalf.com>
 .. sectionauthor:: Simon Glass <sjg@chromium.org>

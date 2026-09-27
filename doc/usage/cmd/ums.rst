@@ -67,3 +67,5 @@ See also
 * :doc:`usbboot<usbboot>` for loading and starting an image held on a USB
   storage device
 * :doc:`part<part>` for listing the partitions a device offers
+* :doc:`fastboot<fastboot>` for the other way of talking to a host over USB,
+  where the host sends images rather than reading blocks
