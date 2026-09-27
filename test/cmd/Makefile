@@ -109,6 +109,7 @@ obj-$(CONFIG_CMD_PMC) += pmc.o
 obj-$(CONFIG_CMD_PWM) += pwm.o
 obj-$(CONFIG_CMD_READ) += rw.o
 obj-y += sb.o
+obj-$(CONFIG_CMD_SCSI) += scsiboot.o
 obj-$(CONFIG_CMD_SETEXPR) += setexpr.o
 obj-$(CONFIG_CMD_SMBIOS) += smbios.o
 obj-$(CONFIG_CMD_SPI) += sspi.o
@@ -117,6 +118,9 @@ obj-$(CONFIG_CMD_TIMER) += timer.o
 obj-$(CONFIG_CMD_TPM_V1) += tpm.o
 obj-$(CONFIG_CMD_TPM_TEST) += tpmtest.o
 obj-$(CONFIG_CMD_TKEY) += tkey.o
+ifdef CONFIG_CMD_USB
+obj-$(CONFIG_USB_STORAGE) += usbboot.o
+endif
 ifdef CONFIG_NET_LEGACY
 obj-$(CONFIG_CMD_DNS) += dns.o
 obj-$(CONFIG_CMD_LINK_LOCAL) += linklocal.o
