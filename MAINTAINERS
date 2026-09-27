@@ -1158,6 +1158,7 @@ F:	include/fastboot-internal.h
 F:	include/net/fastboot_tcp.h
 F:	include/net/fastboot_udp.h
 F:	drivers/fastboot/
+F:	test/cmd/fastboot.c
 F:	drivers/usb/gadget/f_fastboot.c
 F:	net/fastboot_tcp.c
 F:	net/fastboot_udp.c
