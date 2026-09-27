@@ -99735,3 +99735,34 @@ Two claude.ai connectors, Gmail and Google Calendar, need authorising in your cl
 
 ---
 
+### Review: 2026-09-27
+
+Branch: cherry-7ae612085af4
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) samus_tpl, samus, snow, kevin.
+
+The builds show no siz...
+
+### Conversation log
+I've pushed the branch. The remote MR branch had some unrelated content on it, which I checked; here's the report.
+
+I force-pushed `cherry-7ae612085af4` to the MR. Before the push, the MR branch on the remote wasn't this series; it was 97c58f7a6ef8, which I've now replaced.
+
+**Rebase:** nothing to do. The branch was already on the current `ci/master` (8bf12c758353), so `git rebase --keep-empty ci/master` reported "up to date". There were no conflicts and the commits didn't change: the 6 cherry-picks (including the empty merge commit) plus the pickman record commit.
+
+**Build:** `buildman -L --board sandbox -w -o /tmp/pickman` passes.
+
+**Review comment:** it asks for no code change. It is the bot's own report on the samus_tpl, samus, snow and kevin lab failures, which concluded they were a lab problem. The branch is unchanged, and the push should start a new MR pipeline, which re-runs the four lab jobs.
+
+**What was on the remote branch:** 97c58f7a6ef8 held 14 unrelated commits on a different base (f43fdb0b8365): the PolarFire SoC CPU commits "riscv: create a custom CPU implementation for PolarFire SoC" and "riscv: beaglev_fire: Use the PolarFire SoC CPU again", plus pickman record commits for other cherry branches. None of this series' i.MX, env.h or tqma6ul commits were in it. So the last pipeline most likely ran on that content rather than this series, and its lab failures may say nothing about these commits. Nothing is lost: 97c58f7a6ef8 is still on your local branch `mpfs-cpu-repick`. You may want to find out how that work ended up on this MR's branch, in case another push went to the wrong place.
+
+**Local branch:** `cherry-7ae612085af4-v2` is at the same commit as the push, 05e488b0a980.
+
+**Suggested reply for the MR:**
+> The branch was already up to date with ci/master, so the rebase changed nothing; the sandbox build passes. The previous pipeline failures (samus_tpl, samus, snow, kevin) were in lab boot, not the build, and no code change was needed. The remote branch had been overwritten with unrelated commits (PolarFire SoC CPU work, 97c58f7a6ef8), so I force-pushed the correct series (05e488b0a980), which triggers a new pipeline. If the lab jobs fail the same way again, the next step is to boot the base commit 8bf12c758353 on those boards.
+
+The Gmail and Google Calendar connectors need authorising in your claude.ai connector settings before they can be used; this task didn't need them.
+
+---
+
