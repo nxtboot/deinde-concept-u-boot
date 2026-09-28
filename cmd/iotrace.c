@@ -9,6 +9,7 @@
  */
 #include <mapmem.h>
 #include <command.h>
+#include <getopt.h>
 #include <iotrace.h>
 #include <vsprintf.h>
 
@@ -95,12 +96,17 @@ static int do_set_region(int argc, char *const argv[])
 	return 0;
 }
 
-int do_iotrace(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_iotrace(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	const char *cmd = argc < 2 ? NULL : argv[1];
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (!cmd)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 	switch (*cmd) {
 	case 'b':
 		return do_set_buffer(argc - 2, argv + 2);
@@ -125,7 +131,7 @@ int do_iotrace(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	iotrace,	4,	1,	do_iotrace,
 	"iotrace utility commands",
 	"stats                        - display iotrace stats\n"

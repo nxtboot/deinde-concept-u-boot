@@ -1448,6 +1448,7 @@ config CMD_IO
 config CMD_IOTRACE
 	bool "iotrace - Support for tracing I/O activity"
 	depends on IO_TRACE
+	select GETOPT
 	help
 	  Provides an 'iotrace' command which supports recording I/O reads and
 	  writes in a trace buffer in memory . It also maintains a checksum
