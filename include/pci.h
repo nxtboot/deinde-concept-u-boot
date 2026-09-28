@@ -363,6 +363,7 @@
 #define   PCI_EXP_TYPE_ROOT_PORT   0x4	/* Root Port */
 #define   PCI_EXP_TYPE_DOWNSTREAM  0x6	/* Downstream Port */
 #define   PCI_EXP_TYPE_PCIE_BRIDGE 0x8	/* PCI/PCI-X to PCIe Bridge */
+#define  PCI_EXP_FLAGS_SLOT	0x0100	/* Slot implemented */
 #define PCI_EXP_DEVCAP		4	/* Device capabilities */
 #define  PCI_EXP_DEVCAP_FLR	0x10000000 /* Function Level Reset */
 #define  PCI_EXP_DEVCAP_PAYLOAD 0x0007	/* Max payload size supported */
@@ -415,6 +416,8 @@
 #define PCI_EXP_SLTCAP		20	/* Slot Capabilities */
 #define  PCI_EXP_SLTCAP_HPC	0x00000040 /* Hot-Plug Capable */
 #define  PCI_EXP_SLTCAP_PSN	0xfff80000 /* Physical Slot Number */
+#define PCI_EXP_SLTSTA		26	/* Slot Status */
+#define  PCI_EXP_SLTSTA_PDS	0x0040	/* Presence Detect State */
 #define PCI_EXP_RTCTL		28	/* Root Control */
 #define  PCI_EXP_RTCTL_CRSSVE	0x0010	/* CRS Software Visibility Enable */
 #define PCI_EXP_RTCAP		30	/* Root Capabilities */
