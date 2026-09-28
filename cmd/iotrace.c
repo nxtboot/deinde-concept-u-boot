@@ -15,15 +15,16 @@
 static void do_print_stats(void)
 {
 	ulong start, size, needed_size, offset, count;
+	ulong region_start, region_size;
 
 	printf("iotrace is %sabled\n", iotrace_get_enabled() ? "en" : "dis");
 	iotrace_get_buffer(&start, &size, &needed_size, &offset, &count);
 	printf("Start:  %08lx\n", start);
 	printf("Actual Size:   %08lx\n", size);
 	printf("Needed Size:   %08lx\n", needed_size);
-	iotrace_get_region(&start, &size);
-	printf("Region: %08lx\n", start);
-	printf("Size:   %08lx\n", size);
+	iotrace_get_region(&region_start, &region_size);
+	printf("Region: %08lx\n", region_start);
+	printf("Size:   %08lx\n", region_size);
 	printf("Offset: %08lx\n", offset);
 	printf("Output: %08lx\n", start + offset);
 	printf("Count:  %08lx\n", count);
