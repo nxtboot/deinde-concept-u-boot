@@ -18,10 +18,14 @@
  *
  * @command:	Current PCI command value
  * @bar:	Current base address values
+ * @bar1_size:	Size reported for BAR1, the text buffer, from the 'bar1-size'
+ *	property, so tests can have a large BAR; 0 (no property, or no node)
+ *	means MEM_TEXT_SIZE
  */
 struct swap_case_plat {
 	u16 command;
 	u32 bar[6];
+	u32 bar1_size;
 };
 
 enum {
@@ -119,6 +123,7 @@ static int sandbox_swap_case_read_config(const struct udevice *emul,
 		*valuep = plat->command;
 		break;
 	case PCI_HEADER_TYPE:
+	case PCI_ROM_ADDRESS:	/* no expansion ROM */
 		*valuep = 0;
 		break;
 	case PCI_VENDOR_ID:
@@ -151,6 +156,8 @@ static int sandbox_swap_case_read_config(const struct udevice *emul,
 		bar = &plat->bar[barnum];
 
 		*valuep = sandbox_pci_read_bar(*bar, barinfo[barnum].type,
+					       barnum == 1 && plat->bar1_size ?
+					       plat->bar1_size :
 					       barinfo[barnum].size);
 		break;
 	}
@@ -415,6 +422,15 @@ static struct dm_pci_emul_ops sandbox_swap_case_emul_ops = {
 	.unmap_physmem = sandbox_swap_case_unmap_physmem,
 };
 
+static int sandbox_swap_case_of_to_plat(struct udevice *dev)
+{
+	struct swap_case_plat *plat = dev_get_plat(dev);
+
+	plat->bar1_size = dev_read_u32_default(dev, "bar1-size", 0);
+
+	return 0;
+}
+
 static const struct udevice_id sandbox_swap_case_ids[] = {
 	{ .compatible = "sandbox,swap-case" },
 	{ }
@@ -424,6 +440,7 @@ U_BOOT_DRIVER(sandbox_swap_case_emul) = {
 	.name		= "sandbox_swap_case_emul",
 	.id		= UCLASS_PCI_EMUL,
 	.of_match	= sandbox_swap_case_ids,
+	.of_to_plat	= sandbox_swap_case_of_to_plat,
 	.ops		= &sandbox_swap_case_emul_ops,
 	.priv_auto	= sizeof(struct swap_case_priv),
 	.plat_auto	= sizeof(struct swap_case_plat),
