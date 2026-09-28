@@ -3,6 +3,11 @@
  * Copyright (c) 2014 Google, Inc
  */
 
+/*
+ * mapmem.h comes first since it pulls in asm/io.h, which is where iotrace.h
+ * expects to be included from
+ */
+#include <mapmem.h>
 #include <command.h>
 #include <iotrace.h>
 #include <vsprintf.h>
@@ -29,7 +34,7 @@ static void do_print_trace(void)
 {
 	ulong start, size, needed_size, offset, count;
 
-	struct iotrace_record *cur_record;
+	struct iotrace_record *cur_record, *recs;
 
 	iotrace_get_buffer(&start, &size, &needed_size, &offset, &count);
 
@@ -38,7 +43,8 @@ static void do_print_trace(void)
 
 	printf("Timestamp  Value          Address\n");
 
-	cur_record = (struct iotrace_record *)start;
+	recs = map_sysmem(start, count * sizeof(*recs));
+	cur_record = recs;
 	for (int i = 0; i < count; i++) {
 		if (cur_record->flags & IOT_WRITE)
 			printf("%08llu: 0x%08lx --> 0x%08llx\n",
@@ -53,6 +59,7 @@ static void do_print_trace(void)
 
 		cur_record++;
 	}
+	unmap_sysmem(recs);
 }
 
 static int do_set_buffer(int argc, char *const argv[])
