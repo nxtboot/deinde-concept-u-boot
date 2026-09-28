@@ -982,7 +982,9 @@ DM_TEST(dm_test_acpi_bgrt, UTF_SCAN_FDT);
 static int dm_test_acpi_fpdt(struct unit_test_state *uts)
 {
 	struct acpi_fpdt_boot *rec;
+	struct acpi_fpdt_ptr *ptr;
 	struct acpi_fpdt *fpdt;
+	struct acpi_fbpt *fbpt;
 	struct acpi_ctx ctx;
 	ulong addr, time;
 	void *buf;
@@ -1003,16 +1005,26 @@ static int dm_test_acpi_fpdt(struct unit_test_state *uts)
 	/* Verify the FPDT was written at the saved location */
 	ut_asserteq_mem("FPDT", fpdt->header.signature, ACPI_NAME_LEN);
 	ut_asserteq(1, fpdt->header.revision);
-	ut_asserteq(sizeof(struct acpi_fpdt) + sizeof(struct acpi_fpdt_boot),
+	ut_asserteq(sizeof(struct acpi_fpdt) + sizeof(struct acpi_fpdt_ptr),
 		    fpdt->header.length);
 
-	/* Verify the boot performance record */
-	rec = (struct acpi_fpdt_boot *)(fpdt + 1);
+	/* Verify the pointer record and the FBPT it points to */
+	ptr = (struct acpi_fpdt_ptr *)(fpdt + 1);
+	ut_asserteq(FPDT_REC_PTR_BOOT, ptr->hdr.type);
+	ut_asserteq(sizeof(struct acpi_fpdt_ptr), ptr->hdr.length);
+	ut_asserteq(1, ptr->hdr.revision);
+	fbpt = nomap_sysmem(ptr->addr, 0);
+	ut_asserteq_mem("FBPT", fbpt->signature, ACPI_NAME_LEN);
+	ut_asserteq(sizeof(struct acpi_fbpt) + sizeof(struct acpi_fpdt_boot),
+		    fbpt->length);
+
+	/* Verify the boot performance record, whose times are in ns */
+	rec = (struct acpi_fpdt_boot *)(fbpt + 1);
 	ut_asserteq(FPDT_REC_BOOT, rec->hdr.type);
 	ut_asserteq(sizeof(struct acpi_fpdt_boot), rec->hdr.length);
 	ut_asserteq(2, rec->hdr.revision);
 
-	ut_asserteq(1234, rec->reset_end);
+	ut_asserteq(1234 * 1000, rec->reset_end);
 	ut_assert(rec->loader_start != 0);
 	ut_assert(rec->loader_exec != 0);
 	ut_assert(rec->ebs_entry != 0);
@@ -1024,17 +1036,24 @@ static int dm_test_acpi_fpdt(struct unit_test_state *uts)
 	/* Get pointer to boot record and verify it matches */
 	rec = acpi_get_fpdt_boot();
 	ut_assertnonnull(rec);
-	ut_asserteq_ptr(rec, (struct acpi_fpdt_boot *)(fpdt + 1));
-	ut_asserteq(1234, rec->reset_end);
+	ut_asserteq_ptr(rec, (struct acpi_fpdt_boot *)(fbpt + 1));
+	ut_asserteq(1234 * 1000, rec->reset_end);
 
 	/*
-	 * Update a timing field. Incrementing always changes the table's
-	 * byte-sum (a carry chain of k bytes changes it by 1 - 255k, which
-	 * is never a multiple of 256 for a u64), unlike zeroing the field,
-	 * which leaves the checksum valid in the unlucky case where the
-	 * timestamps' bytes summed to a multiple of 256
+	 * Update a timing field: the record is in the FBPT, which the FPDT's
+	 * checksum does not cover, so the checksum stays valid
 	 */
 	rec->ebs_entry++;
+	ut_asserteq(0, table_compute_checksum(fpdt, fpdt->header.length));
+
+	/*
+	 * Change the FPDT itself. Incrementing always changes the table's
+	 * byte-sum (a carry chain of k bytes changes it by 1 - 255k, which
+	 * is never a multiple of 256), unlike zeroing a field, which leaves
+	 * the checksum valid in the unlucky case where the bytes summed to a
+	 * multiple of 256
+	 */
+	ptr->reserved++;
 
 	/* Checksum should now be invalid */
 	ut_assert(table_compute_checksum(fpdt, fpdt->header.length) != 0);

@@ -63,29 +63,6 @@ struct cpuinfo_x86 {
 	uint8_t x86_mask;
 };
 
-/* gcc 7.3 does not wwant to drop x86_vendors, so use #ifdef */
-#ifndef CONFIG_TPL_BUILD
-/*
- * List of cpu vendor strings along with their normalized
- * id values.
- */
-static const struct {
-	int vendor;
-	const char *name;
-} x86_vendors[] = {
-	{ X86_VENDOR_INTEL,     "GenuineIntel", },
-	{ X86_VENDOR_CYRIX,     "CyrixInstead", },
-	{ X86_VENDOR_AMD,       "AuthenticAMD", },
-	{ X86_VENDOR_UMC,       "UMC UMC UMC ", },
-	{ X86_VENDOR_NEXGEN,    "NexGenDriven", },
-	{ X86_VENDOR_CENTAUR,   "CentaurHauls", },
-	{ X86_VENDOR_RISE,      "RiseRiseRise", },
-	{ X86_VENDOR_TRANSMETA, "GenuineTMx86", },
-	{ X86_VENDOR_TRANSMETA, "TransmetaCPU", },
-	{ X86_VENDOR_NSC,       "Geode by NSC", },
-	{ X86_VENDOR_SIS,       "SiS SiS SiS ", },
-};
-#endif
 
 static void load_ds(u32 segment)
 {
@@ -268,7 +245,7 @@ int x86_cpu_vendor_info(char *name)
 
 	cpu_device = 0;
 
-	/* gcc 7.3 does not want to drop x86_vendors, so use #ifdef */
+	/* Keep the vendor lookup out of TPL to save space */
 #ifndef CONFIG_TPL_BUILD
 	*name = '\0'; /* Unset */
 
@@ -334,40 +311,17 @@ static void identify_cpu(struct cpu_device_id *cpu)
 #ifndef CONFIG_TPL_BUILD
 	{
 		char vendor_name[16];
-		int i;
 
 		cpu->device = x86_cpu_vendor_info(vendor_name);
 
-		cpu->vendor = X86_VENDOR_UNKNOWN;
-		for (i = 0; i < ARRAY_SIZE(x86_vendors); i++) {
-			if (memcmp(vendor_name, x86_vendors[i].name, 12) == 0) {
-				cpu->vendor = x86_vendors[i].vendor;
-				break;
-			}
-		}
+		cpu->vendor = x86_vendor_from_name(vendor_name);
 	}
 #endif
 }
 
 static inline void get_fms(struct cpuinfo_x86 *c, uint32_t tfms)
 {
-	c->x86 = (tfms >> 8) & 0xf;
-	c->x86_model = (tfms >> 4) & 0xf;
-	c->x86_mask = tfms & 0xf;
-	if (c->x86 == 0xf)
-		c->x86 += (tfms >> 20) & 0xff;
-	if (c->x86 >= 0x6)
-		c->x86_model += ((tfms >> 16) & 0xF) << 4;
-}
-
-u32 cpu_get_family_model(void)
-{
-	return gd->arch.x86_device & 0x0fff0ff0;
-}
-
-u32 cpu_get_stepping(void)
-{
-	return gd->arch.x86_mask;
+	x86_decode_fms(tfms, &c->x86, &c->x86_model, &c->x86_mask);
 }
 
 /* initialise FPU, reset EM, set MP and NE */

@@ -2055,6 +2055,9 @@ T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-x86.git
 F:	arch/x86/
 F:	cmd/x86/
 F:	configs/coreboot64-no-spl_defconfig
+F:	doc/usage/cmd/ioapic.rst
+F:	test/cmd/ioapic.c
+F:	test/lib/x86_cpu.c
 
 XEN
 M:	Anastasiia Lukianenko <vicooodin@gmail.com>

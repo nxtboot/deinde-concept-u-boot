@@ -28,8 +28,7 @@
 #include <dm/acpi.h>
 #include <linux/err.h>
 
-static int acpi_create_madt_lapic(struct acpi_madt_lapic *lapic,
-				  u8 cpu, u8 apic)
+int acpi_create_madt_lapic(struct acpi_madt_lapic *lapic, u8 cpu, u8 apic)
 {
 	lapic->type = ACPI_APIC_LAPIC;
 	lapic->length = sizeof(struct acpi_madt_lapic);
@@ -170,8 +169,8 @@ int acpi_write_tcpa(struct acpi_ctx *ctx, const struct acpi_writer *entry)
 	tcpa->lasa = nomap_to_sysmem(log);
 
 	/* (Re)calculate length and checksum */
-	current = (u32)tcpa + sizeof(struct acpi_tcpa);
-	header->length = current - (u32)tcpa;
+	current = (ulong)tcpa + sizeof(struct acpi_tcpa);
+	header->length = current - (ulong)tcpa;
 	acpi_update_checksum(header);
 
 	acpi_inc(ctx, tcpa->header.length);
@@ -263,7 +262,7 @@ int acpi_write_gnvs(struct acpi_ctx *ctx, const struct acpi_writer *entry)
 
 		/* Pack GNVS into the ACPI table area */
 		for (i = 0; i < ctx->dsdt->length; i++) {
-			u32 *gnvs = (u32 *)((u32)ctx->dsdt + i);
+			u32 *gnvs = (u32 *)((ulong)ctx->dsdt + i);
 
 			if (*gnvs == ACPI_GNVS_ADDR) {
 				*gnvs = nomap_to_sysmem(ctx->current);

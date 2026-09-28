@@ -835,6 +835,22 @@ static int scan_mmc4_bootdev(struct unit_test_state *uts)
 	return 0;
 }
 
+/* Check 'bootflow menu' with no bootflows to choose from */
+static int bootflow_cmd_menu_empty(struct unit_test_state *uts)
+{
+	struct bootstd_priv *std;
+
+	ut_assertok(bootstd_get_priv(&std));
+	ut_asserteq(0, std->bootflows.count);
+
+	ut_asserteq(1, run_command("bootflow menu", 0));
+	ut_assert_nextline("No bootflows");
+	ut_assert_console_end();
+
+	return 0;
+}
+BOOTSTD_TEST(bootflow_cmd_menu_empty, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
+
 /* Check 'bootflow menu' to select a bootflow */
 static int bootflow_cmd_menu(struct unit_test_state *uts)
 {

@@ -9,10 +9,11 @@
  * Daniel Engström, Omicron Ceti AB, <daniel@omicron.se>
  */
 
+#include <config.h>
 #include <asm/processor.h>
 #include <asm/processor-flags.h>
 
-#define BOOT_SEG	0xffff0000	/* linear segment of boot code */
+#define BOOT_SEG	CONFIG_RESET_SEG_START	/* linear segment of boot code */
 
 .section .start16, "ax"
 .code16

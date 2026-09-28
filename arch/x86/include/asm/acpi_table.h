@@ -24,6 +24,16 @@ struct acpi_table_header;
 
 /* These can be used by the target port */
 
+/**
+ * acpi_create_madt_lapic() - Write a MADT entry for a local APIC
+ *
+ * @lapic: Place to write it
+ * @cpu: ACPI processor ID
+ * @apic: APIC ID
+ * Return: length of the entry
+ */
+int acpi_create_madt_lapic(struct acpi_madt_lapic *lapic, u8 cpu, u8 apic);
+
 int acpi_create_madt_lapics(void *current);
 int acpi_create_madt_ioapic(struct acpi_madt_ioapic *ioapic, u8 id,
 			    u32 addr, u32 gsi_base);

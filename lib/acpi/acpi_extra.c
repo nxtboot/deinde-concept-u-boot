@@ -92,44 +92,50 @@ int acpi_write_bgrt(struct acpi_ctx *ctx)
 
 int acpi_write_fpdt(struct acpi_ctx *ctx, u64 uboot_start)
 {
-	struct acpi_fpdt *fpdt;
-	struct acpi_fpdt_boot *rec;
 	struct acpi_table_header *header;
+	struct acpi_fpdt_boot *rec;
+	struct acpi_fpdt_ptr *ptr;
+	struct acpi_fpdt *fpdt;
+	struct acpi_fbpt *fbpt;
 	u64 current_time;
 	int size;
 
+	/* The FPDT holds just a pointer record, to the FBPT */
 	fpdt = ctx->current;
 	header = &fpdt->header;
-
-	/* Calculate total size: FPDT header + boot performance record */
-	size = sizeof(struct acpi_fpdt) + sizeof(struct acpi_fpdt_boot);
-
+	size = sizeof(struct acpi_fpdt) + sizeof(struct acpi_fpdt_ptr);
 	memset(fpdt, '\0', size);
-
-	/* Fill out FPDT header */
 	acpi_fill_header(header, "FPDT");
 	header->length = size;
 	header->revision = 1;  /* ACPI 6.4+: 1 */
+	ptr = (struct acpi_fpdt_ptr *)(fpdt + 1);
+	ptr->hdr.type = FPDT_REC_PTR_BOOT;
+	ptr->hdr.length = sizeof(struct acpi_fpdt_ptr);
+	ptr->hdr.revision = 1;
+	acpi_inc_align(ctx, size);
 
-	/* Add boot performance record right after FPDT header */
-	rec = (struct acpi_fpdt_boot *)(fpdt + 1);
-
-	/* Fill in record header */
+	/* The FBPT follows, holding the boot performance record */
+	fbpt = ctx->current;
+	size = sizeof(struct acpi_fbpt) + sizeof(struct acpi_fpdt_boot);
+	memset(fbpt, '\0', size);
+	memcpy(fbpt->signature, "FBPT", ACPI_NAME_LEN);
+	fbpt->length = size;
+	rec = (struct acpi_fpdt_boot *)(fbpt + 1);
 	rec->hdr.type = FPDT_REC_BOOT;
 	rec->hdr.length = sizeof(struct acpi_fpdt_boot);
 	rec->hdr.revision = 2;  /* FPDT Boot Performance Record revision */
 
-	/* Fill in timing data */
-	current_time = timer_get_boot_us();
-	rec->reset_end = uboot_start;
+	/* Fill in timing data, in nanoseconds */
+	current_time = timer_get_boot_us() * 1000ULL;
+	rec->reset_end = uboot_start * 1000ULL;
 	rec->loader_start = current_time;
 	rec->loader_exec = current_time;
 	rec->ebs_entry = current_time;
 	rec->ebs_exit = current_time;
-
-	header->checksum = table_compute_checksum(fpdt, header->length);
-
 	acpi_inc_align(ctx, size);
+
+	ptr->addr = nomap_to_sysmem(fbpt);
+	header->checksum = table_compute_checksum(fpdt, header->length);
 	acpi_add_table(ctx, fpdt);
 
 	return 0;
@@ -138,14 +144,22 @@ int acpi_write_fpdt(struct acpi_ctx *ctx, u64 uboot_start)
 struct acpi_fpdt_boot *acpi_get_fpdt_boot(void)
 {
 	struct acpi_table_header *header;
+	struct acpi_fpdt_ptr *ptr;
 	struct acpi_fpdt *fpdt;
+	struct acpi_fbpt *fbpt;
 
 	header = acpi_find_table("FPDT");
 	if (!header)
 		return NULL;
 
 	fpdt = (struct acpi_fpdt *)header;
-	return (struct acpi_fpdt_boot *)(fpdt + 1);
+	ptr = (struct acpi_fpdt_ptr *)(fpdt + 1);
+	if (header->length < sizeof(*fpdt) + sizeof(*ptr) ||
+	    ptr->hdr.type != FPDT_REC_PTR_BOOT)
+		return NULL;
+	fbpt = nomap_sysmem(ptr->addr, 0);
+
+	return (struct acpi_fpdt_boot *)(fbpt + 1);
 }
 
 int acpi_fix_fpdt_checksum(void)
@@ -173,9 +187,9 @@ void acpi_final_fpdt(void)
 	if (fpdt) {
 		u64 time;
 
-		time = timer_get_boot_us();
+		/* The record is in the FBPT, which has no checksum */
+		time = timer_get_boot_us() * 1000ULL;
 		fpdt->ebs_entry = time;
 		fpdt->ebs_exit = time;
-		acpi_fix_fpdt_checksum();
 	}
 }

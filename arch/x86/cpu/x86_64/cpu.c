@@ -156,9 +156,7 @@ static void setup_sse_features(void)
 
 int x86_cpu_reinit_f(void)
 {
-	/* set the vendor to Intel so that native_calibrate_tsc() works */
-	gd->arch.x86_vendor = X86_VENDOR_INTEL;
-	gd->arch.has_mtrr = true;
+	x86_setup_identity_cpuid();
 	if (IS_ENABLED(CONFIG_X86_HARDFP))
 		setup_sse_features();
 
@@ -167,20 +165,19 @@ int x86_cpu_reinit_f(void)
 
 int x86_cpu_init_f(void)
 {
-	gd->arch.has_mtrr = true;
+	x86_setup_identity_cpuid();
 
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_UART_BOARD_INIT
+#if defined(CONFIG_DEBUG_UART_BOARD_INIT) && defined(CONFIG_SPL)
+/* SPL has already set up the debug UART; a board without SPL does its own */
 void board_debug_uart_init(void)
 {
-	/* this was already done in SPL */
 }
 #endif
 
 void x86_get_identity_for_timer(void)
 {
-	/* set the vendor to Intel so that native_calibrate_tsc() works */
-	gd->arch.x86_vendor = X86_VENDOR_INTEL;
+	x86_setup_identity_cpuid();
 }

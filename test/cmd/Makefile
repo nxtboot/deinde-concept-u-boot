@@ -16,6 +16,7 @@ obj-$(CONFIG_CMD_PAUSE) += test_pause.o
 endif
 obj-$(CONFIG_HUSH_PARSER) += exit.o
 obj-$(CONFIG_X86) += cpuid.o msr.o
+obj-$(CONFIG_APIC) += ioapic.o
 obj-$(CONFIG_CMD_ADDR_FIND) += addr_find.o
 obj-$(CONFIG_CMD_ADDRMAP) += addrmap.o
 ifdef CONFIG_CONSOLE_RECORD
