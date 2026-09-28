@@ -116,3 +116,5 @@ See also
 * :doc:`iod<iod>` for reading the I/O space the PM1 and GPE0 registers live in
 * :doc:`msr<msr>` for reading the x86 model-specific registers, another place
   where power settings are kept
+* :doc:`iotrace<iotrace>` for recording the register accesses this command
+  makes

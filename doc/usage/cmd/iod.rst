@@ -97,3 +97,5 @@ See also
 * :doc:`axi<axi>` for reading an AXI bus, another separate address space
 * :doc:`pmc<pmc>` for a decoded view of the power-management registers which
   live in I/O space
+* :doc:`iotrace<iotrace>` for recording the accesses a driver makes, rather
+  than making them by hand

@@ -111,3 +111,5 @@ See also
 
 * :doc:`axi<axi>` for reading an AXI bus in the same layout
 * :doc:`tpm<tpm>` for reading TPM data into memory, which md then shows
+* :doc:`iotrace<iotrace>` for filling a buffer in memory with a record of every
+  I/O access
