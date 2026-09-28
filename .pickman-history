@@ -99933,3 +99933,40 @@ No commits have worrying deltas: the six regular ones match the originals exactl
 
 ---
 
+## 2026-09-27: us/main
+
+Branch: cherry-835ac41ca69a
+
+Commits:
+- 835ac41ca69a arm: mvebu: armada8k: do not offer the ATF/TEE region as free memory
+- b4ac71db13a3 Prepare v2026.10-rc4
+- f31c5646ccac nvme: apple: Don't set a DMA direction for commands without a data transfer
+- bf7661a63cb9 nvme: apple: Never set the opcode in the NVMMU TCB
+- b63d271ae7c0 nvme: apple: Add WARN_ON_ONCE for non page-aligned admin queue buffers
+- b3f756587082 nvme: apple: Drop the PRP null check chicken bit
+- 38eb8d91aba8 Merge tag 'u-boot-nvme-fixes-20260911' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-nvme
+
+### Conversation log
+Two of seven picked cleanly; continuing with the nvme commits.
+
+All 7 commits are now on branch `cherry-835ac41ca69a`, based on ci/master, and the sandbox build passes with no warnings or errors.
+
+| Original | New | Subject |
+|---|---|---|
+| 835ac41ca69a | 48239b4c910c | arm: mvebu: armada8k: do not offer the ATF/TEE region as free memory |
+| b4ac71db13a3 | 01af558fb350 | Prepare v2026.10-rc4 |
+| f31c5646ccac | 74663151d78b | nvme: apple: Don't set a DMA direction for commands without a data transfer |
+| bf7661a63cb9 | 85f6091e9c5b | nvme: apple: Never set the opcode in the NVMMU TCB |
+| b63d271ae7c0 | 704a2e98be64 | nvme: apple: Add WARN_ON_ONCE for non page-aligned admin queue buffers |
+| b3f756587082 | 35e205e078b7 | nvme: apple: Drop the PRP null check chicken bit |
+| 38eb8d91aba8 | 538c4236dc2b | Merge tag 'u-boot-nvme-fixes-20260911' (empty) |
+
+- **Conflicts and fix-ups:** none. Every commit applied cleanly.
+- **Deltas:** each picked commit changes the same files and line counts as its original.
+- **Merge commit:** as expected, it has no changes because the nvme commits were already picked. `git cherry-pick --allow-empty` still stopped on it, so I finished it with `git commit --allow-empty --no-edit`. It keeps the "cherry picked from" line.
+- **Builds:** I built sandbox after the first two commits and once at the end. I didn't build between the four nvme commits, since sandbox doesn't compile `nvme_apple.c` anyway.
+
+The branch is ready to push; I haven't merged it anywhere.
+
+---
+
