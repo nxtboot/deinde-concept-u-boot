@@ -171,6 +171,7 @@ void iotrace_set_buffer(ulong start, ulong size)
 {
 	iotrace.start = start;
 	iotrace.size = size;
+	iotrace.needed_size = 0;
 	iotrace.offset = 0;
 	iotrace.crc32 = 0;
 }
