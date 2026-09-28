@@ -100005,3 +100005,59 @@ The Gmail and Google Calendar connectors need authorising in your claude.ai conn
 
 ---
 
+## 2026-09-28: us/main
+
+Branch: cherry-0cc7799c0cd8
+
+Commits:
+- 0cc7799c0cd8 pci: Iterate over busses using uclass_foreach_dev_probe
+- 85a7290d4bc9 dm: pci: fix uninitialized fdt_pci_addr fall-through in pci_get_devfn
+- ec6bbbc2de2c Merge tag 'u-boot-pci-fixes-20260911' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-pci
+
+### Conversation log
+Working tree is clean. Creating the branch and starting the cherry-picks.
+
+The first cherry-pick conflicts, so I need to check whether these commits are already in ci/master before doing anything else.
+
+Not already applied. Let me look at the conflict in cmd/pci.c.
+
+Now the build test for that (empty) commit, plus confirm the sequencer state is clear.
+
+Build passes. Second commit next.
+
+Identical delta. Building, then the merge commit.
+
+The merge's first-parent diff re-applies the same `cmd/pci.c` hunk, so it hits the same conflict. Let me confirm that's the only conflict and it's the same hunk, then resolve it the same way.
+
+Same single hunk, and the util.c change from the merge is already in via the previous commit. Resolving by keeping ci/master's version and committing as an empty merge-record with the note.
+
+All three commits are on the branch and the final build passes. One quick sanity check, since the `util.c` change touches `pci_get_devfn()` which the sandbox PCI tests exercise:
+
+All PCI tests pass. The branch `cherry-0cc7799c0cd8` is ready for pushing (not merged anywhere).
+
+## Final status
+
+**Branch:** `cherry-0cc7799c0cd8` based on `ci/master`, 3 commits:
+
+```
+9b38c1f274df Merge tag 'u-boot-pci-fixes-20260911' ...   (empty, with note)
+41e03e0cdc44 dm: pci: fix uninitialized fdt_pci_addr fall-through in pci_get_devfn
+d9c3c9a1c36e pci: Iterate over busses using uclass_foreach_dev_probe   (empty, with note)
+```
+
+**Build result:** OK — sandbox built cleanly after each commit and at the end, no warnings or errors. Sandbox PCI unit tests (`ut dm pci*`, `ut cmd pci*`) all pass: 23 tests, 0 failures.
+
+**Fix-ups made:**
+
+1. **0cc7799c0cd8 (pci: Iterate over busses...)** conflicted in `cmd/pci.c`. This was not an "already applied" case — none of the three subjects exist in ci/master. Instead, ci/master commit 860a79a8903f ("cmd: pci: Show all buses when listing them", Simon Glass, 2026-09-25) had already rewritten the same loop with a superset fix: it calls `uclass_probe_all(UCLASS_PCI)` and then iterates by bus number up to `pci_last_busno()`, skipping any bus that fails, which covers the failing-controller case the upstream commit targets, and additionally orders by bus number (with a test in `test/cmd/pci.c` depending on that). I resolved by keeping the ci/master version, which makes the commit empty. It was committed with `--allow-empty`, original author/date, the `-x` cherry-pick line, and a note explaining the supersession.
+
+2. **ec6bbbc2de2c (merge commit)** hit the identical single hunk in `cmd/pci.c` (the merge's first-parent diff re-carries the change from commit 1; its `drivers/core/util.c` part was already applied by commit 2). Resolved the same way; the commit is empty with a note pointing at 860a79a8903f.
+
+**Deltas:**
+- 85a7290d4bc9 → 41e03e0cdc44: identical (`drivers/core/util.c`, +4/−4).
+- The two empty commits are the only "concerning" deltas, and they are intentional for the reason above. If you'd prefer to adopt upstream's `uclass_foreach_dev_probe()` form instead of your `pci_last_busno()` loop, that would mean dropping part of 860a79a8903f and its ordering test, so I left it as a note rather than deciding that unilaterally.
+
+No `.pickman-signal` file was written, since the commits were not already applied.
+
+---
+
