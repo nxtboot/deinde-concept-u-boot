@@ -99970,3 +99970,38 @@ The branch is ready to push; I haven't merged it anywhere.
 
 ---
 
+### Review: 2026-09-27
+
+Branch: cherry-835ac41ca69a
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) epyc-cb, samus_tpl, samus, snow.
+
+None of the four fai...
+
+### Conversation log
+The MR branch was overwritten by the wrong branch (the unrelated `mpfs-cpu-repick` history). I'll restore it: build, make `-v2`, then force-push the correct series.
+
+Stale Rust build state from another worktree (`/tmp/wt-a8k`), so I'll rebuild in a fresh directory.
+
+Sandbox builds cleanly. Creating `-v2` and force-pushing.
+
+The review comment needed no code changes, but the MR branch was broken, so I repaired it and force-pushed.
+
+**The problem:** the remote branch `ci/cherry-835ac41ca69a` pointed at `b0b27d62db64`, which is a chain of `pickman: Record ...` commits on top of a master from 9 August. None of the 7 picked commits were on it, so the MR's diff against master was huge and wrong. Only the unrelated local branch `mpfs-cpu-repick` contains that commit. The likely cause: `pickman push-branch` pushes `HEAD`, not the branch you name (the output shows `HEAD -> cherry-835ac41ca69a`). When this task started, `mpfs-cpu-repick` was checked out, so an earlier step probably pushed that branch's history to this MR. That's worth fixing in pickman.
+
+**What I did:**
+- **Checked the series:** local `cherry-835ac41ca69a` (`9fff8ee85c4e`) is correct. It still has the armada8k `lmb_reserve()` fix in `081bcfa14709` and the other 6 picks.
+- **Sandbox build:** `buildman -L --board sandbox -w -o /tmp/pickman` failed, but not because of this series. The Rust example looked for a linker script left over from another worktree (`/tmp/wt-a8k/.../static.lds`). The same build in a new directory (`/tmp/pickman-835`) passed with no errors or warnings.
+- **Branches and push:** I created `cherry-835ac41ca69a-v2` at `9fff8ee85c4e` and ran `pickman push-branch cherry-835ac41ca69a -r ci -f` with the right branch checked out. The remote now points at `9fff8ee85c4e`, which should start a new MR pipeline.
+
+**The comment itself:** it is the bot's report on pipeline attempt 2 and asks for nothing. epyc-cb, samus, samus_tpl and snow are lab or board problems in code this series doesn't touch. snow's `initr_dm() failed` is still worth checking against a plain ci/master pipeline.
+
+**Suggested reply for the MR:**
+
+> No code change was needed for the attempt-2 failures (epyc-cb: board held by another user; samus/samus_tpl: no console output after em100 flashing; snow: `initr_dm()` failure in code this series doesn't touch). While checking, I found the MR branch had been overwritten by an unrelated chain of `.pickman-history` commits (b0b27d62db64), so the series was missing from the MR. I've force-pushed the correct series back (9fff8ee85c4e, which includes the armada8k `lmb_reserve()` fix). Sandbox builds cleanly. Please check the new pipeline, and re-run the lab jobs if they fail again for the same reasons.
+
+The Gmail and Google Calendar connectors need authorising in your claude.ai connector settings before they can be used. Nothing here needed them.
+
+---
+
