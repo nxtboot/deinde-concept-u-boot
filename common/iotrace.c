@@ -54,7 +54,7 @@ static void add_record(int flags, const void *ptr, ulong value)
 	addr = map_to_sysmem(ptr);
 	if (iotrace.region_size)
 		if (addr < iotrace.region_start ||
-		    addr > iotrace.region_start + iotrace.region_size)
+		    addr >= iotrace.region_start + iotrace.region_size)
 			return;
 
 	/* Store it if there is room */
