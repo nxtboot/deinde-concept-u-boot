@@ -100005,3 +100005,277 @@ The Gmail and Google Calendar connectors need authorising in your claude.ai conn
 
 ---
 
+## 2026-09-28: us/main
+
+Branch: cherry-0cc7799c0cd8
+
+Commits:
+- 0cc7799c0cd8 pci: Iterate over busses using uclass_foreach_dev_probe
+- 85a7290d4bc9 dm: pci: fix uninitialized fdt_pci_addr fall-through in pci_get_devfn
+- ec6bbbc2de2c Merge tag 'u-boot-pci-fixes-20260911' of https://git.u-boot-project.org/u-boot/custodians/neil.armstrong/u-boot-pci
+
+### Conversation log
+Working tree is clean. Creating the branch and starting the cherry-picks.
+
+The first cherry-pick conflicts, so I need to check whether these commits are already in ci/master before doing anything else.
+
+Not already applied. Let me look at the conflict in cmd/pci.c.
+
+Now the build test for that (empty) commit, plus confirm the sequencer state is clear.
+
+Build passes. Second commit next.
+
+Identical delta. Building, then the merge commit.
+
+The merge's first-parent diff re-applies the same `cmd/pci.c` hunk, so it hits the same conflict. Let me confirm that's the only conflict and it's the same hunk, then resolve it the same way.
+
+Same single hunk, and the util.c change from the merge is already in via the previous commit. Resolving by keeping ci/master's version and committing as an empty merge-record with the note.
+
+All three commits are on the branch and the final build passes. One quick sanity check, since the `util.c` change touches `pci_get_devfn()` which the sandbox PCI tests exercise:
+
+All PCI tests pass. The branch `cherry-0cc7799c0cd8` is ready for pushing (not merged anywhere).
+
+## Final status
+
+**Branch:** `cherry-0cc7799c0cd8` based on `ci/master`, 3 commits:
+
+```
+9b38c1f274df Merge tag 'u-boot-pci-fixes-20260911' ...   (empty, with note)
+41e03e0cdc44 dm: pci: fix uninitialized fdt_pci_addr fall-through in pci_get_devfn
+d9c3c9a1c36e pci: Iterate over busses using uclass_foreach_dev_probe   (empty, with note)
+```
+
+**Build result:** OK — sandbox built cleanly after each commit and at the end, no warnings or errors. Sandbox PCI unit tests (`ut dm pci*`, `ut cmd pci*`) all pass: 23 tests, 0 failures.
+
+**Fix-ups made:**
+
+1. **0cc7799c0cd8 (pci: Iterate over busses...)** conflicted in `cmd/pci.c`. This was not an "already applied" case — none of the three subjects exist in ci/master. Instead, ci/master commit 860a79a8903f ("cmd: pci: Show all buses when listing them", Simon Glass, 2026-09-25) had already rewritten the same loop with a superset fix: it calls `uclass_probe_all(UCLASS_PCI)` and then iterates by bus number up to `pci_last_busno()`, skipping any bus that fails, which covers the failing-controller case the upstream commit targets, and additionally orders by bus number (with a test in `test/cmd/pci.c` depending on that). I resolved by keeping the ci/master version, which makes the commit empty. It was committed with `--allow-empty`, original author/date, the `-x` cherry-pick line, and a note explaining the supersession.
+
+2. **ec6bbbc2de2c (merge commit)** hit the identical single hunk in `cmd/pci.c` (the merge's first-parent diff re-carries the change from commit 1; its `drivers/core/util.c` part was already applied by commit 2). Resolved the same way; the commit is empty with a note pointing at 860a79a8903f.
+
+**Deltas:**
+- 85a7290d4bc9 → 41e03e0cdc44: identical (`drivers/core/util.c`, +4/−4).
+- The two empty commits are the only "concerning" deltas, and they are intentional for the reason above. If you'd prefer to adopt upstream's `uclass_foreach_dev_probe()` form instead of your `pci_last_busno()` loop, that would mean dropping part of 860a79a8903f and its ordering test, so I left it as a note rather than deciding that unilaterally.
+
+No `.pickman-signal` file was written, since the commits were not already applied.
+
+---
+
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 1): fixed failed job(s) samus_tpl, samus, snow, pine64.
+
+I'll start by reading...
+
+### Conversation log
+The single "review comment" is the pipeline-fix bot's own report from attempt 1, not a reviewer request. Let me confirm the branch state before deciding whether anything needs changing.
+
+The `-fix1` branch head differs from the MR branch, though the earlier report said they were identical. Let me see what it contains.
+
+That's only the pickman history record from attempt 1 — no code difference. One last check: what the `ci` remote currently has for this branch.
+
+The remote is at `c9e329b0e144`, the same head the bot reviewed. I've done everything needed to answer this; here's the report.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot's own report from attempt 1 (author `project_1_bot_…`), echoed back into the review queue. It requests no code change; its conclusion was explicitly *"infrastructure/lab failures — no code change made"* and *"no change to the MR is warranted"*. There is nothing for a reviewer-comment pass to act on.
+
+**What I verified on `cherry-0cc7799c0cd8` (`c9e329b0e144`):**
+- Branch is unchanged since that report; the `ci` remote is at the same head.
+- Only code delta vs `ci/master` remains the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (the other two cherry-picks are the intentional empty supersession records).
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, 0 warnings, 0 errors.
+- `cherry-0cc7799c0cd8-fix1` (`e8e701aaef0b`) differs from the MR branch only by a `.pickman-history` record commit — no source change.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch and no force push. There is no change to carry, and a force push of an identical tree would only re-trigger the same four `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64), which the previous analysis showed failing identically on unrelated branches (`x86-prep` 9959, MR 1367 pipelines 10005/10006). That would produce another bot comment and loop this cycle again without new information. If you do want a rerun, retrying the lab jobs in GitLab once the boards are back is the cheaper route.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix bot's attempt-1 report rather than a review request, so there is nothing to change. The branch is unchanged (`c9e329b0e144`) and sandbox still builds clean with buildman. The samus/samus_tpl/snow/pine64 failures are lab-runner issues seen identically on x86-prep and MR 1367 — please retry those jobs once the boards are recovered on ellesmere-lab rather than re-pushing.
+
+One process note worth a look: the bot's own report being fed back as a review comment suggests pickman's comment filter should skip its own `project_1_bot_*` posts, otherwise every pipeline-fix attempt will spawn a follow-up "address review" task like this one.
+
+---
+
+### Pipeline fix: 2026-09-28 (attempt 2)
+
+Branch: cherry-0cc7799c0cd8
+
+Failed jobs:
+- samus_tpl (sjg-lab)
+- samus (sjg-lab)
+- bpif3 (sjg-lab)
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+Evidence is complete; nothing else to request. All checks are in, the `-fix2` branch exists at the unchanged head, and the baseline worktree is removed. Here is the report.
+
+## Result: infrastructure/lab failures — no code change made
+
+**Branch:** `cherry-0cc7799c0cd8-fix2` created at `f82d3cd14533`, identical to `cherry-0cc7799c0cd8`. Working tree clean. Not pushed.
+
+### What the MR changes
+Only 4 lines in `drivers/core/util.c`: `pci_get_devfn()` returns -ENODEV when a PCI child node has no `reg` property, instead of falling through and returning bits of an uninitialised `struct fdt_pci_addr`. The other two cherry-picks are the intentional empty supersession records. The one caller that stores the result unchecked (`pci-uclass.c:1362`) could see a behaviour change only for a `reg`-less child — and the compiled `chromebook_samus` DTB has 10 PCI children, all with `reg`.
+
+### Why none of the five failures is caused by this MR
+
+| Job | Symptom | Evidence |
+|---|---|---|
+| **bpif3** (new this attempt) | `BootROM did not start the FSBL` ×5 during USB load | Byte-identical signature on four unrelated pipelines today (9977 MR 1363, 9988 MR 1365, 9990 MR 1366, 9998 MR 1367). It also *passed* on this MR's own earlier pipelines 10003/10004. Fails before any U-Boot code runs; `pci_get_devfn` is not linked into the spacemit_k1 SPL (the FSBL) or U-Boot. |
+| **samus / samus_tpl** | em100 write, no prompt, 25 s timeout | Failed on **every** pipeline today across all branches (mz33-fix, mz33-native, MRs 1363–1367). Never passed anywhere. |
+| **snow** | Hangs after `using memory … for malloc()` | Same: failed on every pipeline today across all branches. `pci_get_devfn` not linked into snow's SPL or U-Boot. |
+| **pine64** | `test_dm_compat` sees `bo??meth_pxe`, `gpi??sunxi` | The raw trace shows the board printed those lines with two invalid bytes mid-name (GitLab renders them as `?`); different bytes in each of 10003/10004/10007. I built pine64_plus at `ci/master` and at HEAD: `u-boot-nodtb.bin` differs in **25 bytes, all inside the two embedded version strings**; the DTB is identical; `pci_get_devfn` is absent from both u-boot and SPL. The image the lab ran is functionally the same as master, so this is serial-line corruption. |
+
+I took pine64 seriously because it failed 3/3 on this MR while passing on neighbours (10005, 10006), but the binary comparison rules out a code cause. The mid-test `u-boot-test-reset` in the log is just the harness respawning after the assert.
+
+### Verification done
+- `buildman -k -o /tmp/pickman --boards spacemit_k1,pine64_plus,chromebook_samus,chromebook_samus_tpl,snow,sandbox`: 6/6 built, only the usual missing-blob binman notices and pre-existing snow DT warnings. (Note: `bpif3`, `samus` etc. are lab *roles*; the board names are `spacemit_k1`, `chromebook_samus`, … — the plain role list in the task doesn't resolve in buildman.)
+- Baseline `ci/master` build of pine64_plus and spacemit_k1 for byte comparison (worktree since removed).
+
+**Recommendation:** retry the lab jobs once ellesmere-lab's samus/snow boards are recovered and bpif3's BootROM USB path is stable; no change to the MR is warranted. As noted in attempt 1, pickman's review-comment filter is still feeding its own bot reports back as review tasks.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers need authorisation via your claude.ai connector settings before use — irrelevant here, just flagging.
+
+---
+
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 2): fixed failed job(s) samus_tpl, samus, bpif3, snow, pine64.
+
+I'll start by ...
+
+### Conversation log
+The "review comment" here is again the pipeline-fix bot's own attempt-2 report, not a reviewer request. Let me confirm the branch state before deciding whether there is anything to act on.
+
+Everything I need is in hand: the branch is clean, the source delta is unchanged, and the build passes. No further tool calls are required — here is the report.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot's own attempt-2 report (author `project_1_bot_…`) fed back into the review queue, exactly as happened after attempt 1. Its conclusion is *"infrastructure/lab failures — no code change made … no change to the MR is warranted"*. It requests nothing, so there is nothing for a review-comment pass to act on.
+
+**State verified on `cherry-0cc7799c0cd8`:**
+- Working tree clean; the only source delta vs `ci/master` is still the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (the other two cherry-picks are the intentional empty supersession records).
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no warnings or errors.
+- The local branch head (`ec5215e35002`) is one commit ahead of the `ci` remote (`f82d3cd14533`), but that commit is only the `.pickman-history` record from attempt 2 — 44 lines added to the history file, no code. `-fix1` and `-fix2` branches likewise carry only history records.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch and no force push. There is no code change to carry, and a force push would re-trigger the same five `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64, bpif3) that attempt 2 showed failing identically on unrelated branches (every pipeline today for samus/snow; MRs 1363–1367 for bpif3). That would produce another bot report, which would then be fed back as a third "review comment" — the same loop that has now run twice. If a rerun is wanted, retrying the lab jobs in GitLab once the boards recover is the cheaper route and does not require a push.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix bot's attempt-2 report rather than a review request, so there is nothing to change. The branch source is unchanged since `f82d3cd14533` and sandbox still builds clean with buildman. The samus/samus_tpl/snow/pine64/bpif3 failures are lab-runner issues seen identically on unrelated branches today — please retry those jobs once the boards are recovered on ellesmere-lab rather than re-pushing.
+
+**Process note (now the second occurrence):** pickman's review-comment filter is feeding its own `project_1_bot_*` pipeline-fix reports back as review tasks. Until that filter skips bot-authored comments, each pipeline-fix attempt will spawn one of these no-op review passes.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this session need authorisation via your claude.ai connector settings before they can be used — not relevant to this task.
+
+---
+
+### Pipeline fix: 2026-09-28 (attempt 3)
+
+Branch: cherry-0cc7799c0cd8
+
+Failed jobs:
+- samus_tpl (sjg-lab)
+- samus (sjg-lab)
+- bpif3 (sjg-lab)
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+While the builds run, one more check: confirming the snow/samus/bpif3 symptoms match what attempt 2 recorded (board never reaches a prompt after flashing).
+
+Nothing further to request right now — the two builds are already running in the background and will notify me when they finish; the branch is created and the diagnosis is complete. I'll report once the build results land.
+
+---
+
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) samus_tpl, samus, bpif3, snow, pine64.
+
+I'll start by ...
+
+### Conversation log
+The single "review comment" is once again the pipeline-fix bot's own report (attempt 3, and it doesn't even contain a conclusion — it ends mid-run waiting on builds). Let me check the branch state before deciding whether anything needs doing.
+
+Build is clean and there is no code to change, so I have everything needed for the report. Nothing further to request.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot's own attempt-3 report (author `project_1_bot_…`) fed back into the review queue — the third time this has happened on this MR. This time the echoed text is not even a finished report: it ends with *"I'll report once the build results land"*, i.e. it was captured mid-run before the bot's conclusion. It requests no code change, so there is nothing for a review-comment pass to act on.
+
+**State verified on `cherry-0cc7799c0cd8` (local head `3b426925355a`):**
+- Working tree clean.
+- Only source delta vs `ci/master` is still the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (+4/−4). The other two cherry-picks remain the intentional empty supersession records.
+- Every commit above `c9e329b0e144` is a `.pickman-history` record (review handling ×2, pipeline fix ×2). The `ci` remote is at `4dc282a8dca8`; the local branch is one history-record commit ahead. `-fix1`, `-fix2`, `-fix3` differ from the MR branch only in `.pickman-history`.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no warnings or errors.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch, no force push. There is no code change to carry. Pushing an identical tree would re-trigger the same five `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64, bpif3) that attempts 1–3 showed failing identically on unrelated branches today, producing a fourth bot report that would then be fed back as a fourth "review comment". If a rerun is wanted, retrying the lab jobs in GitLab once the boards recover is cheaper and needs no push.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix bot's attempt-3 report (captured mid-run) rather than a review request, so there is nothing to change. The source on this branch is unchanged since `c9e329b0e144` and sandbox still builds clean with buildman. The samus/samus_tpl/snow/pine64/bpif3 failures are lab-runner issues seen identically on unrelated branches today — please retry those jobs once the boards are recovered on ellesmere-lab rather than re-pushing.
+
+**Process note (third occurrence — worth fixing now):** pickman's review-comment filter feeds its own `project_1_bot_*` pipeline-fix reports back as review tasks, and in this case captured a partial report before the bot had finished. Two suggestions: (1) skip comments authored by the bot account when collecting review comments; (2) have the pipeline-fix path wait for its background builds before posting, so the MR comment carries the actual conclusion. Until (1) is in place, each pipeline-fix attempt will keep spawning one of these no-op review passes.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this session need authorisation via your claude.ai connector settings before they can be used — not relevant to this task.
+
+---
+
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+This "review comment" is the pipeline-fix bot reporting that it has hit its retry limit — a status notice, not a reviewer request. Let me confirm the branch state before deciding whether anything needs doing.
+
+Branch is clean and unchanged in source; the only remaining step from the checklist that is meaningful here is the build verification.
+
+Build is clean, and there is nothing further to check — the comment asks for manual intervention, which is exactly the point at which an automated pass should stop rather than push again. Here is the report.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot (author `project_1_bot_…`) announcing *"reached retry limit (3 attempts). Manual intervention required."* That is a terminal status notice addressed to a human, not a request for a code change. It is the fourth bot-authored message on this MR to be fed back through the review queue.
+
+**State verified on `cherry-0cc7799c0cd8` (local head `6551aedb07b4`):**
+- Working tree clean.
+- The only source delta vs `ci/master` is still the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (+4/−4). The other two cherry-picks remain the intentional empty supersession records (see 860a79a8903f).
+- Everything above `c9e329b0e144` is `.pickman-history` bookkeeping (five record commits). The `ci` remote sits at `4dc282a8dca8`; the local branch is one history-record commit ahead, no code difference.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no warnings or errors.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch, no force push. There is no code change to carry, and the comment itself says the automated loop should stop. Pushing an identical tree would only re-trigger the same five `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64, bpif3), which attempts 1–3 documented as failing identically on unrelated branches today (samus/snow on every pipeline; bpif3's `BootROM did not start the FSBL` on MRs 1363–1367; pine64's serial corruption with a binary that differs from master only in version strings).
+
+**The manual intervention actually needed is on the lab side, not the branch:**
+1. Recover samus/samus_tpl and snow on `ellesmere-lab` (down all day on every branch).
+2. Check bpif3's USB BootROM path and pine64's serial line.
+3. Then retry the failed jobs in GitLab — no re-push is required.
+
+**Suggested reply to post on the MR:**
+
+> The pipeline-fix bot has hit its retry limit, but the failing jobs (samus, samus_tpl, snow, pine64, bpif3) are all lab-runner problems seen identically on unrelated branches today, as detailed in the three attempt reports above. The branch source is unchanged since `c9e329b0e144` — only the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` — and sandbox still builds clean with buildman. Please retry the lab jobs once the boards are recovered on ellesmere-lab; no change to this MR is needed.
+
+**Process note (fourth occurrence):** pickman's review-comment collector still treats its own `project_1_bot_*` posts as review comments, so even the "retry limit reached" notice spawned this pass. Filtering bot-authored comments out of the review queue would end the loop.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this session need authorisation via your claude.ai connector settings before they can be used — not relevant to this task.
+
+---
+
