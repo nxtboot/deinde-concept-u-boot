@@ -1,0 +1,89 @@
+.. SPDX-License-Identifier: GPL-2.0+:
+
+.. index::
+   single: 2048 (command)
+
+2048 command
+============
+
+Synopsis
+--------
+
+::
+
+    2048
+    2048 test
+
+Description
+-----------
+
+The 2048 command plays the sliding-block puzzle game of the same name, designed
+by Gabriele Cirulli. Tiles carrying powers of two sit on a 4x4 grid. Each move
+slides every tile as far as it will go in the chosen direction; where two tiles
+showing the same number meet, they merge into a single tile showing their sum
+and that sum is added to the score.
+
+A new tile of 2 or 4 appears on a free square after each move which changes the
+board. The game ends when no square is free and no two neighbouring tiles
+match, at which point the command prints GAME OVER.
+
+The board is drawn with ANSI escape sequences: each tile is a block of colour
+three lines deep and seven columns wide, with its number in the middle, and an
+empty square shows a single dot. The terminal must therefore support colour and
+cursor positioning. The game is not fully functional on a video device.
+
+The keys are:
+
+left, right, up and down arrow
+    slide the tiles in that direction
+
+q
+    quit the game, which prints QUIT
+
+Any other key is ignored.
+
+test
+    Run the built-in self-test of the sliding and merging logic rather than
+    playing a game. This checks thirteen rows of tiles against the result
+    expected from sliding each one, and prints nothing but a summary. No board
+    is drawn and no terminal support is needed.
+
+The score is reset to zero each time a game starts, so it does not carry over
+from a previous one.
+
+Example
+-------
+
+This runs the self-test::
+
+    => 2048 test
+    All 13 tests executed successfully
+
+This starts a game and quits it straight away. The two lines shown are the
+only plain text on the screen; everything between them is the board, which is
+drawn as blocks of colour::
+
+    => 2048
+    2048.c                 0 pts
+
+            ←, ↑, →, ↓ or q
+                QUIT
+
+Return value
+------------
+
+The return value $? is 0 (true) after a game, however it ends.
+
+For ``2048 test`` it is 0 (true) if every case gives the expected result and 1
+(false) if any of them does not, in which case the first failing case is
+printed. It is also 1 (false) if more than one argument is given.
+
+See also
+--------
+
+* :doc:`doom<doom>` for a larger game, which needs a video display rather than
+  an ANSI terminal
+* :doc:`cls<cls>` for clearing the screen, which this command does for itself
+  when a game starts
+* :doc:`video<video>` for what the display is doing, since the board needs a
+  terminal which this command cannot check for
