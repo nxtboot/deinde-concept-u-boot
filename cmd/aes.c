@@ -7,6 +7,7 @@
  */
 
 #include <command.h>
+#include <getopt.h>
 #include <linux/string.h>
 #include <uboot_aes.h>
 #include <malloc.h>
@@ -263,17 +264,19 @@ int cmd_aes_cbc(int argc, char *const argv[], u32 key_len)
 
 /**
  * do_aes() - Handle the "aes" command-line command
- * @cmdtp:	Command data struct pointer
- * @flag:	Command flag
- * @argc:	Command-line argument count
- * @argv:	Array of command-line arguments
+ * @gs:		Command state, holding the command-line arguments
  *
  * Returns zero on success, CMD_RET_USAGE in case of misuse and negative
  * on error.
  */
-static int do_aes(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_aes(struct getopt_state *gs)
 {
+	char *const *argv = gs->argv;
+	int argc = gs->argc;
 	u32 key_len;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -339,7 +342,7 @@ U_BOOT_LONGHELP(aes,
 #endif
 );
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	aes, 7, 1, do_aes,
 	"AES 128/192/256 operations",
 	aes_help_text
