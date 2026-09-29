@@ -93,3 +93,11 @@ Configuration
 -------------
 
 The cpu command is available if CONFIG_CMD_CPU=y.
+
+See also
+--------
+
+* :doc:`dhry<dhry>` for measuring what a CPU actually achieves, rather than
+  what it claims for itself
+* :doc:`cpuid<cpuid>` for the raw CPUID registers on x86
+* :doc:`bdinfo<bdinfo>` for the rest of the board information

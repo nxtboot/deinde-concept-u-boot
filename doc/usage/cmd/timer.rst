@@ -71,4 +71,5 @@ See also
 * :doc:`date<date>` for the time of day, which needs an RTC
 * :doc:`sleep<sleep>` for waiting for a given time
 * :doc:`bootstage<bootstage>` for timings of the individual steps of the boot
+* :doc:`dhry<dhry>` for a benchmark which does its own timing
 * *time* for timing a single command
