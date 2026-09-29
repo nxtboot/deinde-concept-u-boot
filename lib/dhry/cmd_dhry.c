@@ -5,19 +5,24 @@
 
 #include <command.h>
 #include <div64.h>
+#include <getopt.h>
 #include <time.h>
 #include <vsprintf.h>
 #include "dhry.h"
 
-static int do_dhry(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_dhry(struct getopt_state *gs)
 {
 	ulong start, duration, vax_mips;
 	u64 dhry_per_sec;
 	int iterations = 1000000;
+	const char *arg;
 
-	if (argc > 1)
-		iterations = dectoul(argv[1], NULL);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	arg = getopt_pop(gs);
+	if (arg)
+		iterations = dectoul(arg, NULL);
 
 	start = get_timer(0);
 	dhry(iterations);
@@ -34,7 +39,7 @@ static int do_dhry(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	dhry,	2,	1,	do_dhry,
 	"[iterations] - run dhrystone benchmark",
 	"\n    - run the Dhrystone 2.1 benchmark, a rough measure of CPU speed\n"
