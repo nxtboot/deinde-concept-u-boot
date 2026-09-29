@@ -2452,6 +2452,7 @@ menu "Misc commands"
 
 config CMD_2048
 	bool "Play 2048"
+	select GETOPT
 	help
 	  This is a simple sliding block puzzle game designed by Italian web
 	  developer Gabriele Cirulli. The game's objective is to slide numbered

@@ -124,3 +124,5 @@ See also
 
 * :doc:`osd<osd>` for the text overlay drawn on top of the display
 * :doc:`bmp<bmp>` for drawing a BMP image on the display
+* :doc:`2048<2048>` for a game which needs an ANSI terminal rather than a
+  display

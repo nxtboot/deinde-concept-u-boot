@@ -20,6 +20,7 @@ obj-$(CONFIG_APIC) += ioapic.o
 obj-$(CONFIG_CMD_ADDR_FIND) += addr_find.o
 obj-$(CONFIG_CMD_ADDRMAP) += addrmap.o
 ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_2048) += 2048.o
 obj-$(CONFIG_CMD_ACPI) += acpi.o
 obj-$(CONFIG_CMD_AXI) += axi.o
 endif
@@ -100,6 +101,7 @@ endif
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
 obj-$(CONFIG_CMD_DATE) += date.o
+obj-$(CONFIG_CMD_DHRYSTONE) += dhry.o
 obj-$(CONFIG_CMD_FASTBOOT) += fastboot.o
 obj-$(CONFIG_CONSOLE_TRUETYPE) += font.o
 obj-$(CONFIG_CMD_GO) += go.o

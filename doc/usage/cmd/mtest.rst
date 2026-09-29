@@ -62,3 +62,10 @@ Configuration
 -------------
 
 The mtest command is enabled by CONFIG_CMD_MEMTEST=y.
+
+See also
+--------
+
+* :doc:`dhry<dhry>` for exercising the CPU rather than memory
+* :doc:`md<md>` for looking at memory rather than testing it
+* :doc:`meminfo<meminfo>` for what memory the board has

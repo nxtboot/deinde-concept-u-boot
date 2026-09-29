@@ -123,3 +123,4 @@ See also
 
 * :doc:`bmp<bmp>` for showing a picture rather than a game
 * :doc:`video<video>` for what the display is doing
+* :doc:`2048<2048>` for a smaller game, which needs only an ANSI terminal

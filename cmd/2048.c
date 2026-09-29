@@ -5,6 +5,7 @@
 
 #include <cli.h>
 #include <command.h>
+#include <getopt.h>
 #include <rand.h>
 #include <vsprintf.h>
 #include <linux/delay.h>
@@ -326,14 +327,18 @@ static int test(void)
 	return !success;
 }
 
-static int do_2048(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_2048(struct getopt_state *gs)
 {
 	struct cli_ch_state cch_s, *cch = &cch_s;
 	u16 board[SIZE][SIZE];
+	const char *arg;
 	bool success;
 
-	if (argc == 2 && strcmp(argv[1], "test") == 0)
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	arg = getopt_pop(gs);
+	if (arg && strcmp(arg, "test") == 0)
 		return test();
 
 	score = 0;
@@ -390,7 +395,7 @@ static int do_2048(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	2048,	2,	1,	do_2048,
 	"The 2048 game",
 	"Use your arrow keys to move the tiles. When two tiles with "
