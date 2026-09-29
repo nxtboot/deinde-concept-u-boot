@@ -76,7 +76,8 @@ The return value $? is 0 (true) after a game, however it ends.
 
 For ``2048 test`` it is 0 (true) if every case gives the expected result and 1
 (false) if any of them does not, in which case the first failing case is
-printed. It is also 1 (false) if more than one argument is given.
+printed. It is also 1 (false) if an option or more than one argument is given,
+since the command takes neither.
 
 See also
 --------

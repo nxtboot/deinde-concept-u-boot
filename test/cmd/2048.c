@@ -107,6 +107,20 @@ static int cmd_test_2048_move(struct unit_test_state *uts)
 }
 CMD_TEST(cmd_test_2048_move, UTF_CONSOLE);
 
+/* Test that the command refuses an option, rather than dealing a board */
+static int cmd_test_2048_option(struct unit_test_state *uts)
+{
+	ut_asserteq(1, run_command("2048 -x", 0));
+	ut_assert_nextline("2048 - The 2048 game");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("Usage:");
+	ut_assert_nextlinen("2048 Use your arrow keys to move the tiles.");
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_2048_option, UTF_CONSOLE);
+
 /* Test that the command refuses more arguments than it has room for */
 static int cmd_test_2048_usage(struct unit_test_state *uts)
 {
