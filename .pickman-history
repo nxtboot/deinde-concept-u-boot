@@ -100100,3 +100100,47 @@ One process note worth a look: the bot's own report being fed back as a review c
 
 ---
 
+### Pipeline fix: 2026-09-28 (attempt 2)
+
+Branch: cherry-0cc7799c0cd8
+
+Failed jobs:
+- samus_tpl (sjg-lab)
+- samus (sjg-lab)
+- bpif3 (sjg-lab)
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+Evidence is complete; nothing else to request. All checks are in, the `-fix2` branch exists at the unchanged head, and the baseline worktree is removed. Here is the report.
+
+## Result: infrastructure/lab failures — no code change made
+
+**Branch:** `cherry-0cc7799c0cd8-fix2` created at `f82d3cd14533`, identical to `cherry-0cc7799c0cd8`. Working tree clean. Not pushed.
+
+### What the MR changes
+Only 4 lines in `drivers/core/util.c`: `pci_get_devfn()` returns -ENODEV when a PCI child node has no `reg` property, instead of falling through and returning bits of an uninitialised `struct fdt_pci_addr`. The other two cherry-picks are the intentional empty supersession records. The one caller that stores the result unchecked (`pci-uclass.c:1362`) could see a behaviour change only for a `reg`-less child — and the compiled `chromebook_samus` DTB has 10 PCI children, all with `reg`.
+
+### Why none of the five failures is caused by this MR
+
+| Job | Symptom | Evidence |
+|---|---|---|
+| **bpif3** (new this attempt) | `BootROM did not start the FSBL` ×5 during USB load | Byte-identical signature on four unrelated pipelines today (9977 MR 1363, 9988 MR 1365, 9990 MR 1366, 9998 MR 1367). It also *passed* on this MR's own earlier pipelines 10003/10004. Fails before any U-Boot code runs; `pci_get_devfn` is not linked into the spacemit_k1 SPL (the FSBL) or U-Boot. |
+| **samus / samus_tpl** | em100 write, no prompt, 25 s timeout | Failed on **every** pipeline today across all branches (mz33-fix, mz33-native, MRs 1363–1367). Never passed anywhere. |
+| **snow** | Hangs after `using memory … for malloc()` | Same: failed on every pipeline today across all branches. `pci_get_devfn` not linked into snow's SPL or U-Boot. |
+| **pine64** | `test_dm_compat` sees `bo??meth_pxe`, `gpi??sunxi` | The raw trace shows the board printed those lines with two invalid bytes mid-name (GitLab renders them as `?`); different bytes in each of 10003/10004/10007. I built pine64_plus at `ci/master` and at HEAD: `u-boot-nodtb.bin` differs in **25 bytes, all inside the two embedded version strings**; the DTB is identical; `pci_get_devfn` is absent from both u-boot and SPL. The image the lab ran is functionally the same as master, so this is serial-line corruption. |
+
+I took pine64 seriously because it failed 3/3 on this MR while passing on neighbours (10005, 10006), but the binary comparison rules out a code cause. The mid-test `u-boot-test-reset` in the log is just the harness respawning after the assert.
+
+### Verification done
+- `buildman -k -o /tmp/pickman --boards spacemit_k1,pine64_plus,chromebook_samus,chromebook_samus_tpl,snow,sandbox`: 6/6 built, only the usual missing-blob binman notices and pre-existing snow DT warnings. (Note: `bpif3`, `samus` etc. are lab *roles*; the board names are `spacemit_k1`, `chromebook_samus`, … — the plain role list in the task doesn't resolve in buildman.)
+- Baseline `ci/master` build of pine64_plus and spacemit_k1 for byte comparison (worktree since removed).
+
+**Recommendation:** retry the lab jobs once ellesmere-lab's samus/snow boards are recovered and bpif3's BootROM USB path is stable; no change to the MR is warranted. As noted in attempt 1, pickman's review-comment filter is still feeding its own bot reports back as review tasks.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers need authorisation via your claude.ai connector settings before use — irrelevant here, just flagging.
+
+---
+
