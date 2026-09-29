@@ -100200,3 +100200,40 @@ Nothing further to request right now — the two builds are already running in t
 
 ---
 
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix (attempt 3): fixed failed job(s) samus_tpl, samus, bpif3, snow, pine64.
+
+I'll start by ...
+
+### Conversation log
+The single "review comment" is once again the pipeline-fix bot's own report (attempt 3, and it doesn't even contain a conclusion — it ends mid-run waiting on builds). Let me check the branch state before deciding whether anything needs doing.
+
+Build is clean and there is no code to change, so I have everything needed for the report. Nothing further to request.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot's own attempt-3 report (author `project_1_bot_…`) fed back into the review queue — the third time this has happened on this MR. This time the echoed text is not even a finished report: it ends with *"I'll report once the build results land"*, i.e. it was captured mid-run before the bot's conclusion. It requests no code change, so there is nothing for a review-comment pass to act on.
+
+**State verified on `cherry-0cc7799c0cd8` (local head `3b426925355a`):**
+- Working tree clean.
+- Only source delta vs `ci/master` is still the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (+4/−4). The other two cherry-picks remain the intentional empty supersession records.
+- Every commit above `c9e329b0e144` is a `.pickman-history` record (review handling ×2, pipeline fix ×2). The `ci` remote is at `4dc282a8dca8`; the local branch is one history-record commit ahead. `-fix1`, `-fix2`, `-fix3` differ from the MR branch only in `.pickman-history`.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no warnings or errors.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch, no force push. There is no code change to carry. Pushing an identical tree would re-trigger the same five `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64, bpif3) that attempts 1–3 showed failing identically on unrelated branches today, producing a fourth bot report that would then be fed back as a fourth "review comment". If a rerun is wanted, retrying the lab jobs in GitLab once the boards recover is cheaper and needs no push.
+
+**Suggested reply to post on the MR:**
+
+> This comment is the pipeline-fix bot's attempt-3 report (captured mid-run) rather than a review request, so there is nothing to change. The source on this branch is unchanged since `c9e329b0e144` and sandbox still builds clean with buildman. The samus/samus_tpl/snow/pine64/bpif3 failures are lab-runner issues seen identically on unrelated branches today — please retry those jobs once the boards are recovered on ellesmere-lab rather than re-pushing.
+
+**Process note (third occurrence — worth fixing now):** pickman's review-comment filter feeds its own `project_1_bot_*` pipeline-fix reports back as review tasks, and in this case captured a partial report before the bot had finished. Two suggestions: (1) skip comments authored by the bot account when collecting review comments; (2) have the pipeline-fix path wait for its background builds before posting, so the MR comment carries the actual conclusion. Until (1) is in place, each pipeline-fix attempt will keep spawning one of these no-op review passes.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this session need authorisation via your claude.ai connector settings before they can be used — not relevant to this task.
+
+---
+
