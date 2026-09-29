@@ -3,22 +3,29 @@
  * Copyright (c) 2014 Google, Inc
  */
 
+/*
+ * mapmem.h comes first since it pulls in asm/io.h, which is where iotrace.h
+ * expects to be included from
+ */
+#include <mapmem.h>
 #include <command.h>
+#include <getopt.h>
 #include <iotrace.h>
 #include <vsprintf.h>
 
 static void do_print_stats(void)
 {
 	ulong start, size, needed_size, offset, count;
+	ulong region_start, region_size;
 
 	printf("iotrace is %sabled\n", iotrace_get_enabled() ? "en" : "dis");
 	iotrace_get_buffer(&start, &size, &needed_size, &offset, &count);
 	printf("Start:  %08lx\n", start);
 	printf("Actual Size:   %08lx\n", size);
 	printf("Needed Size:   %08lx\n", needed_size);
-	iotrace_get_region(&start, &size);
-	printf("Region: %08lx\n", start);
-	printf("Size:   %08lx\n", size);
+	iotrace_get_region(&region_start, &region_size);
+	printf("Region: %08lx\n", region_start);
+	printf("Size:   %08lx\n", region_size);
 	printf("Offset: %08lx\n", offset);
 	printf("Output: %08lx\n", start + offset);
 	printf("Count:  %08lx\n", count);
@@ -29,7 +36,7 @@ static void do_print_trace(void)
 {
 	ulong start, size, needed_size, offset, count;
 
-	struct iotrace_record *cur_record;
+	struct iotrace_record *cur_record, *recs;
 
 	iotrace_get_buffer(&start, &size, &needed_size, &offset, &count);
 
@@ -38,7 +45,8 @@ static void do_print_trace(void)
 
 	printf("Timestamp  Value          Address\n");
 
-	cur_record = (struct iotrace_record *)start;
+	recs = map_sysmem(start, count * sizeof(*recs));
+	cur_record = recs;
 	for (int i = 0; i < count; i++) {
 		if (cur_record->flags & IOT_WRITE)
 			printf("%08llu: 0x%08lx --> 0x%08llx\n",
@@ -53,6 +61,7 @@ static void do_print_trace(void)
 
 		cur_record++;
 	}
+	unmap_sysmem(recs);
 }
 
 static int do_set_buffer(int argc, char *const argv[])
@@ -87,12 +96,17 @@ static int do_set_region(int argc, char *const argv[])
 	return 0;
 }
 
-int do_iotrace(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_iotrace(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	const char *cmd = argc < 2 ? NULL : argv[1];
 
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (!cmd)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 	switch (*cmd) {
 	case 'b':
 		return do_set_buffer(argc - 2, argv + 2);
@@ -117,7 +131,7 @@ int do_iotrace(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	iotrace,	4,	1,	do_iotrace,
 	"iotrace utility commands",
 	"stats                        - display iotrace stats\n"

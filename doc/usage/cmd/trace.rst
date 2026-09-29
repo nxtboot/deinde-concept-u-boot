@@ -163,4 +163,13 @@ From here you can use proftool to convert it:
     tools/proftool -m System.map -t trace -o asc.fg dump-ftrace
 
 
+See also
+--------
+
+* :doc:`iotrace<iotrace>` for recording I/O accesses rather than function calls
+* :doc:`bootstage<bootstage>` for the timing of the boot as a whole, rather
+  than of individual functions
+* :doc:`/develop/trace` for the tracing system behind this command
+
+
 .. _`ACPI specification`: https://uefi.org/sites/default/files/resources/ACPI_6_3_final_Jan30.pdf

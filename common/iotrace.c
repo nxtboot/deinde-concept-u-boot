@@ -40,6 +40,7 @@ static struct iotrace {
 static void add_record(int flags, const void *ptr, ulong value)
 {
 	struct iotrace_record srec, *rec = &srec;
+	phys_addr_t addr;
 
 	/*
 	 * We don't support iotrace before relocation. Since the trace buffer
@@ -50,9 +51,10 @@ static void add_record(int flags, const void *ptr, ulong value)
 	if (!(gd->flags & GD_FLG_RELOC) || !iotrace.enabled)
 		return;
 
+	addr = map_to_sysmem(ptr);
 	if (iotrace.region_size)
-		if ((ulong)ptr < iotrace.region_start ||
-		    (ulong)ptr > iotrace.region_start + iotrace.region_size)
+		if (addr < iotrace.region_start ||
+		    addr >= iotrace.region_start + iotrace.region_size)
 			return;
 
 	/* Store it if there is room */
@@ -68,7 +70,7 @@ static void add_record(int flags, const void *ptr, ulong value)
 
 	rec->timestamp = timer_get_us();
 	rec->flags = flags;
-	rec->addr = map_to_sysmem(ptr);
+	rec->addr = addr;
 	rec->value = value;
 
 	/* Update our checksum */
@@ -169,6 +171,7 @@ void iotrace_set_buffer(ulong start, ulong size)
 {
 	iotrace.start = start;
 	iotrace.size = size;
+	iotrace.needed_size = 0;
 	iotrace.offset = 0;
 	iotrace.crc32 = 0;
 }
