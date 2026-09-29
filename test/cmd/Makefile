@@ -100,6 +100,7 @@ obj-$(CONFIG_CMD_REGULATOR) += regulator.o
 endif
 obj-$(CONFIG_CMD_SEAMA) += seama.o
 ifdef CONFIG_SANDBOX
+obj-$(CONFIG_CMD_AES) += aes.o
 obj-$(CONFIG_CMD_DATE) += date.o
 obj-$(CONFIG_CMD_DHRYSTONE) += dhry.o
 obj-$(CONFIG_CMD_FASTBOOT) += fastboot.o
