@@ -50,6 +50,13 @@ so much easier [Ed]
 Maintainers List (try to look for most precise areas first)
 
 		-----------------------------------
+2048
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	cmd/2048.c
+F:	doc/usage/cmd/2048.rst
+F:	test/cmd/2048.c
+
 ACPI
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
@@ -996,6 +1003,13 @@ M:	Sumit Garg <sumit.garg@kernel.org>
 S:	Maintained
 F:	dts/upstream/
 N:	OF_UPSTREAM
+
+DHRYSTONE
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	doc/usage/cmd/dhry.rst
+F:	lib/dhry/
+F:	test/cmd/dhry.c
 
 DOOM
 M:	Simon Glass <sjg@chromium.org>
