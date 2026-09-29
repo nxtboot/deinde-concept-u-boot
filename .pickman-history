@@ -100180,3 +100180,23 @@ Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this sessi
 
 ---
 
+### Pipeline fix: 2026-09-28 (attempt 3)
+
+Branch: cherry-0cc7799c0cd8
+
+Failed jobs:
+- samus_tpl (sjg-lab)
+- samus (sjg-lab)
+- bpif3 (sjg-lab)
+- snow (sjg-lab)
+- pine64 (sjg-lab)
+
+### Conversation log
+I'll start by reading the MR description and the job logs.
+
+While the builds run, one more check: confirming the snow/samus/bpif3 symptoms match what attempt 2 recorded (board never reaches a prompt after flashing).
+
+Nothing further to request right now — the two builds are already running in the background and will notify me when they finish; the branch is created and the diagnosis is complete. I'll report once the build results land.
+
+---
+
