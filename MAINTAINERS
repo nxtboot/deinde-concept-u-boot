@@ -65,6 +65,13 @@ F:	cmd/acpi.c
 F:	include/acpi/
 F:	lib/acpi/
 
+AES
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	cmd/aes.c
+F:	doc/usage/cmd/aes.rst
+F:	test/cmd/aes.c
+
 AIROHA PHY
 M:	Tommy Shih <tommy.shih@airoha.com>
 M:	Kevin-KW Huang <kevin-kw.huang@airoha.com>
