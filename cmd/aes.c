@@ -47,6 +47,7 @@ int cmd_aes_cbc_simple(int argc, char *const argv[], u32 key_len)
 	uint32_t key_addr, iv_addr, src_addr, dst_addr, len;
 	uint8_t *key_ptr, *iv_ptr, *src_ptr, *dst_ptr;
 	u8 key_exp[AES256_EXPAND_KEY_LENGTH];
+	u32 key_bits = key_len * 8;
 	u32 aes_blocks;
 	int enc;
 
@@ -72,16 +73,16 @@ int cmd_aes_cbc_simple(int argc, char *const argv[], u32 key_len)
 	dst_ptr = (uint8_t *)map_sysmem(dst_addr, len);
 
 	/* First we expand the key. */
-	aes_expand_key(key_ptr, key_len, key_exp);
+	aes_expand_key(key_ptr, key_bits, key_exp);
 
 	/* Calculate the number of AES blocks to encrypt. */
 	aes_blocks = DIV_ROUND_UP(len, AES_BLOCK_LENGTH);
 
 	if (enc)
-		aes_cbc_encrypt_blocks(key_len, key_exp, iv_ptr, src_ptr,
+		aes_cbc_encrypt_blocks(key_bits, key_exp, iv_ptr, src_ptr,
 				       dst_ptr, aes_blocks);
 	else
-		aes_cbc_decrypt_blocks(key_len, key_exp, iv_ptr, src_ptr,
+		aes_cbc_decrypt_blocks(key_bits, key_exp, iv_ptr, src_ptr,
 				       dst_ptr, aes_blocks);
 
 	unmap_sysmem(key_ptr);
