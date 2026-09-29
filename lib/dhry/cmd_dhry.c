@@ -22,6 +22,10 @@ static int do_dhry(struct cmd_tbl *cmdtp, int flag, int argc,
 	start = get_timer(0);
 	dhry(iterations);
 	duration = get_timer(start);
+	if (!duration) {
+		printf("%d iterations take under 1ms: try more\n", iterations);
+		return CMD_RET_FAILURE;
+	}
 	dhry_per_sec = lldiv(iterations * 1000ULL, duration);
 	vax_mips = lldiv(dhry_per_sec, 1757);
 	printf("%d iterations in %lu ms: %lu/s, %lu DMIPS\n", iterations,
