@@ -100237,3 +100237,45 @@ Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this sessi
 
 ---
 
+### Review: 2026-09-28
+
+Branch: cherry-0cc7799c0cd8
+
+Comments addressed:
+- [project_1_bot_2541d37e7146e9c25808a380e05ebef0]: Pipeline fix: reached retry limit (3 attempts). Manual intervention required....
+
+### Conversation log
+This "review comment" is the pipeline-fix bot reporting that it has hit its retry limit — a status notice, not a reviewer request. Let me confirm the branch state before deciding whether anything needs doing.
+
+Branch is clean and unchanged in source; the only remaining step from the checklist that is meaningful here is the build verification.
+
+Build is clean, and there is nothing further to check — the comment asks for manual intervention, which is exactly the point at which an automated pass should stop rather than push again. Here is the report.
+
+## Report: no actionable change — nothing pushed
+
+**The one "review comment" is not a review.** It is the pipeline-fix bot (author `project_1_bot_…`) announcing *"reached retry limit (3 attempts). Manual intervention required."* That is a terminal status notice addressed to a human, not a request for a code change. It is the fourth bot-authored message on this MR to be fed back through the review queue.
+
+**State verified on `cherry-0cc7799c0cd8` (local head `6551aedb07b4`):**
+- Working tree clean.
+- The only source delta vs `ci/master` is still the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` (+4/−4). The other two cherry-picks remain the intentional empty supersession records (see 860a79a8903f).
+- Everything above `c9e329b0e144` is `.pickman-history` bookkeeping (five record commits). The `ci` remote sits at `4dc282a8dca8`; the local branch is one history-record commit ahead, no code difference.
+- `buildman -L --board sandbox -w -o /tmp/pickman`: 1/1 built, no warnings or errors.
+
+**What I deliberately did not do, and why:**
+- No `-v2` branch, no force push. There is no code change to carry, and the comment itself says the automated loop should stop. Pushing an identical tree would only re-trigger the same five `ellesmere-lab` jobs (samus, samus_tpl, snow, pine64, bpif3), which attempts 1–3 documented as failing identically on unrelated branches today (samus/snow on every pipeline; bpif3's `BootROM did not start the FSBL` on MRs 1363–1367; pine64's serial corruption with a binary that differs from master only in version strings).
+
+**The manual intervention actually needed is on the lab side, not the branch:**
+1. Recover samus/samus_tpl and snow on `ellesmere-lab` (down all day on every branch).
+2. Check bpif3's USB BootROM path and pine64's serial line.
+3. Then retry the failed jobs in GitLab — no re-push is required.
+
+**Suggested reply to post on the MR:**
+
+> The pipeline-fix bot has hit its retry limit, but the failing jobs (samus, samus_tpl, snow, pine64, bpif3) are all lab-runner problems seen identically on unrelated branches today, as detailed in the three attempt reports above. The branch source is unchanged since `c9e329b0e144` — only the 4-line `pci_get_devfn()` fix in `drivers/core/util.c` — and sandbox still builds clean with buildman. Please retry the lab jobs once the boards are recovered on ellesmere-lab; no change to this MR is needed.
+
+**Process note (fourth occurrence):** pickman's review-comment collector still treats its own `project_1_bot_*` posts as review comments, so even the "retry limit reached" notice spawned this pass. Filtering bot-authored comments out of the review queue would end the loop.
+
+Side note: the `claude.ai Gmail` and `Google Calendar` MCP servers in this session need authorisation via your claude.ai connector settings before they can be used — not relevant to this task.
+
+---
+
