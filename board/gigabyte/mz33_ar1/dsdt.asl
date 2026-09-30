@@ -233,5 +233,17 @@ DefinitionBlock("dsdt.aml", "DSDT", 2, "U-BOOT", "U-BOOTBL", 0x00010000)
 				Return (POSC (Arg0, Arg3))
 			}
 		}
+
+		/* The BMC's SuperIO UART, reached over eSPI */
+		Device (COM1)
+		{
+			Name (_HID, EisaId ("PNP0501"))
+			Name (_UID, 1)
+			Name (_CRS, ResourceTemplate ()
+			{
+				IO (Decode16, 0x03f8, 0x03f8, 0x01, 0x08)
+				IRQNoFlags () {4}
+			})
+		}
 	}
 }

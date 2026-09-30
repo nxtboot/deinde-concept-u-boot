@@ -4,10 +4,12 @@
  *
  * ACPI tables for AMD EPYC Turin
  *
- * There is no ACPI hardware setup here (no PM1 blocks, GPEs or SCI), so the
- * FADT declares a hardware-reduced platform. The OS finds the PCIe root
- * complexes in the DSDT, the ECAM in the MCFG, the FCH's I/O APIC in the
- * MADT and the FCH's HPET for its timer.
+ * The FADT describes the FCH's fixed ACPI hardware (PM1 blocks, PM timer and
+ * GPE0), which U-Boot decodes at 0x400. It must not declare a hardware-reduced
+ * platform, since Linux then drops the legacy ISA interrupts and the serial
+ * port's IRQ 4 is never set up. The OS finds the PCIe root complexes in the
+ * DSDT, the ECAM in the MCFG, the FCH's I/O APIC in the MADT and the FCH's
+ * HPET for its timer.
  */
 
 #define LOG_CATEGORY LOGC_ACPI
@@ -20,6 +22,7 @@
 #include <asm/mpspec.h>
 #include <asm/tables.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/fch.h>
 #include <asm/arch/global_nvs.h>
 #include <dm/acpi.h>
 #include <linux/sizes.h>
@@ -33,11 +36,43 @@
 #define PCI_BUS_COUNT		0x100
 #define TURIN_BUSES_PER_ROOT	0x20
 
+/* Describe an I/O-port block in a generic address structure */
+static void acpi_fill_gas(struct acpi_gen_regaddr *gas, uint port, uint len)
+{
+	gas->space_id = ACPI_ADDRESS_SPACE_IO;
+	gas->bit_width = len * 8;
+	gas->access_size = len == 2 ? ACPI_ACCESS_SIZE_WORD_ACCESS :
+		ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	gas->addrl = port;
+}
+
 void acpi_fill_fadt(struct acpi_fadt *fadt)
 {
 	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES;
 	fadt->flags = ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
-		ACPI_FADT_RESET_REGISTER | ACPI_FADT_HW_REDUCED_ACPI;
+		ACPI_FADT_RESET_REGISTER | ACPI_FADT_32BIT_TIMER |
+		ACPI_FADT_SLEEP_BUTTON;
+	fadt->preferred_pm_profile = ACPI_PM_ENTERPRISE_SERVER;
+
+	/*
+	 * There is no SMM handler to switch into ACPI mode, so leave smi_cmd
+	 * as zero, which tells the OS that ACPI mode is already on (U-Boot
+	 * sets SCI_EN)
+	 */
+	fadt->sci_int = ACPI_SCI_IRQ;
+
+	fadt->pm1a_evt_blk = ACPI_PM1_EVT;
+	fadt->pm1_evt_len = 4;
+	fadt->pm1a_cnt_blk = ACPI_PM1_CNT;
+	fadt->pm1_cnt_len = 2;
+	fadt->pm_tmr_blk = ACPI_PM_TMR;
+	fadt->pm_tmr_len = 4;
+	fadt->gpe0_blk = ACPI_GPE0;
+	fadt->gpe0_blk_len = 8;
+	acpi_fill_gas(&fadt->x_pm1a_evt_blk, ACPI_PM1_EVT, fadt->pm1_evt_len);
+	acpi_fill_gas(&fadt->x_pm1a_cnt_blk, ACPI_PM1_CNT, fadt->pm1_cnt_len);
+	acpi_fill_gas(&fadt->x_pm_tmr_blk, ACPI_PM_TMR, fadt->pm_tmr_len);
+	acpi_fill_gas(&fadt->x_gpe0_blk, ACPI_GPE0, fadt->gpe0_blk_len);
 
 	fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->reset_reg.bit_width = 8;
@@ -76,7 +111,15 @@ void *acpi_fill_madt(struct acpi_madt *madt, struct acpi_ctx *ctx)
 		current += acpi_create_madt_ioapic(current, id, addr, gsi);
 		gsi += NBIO_IOAPIC_PINS;
 	}
+	/*
+	 * the timer is on pin 2 and the SCI is level-triggered, active low;
+	 * everything else is identity-mapped
+	 */
 	current += acpi_create_madt_irqoverride(current, 0, 0, 2, 0);
+	current += acpi_create_madt_irqoverride(current, 0, ACPI_SCI_IRQ,
+						ACPI_SCI_IRQ,
+						MP_IRQ_TRIGGER_LEVEL |
+						MP_IRQ_POLARITY_LOW);
 	current += acpi_create_madt_lapic_nmi(current, 0xff, 0, 1);
 
 	return current;
