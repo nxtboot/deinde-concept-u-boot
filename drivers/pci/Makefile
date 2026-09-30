@@ -4,7 +4,7 @@
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
 obj-$(CONFIG_VIDEO) += pci_rom.o
-obj-$(CONFIG_PCI) += pci-uclass.o pci_auto.o
+obj-$(CONFIG_PCI) += pci-uclass.o pci_auto.o pci_auto_simple.o
 obj-$(CONFIG_DM_PCI_COMPAT) += pci_compat.o
 obj-$(CONFIG_PCI_SANDBOX) += pci_sandbox.o
 obj-$(CONFIG_SANDBOX) += pci-emul-uclass.o

@@ -106,6 +106,43 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
  */
 int pciauto_config_device(struct udevice *dev);
 
+/*
+ * The allocator, in pci_auto_simple.c, which assigns resources as the devices
+ * are found
+ */
+
+/**
+ * pciauto_alloc_device() - Assign a device's BARs and expansion ROM
+ *
+ * The addresses come from the root bus's regions, in the order the devices
+ * are found. The device's command register is set up too.
+ *
+ * @dev: Device to configure
+ */
+void pciauto_alloc_device(struct udevice *dev);
+
+/**
+ * pciauto_open_windows() - Start a bridge's windows before scanning its bus
+ *
+ * Each window starts where its region's allocation has reached, so that the
+ * devices behind the bridge are assigned inside it.
+ *
+ * @dev: Bridge about to be scanned
+ * @hose: Controller of the bridge's root bus, which holds the regions
+ */
+void pciauto_open_windows(struct udevice *dev, struct pci_controller *hose);
+
+/**
+ * pciauto_close_windows() - End a bridge's windows after scanning its bus
+ *
+ * Each window ends where its region's allocation has reached.
+ *
+ * @dev: Bridge which was scanned
+ * @hose: Controller of the bridge's root bus, which holds the regions
+ */
+void pciauto_close_windows(struct udevice *dev,
+			   struct pci_controller *hose);
+
 /**
  * pci_get_bus() - Get a pointer to a bus, given its number
  *
