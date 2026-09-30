@@ -11,6 +11,18 @@ config ARCH_AMD_TURIN
 	select DEBUG_UART_BOARD_INIT if DEBUG_UART
 	select ARCH_EARLY_INIT_R
 	imply PCI_INIT_R
+	imply AHCI_PCI
+	imply SCSI
+	imply SCSI_AHCI
+	imply CMD_SCSI
+	imply NVME_PCI
+	imply CMD_NVME
+	imply USB
+	imply USB_XHCI_HCD
+	imply USB_XHCI_PCI
+	imply USB_STORAGE
+	imply CMD_USB
+	imply BNXT_ETH
 	help
 	  AMD EPYC 9005 (Turin) SoC. The PSP trains the memory and releases
 	  the x86 cores from a reset vector in DRAM, at the top of the 'BIOS
