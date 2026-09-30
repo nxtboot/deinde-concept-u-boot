@@ -140,3 +140,29 @@ static int turin_write_hpet(struct acpi_ctx *ctx,
 	return acpi_write_hpet(ctx);
 }
 ACPI_WRITER(5hpet, "HPET", turin_write_hpet, 0);
+
+/*
+ * The board is a single NUMA node (the fabric's NPS1 mode), so the SLIT has
+ * one locality, at the standard distance of 10 from itself
+ */
+static int turin_write_slit(struct acpi_ctx *ctx,
+			    const struct acpi_writer *entry)
+{
+	struct acpi_slit *slit = ctx->current;
+	struct acpi_table_header *header = &slit->header;
+	int len = sizeof(*slit) + 1;
+
+	memset(slit, '\0', len);
+	acpi_fill_header(header, "SLIT");
+	header->length = len;
+	header->revision = acpi_get_table_revision(ACPITAB_SLIT);
+	slit->num_localities = cpu_to_le64(1);
+	slit->entry[0] = 10;
+
+	acpi_update_checksum(header);
+	acpi_add_table(ctx, slit);
+	acpi_inc(ctx, len);
+
+	return 0;
+}
+ACPI_WRITER(5slit, "SLIT", turin_write_slit, 0);
