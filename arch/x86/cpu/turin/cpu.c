@@ -52,6 +52,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PM_04_ACPIMMIO_DECODE_EN BIT(1)
 #define ACPIMMIO_BASE		0xfed80000
 #define ACPIMMIO_PMIO		(ACPIMMIO_BASE + 0x300)
+#define PM_DECODE_EN		0x00
+#define PM_HPET_EN		BIT(6)		/* decode it at 0xfed00000 */
+#define PM_HPET_MSI_EN		BIT(29)
 #define PM_LPC_GATING		0xec
 #define PM_LPC_ENABLE		BIT(0)
 
@@ -391,6 +394,9 @@ static int turin_microcode_update(void)
 int arch_early_init_r(void)
 {
 	int ret;
+
+	/* The HPET is the OS's timer, since there is no PM timer */
+	setbits_le32(ACPIMMIO_PMIO + PM_DECODE_EN, PM_HPET_EN | PM_HPET_MSI_EN);
 
 	ret = turin_microcode_update();
 	if (ret)

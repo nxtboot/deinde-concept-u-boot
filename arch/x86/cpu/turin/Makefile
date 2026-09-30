@@ -2,6 +2,7 @@
 #
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
+obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
 obj-y += cpu.o
 obj-y += e820.o
 obj-y += mpio.o
