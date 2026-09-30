@@ -14,6 +14,7 @@
 #define LOG_CATEGORY LOGC_ARCH
 
 #include <init.h>
+#include <bloblist.h>
 #include <log.h>
 #include <asm/e820.h>
 #include <asm/global_data.h>
@@ -158,6 +159,7 @@ unsigned int install_e820_map(unsigned int max_entries,
 	const struct apob_sys_map *map = apob_find_sys_map();
 	u64 tom = native_read_msr(MSR_TOP_MEM) & ~(SZ_8M - 1ULL);
 	struct e820_ctx ctx;
+	u64 tstart, tend;
 	int i;
 
 	e820_init(&ctx, entries, max_entries);
@@ -175,7 +177,21 @@ unsigned int install_e820_map(unsigned int max_entries,
 			  map->hole[i].base, map->hole[i].size,
 			  map->hole[i].type);
 
-	add_ram(&ctx, map, ISA_END_ADDRESS, tom);
+	/*
+	 * The bloblist holds the ACPI and SMBIOS tables, in RAM. Linux maps
+	 * a table which lies in RAM one page at a time and silently skips
+	 * any longer than a page, so tell it the bloblist is ACPI memory,
+	 * which it maps as a whole, as the QEMU map does
+	 */
+	tstart = ALIGN_DOWN((ulong)gd->bloblist, SZ_4K);
+	tend = ALIGN((ulong)gd->bloblist + bloblist_get_total_size(), SZ_4K);
+	if (IS_ENABLED(CONFIG_BLOBLIST_TABLES) && tend <= tom) {
+		add_ram(&ctx, map, ISA_END_ADDRESS, tstart);
+		e820_add(&ctx, E820_ACPI, tstart, tend - tstart);
+		add_ram(&ctx, map, tend, tom);
+	} else {
+		add_ram(&ctx, map, ISA_END_ADDRESS, tom);
+	}
 	e820_add(&ctx, E820_RESERVED, CONFIG_PCIE_ECAM_BASE,
 		 CONFIG_PCIE_ECAM_SIZE);
 
