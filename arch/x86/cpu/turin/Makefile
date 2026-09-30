@@ -5,5 +5,6 @@
 obj-y += cpu.o
 obj-y += mpio.o
 obj-y += pci.o
+obj-$(CONFIG_CMDLINE) += fch.o
 obj-$(CONFIG_CMDLINE) += smn.o
 obj-$(CONFIG_CMDLINE) += mca.o

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Tests for the AMD EPYC Turin bring-up commands (mca and smn), as run
+ * Tests for the AMD EPYC Turin bring-up commands (fch, mca and smn), as run
  * on the Gigabyte MZ33-AR1
  *
  * Copyright 2026 Simon Glass <sjg@chromium.org>
@@ -10,6 +10,24 @@
 #include <console.h>
 #include <test/cmd.h>
 #include <test/ut.h>
+
+static int cmd_test_fch(struct unit_test_state *uts)
+{
+	/* U-Boot sets Misc0 and routes the SCI to IRQ 9 in both modes */
+	ut_assertok(run_command("fch irq", 0));
+	ut_assert_nextline("Index  PIC  APIC");
+	ut_assert_skip_to_line("   09   91    00");
+	ut_assert_skip_to_line("   10   09    09");
+	console_record_reset();
+
+	/* the PM block starts at 0xfed80300 */
+	ut_assertok(run_command("fch pm", 0));
+	ut_assert_nextlinen("fed80300: ");
+	console_record_reset();
+
+	return 0;
+}
+CMD_TEST(cmd_test_fch, UTF_CONSOLE);
 
 static int cmd_test_mca(struct unit_test_state *uts)
 {
