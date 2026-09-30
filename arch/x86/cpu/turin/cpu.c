@@ -117,9 +117,16 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SMU_MSG			0x3b10930
 #define SMU_RESP		0x3b1097c
 #define SMU_ARG0		0x3b109c4
-#define SMU_NUM_ARGS		6
 #define SMU_MSG_USB_INIT	0xa
-#define SMU_RESULT_OK		1
+#define SMU_MSG_SET_FEATURES	0x3
+
+/*
+ * SMU features which openSIL enables by default (mSmuClassDflts), in its
+ * three feature words; bit 22 of the first is CPPC, for example
+ */
+#define SMU_FEATURES		0x7adb4fff
+#define SMU_FEATURES_EXT	0x00000001
+#define SMU_FEATURES_64		0x00000000
 
 /* Aspeed BMC SuperIO behind eSPI */
 #define SIO_INDEX		0x2e
@@ -169,14 +176,7 @@ static void smn_write32(u32 reg, u32 val)
 	pci_cf8_write32(SMN_DATA, val);
 }
 
-/**
- * turin_smu_request() - Send a message to the SMU and wait for its reply
- *
- * @msg: Message ID
- * @args: Six argument words, updated with the SMU's reply
- * Return: SMU result code (SMU_RESULT_OK on success), or -ETIMEDOUT
- */
-static int turin_smu_request(u32 msg, u32 *args)
+int turin_smu_request(u32 msg, u32 *args)
 {
 	ulong start;
 	u32 resp;
@@ -198,6 +198,24 @@ static int turin_smu_request(u32 msg, u32 *args)
 		args[i] = smn_read32(SMU_ARG0 + 4 * i);
 
 	return resp;
+}
+
+/**
+ * turin_smu_features_init() - Ask the SMU to enable its power features
+ *
+ * openSIL does this in InitializeSmuBrh(). Without it the SMU leaves CPPC,
+ * among others, disabled, so the CPPC capability MSR reads as zero and
+ * Linux cannot manage the CPU frequency
+ */
+static void turin_smu_features_init(void)
+{
+	u32 args[SMU_NUM_ARGS] = { SMU_FEATURES, SMU_FEATURES_EXT,
+				   SMU_FEATURES_64 };
+	int ret;
+
+	ret = turin_smu_request(SMU_MSG_SET_FEATURES, args);
+	if (ret != SMU_RESULT_OK)
+		log_warning("SMU feature setup failed: %d\n", ret);
 }
 
 /**
@@ -510,6 +528,7 @@ int arch_early_init_r(void)
 		log_err("AP start-up failed (err=%d)\n", ret);
 	turin_mem_restore_signoff();
 	turin_ecam_init();
+	turin_smu_features_init();
 	turin_smu_usb_init();
 	ret = turin_mpio_init();
 	if (ret)

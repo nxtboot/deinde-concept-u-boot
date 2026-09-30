@@ -47,4 +47,17 @@ int turin_start_aps(const void *ucode);
  */
 int turin_get_cpus(const u8 **idsp);
 
+/* Number of argument words in an SMU request, and its success code */
+#define SMU_NUM_ARGS		6
+#define SMU_RESULT_OK		1
+
+/**
+ * turin_smu_request() - Send a message to the SMU and wait for its reply
+ *
+ * @msg: Message ID
+ * @args: SMU_NUM_ARGS argument words, updated with the SMU's reply
+ * Return: SMU result code (SMU_RESULT_OK on success), or -ETIMEDOUT
+ */
+int turin_smu_request(u32 msg, u32 *args);
+
 #endif
