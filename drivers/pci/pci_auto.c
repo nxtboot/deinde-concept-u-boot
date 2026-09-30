@@ -364,34 +364,25 @@ static void pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
 	}
 }
 
-void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
+/* Start a bridge's windows where the regions' allocation has reached */
+static void pciauto_open_windows(struct udevice *dev,
+				 struct pci_controller *hose)
 {
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
 	struct pci_region *pci_io;
 	u16 cmdstat, pref_type;
 	u8 io_32;
-	struct udevice *ctlr = pci_get_controller(dev);
-	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
-	int pcie_off;
 
-	pci_mem = ctlr_hose->pci_mem;
-	pci_prefetch = ctlr_hose->pci_prefetch;
-	pci_io = ctlr_hose->pci_io;
+	pci_mem = hose->pci_mem;
+	pci_prefetch = hose->pci_prefetch;
+	pci_io = hose->pci_io;
 
 	dm_pci_read_config16(dev, PCI_COMMAND, &cmdstat);
 	dm_pci_read_config16(dev, PCI_PREF_MEMORY_BASE, &pref_type);
 	pref_type &= PCI_PREF_RANGE_TYPE_MASK;
 	dm_pci_read_config8(dev, PCI_IO_BASE, &io_32);
 	io_32 &= PCI_IO_RANGE_TYPE_MASK;
-
-	/* Configure bus number registers */
-	dm_pci_write_config8(dev, PCI_PRIMARY_BUS,
-			     PCI_BUS(dm_pci_get_bdf(dev)) - dev_seq(ctlr) +
-			     ctlr_hose->bus_base);
-	dm_pci_write_config8(dev, PCI_SECONDARY_BUS,
-			     sub_bus - dev_seq(ctlr) + ctlr_hose->bus_base);
-	dm_pci_write_config8(dev, PCI_SUBORDINATE_BUS, 0xff);
 
 	if (pci_mem) {
 		/* Round memory allocator */
@@ -462,30 +453,21 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 		}
 	}
 
-	/* For PCIe devices see if we need to retrain the link by hand */
-	pcie_off = dm_pci_find_capability(dev, PCI_CAP_ID_EXP);
-	if (pcie_off)
-		pciauto_exp_fixup_link(dev, pcie_off);
-
 	/* Enable memory and I/O accesses, enable bus master */
 	dm_pci_write_config16(dev, PCI_COMMAND, cmdstat | PCI_COMMAND_MASTER);
 }
 
-void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
+/* End a bridge's windows where the regions' allocation has reached */
+static void pciauto_close_windows(struct udevice *dev,
+				  struct pci_controller *hose)
 {
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
 	struct pci_region *pci_io;
-	struct udevice *ctlr = pci_get_controller(dev);
-	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
 
-	pci_mem = ctlr_hose->pci_mem;
-	pci_prefetch = ctlr_hose->pci_prefetch;
-	pci_io = ctlr_hose->pci_io;
-
-	/* Configure bus number registers */
-	dm_pci_write_config8(dev, PCI_SUBORDINATE_BUS,
-			     sub_bus - dev_seq(ctlr) + ctlr_hose->bus_base);
+	pci_mem = hose->pci_mem;
+	pci_prefetch = hose->pci_prefetch;
+	pci_io = hose->pci_io;
 
 	if (pci_mem) {
 		/* Round memory allocator */
@@ -533,6 +515,40 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
 					      ((pci_io->bus_lower - 1) &
 					       0xffff0000) >> 16);
 	}
+}
+
+void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
+{
+	struct udevice *ctlr = pci_get_controller(dev);
+	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
+	int pcie_off;
+
+	/* Configure bus number registers */
+	dm_pci_write_config8(dev, PCI_PRIMARY_BUS,
+			     PCI_BUS(dm_pci_get_bdf(dev)) - dev_seq(ctlr) +
+			     ctlr_hose->bus_base);
+	dm_pci_write_config8(dev, PCI_SECONDARY_BUS,
+			     sub_bus - dev_seq(ctlr) + ctlr_hose->bus_base);
+	dm_pci_write_config8(dev, PCI_SUBORDINATE_BUS, 0xff);
+
+	pciauto_open_windows(dev, ctlr_hose);
+
+	/* For PCIe devices see if we need to retrain the link by hand */
+	pcie_off = dm_pci_find_capability(dev, PCI_CAP_ID_EXP);
+	if (pcie_off)
+		pciauto_exp_fixup_link(dev, pcie_off);
+}
+
+void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
+{
+	struct udevice *ctlr = pci_get_controller(dev);
+	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
+
+	/* Configure bus number registers */
+	dm_pci_write_config8(dev, PCI_SUBORDINATE_BUS,
+			     sub_bus - dev_seq(ctlr) + ctlr_hose->bus_base);
+
+	pciauto_close_windows(dev, ctlr_hose);
 }
 
 /*

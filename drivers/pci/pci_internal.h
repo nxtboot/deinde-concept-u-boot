@@ -73,8 +73,8 @@ void pciauto_finish_device(struct udevice *dev, u16 cmd);
  * pciauto_prescan_setup_bridge() - Set up a bridge for scanning
  *
  * This gets a bridge ready so that its downstream devices can be scanned.
- * It sets up the bus number and memory range registers. Once the scan is
- * completed, pciauto_postscan_setup_bridge() should be called.
+ * It sets up the bus number registers and retrains the link. Once the scan
+ * is completed, pciauto_postscan_setup_bridge() should be called.
  *
  * @dev:	Bridge device to be scanned
  * @sub_bus:	Bus number of the 'other side' of the bridge
@@ -84,8 +84,8 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus);
 /**
  * pciauto_postscan_setup_bridge() - Finish set up of a bridge after scanning
  *
- * This should be called after a bus scan is complete. It adjusts the memory
- * ranges to fit with the devices actually found on the other side (downstream)
+ * This should be called after a bus scan is complete. It sets the bridge's
+ * subordinate bus number to the last bus found on the other side (downstream)
  * of the bridge.
  *
  * @dev:	Bridge device that was scanned
