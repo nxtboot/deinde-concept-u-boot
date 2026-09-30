@@ -27,7 +27,6 @@ I2C_COMMON=y
 endif
 
 obj-$(CONFIG_FSL_CADMUS)	+= cadmus.o
-obj-$(CONFIG_FSL_VIA)		+= cds_via.o
 obj-$(CONFIG_FMAN_ENET)	+= fman.o
 ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_FSL_NGPIXIS)	+= ngpixis.o
