@@ -18,6 +18,7 @@
 #include <asm/cpu.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <asm/lapic.h>
 #include <asm/msr.h>
 #include <asm/mtrr.h>
 #include <asm/arch/cpu.h>
@@ -279,6 +280,13 @@ int arch_cpu_init(void)
 		return ret;
 
 	gd->arch.clock_rate = turin_tsc_rate();
+
+	/*
+	 * The ABL leaves the local APIC disabled; enable it in virtual-wire
+	 * mode, as the OS expects to find it
+	 */
+	if (xpl_phase() == PHASE_BOARD_F)
+		lapic_setup();
 
 	return 0;
 }

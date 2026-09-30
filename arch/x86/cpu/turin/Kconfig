@@ -23,6 +23,7 @@ config ARCH_AMD_TURIN
 	imply USB_STORAGE
 	imply CMD_USB
 	imply BNXT_ETH
+	imply GENERATE_MP_TABLE
 	help
 	  AMD EPYC 9005 (Turin) SoC. The PSP trains the memory and releases
 	  the x86 cores from a reset vector in DRAM, at the top of the 'BIOS
