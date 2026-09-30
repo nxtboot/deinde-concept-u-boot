@@ -9,6 +9,7 @@
 #include <init.h>
 #include <log.h>
 #include <malloc.h>
+#include <asm/cache.h>
 #include <asm/control_regs.h>
 #include <asm/cpu.h>
 #include <asm/global_data.h>
@@ -129,17 +130,27 @@ int cpu_has_64bit(void)
 
 void enable_caches(void)
 {
-	/* Not implemented */
+	unsigned long cr0;
+
+	cr0 = read_cr0();
+	cr0 &= ~(X86_CR0_NW | X86_CR0_CD);
+	write_cr0(cr0);
 }
 
 void disable_caches(void)
 {
-	/* Not implemented */
+	unsigned long cr0;
+
+	cr0 = read_cr0();
+	cr0 |= X86_CR0_NW | X86_CR0_CD;
+	wbinvd();
+	write_cr0(cr0);
+	wbinvd();
 }
 
 int dcache_status(void)
 {
-	return true;
+	return !(read_cr0() & X86_CR0_CD);
 }
 
 int x86_mp_init(void)
