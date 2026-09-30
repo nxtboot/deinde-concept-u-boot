@@ -730,6 +730,39 @@ struct __packed acpi_spcr {
 	u32 reserved2;
 };
 
+/* SPMI (Service Processor Management Interface) table, for IPMI */
+enum acpi_spmi_type {
+	ACPI_SPMI_KCS = 1,
+	ACPI_SPMI_SMIC = 2,
+	ACPI_SPMI_BT = 3,
+	ACPI_SPMI_SSIF = 4,
+};
+
+/* IPMI specification revision, as binary-coded decimal */
+#define ACPI_SPMI_IPMI_2_0	0x0200
+
+struct __packed acpi_spmi {
+	struct acpi_table_header header;
+	u8 interface_type;
+	u8 reserved;		/* must be 1 */
+	u16 spec_rev;
+	u8 intr_type;
+	u8 gpe;
+	u8 reserved2;
+	u8 pci_flags;		/* bit 0: the interface is a PCI device */
+	u32 gsi;
+	struct acpi_gen_regaddr base;
+	u32 uid;		/* or the PCI segment, bus, device and function */
+	u8 reserved3;
+};
+
+/* SLIT (System Locality Distance Information Table) */
+struct __packed acpi_slit {
+	struct acpi_table_header header;
+	u64 num_localities;
+	u8 entry[];		/* distances, num_localities squared of them */
+};
+
 /**
  * struct acpi_gtdt - Generic Timer Description Table (GTDT)
  *
@@ -1084,6 +1117,19 @@ int acpi_get_table_revision(enum acpi_tables table);
  * Return: 0 if OK, -ve on error
  */
 int acpi_create_dmar(struct acpi_dmar *dmar, enum dmar_flags flags);
+
+/**
+ * acpi_write_spmi() - Write an SPMI table for the devicetree's IPMI interface
+ *
+ * This looks for a node compatible with ipmi-kcs, ipmi-smic or ipmi-bt, as
+ * the Linux binding names them, and describes its interface to the OS.
+ *
+ * @ctx: ACPI context
+ * @entry: Writer entry (not used)
+ * Return: 0 if OK, -ENOENT if the devicetree has no IPMI interface, -EINVAL
+ *	if the node has no address
+ */
+int acpi_write_spmi(struct acpi_ctx *ctx, const struct acpi_writer *entry);
 
 /**
  * acpi_create_mcfg_mmconfig() - Create a MCFG table entry

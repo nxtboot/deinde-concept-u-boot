@@ -17,6 +17,7 @@ ifndef CONFIG_QFW_ACPI
 obj-y += base.o
 obj-y += csrt.o
 obj-y += mcfg.o
+obj-y += spmi.o
 
 # Sandbox does not build a .asl file
 ifndef CONFIG_SANDBOX

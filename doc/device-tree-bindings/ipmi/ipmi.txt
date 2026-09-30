@@ -1,0 +1,26 @@
+IPMI interface
+==============
+
+An IPMI system interface, typically to a baseboard management controller
+(BMC), described as in the Linux binding. U-Boot does not drive the
+interface itself; it uses the node to write an ACPI SPMI table, so that the
+operating system can find the interface.
+
+Required properties:
+
+  - compatible: one of "ipmi-kcs", "ipmi-smic" or "ipmi-bt", for the
+      Keyboard Controller Style, System Management Interface Chip or Block
+      Transfer interface
+  - reg: base address and size of the interface's registers. On x86 this is
+      an I/O-port address; elsewhere it is a memory address
+
+Optional properties:
+
+  - reg-spacing: bytes between consecutive registers; defaults to 1
+
+Example:
+
+ipmi@ca2 {
+	compatible = "ipmi-kcs";
+	reg = <0xca2 2>;
+};
