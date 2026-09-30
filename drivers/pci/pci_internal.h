@@ -10,6 +10,16 @@
 #define __pci_internal_h
 
 /**
+ * pciauto_bar_count() - Find how many BARs a device has
+ *
+ * @dev: Device to check
+ * @rom_addrp: Returns the config offset of the expansion-ROM register, or 0
+ *	if the device has none
+ * Return: number of BARs: 6 for a normal header, 2 for a bridge, else 0
+ */
+int pciauto_bar_count(struct udevice *dev, uint *rom_addrp);
+
+/**
  * pciauto_write_bar() - Write an address to a BAR
  *
  * @dev: Device to write to

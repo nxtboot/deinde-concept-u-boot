@@ -21,6 +21,25 @@
 #define CFG_SYS_PCI_CACHE_LINE_SIZE	8
 #endif
 
+int pciauto_bar_count(struct udevice *dev, uint *rom_addrp)
+{
+	u8 header_type;
+
+	dm_pci_read_config8(dev, PCI_HEADER_TYPE, &header_type);
+	switch (header_type & 0x7f) {
+	case PCI_HEADER_TYPE_NORMAL:
+		*rom_addrp = PCI_ROM_ADDRESS;
+		return 6;
+	case PCI_HEADER_TYPE_BRIDGE:
+		*rom_addrp = PCI_ROM_ADDRESS1;
+		return 2;
+	default:
+		/* CardBus has no BARs; leave unknown header types alone */
+		*rom_addrp = 0;
+		return 0;
+	}
+}
+
 void pciauto_write_bar(struct udevice *dev, uint bar, bool is64,
 		       pci_addr_t addr)
 {
@@ -56,31 +75,12 @@ static void pciauto_setup_device(struct udevice *dev,
 	u16 cmdstat = 0;
 	int bar, bar_nr = 0;
 	int bars_num;
-	u8 header_type;
-	int rom_addr;
+	uint rom_addr;
 	pci_addr_t bar_value;
 	struct pci_region *bar_res = NULL;
 	int found_mem64 = 0;
 
-	dm_pci_read_config8(dev, PCI_HEADER_TYPE, &header_type);
-	header_type &= 0x7f;
-
-	switch (header_type) {
-	case PCI_HEADER_TYPE_NORMAL:
-		bars_num = 6;
-		break;
-	case PCI_HEADER_TYPE_BRIDGE:
-		bars_num = 2;
-		break;
-	case PCI_HEADER_TYPE_CARDBUS:
-		/* CardBus header does not have any BAR */
-		bars_num = 0;
-		break;
-	default:
-		/* Skip configuring BARs for unknown header types */
-		bars_num = 0;
-		break;
-	}
+	bars_num = pciauto_bar_count(dev, &rom_addr);
 
 	for (bar = PCI_BASE_ADDRESS_0;
 	     bar < PCI_BASE_ADDRESS_0 + (bars_num * 4); bar += 4) {
@@ -169,10 +169,7 @@ static void pciauto_setup_device(struct udevice *dev,
 	}
 
 	/* Configure the expansion ROM address */
-	if (header_type == PCI_HEADER_TYPE_NORMAL ||
-	    header_type == PCI_HEADER_TYPE_BRIDGE) {
-		rom_addr = (header_type == PCI_HEADER_TYPE_NORMAL) ?
-			PCI_ROM_ADDRESS : PCI_ROM_ADDRESS1;
+	if (rom_addr) {
 		dm_pci_write_config32(dev, rom_addr, 0xfffffffe);
 		dm_pci_read_config32(dev, rom_addr, &bar_response);
 		if (bar_response) {
