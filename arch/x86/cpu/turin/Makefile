@@ -3,8 +3,10 @@
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
+obj-y += ap_start.o
 obj-y += cpu.o
 obj-y += e820.o
+obj-y += mp.o
 obj-y += mpio.o
 obj-y += pci.o
 obj-$(CONFIG_CMDLINE) += fch.o

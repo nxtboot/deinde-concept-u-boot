@@ -454,9 +454,10 @@ struct amd_ucode_header {
  * entry named by the processor's equivalent revision ID. The PSP copies the
  * whole image into DRAM, so the patch is already there.
  *
+ * @ucodep: Returns the patch, for the APs
  * Return: 0 if OK, -ve on error
  */
-static int turin_microcode_update(void)
+static int turin_microcode_update(const void **ucodep)
 {
 	const struct amd_ucode_header *hdr;
 	struct binman_entry entry;
@@ -473,6 +474,7 @@ static int turin_microcode_update(void)
 	hdr = map_sysmem(CONFIG_TEXT_BASE + entry.image_pos, entry.size);
 	if (entry.size < sizeof(*hdr) || hdr->processor_rev_id != rev_id)
 		return log_msg_ret("rev", -EINVAL);
+	*ucodep = hdr;
 
 	rdmsrl(MSR_PATCH_LEVEL, old);
 	if ((u32)old >= hdr->patch_id)
@@ -481,6 +483,9 @@ static int turin_microcode_update(void)
 	rdmsrl(MSR_PATCH_LEVEL, old);
 	if ((u32)old != hdr->patch_id)
 		return log_msg_ret("upd", -EIO);
+
+	/* rewrite P-state 0 so that the TSC is recalculated, as openSIL does */
+	wrmsrl(MSR_PSTATE0, msr_read64(MSR_PSTATE0));
 	log_debug("microcode updated to %x\n", hdr->patch_id);
 
 	return 0;
@@ -488,6 +493,7 @@ static int turin_microcode_update(void)
 
 int arch_early_init_r(void)
 {
+	const void *ucode = NULL;
 	int ret;
 
 	ret = turin_irq_routing_init();
@@ -496,9 +502,12 @@ int arch_early_init_r(void)
 
 	turin_fch_acpi_init();
 
-	ret = turin_microcode_update();
+	ret = turin_microcode_update(&ucode);
 	if (ret)
 		log_err("Microcode update failed (err=%d)\n", ret);
+	ret = turin_start_aps(ucode);
+	if (ret)
+		log_err("AP start-up failed (err=%d)\n", ret);
 	turin_mem_restore_signoff();
 	turin_ecam_init();
 	turin_smu_usb_init();

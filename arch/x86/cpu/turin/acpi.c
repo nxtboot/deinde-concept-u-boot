@@ -89,13 +89,17 @@ int acpi_create_gnvs(struct acpi_global_nvs *gnvs)
 void *acpi_fill_madt(struct acpi_madt *madt, struct acpi_ctx *ctx)
 {
 	void *current = ctx->current;
+	const u8 *ids;
+	int num_cpus, i;
 	uint gsi;
 	int bus;
 
 	madt->lapic_addr = LAPIC_DEFAULT_BASE;
 	madt->flags = ACPI_MADT_PCAT_COMPAT;
 
-	current += acpi_create_madt_lapics(current);
+	num_cpus = turin_get_cpus(&ids);
+	for (i = 0; i < num_cpus; i++)
+		current += acpi_create_madt_lapic(current, i, ids[i]);
 	current += acpi_create_madt_ioapic(current,
 					   io_apic_read(IO_APIC_ID) >> 24,
 					   IO_APIC_ADDR, 0);

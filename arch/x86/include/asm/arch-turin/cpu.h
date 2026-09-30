@@ -31,4 +31,20 @@ int turin_mpio_init(void);
  */
 int turin_get_ioapic(int busno, u32 *addrp, uint *idp);
 
+/**
+ * turin_start_aps() - Give each AP the boot processor's patch and memory map
+ *
+ * @ucode: Microcode patch to load, or NULL for none
+ * Return: 0 if OK, -EIO if not every AP started, other -ve on error
+ */
+int turin_start_aps(const void *ucode);
+
+/**
+ * turin_get_cpus() - Get the APIC IDs of the CPUs
+ *
+ * @idsp: Returns the APIC IDs, the boot processor's first
+ * Return: number of CPUs
+ */
+int turin_get_cpus(const u8 **idsp);
+
 #endif
