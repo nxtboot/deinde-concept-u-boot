@@ -25,10 +25,13 @@
 #include <dm.h>
 #include <log.h>
 #include <pci.h>
+#include <acpi/acpigen.h>
 #include <asm/cpu.h>
+#include <asm/arch/cpu.h>
 #include <asm/io.h>
 #include <asm/msr.h>
 #include <asm/pci.h>
+#include <dm/acpi.h>
 #include <linux/bitops.h>
 #include <linux/sizes.h>
 
@@ -129,6 +132,25 @@
 #define IOAPIC_ID_BASE		0xf0
 #define IOAPIC_ID_SHIFT		24
 #define IOAPIC_MMIO_SIZE	SZ_64K
+
+/*
+ * Each bridge's INTA-D reach the root complex's I/O APIC through one of its
+ * pin groups of four, swizzled first by the register's 'swz' field. The
+ * registers follow the RCEC's, in bridge-control order. The IOHC's remap
+ * registers give the device and function of each bridge
+ */
+#define IOAPIC_RCEC_ROUTING	0x3c
+#define IOAPIC_BR_ROUTING	0x40
+#define ROUTE(grp, swz, map)	((grp) | (swz) << 4 | (map) << 16)
+#define RCEC_ROUTE		ROUTE(3, 0, 0)	/* as openSIL, on every IOHC */
+#define ROUTE_GRP(val)		((val) & 7)
+#define ROUTE_SWZ(val)		(((val) >> 4) & 3)
+#define IOAPIC_PINS_PER_GRP	4
+#define PCI_NUM_PINS		4
+#define IOHC_DEV_REMAP		0xb8
+#define IOHC_NUM_BRIDGES	24
+#define IOHC_INTERNAL_BRIDGE	20
+#define REMAP_DEVFN_MASK	0xff
 
 /*
  * How much of a window above 4GB to map for U-Boot's own use: it allocates
@@ -325,6 +347,21 @@ static const u8 turin_port_devfn[] = {
 	DEVFN(3, 7), DEVFN(4, 1),
 };
 
+/*
+ * The I/O APIC pin group and swizzle of each bridge, as openSIL programs
+ * them on this board (traced from its NbioIoapicIntrRoutingTbl). The
+ * bridges spread over seven groups, so no two of a root complex's ports
+ * share a pin. A small IOHC has only the first nine bridges
+ */
+static const u32 turin_bridge_routing[] = {
+	ROUTE(0, 0, 0), ROUTE(1, 0, 0), ROUTE(2, 0, 0), ROUTE(3, 0, 0),
+	ROUTE(4, 0, 0), ROUTE(5, 0, 0), ROUTE(6, 0, 0), ROUTE(6, 2, 0),
+	ROUTE(5, 2, 0), ROUTE(4, 2, 1), ROUTE(3, 2, 1), ROUTE(2, 2, 1),
+	ROUTE(1, 2, 1), ROUTE(0, 2, 1), ROUTE(0, 1, 1), ROUTE(1, 1, 1),
+	ROUTE(2, 1, 1), ROUTE(3, 1, 1), ROUTE(4, 1, 2), ROUTE(5, 1, 2),
+};
+#define SMALL_IOHC_BRIDGES	9
+
 #define IOHC_BRIDGE_CNTL_OFF	0x21004
 #define BRIDGE_CNTL_CRS_EN	BIT(18)
 #define BRIDGE_CNTL_HIDE_BITS	(BIT(2) | BIT(0))
@@ -359,15 +396,37 @@ static void turin_hide_dup_bridges(uint fid)
  * @fid: Fabric ID of its IOS
  * @addr: MMIO address to give it
  */
+/* Get the SMN address of a root complex's I/O APIC registers */
+static u32 turin_ioapic_regs(uint fid)
+{
+	return ((fid & 1) ? IOAPIC_SMALL_FEATURES : IOAPIC_BIG_FEATURES) +
+		turin_iohc_index(fid) * IOHC_STRIDE;
+}
+
+/*
+ * Route each bridge's INTA-D, and the root complex event collector's
+ * interrupt, to the I/O APIC pins the OS is told about
+ */
+static void turin_route_bridges(uint fid, u32 regs)
+{
+	int i, count;
+
+	smn_write(regs + IOAPIC_RCEC_ROUTING, RCEC_ROUTE);
+	count = (fid & 1) ? SMALL_IOHC_BRIDGES : ARRAY_SIZE(turin_bridge_routing);
+	for (i = 0; i < count; i++)
+		smn_write(regs + IOAPIC_BR_ROUTING + i * 4,
+			  turin_bridge_routing[i]);
+}
+
 static void turin_ioapic_init(int busno, uint fid, u32 addr)
 {
 	u32 offset = turin_iohc_index(fid) * IOHC_STRIDE;
 	u32 iohc = turin_iohc_base(fid);
 	u32 feat, id;
 
-	feat = ((fid & 1) ? IOAPIC_SMALL_FEATURES : IOAPIC_BIG_FEATURES) +
-		offset;
+	feat = turin_ioapic_regs(fid);
 	id = ((fid & 1) ? IOAPIC_SMALL_ID : IOAPIC_BIG_ID) + offset;
+	turin_route_bridges(fid, feat);
 	smn_write(feat, smn_read(feat) | IOAPIC_FEAT_SB |
 		  IOAPIC_FEAT_SECONDARY |
 		  (busno != FCH_ROOT_BUS ? IOAPIC_FEAT_NO_SB : 0));
@@ -477,6 +536,21 @@ int turin_get_ioapic(int busno, u32 *addrp, uint *idp)
 	*idp = turin_ioapic_id(fid);
 
 	return 0;
+}
+
+int turin_gsi_base(int busno)
+{
+	int bus, gsi = FCH_IOAPIC_PINS;
+
+	for (bus = 0; bus < busno; bus += TURIN_BUSES_PER_ROOT) {
+		u32 addr;
+		uint id;
+
+		if (!turin_get_ioapic(bus, &addr, &id))
+			gsi += NBIO_IOAPIC_PINS;
+	}
+
+	return gsi;
 }
 
 static void turin_set_io_map(int slot, uint fid, const struct pci_region *reg)
@@ -595,6 +669,108 @@ static const struct dm_pci_ops turin_pci_ops = {
 	.write_config	= turin_pci_write_config,
 };
 
+/*
+ * Find a bridge's index into the bridge-control and routing registers. The
+ * remap registers give the PCIe ports' devfns but are zero for the internal
+ * bridges 20 and 21, which are devices 7.1 and 7.2 (the USB and SATA
+ * controllers behind them)
+ */
+static int turin_bridge_index(uint fid, uint devfn)
+{
+	u32 base = turin_iohc_base(fid) + IOHC_DEV_REMAP;
+	int i;
+
+	for (i = 0; i < IOHC_NUM_BRIDGES; i++) {
+		if ((smn_read(base + i * 4) & REMAP_DEVFN_MASK) == devfn)
+			return i;
+	}
+	if (devfn == DEVFN(7, 1) || devfn == DEVFN(7, 2))
+		return IOHC_INTERNAL_BRIDGE + (devfn & 7) - 1;
+
+	return -ENOENT;
+}
+
+/*
+ * Write a bridge's _PRT: the device behind it has its INTA-D swizzled and
+ * routed to the group of four pins in @route
+ */
+static void turin_write_prt(struct acpi_ctx *ctx, int gsi_base, u32 route)
+{
+	int pin;
+
+	acpigen_write_name(ctx, "_PRT");
+	acpigen_write_package(ctx, PCI_NUM_PINS);
+	for (pin = 0; pin < PCI_NUM_PINS; pin++) {
+		acpigen_write_package(ctx, 4);
+		acpigen_write_dword(ctx, 0xffff);	/* device 0, any function */
+		acpigen_write_byte(ctx, pin);
+		acpigen_write_zero(ctx);		/* a GSI, not a link device */
+		acpigen_write_dword(ctx, gsi_base +
+				    ROUTE_GRP(route) * IOAPIC_PINS_PER_GRP +
+				    (pin + ROUTE_SWZ(route)) % PCI_NUM_PINS);
+		acpigen_pop_len(ctx);
+	}
+	acpigen_pop_len(ctx);
+}
+
+/*
+ * Describe the interrupt routing of a root bus's own device 0 (the IOMMU
+ * and the event collector, which share the collector's routing) and of
+ * each bridge on it, so that the OS can find the I/O APIC pin of a
+ * device's INTx. The root bus's own device is in the DSDT, so this adds its
+ * _PRT and a device for each bridge to its scope
+ */
+static int turin_pci_fill_ssdt(const struct udevice *bus, struct acpi_ctx *ctx)
+{
+	int busno = dev_seq(bus);
+	struct udevice *dev;
+	char scope[16], name[8];
+	int gsi_base, ret;
+	u32 regs;
+	uint fid;
+
+	ret = turin_find_root(busno, &fid);
+	if (ret < 0)
+		return log_msg_ret("fid", ret);
+	regs = turin_ioapic_regs(fid);
+	gsi_base = turin_gsi_base(busno);
+	snprintf(scope, sizeof(scope), "\\_SB.PC%02X", busno);
+	acpigen_write_scope(ctx, scope);
+
+	/* the root bus's own device 0, routed with the event collector */
+	turin_write_prt(ctx, gsi_base, smn_read(regs + IOAPIC_RCEC_ROUTING));
+	device_foreach_child(dev, bus) {
+		struct pci_child_plat *plat = dev_get_parent_plat(dev);
+		uint devfn = DEVFN(PCI_DEV(plat->devfn), PCI_FUNC(plat->devfn));
+		int idx;
+
+		if (plat->class >> 8 != PCI_CLASS_BRIDGE_PCI)
+			continue;
+		idx = turin_bridge_index(fid, devfn);
+		if (idx < 0) {
+			log_warning("bus %x: no routing for bridge %x.%x\n",
+				    busno, PCI_DEV(plat->devfn),
+				    PCI_FUNC(plat->devfn));
+			continue;
+		}
+		snprintf(name, sizeof(name), "GP%02X", devfn);
+		acpigen_write_device(ctx, name);
+		acpigen_write_name_integer(ctx, "_ADR",
+					   PCI_DEV(plat->devfn) << 16 |
+					   PCI_FUNC(plat->devfn));
+		turin_write_prt(ctx, gsi_base,
+				smn_read(regs + IOAPIC_BR_ROUTING + idx * 4));
+		acpigen_pop_len(ctx);	/* Device */
+	}
+	acpigen_pop_len(ctx);	/* Scope */
+
+	return 0;
+}
+
+static const struct acpi_ops turin_pci_acpi_ops = {
+	.fill_ssdt	= turin_pci_fill_ssdt,
+};
+
 static const struct udevice_id turin_pci_ids[] = {
 	{ .compatible = "amd,turin-pci" },
 	{ }
@@ -606,4 +782,5 @@ U_BOOT_DRIVER(turin_pci) = {
 	.of_match = turin_pci_ids,
 	.ops	= &turin_pci_ops,
 	.probe	= turin_pci_probe,
+	ACPI_OPS_PTR(&turin_pci_acpi_ops)
 };

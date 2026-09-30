@@ -31,6 +31,22 @@ int turin_mpio_init(void);
  */
 int turin_get_ioapic(int busno, u32 *addrp, uint *idp);
 
+/* Pins on the FCH's I/O APIC and on each root complex's, and the bus stride */
+#define FCH_IOAPIC_PINS		24
+#define NBIO_IOAPIC_PINS	32
+#define TURIN_BUSES_PER_ROOT	0x20
+
+/**
+ * turin_gsi_base() - Get the first GSI of a root complex's I/O APIC
+ *
+ * The FCH's I/O APIC has the first GSIs, then each root complex's follows in
+ * bus order, as the MADT reports them
+ *
+ * @busno: Root bus number
+ * Return: first global system interrupt of the bus's I/O APIC
+ */
+int turin_gsi_base(int busno);
+
 /**
  * turin_start_aps() - Give each AP the boot processor's patch and memory map
  *
