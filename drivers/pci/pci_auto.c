@@ -141,17 +141,8 @@ static void dm_pciauto_setup_device(struct udevice *dev,
 
 			if (found_mem64) {
 				bar += 4;
-#ifdef CONFIG_SYS_PCI_64BIT
 				dm_pci_write_config32(dev, bar,
-						      (u32)(bar_value >> 32));
-#else
-				/*
-				 * If we are a 64-bit decoder then increment to
-				 * the upper 32 bits of the bar and force it to
-				 * locate in the lower 4GB of memory.
-				 */
-				dm_pci_write_config32(dev, bar, 0x00000000);
-#endif
+						      upper_32_bits(bar_value));
 			}
 		}
 
@@ -411,13 +402,11 @@ void dm_pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_BASE,
 				(((pci_prefetch->bus_lower & 0xfff00000) >> 16) &
 				PCI_PREF_RANGE_MASK) | prefechable_64);
-		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64)
-#ifdef CONFIG_SYS_PCI_64BIT
-			dm_pci_write_config32(dev, PCI_PREF_BASE_UPPER32,
-					      pci_prefetch->bus_lower >> 32);
-#else
-			dm_pci_write_config32(dev, PCI_PREF_BASE_UPPER32, 0x0);
-#endif
+		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64) {
+			u32 upper = upper_32_bits(pci_prefetch->bus_lower);
+
+			dm_pci_write_config32(dev, PCI_PREF_BASE_UPPER32, upper);
+		}
 
 		cmdstat |= PCI_COMMAND_MEMORY;
 	} else {
@@ -501,13 +490,11 @@ void dm_pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_LIMIT,
 				      (((pci_prefetch->bus_lower - 1) >> 16) &
 				       PCI_PREF_RANGE_MASK) | prefechable_64);
-		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64)
-#ifdef CONFIG_SYS_PCI_64BIT
-			dm_pci_write_config32(dev, PCI_PREF_LIMIT_UPPER32,
-					(pci_prefetch->bus_lower - 1) >> 32);
-#else
-			dm_pci_write_config32(dev, PCI_PREF_LIMIT_UPPER32, 0x0);
-#endif
+		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64) {
+			u32 upper = upper_32_bits(pci_prefetch->bus_lower - 1);
+
+			dm_pci_write_config32(dev, PCI_PREF_LIMIT_UPPER32, upper);
+		}
 	}
 
 	if (pci_io) {
