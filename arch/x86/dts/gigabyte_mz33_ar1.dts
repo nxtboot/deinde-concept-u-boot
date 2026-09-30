@@ -30,6 +30,12 @@
 		reg = <0 0x3f8 0 8>;
 	};
 
+	/* the BMC's IPMI interface, on the LPC bus, for the ACPI SPMI table */
+	ipmi@ca2 {
+		compatible = "ipmi-kcs";
+		reg = <0 0xca2 0 2>;
+	};
+
 	/* the board's identity for SMBIOS; the memory comes from the APOB */
 	sysinfo {
 		compatible = "u-boot,sysinfo-smbios";
