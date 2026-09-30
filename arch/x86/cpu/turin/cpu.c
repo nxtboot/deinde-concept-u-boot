@@ -317,9 +317,14 @@ static void turin_mem_restore_signoff(void)
 
 int arch_early_init_r(void)
 {
+	int ret;
+
 	turin_mem_restore_signoff();
 	turin_ecam_init();
 	turin_smu_usb_init();
+	ret = turin_mpio_init();
+	if (ret)
+		log_err("MPIO link setup failed (err=%d)\n", ret);
 
 	return 0;
 }

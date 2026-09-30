@@ -119,6 +119,49 @@
 			 <0x02000000 0 0xea000000 0xea000000 0 0x07000000>;
 	};
 
+	/*
+	 * The board's PCIe and SATA links, for the MPIO firmware to train. Each
+	 * is <first-lane lane-count flags devfn>, numbering the lanes as the
+	 * MPIO numbers its PHY lanes; flags bit 0 means the lanes are reversed
+	 * and bits 7:4 give the type (0 PCIe, 1 SATA); devfn is the root port
+	 * on its root bus. This follows the Dasharo coreboot devicetree, with
+	 * the lanes as openSIL translates them
+	 */
+	mpio {
+		amd,links =
+			<  0 4 0x00 0x09>,	/* PCIe 01.1 */
+			<  4 4 0x00 0x0a>,	/* PCIe 01.2 */
+			<  8 4 0x00 0x0b>,	/* PCIe 01.3 */
+			< 12 4 0x00 0x0c>,	/* PCIe 01.4 */
+			< 16 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 20 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 24 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 28 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 32 4 0x00 0x09>,	/* PCIe 01.1 */
+			< 36 4 0x00 0x0a>,	/* PCIe 01.2 */
+			< 40 4 0x00 0x0b>,	/* PCIe 01.3 */
+			< 44 4 0x00 0x0c>,	/* PCIe 01.4 */
+			< 48 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 52 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 56 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 60 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 64 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 68 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 72 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 76 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 80 8 0x10 0x00>,	/* SATA */
+			< 88 8 0x10 0x00>,	/* SATA */
+			< 96 4 0x01 0x09>,	/* PCIe 01.1 */
+			<100 4 0x01 0x0a>,	/* PCIe 01.2 */
+			<104 4 0x01 0x0b>,	/* PCIe 01.3 */
+			<108 4 0x01 0x0c>,	/* PCIe 01.4 */
+			<112 4 0x00 0x09>,	/* PCIe 01.1 */
+			<120 4 0x00 0x0b>,	/* PCIe 01.3 */
+			<124 4 0x00 0x0c>,	/* PCIe 01.4 */
+			<128 4 0x00 0x19>,	/* PCIe 03.1 */
+			<135 1 0x00 0x1c>;	/* PCIe 03.4 */
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

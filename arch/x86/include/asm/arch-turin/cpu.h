@@ -13,4 +13,11 @@
  */
 void turin_ecam_init(void);
 
+/**
+ * turin_mpio_init() - Train the PCIe and SATA links described in /mpio
+ *
+ * Return: 0 if OK (or there is nothing to do), -ve on error
+ */
+int turin_mpio_init(void);
+
 #endif
