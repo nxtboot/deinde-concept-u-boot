@@ -5,6 +5,7 @@
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += ivrs.o
 obj-y += ap_start.o
+obj-y += apob.o
 obj-y += cpu.o
 obj-y += cpu_dev.o
 obj-y += e820.o

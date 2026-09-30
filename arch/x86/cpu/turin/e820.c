@@ -18,56 +18,14 @@
 #include <log.h>
 #include <asm/e820.h>
 #include <asm/global_data.h>
+#include <asm/arch/apob.h>
 #include <asm/msr.h>
 #include <linux/sizes.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define APOB_BASE		0x7010000
-#define APOB_SIGNATURE		0x424f5041	/* "APOB" */
-#define APOB_GROUP_FABRIC	9
-#define APOB_TYPE_SYS_MAP	9
-#define APOB_HMAC_SIZE		32
-
 #define MSR_TOP_MEM		0xc001001a
 #define HIGH_GAP_SIZE		SZ_64K
-
-/**
- * struct apob_header - Header at the start of the APOB
- *
- * @signature: APOB_SIGNATURE ("APOB")
- * @version: Version of the APOB's layout
- * @size: Size of the whole APOB in bytes, including this header
- * @first_entry: Offset of the first entry from the start of the APOB
- */
-struct apob_header {
-	u32 signature;
-	u32 version;
-	u32 size;
-	u32 first_entry;
-};
-
-/**
- * struct apob_entry - Header of each entry in the APOB
- *
- * The entry's data follows the header. The entries are grouped by the part
- * of the ABL which writes them, such as its memory or fabric code, and each
- * group numbers its own types.
- *
- * @group: Group the entry is in
- * @type: Type of entry within the group
- * @instance: Instance of the type, for entries which have several, such as
- *	one per die
- * @size: Size of the entry in bytes, including this header
- * @hmac: HMAC of the entry, which U-Boot does not check
- */
-struct apob_entry {
-	u32 group;
-	u32 type;
-	u32 instance;
-	u32 size;
-	u8 hmac[APOB_HMAC_SIZE];
-};
 
 /**
  * struct apob_hole - A range of the physical address space which is not RAM
@@ -102,28 +60,6 @@ struct apob_sys_map {
 	struct apob_hole hole[];
 };
 
-static const struct apob_sys_map *apob_find_sys_map(void)
-{
-	const struct apob_header *apob = (void *)APOB_BASE;
-	ulong pos, end;
-
-	if (apob->signature != APOB_SIGNATURE)
-		return NULL;
-	end = APOB_BASE + apob->size;
-	for (pos = APOB_BASE + apob->first_entry; pos < end;) {
-		const struct apob_entry *entry = (void *)pos;
-
-		if (!entry->size)
-			break;
-		if (entry->group == APOB_GROUP_FABRIC &&
-		    entry->type == APOB_TYPE_SYS_MAP)
-			return (void *)entry;
-		pos += entry->size;
-	}
-
-	return NULL;
-}
-
 /* Add RAM from @start to @end, less any reserved holes within it */
 static void add_ram(struct e820_ctx *ctx, const struct apob_sys_map *map,
 		    u64 start, u64 end)
@@ -156,7 +92,8 @@ static void add_ram(struct e820_ctx *ctx, const struct apob_sys_map *map,
 unsigned int install_e820_map(unsigned int max_entries,
 			      struct e820_entry *entries)
 {
-	const struct apob_sys_map *map = apob_find_sys_map();
+	const struct apob_sys_map *map = (void *)
+		turin_apob_find(APOB_GROUP_FABRIC, APOB_TYPE_SYS_MAP, 0);
 	u64 tom = native_read_msr(MSR_TOP_MEM) & ~(SZ_8M - 1ULL);
 	struct e820_ctx ctx;
 	u64 tstart, tend;
