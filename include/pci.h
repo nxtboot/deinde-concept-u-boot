@@ -713,10 +713,26 @@ void pciauto_region_align(struct pci_region *res, pci_size_t size);
 void pciauto_config_init(struct pci_controller *hose);
 
 /**
+ * pciauto_region_allocate_aligned() - Allocate from a PCI resource region
+ *
+ * Allocates @size bytes from the PCI resource @res, aligned to @align. If
+ * @supports_64bit is false, the result will be guaranteed to fit in 32 bits.
+ *
+ * @res:		PCI region to allocate from
+ * @size:		Amount of bytes to allocate
+ * @align:		Alignment of the allocation, a power of two
+ * @bar:		Returns the PCI bus address of the allocated resource
+ * @supports_64bit:	Whether to allow allocations above the 32-bit boundary
+ * Return: 0 if successful, -1 on failure
+ */
+int pciauto_region_allocate_aligned(struct pci_region *res, pci_size_t size,
+				    pci_size_t align, pci_addr_t *bar,
+				    bool supports_64bit);
+
+/**
  * pciauto_region_allocate() - Allocate resources from a PCI resource region
  *
- * Allocates @size bytes from the PCI resource @res. If @supports_64bit is
- * false, the result will be guaranteed to fit in 32 bits.
+ * As pciauto_region_allocate_aligned() but aligned to @size, as a BAR needs
  *
  * @res:		PCI region to allocate from
  * @size:		Amount of bytes to allocate
@@ -724,8 +740,13 @@ void pciauto_config_init(struct pci_controller *hose);
  * @supports_64bit:	Whether to allow allocations above the 32-bit boundary
  * Return: 0 if successful, -1 on failure
  */
-int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
-			    pci_addr_t *bar, bool supports_64bit);
+static inline int pciauto_region_allocate(struct pci_region *res,
+					  pci_size_t size, pci_addr_t *bar,
+					  bool supports_64bit)
+{
+	return pciauto_region_allocate_aligned(res, size, size, bar,
+					       supports_64bit);
+}
 
 #if defined(CONFIG_DM_PCI_COMPAT)
 extern void *pci_map_bar(pci_dev_t pdev, int bar, int flags);
