@@ -14,6 +14,7 @@
 #include <log.h>
 #include <pci.h>
 #include <time.h>
+#include <linux/bitops.h>
 #include "pci_internal.h"
 
 /* the user can define CFG_SYS_PCI_CACHE_LINE_SIZE to avoid problems */
@@ -38,6 +39,56 @@ int pciauto_bar_count(struct udevice *dev, uint *rom_addrp)
 		*rom_addrp = 0;
 		return 0;
 	}
+}
+
+pci_size_t pciauto_probe_bar(struct udevice *dev, uint bar, uint *flagsp)
+{
+	pci_size_t size;
+	u32 resp;
+
+	*flagsp = 0;
+
+	/* Tickle the BAR and get the response */
+	dm_pci_write_config32(dev, bar, 0xffffffff);
+	dm_pci_read_config32(dev, bar, &resp);
+
+	/* If BAR is not implemented (or invalid) go to the next BAR */
+	if (!resp || resp == 0xffffffff)
+		return 0;
+
+	/* Check the BAR type and set our address mask */
+	if (resp & PCI_BASE_ADDRESS_SPACE) {
+		size = resp & PCI_BASE_ADDRESS_IO_MASK;
+		size &= ~(size - 1);
+		*flagsp = PCIAUTO_BAR_IO;
+	} else {
+		if ((resp & PCI_BASE_ADDRESS_MEM_TYPE_MASK) ==
+		    PCI_BASE_ADDRESS_MEM_TYPE_64) {
+			u32 upper;
+			u64 resp64;
+
+			dm_pci_write_config32(dev, bar + 4, 0xffffffff);
+			dm_pci_read_config32(dev, bar + 4, &upper);
+			resp64 = (u64)upper << 32 | resp;
+			size = ~(resp64 & PCI_BASE_ADDRESS_MEM_MASK) + 1;
+			*flagsp |= PCIAUTO_BAR_64;
+		} else {
+			size = (u32)(~(resp & PCI_BASE_ADDRESS_MEM_MASK) + 1);
+		}
+		if (resp & PCI_BASE_ADDRESS_MEM_PREFETCH)
+			*flagsp |= PCIAUTO_BAR_PREFETCH;
+	}
+	log_debug("%s: BAR %x, %s%s%s, size=%llx%s\n", dev->name, bar,
+		  *flagsp & PCIAUTO_BAR_IO ? "I/O" : "Mem",
+		  *flagsp & PCIAUTO_BAR_PREFETCH ? " prefetch" : "",
+		  *flagsp & PCIAUTO_BAR_64 ? " 64" : "",
+		  (unsigned long long)size, size ? "" : " (disabled)");
+
+	/*
+	 * A disabled device can report a BAR with its type bits set but no
+	 * size; there is nothing to allocate for it
+	 */
+	return size;
 }
 
 pci_size_t pciauto_probe_rom(struct udevice *dev, uint rom_addr)
@@ -86,85 +137,39 @@ static void pciauto_setup_device(struct udevice *dev,
 				 struct pci_region *prefetch,
 				 struct pci_region *io)
 {
-	u32 bar_response;
 	pci_size_t bar_size;
 	u16 cmdstat = 0;
-	int bar, bar_nr = 0;
+	int bar;
 	int bars_num;
 	uint rom_addr;
 	pci_addr_t bar_value;
 	struct pci_region *bar_res = NULL;
-	int found_mem64 = 0;
+	bool found_mem64;
 
 	bars_num = pciauto_bar_count(dev, &rom_addr);
 
 	for (bar = PCI_BASE_ADDRESS_0;
 	     bar < PCI_BASE_ADDRESS_0 + (bars_num * 4); bar += 4) {
+		uint flags;
 		int ret = 0;
 
-		/* Tickle the BAR and get the response */
-		dm_pci_write_config32(dev, bar, 0xffffffff);
-		dm_pci_read_config32(dev, bar, &bar_response);
+		bar_size = pciauto_probe_bar(dev, bar, &flags);
+		found_mem64 = flags & PCIAUTO_BAR_64;
 
-		/* If BAR is not implemented (or invalid) go to the next BAR */
-		if (!bar_response || bar_response == 0xffffffff)
-			continue;
-
-		found_mem64 = 0;
-
-		/* Check the BAR type and set our address mask */
-		if (bar_response & PCI_BASE_ADDRESS_SPACE) {
-			bar_size = bar_response & PCI_BASE_ADDRESS_IO_MASK;
-			bar_size &= ~(bar_size - 1);
-
-			bar_res = io;
-
-			debug("PCI Autoconfig: BAR %d, I/O, size=0x%llx, ",
-			      bar_nr, (unsigned long long)bar_size);
-		} else {
-			if ((bar_response & PCI_BASE_ADDRESS_MEM_TYPE_MASK) ==
-			     PCI_BASE_ADDRESS_MEM_TYPE_64) {
-				u32 bar_response_upper;
-				u64 bar64;
-
-				dm_pci_write_config32(dev, bar + 4, 0xffffffff);
-				dm_pci_read_config32(dev, bar + 4,
-						     &bar_response_upper);
-
-				bar64 = ((u64)bar_response_upper << 32) |
-						bar_response;
-
-				bar_size = ~(bar64 & PCI_BASE_ADDRESS_MEM_MASK)
-						+ 1;
-				found_mem64 = 1;
-			} else {
-				bar_size = (u32)(~(bar_response &
-						PCI_BASE_ADDRESS_MEM_MASK) + 1);
-			}
-
-			if (prefetch &&
-			    (bar_response & PCI_BASE_ADDRESS_MEM_PREFETCH) &&
-			    (found_mem64 || prefetch->bus_lower < 0x100000000ULL))
-				bar_res = prefetch;
-			else
-				bar_res = mem;
-
-			debug("PCI Autoconfig: BAR %d, %s%s, size=0x%llx, ",
-			      bar_nr, bar_res == prefetch ? "Prf" : "Mem",
-			      found_mem64 ? "64" : "",
-			      (unsigned long long)bar_size);
-		}
-
-		/*
-		 * A disabled device can report a BAR with its type bits set
-		 * but no size; there is nothing to allocate for it
-		 */
+		/* If the BAR is not implemented or is disabled, skip it */
 		if (!bar_size) {
-			debug("skipped\n");
 			if (found_mem64)
 				bar += 4;
 			continue;
 		}
+
+		if (flags & PCIAUTO_BAR_IO)
+			bar_res = io;
+		else if (prefetch && (flags & PCIAUTO_BAR_PREFETCH) &&
+			 (found_mem64 || prefetch->bus_lower < 0x100000000ULL))
+			bar_res = prefetch;
+		else
+			bar_res = mem;
 
 		ret = pciauto_region_allocate(bar_res, bar_size,
 					      &bar_value, found_mem64);
@@ -176,12 +181,8 @@ static void pciauto_setup_device(struct udevice *dev,
 		if (found_mem64)
 			bar += 4;
 
-		cmdstat |= (bar_response & PCI_BASE_ADDRESS_SPACE) ?
+		cmdstat |= (flags & PCIAUTO_BAR_IO) ?
 			PCI_COMMAND_IO : PCI_COMMAND_MEMORY;
-
-		debug("\n");
-
-		bar_nr++;
 	}
 
 	/* Configure the expansion ROM address */

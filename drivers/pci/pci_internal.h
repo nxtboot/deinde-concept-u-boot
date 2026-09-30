@@ -9,6 +9,11 @@
 #ifndef __pci_internal_h
 #define __pci_internal_h
 
+/* What pciauto_probe_bar() found: a BAR's type and width */
+#define PCIAUTO_BAR_IO		BIT(0)	/* I/O space, else memory */
+#define PCIAUTO_BAR_PREFETCH	BIT(1)	/* prefetchable memory */
+#define PCIAUTO_BAR_64		BIT(2)	/* 64-bit memory BAR, using two registers */
+
 /**
  * pciauto_bar_count() - Find how many BARs a device has
  *
@@ -18,6 +23,20 @@
  * Return: number of BARs: 6 for a normal header, 2 for a bridge, else 0
  */
 int pciauto_bar_count(struct udevice *dev, uint *rom_addrp);
+
+/**
+ * pciauto_probe_bar() - Find the size and type of a BAR
+ *
+ * This writes all-ones to the BAR, and to the next register too for a 64-bit
+ * BAR, and reads back what sticks, so the caller must write the address (or
+ * zero) afterwards and must skip the next register if PCIAUTO_BAR_64 is set.
+ *
+ * @dev: Device to probe
+ * @bar: Config offset of the BAR
+ * @flagsp: Returns PCIAUTO_BAR_... flags describing the BAR
+ * Return: size in bytes, or 0 if the BAR is not implemented or disabled
+ */
+pci_size_t pciauto_probe_bar(struct udevice *dev, uint bar, uint *flagsp);
 
 /**
  * pciauto_probe_rom() - Find the size of a device's expansion ROM
