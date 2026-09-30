@@ -12,6 +12,7 @@ obj-$(CONFIG_HUSH_OLD_PARSER) += showvar.o
 obj-$(CONFIG_ENV_IS_IN_SANDBOX) += eraseenv.o
 endif
 ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_SHIM) += shim.o
 obj-$(CONFIG_CMD_PAUSE) += test_pause.o
 endif
 obj-$(CONFIG_HUSH_PARSER) += exit.o

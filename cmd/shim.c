@@ -5,11 +5,9 @@
  * Copyright 2025 Simon Glass <sjg@chromium.org>
  */
 
-#define __efi_runtime
-
 #include <abuf.h>
 #include <command.h>
-#include <efi.h>
+#include <efi_loader.h>
 #include <efi_variable.h>
 #include <errno.h>
 #include <shim.h>
@@ -24,6 +22,13 @@ static int do_shim_debug(struct cmd_tbl *cmdtp, int flag, int argc,
 	u32 value;
 	u32 attr;
 	int ret;
+
+	/* the variable needs the EFI subsystem, which may not be up yet */
+	eret = efi_init_obj_list();
+	if (eret != EFI_SUCCESS) {
+		printf("Cannot initialise UEFI (err=%lx)\n", eret);
+		return CMD_RET_FAILURE;
+	}
 
 	sub = cmd_arg1(argc, argv);
 	if (argc == 1) {
