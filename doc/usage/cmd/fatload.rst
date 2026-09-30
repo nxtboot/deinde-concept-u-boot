@@ -89,4 +89,5 @@ See also
 * :doc:`fatwrite<fatwrite>` for writing memory back out to a file
 * :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
 * :doc:`ext2load<ext2load>` for the same operation on an ext filesystem
+* :doc:`ext4load<ext4load>` for that operation under its ext4 name
 * :doc:`load<load>` for the same operation on any supported filesystem

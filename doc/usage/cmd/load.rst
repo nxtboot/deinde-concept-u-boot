@@ -139,6 +139,7 @@ See also
 --------
 
 * :doc:`ext2load<ext2load>` for the ext-only form of this command
+* :doc:`ext4load<ext4load>` for the ext-only form under its ext4 name
 * :doc:`fatload<fatload>` for the FAT-only form of this command
 * :doc:`iminfo<iminfo>` for checking an image once it has been loaded
 * :doc:`go<go>` for starting an application once it has been loaded
