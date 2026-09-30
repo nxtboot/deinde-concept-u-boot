@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ *
+ * Gigabyte MZ33-AR1 (AMD EPYC Turin) with U-Boot as the PSP's BIOS image
+ */
+
+/dts-v1/;
+
+/include/ "skeleton.dtsi"
+/include/ "serial.dtsi"
+/include/ "reset.dtsi"
+#include "tsc_timer.dtsi"
+
+/ {
+	model = "Gigabyte MZ33-AR1";
+	compatible = "gigabyte,mz33-ar1";
+
+	chosen {
+		stdout-path = "/serial";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		bootph-all;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "cpu-x86";
+			bootph-all;
+			reg = <0>;
+			intel,apic-id = <0>;
+		};
+	};
+};

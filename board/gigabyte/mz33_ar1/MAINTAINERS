@@ -1,0 +1,9 @@
+GIGABYTE MZ33-AR1 BOARD
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	arch/x86/cpu/turin/
+F:	arch/x86/dts/gigabyte_mz33_ar1-u-boot.dtsi
+F:	arch/x86/dts/gigabyte_mz33_ar1.dts
+F:	arch/x86/include/asm/arch-turin/
+F:	board/gigabyte/
+F:	configs/gigabyte_mz33_ar1_defconfig

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright 2026 Simon Glass <sjg@chromium.org>
+
+config ARCH_AMD_TURIN
+	bool
+	select X86_RESET_VECTOR
+	select X86_TSC_TIMER
+	select SYS_NS16550
+	select SYS_NS16550_PORT_MAPPED
+	select DEBUG_UART_BOARD_INIT if DEBUG_UART
+	help
+	  AMD EPYC 9005 (Turin) SoC. The PSP trains the memory and releases
+	  the x86 cores from a reset vector in DRAM, at the top of the 'BIOS
+	  reset image' it has decompressed there from the flash, so U-Boot
+	  runs from DRAM from its first instruction and needs no SPL.
+
+if ARCH_AMD_TURIN
+
+config SYS_CAR_ADDR
+	hex
+	default 0x07000000
+	help
+	  There is no cache-as-RAM on this SoC since DRAM is up before the
+	  x86 cores start; this is simply the early stack region, below the
+	  APOB which the PSP leaves at 0x7010000.
+
+config SYS_CAR_SIZE
+	hex
+	default 0x10000
+
+config PCIE_ECAM_BASE
+	default 0xb0000000
+	help
+	  The ABL puts the ECAM near the top of the physical address space;
+	  U-Boot moves it here, just above the top of low memory, where
+	  coreboot also puts it.
+
+endif

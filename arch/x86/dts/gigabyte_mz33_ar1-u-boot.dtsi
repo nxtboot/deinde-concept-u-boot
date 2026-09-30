@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ *
+ * The PSP decompresses this whole image into DRAM at CONFIG_TEXT_BASE and
+ * starts the CPU at the reset vector in its last 16 bytes, so the image is
+ * laid out at its DRAM address rather than at the top of 4GB
+ */
+
+#include <config.h>
+
+/*
+ * Only meaningful for this board's own build; other x86 builds compile
+ * every devicetree in the directory
+ */
+#ifdef CONFIG_TARGET_MZ33_AR1
+/ {
+	binman {
+		filename = "u-boot-mz33.bin";
+		pad-byte = <0xff>;
+		sort-by-offset;
+		skip-at-start = <CONFIG_TEXT_BASE>;
+		size = <CONFIG_ROM_SIZE>;
+
+		u-boot {
+			offset = <CONFIG_TEXT_BASE>;
+		};
+		x86-start16 {
+			offset = <CONFIG_SYS_X86_START16>;
+		};
+		x86-reset16 {
+			offset = <CONFIG_RESET_VEC_LOC>;
+		};
+	};
+};
+#endif

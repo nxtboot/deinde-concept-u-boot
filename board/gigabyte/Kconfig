@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright 2026 Simon Glass <sjg@chromium.org>
+
+if VENDOR_GIGABYTE
+
+choice
+	prompt "Mainboard model"
+	optional
+
+config TARGET_MZ33_AR1
+	bool "Gigabyte MZ33-AR1"
+	help
+	  Single-socket server board for the AMD EPYC 9005 (Turin) family,
+	  with 12 DDR5 DIMM slots, an AST2600 BMC and PCIe Gen5 slots. U-Boot
+	  runs on it natively as the 'BIOS' loaded by the PSP.
+
+endchoice
+
+source "board/gigabyte/mz33_ar1/Kconfig"
+
+endif
