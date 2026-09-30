@@ -106,6 +106,30 @@ def test_ext4size_baddev(ubman):
 
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_ext4')
+def test_ext4size_option(ubman):
+    """Check that ext4size refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with FsHelper(ubman.config, 'ext4', 2, 'test_ext4size_option') as fsh:
+        make_image(fsh)
+        ubman.run_command(f'host bind 0 {fsh.fs_img}')
+
+        out = ubman.run_command('ext4size -b host 0')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+        assert 'Bad device specification' not in out
+
+        # An option after the interface is a filename, as before
+        ubman.run_command('setenv filesize sentinel')
+        out = ubman.run_command('ext4size host 0 -b')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' not in out
+        assert 'sentinel' == ubman.run_command('echo $filesize')
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_ext4')
 def test_ext4size_usage(ubman):
     """Check that ext4size wants all three of its arguments
 

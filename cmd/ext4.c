@@ -41,9 +41,12 @@
 #include <usb.h>
 #endif
 
-int do_ext4_size(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_ext4_size(struct getopt_state *gs)
 {
-	return do_size(argc, argv, FS_TYPE_EXT);
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
+	return do_size(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
 static int do_ext4_load(struct getopt_state *gs)
@@ -74,7 +77,7 @@ U_BOOT_CMD(ext4write, 7, 1, do_ext4_write,
 
 #endif
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	ext4size,	4,	0,	do_ext4_size,
 	"determine a file's size",
 	"<interface> <dev[:part]> <filename>\n"
