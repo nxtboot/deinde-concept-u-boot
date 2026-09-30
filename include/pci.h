@@ -730,16 +730,6 @@ int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
 #if defined(CONFIG_DM_PCI_COMPAT)
 extern void *pci_map_bar(pci_dev_t pdev, int bar, int flags);
 extern struct pci_controller* pci_bus_to_hose(int bus);
-extern void pciauto_setup_device(struct pci_controller *hose,
-				 pci_dev_t dev, int bars_num,
-				 struct pci_region *mem,
-				 struct pci_region *prefetch,
-				 struct pci_region *io);
-extern void pciauto_prescan_setup_bridge(struct pci_controller *hose,
-				 pci_dev_t dev, int sub_bus);
-extern void pciauto_postscan_setup_bridge(struct pci_controller *hose,
-				 pci_dev_t dev, int sub_bus);
-extern int pciauto_config_device(struct pci_controller *hose, pci_dev_t dev);
 
 extern pci_dev_t pci_find_device (unsigned int vendor, unsigned int device, int index);
 extern pci_dev_t pci_find_devices (struct pci_device_id *ids, int index);
