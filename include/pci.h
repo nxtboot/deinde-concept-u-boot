@@ -694,9 +694,6 @@ extern pci_addr_t pci_hose_phys_to_bus(struct pci_controller* hose,
 #define pci_bus_to_phys(dev, addr, flags) \
 	pci_hose_bus_to_phys(pci_bus_to_hose(PCI_BUS(dev)), (addr), (flags))
 
-#define pci_virt_to_bus(dev, addr, flags) \
-	pci_hose_phys_to_bus(pci_bus_to_hose(PCI_BUS(dev)), \
-			     (virt_to_phys(addr)), (flags))
 #define pci_bus_to_virt(dev, addr, flags, len, map_flags) \
 	map_physmem(pci_hose_bus_to_phys(pci_bus_to_hose(PCI_BUS(dev)), \
 					 (addr), (flags)), \
@@ -706,31 +703,6 @@ extern pci_addr_t pci_hose_phys_to_bus(struct pci_controller* hose,
 	pci_phys_to_bus((dev), (addr), PCI_REGION_MEM)
 #define pci_mem_to_phys(dev, addr) \
 	pci_bus_to_phys((dev), (addr), PCI_REGION_MEM)
-#define pci_phys_to_io(dev, addr)  pci_phys_to_bus((dev), (addr), PCI_REGION_IO)
-#define pci_io_to_phys(dev, addr)  pci_bus_to_phys((dev), (addr), PCI_REGION_IO)
-
-#define pci_virt_to_mem(dev, addr) \
-	pci_virt_to_bus((dev), (addr), PCI_REGION_MEM)
-#define pci_mem_to_virt(dev, addr, len, map_flags) \
-	pci_bus_to_virt((dev), (addr), PCI_REGION_MEM, (len), (map_flags))
-#define pci_virt_to_io(dev, addr) \
-	pci_virt_to_bus((dev), (addr), PCI_REGION_IO)
-#define pci_io_to_virt(dev, addr, len, map_flags) \
-	pci_bus_to_virt((dev), (addr), PCI_REGION_IO, (len), (map_flags))
-
-/* For driver model these are defined in macros in pci_compat.c */
-extern int pci_hose_read_config_byte(struct pci_controller *hose,
-				     pci_dev_t dev, int where, u8 *val);
-extern int pci_hose_read_config_word(struct pci_controller *hose,
-				     pci_dev_t dev, int where, u16 *val);
-extern int pci_hose_read_config_dword(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u32 *val);
-extern int pci_hose_write_config_byte(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u8 val);
-extern int pci_hose_write_config_word(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u16 val);
-extern int pci_hose_write_config_dword(struct pci_controller *hose,
-				       pci_dev_t dev, int where, u32 val);
 #endif
 
 void pciauto_region_init(struct pci_region *res);
@@ -753,24 +725,8 @@ int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
 			    pci_addr_t *bar, bool supports_64bit);
 
 #if defined(CONFIG_DM_PCI_COMPAT)
-extern int pci_hose_read_config_byte_via_dword(struct pci_controller *hose,
-					       pci_dev_t dev, int where, u8 *val);
-extern int pci_hose_read_config_word_via_dword(struct pci_controller *hose,
-					       pci_dev_t dev, int where, u16 *val);
-extern int pci_hose_write_config_byte_via_dword(struct pci_controller *hose,
-						pci_dev_t dev, int where, u8 val);
-extern int pci_hose_write_config_word_via_dword(struct pci_controller *hose,
-						pci_dev_t dev, int where, u16 val);
-
 extern void *pci_map_bar(pci_dev_t pdev, int bar, int flags);
-extern void pci_register_hose(struct pci_controller* hose);
 extern struct pci_controller* pci_bus_to_hose(int bus);
-extern struct pci_controller *find_hose_by_cfg_addr(void *cfg_addr);
-extern struct pci_controller *pci_get_hose_head(void);
-
-extern int pci_hose_scan(struct pci_controller *hose);
-extern int pci_hose_scan_bus(struct pci_controller *hose, int bus);
-
 extern void pciauto_setup_device(struct pci_controller *hose,
 				 pci_dev_t dev, int bars_num,
 				 struct pci_region *mem,
@@ -785,18 +741,6 @@ extern int pciauto_config_device(struct pci_controller *hose, pci_dev_t dev);
 extern pci_dev_t pci_find_device (unsigned int vendor, unsigned int device, int index);
 extern pci_dev_t pci_find_devices (struct pci_device_id *ids, int index);
 pci_dev_t pci_find_class(unsigned int find_class, int index);
-
-extern int pci_hose_find_capability(struct pci_controller *hose, pci_dev_t dev,
-				    int cap);
-extern int pci_hose_find_cap_start(struct pci_controller *hose, pci_dev_t dev,
-				   u8 hdr_type);
-extern int pci_find_cap(struct pci_controller *hose, pci_dev_t dev, int pos,
-			int cap);
-
-int pci_find_next_ext_capability(struct pci_controller *hose,
-				 pci_dev_t dev, int start, int cap);
-int pci_hose_find_ext_capability(struct pci_controller *hose,
-				 pci_dev_t dev, int cap);
 
 #endif /* defined(CONFIG_DM_PCI_COMPAT) */
 
