@@ -20,6 +20,7 @@
 #include <asm/io.h>
 #include <asm/msr.h>
 #include <asm/mtrr.h>
+#include <asm/arch/cpu.h>
 #include <asm/post.h>
 #include <linux/sizes.h>
 
@@ -317,6 +318,7 @@ static void turin_mem_restore_signoff(void)
 int arch_early_init_r(void)
 {
 	turin_mem_restore_signoff();
+	turin_ecam_init();
 	turin_smu_usb_init();
 
 	return 0;

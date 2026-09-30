@@ -3,3 +3,4 @@
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
 obj-y += cpu.o
+obj-y += pci.o
