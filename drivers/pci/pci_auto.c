@@ -366,7 +366,7 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
 	struct pci_region *pci_io;
-	u16 cmdstat, prefechable_64;
+	u16 cmdstat, pref_type;
 	u8 io_32;
 	struct udevice *ctlr = pci_get_controller(dev);
 	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
@@ -377,8 +377,8 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 	pci_io = ctlr_hose->pci_io;
 
 	dm_pci_read_config16(dev, PCI_COMMAND, &cmdstat);
-	dm_pci_read_config16(dev, PCI_PREF_MEMORY_BASE, &prefechable_64);
-	prefechable_64 &= PCI_PREF_RANGE_TYPE_MASK;
+	dm_pci_read_config16(dev, PCI_PREF_MEMORY_BASE, &pref_type);
+	pref_type &= PCI_PREF_RANGE_TYPE_MASK;
 	dm_pci_read_config8(dev, PCI_IO_BASE, &io_32);
 	io_32 &= PCI_IO_RANGE_TYPE_MASK;
 
@@ -416,8 +416,8 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_BASE,
 				      (((pci_prefetch->bus_lower & 0xfff00000) >>
 					16) & PCI_PREF_RANGE_MASK) |
-				      prefechable_64);
-		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64) {
+				      pref_type);
+		if (pref_type == PCI_PREF_RANGE_TYPE_64) {
 			u32 upper = upper_32_bits(pci_prefetch->bus_lower);
 
 			dm_pci_write_config32(dev, PCI_PREF_BASE_UPPER32, upper);
@@ -427,10 +427,10 @@ void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 	} else {
 		/* We don't support prefetchable memory for now, so disable */
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_BASE, 0xfff0 |
-								prefechable_64);
+								pref_type);
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_LIMIT, 0x0 |
-								prefechable_64);
-		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64) {
+								pref_type);
+		if (pref_type == PCI_PREF_RANGE_TYPE_64) {
 			dm_pci_write_config16(dev, PCI_PREF_BASE_UPPER32, 0x0);
 			dm_pci_write_config16(dev, PCI_PREF_LIMIT_UPPER32, 0x0);
 		}
@@ -494,19 +494,19 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
 	}
 
 	if (pci_prefetch) {
-		u16 prefechable_64;
+		u16 pref_type;
 
 		dm_pci_read_config16(dev, PCI_PREF_MEMORY_LIMIT,
-				     &prefechable_64);
-		prefechable_64 &= PCI_PREF_RANGE_TYPE_MASK;
+				     &pref_type);
+		pref_type &= PCI_PREF_RANGE_TYPE_MASK;
 
 		/* Round memory allocator */
 		pciauto_region_align(pci_prefetch, CONFIG_PCI_BRIDGE_MEM_ALIGNMENT);
 
 		dm_pci_write_config16(dev, PCI_PREF_MEMORY_LIMIT,
 				      (((pci_prefetch->bus_lower - 1) >> 16) &
-				       PCI_PREF_RANGE_MASK) | prefechable_64);
-		if (prefechable_64 == PCI_PREF_RANGE_TYPE_64) {
+				       PCI_PREF_RANGE_MASK) | pref_type);
+		if (pref_type == PCI_PREF_RANGE_TYPE_64) {
 			u32 upper = upper_32_bits(pci_prefetch->bus_lower - 1);
 
 			dm_pci_write_config32(dev, PCI_PREF_LIMIT_UPPER32, upper);
