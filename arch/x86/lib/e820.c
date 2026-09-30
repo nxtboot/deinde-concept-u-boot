@@ -108,18 +108,28 @@ int e820_finish(struct e820_ctx *ctx)
 	return ctx->count;
 }
 
+/* Get the top of the RAM which U-Boot may use, page-aligned */
+static inline u64 e820_ram_top(void)
+{
+	u64 ram_top = (u64)gd->ram_top & ~EFI_PAGE_MASK;
+
+	return ram_top ? ram_top : 0x100000000ULL;
+}
+
 #if CONFIG_IS_ENABLED(EFI_LOADER)
 void efi_add_known_memory(void)
 {
 	struct e820_entry e820[E820MAX];
 	unsigned int i, num;
-	u64 start;
+	u64 start, end, ram_top;
 	int type;
 
 	num = install_e820_map(ARRAY_SIZE(e820), e820);
+	ram_top = e820_ram_top();
 
 	for (i = 0; i < num; ++i) {
 		start = e820[i].addr;
+		end = start + e820[i].size;
 
 		switch (e820[i].type) {
 		case E820_RAM:
@@ -140,8 +150,19 @@ void efi_add_known_memory(void)
 			break;
 		}
 
-		if (type != EFI_CONVENTIONAL_MEMORY)
+		if (type != EFI_CONVENTIONAL_MEMORY) {
 			efi_add_memory_map(start, e820[i].size, type);
+		} else if (end > ram_top) {
+			/*
+			 * LMB only holds the RAM below ram_top, which is all
+			 * that U-Boot can use. Mark the rest as boot-services
+			 * data, so that nothing allocates it before the OS
+			 * takes it over
+			 */
+			start = max(start, ram_top);
+			efi_add_memory_map(start, end - start,
+					   EFI_BOOT_SERVICES_DATA);
+		}
 	}
 
 	/* The 64-bit page tables are in low memory, which is otherwise free */
@@ -159,10 +180,7 @@ void lmb_arch_add_memory(void)
 	u64 ram_top;
 
 	num = install_e820_map(ARRAY_SIZE(e820), e820);
-
-	ram_top = (u64)gd->ram_top & ~EFI_PAGE_MASK;
-	if (!ram_top)
-		ram_top = 0x100000000ULL;
+	ram_top = e820_ram_top();
 
 	for (i = 0; i < num; ++i) {
 		if (e820[i].type == E820_RAM) {

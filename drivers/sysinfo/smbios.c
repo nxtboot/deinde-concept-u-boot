@@ -5,6 +5,8 @@
  */
 
 #include <dm.h>
+#include <log.h>
+#include <malloc.h>
 #include <smbios_plat.h>
 #include <sysinfo.h>
 
@@ -25,6 +27,10 @@ struct sysinfo_plat_priv {
 	u16 cache_handles[SYSINFO_CACHE_LVL_MAX];
 	u8 cache_level;
 	u16 marray_handles[SYSINFO_MEM_HANDLE_MAX];
+	struct memory_array_info marray;
+	struct memory_dev_info *mdevs;
+	int mdev_count;
+	bool have_marray;
 };
 
 static void smbios_cache_info_dump(struct smbios_type7 *cache_info)
@@ -56,6 +62,18 @@ __weak int sysinfo_get_processor_info(struct processor_info *pinfo)
 {
 	return -ENOSYS;
 }
+
+#if IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+__weak int sysinfo_get_memory_array_info(struct memory_array_info *info)
+{
+	return -ENOSYS;
+}
+
+__weak int sysinfo_get_memory_dev_info(int idx, struct memory_dev_info *info)
+{
+	return -ENOSYS;
+}
+#endif
 
 void sysinfo_cache_info_default(struct cache_info *ci)
 {
@@ -170,9 +188,59 @@ static int sysinfo_plat_get_data(struct udevice *dev, int id, void **buf,
 		*buf = &priv->marray_handles[0];
 		*size = sizeof(priv->marray_handles);
 		break;
+#if IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+	case SYSID_SM_MEMARRAY_INFO:
+		if (!priv->have_marray)
+			return -ENOENT;
+		*buf = &priv->marray;
+		*size = sizeof(priv->marray);
+		break;
+	case SYSID_SM_MEMDEV_INFO:
+		if (!priv->have_marray)
+			return -ENOENT;
+		*buf = priv->mdevs;
+		*size = priv->mdev_count * sizeof(*priv->mdevs);
+		break;
+#endif
 	default:
 		return -EOPNOTSUPP;
 	}
+	return 0;
+}
+
+#if IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+static int sysinfo_plat_get_item_count(struct udevice *dev, int id)
+{
+	struct sysinfo_plat_priv *priv = dev_get_priv(dev);
+
+	if (id != SYSID_SM_MEMDEV_INFO || !priv->have_marray)
+		return -EOPNOTSUPP;
+
+	return priv->mdev_count;
+}
+#endif
+
+/* Collect the memory devices, if the platform knows them */
+static int sysinfo_plat_get_memory(struct sysinfo_plat_priv *priv)
+{
+	int count, i;
+
+	if (!IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO))
+		return -ENOSYS;
+	if (sysinfo_get_memory_array_info(&priv->marray))
+		return -ENOSYS;
+	count = priv->marray.num_devices;
+	priv->mdevs = calloc(count, sizeof(*priv->mdevs));
+	if (count && !priv->mdevs)
+		return -ENOMEM;
+	for (i = 0; i < count; i++) {
+		if (sysinfo_get_memory_dev_info(i, &priv->mdevs[i]))
+			break;
+	}
+	priv->mdev_count = i;
+	priv->have_marray = true;
+	log_debug("%d memory devices in an array of %d\n", i, count);
+
 	return 0;
 }
 
@@ -226,10 +294,13 @@ static int sysinfo_plat_probe(struct udevice *dev)
 		}
 		smbios_cache_info_dump(&priv->t7[level]);
 	}
-	if (!level) /* no cache detected */
-		return -ENOSYS;
-
 	priv->cache_level = level;
+
+	/* the platform may know its caches, its memory devices, both or none */
+	if (sysinfo_plat_get_memory(priv) == -ENOMEM)
+		return log_msg_ret("mem", -ENOMEM);
+	if (!level && !priv->have_marray)
+		return -ENOSYS;
 
 	return 0;
 }
@@ -244,6 +315,9 @@ static const struct sysinfo_ops sysinfo_smbios_ops = {
 	.get_str = sysinfo_plat_get_str,
 	.get_int = sysinfo_plat_get_int,
 	.get_data = sysinfo_plat_get_data,
+#if IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+	.get_item_count = sysinfo_plat_get_item_count,
+#endif
 };
 
 U_BOOT_DRIVER(sysinfo_smbios) = {

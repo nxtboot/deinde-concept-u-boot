@@ -1134,7 +1134,11 @@ void board_init_f(ulong boot_flags)
  */
 static void initcall_run_f_r(void)
 {
-#if !CONFIG_IS_ENABLED(X86_64)
+	/*
+	 * A 64-bit build which started in SPL has its caches on already, but
+	 * one which started in 64-bit mode does not
+	 */
+#if !CONFIG_IS_ENABLED(X86_64) || IS_ENABLED(CONFIG_X86_RUN_64BIT_NO_SPL)
 	INITCALL(init_cache_f_r);
 #endif
 }

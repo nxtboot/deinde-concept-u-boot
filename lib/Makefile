@@ -103,6 +103,7 @@ obj-$(CONFIG_$(PHASE_)LZO) += lzo/
 obj-$(CONFIG_$(PHASE_)LZMA) += lzma/
 obj-$(CONFIG_$(PHASE_)LZ4) += lz4_wrapper.o
 
+obj-$(CONFIG_DDR5_SPD) += ddr5_spd.o
 obj-$(CONFIG_$(PHASE_)LIB_RATIONAL) += rational.o
 
 obj-$(CONFIG_LIBAVB) += libavb/

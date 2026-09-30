@@ -5,6 +5,8 @@
  */
 
 #include <dm.h>
+#include <smbios_def.h>
+#include <smbios_plat.h>
 #include <sysinfo.h>
 
 #include "sandbox.h"
@@ -82,6 +84,46 @@ int sysinfo_sandbox_get_str(struct udevice *dev, int id, size_t size, char *val)
 	return -ENOENT;
 }
 
+/* Two memory slots, one of them populated, for the SMBIOS memory tables */
+static const struct memory_array_info sandbox_marray = {
+	.max_capacity = 16ULL << 30,
+	.num_devices = 2,
+	.location = SMBIOS_MA_LOCATION_MOTHERBOARD,
+	.use = SMBIOS_MA_USE_SYSTEM,
+	.err_corr = SMBIOS_MA_ERRCORR_NONE,
+};
+
+static const struct memory_dev_info sandbox_mdevs[] = {
+	{
+		.size = 8ULL << 30,
+		.speed = 4800,
+		.config_speed = 4400,
+		.total_width = 64,
+		.data_width = 64,
+		.min_voltage = 1100,
+		.max_voltage = 1100,
+		.config_voltage = 1100,
+		.type_detail = SMBIOS_MD_TD_SYNC,
+		.module_man_id = 0x2c80,
+		.form_factor = SMBIOS_MD_FF_SODIMM,
+		.mem_type = SMBIOS_MD_TYPE_DDR5,
+		.ranks = 1,
+		.dev_locator = "DIMM 0",
+		.bank_locator = "BANK 0",
+		.manufacturer = "Sandbox Memory",
+		.part_number = "SB-8G-4800",
+		.serial = "00000001",
+	}, {
+		.total_width = 0xffff,
+		.data_width = 0xffff,
+		.type_detail = SMBIOS_MD_TD_UNKNOWN,
+		.form_factor = SMBIOS_MD_FF_UNKNOWN,
+		.mem_type = SMBIOS_MD_TYPE_UNKNOWN,
+		.dev_locator = "DIMM 1",
+		.bank_locator = "BANK 0",
+	},
+};
+
 int sysinfo_sandbox_get_data(struct udevice *dev, int id, void **buf,
 			     size_t *size)
 {
@@ -92,7 +134,23 @@ int sysinfo_sandbox_get_data(struct udevice *dev, int id, void **buf,
 		*buf = priv->test_data;
 		*size = sizeof(priv->test_data);
 		return 0;
+	case SYSID_SM_MEMARRAY_INFO:
+		*buf = (void *)&sandbox_marray;
+		*size = sizeof(sandbox_marray);
+		return 0;
+	case SYSID_SM_MEMDEV_INFO:
+		*buf = (void *)sandbox_mdevs;
+		*size = sizeof(sandbox_mdevs);
+		return 0;
 	}
+
+	return -ENOENT;
+}
+
+static int sysinfo_sandbox_get_item_count(struct udevice *dev, int id)
+{
+	if (id == SYSID_SM_MEMDEV_INFO)
+		return ARRAY_SIZE(sandbox_mdevs);
 
 	return -ENOENT;
 }
@@ -108,6 +166,7 @@ static const struct sysinfo_ops sysinfo_sandbox_ops = {
 	.get_int = sysinfo_sandbox_get_int,
 	.get_str = sysinfo_sandbox_get_str,
 	.get_data = sysinfo_sandbox_get_data,
+	.get_item_count = sysinfo_sandbox_get_item_count,
 };
 
 int sysinfo_sandbox_probe(struct udevice *dev)

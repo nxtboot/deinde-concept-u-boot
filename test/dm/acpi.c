@@ -272,6 +272,44 @@ static int dm_test_acpi_fill_header(struct unit_test_state *uts)
 DM_TEST(dm_test_acpi_fill_header, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test ACPI write_tables() */
+/* Test that the SPMI table describes the devicetree's IPMI interface */
+static int dm_test_acpi_write_spmi(struct unit_test_state *uts)
+{
+	struct acpi_spmi *spmi;
+	struct acpi_ctx ctx;
+	ulong addr;
+	void *buf;
+
+	buf = malloc(BUF_SIZE);
+	ut_assertnonnull(buf);
+	addr = map_to_sysmem(buf);
+	ut_assertok(setup_ctx_and_base_tables(uts, &ctx, addr));
+
+	spmi = ctx.current;
+	ut_assertok(acpi_write_spmi(&ctx, NULL));
+	ut_asserteq_mem("SPMI", spmi->header.signature, 4);
+	ut_asserteq(0x41, sizeof(*spmi));
+	ut_asserteq(sizeof(*spmi), spmi->header.length);
+	ut_asserteq(ACPI_SPMI_KCS, spmi->interface_type);
+	ut_asserteq(1, spmi->reserved);
+	ut_asserteq(ACPI_SPMI_IPMI_2_0, spmi->spec_rev);
+	ut_asserteq(ACPI_ADDRESS_SPACE_MEMORY, spmi->base.space_id);
+	ut_asserteq(32, spmi->base.bit_width);
+	ut_asserteq(ACPI_ACCESS_SIZE_BYTE_ACCESS, spmi->base.access_size);
+	ut_asserteq(0xca2, spmi->base.addrl);
+	ut_asserteq(0, spmi->base.addrh);
+	ut_asserteq(0, spmi->uid);
+	ut_asserteq_ptr(spmi + 1, ctx.current);
+	ut_asserteq(nomap_to_sysmem(spmi), ctx.rsdt->entry[0]);
+	ut_asserteq(nomap_to_sysmem(spmi), ctx.xsdt->entry[0]);
+
+	unmap_sysmem(buf);
+	free(buf);
+
+	return 0;
+}
+DM_TEST(dm_test_acpi_write_spmi, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
 static int dm_test_acpi_write_tables(struct unit_test_state *uts)
 {
 	struct acpi_dmar *dmar;

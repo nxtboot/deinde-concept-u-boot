@@ -8,10 +8,14 @@
 #include <debug_uart.h>
 #include <init.h>
 #include <log.h>
+#include <malloc.h>
+#include <asm/cache.h>
+#include <asm/control_regs.h>
 #include <asm/cpu.h>
 #include <asm/global_data.h>
 #include <asm/processor.h>
 #include <asm/processor-flags.h>
+#include <linux/sizes.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -126,17 +130,27 @@ int cpu_has_64bit(void)
 
 void enable_caches(void)
 {
-	/* Not implemented */
+	unsigned long cr0;
+
+	cr0 = read_cr0();
+	cr0 &= ~(X86_CR0_NW | X86_CR0_CD);
+	write_cr0(cr0);
 }
 
 void disable_caches(void)
 {
-	/* Not implemented */
+	unsigned long cr0;
+
+	cr0 = read_cr0();
+	cr0 |= X86_CR0_NW | X86_CR0_CD;
+	wbinvd();
+	write_cr0(cr0);
+	wbinvd();
 }
 
 int dcache_status(void)
 {
-	return true;
+	return !(read_cr0() & X86_CR0_CD);
 }
 
 int x86_mp_init(void)
@@ -180,4 +194,42 @@ void board_debug_uart_init(void)
 void x86_get_identity_for_timer(void)
 {
 	x86_setup_identity_cpuid();
+}
+
+/* Page-table entry bits */
+#define PTE_PRESENT		BIT(0)
+#define PTE_RW			BIT(1)
+#define PTE_PCD			BIT(4)	/* uncached */
+#define PTE_PS			BIT(7)	/* large page */
+#define PTE_ADDR_MASK		GENMASK_ULL(51, 12)
+#define PAGE_TABLE_ENTRIES	512
+
+int x86_64_map_mmio(u64 start, u64 size)
+{
+	u64 *pml4 = (u64 *)(read_cr3() & PTE_ADDR_MASK);
+	u64 addr;
+
+	if (!(cpuid_edx(0x80000001) & BIT(26)))
+		return -EOPNOTSUPP;
+	for (addr = ALIGN_DOWN(start, SZ_1G); addr < start + size;
+	     addr += SZ_1G) {
+		u64 *pml4e = &pml4[(addr >> 39) % PAGE_TABLE_ENTRIES];
+		u64 *pdpt;
+
+		if (!(*pml4e & PTE_PRESENT)) {
+			pdpt = memalign(SZ_4K, SZ_4K);
+			if (!pdpt)
+				return -ENOMEM;
+			memset(pdpt, '\0', SZ_4K);
+			*pml4e = (ulong)pdpt | PTE_RW | PTE_PRESENT;
+		}
+		pdpt = (u64 *)(ulong)(*pml4e & PTE_ADDR_MASK);
+		pdpt[(addr >> 30) % PAGE_TABLE_ENTRIES] = addr | PTE_PS |
+			PTE_PCD | PTE_RW | PTE_PRESENT;
+	}
+
+	/* flush the TLB */
+	asm volatile("mov %0, %%cr3" : : "r" (read_cr3()) : "memory");
+
+	return 0;
 }

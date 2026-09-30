@@ -169,6 +169,22 @@ static inline int flag_is_changeable_p(u32 flag)
 #endif /* X86_64 */
 
 /**
+ * x86_64_map_mmio() - Map a physical address range with 1GB pages
+ *
+ * 64-bit U-Boot's page tables map only the first 4GB, so memory-mapped I/O
+ * above that, such as a PCI BAR in a 64-bit window, faults. This adds
+ * identity-mapped, uncached 1GB pages covering the range to the page tables.
+ * It must not be used for ranges below 4GB, which are already mapped with
+ * smaller pages.
+ *
+ * @start: Start of the range
+ * @size: Size of the range in bytes
+ * Return: 0 if OK, -ENOTSUPP if the CPU does not support 1GB pages, -ENOMEM
+ *	if a page table could not be allocated
+ */
+int x86_64_map_mmio(u64 start, u64 size);
+
+/**
  * cpu_enable_paging_pae() - Enable PAE-paging
  *
  * @cr3:	Value to set in cr3 (PDPT or PML4T)

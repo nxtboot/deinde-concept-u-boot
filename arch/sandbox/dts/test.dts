@@ -2396,6 +2396,13 @@
 		reset-names = "valid", "no_mask", "out_of_range";
 	};
 
+	/* an IPMI interface to describe in the ACPI SPMI table */
+	ipmi@ca2 {
+		compatible = "ipmi-kcs";
+		reg = <0xca2 2>;
+		reg-spacing = <4>;
+	};
+
 	sysinfo {
 		compatible = "sandbox,sysinfo-sandbox";
 
