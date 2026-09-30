@@ -12,6 +12,10 @@ config ARCH_AMD_TURIN
 	select ARCH_EARLY_INIT_R
 	select PHYS_64BIT
 	select SYS_PCI_64BIT
+	select DDR5_SPD
+	imply SYSINFO
+	imply SYSINFO_SMBIOS
+	imply SMBIOS_MEMORY_SYSINFO
 	imply PCI_INIT_R
 	imply AHCI_PCI
 	imply SCSI

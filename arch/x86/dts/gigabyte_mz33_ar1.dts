@@ -30,6 +30,28 @@
 		reg = <0 0x3f8 0 8>;
 	};
 
+	/* the board's identity for SMBIOS; the memory comes from the APOB */
+	sysinfo {
+		compatible = "u-boot,sysinfo-smbios";
+
+		smbios {
+			system {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+				product = "MZ33-AR1";
+				family = "EPYC 9005";
+			};
+
+			baseboard {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+				product = "MZ33-AR1";
+			};
+
+			chassis {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+			};
+		};
+	};
+
 	chosen {
 		stdout-path = "/serial";
 	};

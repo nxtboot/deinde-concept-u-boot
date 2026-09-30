@@ -12,6 +12,7 @@ obj-y += e820.o
 obj-y += mp.o
 obj-y += mpio.o
 obj-y += pci.o
+obj-$(CONFIG_SYSINFO_SMBIOS) += smbios.o
 obj-$(CONFIG_TURIN_REG_TRACE) += trace.o
 obj-$(CONFIG_CMDLINE) += fch.o
 obj-$(CONFIG_CMDLINE) += smn.o
