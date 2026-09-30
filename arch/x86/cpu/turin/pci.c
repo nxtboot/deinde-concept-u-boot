@@ -108,7 +108,12 @@
  * (NbioBaseConfigurationBrh). This must happen before anything reads an
  * empty slot on the bus, so it cannot be decided by looking for the FCH
  */
+#define IOHC_NB_BUS_NUM_CNTL	0x44	/* the root complex's own bus number */
+#define NB_BUS_LAT_MODE		BIT(8)
 #define IOHC_SB_LOCATION	0x7c
+/* the IOMMU's own copies of the southbridge location, in its L1 and L2 */
+#define IOMMU_L1_SB_LOCATION	0x15300024
+#define IOMMU_L2_SB_LOCATION	0x13f0112c
 
 /*
  * Each IOHC has an I/O APIC for its PCIe INTx interrupts, which the ABL
@@ -181,6 +186,21 @@
 #define NBIF_STRAP_STRIDE	0x200	/* per function of port 0 */
 #define NBIF_SATA_STRAP_BASE	0x10135000	/* port 1 functions 0 and 1 */
 #define NBIF_STRAP_FUNC_EN	BIT(28)
+/*
+ * The NBIF's two root ports, devices 7.1 and 7.2 of the root bus, learn
+ * their own bus, device and function from these straps, which requests
+ * they originate or forward then carry as the requester ID
+ */
+#define NBIF_PORT_STRAP7	0x1013101c
+#define NBIF_PORT_STRAP_STRIDE	0x200
+#define NBIF2_OFFSET		0x400000
+#define STRAP7_RP_BUSNUM_SHIFT	16
+#define STRAP7_RP_BUSNUM_MASK	GENMASK(23, 16)
+#define STRAP7_DN_DEVNUM_SHIFT	24
+#define STRAP7_DN_DEVNUM_MASK	GENMASK(28, 24)
+#define STRAP7_DN_FUNCID_SHIFT	29
+#define STRAP7_DN_FUNCID_MASK	GENMASK(31, 29)
+#define NBIF_PORT_DEV		7
 #define NBIF_FUNC_USB		4
 #define NBIF_NUM_FUNCS		8
 #define NBIF_NUM_SATA		2
@@ -316,7 +336,27 @@ static u32 turin_iohc_base(uint fid)
  * @busno: Root bus number
  * @fid: Fabric ID of its IOS
  */
-static void turin_nbif_init(uint fid)
+/* Tell an NBIF's root ports which bus, device and function they are */
+static void turin_nbif_strap_ports(u32 base, int busno)
+{
+	int port;
+
+	for (port = 0; port < 2; port++) {
+		u32 reg = base + port * NBIF_PORT_STRAP_STRIDE;
+		u32 val = smn_read(reg);
+
+		if (val == ~0U)
+			return;		/* no such NBIF */
+		val &= ~(STRAP7_RP_BUSNUM_MASK | STRAP7_DN_DEVNUM_MASK |
+			 STRAP7_DN_FUNCID_MASK);
+		val |= busno << STRAP7_RP_BUSNUM_SHIFT |
+			NBIF_PORT_DEV << STRAP7_DN_DEVNUM_SHIFT |
+			(port + 1) << STRAP7_DN_FUNCID_SHIFT;
+		smn_write(reg, val);
+	}
+}
+
+static void turin_nbif_init(int busno, uint fid)
 {
 	uint n = (fid - DF_FID_IOS_BASE) >> 1;
 	u32 base = NBIF_STRAP_BASE + n * IOHC_STRIDE;
@@ -325,6 +365,9 @@ static void turin_nbif_init(uint fid)
 
 	if (fid & 1)
 		return;
+	turin_nbif_strap_ports(NBIF_PORT_STRAP7 + n * IOHC_STRIDE, busno);
+	turin_nbif_strap_ports(NBIF_PORT_STRAP7 + NBIF2_OFFSET + n * IOHC_STRIDE,
+			       busno);
 	for (i = 2; i < NBIF_NUM_FUNCS; i++) {
 		if (i == NBIF_FUNC_USB && has_fch)
 			continue;
@@ -577,12 +620,31 @@ static void turin_hide_unused_ports(int busno, uint fid)
 
 static void turin_iohc_init(int busno, uint fid)
 {
+	/*
+	 * Requests the root complex originates itself, such as its root
+	 * ports' and I/O APIC's interrupt messages, carry this bus number as
+	 * their requester ID. Without it they claim to be from bus 0, which
+	 * the IOMMU rejects
+	 */
+	smn_write(turin_iohc_base(fid) + IOHC_NB_BUS_NUM_CNTL,
+		  busno | NB_BUS_LAT_MODE);
 	if (busno != FCH_ROOT_BUS) {
 		log_debug("bus %x: no southbridge, clearing SB location\n",
 			  busno);
 		smn_write(turin_iohc_base(fid) + IOHC_SB_LOCATION, 0);
+		/*
+		 * The IOMMU has its own copies, which the ABL leaves set on
+		 * every big root complex. They make the IOMMU take requests
+		 * from that port as the southbridge's, i.e. from bus 0
+		 */
+		if (!(fid & 1)) {
+			u32 off = turin_iohc_index(fid) * IOHC_STRIDE;
+
+			smn_write(IOMMU_L1_SB_LOCATION + off, 0);
+			smn_write(IOMMU_L2_SB_LOCATION + off, 0);
+		}
 	}
-	turin_nbif_init(fid);
+	turin_nbif_init(busno, fid);
 	turin_hide_dup_bridges(fid);
 	turin_hide_unused_ports(busno, fid);
 }
