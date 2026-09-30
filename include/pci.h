@@ -1155,7 +1155,7 @@ static inline int pci_read_config_byte(pci_dev_t pcidev, int offset,
 #endif /* CONFIG_DM_PCI_COMPAT */
 
 /**
- * dm_pciauto_config_device() - configure a device ready for use
+ * pciauto_config_device() - configure a device ready for use
  *
  * Space is allocated for each PCI base address register (BAR) so that the
  * devices are mapped into memory and I/O space ready for use.
@@ -1163,7 +1163,7 @@ static inline int pci_read_config_byte(pci_dev_t pcidev, int offset,
  * @dev:	Device to configure
  * Return: 0 if OK, -ve on error
  */
-int dm_pciauto_config_device(struct udevice *dev);
+int pciauto_config_device(struct udevice *dev);
 
 /**
  * pci_conv_32_to_size() - convert a 32-bit read value to the given size

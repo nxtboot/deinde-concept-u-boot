@@ -21,10 +21,10 @@
 #define CFG_SYS_PCI_CACHE_LINE_SIZE	8
 #endif
 
-static void dm_pciauto_setup_device(struct udevice *dev,
-				    struct pci_region *mem,
-				    struct pci_region *prefetch,
-				    struct pci_region *io)
+static void pciauto_setup_device(struct udevice *dev,
+				 struct pci_region *mem,
+				 struct pci_region *prefetch,
+				 struct pci_region *io)
 {
 	u32 bar_response;
 	pci_size_t bar_size;
@@ -197,7 +197,7 @@ static void dm_pciauto_setup_device(struct udevice *dev,
  * 11-44ms to indicate the Data Link Layer Link Active status at 2.5GT/s,
  * though it may take a couple of link training iterations.
  */
-static bool dm_pciauto_exp_link_stable(struct udevice *dev, int pcie_off)
+static bool pciauto_exp_link_stable(struct udevice *dev, int pcie_off)
 {
 	u64 loops = 0, trcount = 0, ntrcount = 0, flips = 0;
 	bool dllla, lnktr, plnktr;
@@ -282,7 +282,7 @@ static bool dm_pciauto_exp_link_stable(struct udevice *dev, int pcie_off)
  * obvious reasons, to limit the speed if 2.5GT/s is the only link speed
  * supported.
  */
-static void dm_pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
+static void pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
 {
 	u16 exp_lnksta, exp_lnkctl, exp_lnkctl2;
 	u16 exp_flags, exp_type, exp_version;
@@ -313,7 +313,7 @@ static void dm_pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
 	    PCI_EXP_LNKSTA_LBMS)
 		return;
 
-	if (dm_pciauto_exp_link_stable(dev, pcie_off))
+	if (pciauto_exp_link_stable(dev, pcie_off))
 		return;
 
 	bdf = dm_pci_get_bdf(dev);
@@ -333,7 +333,7 @@ static void dm_pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
 	dm_pci_write_config16(dev, pcie_off + PCI_EXP_LNKCTL,
 			      exp_lnkctl | PCI_EXP_LNKCTL_RL);
 
-	if (dm_pciauto_exp_link_stable(dev, pcie_off)) {
+	if (pciauto_exp_link_stable(dev, pcie_off)) {
 		printf("PCI Autoconfig: %02x.%02x.%02x: Succeeded!\n",
 		       PCI_BUS(bdf), PCI_DEV(bdf), PCI_FUNC(bdf));
 	} else {
@@ -347,7 +347,7 @@ static void dm_pciauto_exp_fixup_link(struct udevice *dev, int pcie_off)
 	}
 }
 
-void dm_pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
+void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 {
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
@@ -446,13 +446,13 @@ void dm_pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus)
 	/* For PCIe devices see if we need to retrain the link by hand */
 	pcie_off = dm_pci_find_capability(dev, PCI_CAP_ID_EXP);
 	if (pcie_off)
-		dm_pciauto_exp_fixup_link(dev, pcie_off);
+		pciauto_exp_fixup_link(dev, pcie_off);
 
 	/* Enable memory and I/O accesses, enable bus master */
 	dm_pci_write_config16(dev, PCI_COMMAND, cmdstat | PCI_COMMAND_MASTER);
 }
 
-void dm_pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
+void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
 {
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
@@ -520,7 +520,7 @@ void dm_pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
  * HJF: Changed this to return int. I think this is required
  * to get the correct result when scanning bridges
  */
-int dm_pciauto_config_device(struct udevice *dev)
+int pciauto_config_device(struct udevice *dev)
 {
 	struct pci_region *pci_mem;
 	struct pci_region *pci_prefetch;
@@ -549,7 +549,7 @@ int dm_pciauto_config_device(struct udevice *dev)
 		log_debug("PCI Autoconfig: Found P2P bridge, device %d\n",
 			  PCI_DEV(dm_pci_get_bdf(dev)));
 
-		dm_pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
 
 		ret = dm_pci_hose_probe_bus(dev);
 		log_debug("hose_probe_bus: ret=%d\n", ret);
@@ -563,7 +563,7 @@ int dm_pciauto_config_device(struct udevice *dev)
 		 * just do a minimal setup of the bridge,
 		 * let the OS take care of the rest
 		 */
-		dm_pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
 
 		debug("PCI Autoconfig: Found P2CardBus bridge, device %d\n",
 		      PCI_DEV(dm_pci_get_bdf(dev)));
@@ -578,7 +578,7 @@ int dm_pciauto_config_device(struct udevice *dev)
 #endif
 
 	default:
-		dm_pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
 		break;
 	}
 

@@ -611,7 +611,7 @@ int pci_auto_config_devices(struct udevice *bus)
 		if (dev_has_ofnode(dev) &&
 		    dev_read_bool(dev, "pci,no-autoconfig"))
 			continue;
-		ret = dm_pciauto_config_device(dev);
+		ret = pciauto_config_device(dev);
 		if (ret < 0)
 			return log_msg_ret("auto", ret);
 		max_bus = ret;
@@ -736,7 +736,7 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 	debug("%s: bus = %d/%s\n", __func__, sub_bus, bus->name);
 	if (dev_seq(bus) == -1)
 		bus->seq_ = sub_bus;
-	dm_pciauto_prescan_setup_bridge(bus, sub_bus);
+	pciauto_prescan_setup_bridge(bus, sub_bus);
 
 	ret = device_probe(bus);
 	if (ret) {
@@ -748,7 +748,7 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 	if (!ea_pos)
 		sub_bus = ctlr->abs_bus ? ctlr->last_busno : pci_get_bus_max();
 
-	dm_pciauto_postscan_setup_bridge(bus, sub_bus);
+	pciauto_postscan_setup_bridge(bus, sub_bus);
 
 	return sub_bus;
 }

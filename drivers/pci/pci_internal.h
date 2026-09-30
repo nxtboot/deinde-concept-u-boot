@@ -10,19 +10,19 @@
 #define __pci_internal_h
 
 /**
- * dm_pciauto_prescan_setup_bridge() - Set up a bridge for scanning
+ * pciauto_prescan_setup_bridge() - Set up a bridge for scanning
  *
  * This gets a bridge ready so that its downstream devices can be scanned.
  * It sets up the bus number and memory range registers. Once the scan is
- * completed, dm_pciauto_postscan_setup_bridge() should be called.
+ * completed, pciauto_postscan_setup_bridge() should be called.
  *
  * @dev:	Bridge device to be scanned
  * @sub_bus:	Bus number of the 'other side' of the bridge
  */
-void dm_pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus);
+void pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus);
 
 /**
- * dm_pciauto_postscan_setup_bridge() - Finish set up of a bridge after scanning
+ * pciauto_postscan_setup_bridge() - Finish set up of a bridge after scanning
  *
  * This should be called after a bus scan is complete. It adjusts the memory
  * ranges to fit with the devices actually found on the other side (downstream)
@@ -31,10 +31,10 @@ void dm_pciauto_prescan_setup_bridge(struct udevice *dev, int sub_bus);
  * @dev:	Bridge device that was scanned
  * @sub_bus:	Bus number of the 'other side' of the bridge
  */
-void dm_pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
+void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
 
 /**
- * dm_pciauto_config_device() - Configure a PCI device ready for use
+ * pciauto_config_device() - Configure a PCI device ready for use
  *
  * If the device is a bridge, downstream devices will be probed.
  *
@@ -44,7 +44,7 @@ void dm_pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
  * bridge then it will return a larger number, depending on the devices on
  * that bridge. On error, returns a -ve error number.
  */
-int dm_pciauto_config_device(struct udevice *dev);
+int pciauto_config_device(struct udevice *dev);
 
 /**
  * pci_get_bus() - Get a pointer to a bus, given its number
