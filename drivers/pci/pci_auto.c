@@ -132,11 +132,14 @@ void pciauto_finish_device(struct udevice *dev, u16 cmd)
 	dm_pci_write_config8(dev, PCI_LATENCY_TIMER, 0x80);
 }
 
-static void pciauto_setup_device(struct udevice *dev,
-				 struct pci_region *mem,
-				 struct pci_region *prefetch,
-				 struct pci_region *io)
+/* Assign a device's BARs and expansion ROM from the root bus's regions */
+static void pciauto_alloc_device(struct udevice *dev)
 {
+	struct udevice *ctlr = pci_get_controller(dev);
+	struct pci_controller *hose = dev_get_uclass_priv(ctlr);
+	struct pci_region *mem = hose->pci_mem;
+	struct pci_region *prefetch = hose->pci_prefetch;
+	struct pci_region *io = hose->pci_io;
 	pci_size_t bar_size;
 	u16 cmdstat = 0;
 	int bar;
@@ -538,18 +541,9 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus)
  */
 int pciauto_config_device(struct udevice *dev)
 {
-	struct pci_region *pci_mem;
-	struct pci_region *pci_prefetch;
-	struct pci_region *pci_io;
 	unsigned int sub_bus = PCI_BUS(dm_pci_get_bdf(dev));
 	unsigned short class;
-	struct udevice *ctlr = pci_get_controller(dev);
-	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
 	int ret;
-
-	pci_mem = ctlr_hose->pci_mem;
-	pci_prefetch = ctlr_hose->pci_prefetch;
-	pci_io = ctlr_hose->pci_io;
 
 	dm_pci_read_config16(dev, PCI_CLASS_DEVICE, &class);
 	if (CONFIG_IS_ENABLED(LOG)) {
@@ -565,7 +559,7 @@ int pciauto_config_device(struct udevice *dev)
 		log_debug("PCI Autoconfig: Found P2P bridge, device %d\n",
 			  PCI_DEV(dm_pci_get_bdf(dev)));
 
-		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_alloc_device(dev);
 
 		ret = dm_pci_hose_probe_bus(dev);
 		log_debug("hose_probe_bus: ret=%d\n", ret);
@@ -579,7 +573,7 @@ int pciauto_config_device(struct udevice *dev)
 		 * just do a minimal setup of the bridge,
 		 * let the OS take care of the rest
 		 */
-		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_alloc_device(dev);
 
 		debug("PCI Autoconfig: Found P2CardBus bridge, device %d\n",
 		      PCI_DEV(dm_pci_get_bdf(dev)));
@@ -594,7 +588,7 @@ int pciauto_config_device(struct udevice *dev)
 #endif
 
 	default:
-		pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
+		pciauto_alloc_device(dev);
 		break;
 	}
 
