@@ -108,6 +108,28 @@
 #define FCH_ROOT_BUS		0
 
 /*
+ * Each IOHC has an I/O APIC for its PCIe INTx interrupts, which the ABL
+ * leaves disabled, every one at 0xfec00000 with the enable bit clear.
+ * openSIL gives each one 64KB of its root complex's MMIO window
+ * (NbioIoApicMmioAddressBrh), an ID (NbioIoApicPreDefIdBrh) and sets the
+ * southbridge and secondary features, plus 'no southbridge' on the others
+ * (NbioIoapicInitBrh)
+ */
+#define IOHC_IOAPIC_BASE_LO	0x2f0
+#define IOHC_IOAPIC_BASE_HI	0x2f4
+#define IOAPIC_BASE_EN		BIT(0)
+#define IOAPIC_BIG_FEATURES	0x14300000
+#define IOAPIC_SMALL_FEATURES	0x1d800000
+#define IOAPIC_FEAT_SB		BIT(2)
+#define IOAPIC_FEAT_SECONDARY	BIT(4)
+#define IOAPIC_FEAT_NO_SB	BIT(5)
+#define IOAPIC_BIG_ID		0x02801000
+#define IOAPIC_SMALL_ID		0x1d001000
+#define IOAPIC_ID_BASE		0xf0
+#define IOAPIC_ID_SHIFT		24
+#define IOAPIC_MMIO_SIZE	SZ_64K
+
+/*
  * Each big IOHC has an NBIF carrying the FCH-type functions (USB, SATA, the
  * crypto coprocessor, audio) as functions of an internal bridge. Only the
  * NBIFs of the first and last big IOHCs are wired to an FCH; the functions
@@ -236,6 +258,13 @@ static uint turin_iohc_index(uint fid)
 	return (fid & 1) ? n ^ 1 : n;
 }
 
+/* openSIL numbers the big IOHCs 0-3 and the small ones 4-7 */
+static uint turin_ioapic_id(uint fid)
+{
+	return IOAPIC_ID_BASE + ((fid & 1) ? IOHC_NUM_BIG : 0) +
+		turin_iohc_index(fid);
+}
+
 static u32 turin_iohc_base(uint fid)
 {
 	return ((fid & 1) ? IOHC_SMALL_BASE : IOHC_BIG_BASE) +
@@ -298,6 +327,32 @@ static void turin_hide_dup_bridges(uint fid)
 		turin_hide_bridge(offset, i);
 }
 
+/**
+ * turin_ioapic_init() - Enable a root complex's I/O APIC
+ *
+ * @busno: Root bus number
+ * @fid: Fabric ID of its IOS
+ * @addr: MMIO address to give it
+ */
+static void turin_ioapic_init(int busno, uint fid, u32 addr)
+{
+	u32 offset = turin_iohc_index(fid) * IOHC_STRIDE;
+	u32 iohc = turin_iohc_base(fid);
+	u32 feat, id;
+
+	feat = ((fid & 1) ? IOAPIC_SMALL_FEATURES : IOAPIC_BIG_FEATURES) +
+		offset;
+	id = ((fid & 1) ? IOAPIC_SMALL_ID : IOAPIC_BIG_ID) + offset;
+	smn_write(feat, smn_read(feat) | IOAPIC_FEAT_SB |
+		  IOAPIC_FEAT_SECONDARY |
+		  (busno != FCH_ROOT_BUS ? IOAPIC_FEAT_NO_SB : 0));
+	smn_write(id, turin_ioapic_id(fid) << IOAPIC_ID_SHIFT);
+	smn_write(iohc + IOHC_IOAPIC_BASE_HI, 0);
+	smn_write(iohc + IOHC_IOAPIC_BASE_LO, addr | IOAPIC_BASE_EN);
+	log_debug("bus %x: I/O APIC %x at %x\n", busno, turin_ioapic_id(fid),
+		  addr);
+}
+
 static void turin_iohc_init(int busno, uint fid)
 {
 	if (busno != FCH_ROOT_BUS) {
@@ -307,6 +362,24 @@ static void turin_iohc_init(int busno, uint fid)
 	}
 	turin_nbif_init(fid);
 	turin_hide_dup_bridges(fid);
+}
+
+int turin_get_ioapic(int busno, u32 *addrp, uint *idp)
+{
+	uint fid;
+	u32 val;
+	int ret;
+
+	ret = turin_find_root(busno, &fid);
+	if (ret < 0)
+		return ret;
+	val = smn_read(turin_iohc_base(fid) + IOHC_IOAPIC_BASE_LO);
+	if (!(val & IOAPIC_BASE_EN))
+		return -ENOENT;
+	*addrp = val & ~IOAPIC_BASE_EN;
+	*idp = turin_ioapic_id(fid);
+
+	return 0;
 }
 
 static void turin_set_io_map(int slot, uint fid, const struct pci_region *reg)
@@ -349,7 +422,7 @@ static int turin_pci_probe(struct udevice *bus)
 	struct pci_controller *hose = dev_get_uclass_priv(bus);
 	int busno = dev_seq(bus);
 	int slot, mmio_slot;
-	bool have_io = false;
+	bool have_io = false, have_ioapic = false;
 	uint fid;
 	int i;
 
@@ -364,7 +437,7 @@ static int turin_pci_probe(struct udevice *bus)
 
 	mmio_slot = slot;
 	for (i = 0; i < hose->region_count; i++) {
-		const struct pci_region *reg = &hose->regions[i];
+		struct pci_region *reg = &hose->regions[i];
 
 		if (reg->flags & PCI_REGION_SYS_MEMORY)
 			continue;
@@ -378,6 +451,17 @@ static int turin_pci_probe(struct udevice *bus)
 				return log_msg_ret("mmio", -E2BIG);
 			turin_set_mmio_map(mmio_slot, fid, reg);
 			mmio_slot += DF_NUM_CFG_MAPS;
+
+			/*
+			 * put the I/O APIC at the top of the first window,
+			 * which the fabric map covers, and keep it from PCI
+			 */
+			if (!have_ioapic && reg->size > IOAPIC_MMIO_SIZE) {
+				reg->size -= IOAPIC_MMIO_SIZE;
+				turin_ioapic_init(busno, fid,
+						  reg->bus_start + reg->size);
+				have_ioapic = true;
+			}
 		}
 	}
 

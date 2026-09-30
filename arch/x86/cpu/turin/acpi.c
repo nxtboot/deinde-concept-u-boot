@@ -19,6 +19,7 @@
 #include <asm/lapic.h>
 #include <asm/mpspec.h>
 #include <asm/tables.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/global_nvs.h>
 #include <dm/acpi.h>
 #include <linux/sizes.h>
@@ -26,6 +27,11 @@
 #define IO_PORT_RESET		0xcf9
 #define RST_CPU			BIT(2)
 #define SYS_RST			BIT(1)
+
+#define FCH_IOAPIC_PINS		24
+#define NBIO_IOAPIC_PINS	32
+#define PCI_BUS_COUNT		0x100
+#define TURIN_BUSES_PER_ROOT	0x20
 
 void acpi_fill_fadt(struct acpi_fadt *fadt)
 {
@@ -48,6 +54,8 @@ int acpi_create_gnvs(struct acpi_global_nvs *gnvs)
 void *acpi_fill_madt(struct acpi_madt *madt, struct acpi_ctx *ctx)
 {
 	void *current = ctx->current;
+	uint gsi;
+	int bus;
 
 	madt->lapic_addr = LAPIC_DEFAULT_BASE;
 	madt->flags = ACPI_MADT_PCAT_COMPAT;
@@ -56,7 +64,18 @@ void *acpi_fill_madt(struct acpi_madt *madt, struct acpi_ctx *ctx)
 	current += acpi_create_madt_ioapic(current,
 					   io_apic_read(IO_APIC_ID) >> 24,
 					   IO_APIC_ADDR, 0);
-	/* the timer is on pin 2; everything else is identity-mapped */
+
+	/* then each root complex's, in bus order, after the FCH's 24 pins */
+	gsi = FCH_IOAPIC_PINS;
+	for (bus = 0; bus < PCI_BUS_COUNT; bus += TURIN_BUSES_PER_ROOT) {
+		u32 addr;
+		uint id;
+
+		if (turin_get_ioapic(bus, &addr, &id))
+			continue;
+		current += acpi_create_madt_ioapic(current, id, addr, gsi);
+		gsi += NBIO_IOAPIC_PINS;
+	}
 	current += acpi_create_madt_irqoverride(current, 0, 0, 2, 0);
 	current += acpi_create_madt_lapic_nmi(current, 0xff, 0, 1);
 

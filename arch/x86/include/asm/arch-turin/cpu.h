@@ -20,4 +20,15 @@ void turin_ecam_init(void);
  */
 int turin_mpio_init(void);
 
+/**
+ * turin_get_ioapic() - Find the I/O APIC of a root complex
+ *
+ * @busno: Root bus number
+ * @addrp: Returns its MMIO address
+ * @idp: Returns its ID
+ * Return: 0 if OK, -ENOENT if it is not enabled, -ENODEV if the bus is not
+ * a root bus
+ */
+int turin_get_ioapic(int busno, u32 *addrp, uint *idp);
+
 #endif
