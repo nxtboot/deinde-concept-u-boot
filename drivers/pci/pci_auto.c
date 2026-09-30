@@ -137,6 +137,40 @@ void pciauto_finish_device(struct udevice *dev, u16 cmd)
 	dm_pci_write_config8(dev, PCI_LATENCY_TIMER, 0x80);
 }
 
+u16 pciauto_find_res(struct udevice *dev, void *priv)
+{
+	pci_size_t size;
+	uint rom_addr;
+	u16 cmd = 0;
+	int bar, nbars;
+
+	nbars = pciauto_bar_count(dev, &rom_addr);
+	for (bar = PCI_BASE_ADDRESS_0; bar < PCI_BASE_ADDRESS_0 + nbars * 4;
+	     bar += 4) {
+		uint flags;
+
+		size = pciauto_probe_bar(dev, bar, &flags);
+		if (size) {
+			pciauto_add_res(dev, bar, flags, size, priv);
+			cmd |= flags & PCIAUTO_BAR_IO ? PCI_COMMAND_IO :
+				PCI_COMMAND_MEMORY;
+		}
+		if (flags & PCIAUTO_BAR_64)
+			bar += 4;
+	}
+
+	/* the expansion ROM is a 32-bit memory resource */
+	if (rom_addr) {
+		size = pciauto_probe_rom(dev, rom_addr);
+		if (size) {
+			pciauto_add_res(dev, rom_addr, 0, size, priv);
+			cmd |= PCI_COMMAND_MEMORY;
+		}
+	}
+
+	return cmd;
+}
+
 /*
  * Check if the link of a downstream PCIe port operates correctly.
  *

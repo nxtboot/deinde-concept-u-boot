@@ -70,6 +70,33 @@ void pciauto_write_bar(struct udevice *dev, uint bar, bool is64,
 void pciauto_finish_device(struct udevice *dev, u16 cmd);
 
 /**
+ * pciauto_find_res() - Find a device's BARs and expansion ROM
+ *
+ * Probes each BAR and the expansion ROM, calling pciauto_add_res() for each
+ * which is implemented and enabled, so that the allocator can place it.
+ *
+ * @dev: Device to look at
+ * @priv: Private data to pass to pciauto_add_res()
+ * Return: the PCI_COMMAND bits (I/O and/or memory) the device needs
+ */
+u16 pciauto_find_res(struct udevice *dev, void *priv);
+
+/**
+ * pciauto_add_res() - Handle a resource found by pciauto_find_res()
+ *
+ * The allocator implements this, either assigning the resource at once or
+ * recording it to place later.
+ *
+ * @dev: Device which has the resource
+ * @offset: Config offset of the BAR or expansion-ROM register
+ * @flags: PCIAUTO_BAR_... flags of the resource; 0 for an expansion ROM
+ * @size: Size of the resource, which is also the alignment it needs
+ * @priv: Private data passed to pciauto_find_res()
+ */
+void pciauto_add_res(struct udevice *dev, uint offset, uint flags,
+		     pci_size_t size, void *priv);
+
+/**
  * pciauto_prescan_setup_bridge() - Set up a bridge for scanning
  *
  * This gets a bridge ready so that its downstream devices can be scanned.

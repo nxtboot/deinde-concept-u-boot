@@ -19,73 +19,37 @@
 #include <pci.h>
 #include "pci_internal.h"
 
+void pciauto_add_res(struct udevice *dev, uint offset, uint flags,
+		     pci_size_t size, void *priv)
+{
+	struct pci_controller *hose = priv;
+	struct pci_region *prefetch = hose->pci_prefetch;
+	bool is64 = flags & PCIAUTO_BAR_64;
+	struct pci_region *res;
+	pci_addr_t addr;
+
+	if (flags & PCIAUTO_BAR_IO)
+		res = hose->pci_io;
+	else if (prefetch && (flags & PCIAUTO_BAR_PREFETCH) &&
+		 (is64 || prefetch->bus_lower < 0x100000000ULL))
+		res = prefetch;
+	else
+		res = hose->pci_mem;
+
+	if (pciauto_region_allocate(res, size, &addr, is64))
+		printf("PCI: Failed autoconfig bar %x\n", offset);
+	else
+		pciauto_write_bar(dev, offset, is64, addr);
+}
+
 void pciauto_alloc_device(struct udevice *dev)
 {
 	struct udevice *ctlr = pci_get_controller(dev);
 	struct pci_controller *hose = dev_get_uclass_priv(ctlr);
-	struct pci_region *mem = hose->pci_mem;
-	struct pci_region *prefetch = hose->pci_prefetch;
-	struct pci_region *io = hose->pci_io;
-	pci_size_t bar_size;
-	u16 cmdstat = 0;
-	int bar;
-	int bars_num;
-	uint rom_addr;
-	pci_addr_t bar_value;
-	struct pci_region *bar_res = NULL;
-	bool found_mem64;
+	u16 cmd;
 
-	bars_num = pciauto_bar_count(dev, &rom_addr);
-
-	for (bar = PCI_BASE_ADDRESS_0;
-	     bar < PCI_BASE_ADDRESS_0 + (bars_num * 4); bar += 4) {
-		uint flags;
-		int ret = 0;
-
-		bar_size = pciauto_probe_bar(dev, bar, &flags);
-		found_mem64 = flags & PCIAUTO_BAR_64;
-
-		/* If the BAR is not implemented or is disabled, skip it */
-		if (!bar_size) {
-			if (found_mem64)
-				bar += 4;
-			continue;
-		}
-
-		if (flags & PCIAUTO_BAR_IO)
-			bar_res = io;
-		else if (prefetch && (flags & PCIAUTO_BAR_PREFETCH) &&
-			 (found_mem64 || prefetch->bus_lower < 0x100000000ULL))
-			bar_res = prefetch;
-		else
-			bar_res = mem;
-
-		ret = pciauto_region_allocate(bar_res, bar_size,
-					      &bar_value, found_mem64);
-		if (ret)
-			printf("PCI: Failed autoconfig bar %x\n", bar);
-
-		if (!ret)
-			pciauto_write_bar(dev, bar, found_mem64, bar_value);
-		if (found_mem64)
-			bar += 4;
-
-		cmdstat |= (flags & PCIAUTO_BAR_IO) ?
-			PCI_COMMAND_IO : PCI_COMMAND_MEMORY;
-	}
-
-	/* Configure the expansion ROM address */
-	if (rom_addr) {
-		bar_size = pciauto_probe_rom(dev, rom_addr);
-		if (bar_size) {
-			if (!pciauto_region_allocate(mem, bar_size, &bar_value,
-						     false))
-				dm_pci_write_config32(dev, rom_addr, bar_value);
-			cmdstat |= PCI_COMMAND_MEMORY;
-		}
-	}
-
-	pciauto_finish_device(dev, cmdstat);
+	cmd = pciauto_find_res(dev, hose);
+	pciauto_finish_device(dev, cmd);
 }
 
 void pciauto_open_windows(struct udevice *dev, struct pci_controller *hose)
