@@ -10,6 +10,17 @@
 #define __pci_internal_h
 
 /**
+ * pciauto_finish_device() - Enable a device once its resources are set
+ *
+ * This enables the decoding the device needs, and bus mastering, and sets
+ * its cache-line size and latency timer.
+ *
+ * @dev: Device to enable
+ * @cmd: PCI_COMMAND_IO and/or PCI_COMMAND_MEMORY, for the resources it has
+ */
+void pciauto_finish_device(struct udevice *dev, u16 cmd);
+
+/**
  * pciauto_prescan_setup_bridge() - Set up a bridge for scanning
  *
  * This gets a bridge ready so that its downstream devices can be scanned.

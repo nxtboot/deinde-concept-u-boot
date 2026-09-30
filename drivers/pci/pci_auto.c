@@ -21,6 +21,23 @@
 #define CFG_SYS_PCI_CACHE_LINE_SIZE	8
 #endif
 
+void pciauto_finish_device(struct udevice *dev, u16 cmd)
+{
+	u16 class, cur;
+
+	/* PCI_COMMAND_IO must be set for VGA device */
+	dm_pci_read_config16(dev, PCI_CLASS_DEVICE, &class);
+	if (class == PCI_CLASS_DISPLAY_VGA)
+		cmd |= PCI_COMMAND_IO;
+
+	dm_pci_read_config16(dev, PCI_COMMAND, &cur);
+	cur &= ~(PCI_COMMAND_IO | PCI_COMMAND_MEMORY);
+	dm_pci_write_config16(dev, PCI_COMMAND, cur | cmd | PCI_COMMAND_MASTER);
+	dm_pci_write_config8(dev, PCI_CACHE_LINE_SIZE,
+			     CFG_SYS_PCI_CACHE_LINE_SIZE);
+	dm_pci_write_config8(dev, PCI_LATENCY_TIMER, 0x80);
+}
+
 static void pciauto_setup_device(struct udevice *dev,
 				 struct pci_region *mem,
 				 struct pci_region *prefetch,
@@ -36,11 +53,6 @@ static void pciauto_setup_device(struct udevice *dev,
 	pci_addr_t bar_value;
 	struct pci_region *bar_res = NULL;
 	int found_mem64 = 0;
-	u16 class;
-
-	dm_pci_read_config16(dev, PCI_COMMAND, &cmdstat);
-	cmdstat = (cmdstat & ~(PCI_COMMAND_IO | PCI_COMMAND_MEMORY)) |
-			PCI_COMMAND_MASTER;
 
 	dm_pci_read_config8(dev, PCI_HEADER_TYPE, &header_type);
 	header_type &= 0x7f;
@@ -174,15 +186,7 @@ static void pciauto_setup_device(struct udevice *dev,
 		}
 	}
 
-	/* PCI_COMMAND_IO must be set for VGA device */
-	dm_pci_read_config16(dev, PCI_CLASS_DEVICE, &class);
-	if (class == PCI_CLASS_DISPLAY_VGA)
-		cmdstat |= PCI_COMMAND_IO;
-
-	dm_pci_write_config16(dev, PCI_COMMAND, cmdstat);
-	dm_pci_write_config8(dev, PCI_CACHE_LINE_SIZE,
-			     CFG_SYS_PCI_CACHE_LINE_SIZE);
-	dm_pci_write_config8(dev, PCI_LATENCY_TIMER, 0x80);
+	pciauto_finish_device(dev, cmdstat);
 }
 
 /*
