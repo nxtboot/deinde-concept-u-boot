@@ -12,9 +12,9 @@
 
 /*
  * Test listing all buses. Sandbox's buses are not numbered contiguously:
- * pci4 is bus 0x10, with a bridge to bus 0x11, and the bridge on pci2 is
- * bus 0x20. They are listed in order, although the bridge on pci2 is bound
- * before pci3 and pci4
+ * pci4 is bus 0x10, with a bridge to bus 0x11, the bridge on pci2 is bus
+ * 0x20 and pci5's two bridges are 0x21 and 0x22. They are listed in order,
+ * although the bridge on pci2 is bound before pci3 and pci4
  */
 static int cmd_test_pci_list(struct unit_test_state *uts)
 {
@@ -22,9 +22,13 @@ static int cmd_test_pci_list(struct unit_test_state *uts)
 	ut_assert_nextline("BusDevFun  VendorId   DeviceId   Device Class       Sub-Class");
 	ut_assert_nextlinen("_____");
 	ut_assert_skip_to_line("03.00.00   0x1234     0x5678     Simple comm. controller 0x00");
+	ut_assert_nextline("05.01.00   0x1234     0x5678     Simple comm. controller 0x00");
+	ut_assert_nextline("05.02.00   0x1234     0x5675     Bridge device           0x04");
 	ut_assert_nextline("10.00.00   0x1234     0x5675     Bridge device           0x04");
 	ut_assert_nextline("11.00.00   0x1234     0x5678     Simple comm. controller 0x00");
 	ut_assert_nextline("20.00.00   0x1234     0x5678     Simple comm. controller 0x00");
+	ut_assert_nextline("21.00.00   0x1234     0x5675     Bridge device           0x04");
+	ut_assert_nextline("22.00.00   0x1234     0x5678     Simple comm. controller 0x00");
 	ut_assert_console_end();
 
 	/* the regions of each controller, but not of the bridges */

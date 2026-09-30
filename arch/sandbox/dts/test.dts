@@ -61,6 +61,7 @@
 		pci2 = &pci2;
 		pci3 = &pci3;
 		pci16 = &pci4;
+		pci5 = &pci5;
 		remoteproc0 = &rproc_1;
 		remoteproc1 = &rproc_2;
 		rtc0 = &rtc_0;
@@ -1532,10 +1533,19 @@
 		bus-range = <0x00 0xff>;
 		#address-cells = <3>;
 		#size-cells = <2>;
-		/* room for the bridge's windows, aligned to 1MB and 4KB */
-		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x400000
+		/*
+		 * Room for the bridge's windows (aligned to 1MB and 4KB) and
+		 * the other devices, whichever order they are placed in: with
+		 * the 2MB BAR behind the bridge placed last, they need 5MB
+		 */
+		ranges = <0x02000000 0 0x50000000 0x50000000 0 0x800000
 				0x01000000 0 0x60000000 0x60000000 0 0x10000>;
 		sandbox,dev-info = <0x08 0x00 0x1234 0x5678>;
+		pci@1,0 {
+			compatible = "pci-generic";
+			reg = <0x0800 0 0 0 0>;
+			sandbox,emul = <&swap_case_emul2_1>;
+		};
 		pci@1f,0 {
 			compatible = "pci-generic";
 			reg = <0xf800 0 0 0 0>;
@@ -1563,6 +1573,9 @@
 
 	pci-emul2 {
 		compatible = "sandbox,pci-emul-parent";
+		swap_case_emul2_1: emul2@1,0 {
+			compatible = "sandbox,swap-case";
+		};
 		swap_case_emul2_1f: emul2@1f,0 {
 			compatible = "sandbox,swap-case";
 		};
@@ -1571,6 +1584,8 @@
 		};
 		swap_case_emul2b_0: emul2b@0,0 {
 			compatible = "sandbox,swap-case";
+			/* larger than the bridge's 1MB window granularity */
+			bar1-size = <0x200000>;
 		};
 	};
 
@@ -1633,6 +1648,63 @@
 		};
 		swap_case_emul4b_0: emul4b@0,0 {
 			compatible = "sandbox,swap-case";
+		};
+	};
+
+	/*
+	 * A bridge behind a bridge, with a 2MB BAR at the bottom and a small
+	 * device on the root bus, to check that the outer window is sized
+	 * from the inner bus and placed first
+	 */
+	pci5: pci@5 {
+		compatible = "sandbox,pci";
+		device_type = "pci";
+		bus-range = <0x00 0xff>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges = <0x02000000 0 0x90000000 0x90000000 0 0x800000
+				0x01000000 0 0x91000000 0x91000000 0 0x10000>;
+		pci@1,0 {
+			compatible = "pci-generic";
+			reg = <0x0800 0 0 0 0>;
+			sandbox,emul = <&swap_case_emul5_1>;
+		};
+		pci@2,0 {
+			compatible = "pci-bridge";
+			reg = <0x1000 0 0 0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			sandbox,emul = <&bridge_emul5_2>;
+
+			pci@0,0 {
+				compatible = "pci-bridge";
+				reg = <0x0000 0 0 0 0>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+				sandbox,emul = <&bridge_emul5b_0>;
+
+				pci@0,0 {
+					compatible = "pci-generic";
+					reg = <0x0000 0 0 0 0>;
+					sandbox,emul = <&swap_case_emul5c_0>;
+				};
+			};
+		};
+	};
+	pci-emul5 {
+		compatible = "sandbox,pci-emul-parent";
+		swap_case_emul5_1: emul5@1,0 {
+			compatible = "sandbox,swap-case";
+		};
+		bridge_emul5_2: emul5@2,0 {
+			compatible = "sandbox,pci-bridge-emul";
+		};
+		bridge_emul5b_0: emul5b@0,0 {
+			compatible = "sandbox,pci-bridge-emul";
+		};
+		swap_case_emul5c_0: emul5c@0,0 {
+			compatible = "sandbox,swap-case";
+			bar1-size = <0x200000>;
 		};
 	};
 
