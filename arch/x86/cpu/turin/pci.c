@@ -134,6 +134,20 @@
 #define IOHC_SATA_BRIDGE_CNTL	0x13b38404
 #define BRIDGE_CNTL_HIDE	(BIT(18) | BIT(2) | BIT(0))
 
+/*
+ * Some root ports appear under two root complexes, e.g. the one for the slot
+ * behind 20:01.1 also shows as e0:03.1, and a write to either reaches the
+ * same port. openSIL hides the duplicates (PcieHideBridgeTbl and
+ * PcieHideBridgePcie6Tbl): bridges 17-19 on every big IOHC and 9-16 on all
+ * but the second, using the same bridge-control bits as for SATA
+ */
+#define IOHC_BRIDGE_CNTL(n)	(0x13b31004 + (n) * 0x400)
+#define IOHC_HIDE_ALL_FIRST	17
+#define IOHC_HIDE_ALL_LAST	19
+#define IOHC_HIDE_FIRST		9
+#define IOHC_HIDE_LAST		16
+#define IOHC_NO_HIDE		1	/* big IOHC which keeps bridges 9-16 */
+
 static u32 df_read(uint reg)
 {
 	return readl(DF_REG(reg));
@@ -261,6 +275,29 @@ static void turin_nbif_init(uint fid)
 	smn_write(base, smn_read(base) | BRIDGE_CNTL_HIDE);
 }
 
+static void turin_hide_bridge(u32 base, int n)
+{
+	u32 reg = base + IOHC_BRIDGE_CNTL(n);
+
+	smn_write(reg, smn_read(reg) | BRIDGE_CNTL_HIDE);
+}
+
+static void turin_hide_dup_bridges(uint fid)
+{
+	uint n = (fid - DF_FID_IOS_BASE) >> 1;
+	u32 offset = n * IOHC_STRIDE;
+	int i;
+
+	if (fid & 1)
+		return;
+	for (i = IOHC_HIDE_ALL_FIRST; i <= IOHC_HIDE_ALL_LAST; i++)
+		turin_hide_bridge(offset, i);
+	if (n == IOHC_NO_HIDE)
+		return;
+	for (i = IOHC_HIDE_FIRST; i <= IOHC_HIDE_LAST; i++)
+		turin_hide_bridge(offset, i);
+}
+
 static void turin_iohc_init(int busno, uint fid)
 {
 	if (busno != FCH_ROOT_BUS) {
@@ -269,6 +306,7 @@ static void turin_iohc_init(int busno, uint fid)
 		smn_write(turin_iohc_base(fid) + IOHC_SB_LOCATION, 0);
 	}
 	turin_nbif_init(fid);
+	turin_hide_dup_bridges(fid);
 }
 
 static void turin_set_io_map(int slot, uint fid, const struct pci_region *reg)
