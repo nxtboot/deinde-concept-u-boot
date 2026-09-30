@@ -14,6 +14,7 @@
 #include <init.h>
 #include <log.h>
 #include <spl.h>
+#include <time.h>
 #include <asm/cpu.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
@@ -71,6 +72,21 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CMOS_MEM_RESTORE_BOOT_FAIL BIT(0)
 #define CMOS_APOB_SAVED		BIT(2)
 
+/*
+ * System Management Unit mailbox (MP1 C2P messages), reached through the
+ * SMN index/data pair in the root complex's config space, as openSIL's
+ * SmuServiceRequest does. The SMU firmware powers up and configures the
+ * FCH's USB controllers on request; until then their MMIO hangs the CPU
+ */
+#define SMN_INDEX		0xb8	/* in PCI 00:00.0 config space */
+#define SMN_DATA		0xbc
+#define SMU_MSG			0x3b10930
+#define SMU_RESP		0x3b1097c
+#define SMU_ARG0		0x3b109c4
+#define SMU_NUM_ARGS		6
+#define SMU_MSG_USB_INIT	0xa
+#define SMU_RESULT_OK		1
+
 /* Aspeed BMC SuperIO behind eSPI */
 #define SIO_INDEX		0x2e
 #define SIO_DATA		0x2f
@@ -91,6 +107,74 @@ static void pci_cf8_write32(u32 bdf_reg, u32 val)
 {
 	outl(0x80000000 | bdf_reg, 0xcf8);
 	outl(val, 0xcfc);
+}
+
+static u32 pci_cf8_read32(u32 bdf_reg)
+{
+	outl(0x80000000 | bdf_reg, 0xcf8);
+
+	return inl(0xcfc);
+}
+
+static u32 smn_read32(u32 reg)
+{
+	pci_cf8_write32(SMN_INDEX, reg);
+
+	return pci_cf8_read32(SMN_DATA);
+}
+
+static void smn_write32(u32 reg, u32 val)
+{
+	pci_cf8_write32(SMN_INDEX, reg);
+	pci_cf8_write32(SMN_DATA, val);
+}
+
+/**
+ * turin_smu_request() - Send a message to the SMU and wait for its reply
+ *
+ * @msg: Message ID
+ * @args: Six argument words, updated with the SMU's reply
+ * Return: SMU result code (SMU_RESULT_OK on success), or -ETIMEDOUT
+ */
+static int turin_smu_request(u32 msg, u32 *args)
+{
+	ulong start;
+	u32 resp;
+	int i;
+
+	smn_write32(SMU_RESP, 0);
+	for (i = 0; i < SMU_NUM_ARGS; i++)
+		smn_write32(SMU_ARG0 + 4 * i, args[i]);
+	smn_write32(SMU_MSG, msg);
+	start = get_timer(0);
+	do {
+		resp = smn_read32(SMU_RESP);
+		if (resp)
+			break;
+	} while (get_timer(start) < 2000);
+	if (!resp)
+		return -ETIMEDOUT;
+	for (i = 0; i < SMU_NUM_ARGS; i++)
+		args[i] = smn_read32(SMU_ARG0 + 4 * i);
+
+	return resp;
+}
+
+/**
+ * turin_smu_usb_init() - Ask the SMU to bring up the FCH's USB controllers
+ *
+ * openSIL does this in its FCH USB init (FchKLXhciSmuServiceUsbInit) with a
+ * bit per xHCI controller; it also sends PHY configuration afterwards,
+ * which is not done here yet
+ */
+static void turin_smu_usb_init(void)
+{
+	u32 args[SMU_NUM_ARGS] = { BIT(0) | BIT(1) };
+	int ret;
+
+	ret = turin_smu_request(SMU_MSG_USB_INIT, args);
+	if (ret != SMU_RESULT_OK)
+		log_warning("SMU USB init failed: %d\n", ret);
 }
 
 static void pm_io_setbits8(u8 reg, u8 bits)
@@ -233,6 +317,7 @@ static void turin_mem_restore_signoff(void)
 int arch_early_init_r(void)
 {
 	turin_mem_restore_signoff();
+	turin_smu_usb_init();
 
 	return 0;
 }
