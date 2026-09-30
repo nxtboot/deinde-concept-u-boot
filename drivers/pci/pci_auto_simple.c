@@ -6,7 +6,7 @@
  * up through the region, and a bridge's windows cover whatever its bus used
  * between the pre-scan and the post-scan. This is small, but a large BAR can
  * be left without an aligned block once smaller ones have taken the start of
- * the space.
+ * the space; pci_auto_sorted.c avoids that at a cost of about 1KB of code.
  *
  * Author: Matt Porter <mporter@mvista.com>
  *

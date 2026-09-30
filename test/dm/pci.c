@@ -620,6 +620,126 @@ static int dm_test_pci_bridge(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_pci_bridge, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
+/* Read a bridge's memory window */
+static int read_mem_window(struct unit_test_state *uts, struct udevice *bridge,
+			   ulong *basep, ulong *limitp)
+{
+	u16 base16, limit16;
+
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_BASE, &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_MEMORY_LIMIT, &limit16));
+	*basep = (ulong)(base16 & PCI_MEMORY_RANGE_MASK) << 16;
+	*limitp = (ulong)(limit16 & PCI_MEMORY_RANGE_MASK) << 16 | 0xfffff;
+
+	return 0;
+}
+
+/* Read a bridge's I/O window */
+static int read_io_window(struct unit_test_state *uts, struct udevice *bridge,
+			  ulong *basep, ulong *limitp)
+{
+	u16 base16, limit16;
+	u8 base8, limit8;
+
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_BASE, &base8));
+	ut_assertok(dm_pci_read_config8(bridge, PCI_IO_LIMIT, &limit8));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_BASE_UPPER16,
+					 &base16));
+	ut_assertok(dm_pci_read_config16(bridge, PCI_IO_LIMIT_UPPER16,
+					 &limit16));
+	*basep = (ulong)base16 << 16 | (base8 & PCI_IO_RANGE_MASK) << 8;
+	*limitp = (ulong)limit16 << 16 | (limit8 & PCI_IO_RANGE_MASK) << 8 |
+		0xfff;
+
+	return 0;
+}
+
+/*
+ * Test that resources are allocated largest first. Bus 2 has a bridge at
+ * device 2 with a 2MB BAR behind it and small devices at 1 and 1f. The
+ * bridge's window, which must be aligned to 2MB, is placed first, with the
+ * small BARs after it; in device order the window would start at 1MB and
+ * need 3MB. The I/O window likewise comes first, so that its 4KB alignment
+ * costs nothing.
+ */
+static int dm_test_pci_alloc_order(struct unit_test_state *uts)
+{
+	struct udevice *bus, *bridge, *swap1, *swap1f, *behind;
+	ulong base, limit;
+
+	if (!CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST))
+		return -EAGAIN;
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 0x20, &bridge));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(2, 1, 0), &swap1));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(2, 0x1f, 0), &swap1f));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(0x20, 0, 0), &behind));
+
+	/* the 2MB window is first, then the small BARs in device order */
+	ut_assertok(read_mem_window(uts, bridge, &base, &limit));
+	ut_asserteq(0x50000000, base);
+	ut_asserteq(0x501fffff, limit);
+	ut_asserteq(0x50000000, dm_pci_read_bar32(behind, 1));
+	ut_asserteq(0x50200000, dm_pci_read_bar32(swap1, 1));
+	ut_asserteq(0x50200100, dm_pci_read_bar32(swap1f, 1));
+
+	/* the same for I/O, where the window is 4KB */
+	ut_assertok(read_io_window(uts, bridge, &base, &limit));
+	ut_asserteq(0x60000000, base);
+	ut_asserteq(0x60000fff, limit);
+	ut_asserteq(0x60000000, dm_pci_read_bar32(behind, 0) & ~1);
+	ut_asserteq(0x60001000, dm_pci_read_bar32(swap1, 0) & ~1);
+	ut_asserteq(0x60001004, dm_pci_read_bar32(swap1f, 0) & ~1);
+
+	return 0;
+}
+DM_TEST(dm_test_pci_alloc_order, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
+/*
+ * Test a bridge behind a bridge: the outer window must be sized from the bus
+ * two levels down and the inner bus must not take its space from the root
+ * bus while the root bus is still scanning. Bus 5 has a small device and a
+ * bridge to a bridge to a device with a 2MB BAR
+ */
+static int dm_test_pci_alloc_nested(struct unit_test_state *uts)
+{
+	struct udevice *bus, *outer, *inner, *swap1, *bottom;
+	ulong base, limit;
+
+	if (!CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST))
+		return -EAGAIN;
+
+	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 5, &bus));
+	ut_assertok(device_find_first_child_by_uclass(bus, UCLASS_PCI,
+						      &outer));
+	ut_assertok(device_find_first_child_by_uclass(outer, UCLASS_PCI,
+						      &inner));
+	ut_assertok(device_find_first_child(inner, &bottom));
+	ut_assertok(dm_pci_bus_find_bdf(PCI_BDF(5, 1, 0), &swap1));
+
+	ut_assertok(read_mem_window(uts, outer, &base, &limit));
+	ut_asserteq(0x90000000, base);
+	ut_asserteq(0x901fffff, limit);
+	ut_assertok(read_mem_window(uts, inner, &base, &limit));
+	ut_asserteq(0x90000000, base);
+	ut_asserteq(0x901fffff, limit);
+	ut_asserteq(0x90000000, dm_pci_read_bar32(bottom, 1));
+	ut_asserteq(0x90200000, dm_pci_read_bar32(swap1, 1));
+
+	ut_assertok(read_io_window(uts, outer, &base, &limit));
+	ut_asserteq(0x91000000, base);
+	ut_asserteq(0x91000fff, limit);
+	ut_assertok(read_io_window(uts, inner, &base, &limit));
+	ut_asserteq(0x91000000, base);
+	ut_asserteq(0x91000fff, limit);
+	ut_asserteq(0x91000000, dm_pci_read_bar32(bottom, 0) & ~1);
+	ut_asserteq(0x91001000, dm_pci_read_bar32(swap1, 0) & ~1);
+
+	return 0;
+}
+DM_TEST(dm_test_pci_alloc_nested, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
 /* Test the last bus number, including when there are no buses */
 static int dm_test_pci_last_busno(struct unit_test_state *uts)
 {

@@ -653,6 +653,8 @@ struct pci_controller {
 	struct udevice *ctlr;
 	bool skip_auto_config_until_reloc;
 	bool skip_enumeration_until_reloc;
+	/* root bus is scanning its buses; resources are allocated afterwards */
+	bool scanning;
 
 	int first_busno;
 	int last_busno;
@@ -871,10 +873,13 @@ int pci_bind_bus_devices(struct udevice *bus);
  *
  * This works through all devices on a bus by scanning the driver model
  * data structures (normally these have been set up by pci_bind_bus_devices()
- * earlier).
+ * earlier), probing the bus behind each bridge.
  *
- * Space is allocated for each PCI base address register (BAR) so that the
- * devices are mapped into memory and I/O space ready for use.
+ * Once a root bus has scanned all its buses, space is allocated for each PCI
+ * base address register (BAR) and bridge window so that the devices are
+ * mapped into memory and I/O space ready for use. On each bus the largest
+ * resources are placed first, so that they do not go without an aligned
+ * block after smaller ones have taken the start of the space.
  *
  * @bus:	Bus containing devices to bind
  * Return: 0 if OK, -ve on error

@@ -100,8 +100,8 @@ void pciauto_add_res(struct udevice *dev, uint offset, uint flags,
  * pciauto_prescan_setup_bridge() - Set up a bridge for scanning
  *
  * This gets a bridge ready so that its downstream devices can be scanned.
- * It sets up the bus number registers and retrains the link. Once the scan
- * is completed, pciauto_postscan_setup_bridge() should be called.
+ * It sets up the bus number registers and retrains the link if needed. Once
+ * the scan is completed, pciauto_postscan_setup_bridge() should be called.
  *
  * @dev:	Bridge device to be scanned
  * @sub_bus:	Bus number of the 'other side' of the bridge
@@ -123,7 +123,8 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
 /**
  * pciauto_config_device() - Configure a PCI device ready for use
  *
- * If the device is a bridge, downstream devices will be probed.
+ * If the device is a bridge, downstream devices will be probed. Resources are
+ * allocated afterwards by pciauto_alloc_resources().
  *
  * @dev:	Device to configure
  * Return: the maximum PCI bus number found by this device. If there are no
@@ -134,9 +135,34 @@ void pciauto_postscan_setup_bridge(struct udevice *dev, int sub_bus);
 int pciauto_config_device(struct udevice *dev);
 
 /*
- * The allocator, in pci_auto_simple.c, which assigns resources as the devices
- * are found
+ * The allocator hooks: pci_auto_sorted.c allocates everything once the root
+ * bus has scanned all its buses, pci_auto_simple.c as the devices are found
  */
+#if CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST)
+/**
+ * pciauto_alloc_resources() - Allocate the resources of a bus's devices
+ *
+ * This sizes the BARs and expansion ROMs of the devices on @bus and behind
+ * its bridges, then assigns them, and the bridges' windows, from the root
+ * bus's regions, placing the largest on each bus first. If @bus is a bridge
+ * (not a root bus), only its windows and the devices behind it are set up,
+ * from the space its root bus has left.
+ *
+ * @bus: Bus to allocate for, normally a root bus with all its buses probed
+ * Return: 0 if OK, -ve on error
+ */
+int pciauto_alloc_resources(struct udevice *bus);
+
+static inline void pciauto_alloc_device(struct udevice *dev) {}
+static inline void pciauto_open_windows(struct udevice *dev,
+					struct pci_controller *hose) {}
+static inline void pciauto_close_windows(struct udevice *dev,
+					 struct pci_controller *hose) {}
+#else
+static inline int pciauto_alloc_resources(struct udevice *bus)
+{
+	return 0;
+}
 
 /**
  * pciauto_alloc_device() - Assign a device's BARs and expansion ROM
@@ -169,6 +195,7 @@ void pciauto_open_windows(struct udevice *dev, struct pci_controller *hose);
  */
 void pciauto_close_windows(struct udevice *dev,
 			   struct pci_controller *hose);
+#endif
 
 /**
  * pci_get_bus() - Get a pointer to a bus, given its number

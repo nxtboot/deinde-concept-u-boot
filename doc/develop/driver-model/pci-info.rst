@@ -156,6 +156,41 @@ bridge's secondary-bus register, as long as it is within the range and not
 already in use. Otherwise it takes the next free number, as usual.
 
 
+Resource allocation
+-------------------
+
+When CONFIG_PCI_PNP is enabled, U-Boot assigns an address to each device's
+base address registers (BARs) and expansion ROM, and a window of memory and
+I/O space to each bridge, from the regions in the root bus's 'ranges'
+property: non-prefetchable memory, prefetchable memory and I/O space, each
+of which is only used for resources of its own type.
+
+With CONFIG_PCI_PNP_LARGEST_FIRST (the default), a root bus first scans all
+the buses behind its bridges, then sizes the resources of the whole tree,
+from the leaves up: a bridge needs a window of each type large enough for
+the resources of the bus behind it, rounded up to the granularity of its
+base and limit registers (1MB for memory, 4KB for I/O) and aligned to the
+largest resource behind it.
+
+Each bus then places its resources with the largest alignment first (for a
+BAR, its size), as Linux does. Since every alignment is a power of two,
+this packs them without gaps, so a large BAR is not left without an aligned
+block after smaller ones have taken the start of the space. A bridge's
+windows are allocated as single resources on its own bus and become the
+regions for the bus behind it.
+
+Without that option, to save about 1KB of code and any use of the heap
+while the buses are configured, resources are assigned in the order the
+devices are found, from a pointer which moves up through each region, and a
+bridge's window covers whatever its bus used while it was scanned. This can
+leave a large BAR unassigned when the aligned block it needs has already
+been broken up by smaller ones.
+
+If a resource does not fit, a message is printed and its register is left
+unassigned (zero with the largest-first allocator), for the operating system
+to assign.
+
+
 Sandbox
 -------
 
