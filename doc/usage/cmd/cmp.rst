@@ -106,3 +106,10 @@ Return value
 
 The return value $? is true (0) if the compared memory areas are equal.
 The reutrn value is false (1) if the compared memory areas differ.
+
+See also
+--------
+
+* :doc:`cp<cp>` for copying one of the regions over the other
+* :doc:`md<md>` for showing where two regions differ
+* :doc:`aes<aes>` for producing a region to compare, by decrypting another one

@@ -113,3 +113,4 @@ See also
 * :doc:`tpm<tpm>` for reading TPM data into memory, which md then shows
 * :doc:`iotrace<iotrace>` for filling a buffer in memory with a record of every
   I/O access
+* :doc:`aes<aes>` for encrypting a region of memory, which md then shows

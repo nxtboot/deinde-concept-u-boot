@@ -109,3 +109,4 @@ See also
 * :doc:`md<md>` for displaying memory once
 * *mw* for writing a value to memory without prompting
 * :doc:`base<base>` for the address offset applied to these commands
+* :doc:`aes<aes>` for encrypting memory with a key entered this way
