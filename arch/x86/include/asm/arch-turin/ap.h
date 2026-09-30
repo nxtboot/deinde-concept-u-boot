@@ -15,6 +15,9 @@
 
 /* TW_CFG's CombineCr0Cd bit: the high word of the MSR holds bits 63:32 */
 #define MSR_AMD64_TW_CFG	0xc0011023
+/* the processor name string reported by CPUID 0x80000002-4, six MSRs */
+#define MSR_CPUID_NAME_STRING0	0xc0010030
+#define CPUID_NAME_STRING_MSRS	6
 #define TW_CFG_COMBINE_CR0_CD_BIT	49
 #define TW_CFG_COMBINE_CR0_CD_HI	(1 << (TW_CFG_COMBINE_CR0_CD_BIT - 32))
 

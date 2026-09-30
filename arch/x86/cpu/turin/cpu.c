@@ -23,6 +23,7 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/lapic.h>
+#include <asm/arch/ap.h>
 #include <asm/msr.h>
 #include <asm/mtrr.h>
 #include <asm/arch/trace.h>
@@ -119,6 +120,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SMU_RESP		0x3b1097c
 #define SMU_ARG0		0x3b109c4
 #define SMU_MSG_USB_INIT	0xa
+#define SMU_MSG_GET_NAME	0xd
 #define SMU_MSG_SET_FEATURES	0x3
 
 /*
@@ -220,6 +222,36 @@ static void turin_smu_features_init(void)
 	ret = turin_smu_request(SMU_MSG_SET_FEATURES, args);
 	if (ret != SMU_RESULT_OK)
 		log_warning("SMU feature setup failed: %d\n", ret);
+}
+
+/**
+ * turin_set_name_string() - Set the processor name string from the SMU
+ *
+ * The name CPUID 0x80000002-4 reports comes from six MSRs, which reset to
+ * zero, so the OS would otherwise show the processor as a bare family and
+ * model. The SMU holds the name; openSIL fetches it four bytes at a time
+ * and writes the MSRs on every thread (the APs get them from mp.c)
+ */
+static void turin_set_name_string(void)
+{
+	u64 name[CPUID_NAME_STRING_MSRS];
+	u32 *words = (u32 *)name;
+	int i, ret;
+
+	for (i = 0; i < CPUID_NAME_STRING_MSRS * 2; i++) {
+		u32 args[SMU_NUM_ARGS] = { i };
+
+		ret = turin_smu_request(SMU_MSG_GET_NAME, args);
+		if (ret != SMU_RESULT_OK) {
+			log_warning("SMU name string failed: %d\n", ret);
+			return;
+		}
+		words[i] = args[0];
+	}
+	for (i = 0; i < CPUID_NAME_STRING_MSRS; i++)
+		native_write_msr(MSR_CPUID_NAME_STRING0 + i, name[i],
+				 name[i] >> 32);
+	log_debug("processor: %.48s\n", (char *)name);
 }
 
 /**
@@ -529,6 +561,8 @@ int arch_early_init_r(void)
 	ret = turin_microcode_update(&ucode);
 	if (ret)
 		log_err("Microcode update failed (err=%d)\n", ret);
+	/* the APs copy the name string from the boot CPU, so set it first */
+	turin_set_name_string();
 	ret = turin_start_aps(ucode);
 	if (ret)
 		log_err("AP start-up failed (err=%d)\n", ret);

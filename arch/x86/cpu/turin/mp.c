@@ -135,7 +135,8 @@ static int setup_msrs(struct turin_ap_params *params)
 	u64 syscfg;
 
 	num_var = native_read_msr(MTRR_CAP_MSR) & MTRR_CAP_VCNT_MASK;
-	if (5 + NUM_FIXED_MTRRS + 2 * num_var > TURIN_AP_MAX_MSRS)
+	if (5 + CPUID_NAME_STRING_MSRS + NUM_FIXED_MTRRS + 2 * num_var >
+	    TURIN_AP_MAX_MSRS)
 		return -E2BIG;
 	syscfg = native_read_msr(MSR_K8_SYSCFG);
 	add_msr(params, MSR_K8_TOP_MEM1, native_read_msr(MSR_K8_TOP_MEM1));
@@ -153,6 +154,11 @@ static int setup_msrs(struct turin_ap_params *params)
 	}
 	add_msr(params, MTRR_DEF_TYPE_MSR, native_read_msr(MTRR_DEF_TYPE_MSR));
 	add_msr(params, MSR_K8_SYSCFG, syscfg);
+
+	/* the processor name string, which the boot CPU got from the SMU */
+	for (i = 0; i < CPUID_NAME_STRING_MSRS; i++)
+		add_msr(params, MSR_CPUID_NAME_STRING0 + i,
+			native_read_msr(MSR_CPUID_NAME_STRING0 + i));
 
 	return 0;
 }
