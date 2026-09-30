@@ -278,5 +278,20 @@ DefinitionBlock("dsdt.aml", "DSDT", 2, "U-BOOT", "U-BOOTBL", 0x00010000)
 				IRQNoFlags () {4}
 			})
 		}
+
+		/* The BMC's IPMI system interface, a KCS at port 0xca2 */
+		Device (KCS0)
+		{
+			Name (_HID, "IPI0001")
+			Name (_STR, Unicode ("IPMI_KCS"))
+			Name (_UID, 0)
+			Name (_IFT, 1)		/* KCS */
+			Name (_SRV, 0x0200)	/* IPMI 2.0 */
+			Name (_CRS, ResourceTemplate ()
+			{
+				IO (Decode16, 0x0ca2, 0x0ca2, 0x01, 0x01)
+				IO (Decode16, 0x0ca3, 0x0ca3, 0x01, 0x01)
+			})
+		}
 	}
 }
