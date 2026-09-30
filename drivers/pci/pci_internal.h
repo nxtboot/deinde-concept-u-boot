@@ -20,6 +20,15 @@
 int pciauto_bar_count(struct udevice *dev, uint *rom_addrp);
 
 /**
+ * pciauto_probe_rom() - Find the size of a device's expansion ROM
+ *
+ * @dev: Device to probe
+ * @rom_addr: Config offset of the ROM register
+ * Return: size in bytes, or 0 if the device has no ROM
+ */
+pci_size_t pciauto_probe_rom(struct udevice *dev, uint rom_addr);
+
+/**
  * pciauto_write_bar() - Write an address to a BAR
  *
  * @dev: Device to write to

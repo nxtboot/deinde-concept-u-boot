@@ -40,6 +40,22 @@ int pciauto_bar_count(struct udevice *dev, uint *rom_addrp)
 	}
 }
 
+pci_size_t pciauto_probe_rom(struct udevice *dev, uint rom_addr)
+{
+	pci_size_t size;
+	u32 resp;
+
+	dm_pci_write_config32(dev, rom_addr, 0xfffffffe);
+	dm_pci_read_config32(dev, rom_addr, &resp);
+	if (!resp)
+		return 0;
+	size = -(resp & ~1);
+	log_debug("%s: ROM, size=%#llx\n", dev->name,
+		  (unsigned long long)size);
+
+	return size;
+}
+
 void pciauto_write_bar(struct udevice *dev, uint bar, bool is64,
 		       pci_addr_t addr)
 {
@@ -170,18 +186,12 @@ static void pciauto_setup_device(struct udevice *dev,
 
 	/* Configure the expansion ROM address */
 	if (rom_addr) {
-		dm_pci_write_config32(dev, rom_addr, 0xfffffffe);
-		dm_pci_read_config32(dev, rom_addr, &bar_response);
-		if (bar_response) {
-			bar_size = -(bar_response & ~1);
-			debug("PCI Autoconfig: ROM, size=%#x, ",
-			      (unsigned int)bar_size);
-			if (pciauto_region_allocate(mem, bar_size, &bar_value,
-						    false) == 0) {
+		bar_size = pciauto_probe_rom(dev, rom_addr);
+		if (bar_size) {
+			if (!pciauto_region_allocate(mem, bar_size, &bar_value,
+						     false))
 				dm_pci_write_config32(dev, rom_addr, bar_value);
-			}
 			cmdstat |= PCI_COMMAND_MEMORY;
-			debug("\n");
 		}
 	}
 
