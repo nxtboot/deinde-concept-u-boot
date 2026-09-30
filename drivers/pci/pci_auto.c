@@ -21,6 +21,14 @@
 #define CFG_SYS_PCI_CACHE_LINE_SIZE	8
 #endif
 
+void pciauto_write_bar(struct udevice *dev, uint bar, bool is64,
+		       pci_addr_t addr)
+{
+	dm_pci_write_config32(dev, bar, (u32)addr);
+	if (is64)
+		dm_pci_write_config32(dev, bar + 4, upper_32_bits(addr));
+}
+
 void pciauto_finish_device(struct udevice *dev, u16 cmd)
 {
 	u16 class, cur;
@@ -147,16 +155,10 @@ static void pciauto_setup_device(struct udevice *dev,
 		if (ret)
 			printf("PCI: Failed autoconfig bar %x\n", bar);
 
-		if (!ret) {
-			/* Write it out and update our limit */
-			dm_pci_write_config32(dev, bar, (u32)bar_value);
-
-			if (found_mem64) {
-				bar += 4;
-				dm_pci_write_config32(dev, bar,
-						      upper_32_bits(bar_value));
-			}
-		}
+		if (!ret)
+			pciauto_write_bar(dev, bar, found_mem64, bar_value);
+		if (found_mem64)
+			bar += 4;
 
 		cmdstat |= (bar_response & PCI_BASE_ADDRESS_SPACE) ?
 			PCI_COMMAND_IO : PCI_COMMAND_MEMORY;

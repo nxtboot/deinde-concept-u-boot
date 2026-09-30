@@ -10,6 +10,17 @@
 #define __pci_internal_h
 
 /**
+ * pciauto_write_bar() - Write an address to a BAR
+ *
+ * @dev: Device to write to
+ * @bar: Config offset of the BAR
+ * @is64: true for a 64-bit BAR, whose upper half is written too
+ * @addr: Address to write
+ */
+void pciauto_write_bar(struct udevice *dev, uint bar, bool is64,
+		       pci_addr_t addr);
+
+/**
  * pciauto_finish_device() - Enable a device once its resources are set
  *
  * This enables the decoding the device needs, and bus mastering, and sets
