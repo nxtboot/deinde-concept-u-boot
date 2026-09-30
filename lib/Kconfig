@@ -1266,6 +1266,14 @@ config GENERATE_SMBIOS_TABLE_VERBOSE
 
 endmenu
 
+config DDR5_SPD
+	bool "Decode DDR5 SPD data"
+	default y if SANDBOX
+	help
+	  Provides ddr5_spd_decode(), which works out a DDR5 module's size,
+	  speed, organisation and identity from its Serial Presence Detect
+	  data, so that it can be reported in the SMBIOS tables.
+
 config LIB_RATIONAL
 	bool "enable continued fraction calculation routines"
 
