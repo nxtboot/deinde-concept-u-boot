@@ -120,6 +120,43 @@
 	};
 
 	/*
+	 * The FCH's interrupt routing, written to its index/data registers at
+	 * 0xc00/0xc01. Each entry is <index pic-irq apic-irq>: the IRQ each
+	 * source uses in PIC mode and in I/O APIC mode (the index with bit 7
+	 * set). This follows the Dasharo coreboot mainboard. Misc and Misc0 are
+	 * settings rather than IRQs: the ABL leaves Misc0 at 0xe7, which keeps
+	 * the timer and every other ISA interrupt from reaching the 8259 and the
+	 * I/O APIC
+	 */
+	fch {
+		amd,irq-routing =
+			<0x00 0x0a 0x10>,	/* INTA# */
+			<0x01 0x0b 0x11>,	/* INTB# */
+			<0x02 0x0b 0x12>,	/* INTC# */
+			<0x03 0x0a 0x13>,	/* INTD# */
+			<0x04 0x0a 0x14>,	/* INTE# */
+			<0x05 0x0b 0x15>,	/* INTF# */
+			<0x06 0x0b 0x16>,	/* INTG# */
+			<0x07 0x0a 0x17>,	/* INTH# */
+			<0x08 0xfa 0x00>,	/* Misc */
+			<0x09 0x91 0x00>,	/* Misc0 */
+			<0x0a 0x00 0x00>,	/* HPET_L */
+			<0x0b 0x00 0x00>,	/* HPET_H */
+			<0x10 0x09 0x09>,	/* SCI */
+			<0x62 0x07 0x07>,	/* GPIO */
+			<0x70 0x0a 0x0a>,	/* I2C0 */
+			<0x71 0x0b 0x0b>,	/* I2C1 */
+			<0x72 0x0e 0x0c>,	/* I2C2 */
+			<0x73 0x0f 0x0d>,	/* I2C3 */
+			<0x74 0x04 0x03>,	/* UART0 */
+			<0x75 0x03 0x0e>,	/* UART1 */
+			<0x76 0x05 0x16>,	/* I2C4 */
+			<0x77 0x06 0x17>,	/* I2C5 */
+			<0x78 0x04 0x05>,	/* UART2 */
+			<0x79 0x03 0x0f>;	/* UART3 */
+	};
+
+	/*
 	 * The board's PCIe and SATA links, for the MPIO firmware to train. Each
 	 * is <first-lane lane-count flags devfn>, numbering the lanes as the
 	 * MPIO numbers its PHY lanes; flags bit 0 means the lanes are reversed

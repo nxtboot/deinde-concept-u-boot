@@ -12,6 +12,7 @@
 
 #include <binman.h>
 #include <cpu_func.h>
+#include <dm/ofnode.h>
 #include <init.h>
 #include <log.h>
 #include <mapmem.h>
@@ -25,6 +26,7 @@
 #include <asm/msr.h>
 #include <asm/mtrr.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/fch.h>
 #include <asm/post.h>
 #include <linux/sizes.h>
 
@@ -53,8 +55,29 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ACPIMMIO_BASE		0xfed80000
 #define ACPIMMIO_PMIO		(ACPIMMIO_BASE + 0x300)
 #define PM_DECODE_EN		0x00
+#define PM_LEGACY_IO_EN		BIT(0)
+#define PM_CF9_IO_EN		BIT(1)
+#define PM_LEGACY_DMA_IO_EN	BIT(2)
+#define PM_IOAPIC_EN		BIT(5)		/* decode it at 0xfec00000 */
 #define PM_HPET_EN		BIT(6)		/* decode it at 0xfed00000 */
 #define PM_HPET_MSI_EN		BIT(29)
+#define PM_EVT_BLK		0x60
+#define PM1_CNT_BLK		0x62
+#define PM_TMR_BLK		0x64
+#define PM_CPU_CNT_BLK		0x66
+#define PM_GPE0_BLK		0x68
+#define PM_ACPI_SMI_CMD		0x6a
+#define PM_ACPI_CONF		0x74
+#define PM_ACPI_DECODE_STD	BIT(0)
+#define PM_ACPI_GLOBAL_EN	BIT(1)
+#define PM_ACPI_RTC_EN_EN	BIT(2)
+#define PM_ACPI_TIMER_EN_EN	BIT(4)
+#define PM_PCI_CTRL		0x08
+#define PM_MSG_INTR_EN		BIT(4)	/* send PIC interrupts as messages */
+#define PM_PIC_MSG_SEL		BIT(5)
+#define PM_NMI_MSG_SEL		BIT(6)
+#define PM_PCI_INT_VW		0xa8
+#define PM_PCI_INT_VW_MODE	0x80ffcef8	/* as coreboot and the ABL use */
 #define PM_LPC_GATING		0xec
 #define PM_LPC_ENABLE		BIT(0)
 
@@ -104,6 +127,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SIO_ENTRY_KEY		0xa5
 #define SIO_EXIT_KEY		0xaa
 #define SIO_LDN_SUART1		2
+
+/* FCH interrupt routing, indexed by source, with bit 7 for I/O APIC mode */
+#define PCI_INTR_INDEX		0xc00
+#define PCI_INTR_DATA		0xc01
+#define PCI_INTR_APIC		BIT(7)
+#define FCH_IRQ_MAX_ROUTES	64
 
 static u64 msr_read64(u32 msr)
 {
@@ -236,6 +265,72 @@ static void turin_console_path_init(void)
 	sio_write(0x61, CONFIG_DEBUG_UART_BASE & 0xff);
 	sio_write(0x30, 0x01);
 	outb(SIO_EXIT_KEY, SIO_INDEX);
+}
+
+/**
+ * turin_fch_acpi_init() - Set up the FCH's legacy decoding and ACPI hardware
+ *
+ * The ABL sets these up on some boots but not others (not after a cold
+ * mains-on, for example), so program them rather than rely on it: the FCH's
+ * I/O APIC, the legacy I/O and reset ports, the HPET, and the ACPI blocks
+ * which the FADT describes. There is no SMM handler, so there is no SMI
+ * command port and U-Boot switches to ACPI mode itself
+ */
+static void turin_fch_acpi_init(void)
+{
+	void *pmio = (void *)ACPIMMIO_PMIO;
+
+	setbits_le32(pmio + PM_DECODE_EN, PM_LEGACY_IO_EN | PM_CF9_IO_EN |
+		     PM_LEGACY_DMA_IO_EN | PM_IOAPIC_EN | PM_HPET_EN |
+		     PM_HPET_MSI_EN);
+	writew(ACPI_PM1_EVT, pmio + PM_EVT_BLK);
+	writew(ACPI_PM1_CNT, pmio + PM1_CNT_BLK);
+	writew(ACPI_PM_TMR, pmio + PM_TMR_BLK);
+	writew(ACPI_CPU_CNT, pmio + PM_CPU_CNT_BLK);
+	writew(ACPI_GPE0, pmio + PM_GPE0_BLK);
+	writew(0, pmio + PM_ACPI_SMI_CMD);
+	setbits_le32(pmio + PM_ACPI_CONF, PM_ACPI_DECODE_STD |
+		     PM_ACPI_GLOBAL_EN | PM_ACPI_RTC_EN_EN |
+		     PM_ACPI_TIMER_EN_EN);
+	outw(inw(ACPI_PM1_CNT) | PM1_CNT_SCI_EN, ACPI_PM1_CNT);
+}
+
+/**
+ * turin_irq_routing_init() - Set up the FCH's interrupt routing
+ *
+ * This writes the board's /fch amd,irq-routing table, then sets how the FCH
+ * delivers interrupts, as coreboot does: the PIC's as ExtInt messages and PCI
+ * interrupts as virtual wires. Without these no ISA interrupt (the timer, the
+ * serial port, the SCI) reaches the CPUs, so the OS cannot use the I/O APIC
+ *
+ * Return: 0 if OK, -ve on error
+ */
+static int turin_irq_routing_init(void)
+{
+	void *pmio = (void *)ACPIMMIO_PMIO;
+	u32 cells[FCH_IRQ_MAX_ROUTES * 3];
+	ofnode node;
+	int size, i;
+
+	node = ofnode_path("/fch");
+	size = ofnode_read_size(node, "amd,irq-routing");
+	if (size == -EINVAL)
+		return 0;
+	if (size <= 0 || size % 12 || size > sizeof(cells))
+		return log_msg_ret("irq", -EINVAL);
+	if (ofnode_read_u32_array(node, "amd,irq-routing", cells, size / 4))
+		return log_msg_ret("rd", -EINVAL);
+	for (i = 0; i < size / 4; i += 3) {
+		outb(cells[i], PCI_INTR_INDEX);
+		outb(cells[i + 1], PCI_INTR_DATA);
+		outb(cells[i] | PCI_INTR_APIC, PCI_INTR_INDEX);
+		outb(cells[i + 2], PCI_INTR_DATA);
+	}
+	clrsetbits_le32(pmio + PM_PCI_CTRL, PM_PIC_MSG_SEL | PM_NMI_MSG_SEL,
+			PM_MSG_INTR_EN);
+	writel(PM_PCI_INT_VW_MODE, pmio + PM_PCI_INT_VW);
+
+	return 0;
 }
 
 void board_debug_uart_init(void)
@@ -395,8 +490,11 @@ int arch_early_init_r(void)
 {
 	int ret;
 
-	/* The HPET is the OS's timer, since there is no PM timer */
-	setbits_le32(ACPIMMIO_PMIO + PM_DECODE_EN, PM_HPET_EN | PM_HPET_MSI_EN);
+	ret = turin_irq_routing_init();
+	if (ret)
+		log_err("IRQ routing failed (err=%d)\n", ret);
+
+	turin_fch_acpi_init();
 
 	ret = turin_microcode_update();
 	if (ret)
