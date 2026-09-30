@@ -584,9 +584,14 @@ static void set_vga_bridge_bits(struct udevice *dev)
 int pci_auto_config_devices(struct udevice *bus)
 {
 	struct pci_controller *hose = dev_get_uclass_priv(bus);
+	bool sorted = CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST);
+	struct udevice *ctlr = pci_get_controller(bus);
+	struct pci_controller *ctlr_hose = dev_get_uclass_priv(ctlr);
 	struct pci_child_plat *pplat;
+	bool is_root = ctlr == bus;
 	unsigned int sub_bus;
 	struct udevice *dev;
+	int ret;
 
 	sub_bus = dev_seq(bus);
 	debug("%s: start\n", __func__);
@@ -601,17 +606,25 @@ int pci_auto_config_devices(struct udevice *bus)
 	}
 
 	pciauto_config_init(hose);
+
+	/*
+	 * With the sorted allocator, a root bus scans all its buses before
+	 * allocating their resources, so that each bus can place its largest
+	 * ones first; the buses behind bridges, however deep, are found with
+	 * the root's scanning flag set and leave it to the root
+	 */
+	if (sorted && is_root)
+		hose->scanning = true;
 	for (device_find_first_child(bus, &dev);
 	     dev;
 	     device_find_next_child(&dev)) {
 		unsigned int max_bus;
-		int ret;
 
 		log_debug("configuring device %s\n", dev->name);
 		if (dev_has_ofnode(dev) &&
 		    dev_read_bool(dev, "pci,no-autoconfig"))
 			continue;
-		ret = dm_pciauto_config_device(dev);
+		ret = pciauto_config_device(dev);
 		if (ret < 0)
 			return log_msg_ret("auto", ret);
 		max_bus = ret;
@@ -626,6 +639,14 @@ int pci_auto_config_devices(struct udevice *bus)
 	}
 	if (hose->last_busno < sub_bus)
 		hose->last_busno = sub_bus;
+
+	if (sorted && is_root)
+		hose->scanning = false;
+	if (sorted && !ctlr_hose->scanning) {
+		ret = pciauto_alloc_resources(bus);
+		if (ret)
+			return log_msg_ret("alloc", ret);
+	}
 	debug("%s: done\n", __func__);
 
 	return log_msg_ret("sub", sub_bus);
@@ -736,7 +757,7 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 	debug("%s: bus = %d/%s\n", __func__, sub_bus, bus->name);
 	if (dev_seq(bus) == -1)
 		bus->seq_ = sub_bus;
-	dm_pciauto_prescan_setup_bridge(bus, sub_bus);
+	pciauto_prescan_setup_bridge(bus, sub_bus);
 
 	ret = device_probe(bus);
 	if (ret) {
@@ -748,7 +769,7 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 	if (!ea_pos)
 		sub_bus = ctlr->abs_bus ? ctlr->last_busno : pci_get_bus_max();
 
-	dm_pciauto_postscan_setup_bridge(bus, sub_bus);
+	pciauto_postscan_setup_bridge(bus, sub_bus);
 
 	return sub_bus;
 }

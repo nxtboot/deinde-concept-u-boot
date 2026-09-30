@@ -10,7 +10,6 @@
  */
 
 #include <dm.h>
-#include <env.h>
 #include <errno.h>
 #include <pci.h>
 #include <asm/io.h>
@@ -78,26 +77,6 @@ const char *pci_class_str(u8 class)
 	};
 }
 
-__weak int pci_skip_dev(struct pci_controller *hose, pci_dev_t dev)
-{
-	/*
-	 * Check if pci device should be skipped in configuration
-	 */
-	if (dev == PCI_BDF(hose->first_busno, 0, 0)) {
-#if defined(CONFIG_PCI_CONFIG_HOST_BRIDGE) /* don't skip host bridge */
-		/*
-		 * Only skip configuration if "pciconfighost" is not set
-		 */
-		if (env_get("pciconfighost") == NULL)
-			return 1;
-#else
-		return 1;
-#endif
-	}
-
-	return 0;
-}
-
 #if defined(CONFIG_DM_PCI_COMPAT)
 /* Get a virtual address associated with a BAR region */
 void *pci_map_bar(pci_dev_t pdev, int bar, int flags)
@@ -116,28 +95,6 @@ void *pci_map_bar(pci_dev_t pdev, int bar, int flags)
 	 * and pass that as the size if needed.
 	 */
 	return pci_bus_to_virt(pdev, pci_bus_addr, flags, 0, MAP_NOCACHE);
-}
-
-void pci_write_bar32(struct pci_controller *hose, pci_dev_t dev, int barnum,
-		     u32 addr_and_ctrl)
-{
-	int bar;
-
-	bar = PCI_BASE_ADDRESS_0 + barnum * 4;
-	pci_hose_write_config_dword(hose, dev, bar, addr_and_ctrl);
-}
-
-u32 pci_read_bar32(struct pci_controller *hose, pci_dev_t dev, int barnum)
-{
-	u32 addr;
-	int bar;
-
-	bar = PCI_BASE_ADDRESS_0 + barnum * 4;
-	pci_hose_read_config_dword(hose, dev, bar, &addr);
-	if (addr & PCI_BASE_ADDRESS_SPACE_IO)
-		return addr & PCI_BASE_ADDRESS_IO_MASK;
-	else
-		return addr & PCI_BASE_ADDRESS_MEM_MASK;
 }
 
 int __pci_hose_bus_to_phys(struct pci_controller *hose,
@@ -276,47 +233,6 @@ pci_dev_t pci_find_device(unsigned int vendor, unsigned int device, int index)
 	ids[0].device = device;
 
 	return pci_find_devices(ids, index);
-}
-
-pci_dev_t pci_hose_find_devices(struct pci_controller *hose, int busnum,
-				struct pci_device_id *ids, int *indexp)
-{
-	int found_multi = 0;
-	u16 vendor, device;
-	u8 header_type;
-	pci_dev_t bdf;
-	int i;
-
-	for (bdf = PCI_BDF(busnum, 0, 0);
-	     bdf < PCI_BDF(busnum + 1, 0, 0);
-	     bdf += PCI_BDF(0, 0, 1)) {
-		if (pci_skip_dev(hose, bdf))
-			continue;
-
-		if (!PCI_FUNC(bdf)) {
-			pci_read_config_byte(bdf, PCI_HEADER_TYPE,
-					     &header_type);
-			found_multi = header_type & 0x80;
-		} else {
-			if (!found_multi)
-				continue;
-		}
-
-		pci_read_config_word(bdf, PCI_VENDOR_ID, &vendor);
-		pci_read_config_word(bdf, PCI_DEVICE_ID, &device);
-
-		for (i = 0; ids[i].vendor != 0; i++) {
-			if (vendor == ids[i].vendor &&
-			    device == ids[i].device) {
-				if ((*indexp) <= 0)
-					return bdf;
-
-				(*indexp)--;
-			}
-		}
-	}
-
-	return -1;
 }
 
 pci_dev_t pci_find_class(uint find_class, int index)

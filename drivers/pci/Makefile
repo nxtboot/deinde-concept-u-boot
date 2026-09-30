@@ -5,6 +5,11 @@
 
 obj-$(CONFIG_VIDEO) += pci_rom.o
 obj-$(CONFIG_PCI) += pci-uclass.o pci_auto.o
+ifeq ($(CONFIG_$(PHASE_)PCI_PNP_LARGEST_FIRST),y)
+obj-$(CONFIG_PCI) += pci_auto_sorted.o
+else
+obj-$(CONFIG_PCI) += pci_auto_simple.o
+endif
 obj-$(CONFIG_DM_PCI_COMPAT) += pci_compat.o
 obj-$(CONFIG_PCI_SANDBOX) += pci_sandbox.o
 obj-$(CONFIG_SANDBOX) += pci-emul-uclass.o

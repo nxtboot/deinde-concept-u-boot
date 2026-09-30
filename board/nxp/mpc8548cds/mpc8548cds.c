@@ -27,7 +27,6 @@
 
 #include "../common/cadmus.h"
 #include "../common/eeprom.h"
-#include "../common/via.h"
 
 void local_bus_init(void);
 

@@ -32,8 +32,9 @@ void pciauto_region_align(struct pci_region *res, pci_size_t size)
 	res->bus_lower = ((res->bus_lower - 1) | (size - 1)) + 1;
 }
 
-int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
-	pci_addr_t *bar, bool supports_64bit)
+int pciauto_region_allocate_aligned(struct pci_region *res, pci_size_t size,
+				    pci_size_t align, pci_addr_t *bar,
+				    bool supports_64bit)
 {
 	pci_addr_t addr;
 
@@ -42,7 +43,7 @@ int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
 		goto error;
 	}
 
-	addr = ((res->bus_lower - 1) | (size - 1)) + 1;
+	addr = ((res->bus_lower - 1) | (align - 1)) + 1;
 
 	if (addr - res->bus_start + size > res->size) {
 		debug("No room in resource, avail start=%llx / size=%llx, "

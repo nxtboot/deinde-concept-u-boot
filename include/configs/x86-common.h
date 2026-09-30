@@ -27,7 +27,6 @@
 #define CFG_EXTRA_ENV_SETTINGS			\
 	CFG_STD_DEVICES_SETTINGS			\
 	SPLASH_SETTINGS					\
-	"pciconfighost=1\0"				\
 	"netdev=eth0\0"					\
 	"consoledev=ttyS0\0"				\
 	CFG_OTHBOOTARGS				\

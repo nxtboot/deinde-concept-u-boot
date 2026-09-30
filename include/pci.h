@@ -363,6 +363,7 @@
 #define   PCI_EXP_TYPE_ROOT_PORT   0x4	/* Root Port */
 #define   PCI_EXP_TYPE_DOWNSTREAM  0x6	/* Downstream Port */
 #define   PCI_EXP_TYPE_PCIE_BRIDGE 0x8	/* PCI/PCI-X to PCIe Bridge */
+#define  PCI_EXP_FLAGS_SLOT	0x0100	/* Slot implemented */
 #define PCI_EXP_DEVCAP		4	/* Device capabilities */
 #define  PCI_EXP_DEVCAP_FLR	0x10000000 /* Function Level Reset */
 #define  PCI_EXP_DEVCAP_PAYLOAD 0x0007	/* Max payload size supported */
@@ -415,6 +416,8 @@
 #define PCI_EXP_SLTCAP		20	/* Slot Capabilities */
 #define  PCI_EXP_SLTCAP_HPC	0x00000040 /* Hot-Plug Capable */
 #define  PCI_EXP_SLTCAP_PSN	0xfff80000 /* Physical Slot Number */
+#define PCI_EXP_SLTSTA		26	/* Slot Status */
+#define  PCI_EXP_SLTSTA_PDS	0x0040	/* Presence Detect State */
 #define PCI_EXP_RTCTL		28	/* Root Control */
 #define  PCI_EXP_RTCTL_CRSSVE	0x0010	/* CRS Software Visibility Enable */
 #define PCI_EXP_RTCAP		30	/* Root Capabilities */
@@ -650,6 +653,8 @@ struct pci_controller {
 	struct udevice *ctlr;
 	bool skip_auto_config_until_reloc;
 	bool skip_enumeration_until_reloc;
+	/* root bus is scanning its buses; resources are allocated afterwards */
+	bool scanning;
 
 	int first_busno;
 	int last_busno;
@@ -694,9 +699,6 @@ extern pci_addr_t pci_hose_phys_to_bus(struct pci_controller* hose,
 #define pci_bus_to_phys(dev, addr, flags) \
 	pci_hose_bus_to_phys(pci_bus_to_hose(PCI_BUS(dev)), (addr), (flags))
 
-#define pci_virt_to_bus(dev, addr, flags) \
-	pci_hose_phys_to_bus(pci_bus_to_hose(PCI_BUS(dev)), \
-			     (virt_to_phys(addr)), (flags))
 #define pci_bus_to_virt(dev, addr, flags, len, map_flags) \
 	map_physmem(pci_hose_bus_to_phys(pci_bus_to_hose(PCI_BUS(dev)), \
 					 (addr), (flags)), \
@@ -706,31 +708,6 @@ extern pci_addr_t pci_hose_phys_to_bus(struct pci_controller* hose,
 	pci_phys_to_bus((dev), (addr), PCI_REGION_MEM)
 #define pci_mem_to_phys(dev, addr) \
 	pci_bus_to_phys((dev), (addr), PCI_REGION_MEM)
-#define pci_phys_to_io(dev, addr)  pci_phys_to_bus((dev), (addr), PCI_REGION_IO)
-#define pci_io_to_phys(dev, addr)  pci_bus_to_phys((dev), (addr), PCI_REGION_IO)
-
-#define pci_virt_to_mem(dev, addr) \
-	pci_virt_to_bus((dev), (addr), PCI_REGION_MEM)
-#define pci_mem_to_virt(dev, addr, len, map_flags) \
-	pci_bus_to_virt((dev), (addr), PCI_REGION_MEM, (len), (map_flags))
-#define pci_virt_to_io(dev, addr) \
-	pci_virt_to_bus((dev), (addr), PCI_REGION_IO)
-#define pci_io_to_virt(dev, addr, len, map_flags) \
-	pci_bus_to_virt((dev), (addr), PCI_REGION_IO, (len), (map_flags))
-
-/* For driver model these are defined in macros in pci_compat.c */
-extern int pci_hose_read_config_byte(struct pci_controller *hose,
-				     pci_dev_t dev, int where, u8 *val);
-extern int pci_hose_read_config_word(struct pci_controller *hose,
-				     pci_dev_t dev, int where, u16 *val);
-extern int pci_hose_read_config_dword(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u32 *val);
-extern int pci_hose_write_config_byte(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u8 val);
-extern int pci_hose_write_config_word(struct pci_controller *hose,
-				      pci_dev_t dev, int where, u16 val);
-extern int pci_hose_write_config_dword(struct pci_controller *hose,
-				       pci_dev_t dev, int where, u32 val);
 #endif
 
 void pciauto_region_init(struct pci_region *res);
@@ -738,10 +715,26 @@ void pciauto_region_align(struct pci_region *res, pci_size_t size);
 void pciauto_config_init(struct pci_controller *hose);
 
 /**
+ * pciauto_region_allocate_aligned() - Allocate from a PCI resource region
+ *
+ * Allocates @size bytes from the PCI resource @res, aligned to @align. If
+ * @supports_64bit is false, the result will be guaranteed to fit in 32 bits.
+ *
+ * @res:		PCI region to allocate from
+ * @size:		Amount of bytes to allocate
+ * @align:		Alignment of the allocation, a power of two
+ * @bar:		Returns the PCI bus address of the allocated resource
+ * @supports_64bit:	Whether to allow allocations above the 32-bit boundary
+ * Return: 0 if successful, -1 on failure
+ */
+int pciauto_region_allocate_aligned(struct pci_region *res, pci_size_t size,
+				    pci_size_t align, pci_addr_t *bar,
+				    bool supports_64bit);
+
+/**
  * pciauto_region_allocate() - Allocate resources from a PCI resource region
  *
- * Allocates @size bytes from the PCI resource @res. If @supports_64bit is
- * false, the result will be guaranteed to fit in 32 bits.
+ * As pciauto_region_allocate_aligned() but aligned to @size, as a BAR needs
  *
  * @res:		PCI region to allocate from
  * @size:		Amount of bytes to allocate
@@ -749,55 +742,21 @@ void pciauto_config_init(struct pci_controller *hose);
  * @supports_64bit:	Whether to allow allocations above the 32-bit boundary
  * Return: 0 if successful, -1 on failure
  */
-int pciauto_region_allocate(struct pci_region *res, pci_size_t size,
-			    pci_addr_t *bar, bool supports_64bit);
-int pci_skip_dev(struct pci_controller *hose, pci_dev_t dev);
+static inline int pciauto_region_allocate(struct pci_region *res,
+					  pci_size_t size, pci_addr_t *bar,
+					  bool supports_64bit)
+{
+	return pciauto_region_allocate_aligned(res, size, size, bar,
+					       supports_64bit);
+}
 
 #if defined(CONFIG_DM_PCI_COMPAT)
-extern int pci_hose_read_config_byte_via_dword(struct pci_controller *hose,
-					       pci_dev_t dev, int where, u8 *val);
-extern int pci_hose_read_config_word_via_dword(struct pci_controller *hose,
-					       pci_dev_t dev, int where, u16 *val);
-extern int pci_hose_write_config_byte_via_dword(struct pci_controller *hose,
-						pci_dev_t dev, int where, u8 val);
-extern int pci_hose_write_config_word_via_dword(struct pci_controller *hose,
-						pci_dev_t dev, int where, u16 val);
-
 extern void *pci_map_bar(pci_dev_t pdev, int bar, int flags);
-extern void pci_register_hose(struct pci_controller* hose);
 extern struct pci_controller* pci_bus_to_hose(int bus);
-extern struct pci_controller *find_hose_by_cfg_addr(void *cfg_addr);
-extern struct pci_controller *pci_get_hose_head(void);
-
-extern int pci_hose_scan(struct pci_controller *hose);
-extern int pci_hose_scan_bus(struct pci_controller *hose, int bus);
-
-extern void pciauto_setup_device(struct pci_controller *hose,
-				 pci_dev_t dev, int bars_num,
-				 struct pci_region *mem,
-				 struct pci_region *prefetch,
-				 struct pci_region *io);
-extern void pciauto_prescan_setup_bridge(struct pci_controller *hose,
-				 pci_dev_t dev, int sub_bus);
-extern void pciauto_postscan_setup_bridge(struct pci_controller *hose,
-				 pci_dev_t dev, int sub_bus);
-extern int pciauto_config_device(struct pci_controller *hose, pci_dev_t dev);
 
 extern pci_dev_t pci_find_device (unsigned int vendor, unsigned int device, int index);
 extern pci_dev_t pci_find_devices (struct pci_device_id *ids, int index);
 pci_dev_t pci_find_class(unsigned int find_class, int index);
-
-extern int pci_hose_find_capability(struct pci_controller *hose, pci_dev_t dev,
-				    int cap);
-extern int pci_hose_find_cap_start(struct pci_controller *hose, pci_dev_t dev,
-				   u8 hdr_type);
-extern int pci_find_cap(struct pci_controller *hose, pci_dev_t dev, int pos,
-			int cap);
-
-int pci_find_next_ext_capability(struct pci_controller *hose,
-				 pci_dev_t dev, int start, int cap);
-int pci_hose_find_ext_capability(struct pci_controller *hose,
-				 pci_dev_t dev, int cap);
 
 #endif /* defined(CONFIG_DM_PCI_COMPAT) */
 
@@ -807,51 +766,6 @@ int pci_last_busno(void);
 #ifdef CONFIG_MPC85xx
 extern void pci_mpc85xx_init (struct pci_controller *hose);
 #endif
-
-/**
- * pci_write_bar32() - Write the address of a BAR including control bits
- *
- * This writes a raw address (with control bits) to a bar. This can be used
- * with devices which require hard-coded addresses, not part of the normal
- * PCI enumeration process.
- *
- * This is only available if CONFIG_DM_PCI_COMPAT is enabled
- *
- * @hose:	PCI hose to use
- * @dev:	PCI device to update
- * @barnum:	BAR number (0-5)
- * @addr:	BAR address with control bits
- */
-void pci_write_bar32(struct pci_controller *hose, pci_dev_t dev, int barnum,
-		     u32 addr);
-
-/**
- * pci_read_bar32() - read the address of a bar
- *
- * This is only available if CONFIG_DM_PCI_COMPAT is enabled
- *
- * @hose:	PCI hose to use
- * @dev:	PCI device to inspect
- * @barnum:	BAR number (0-5)
- * Return: address of the bar, masking out any control bits
- * */
-u32 pci_read_bar32(struct pci_controller *hose, pci_dev_t dev, int barnum);
-
-/**
- * pci_hose_find_devices() - Find devices by vendor/device ID
- *
- * This is only available if CONFIG_DM_PCI_COMPAT is enabled
- *
- * @hose:	PCI hose to search
- * @busnum:	Bus number to search
- * @ids:	PCI vendor/device IDs to look for, terminated by 0, 0 record
- * @indexp:	Pointer to device index to find. To find the first matching
- *		device, pass 0; to find the second, pass 1, etc. This
- *		parameter is decremented for each non-matching device so
- *		can be called repeatedly.
- */
-pci_dev_t pci_hose_find_devices(struct pci_controller *hose, int busnum,
-				struct pci_device_id *ids, int *indexp);
 
 /* Access sizes for PCI reads and writes */
 enum pci_size_t {
@@ -959,10 +873,13 @@ int pci_bind_bus_devices(struct udevice *bus);
  *
  * This works through all devices on a bus by scanning the driver model
  * data structures (normally these have been set up by pci_bind_bus_devices()
- * earlier).
+ * earlier), probing the bus behind each bridge.
  *
- * Space is allocated for each PCI base address register (BAR) so that the
- * devices are mapped into memory and I/O space ready for use.
+ * Once a root bus has scanned all its buses, space is allocated for each PCI
+ * base address register (BAR) and bridge window so that the devices are
+ * mapped into memory and I/O space ready for use. On each bus the largest
+ * resources are placed first, so that they do not go without an aligned
+ * block after smaller ones have taken the start of the space.
  *
  * @bus:	Bus containing devices to bind
  * Return: 0 if OK, -ve on error
@@ -1264,7 +1181,7 @@ static inline int pci_read_config_byte(pci_dev_t pcidev, int offset,
 #endif /* CONFIG_DM_PCI_COMPAT */
 
 /**
- * dm_pciauto_config_device() - configure a device ready for use
+ * pciauto_config_device() - configure a device ready for use
  *
  * Space is allocated for each PCI base address register (BAR) so that the
  * devices are mapped into memory and I/O space ready for use.
@@ -1272,7 +1189,7 @@ static inline int pci_read_config_byte(pci_dev_t pcidev, int offset,
  * @dev:	Device to configure
  * Return: 0 if OK, -ve on error
  */
-int dm_pciauto_config_device(struct udevice *dev);
+int pciauto_config_device(struct udevice *dev);
 
 /**
  * pci_conv_32_to_size() - convert a 32-bit read value to the given size

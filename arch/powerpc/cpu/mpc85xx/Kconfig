@@ -118,7 +118,6 @@ config TARGET_P5040DS
 config TARGET_MPC8548CDS
 	bool "Support MPC8548CDS"
 	select ARCH_MPC8548
-	select FSL_VIA
 	select SYS_CACHE_SHIFT_5
 
 config TARGET_P1010RDB_PA
@@ -1536,9 +1535,6 @@ config TPL_SYS_MPC85XX_NO_RESETVEC
 	  If this variable is specified, the section .resetvec is not kept and
 	  the section .bootpg is placed in the previous 4k of the .text section,
 	  of the SPL portion of the binary.
-
-config FSL_VIA
-	bool
 
 source "board/CZ.NIC/turris_1x/Kconfig"
 source "board/emulation/qemu-ppce500/Kconfig"

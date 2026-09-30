@@ -52,6 +52,30 @@ config SPL_PCI_PNP
 	  be set up in the SPL phase. Often it is enough to manually configure
 	  one device, so this option can be disabled.
 
+config PCI_PNP_LARGEST_FIRST
+	bool "Place the largest PCI resources first"
+	depends on PCI_PNP
+	default y
+	help
+	  Size all the BARs and bridge windows of a root bus before assigning
+	  them, then place the largest on each bus first, as Linux does, so
+	  that a large BAR is not left without an aligned block after smaller
+	  ones have taken the start of the space. This adds about 1KB of code
+	  and uses a little heap while the buses are configured.
+
+	  If disabled, resources are assigned in the order the devices are
+	  found, which is smaller but can leave a large BAR unassigned.
+
+config SPL_PCI_PNP_LARGEST_FIRST
+	bool "Place the largest PCI resources first in SPL"
+	depends on SPL_PCI_PNP
+	default y
+	help
+	  Size all the BARs and bridge windows of a root bus before assigning
+	  them, then place the largest on each bus first, as for
+	  PCI_PNP_LARGEST_FIRST. Disable this to save about 1KB in SPL if it
+	  only needs a few devices set up.
+
 config PCI_REGION_MULTI_ENTRY
 	bool "Enable Multiple entries of region type MEMORY in ranges for PCI"
 	help
@@ -59,10 +83,6 @@ config PCI_REGION_MULTI_ENTRY
 	  here refers to allow more than one count of address ranges for MEMORY
 	  region type. This helps to add support for SoC's like OcteonTX/TX2
 	  where every peripheral is on the PCI bus.
-
-config PCI_CONFIG_HOST_BRIDGE
-	bool "Configure PCI host bridges"
-	default y if X86
 
 config PCI_MAP_SYSTEM_MEMORY
 	bool "Map local system memory from a virtual base address"
