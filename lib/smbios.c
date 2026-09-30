@@ -14,6 +14,7 @@
 #include <linux/string.h>
 #include <mapmem.h>
 #include <smbios.h>
+#include <smbios_plat.h>
 #include <sysinfo.h>
 #include <tables_csum.h>
 #include <version.h>
@@ -129,6 +130,7 @@ struct smbios_ctx {
 	char *eos;
 	char *next_ptr;
 	char *last_str;
+	u16 mem_array_handle;
 };
 
 typedef int (*smbios_write_subnode)(ulong *current, int handle,
@@ -1366,8 +1368,8 @@ static int smbios_write_type16_1array(ulong *current, int handle,
 	return len;
 }
 
-static int smbios_write_type16(ulong *current, int *handle,
-			       struct smbios_ctx *ctx)
+static int smbios_write_type16_dt(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
 {
 	int len;
 	struct smbios_ctx ctx_bak;
@@ -1799,8 +1801,8 @@ static int smbios_write_type1719(ulong *current, int *handle,
 	return len;
 }
 
-static int smbios_write_type17(ulong *current, int *handle,
-			       struct smbios_ctx *ctx)
+static int smbios_write_type17_dt(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
 {
 	return smbios_write_type1719(current, handle, ctx,
 				     smbios_write_type17_mem,
@@ -1948,15 +1950,268 @@ static int smbios_write_type19_mem(ulong *current, int handle,
 	return len;
 }
 
-static int smbios_write_type19(ulong *current, int *handle,
-			       struct smbios_ctx *ctx)
+static int smbios_write_type19_dt(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
 {
 	return smbios_write_type1719(current, handle, ctx,
 				     smbios_write_type19_mem,
 				     smbios_write_type19_from_memctrl_node);
 }
 
+#else
+static inline int smbios_write_type16_dt(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
+
+static inline int smbios_write_type17_dt(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
+
+static inline int smbios_write_type19_dt(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
 #endif /* #if IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE) */
+
+#if IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+/*
+ * Memory tables from sysinfo, for a platform which knows its memory devices:
+ * one physical memory array (type 16), a device for each of its slots (type
+ * 17) and one mapped address range covering them all (type 19)
+ */
+static int smbios_get_mem_info(struct smbios_ctx *ctx,
+			       const struct memory_array_info **arrayp,
+			       const struct memory_dev_info **devsp)
+{
+	void *data;
+	size_t size;
+	int count;
+
+	if (!ctx->dev)
+		return -ENOENT;
+	if (sysinfo_get_data(ctx->dev, SYSID_SM_MEMARRAY_INFO, &data, &size) ||
+	    size != sizeof(struct memory_array_info))
+		return -ENOENT;
+	*arrayp = data;
+	count = sysinfo_get_item_count(ctx->dev, SYSID_SM_MEMDEV_INFO);
+	if (count < 0)
+		return log_msg_ret("cnt", count);
+	if (sysinfo_get_data(ctx->dev, SYSID_SM_MEMDEV_INFO, &data, &size) ||
+	    size != count * sizeof(struct memory_dev_info))
+		return -ENOENT;
+	*devsp = data;
+
+	return count;
+}
+
+/* Add a string, or nothing (index 0) if it is empty */
+static int smbios_add_string_opt(struct smbios_ctx *ctx, const char *str)
+{
+	return *str ? smbios_add_string(ctx, str) : 0;
+}
+
+static int smbios_write_type16_si(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
+{
+	const struct memory_array_info *array;
+	const struct memory_dev_info *devs;
+	struct smbios_type16 *t;
+	int len = sizeof(*t);
+	int count;
+
+	count = smbios_get_mem_info(ctx, &array, &devs);
+	if (count < 0)
+		return 0;
+
+	t = map_sysmem(*current, len);
+	memset(t, 0, len);
+	fill_smbios_header(t, SMBIOS_PHYS_MEMORY_ARRAY, len, *handle);
+	smbios_set_eos(ctx, t->eos);
+	t->location = array->location;
+	t->use = array->use;
+	t->mem_err_corr = array->err_corr;
+	t->mem_err_info_hdl = cpu_to_le16(SMBIOS_MA_ERRINFO_NONE);
+	t->num_of_mem_dev = cpu_to_le16(array->num_devices);
+
+	/* the 32-bit field is in KB, so use the extended one, in bytes */
+	t->max_cap = cpu_to_le32(0x80000000);
+	t->ext_max_cap = cpu_to_le64(array->max_capacity);
+
+	/* the memory devices refer to this array */
+	ctx->mem_array_handle = *handle;
+	len = t->hdr.length + smbios_string_table_len(ctx);
+	*current += len;
+	unmap_sysmem(t);
+
+	return len;
+}
+
+static int smbios_write_type17_si(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
+{
+	const struct memory_array_info *array;
+	const struct memory_dev_info *devs;
+	int count, i, total = 0;
+
+	count = smbios_get_mem_info(ctx, &array, &devs);
+	if (count <= 0)
+		return 0;
+
+	for (i = 0; i < count; i++) {
+		const struct memory_dev_info *dev = &devs[i];
+		struct smbios_type17 *t;
+		int len = sizeof(*t);
+		u32 size_mb = dev->size >> 20;
+
+		/* the first device uses the handle passed in */
+		if (i)
+			(*handle)++;
+		t = map_sysmem(*current, len);
+		memset(t, 0, len);
+		fill_smbios_header(t, SMBIOS_MEMORY_DEVICE, len, *handle);
+		smbios_set_eos(ctx, t->eos);
+		t->phy_mem_array_hdl = cpu_to_le16(ctx->mem_array_handle);
+		t->mem_err_info_hdl = cpu_to_le16(SMBIOS_MD_ERRINFO_NONE);
+		t->total_width = cpu_to_le16(dev->total_width);
+		t->data_width = cpu_to_le16(dev->data_width);
+		if (size_mb < SMBIOS_MD_SIZE_EXT) {
+			t->size = cpu_to_le16(size_mb);
+		} else {
+			/* the extended size is in MB too */
+			t->size = cpu_to_le16(SMBIOS_MD_SIZE_EXT);
+			t->ext_size = cpu_to_le32(size_mb);
+		}
+		t->form_factor = dev->form_factor;
+		t->dev_locator = smbios_add_string_opt(ctx, dev->dev_locator);
+		t->bank_locator = smbios_add_string_opt(ctx, dev->bank_locator);
+		t->mem_type = dev->mem_type;
+		t->type_detail = cpu_to_le16(dev->type_detail);
+		t->speed = cpu_to_le16(dev->speed);
+		t->manufacturer = smbios_add_string_opt(ctx, dev->manufacturer);
+		t->serial_number = smbios_add_string_opt(ctx, dev->serial);
+		t->part_number = smbios_add_string_opt(ctx, dev->part_number);
+		t->attributes = dev->ranks;
+		t->config_mem_speed = cpu_to_le16(dev->config_speed);
+		t->min_voltage = cpu_to_le16(dev->min_voltage);
+		t->max_voltage = cpu_to_le16(dev->max_voltage);
+		t->config_voltage = cpu_to_le16(dev->config_voltage);
+		t->module_man_id = cpu_to_le16(dev->module_man_id);
+		len = t->hdr.length + smbios_string_table_len(ctx);
+		*current += len;
+		unmap_sysmem(t);
+		total += len;
+	}
+
+	return total;
+}
+
+static int smbios_write_type19_si(ulong *current, int *handle,
+				  struct smbios_ctx *ctx)
+{
+	const struct memory_array_info *array;
+	const struct memory_dev_info *devs;
+	struct smbios_type19 *t;
+	int len = sizeof(*t);
+	int count, i, populated = 0;
+	u64 total = 0;
+
+	count = smbios_get_mem_info(ctx, &array, &devs);
+	if (count < 0)
+		return 0;
+	for (i = 0; i < count; i++) {
+		if (devs[i].size) {
+			total += devs[i].size;
+			populated++;
+		}
+	}
+	if (!total)
+		return 0;
+
+	t = map_sysmem(*current, len);
+	memset(t, 0, len);
+	fill_smbios_header(t, SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS, len, *handle);
+	smbios_set_eos(ctx, t->eos);
+	t->mem_array_hdl = cpu_to_le16(ctx->mem_array_handle);
+	t->partition_wid = populated;
+
+	/* the 32-bit fields are in KB; the extended ones are in bytes */
+	if (total - 1 <= (u64)0xffffffff << 10) {
+		t->end_addr = cpu_to_le32((total - 1) >> 10);
+	} else {
+		t->start_addr = cpu_to_le32(0xffffffff);
+		t->end_addr = cpu_to_le32(0xffffffff);
+	}
+	t->ext_end_addr = cpu_to_le64(total - 1);
+	len = t->hdr.length + smbios_string_table_len(ctx);
+	*current += len;
+	unmap_sysmem(t);
+
+	return len;
+}
+#else
+static inline int smbios_write_type16_si(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
+
+static inline int smbios_write_type17_si(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
+
+static inline int smbios_write_type19_si(ulong *current, int *handle,
+					 struct smbios_ctx *ctx)
+{
+	return 0;
+}
+#endif /* CONFIG_SMBIOS_MEMORY_SYSINFO */
+
+#if IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE) || \
+	IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
+/*
+ * The memory tables come from sysinfo when the platform provides them, else
+ * from the devicetree
+ */
+static int smbios_write_type16(ulong *current, int *handle,
+			       struct smbios_ctx *ctx)
+{
+	int len = smbios_write_type16_si(current, handle, ctx);
+
+	if (!len && IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE))
+		len = smbios_write_type16_dt(current, handle, ctx);
+
+	return len;
+}
+
+static int smbios_write_type17(ulong *current, int *handle,
+			       struct smbios_ctx *ctx)
+{
+	int len = smbios_write_type17_si(current, handle, ctx);
+
+	if (!len && IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE))
+		len = smbios_write_type17_dt(current, handle, ctx);
+
+	return len;
+}
+
+static int smbios_write_type19(ulong *current, int *handle,
+			       struct smbios_ctx *ctx)
+{
+	int len = smbios_write_type19_si(current, handle, ctx);
+
+	if (!len && IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE))
+		len = smbios_write_type19_dt(current, handle, ctx);
+
+	return len;
+}
+#endif /* VERBOSE || MEMORY_SYSINFO */
 
 static int smbios_write_type32(ulong *current, int *handle,
 			       struct smbios_ctx *ctx)
@@ -2004,6 +2259,9 @@ static struct smbios_write_method smbios_write_funcs[] = {
 	{ smbios_write_type4, "processor"},
 #if IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE)
 	{ smbios_write_type9, "system-slot"},
+#endif
+#if IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE_VERBOSE) || \
+	IS_ENABLED(CONFIG_SMBIOS_MEMORY_SYSINFO)
 	{ smbios_write_type16, "memory-array"},
 	{ smbios_write_type17, "memory-device"},
 	{ smbios_write_type19, "memory-array-mapped-address"},
@@ -2021,14 +2279,12 @@ ulong write_smbios_table(ulong addr)
 	ulong tables;
 	int len = 0;
 	int handle = 0;
-	int i;
+	int i, ret;
 
 	ctx.node = ofnode_null();
 	if (CONFIG_IS_ENABLED(SYSINFO)) {
 		uclass_first_device(UCLASS_SYSINFO, &ctx.dev);
 		if (ctx.dev) {
-			int ret;
-
 			parent_node = dev_read_subnode(ctx.dev, "smbios");
 			ret = sysinfo_detect(ctx.dev);
 
@@ -2060,8 +2316,11 @@ ulong write_smbios_table(ulong addr)
 				ctx.node = ofnode_find_subnode(parent_node,
 							       method->subnode_name);
 		}
-		len += method->write((ulong *)&addr, &handle, &ctx);
-		handle++;
+		ret = method->write((ulong *)&addr, &handle, &ctx);
+		len += ret;
+		/* a writer with nothing to write leaves its handle unused */
+		if (ret)
+			handle++;
 	}
 
 	/*

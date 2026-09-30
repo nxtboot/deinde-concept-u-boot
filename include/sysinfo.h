@@ -152,6 +152,11 @@ enum sysinfo_id {
 
 	/* Memory Array (Type 16) */
 	SYSID_SM_MEMARRAY_HANDLE,
+	/* struct memory_array_info, from sysinfo_get_memory_array_info() */
+	SYSID_SM_MEMARRAY_INFO,
+
+	/* Memory Devices (Type 17): an array of struct memory_dev_info */
+	SYSID_SM_MEMDEV_INFO,
 
 	/* For show_board_info() */
 	SYSID_BOARD_MODEL,
