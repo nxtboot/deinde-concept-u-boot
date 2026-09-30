@@ -31,7 +31,6 @@
 #define RST_CPU			BIT(2)
 #define SYS_RST			BIT(1)
 
-#define PCI_BUS_COUNT		0x100
 
 /* Describe an I/O-port block in a generic address structure */
 static void acpi_fill_gas(struct acpi_gen_regaddr *gas, uint port, uint len)

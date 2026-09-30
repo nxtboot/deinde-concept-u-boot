@@ -31,10 +31,32 @@ int turin_mpio_init(void);
  */
 int turin_get_ioapic(int busno, u32 *addrp, uint *idp);
 
+/**
+ * turin_get_iommu() - Find the IOMMU of a root complex
+ *
+ * Only the big IOHCs have one; it covers the small IOHC paired with it too
+ *
+ * @busno: Root bus number
+ * @basep: Returns the MMIO address of its registers
+ * Return: 0 if OK, -ENOENT if there is none, -ENODEV if the bus is not a
+ * root bus
+ */
+int turin_get_iommu(int busno, u32 *basep);
+
+/**
+ * turin_get_paired_bus() - Find the small IOHC paired with a big one
+ *
+ * @busno: Root bus number of the big IOHC
+ * Return: root bus number of the small IOHC, or -ENOENT if there is none
+ */
+int turin_get_paired_bus(int busno);
+
 /* Pins on the FCH's I/O APIC and on each root complex's, and the bus stride */
 #define FCH_IOAPIC_PINS		24
 #define NBIO_IOAPIC_PINS	32
 #define TURIN_BUSES_PER_ROOT	0x20
+#define PCI_BUS_COUNT		0x100
+#define FCH_ROOT_BUS		0	/* the root complex with the FCH */
 
 /**
  * turin_gsi_base() - Get the first GSI of a root complex's I/O APIC

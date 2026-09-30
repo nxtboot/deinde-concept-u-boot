@@ -109,7 +109,6 @@
  * empty slot on the bus, so it cannot be decided by looking for the FCH
  */
 #define IOHC_SB_LOCATION	0x7c
-#define FCH_ROOT_BUS		0
 
 /*
  * Each IOHC has an I/O APIC for its PCIe INTx interrupts, which the ABL
@@ -132,6 +131,17 @@
 #define IOAPIC_ID_BASE		0xf0
 #define IOAPIC_ID_SHIFT		24
 #define IOAPIC_MMIO_SIZE	SZ_64K
+
+/*
+ * The IOMMU is device 0.2 of a big root complex, with the base of its MMIO
+ * registers in its capability at 0x40
+ */
+#define DEVFN(dev, func)	((dev) << 3 | (func))
+#define IOMMU_DEVFN		DEVFN(0, 2)
+#define IOMMU_CAP_BASE_LO	0x44
+#define IOMMU_CAP_BASE_HI	0x48
+#define IOMMU_BASE_EN		BIT(0)
+#define IOMMU_MMIO_SIZE		SZ_512K
 
 /*
  * Each bridge's INTA-D reach the root complex's I/O APIC through one of its
@@ -338,7 +348,6 @@ static void turin_nbif_init(uint fid)
  * registers (openSIL's DefaultPortDevMap). Bit 18 of the register enables
  * configuration-retry (CRS) handling, which openSIL sets for every port
  */
-#define DEVFN(dev, func)	((dev) << 3 | (func))
 
 static const u8 turin_port_devfn[] = {
 	DEVFN(1, 1), DEVFN(1, 2), DEVFN(1, 3), DEVFN(1, 4), DEVFN(1, 5),
@@ -438,9 +447,67 @@ static void turin_ioapic_init(int busno, uint fid, u32 addr)
 }
 
 /* Read a root port's configuration space through the ECAM */
+static void *ecam_addr(int busno, uint devfn, uint offset)
+{
+	return (void *)(ECAM_BASE + ((ulong)busno << 20) + (devfn << 12) +
+			offset);
+}
+
 static u16 port_read16(int busno, uint devfn, uint offset)
 {
-	return readw(ECAM_BASE + ((ulong)busno << 20) + (devfn << 12) + offset);
+	return readw(ecam_addr(busno, devfn, offset));
+}
+
+/* Put a big root complex's IOMMU registers at @addr */
+static void turin_iommu_init(int busno, u32 addr)
+{
+	if (readw(ecam_addr(busno, IOMMU_DEVFN, PCI_VENDOR_ID)) == 0xffff) {
+		log_debug("bus %x: no IOMMU\n", busno);
+		return;
+	}
+	writel(0, ecam_addr(busno, IOMMU_DEVFN, IOMMU_CAP_BASE_HI));
+	writel(addr | IOMMU_BASE_EN,
+	       ecam_addr(busno, IOMMU_DEVFN, IOMMU_CAP_BASE_LO));
+	log_debug("bus %x: IOMMU at %x\n", busno, addr);
+}
+
+int turin_get_iommu(int busno, u32 *basep)
+{
+	uint fid;
+	u32 val;
+	int ret;
+
+	ret = turin_find_root(busno, &fid);
+	if (ret < 0)
+		return ret;
+	if (fid & 1)
+		return -ENOENT;
+	if (readw(ecam_addr(busno, IOMMU_DEVFN, PCI_VENDOR_ID)) == 0xffff)
+		return -ENOENT;
+	val = readl(ecam_addr(busno, IOMMU_DEVFN, IOMMU_CAP_BASE_LO));
+	if (!(val & IOMMU_BASE_EN))
+		return -ENOENT;
+	*basep = val & ~IOMMU_BASE_EN;
+
+	return 0;
+}
+
+int turin_get_paired_bus(int busno)
+{
+	uint fid, other;
+	int bus, ret;
+
+	ret = turin_find_root(busno, &fid);
+	if (ret < 0)
+		return ret;
+	for (bus = 0; bus < PCI_BUS_COUNT; bus += TURIN_BUSES_PER_ROOT) {
+		if (turin_find_root(bus, &other) < 0 || !(other & 1))
+			continue;
+		if (turin_iohc_index(other) == turin_iohc_index(fid))
+			return bus;
+	}
+
+	return -ENOENT;
 }
 
 /*
@@ -643,6 +710,13 @@ static int turin_pci_probe(struct udevice *bus)
 				turin_ioapic_init(busno, fid,
 						  reg->bus_start + reg->size);
 				have_ioapic = true;
+
+				/* a big root complex's IOMMU goes below it */
+				if (!(fid & 1) && reg->size > IOMMU_MMIO_SIZE) {
+					reg->size -= IOMMU_MMIO_SIZE;
+					turin_iommu_init(busno, reg->bus_start +
+							 reg->size);
+				}
 			}
 		}
 	}
