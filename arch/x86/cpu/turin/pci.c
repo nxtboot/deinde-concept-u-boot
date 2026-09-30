@@ -202,6 +202,12 @@
 #define STRAP7_DN_FUNCID_SHIFT	29
 #define STRAP7_DN_FUNCID_MASK	GENMASK(31, 29)
 #define NBIF_PORT_DEV		7
+/*
+ * Which functions' interrupt lines the NBIF passes on: device 0 functions
+ * 0, 1, 4 (USB) and 5, and device 1 functions 0 and 1 (SATA)
+ */
+#define NBIF_INTR_LINE_ENABLE	0x1013a008
+#define NBIF_INTR_LINES		0x333
 #define NBIF_FUNC_USB		4
 #define NBIF_NUM_FUNCS		8
 #define NBIF_NUM_SATA		2
@@ -372,6 +378,8 @@ static void turin_nbif_init(int busno, uint fid)
 	turin_nbif_strap_ports(NBIF_PORT_STRAP7 + n * IOHC_STRIDE, busno);
 	turin_nbif_strap_ports(NBIF_PORT_STRAP7 + NBIF2_OFFSET + n * IOHC_STRIDE,
 			       busno);
+	/* let the functions' interrupts through, which the ABL leaves off */
+	smn_write(NBIF_INTR_LINE_ENABLE + n * IOHC_STRIDE, NBIF_INTR_LINES);
 	for (i = 2; i < NBIF_NUM_FUNCS; i++) {
 		if (i == NBIF_FUNC_USB && has_fch)
 			continue;
