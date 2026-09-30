@@ -55,6 +55,22 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ESPI_DECODE_IO_2E_2F	BIT(0)
 #define ESPI_DECODE_IO_80	BIT(2)
 
+/*
+ * CMOS bank 1 (index port 0x72) bytes shared with the PSP's ABL, as used by
+ * AGESA's MemRestoreLib and coreboot's memctx_cmos.c. The ABL clears the
+ * memory-restore byte when it restores the saved context and expects the
+ * BIOS to sign off a successful boot by setting APOB_SAVED again; without
+ * that it retrains on the next boot
+ */
+#define CMOS_INDEX1		0x72
+#define CMOS_DATA1		0x73
+#define CMOS_APCB_RECOVERY_LO	0x06
+#define CMOS_APCB_RECOVERY_HI	0x07
+#define CMOS_APCB_RECOVERY_DISABLED 0x5555
+#define CMOS_MEM_RESTORE	0x0d
+#define CMOS_MEM_RESTORE_BOOT_FAIL BIT(0)
+#define CMOS_APOB_SAVED		BIT(2)
+
 /* Aspeed BMC SuperIO behind eSPI */
 #define SIO_INDEX		0x2e
 #define SIO_DATA		0x2f
@@ -179,8 +195,45 @@ int arch_cpu_init(void)
 	return 0;
 }
 
+static u8 cmos1_read(u8 index)
+{
+	outb(index, CMOS_INDEX1);
+
+	return inb(CMOS_DATA1);
+}
+
+static void cmos1_write(u8 index, u8 val)
+{
+	outb(index, CMOS_INDEX1);
+	outb(val, CMOS_DATA1);
+}
+
+/**
+ * turin_mem_restore_signoff() - Tell the ABL that the memory context is good
+ *
+ * The saved memory context (the APOB in the flash's RW_MRC_CACHE region) is
+ * only restored on the next boot if the BIOS signs off the current one, by
+ * clearing the boot-failure bit and setting APOB_SAVED, and disables the
+ * APCB recovery mechanism with the 0x5555 signature. U-Boot has no way to
+ * write the flash here, so it does not save a new context itself: the
+ * image must already carry one which matches the DIMMs, and if it does not
+ * the ABL simply trains again, as it did before.
+ */
+static void turin_mem_restore_signoff(void)
+{
+	u8 val;
+
+	cmos1_write(CMOS_APCB_RECOVERY_LO, CMOS_APCB_RECOVERY_DISABLED & 0xff);
+	cmos1_write(CMOS_APCB_RECOVERY_HI, CMOS_APCB_RECOVERY_DISABLED >> 8);
+	val = cmos1_read(CMOS_MEM_RESTORE);
+	val = (val & ~CMOS_MEM_RESTORE_BOOT_FAIL) | CMOS_APOB_SAVED;
+	cmos1_write(CMOS_MEM_RESTORE, val);
+}
+
 int arch_early_init_r(void)
 {
+	turin_mem_restore_signoff();
+
 	return 0;
 }
 
