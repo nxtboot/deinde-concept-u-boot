@@ -11,3 +11,4 @@ F:	doc/usage/cmd/fch.rst
 F:	doc/usage/cmd/mca.rst
 F:	doc/usage/cmd/smn.rst
 F:	test/cmd/turin.c
+F:	tools/turin_trace.py

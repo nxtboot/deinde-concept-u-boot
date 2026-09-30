@@ -21,6 +21,7 @@
 #include <time.h>
 #include <asm/io.h>
 #include <asm/pci.h>
+#include <asm/arch/trace.h>
 #include <asm/arch/cpu.h>
 #include <dm/ofnode.h>
 #include <linux/bitops.h>
@@ -111,6 +112,7 @@ static void smn_write(u32 reg, u32 val)
 {
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_INDEX, reg, PCI_SIZE_32);
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_DATA, val, PCI_SIZE_32);
+	turin_trace_smn(reg, val);
 }
 
 static int mpio_wait_ready(ulong timeout_ms, u32 *respp)
@@ -145,6 +147,7 @@ static int mpio_request(u32 msg, u32 args[MPIO_NUM_ARGS])
 	ret = mpio_wait_ready(1000, &resp);
 	if (ret)
 		return log_msg_ret("rdy", ret);
+	turin_trace_msg('Q', msg, args, MPIO_NUM_ARGS);
 	for (i = 0; i < MPIO_NUM_ARGS; i++)
 		smn_write(MPIO_ARG0 + 4 * i, args[i]);
 	smn_write(MPIO_RESP, (msg & 0xfff) << 8);
@@ -155,6 +158,7 @@ static int mpio_request(u32 msg, u32 args[MPIO_NUM_ARGS])
 		return log_msg_ret("rsp", ret);
 	for (i = 0; i < MPIO_NUM_ARGS; i++)
 		args[i] = smn_read(MPIO_ARG0 + 4 * i);
+	turin_trace_resp('q', resp, args, MPIO_NUM_ARGS);
 	if ((resp & MPIO_RESP_STATUS) != MPIO_RESULT_OK) {
 		log_debug("msg %x: status %x err %x\n", msg, resp, args[0]);
 		return log_msg_ret("sts", -EIO);

@@ -47,6 +47,17 @@ config SYS_CAR_SIZE
 	hex
 	default 0x10000
 
+config TURIN_REG_TRACE
+	bool "Trace the register writes and firmware messages of the bring-up"
+	depends on DEBUG_UART
+	help
+	  Print every SMN, PCI-configuration, MMIO and MSR write, and every
+	  message to the SMU and MPIO firmware, on the debug UART as the
+	  processor is brought up, one line each in the form that openSIL
+	  prints with the same hooks. The two traces can then be compared to
+	  find what one firmware sets up and the other does not. This is for
+	  bring-up only: the output is large and slows the boot.
+
 config PCIE_ECAM_BASE
 	default 0xb0000000
 	help

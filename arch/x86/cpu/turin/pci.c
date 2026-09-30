@@ -28,6 +28,7 @@
 #include <acpi/acpigen.h>
 #include <asm/cpu.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/trace.h>
 #include <asm/io.h>
 #include <asm/msr.h>
 #include <asm/pci.h>
@@ -237,6 +238,8 @@ static u32 df_read(uint reg)
 static void df_write(uint reg, u32 val)
 {
 	writel(val, DF_REG(reg));
+	turin_trace_pci(PCI_BDF(0, PCI_DEV(DF_BDF), reg >> 12), reg & 0xfff,
+			val, 32);
 }
 
 static u32 smn_read(u32 reg)
@@ -253,6 +256,7 @@ static void smn_write(u32 reg, u32 val)
 {
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_INDEX, reg, PCI_SIZE_32);
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_DATA, val, PCI_SIZE_32);
+	turin_trace_smn(reg, val);
 }
 
 /**
@@ -509,8 +513,11 @@ static void turin_iommu_init(int busno, u32 addr)
 		return;
 	}
 	writel(0, ecam_addr(busno, IOMMU_DEVFN, IOMMU_CAP_BASE_HI));
+	turin_trace_pci(PCI_BDF(busno, 0, 2), IOMMU_CAP_BASE_HI, 0, 32);
 	writel(addr | IOMMU_BASE_EN,
 	       ecam_addr(busno, IOMMU_DEVFN, IOMMU_CAP_BASE_LO));
+	turin_trace_pci(PCI_BDF(busno, 0, 2), IOMMU_CAP_BASE_LO,
+			addr | IOMMU_BASE_EN, 32);
 	log_debug("bus %x: IOMMU at %x\n", busno, addr);
 }
 
@@ -797,6 +804,8 @@ static int turin_pci_write_config(struct udevice *bus, pci_dev_t bdf,
 				  uint offset, ulong value,
 				  enum pci_size_t size)
 {
+	turin_trace_pci(bdf, offset, value, 8 << size);
+
 	return pci_x86_write_config(bdf, offset, value, size);
 }
 

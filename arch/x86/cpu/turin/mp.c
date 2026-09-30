@@ -34,6 +34,7 @@
 #include <asm/msr-index.h>
 #include <asm/mtrr.h>
 #include <asm/pci.h>
+#include <asm/arch/trace.h>
 #include <asm/arch/ap.h>
 #include <asm/arch/cpu.h>
 #include <linux/errno.h>
@@ -107,6 +108,7 @@ static void smn_write(u32 reg, u32 val)
 {
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_INDEX, reg, PCI_SIZE_32);
 	pci_x86_write_config(PCI_BDF(0, 0, 0), SMN_DATA, val, PCI_SIZE_32);
+	turin_trace_smn(reg, val);
 }
 
 static void add_msr(struct turin_ap_params *params, uint index, u64 val)
@@ -267,6 +269,7 @@ int turin_start_aps(const void *ucode)
 
 	/* the boot processor's core has all its threads now too */
 	msr_setbits_64(MSR_AMD64_TW_CFG, BIT_ULL(TW_CFG_COMBINE_CR0_CD_BIT));
+	turin_trace_msr(MSR_AMD64_TW_CFG, native_read_msr(MSR_AMD64_TW_CFG));
 
 	memcpy(apic_ids + 1, params->ids, params->count);
 	num_cpus += params->count;

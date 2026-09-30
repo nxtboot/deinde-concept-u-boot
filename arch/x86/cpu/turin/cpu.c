@@ -25,6 +25,7 @@
 #include <asm/lapic.h>
 #include <asm/msr.h>
 #include <asm/mtrr.h>
+#include <asm/arch/trace.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/fch.h>
 #include <asm/post.h>
@@ -174,6 +175,7 @@ static void smn_write32(u32 reg, u32 val)
 {
 	pci_cf8_write32(SMN_INDEX, reg);
 	pci_cf8_write32(SMN_DATA, val);
+	turin_trace_smn(reg, val);
 }
 
 int turin_smu_request(u32 msg, u32 *args)
@@ -182,6 +184,7 @@ int turin_smu_request(u32 msg, u32 *args)
 	u32 resp;
 	int i;
 
+	turin_trace_msg('U', msg, args, SMU_NUM_ARGS);
 	smn_write32(SMU_RESP, 0);
 	for (i = 0; i < SMU_NUM_ARGS; i++)
 		smn_write32(SMU_ARG0 + 4 * i, args[i]);
@@ -196,6 +199,7 @@ int turin_smu_request(u32 msg, u32 *args)
 		return -ETIMEDOUT;
 	for (i = 0; i < SMU_NUM_ARGS; i++)
 		args[i] = smn_read32(SMU_ARG0 + 4 * i);
+	turin_trace_resp('u', resp, args, SMU_NUM_ARGS);
 
 	return resp;
 }
@@ -498,12 +502,14 @@ static int turin_microcode_update(const void **ucodep)
 	if ((u32)old >= hdr->patch_id)
 		return 0;
 	wrmsrl(MSR_PATCH_LOADER, (ulong)hdr);
+	turin_trace_msr(MSR_PATCH_LOADER, (ulong)hdr);
 	rdmsrl(MSR_PATCH_LEVEL, old);
 	if ((u32)old != hdr->patch_id)
 		return log_msg_ret("upd", -EIO);
 
 	/* rewrite P-state 0 so that the TSC is recalculated, as openSIL does */
 	wrmsrl(MSR_PSTATE0, msr_read64(MSR_PSTATE0));
+	turin_trace_msr(MSR_PSTATE0, msr_read64(MSR_PSTATE0));
 	log_debug("microcode updated to %x\n", hdr->patch_id);
 
 	return 0;
@@ -557,6 +563,7 @@ int dram_init(void)
 		 */
 		msr_setbits_64(MSR_K8_SYSCFG, SYSCFG_MTRR_VAR_DRAM_EN |
 			       SYSCFG_TOM2_EN | SYSCFG_TOM2_WB);
+		turin_trace_msr(MSR_K8_SYSCFG, msr_read64(MSR_K8_SYSCFG));
 		ret = mtrr_add_request(MTRR_TYPE_WRBACK, 0, low);
 		if (ret != -ENOSYS) {
 			if (ret)
