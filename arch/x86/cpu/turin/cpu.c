@@ -31,6 +31,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MMIO_CONF_EN		BIT(0)
 #define MMIO_CONF_BUS_RANGE_SHIFT 2
 #define MSR_TOP_MEM		0xc001001a
+#define SYSCFG_MTRR_VAR_DRAM_EN	BIT(20)
+#define SYSCFG_TOM2_EN		BIT(21)
+#define SYSCFG_TOM2_WB		BIT(22)
 #define MSR_TOP_MEM2		0xc001001d
 #define MSR_PS_LIM		0xc0010061
 #define MSR_PSTATE0		0xc0010064
@@ -341,6 +344,14 @@ int dram_init(void)
 	post_code(POST_DRAM);
 
 	if (xpl_phase() == PHASE_BOARD_F) {
+		/*
+		 * Memory from 4GB to TOP_MEM2 is write-back through SYSCFG
+		 * rather than an MTRR; the ABL leaves that off, as it does the
+		 * use of variable MTRRs for DRAM. Without it Linux finds the
+		 * MTRRs cover only low memory and drops the rest
+		 */
+		msr_setbits_64(MSR_K8_SYSCFG, SYSCFG_MTRR_VAR_DRAM_EN |
+			       SYSCFG_TOM2_EN | SYSCFG_TOM2_WB);
 		ret = mtrr_add_request(MTRR_TYPE_WRBACK, 0, low);
 		if (ret != -ENOSYS) {
 			if (ret)
