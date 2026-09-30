@@ -118,6 +118,6 @@ See also
 
 * :doc:`ext2load<ext2load>` for the same command under its ext2 name
 * *ext4ls* for finding out which files are there to read
-* *ext4size* for asking how big a file is without reading it
+* :doc:`ext4size<ext4size>` for asking how big a file is without reading it
 * :doc:`load<load>` for reading a file from any supported filesystem
 * :doc:`fatload<fatload>` for the same operation on a FAT filesystem
