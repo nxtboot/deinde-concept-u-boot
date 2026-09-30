@@ -311,6 +311,24 @@ static void turin_nbif_init(uint fid)
 	smn_write(base, smn_read(base) | BRIDGE_CNTL_HIDE);
 }
 
+/*
+ * The root ports behind each IOHC, in the order of their bridge-control
+ * registers (openSIL's DefaultPortDevMap). Bit 18 of the register enables
+ * configuration-retry (CRS) handling, which openSIL sets for every port
+ */
+#define DEVFN(dev, func)	((dev) << 3 | (func))
+
+static const u8 turin_port_devfn[] = {
+	DEVFN(1, 1), DEVFN(1, 2), DEVFN(1, 3), DEVFN(1, 4), DEVFN(1, 5),
+	DEVFN(1, 6), DEVFN(1, 7), DEVFN(2, 1), DEVFN(2, 2), DEVFN(3, 1),
+	DEVFN(3, 2), DEVFN(3, 3), DEVFN(3, 4), DEVFN(3, 5), DEVFN(3, 6),
+	DEVFN(3, 7), DEVFN(4, 1),
+};
+
+#define IOHC_BRIDGE_CNTL_OFF	0x21004
+#define BRIDGE_CNTL_CRS_EN	BIT(18)
+#define BRIDGE_CNTL_HIDE_BITS	(BIT(2) | BIT(0))
+
 static void turin_hide_bridge(u32 base, int n)
 {
 	u32 reg = base + IOHC_BRIDGE_CNTL(n);
@@ -360,6 +378,77 @@ static void turin_ioapic_init(int busno, uint fid, u32 addr)
 		  addr);
 }
 
+/* Read a root port's configuration space through the ECAM */
+static u16 port_read16(int busno, uint devfn, uint offset)
+{
+	return readw(ECAM_BASE + ((ulong)busno << 20) + (devfn << 12) + offset);
+}
+
+/*
+ * turin_port_in_use() - Check whether a root port has something behind it
+ *
+ * A port is in use if its link is up, or its slot has a card present or
+ * supports hot-plug, which openSIL also keeps visible
+ */
+static bool turin_port_in_use(int busno, uint devfn)
+{
+	uint pos, ttl = 48;
+	u16 flags, val;
+
+	if (port_read16(busno, devfn, PCI_VENDOR_ID) == 0xffff)
+		return false;
+	if (!(port_read16(busno, devfn, PCI_STATUS) & PCI_STATUS_CAP_LIST))
+		return false;
+	pos = port_read16(busno, devfn, PCI_CAPABILITY_LIST) & 0xfc;
+	while (pos && ttl--) {
+		val = port_read16(busno, devfn, pos);
+		if ((val & 0xff) == PCI_CAP_ID_EXP)
+			break;
+		pos = (val >> 8) & 0xfc;
+	}
+	if (!pos || !ttl)
+		return false;
+	if (port_read16(busno, devfn, pos + PCI_EXP_LNKSTA) & PCI_EXP_LNKSTA_DLLLA)
+		return true;
+	flags = port_read16(busno, devfn, pos + PCI_EXP_FLAGS);
+	if (!(flags & PCI_EXP_FLAGS_SLOT))
+		return false;
+	if (readl(ECAM_BASE + ((ulong)busno << 20) + (devfn << 12) + pos +
+		  PCI_EXP_SLTCAP) & PCI_EXP_SLTCAP_HPC)
+		return true;
+
+	return port_read16(busno, devfn, pos + PCI_EXP_SLTSTA) &
+		PCI_EXP_SLTSTA_PDS;
+}
+
+/*
+ * turin_hide_unused_ports() - Hide the root ports with nothing behind them
+ *
+ * openSIL (MpioVisibilityControl) hides every root port after training the
+ * links and then shows those in use. Without this, each unused port is
+ * given a share of the root complex's windows, which is then not available
+ * to devices with large BARs
+ */
+static void turin_hide_unused_ports(int busno, uint fid)
+{
+	u32 base = turin_iohc_base(fid) + IOHC_BRIDGE_CNTL_OFF;
+	int i, hidden = 0;
+
+	for (i = 0; i < ARRAY_SIZE(turin_port_devfn); i++) {
+		u32 reg = base + i * 0x400;
+		u32 ctrl = smn_read(reg) | BRIDGE_CNTL_CRS_EN;
+
+		/* leave hidden ports, e.g. the duplicates, alone */
+		if (!(ctrl & BRIDGE_CNTL_HIDE_BITS) &&
+		    !turin_port_in_use(busno, turin_port_devfn[i])) {
+			ctrl |= BRIDGE_CNTL_HIDE_BITS;
+			hidden++;
+		}
+		smn_write(reg, ctrl);
+	}
+	log_debug("bus %x: hid %d unused root ports\n", busno, hidden);
+}
+
 static void turin_iohc_init(int busno, uint fid)
 {
 	if (busno != FCH_ROOT_BUS) {
@@ -369,6 +458,7 @@ static void turin_iohc_init(int busno, uint fid)
 	}
 	turin_nbif_init(fid);
 	turin_hide_dup_bridges(fid);
+	turin_hide_unused_ports(busno, fid);
 }
 
 int turin_get_ioapic(int busno, u32 *addrp, uint *idp)
