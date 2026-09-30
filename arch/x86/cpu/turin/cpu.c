@@ -10,11 +10,14 @@
 
 #define LOG_CATEGORY LOGC_ARCH
 
+#include <binman.h>
 #include <cpu_func.h>
 #include <init.h>
 #include <log.h>
+#include <mapmem.h>
 #include <spl.h>
 #include <time.h>
+#include <vsprintf.h>
 #include <asm/cpu.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
@@ -326,10 +329,72 @@ static void turin_mem_restore_signoff(void)
 	cmos1_write(CMOS_MEM_RESTORE, val);
 }
 
+/*
+ * AMD microcode patch header, as used by coreboot's update_microcode.c; the
+ * patch-loader MSR takes the address of the header
+ */
+struct amd_ucode_header {
+	u32 date_code;
+	u32 patch_id;
+	u16 mc_patch_data_id;
+	u8 reserved1[6];
+	u32 chipset1_dev_id;
+	u32 chipset2_dev_id;
+	u16 processor_rev_id;
+	u8 chipset1_rev_id;
+	u8 chipset2_rev_id;
+	u8 reserved2[4];
+} __packed;
+
+#define MSR_PATCH_LOADER	0xc0010020
+#define MSR_PATCH_LEVEL		0x8b
+
+/**
+ * turin_microcode_update() - Apply the microcode patch for this processor
+ *
+ * The image carries a patch for each revision of the processor, as a binman
+ * entry named by the processor's equivalent revision ID. The PSP copies the
+ * whole image into DRAM, so the patch is already there.
+ *
+ * Return: 0 if OK, -ve on error
+ */
+static int turin_microcode_update(void)
+{
+	const struct amd_ucode_header *hdr;
+	struct binman_entry entry;
+	u32 eax = cpuid_eax(1);
+	u16 rev_id = (eax & 0xff0000) >> 8 | (eax & 0xff);
+	char name[30];
+	u64 old;
+	int ret;
+
+	snprintf(name, sizeof(name), "amd-ucode-%04x", rev_id);
+	ret = binman_entry_find(name, &entry);
+	if (ret)
+		return log_msg_ret("fnd", ret);
+	hdr = map_sysmem(CONFIG_TEXT_BASE + entry.image_pos, entry.size);
+	if (entry.size < sizeof(*hdr) || hdr->processor_rev_id != rev_id)
+		return log_msg_ret("rev", -EINVAL);
+
+	rdmsrl(MSR_PATCH_LEVEL, old);
+	if ((u32)old >= hdr->patch_id)
+		return 0;
+	wrmsrl(MSR_PATCH_LOADER, (ulong)hdr);
+	rdmsrl(MSR_PATCH_LEVEL, old);
+	if ((u32)old != hdr->patch_id)
+		return log_msg_ret("upd", -EIO);
+	log_debug("microcode updated to %x\n", hdr->patch_id);
+
+	return 0;
+}
+
 int arch_early_init_r(void)
 {
 	int ret;
 
+	ret = turin_microcode_update();
+	if (ret)
+		log_err("Microcode update failed (err=%d)\n", ret);
 	turin_mem_restore_signoff();
 	turin_ecam_init();
 	turin_smu_usb_init();
