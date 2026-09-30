@@ -105,6 +105,28 @@ def test_ext4load_default(ubman):
 
 @pytest.mark.boardspec('sandbox')
 @pytest.mark.buildconfigspec('cmd_ext4')
+def test_ext4load_option(ubman):
+    """Check that ext4load refuses an option, since it has none
+
+    Args:
+        ubman -- U-Boot console
+    """
+    with FsHelper(ubman.config, 'ext4', 2, 'test_ext4load_option') as fsh:
+        make_image(fsh)
+        ubman.run_command(f'host bind 0 {fsh.fs_img}')
+
+        out = ubman.run_command('ext4load -b host 0 1000000 hello.txt')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' in out
+
+        # An option after the interface is a filename, as before
+        out = ubman.run_command('ext4load host 0 1000000 -b')
+        assert '1' == ubman.run_command('echo $?')
+        assert 'Usage:' not in out
+        assert "Failed to load '-b'" in out
+
+@pytest.mark.boardspec('sandbox')
+@pytest.mark.buildconfigspec('cmd_ext4')
 def test_ext4load_missing(ubman):
     """Check that ext4load fails without disturbing filesize and fileaddr
 

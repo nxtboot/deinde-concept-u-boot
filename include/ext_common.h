@@ -256,8 +256,6 @@ struct ext2_data {
 
 extern lbaint_t part_offset;
 
-int do_ext4_load(struct cmd_tbl *cmdtp, int flag, int argc,
-		 char *const argv[]);
 int do_ext4_ls(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_ext4_write(struct cmd_tbl *cmdtp, int flag, int argc,
 		  char *const argv[]);
