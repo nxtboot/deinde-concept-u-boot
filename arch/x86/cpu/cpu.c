@@ -118,6 +118,16 @@ void  flush_cache(unsigned long dummy1, unsigned long dummy2)
 	asm("wbinvd\n");
 }
 
+void flush_dcache_all(void)
+{
+	asm("wbinvd\n");
+}
+
+/* The instruction cache is coherent with writes on x86 */
+void invalidate_icache_all(void)
+{
+}
+
 /* Define these functions to allow ehch-hcd to function */
 void flush_dcache_range(unsigned long start, unsigned long stop)
 {
