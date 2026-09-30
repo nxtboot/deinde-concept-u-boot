@@ -86,7 +86,8 @@ pci_dev_t dm_pci_get_bdf(const struct udevice *dev)
  */
 static int pci_get_abs_range(const struct udevice *bus, u32 range[2])
 {
-	if (!dev_has_ofnode(bus) || device_is_on_pci_bus(bus) ||
+	if (!IS_ENABLED(CONFIG_PCI_ABSOLUTE_BUS_NUMBERS) ||
+	    !dev_has_ofnode(bus) || device_is_on_pci_bus(bus) ||
 	    !dev_read_bool(bus, "u-boot,absolute-bus-numbers"))
 		return -ENOENT;
 	if (dev_read_u32_array(bus, "bus-range", range, 2) ||
@@ -94,6 +95,12 @@ static int pci_get_abs_range(const struct udevice *bus, u32 range[2])
 		return -EINVAL;
 
 	return 0;
+}
+
+/* Check whether a controller's root bus has absolute bus numbers */
+static bool pci_abs_bus(const struct pci_controller *ctlr)
+{
+	return IS_ENABLED(CONFIG_PCI_ABSOLUTE_BUS_NUMBERS) && ctlr->abs_bus;
 }
 
 /**
@@ -741,7 +748,7 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 		dm_pci_read_config8(bus, ea_pos + sizeof(u32) + sizeof(u8),
 				    &reg);
 		sub_bus = reg;
-	} else if (ctlr->abs_bus) {
+	} else if (pci_abs_bus(ctlr)) {
 		/*
 		 * Number the bus within the root bus's range, since the
 		 * hardware only sends those bus numbers to this root bus
@@ -767,7 +774,8 @@ int dm_pci_hose_probe_bus(struct udevice *bus)
 	}
 
 	if (!ea_pos)
-		sub_bus = ctlr->abs_bus ? ctlr->last_busno : pci_get_bus_max();
+		sub_bus = pci_abs_bus(ctlr) ? ctlr->last_busno :
+			pci_get_bus_max();
 
 	pciauto_postscan_setup_bridge(bus, sub_bus);
 
@@ -1239,7 +1247,7 @@ static int pci_get_fw_busno(struct udevice *bus)
 	int seq;
 
 	ctlr = dev_get_uclass_priv(pci_get_controller(bus));
-	if (!ctlr->abs_bus)
+	if (!pci_abs_bus(ctlr))
 		return -ENOENT;
 	dm_pci_read_config8(bus, PCI_SECONDARY_BUS, &sec);
 	if (sec <= ctlr->bus_base || sec > ctlr->bus_limit)
@@ -2054,11 +2062,30 @@ static int pci_uclass_pre_remove(struct udevice *bus)
 	return 0;
 }
 
+/*
+ * A root bus with absolute bus numbers takes its number from the start of its
+ * bus-range, unless an alias gives it one. This happens at bind, not probe,
+ * since the bus reserves its whole range before it is probed
+ */
+static int pci_uclass_post_bind(struct udevice *bus)
+{
+	struct udevice *other;
+	u32 range[2];
+
+	if (dev_seq(bus) == -1 && !pci_get_abs_range(bus, range)) {
+		if (!uclass_find_device_by_seq(UCLASS_PCI, range[0], &other))
+			return log_msg_ret("seq", -EEXIST);
+		bus->seq_ = range[0];
+	}
+
+	return dm_scan_fdt_dev(bus);
+}
+
 UCLASS_DRIVER(pci) = {
 	.id		= UCLASS_PCI,
 	.name		= "pci",
 	.flags		= DM_UC_FLAG_SEQ_ALIAS | DM_UC_FLAG_NO_AUTO_SEQ,
-	.post_bind	= dm_scan_fdt_dev,
+	.post_bind	= pci_uclass_post_bind,
 	.pre_probe	= pci_uclass_pre_probe,
 	.post_probe	= pci_uclass_post_probe,
 	.pre_remove	= pci_uclass_pre_remove,

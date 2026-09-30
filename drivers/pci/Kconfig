@@ -76,6 +76,17 @@ config SPL_PCI_PNP_LARGEST_FIRST
 	  PCI_PNP_LARGEST_FIRST. Disable this to save about 1KB in SPL if it
 	  only needs a few devices set up.
 
+config PCI_ABSOLUTE_BUS_NUMBERS
+	bool "Support root buses with absolute bus numbers"
+	default y if X86 || SANDBOX
+	help
+	  Support the 'u-boot,absolute-bus-numbers' devicetree property, for
+	  hardware with several root buses sharing one configuration space,
+	  each with a fixed range of bus numbers, such as the root complexes
+	  of a server processor. Each such root bus takes its number from the
+	  start of its bus-range and the buses behind its bridges are numbered
+	  within that range. Without this the property is ignored.
+
 config PCI_REGION_MULTI_ENTRY
 	bool "Enable Multiple entries of region type MEMORY in ranges for PCI"
 	help

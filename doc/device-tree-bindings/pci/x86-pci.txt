@@ -21,7 +21,9 @@ Optional properties:
 	space. The buses behind its bridges are numbered within that range and
 	the bridges are programmed with the same numbers. When U-Boot does not
 	configure PCI itself, the buses keep the numbers the firmware gave
-	them. The bus should have a 'pciN' alias. See
+	them. The bus takes its number from the start of the bus-range,
+	unless a 'pciN' alias gives it one. This needs
+	CONFIG_PCI_ABSOLUTE_BUS_NUMBERS. See
 	doc/develop/driver-model/pci-info.rst for details.
 
 For PCI devices the following optional property is available:

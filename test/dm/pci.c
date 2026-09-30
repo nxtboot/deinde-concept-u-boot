@@ -779,6 +779,23 @@ static int dm_test_pci_bus_abs_order(struct unit_test_state *uts)
 }
 DM_TEST(dm_test_pci_bus_abs_order, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
+/*
+ * Test that a root bus with absolute bus numbers takes its number from its
+ * bus-range, before it is probed
+ */
+static int dm_test_pci_bus_abs_seq(struct unit_test_state *uts)
+{
+	struct udevice *bus;
+
+	/* pci4 has no alias; its bus-range starts at 0x10 */
+	ut_assertok(uclass_find_device_by_seq(UCLASS_PCI, 0x10, &bus));
+	ut_asserteq_str("pci@4", bus->name);
+	ut_assert(!device_active(bus));
+
+	return 0;
+}
+DM_TEST(dm_test_pci_bus_abs_seq, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+
 /* Probe pci4 with a different bus-range and restore it afterwards */
 static int probe_with_range(const fdt32_t *range, int len)
 {
