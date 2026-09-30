@@ -25,6 +25,7 @@
 #include <dm.h>
 #include <log.h>
 #include <pci.h>
+#include <asm/cpu.h>
 #include <asm/io.h>
 #include <asm/msr.h>
 #include <asm/pci.h>
@@ -128,6 +129,12 @@
 #define IOAPIC_ID_BASE		0xf0
 #define IOAPIC_ID_SHIFT		24
 #define IOAPIC_MMIO_SIZE	SZ_64K
+
+/*
+ * How much of a window above 4GB to map for U-Boot's own use: it allocates
+ * BARs from the start of the window and needs far less than this
+ */
+#define HIGH_WINDOW_MAP_SIZE	SZ_4G
 
 /*
  * Each big IOHC has an NBIF carrying the FCH-type functions (USB, SATA, the
@@ -451,6 +458,17 @@ static int turin_pci_probe(struct udevice *bus)
 				return log_msg_ret("mmio", -E2BIG);
 			turin_set_mmio_map(mmio_slot, fid, reg);
 			mmio_slot += DF_NUM_CFG_MAPS;
+
+			/* let U-Boot reach the BARs it puts above 4GB */
+			if (reg->phys_start >= SZ_4G) {
+				int ret;
+
+				ret = x86_64_map_mmio(reg->phys_start,
+						      min_t(u64, reg->size,
+							    HIGH_WINDOW_MAP_SIZE));
+				if (ret)
+					return log_msg_ret("map", ret);
+			}
 
 			/*
 			 * put the I/O APIC at the top of the first window,
