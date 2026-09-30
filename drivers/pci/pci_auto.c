@@ -589,19 +589,6 @@ int dm_pciauto_config_device(struct udevice *dev)
 		      PCI_DEV(dm_pci_get_bdf(dev)));
 		break;
 #endif
-#if defined(CONFIG_ARCH_MPC834X)
-	case PCI_CLASS_BRIDGE_OTHER:
-		/*
-		 * The host/PCI bridge 1 seems broken in 8349 - it presents
-		 * itself as 'PCI_CLASS_BRIDGE_OTHER' and appears as an _agent_
-		 * device claiming resources io/mem/irq.. we only allow for
-		 * the PIMMR window to be allocated (BAR0 - 1MB size)
-		 */
-		debug("PCI Autoconfig: Broken bridge found, only minimal config\n");
-		dm_pciauto_setup_device(dev, 0, hose->pci_mem,
-					hose->pci_prefetch, hose->pci_io);
-		break;
-#endif
 
 	default:
 		dm_pciauto_setup_device(dev, pci_mem, pci_prefetch, pci_io);
