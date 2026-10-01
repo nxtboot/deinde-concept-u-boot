@@ -30,17 +30,23 @@ obj-y += opensil.o
 opensil_src := $(abspath $(CONFIG_TURIN_OPENSIL_PATH:"%"=%))
 ifeq ($(wildcard $(opensil_src)/meson.build),)
 # Without the tree, fail unless OPENSIL_ALLOW_MISSING is set, as for CI's
-# world builds, and then build the glue alone
+# world builds, and then build the glue alone, which gives a U-Boot that
+# cannot set up the SoC
 ifeq ($(OPENSIL_ALLOW_MISSING),)
 $(error openSIL tree not found at '$(opensil_src)' \
 	(CONFIG_TURIN_OPENSIL_PATH); set OPENSIL_ALLOW_MISSING=1 to build \
 	without it)
 endif
 $(warning openSIL tree not found at '$(opensil_src)' \
-	(CONFIG_TURIN_OPENSIL_PATH): building without openSIL)
+	(CONFIG_TURIN_OPENSIL_PATH): building without openSIL, so this U-Boot \
+	cannot set up the SoC)
 CFLAGS_opensil.o += -DOPENSIL_MISSING
 else
-CFLAGS_opensil.o += -I$(opensil_src)/Include
+CFLAGS_opensil.o += -I$(opensil_src)/Include -I$(opensil_src)/xUSL \
+	-I$(opensil_src)/xUSL/Include -I$(opensil_src)/xUSL/FCH \
+	-I$(opensil_src)/xUSL/FCH/Common -I$(opensil_src)/xSIM \
+	-I$(opensil_src)/xPRF -I$(obj)/opensil \
+	-I$(srctree)/$(src)/opensil/host
 
 $(obj)/opensil.o: $(obj)/opensil/libAMDopensil64.a
 

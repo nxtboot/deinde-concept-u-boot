@@ -579,15 +579,27 @@ int arch_early_init_r(void)
 		log_err("Microcode update failed (err=%d)\n", ret);
 	/* the APs copy the name string from the boot CPU, so set it first */
 	turin_set_name_string();
+
+	/*
+	 * openSIL starts the APs and sets up the SMU's features, the USB
+	 * controllers and the links itself
+	 */
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL)) {
+		turin_mem_restore_signoff();
+		turin_ecam_init();
+		ret = turin_opensil_init(ucode);
+		if (ret)
+			log_err("openSIL set-up failed (err=%d)\n", ret);
+		ret = turin_find_aps();
+		if (ret)
+			log_err("AP discovery failed (err=%d)\n", ret);
+		return 0;
+	}
+
 	ret = turin_start_aps(ucode);
 	if (ret)
 		log_err("AP start-up failed (err=%d)\n", ret);
 	turin_mem_restore_signoff();
-	if (IS_ENABLED(CONFIG_TURIN_OPENSIL)) {
-		ret = turin_opensil_init();
-		if (ret)
-			log_err("openSIL set-up failed (err=%d)\n", ret);
-	}
 	turin_ecam_init();
 	turin_smu_features_init();
 	turin_smu_usb_init();
@@ -596,6 +608,20 @@ int arch_early_init_r(void)
 		log_err("MPIO link setup failed (err=%d)\n", ret);
 
 	return 0;
+}
+
+/* openSIL's second timepoint follows PCI enumeration, before the tables */
+void board_final_init(void)
+{
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL))
+		turin_opensil_tp2();
+}
+
+/* and its third comes once U-Boot is otherwise done */
+void board_final_cleanup(void)
+{
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL))
+		turin_opensil_tp3();
 }
 
 int dram_init(void)

@@ -94,8 +94,8 @@ config TURIN_OPENSIL_PATH
 	  tree. U-Boot builds it in its own output directory and does not
 	  write to the tree. If there is no tree here, the build fails unless
 	  OPENSIL_ALLOW_MISSING is set in the environment, as for CI's world
-	  builds; it then goes ahead without openSIL, so that U-Boot's own
-	  code does all the set-up.
+	  builds; it then goes ahead without openSIL, giving a U-Boot which
+	  cannot set up the SoC.
 
 config TURIN_OPENSIL_DEBUG
 	bool "Show openSIL's messages"
