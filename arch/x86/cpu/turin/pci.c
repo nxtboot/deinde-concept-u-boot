@@ -24,6 +24,8 @@
 
 #include <dm.h>
 #include <log.h>
+#include <malloc.h>
+#include <mapmem.h>
 #include <pci.h>
 #include <acpi/acpigen.h>
 #include <asm/cpu.h>
@@ -75,6 +77,8 @@
 #define DF_IO_BASE(i)		(0xd00 + (i) * 8)
 #define DF_IO_LIMIT(i)		(0xd04 + (i) * 8)
 #define DF_IO_ADDR_SHIFT	16	/* address bits 24:12 in bits 28:16 */
+#define DF_IO_ADDR_MASK		0x1fff
+#define IO_SPACE_END		0xffff	/* the limit can run past x86 I/O space */
 #define DF_IO_FID_MASK		0xff	/* in the limit register */
 
 #define DF_NUM_MMIO_MAPS	16
@@ -84,6 +88,7 @@
 #define DF_MMIO_EXT(i)		(0xd8c + (i) * 0x10)	/* address 55:48 */
 #define DF_MMIO_ADDR_SHIFT	16
 #define DF_MMIO_CTRL_FID_SHIFT	16
+#define DF_MMIO_FID_MASK	0xff
 
 /*
  * The IOS fabric IDs run from 0x20, alternating between the big IOHCs (even,
@@ -125,6 +130,13 @@
  * (NbioIoapicInitBrh)
  */
 #define IOHC_IOAPIC_BASE_LO	0x2f0
+
+/* An I/O APIC's own registers, through its index and data windows */
+#define IOAPIC_INDEX		0x00
+#define IOAPIC_DATA		0x10
+#define IOAPIC_WINDOW		0x20
+#define IOAPIC_REG_ID		0x00
+#define IOAPIC_ID_REG_SHIFT	24
 #define IOHC_IOAPIC_BASE_HI	0x2f4
 #define IOAPIC_BASE_EN		BIT(0)
 #define IOAPIC_BIG_FEATURES	0x14300000
@@ -677,7 +689,16 @@ int turin_get_ioapic(int busno, u32 *addrp, uint *idp)
 	if (!(val & IOAPIC_BASE_EN))
 		return -ENOENT;
 	*addrp = val & ~IOAPIC_BASE_EN;
-	*idp = turin_ioapic_id(fid);
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL)) {
+		void *ioapic = map_sysmem(*addrp, IOAPIC_WINDOW);
+
+		/* openSIL assigns the IDs, so read back what it chose */
+		writel(IOAPIC_REG_ID, ioapic + IOAPIC_INDEX);
+		*idp = readl(ioapic + IOAPIC_DATA) >> IOAPIC_ID_REG_SHIFT;
+		unmap_sysmem(ioapic);
+	} else {
+		*idp = turin_ioapic_id(fid);
+	}
 
 	return 0;
 }
@@ -724,6 +745,174 @@ static void turin_set_mmio_map(int slot, uint fid,
 		 DF_MAP_RE | DF_MAP_WE);
 }
 
+/*
+ * The IOHC registers in which openSIL places a root complex's non-PCI MMIO,
+ * such as its I/O APIC and IOMMU, with the size of each block, as coreboot's
+ * root_complex.c lists them
+ */
+/* Windows a root bus can have: system memory, I/O and its MMIO maps */
+#define TURIN_MAX_REGIONS	8
+
+static const struct {
+	u16 reg;
+	u32 size;
+} turin_non_pci_mmio[] = {
+	{ 0x2d8, SZ_1M }, { 0x2e0, SZ_1M }, { 0x2e8, SZ_1M },
+	{ 0x2f0, 0x100 }, { 0x2f8, SZ_1M }, { 0x300, SZ_1M },
+	{ 0x308, SZ_4K }, { 0x310, SZ_1M }, { 0x318, SZ_512K },
+	{ 0x338, SZ_1M },
+};
+
+/**
+ * turin_keep_non_pci() - Keep a window clear of the root complex's own MMIO
+ *
+ * openSIL puts the blocks at one end of the root complex's window below 4GB,
+ * so move that end in to leave them out
+ *
+ * @fid: Fabric ID of the root complex
+ * @reg: Window below 4GB, updated
+ */
+static void turin_keep_non_pci(uint fid, struct pci_region *reg)
+{
+	u64 start = reg->phys_start, end = start + reg->size - 1;
+	u64 lowest = U64_MAX, highest = 0;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(turin_non_pci_mmio); i++) {
+		u32 base = turin_iohc_base(fid) + turin_non_pci_mmio[i].reg;
+		u32 size = turin_non_pci_mmio[i].size;
+		u64 addr;
+
+		addr = smn_read(base) | (u64)smn_read(base + 4) << 32;
+		if (!(addr & IOAPIC_BASE_EN))
+			continue;
+		addr &= ~(u64)(size - 1) & GENMASK_ULL(47, 0);
+		if (addr < start || addr > end)
+			continue;
+		lowest = min(lowest, addr);
+		highest = max(highest, addr + size - 1);
+	}
+	if (lowest == U64_MAX)
+		return;
+	log_debug("fabric %x: non-PCI MMIO %llx-%llx\n", fid, lowest, highest);
+	if (highest == end || end - highest < lowest - start) {
+		reg->size = lowest - start;
+	} else {
+		reg->phys_start = highest + 1;
+		reg->bus_start = highest + 1;
+		reg->size = end - highest;
+	}
+}
+
+/**
+ * turin_pci_read_maps() - Take this root bus's windows from the fabric maps
+ *
+ * openSIL shares out the I/O and MMIO among the root complexes itself, so
+ * replace the windows from the devicetree with the ones it programmed
+ *
+ * @hose: Controller for the root bus
+ * @fid: Fabric ID of its root complex
+ * Return: 0 if OK, -E2BIG if there are too many windows
+ */
+static int turin_pci_read_maps(struct pci_controller *hose, uint fid)
+{
+	struct pci_region regs[TURIN_MAX_REGIONS], *new;
+	int count = 0, i;
+
+	/* keep only the system-memory regions from the devicetree */
+	for (i = 0; i < hose->region_count; i++) {
+		if (hose->regions[i].flags & PCI_REGION_SYS_MEMORY)
+			regs[count++] = hose->regions[i];
+	}
+
+	for (i = 0; i < DF_NUM_IO_MAPS; i++) {
+		u32 base = df_read(DF_IO_BASE(i)), limit = df_read(DF_IO_LIMIT(i));
+		ulong start, end;
+
+		if (!(base & DF_MAP_RE) || (limit & DF_IO_FID_MASK) != fid)
+			continue;
+		start = ((base >> DF_IO_ADDR_SHIFT) & DF_IO_ADDR_MASK) << 12;
+		end = ((limit >> DF_IO_ADDR_SHIFT) & DF_IO_ADDR_MASK) << 12 |
+			0xfff;
+		/* the legacy ports below 0x1000 stay with the FCH */
+		start = max(start, (ulong)SZ_4K);
+		end = min(end, (ulong)IO_SPACE_END);
+		if (start > end || count == TURIN_MAX_REGIONS)
+			continue;
+		pci_set_region(&regs[count++], start, start, end - start + 1,
+			       PCI_REGION_IO);
+		log_debug("fabric %x: I/O %lx-%lx\n", fid, start, end);
+	}
+
+	for (i = 0; i < DF_NUM_MMIO_MAPS; i++) {
+		u32 ctrl = df_read(DF_MMIO_CTRL(i)), ext;
+		u64 start, end;
+
+		if (!(ctrl & DF_MAP_RE) ||
+		    ((ctrl >> DF_MMIO_CTRL_FID_SHIFT) & DF_MMIO_FID_MASK) != fid)
+			continue;
+		if (count == TURIN_MAX_REGIONS)
+			return log_msg_ret("reg", -E2BIG);
+		ext = df_read(DF_MMIO_EXT(i));
+		start = (u64)df_read(DF_MMIO_BASE(i)) << DF_MMIO_ADDR_SHIFT |
+			(u64)(ext & 0xff) << 48;
+		end = (u64)df_read(DF_MMIO_LIMIT(i)) << DF_MMIO_ADDR_SHIFT |
+			0xffff | (u64)((ext >> 16) & 0xff) << 48;
+		log_debug("fabric %x: MMIO %llx-%llx\n", fid, start, end);
+		pci_set_region(&regs[count], start, start, end - start + 1,
+			       start >= SZ_4G ?
+			       PCI_REGION_MEM | PCI_REGION_PREFETCH :
+			       PCI_REGION_MEM);
+		if (start < SZ_4G)
+			turin_keep_non_pci(fid, &regs[count]);
+		count++;
+	}
+
+	/* the uclass sized the array for the devicetree's ranges */
+	new = calloc(count, sizeof(regs[0]));
+	if (!new)
+		return log_msg_ret("new", -ENOMEM);
+	memcpy(new, regs, count * sizeof(regs[0]));
+	free(hose->regions);
+	hose->regions = new;
+	hose->region_count = count;
+
+	return 0;
+}
+
+/**
+ * turin_pci_probe_opensil() - Set up a root bus which openSIL has configured
+ *
+ * @bus: Root bus
+ * @fid: Fabric ID of its root complex
+ * Return: 0 if OK, -ve on error
+ */
+static int turin_pci_probe_opensil(struct udevice *bus, uint fid)
+{
+	struct pci_controller *hose = dev_get_uclass_priv(bus);
+	int ret, i;
+
+	ret = turin_pci_read_maps(hose, fid);
+	if (ret)
+		return log_msg_ret("map", ret);
+
+	/* let U-Boot reach the BARs it puts above 4GB */
+	for (i = 0; i < hose->region_count; i++) {
+		struct pci_region *reg = &hose->regions[i];
+
+		if (!(reg->flags & PCI_REGION_SYS_MEMORY) &&
+		    reg->phys_start >= SZ_4G) {
+			ret = x86_64_map_mmio(reg->phys_start,
+					      min_t(u64, reg->size,
+						    HIGH_WINDOW_MAP_SIZE));
+			if (ret)
+				return log_msg_ret("hi", ret);
+		}
+	}
+
+	return 0;
+}
+
 /**
  * turin_pci_probe() - Route this root bus's windows to its root complex
  *
@@ -748,6 +937,8 @@ static int turin_pci_probe(struct udevice *bus)
 		return log_msg_ret("cfg", slot);
 	}
 	log_debug("bus %x: config map %d, fabric %x\n", busno, slot, fid);
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL))
+		return turin_pci_probe_opensil(bus, fid);
 	turin_iohc_init(busno, fid);
 
 	mmio_slot = slot;
