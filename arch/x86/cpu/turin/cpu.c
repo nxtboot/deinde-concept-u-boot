@@ -86,6 +86,7 @@ DECLARE_GLOBAL_DATA_PTR;
 /* LPC bridge at 00:14.3; its SPI/eSPI register block */
 #define LPC_BDF_REG(reg)	((0x14 << 11) | (3 << 8) | (reg))
 #define LPC_SPI_BASE_ADDRESS	0xa0
+#define  LPC_SPI_ENABLES	GENMASK(7, 0)	/* ROM decode and others */
 #define SPI_BASE		0xfec10000
 #define ESPI_BASE		(SPI_BASE + 0x10000)
 #define ESPI_DECODE		0x40
@@ -295,6 +296,8 @@ static void sio_write(u8 reg, u8 val)
  */
 static void turin_console_path_init(void)
 {
+	u32 val;
+
 	/* ECAM, so that PCI config access works */
 	wrmsrl(MSR_MMIO_CONF_BASE, ECAM_BASE | MMIO_CONF_EN |
 	       (__fls(ECAM_BUSES) << MMIO_CONF_BUS_RANGE_SHIFT));
@@ -302,9 +305,14 @@ static void turin_console_path_init(void)
 	/* ACPIMMIO */
 	pm_io_setbits8(0x04, PM_04_ACPIMMIO_DECODE_EN);
 
-	/* LPC controller and the SPI/eSPI register block */
+	/*
+	 * LPC controller and the SPI/eSPI register block. Keep the enables in
+	 * the low bits, since without ROM decode the flash reads as 0xff
+	 */
 	setbits_8(ACPIMMIO_PMIO + PM_LPC_GATING, PM_LPC_ENABLE);
-	pci_cf8_write32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS), SPI_BASE);
+	val = pci_cf8_read32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS));
+	pci_cf8_write32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS),
+			SPI_BASE | (val & LPC_SPI_ENABLES));
 
 	/* eSPI decode for the SuperIO config port and port 80 */
 	setbits_le32(ESPI_BASE + ESPI_DECODE,
