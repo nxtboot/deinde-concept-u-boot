@@ -74,7 +74,9 @@ obj-$(CONFIG_APIC) += lapic.o ioapic.o
 obj-$(CONFIG_$(PHASE_)ACPI_GPE) += acpi_gpe.o
 obj-$(CONFIG_QFW) += qfw_cpu.o
 ifndef CONFIG_SYS_COREBOOT
+ifdef CONFIG_$(PHASE_)PCI
 obj-$(CONFIG_$(PHASE_)X86_32BIT_INIT) += irq.o
+endif
 endif
 ifndef CONFIG_$(PHASE_)X86_64
 obj-$(CONFIG_$(PHASE_)SMP) += mp_init.o
