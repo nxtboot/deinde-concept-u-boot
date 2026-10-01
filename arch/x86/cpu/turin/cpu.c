@@ -539,7 +539,8 @@ static int turin_microcode_update(const void **ucodep)
 	ret = binman_entry_find(name, &entry);
 	if (ret)
 		return log_msg_ret("fnd", ret);
-	hdr = map_sysmem(CONFIG_TEXT_BASE + entry.image_pos, entry.size);
+	hdr = map_sysmem(CONFIG_TURIN_IMAGE_ADDR + entry.image_pos,
+			 entry.size);
 	if (entry.size < sizeof(*hdr) || hdr->processor_rev_id != rev_id)
 		return log_msg_ret("rev", -EINVAL);
 	*ucodep = hdr;
