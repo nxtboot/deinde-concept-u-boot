@@ -43,10 +43,10 @@
 
 /*
  * A released thread starts at the reset vector of the BIOS image, which the
- * PSP copied to CONFIG_TEXT_BASE: that is U-Boot's own reset code, so the
- * routine must be in place first
+ * PSP copied into DRAM: that is SPL's reset code, so the routine must be in
+ * place first
  */
-#define TURIN_AP_RESET_VECTOR	(CONFIG_TEXT_BASE + CONFIG_ROM_SIZE - 0x10)
+#define TURIN_AP_RESET_VECTOR	CONFIG_RESET_VEC_LOC
 #define AP_TIMEOUT_MS		100	/* a launch takes about 20ms */
 #define CPUID_ADDR_SIZE		0x80000008
 #define CPUID_NC_MASK		0xff	/* number of threads, minus one */

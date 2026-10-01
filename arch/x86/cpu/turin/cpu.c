@@ -272,6 +272,11 @@ static void turin_smu_usb_init(void)
 		log_warning("SMU USB init failed: %d\n", ret);
 }
 
+/*
+ * With SPL, SPL sets up the console path and U-Boot proper finds it ready;
+ * see x86_64/cpu.c
+ */
+#if !IS_ENABLED(CONFIG_SPL) || IS_ENABLED(CONFIG_XPL_BUILD)
 static void pm_io_setbits8(u8 reg, u8 bits)
 {
 	outb(reg, PM_INDEX);
@@ -328,6 +333,12 @@ static void turin_console_path_init(void)
 	sio_write(0x30, 0x01);
 	outb(SIO_EXIT_KEY, SIO_INDEX);
 }
+
+void board_debug_uart_init(void)
+{
+	turin_console_path_init();
+}
+#endif
 
 /**
  * turin_fch_acpi_init() - Set up the FCH's legacy decoding and ACPI hardware
@@ -393,11 +404,6 @@ static int turin_irq_routing_init(void)
 	writel(PM_PCI_INT_VW_MODE, pmio + PM_PCI_INT_VW);
 
 	return 0;
-}
-
-void board_debug_uart_init(void)
-{
-	turin_console_path_init();
 }
 
 /**

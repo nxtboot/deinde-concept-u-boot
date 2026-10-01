@@ -41,7 +41,9 @@ obj-$(CONFIG_HAVE_P2SB) += p2sb.o
 ifdef CONFIG_SPL
 ifndef CONFIG_XPL_BUILD
 ifndef CONFIG_SYS_COREBOOT
+ifndef CONFIG_ARCH_AMD_TURIN
 obj-y += cpu_from_spl.o
+endif
 endif
 endif
 endif

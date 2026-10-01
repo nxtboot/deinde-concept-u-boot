@@ -2,6 +2,10 @@
 #
 # Copyright 2026 Simon Glass <sjg@chromium.org>
 
+ifdef CONFIG_XPL_BUILD
+obj-$(CONFIG_$(PHASE_)X86_16BIT_INIT) += car.o
+obj-y += cpu.o
+else
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi.o
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += ivrs.o
 obj-y += ap_start.o
@@ -17,3 +21,4 @@ obj-$(CONFIG_TURIN_REG_TRACE) += trace.o
 obj-$(CONFIG_CMDLINE) += fch.o
 obj-$(CONFIG_CMDLINE) += smn.o
 obj-$(CONFIG_CMDLINE) += mca.o
+endif
