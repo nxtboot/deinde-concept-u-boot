@@ -1149,6 +1149,15 @@ epyc-cb:
   timeout: 30m
   <<: *sjg_lab_slow_dfn
 
+# The same board, booting U-Boot natively as the BIOS image loaded by the
+# PSP, with no coreboot
+epyc:
+  variables:
+    ROLE: epyc
+  resource_group: epyc-board
+  timeout: 30m
+  <<: *sjg_lab_slow_dfn
+
 # Chromebook Pixel 2015 (samus, Broadwell), booting from an EM100 flash
 # emulator
 samus:

@@ -312,6 +312,92 @@ struct __packed acpi_fadt {
 #define IVRS_FORMAT_FIXED	0x01	/* Type 10h & 11h only */
 #define IVRS_FORMAT_MIXED	0x02	/* Type 10h, 11h, & 40h */
 
+/* IVRS IVinfo: the size fields come from the IOMMU's capability register */
+#define IVRS_IVINFO_EFR_SUP	BIT(0)
+#define IVRS_IVINFO_SIZE_MASK	0x007fffe0
+
+/* IVRS (I/O Virtualization Reporting Structure) for AMD IOMMUs */
+struct acpi_ivrs {
+	struct acpi_table_header header;
+	u32 ivinfo;
+	u32 reserved[2];
+};
+
+/* IVHD (I/O Virtualization Hardware Definition) block types */
+#define IVHD_TYPE_LEGACY	0x10
+#define IVHD_TYPE_FULL		0x11
+
+/* IVHD flags */
+#define IVHD_FLAG_PPE_SUP	BIT(7)	/* type 10h only */
+#define IVHD_FLAG_PREF_SUP	BIT(6)	/* type 10h only */
+#define IVHD_FLAG_COHERENT	BIT(5)
+#define IVHD_FLAG_IOTLB_SUP	BIT(4)
+#define IVHD_FLAG_ISOC		BIT(3)
+#define IVHD_FLAG_RES_PASS_PW	BIT(2)
+#define IVHD_FLAG_PASS_PW	BIT(1)
+#define IVHD_FLAG_HT_TUN_EN	BIT(0)
+
+/* IVHD type 10h block */
+struct __packed acpi_ivhd {
+	u8 type;
+	u8 flags;
+	u16 length;
+	u16 device_id;		/* the IOMMU's bus, device and function */
+	u16 cap_offset;		/* of its capability in config space */
+	u64 base;		/* of its MMIO registers */
+	u16 segment;
+	u16 info;		/* MSI number and unit ID */
+	u32 feature;		/* from its extended feature register */
+};
+
+/* IVHD type 11h block, which reports the extended feature registers */
+struct __packed acpi_ivhd_11 {
+	u8 type;
+	u8 flags;
+	u16 length;
+	u16 device_id;
+	u16 cap_offset;
+	u64 base;
+	u16 segment;
+	u16 info;
+	u32 attr;		/* performance counters and MSI number */
+	u64 efr;
+	u64 efr2;
+};
+
+/* IVHD device entries */
+#define IVHD_DEV_START_RANGE	0x03
+#define IVHD_DEV_END_RANGE	0x04
+#define IVHD_DEV_SPECIAL	0x48
+
+/* DTE settings for a device entry */
+#define IVHD_DTE_LINT1_PASS	BIT(7)
+#define IVHD_DTE_LINT0_PASS	BIT(6)
+#define IVHD_DTE_SYS_MGT_NO_TRANS	(1 << 4)
+#define IVHD_DTE_NMI_PASS	BIT(2)
+#define IVHD_DTE_EXT_INT_PASS	BIT(1)
+#define IVHD_DTE_INIT_PASS	BIT(0)
+
+/* 4-byte device entry: select, start of range or end of range */
+struct __packed acpi_ivhd_dev {
+	u8 type;
+	u16 dev_id;
+	u8 setting;
+};
+
+/* 8-byte special-device entry, for an I/O APIC or HPET */
+#define IVHD_SPECIAL_IOAPIC	1
+#define IVHD_SPECIAL_HPET	2
+
+struct __packed acpi_ivhd_special {
+	u8 type;
+	u16 reserved;
+	u8 setting;
+	u8 handle;		/* I/O APIC ID or HPET number */
+	u16 source_id;		/* bus, device and function it appears as */
+	u8 variety;
+};
+
 /* FACS flags */
 #define ACPI_FACS_S4BIOS_F		BIT(0)
 #define ACPI_FACS_64BIT_WAKE_F		BIT(1)

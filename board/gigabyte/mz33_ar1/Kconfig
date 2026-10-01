@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright 2026 Simon Glass <sjg@chromium.org>
+
+if TARGET_MZ33_AR1
+
+config SYS_BOARD
+	default "mz33_ar1"
+
+config SYS_VENDOR
+	default "gigabyte"
+
+config SYS_SOC
+	default "turin"
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+	select ARCH_AMD_TURIN
+	select BOARD_ROMSIZE_KB_1024
+
+# The PSP decompresses the image to this address; it must end on a 64KB
+# boundary, since the reset vector is the last 16 bytes of that segment
+config TEXT_BASE
+	default 0x07150000
+
+config RESET_SEG_START
+	default 0x07240000
+
+config SYS_X86_START16
+	default 0x0724f800
+
+config RESET_VEC_LOC
+	default 0x0724fff0
+
+endif

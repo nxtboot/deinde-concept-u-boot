@@ -60,7 +60,6 @@
 		pci1 = &pci1;
 		pci2 = &pci2;
 		pci3 = &pci3;
-		pci16 = &pci4;
 		pci5 = &pci5;
 		remoteproc0 = &rproc_1;
 		remoteproc1 = &rproc_2;

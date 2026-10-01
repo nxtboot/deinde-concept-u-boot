@@ -15,4 +15,87 @@
 / {
 	model = "Gigabyte MZ33-AR1";
 	compatible = "gigabyte,mz33-ar1", "coreboot,x86-payload";
+
+	/*
+	 * The processor has a root complex per IOHC, each with its own root
+	 * bus and a fixed range of bus numbers; coreboot has set them all up,
+	 * so these just let U-Boot find the devices on buses other than 0,
+	 * with the numbers coreboot gave them
+	 */
+	aliases {
+		/*
+		 * bus 0 comes from coreboot.dtsi, which gives it no bus-range,
+		 * so it would otherwise be numbered after the others
+		 */
+		pci0 = "/pci";
+	};
+
+	pci20: pci@20 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0x20 0x3f>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pci40: pci@40 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0x40 0x5f>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pci60: pci@60 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0x60 0x7f>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pci80: pci@80 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0x80 0x9f>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pcia0: pci@a0 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0xa0 0xbf>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pcic0: pci@c0 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0xc0 0xdf>;
+		u-boot,absolute-bus-numbers;
+	};
+
+	pcie0: pci@e0 {
+		compatible = "pci-x86";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		bus-range = <0xe0 0xff>;
+		u-boot,absolute-bus-numbers;
+	};
+};
+
+/* Root bus 0, from coreboot.dtsi */
+&{/pci} {
+	bus-range = <0x00 0x1f>;
+	u-boot,absolute-bus-numbers;
 };

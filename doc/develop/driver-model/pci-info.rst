@@ -125,15 +125,11 @@ Some hardware instead has several root buses sharing one configuration space,
 each with a fixed range of bus numbers, such as the root complexes of a
 server processor. The hardware only sends a root bus the numbers in its
 range, so the buses behind its bridges must be numbered within that range
-and the bridges must be programmed with those same numbers. For this, add
-the 'u-boot,absolute-bus-numbers' property to each such root bus, give the
-range with the standard 'bus-range' property and give the bus an alias,
-normally matching the start of the range::
-
-	aliases {
-		pci0 = &pci0;
-		pci64 = &pci2;
-	};
+and the bridges must be programmed with those same numbers. For this, enable
+CONFIG_PCI_ABSOLUTE_BUS_NUMBERS (the default on x86 and sandbox), add
+the 'u-boot,absolute-bus-numbers' property to each such root bus and give the
+range with the standard 'bus-range' property. The bus takes its own number
+from the start of the range::
 
 	pci2: pci@40 {
 		compatible = "amd,turin-pci";
@@ -142,10 +138,12 @@ normally matching the start of the range::
 		...
 	};
 
-The first bridge below pci2 is then bus 0x41, both in U-Boot and on the wire.
-Since the bus has an alias, U-Boot reserves its whole range before it is
-probed, so buses under other controllers are numbered above it, whatever the
-order in which they are probed. If the range runs out, probing the root bus
+The bus is then bus 0x40 and the first bridge below it bus 0x41, both in
+U-Boot and on the wire. An alias, such as 'pci64 = &pci2', can give the bus a
+different number, although there is rarely a reason to. Since the bus's number
+is known when it is bound, U-Boot reserves its whole range before it is probed,
+so buses under other controllers are numbered above it, whatever the order in
+which they are probed. If the range runs out, probing the root bus
 fails with -ENOSPC. The config-space driver receives U-Boot's bus numbers
 either way and does its own translation, if the hardware needs one.
 

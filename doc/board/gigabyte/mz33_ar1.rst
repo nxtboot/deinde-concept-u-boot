@@ -103,10 +103,109 @@ of the APOB at that offset (0xf30000 in the 32MB image); the raw APOB can
 be read from DRAM at 0x7010000 with 'md'. With both in place the prompt
 appears about a minute after power-on instead of five.
 
+Running U-Boot natively
+-----------------------
+
+U-Boot can also replace coreboot altogether, as the 'BIOS reset image' the
+PSP loads: build gigabyte_mz33_ar1_defconfig, which produces
+u-boot-mz33.bin, a 1MB image laid out for its DRAM address. On this
+platform the PSP's ABL trains the memory and sets up the memory map before
+any x86 code runs, then decompresses the BIOS image into DRAM and starts
+the boot CPU in 16-bit real mode at the reset vector in the image's last
+16 bytes, so U-Boot runs from DRAM from the start and needs no SPL. Its
+early code only opens the path to the BMC's SuperIO UART, takes the TSC
+rate from the P-state MSRs and the memory size from the TOP_MEM MSRs, and
+a prompt appears about five minutes after power-on, most of it memory
+training, or about a minute when the ABL can restore the saved context (see
+above).
+
+U-Boot then does the rest of what openSIL and coreboot would:
+
+* loads the CPU microcode patch, which binman places in the image from the
+  cpu_microcode_<rev>.bin files that the Dasharo image carries
+* sets up the eight PCIe root complexes, trains the PCIe and SATA links
+  through the MPIO firmware, enables each root complex's I/O APIC and
+  routes its bridges' legacy interrupts to it, and lets the USB and SATA
+  controllers' interrupts out of the NBIF
+* programs the FCH's interrupt routing and its ACPI hardware, which the ABL
+  only sets up on some boots
+* releases the other CPU threads through the SMU and gives each the boot
+  CPU's microcode, memory map and MTRRs
+* writes ACPI tables (FADT, MADT, MCFG, HPET, IVRS for the IOMMUs, a DSDT
+  describing the root complexes and the serial port, and an SSDT with the
+  CPUs and the bridges' interrupt routing)
+
+This is enough to boot Ubuntu 24.04 from the NVMe drive, using a BLS entry
+on its root filesystem, with all 32 CPUs, networking, USB and a login on
+the serial port. For bring-up there are 'smn' (System Management Network
+access), 'mca' (machine-check banks), 'fch' (the FCH's interrupt routing
+and power-management registers), 'ioapic' and 'pci intr'.
+
+The image goes into the PSP directory in place of coreboot's bootblock,
+using tools from the Dasharo coreboot build (build/util/cbfstool/amdcompress
+and build/util/amdfwtool/amdfwtool) and the same amdfwtool arguments that
+build uses (get them with 'make -n -B V=1 build/amdfw.rom'), changing only
+the image, its destination and its size::
+
+   amdcompress --infile u-boot-mz33.bin --outfile u-boot.img --compress \
+      --maxsize 0x100000
+   amdfwtool ...other arguments as in the coreboot build... \
+      --bios-bin u-boot.img --bios-bin-dest 0x7150000 \
+      --bios-uncomp-size 0x100000 --output amdfw.rom
+
+Then replace the PSP directory in a flash image built for the board, at
+the position the coreboot build put it, removing the coreboot stages and
+payload which are no longer used (and make room for the larger image)::
+
+   cbfstool coreboot.rom remove -n apu/amdfw
+   cbfstool coreboot.rom remove -n fallback/payload
+   cbfstool coreboot.rom remove -n fallback/ramstage
+   cbfstool coreboot.rom remove -n fallback/romstage
+   cbfstool coreboot.rom add -f amdfw.rom -n apu/amdfw -t amdfw -b 0x17800
+
+The result is flashed as above. Note that the destination plus the size
+must end on a 64KB boundary and the reset vector must be the last 16 bytes
+of the image, which is what the defconfig's CONFIG_TEXT_BASE,
+CONFIG_RESET_SEG_START, CONFIG_SYS_X86_START16 and CONFIG_RESET_VEC_LOC
+arrange.
+
+Comparing with openSIL
+----------------------
+
+When something works under coreboot (openSIL) but not natively, the most
+direct way to find the difference is to trace the register writes of both.
+With CONFIG_TURIN_REG_TRACE, U-Boot prints a line on the debug UART for
+every SMN, PCI-configuration, MMIO and MSR write and every message to the
+SMU and MPIO firmware, for example::
+
+   T S 0 13b10044 000001e0
+   T P32 00:18.4 08c 00000029
+   T Q 0 00000026 1a640084 ffffffff 00400009 00000000 00000000 00000000
+
+openSIL prints the same lines with a trace added to its few access
+primitives: xUSLSmnWrite() and xUSLSmnWrite8() in SmnAccess.c, the
+xUSLPciWrite*() functions in PciOps.c (skipping the SMN index and data
+registers, which the SMN trace covers), the xUSLMemWrite*() functions in
+Mmio.h, xUslWrMsr() in CpuLib.h, MpioServiceRequestCommon() and
+SmuServiceRequestBrh(), using XUSL_TRACEPOINT() at SIL_TRACE_WARNING level
+so that coreboot's normal log level shows them. Then::
+
+   tools/turin_trace.py parse coreboot.log coreboot.trace
+   tools/turin_trace.py parse u-boot.log u-boot.trace
+   tools/turin_trace.py compare coreboot.trace u-boot.trace names
+
+lists the registers each firmware writes and the other does not, and those
+whose final values differ, with names from openSIL's headers.
+
 Known limitations
 -----------------
 
-Only the PCI devices on bus 0 are enumerated at present. The PCIe root ports
-appear as extra functions of the bus 0 bridges and are not scanned, so
-devices behind them (NVMe, the USB controllers) are not yet available to
-U-Boot.
+The coreboot build writes a TPM2 table although no TPM is fitted (its log
+reports 'No TPM device found' on every boot), so the native build has none;
+if a TPM module is added to the header, enable CONFIG_TPM_V2 and the table
+will be written.
+
+The SMBIOS memory devices come from the ABL's APOB, which holds the SPD of
+each module it found, so they are only as complete as the SPDs: the module
+date and any manufacturer not in the decoder's short list appear as a JEDEC
+id.

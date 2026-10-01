@@ -65,6 +65,7 @@ obj-$(CONFIG_SYS_COREBOOT) += coreboot/
 obj-$(CONFIG_SYS_SLIMBOOTLOADER) += slimbootloader/
 obj-$(CONFIG_EFI_CLIENT) += efi/
 obj-$(CONFIG_ARCH_QEMU_X86) += qemu/
+obj-$(CONFIG_ARCH_AMD_TURIN) += turin/
 obj-$(CONFIG_NORTHBRIDGE_INTEL_IVYBRIDGE) += ivybridge/
 obj-$(CONFIG_INTEL_QUARK) += quark/
 obj-$(CONFIG_INTEL_QUEENSBAY) += queensbay/

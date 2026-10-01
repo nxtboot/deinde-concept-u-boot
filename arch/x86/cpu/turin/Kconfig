@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright 2026 Simon Glass <sjg@chromium.org>
+
+config ARCH_AMD_TURIN
+	bool
+	select X86_RESET_VECTOR
+	select X86_TSC_TIMER
+	select SYS_NS16550
+	select SYS_NS16550_PORT_MAPPED
+	select DEBUG_UART_BOARD_INIT if DEBUG_UART
+	select ARCH_EARLY_INIT_R
+	select PHYS_64BIT
+	select SYS_PCI_64BIT
+	select DDR5_SPD
+	imply SYSINFO
+	imply SYSINFO_SMBIOS
+	imply SMBIOS_MEMORY_SYSINFO
+	imply PCI_INIT_R
+	imply AHCI_PCI
+	imply SCSI
+	imply SCSI_AHCI
+	imply CMD_SCSI
+	imply NVME_PCI
+	imply CMD_NVME
+	imply USB
+	imply USB_XHCI_HCD
+	imply USB_XHCI_PCI
+	imply USB_STORAGE
+	imply CMD_USB
+	imply BNXT_ETH
+	imply GENERATE_MP_TABLE
+	imply GENERATE_ACPI_TABLE
+	help
+	  AMD EPYC 9005 (Turin) SoC. The PSP trains the memory and releases
+	  the x86 cores from a reset vector in DRAM, at the top of the 'BIOS
+	  reset image' it has decompressed there from the flash, so U-Boot
+	  runs from DRAM from its first instruction and needs no SPL.
+
+if ARCH_AMD_TURIN
+
+config SYS_CAR_ADDR
+	hex
+	default 0x07000000
+	help
+	  There is no cache-as-RAM on this SoC since DRAM is up before the
+	  x86 cores start; this is simply the early stack region, below the
+	  APOB which the PSP leaves at 0x7010000.
+
+config SYS_CAR_SIZE
+	hex
+	default 0x10000
+
+config TURIN_REG_TRACE
+	bool "Trace the register writes and firmware messages of the bring-up"
+	depends on DEBUG_UART
+	help
+	  Print every SMN, PCI-configuration, MMIO and MSR write, and every
+	  message to the SMU and MPIO firmware, on the debug UART as the
+	  processor is brought up, one line each in the form that openSIL
+	  prints with the same hooks. The two traces can then be compared to
+	  find what one firmware sets up and the other does not. This is for
+	  bring-up only: the output is large and slows the boot.
+
+config PCIE_ECAM_BASE
+	default 0xb0000000
+	help
+	  The ABL puts the ECAM near the top of the physical address space;
+	  U-Boot moves it here, just above the top of low memory, where
+	  coreboot also puts it.
+
+endif

@@ -103,6 +103,13 @@ config ARCH_QEMU_X86
 	imply USB_EHCI_HCD
 	imply VIDEO_VESA
 
+config VENDOR_GIGABYTE
+	bool "Gigabyte"
+	help
+	  Gigabyte server boards on which U-Boot runs natively as the BIOS
+	  image loaded by the platform's boot processor, such as the MZ33-AR1
+	  with an AMD EPYC Turin.
+
 config VENDOR_GOOGLE
 	bool "Google"
 
@@ -132,6 +139,7 @@ source "board/advantech/Kconfig"
 source "board/congatec/Kconfig"
 source "board/coreboot/Kconfig"
 source "board/dfi/Kconfig"
+source "board/gigabyte/Kconfig"
 source "board/google/Kconfig"
 source "board/intel/Kconfig"
 
@@ -149,6 +157,7 @@ source "arch/x86/cpu/quark/Kconfig"
 source "arch/x86/cpu/queensbay/Kconfig"
 source "arch/x86/cpu/slimbootloader/Kconfig"
 source "arch/x86/cpu/tangier/Kconfig"
+source "arch/x86/cpu/turin/Kconfig"
 
 # architecture-specific options below
 

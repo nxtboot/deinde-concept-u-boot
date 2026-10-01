@@ -1,0 +1,266 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ *
+ * Gigabyte MZ33-AR1 (AMD EPYC Turin) with U-Boot as the PSP's BIOS image
+ */
+
+/dts-v1/;
+
+/include/ "skeleton.dtsi"
+/include/ "serial.dtsi"
+/include/ "reset.dtsi"
+#include "tsc_timer.dtsi"
+
+/ {
+	/*
+	 * Two address cells, so that the root buses' ranges can hold the
+	 * windows above 4GB
+	 */
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "Gigabyte MZ33-AR1";
+	compatible = "gigabyte,mz33-ar1";
+
+	memory {
+		reg = <0 0 0 0>;
+	};
+
+	serial {
+		reg = <0 0x3f8 0 8>;
+	};
+
+	/* the BMC's IPMI interface, on the LPC bus, for the ACPI SPMI table */
+	ipmi@ca2 {
+		compatible = "ipmi-kcs";
+		reg = <0 0xca2 0 2>;
+	};
+
+	/* the board's identity for SMBIOS; the memory comes from the APOB */
+	sysinfo {
+		compatible = "u-boot,sysinfo-smbios";
+
+		smbios {
+			system {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+				product = "MZ33-AR1";
+				family = "EPYC 9005";
+			};
+
+			baseboard {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+				product = "MZ33-AR1";
+			};
+
+			chassis {
+				manufacturer = "Gigabyte Technology Co., Ltd.";
+			};
+		};
+	};
+
+	chosen {
+		stdout-path = "/serial";
+	};
+
+	/*
+	 * One root bus per root complex. Its bus-range gives its own bus
+	 * number and those of the buses behind its bridges, which the fabric's
+	 * config maps fix at 0x20 apart and which U-Boot uses as they are
+	 * (u-boot,absolute-bus-numbers); the ranges are the I/O and MMIO
+	 * windows the fabric routes to it, which the host driver
+	 * programs. The MMIO hole is the space between the top of low memory
+	 * and the compatibility area at 0xfec00000, less the ECAM at
+	 * 0xb0000000-0xbfffffff; bus 0 gets the top of it, the rest an equal
+	 * share, as openSIL's resource manager does. Each also has a 64-bit
+	 * prefetchable window above 4GB, at the addresses openSIL uses
+	 */
+	pci0: pci@0 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x00 0x1f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x1000 0 0x1000 0 0x1000>,
+			 <0x02000000 0 0xf1000000 0 0xf1000000 0 0x0dc00000>,
+			 <0x43000000 0x207e 0x80000000 0x207e 0x80000000 0x7df 0xa0000000>;
+	};
+
+	pci1: pci@20 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x20 0x3f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x2000 0 0x2000 0 0x1000>,
+			 <0x02000000 0 0xce000000 0 0xce000000 0 0x07000000>,
+			 <0x43000000 0x285e 0x20000000 0x285e 0x20000000 0x7df 0xa0000000>;
+	};
+
+	pci2: pci@40 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x40 0x5f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x3000 0 0x3000 0 0x1000>,
+			 <0x02000000 0 0xc7000000 0 0xc7000000 0 0x07000000>,
+			 <0x43000000 0x303d 0xc0000000 0x303d 0xc0000000 0x7df 0xa0000000>;
+	};
+
+	pci3: pci@60 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x60 0x7f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x4000 0 0x4000 0 0x1000>,
+			 <0x02000000 0 0xc0000000 0 0xc0000000 0 0x07000000>,
+			 <0x43000000 0x381d 0x60000000 0x381d 0x60000000 0x7df 0xa0000000>;
+	};
+
+	pci4: pci@80 {
+		compatible = "amd,turin-pci";
+		bus-range = <0x80 0x9f>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x5000 0 0x5000 0 0x1000>,
+			 <0x02000000 0 0xd5000000 0 0xd5000000 0 0x07000000>,
+			 <0x43000000 0x189e 0xe0000000 0x189e 0xe0000000 0x7df 0xa0000000>;
+	};
+
+	pci5: pci@a0 {
+		compatible = "amd,turin-pci";
+		bus-range = <0xa0 0xbf>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x6000 0 0x6000 0 0x1000>,
+			 <0x02000000 0 0xdc000000 0 0xdc000000 0 0x07000000>,
+			 <0x43000000 0x10bf 0x40000000 0x10bf 0x40000000 0x7df 0xa0000000>;
+	};
+
+	pci6: pci@c0 {
+		compatible = "amd,turin-pci";
+		bus-range = <0xc0 0xdf>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x7000 0 0x7000 0 0x1000>,
+			 <0x02000000 0 0xe3000000 0 0xe3000000 0 0x07000000>,
+			 <0x43000000 0x8df 0xa0000000 0x8df 0xa0000000 0x7df 0xa0000000>;
+	};
+
+	pci7: pci@e0 {
+		compatible = "amd,turin-pci";
+		bus-range = <0xe0 0xff>;
+		u-boot,absolute-bus-numbers;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		ranges = <0x01000000 0 0x8000 0 0x8000 0 0x1000>,
+			 <0x02000000 0 0xea000000 0 0xea000000 0 0x07000000>,
+			 <0x43000000 0x100 0x00000000 0x100 0x00000000 0x7df 0xa0000000>;
+	};
+
+	/*
+	 * The FCH's interrupt routing, written to its index/data registers at
+	 * 0xc00/0xc01. Each entry is <index pic-irq apic-irq>: the IRQ each
+	 * source uses in PIC mode and in I/O APIC mode (the index with bit 7
+	 * set). This follows the Dasharo coreboot mainboard. Misc and Misc0 are
+	 * settings rather than IRQs: the ABL leaves Misc0 at 0xe7, which keeps
+	 * the timer and every other ISA interrupt from reaching the 8259 and the
+	 * I/O APIC
+	 */
+	fch {
+		amd,irq-routing =
+			<0x00 0x0a 0x10>,	/* INTA# */
+			<0x01 0x0b 0x11>,	/* INTB# */
+			<0x02 0x0b 0x12>,	/* INTC# */
+			<0x03 0x0a 0x13>,	/* INTD# */
+			<0x04 0x0a 0x14>,	/* INTE# */
+			<0x05 0x0b 0x15>,	/* INTF# */
+			<0x06 0x0b 0x16>,	/* INTG# */
+			<0x07 0x0a 0x17>,	/* INTH# */
+			<0x08 0xfa 0x00>,	/* Misc */
+			<0x09 0x91 0x00>,	/* Misc0 */
+			<0x0a 0x00 0x00>,	/* HPET_L */
+			<0x0b 0x00 0x00>,	/* HPET_H */
+			<0x10 0x09 0x09>,	/* SCI */
+			<0x62 0x07 0x07>,	/* GPIO */
+			<0x70 0x0a 0x0a>,	/* I2C0 */
+			<0x71 0x0b 0x0b>,	/* I2C1 */
+			<0x72 0x0e 0x0c>,	/* I2C2 */
+			<0x73 0x0f 0x0d>,	/* I2C3 */
+			<0x74 0x04 0x03>,	/* UART0 */
+			<0x75 0x03 0x0e>,	/* UART1 */
+			<0x76 0x05 0x16>,	/* I2C4 */
+			<0x77 0x06 0x17>,	/* I2C5 */
+			<0x78 0x04 0x05>,	/* UART2 */
+			<0x79 0x03 0x0f>;	/* UART3 */
+	};
+
+	/*
+	 * The board's PCIe and SATA links, for the MPIO firmware to train. Each
+	 * is <first-lane lane-count flags devfn>, numbering the lanes as the
+	 * MPIO numbers its PHY lanes; flags bit 0 means the lanes are reversed
+	 * and bits 7:4 give the type (0 PCIe, 1 SATA); devfn is the root port
+	 * on its root bus. This follows the Dasharo coreboot devicetree, with
+	 * the lanes as openSIL translates them
+	 */
+	mpio {
+		amd,links =
+			<  0 4 0x00 0x09>,	/* PCIe 01.1 */
+			<  4 4 0x00 0x0a>,	/* PCIe 01.2 */
+			<  8 4 0x00 0x0b>,	/* PCIe 01.3 */
+			< 12 4 0x00 0x0c>,	/* PCIe 01.4 */
+			< 16 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 20 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 24 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 28 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 32 4 0x00 0x09>,	/* PCIe 01.1 */
+			< 36 4 0x00 0x0a>,	/* PCIe 01.2 */
+			< 40 4 0x00 0x0b>,	/* PCIe 01.3 */
+			< 44 4 0x00 0x0c>,	/* PCIe 01.4 */
+			< 48 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 52 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 56 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 60 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 64 4 0x01 0x09>,	/* PCIe 01.1 */
+			< 68 4 0x01 0x0a>,	/* PCIe 01.2 */
+			< 72 4 0x01 0x0b>,	/* PCIe 01.3 */
+			< 76 4 0x01 0x0c>,	/* PCIe 01.4 */
+			< 80 8 0x10 0x00>,	/* SATA */
+			< 88 8 0x10 0x00>,	/* SATA */
+			< 96 4 0x01 0x09>,	/* PCIe 01.1 */
+			<100 4 0x01 0x0a>,	/* PCIe 01.2 */
+			<104 4 0x01 0x0b>,	/* PCIe 01.3 */
+			<108 4 0x01 0x0c>,	/* PCIe 01.4 */
+			<112 4 0x00 0x09>,	/* PCIe 01.1 */
+			<120 4 0x00 0x0b>,	/* PCIe 01.3 */
+			<124 4 0x00 0x0c>,	/* PCIe 01.4 */
+			<128 4 0x00 0x19>,	/* PCIe 03.1 */
+			<135 1 0x00 0x1c>;	/* PCIe 03.4 */
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		bootph-all;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "amd,turin-cpu";
+			bootph-all;
+			reg = <0>;
+			intel,apic-id = <0>;
+		};
+	};
+};
