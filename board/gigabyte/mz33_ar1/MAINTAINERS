@@ -7,6 +7,7 @@ F:	arch/x86/dts/gigabyte_mz33_ar1.dts
 F:	arch/x86/include/asm/arch-turin/
 F:	board/gigabyte/
 F:	configs/gigabyte_mz33_ar1_defconfig
+F:	configs/gigabyte_mz33_ar1_opensil_defconfig
 F:	doc/usage/cmd/fch.rst
 F:	doc/usage/cmd/mca.rst
 F:	doc/usage/cmd/smn.rst
