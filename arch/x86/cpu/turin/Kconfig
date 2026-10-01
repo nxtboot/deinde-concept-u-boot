@@ -74,6 +74,37 @@ config TURIN_REG_TRACE
 	  find what one firmware sets up and the other does not. This is for
 	  bring-up only: the output is large and slows the boot.
 
+config TURIN_OPENSIL
+	bool "Build and link AMD's openSIL library"
+	depends on X86_64
+	help
+	  Build openSIL, AMD's silicon-initialisation library, from the tree
+	  given by TURIN_OPENSIL_PATH with U-Boot's own compiler, and link it
+	  into U-Boot. This needs meson, ninja, nasm and python3 on the build
+	  machine. U-Boot still sets up the SoC with its own code; for now
+	  this only sets up openSIL's debug output and reports the memory it
+	  needs, so that the library can be tried out.
+
+config TURIN_OPENSIL_PATH
+	string "Path to the openSIL source tree"
+	depends on TURIN_OPENSIL
+	help
+	  The turin_poc branch of https://github.com/openSIL/openSIL, such as
+	  src/vendorcode/amd/opensil/turin_poc/opensil in Dasharo's coreboot
+	  tree. U-Boot builds it in its own output directory and does not
+	  write to the tree. If there is no tree here, the build fails unless
+	  OPENSIL_ALLOW_MISSING is set in the environment, as for CI's world
+	  builds; it then goes ahead without openSIL, so that U-Boot's own
+	  code does all the set-up.
+
+config TURIN_OPENSIL_DEBUG
+	bool "Show openSIL's messages"
+	depends on TURIN_OPENSIL
+	help
+	  Build openSIL with its trace points enabled, sending its errors and
+	  warnings to U-Boot's log as such and the rest at debug levels. This
+	  makes the library larger.
+
 config PCIE_ECAM_BASE
 	default 0xb0000000
 	help

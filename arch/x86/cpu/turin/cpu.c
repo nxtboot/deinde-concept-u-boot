@@ -29,6 +29,7 @@
 #include <asm/arch/trace.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/fch.h>
+#include <asm/arch/opensil.h>
 #include <asm/post.h>
 #include <linux/sizes.h>
 
@@ -582,6 +583,11 @@ int arch_early_init_r(void)
 	if (ret)
 		log_err("AP start-up failed (err=%d)\n", ret);
 	turin_mem_restore_signoff();
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL)) {
+		ret = turin_opensil_init();
+		if (ret)
+			log_err("openSIL set-up failed (err=%d)\n", ret);
+	}
 	turin_ecam_init();
 	turin_smu_features_init();
 	turin_smu_usb_init();
