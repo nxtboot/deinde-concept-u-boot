@@ -21,6 +21,7 @@ import tempfile
 import unittest
 import unittest.mock
 import urllib.error
+import zlib
 
 from binman import bintool
 from binman import cbfs_util
@@ -33,6 +34,7 @@ from binman import fmap_util
 from binman import state
 from dtoc import fdt
 from dtoc import fdt_util
+from binman.etype import amd_fw
 from binman.etype import fdtmap
 from binman.etype import image_header
 from binman.image import Image
@@ -2924,6 +2926,227 @@ class TestFunctional(unittest.TestCase):
             self._DoTestFile('cbfs/coreboot_rom_no_addr.dts')
         self.assertIn("Missing 'cbfs-load-addr' and no ELF payload to derive "
                       'it from', str(e.exception))
+
+    def _ReadAmdDir(self, data, pos):
+        """Read a PSP or BIOS directory written by an amd-fw entry
+
+        This checks the directory's checksum too.
+
+        Args:
+            data (bytes): Image, starting at the start of the flash
+            pos (int): Offset of the directory in the image
+
+        Returns:
+            tuple:
+                bytes: Cookie
+                int: Value of the info field
+                list of tuple: Entries, each with the fields of a PSP entry
+                    (type, subprog, flags, size, addr, mode) or a BIOS entry
+                    (type, region_type, flags, flags2, size, addr, mode,
+                    dest)
+        """
+        cookie, csum, count, info = struct.unpack_from('<4sIII', data, pos)
+        bios = cookie in (b'$BHD', b'$BL2')
+        esize = 24 if bios else 16
+        end = pos + 16 + count * esize
+        self.assertEqual(amd_fw.fletcher32(data[pos + 8:end]), csum)
+        entries = []
+        for epos in range(pos + 16, end, esize):
+            if bios:
+                fields = struct.unpack_from('<BBBBIQQ', data, epos)
+                entries.append(fields[:5] +
+                               (fields[5] & amd_fw.ADDR_MASK, fields[5] >> 62,
+                                fields[6]))
+            else:
+                fields = struct.unpack_from('<BBHIQ', data, epos)
+                entries.append(fields[:4] +
+                               (fields[4] & amd_fw.ADDR_MASK, fields[4] >> 62))
+        return cookie, info, entries
+
+    def testAmdFw(self):
+        """Test building the firmware which an AMD PSP reads"""
+        data = self._DoReadFile('amd/fw.dts')
+        all_ones = (1 << 64) - 1
+
+        # The EFS points to the first level of each directory
+        efs = 0x10000
+        self.assertEqual((0x55aa55aa, 0, 0, 0, 0xffffffff),
+                         struct.unpack_from('<5I', data, efs))
+        psp, = struct.unpack_from('<I', data, efs + 0x14)
+        multi_gen, bios = struct.unpack_from('<II', data, efs + 0x24)
+        self.assertEqual(0x20000, psp)
+        self.assertEqual(0xffffffe3, multi_gen)
+        self.assertEqual(b'\x02\x03\xff\x02\xff\xff',
+                         data[efs + 0x40:efs + 0x46])
+        self.assertEqual(b'\x0e\xff\x12\x34', data[efs + 0x50:efs + 0x54])
+
+        # First level of the PSP directory, sorted by type
+        cookie, info, entries = self._ReadAmdDir(data, psp)
+        self.assertEqual(b'$PSP', cookie)
+        self.assertEqual(4 | 1 << 10 | 1 << 29, info)
+        self.assertEqual([0x00, 0x01, 0x0b, 0x22, 0x38, 0x40, 0xa0],
+                         [entry[0] for entry in entries])
+        pubkey, both, fuse, unlock, nvram, l2_ptr, inst = entries
+        self.assertEqual((0, 0, 0, len(U_BOOT_DTB_DATA), 0x21000, 1), pubkey)
+        self.assertEqual(U_BOOT_DTB_DATA, data[0x21000:0x21004])
+        self.assertEqual((1, 0, 0, len(U_BOOT_DATA), 0x21100, 1), both)
+        self.assertEqual(U_BOOT_DATA, data[0x21100:0x21104])
+        self.assertEqual((0xb, 0, 0, 0xffffffff, 5, 1), fuse)
+        self.assertEqual((0x22, 0, 0, 0x1000, 0x22000, 1), unlock)
+        self.assertEqual(tools.get_bytes(0xff, 0x1000),
+                         data[0x22000:0x23000])
+        self.assertEqual((0x38, 0, 4, 0x8000, 0x80000, 1), nvram)
+        self.assertEqual((0x40, 0, 0, 16 + 6 * 16, 0x24000, 1), l2_ptr)
+        self.assertEqual((0xa0, 2, 3 << 3, 8, 0x23000, 1), inst)
+        self.assertEqual(b'instance', data[0x23000:0x23008])
+
+        # Second level, with the same copy of the entries in both levels
+        cookie, info, entries = self._ReadAmdDir(data, 0x24000)
+        self.assertEqual(b'$PL2', cookie)
+        self.assertEqual(4 | 1 << 10 | 1 << 29, info)
+        self.assertEqual([0x01, 0x09, 0x0b, 0x22, 0x38, 0xa0],
+                         [entry[0] for entry in entries])
+        self.assertEqual(0x25000, entries[0][4])
+        self.assertEqual(U_BOOT_DATA, data[0x25000:0x25004])
+        self.assertEqual((9, 0, 0, 9, 0x25100, 1), entries[1])
+        self.assertEqual(b'level two', data[0x25100:0x25109])
+
+        # First level of the BIOS directory, in amdfwtool's order
+        cookie, info, entries = self._ReadAmdDir(data, bios)
+        self.assertEqual(b'$BHD', cookie)
+        self.assertEqual(0x28000, bios)
+        self.assertEqual([0x68, 0x61, 0x62, 0x6e, 0x70],
+                         [entry[0] for entry in entries])
+        apcb, apob, bios_img, other, l2_ptr = entries
+        self.assertEqual((0x68, 0, 8 << 4, 0, 4, 0x29000, 1, all_ones),
+                         apcb)
+        self.assertEqual(b'apcb', data[0x29000:0x29004])
+        self.assertEqual((0x61, 0, 0, 0, 0, 0, 1, 0x7010000), apob)
+
+        # The BIOS image is compressed, with its uncompressed size
+        contents = U_BOOT_DATA + b'spl'
+        self.assertEqual((0x62, 2, 0xf, 0, len(contents), 0x29100, 1,
+                          0x7150000), bios_img)
+        comp_size, = struct.unpack_from('<I', data, 0x29114)
+        self.assertEqual(contents, zlib.decompress(
+            data[0x29200:0x29200 + comp_size]))
+        self.assertEqual(b'other', data[other[5]:other[5] + 5])
+        l2_pos = l2_ptr[5]
+        self.assertEqual((0x70, 0, 0, 0, 0x2f * 24, l2_pos, 1, all_ones),
+                         l2_ptr)
+
+        # The second level shares the BIOS image with the first
+        cookie, info, entries = self._ReadAmdDir(data, l2_pos)
+        self.assertEqual(b'$BL2', cookie)
+        self.assertEqual([0x68, 0x61, 0x62, 0x63, 0x66, 0x6e],
+                         [entry[0] for entry in entries])
+        self.assertEqual(bios_img, entries[2])
+        self.assertEqual((0x63, 0, 0, 1 | 1 << 5, 0x1000, 0x90000, 1,
+                          all_ones), entries[3])
+        self.assertEqual(1 << 4, entries[4][2])
+
+    def testAmdFwUpdateFdt(self):
+        """Test the positions which an amd-fw entry gives to its entries"""
+        _, _, _, out_dtb_fname = self._DoReadFileDtb('amd/fw.dts',
+                                                     update_dtb=True)
+        dtb = fdt.Fdt(out_dtb_fname)
+        dtb.Scan()
+        props = self._GetPropTree(dtb, BASE_DTB_PROPS + ['uncomp-size'])
+        self.assertEqual(0x10000, props['amd-fw:offset'])
+        self.assertEqual(0x11100, props['amd-fw/psp-both:offset'])
+        self.assertEqual(0x21100, props['amd-fw/psp-both:image-pos'])
+        self.assertEqual(len(U_BOOT_DATA), props['amd-fw/psp-both:size'])
+        self.assertEqual(0x29100, props['amd-fw/bios:image-pos'])
+        self.assertEqual(len(U_BOOT_DATA) + 3,
+                         props['amd-fw/bios:uncomp-size'])
+
+        # The contents of the compressed BIOS image have no image position
+        self.assertIn('amd-fw/bios/u-boot:offset', props)
+        self.assertNotIn('amd-fw/bios/u-boot:image-pos', props)
+
+    def testAmdFwGenoa(self):
+        """Test the EFS for Genoa, with Micron flash and no eSPI settings"""
+        data = self._DoReadFile('amd/genoa.dts')
+        self.assertEqual(0xfffffffe, struct.unpack_from('<I', data, 0x24)[0])
+        self.assertEqual(b'\x00\x01\xff\x00\xff\x0a', data[0x40:0x46])
+        self.assertEqual(tools.get_bytes(0xff, 4), data[0x50:0x54])
+
+    def testAmdFwCollection(self):
+        """Test an amd-fw entry whose contents are needed before it is built"""
+        data = self._DoReadFile('amd/collection.dts')
+        size = control.images['image'].GetEntries()['amd-fw'].size
+        self.assertEqual(data[0x20000:0x20000 + size], data[:size])
+        self.assertEqual(b'\xaa\x55\xaa\x55', data[:4])
+
+    def _CheckAmdFwError(self, fname, msg):
+        """Check that an amd-fw entry reports an error
+
+        Args:
+            fname (str): Test file in the amd/ directory, without extension
+            msg (str): Expected error message
+        """
+        with self.assertRaises(ValueError) as exc:
+            self._DoReadFile(f'amd/{fname}.dts')
+        self.assertIn(msg, str(exc.exception))
+
+    def testAmdFwBadSoc(self):
+        """Test an amd-fw entry with an unknown SoC"""
+        self._CheckAmdFwError('bad_soc', "Unknown SoC 'milan' (use genoa, turin)")
+
+    def testAmdFwNoSpi(self):
+        """Test an amd-fw entry without the SPI settings"""
+        self._CheckAmdFwError(
+            'no_spi', "Missing 'amd,spi-read-mode' or 'amd,spi-speed'")
+
+    def testAmdFwBadMicron(self):
+        """Test an amd-fw entry with an invalid Micron flag"""
+        self._CheckAmdFwError('bad_micron', "Invalid 'amd,spi-micron-flag' 2")
+
+    def testAmdFwBadEspi(self):
+        """Test an amd-fw entry with the wrong number of eSPI settings"""
+        self._CheckAmdFwError('bad_espi',
+                              "'amd,espi-config' must have four values")
+
+    def testAmdFwNoType(self):
+        """Test an amd-fw subnode with no type"""
+        self._CheckAmdFwError(
+            'no_type', "Subnode 'u-boot': Need one of 'amd,psp-type' and "
+            "'amd,bios-type'")
+
+    def testAmdFwTwoTypes(self):
+        """Test an amd-fw subnode with both types"""
+        self._CheckAmdFwError(
+            'two_types', "Subnode 'u-boot': Need one of 'amd,psp-type' and "
+            "'amd,bios-type'")
+
+    def testAmdFwBadLevel(self):
+        """Test an amd-fw subnode with an invalid level"""
+        self._CheckAmdFwError(
+            'bad_level',
+            "Subnode 'u-boot': Invalid 'amd,level' '3' (use 1, 2 or both)")
+
+    def testAmdFwBadRegion(self):
+        """Test an amd-fw subnode with a region which has no size"""
+        self._CheckAmdFwError(
+            'bad_region',
+            "Subnode 'nvram': 'amd,region' must have an offset and a size")
+
+    def testAmdFwRegionAlign(self):
+        """Test an amd-fw subnode with a region which is not aligned"""
+        self._CheckAmdFwError(
+            'region_align',
+            "Subnode 'nvram': Region offset 0x80100 is not 4KB-aligned")
+
+    def testAmdFwBiosValue(self):
+        """Test a BIOS-directory entry with a value"""
+        self._CheckAmdFwError(
+            'bios_value', "Subnode 'apob': BIOS-directory entries cannot use "
+            "'amd,reserve' or 'amd,value'")
+
+    def testAmdFwMisaligned(self):
+        """Test an amd-fw entry which is not 64KB-aligned in the flash"""
+        self._CheckAmdFwError('misaligned',
+                              'Offset 0x8000 in the flash must be 64KB-aligned')
 
     def testList(self):
         """Test listing the files in an image"""

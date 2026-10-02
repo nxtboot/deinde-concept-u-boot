@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-2.0+
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	binman {
+		pad-byte = <0xff>;
+
+		amd-fw {
+			offset = <0x10000>;
+			amd,soc = "turin";
+			amd,spi-read-mode = <2>;
+			amd,spi-speed = <3>;
+			amd,espi-config = <0x0e 0xff 0x12 0x34>;
+
+			/* out of order, to check that the entries are sorted */
+			psp-l2 {
+				type = "text";
+				text = "level two";
+				amd,psp-type = <0x09>;
+				amd,level = "2";
+			};
+			psp-both {
+				type = "u-boot";
+				amd,psp-type = <0x01>;
+			};
+			psp-l1 {
+				type = "u-boot-dtb";
+				amd,psp-type = <0x00>;
+				amd,level = "1";
+			};
+			psp-inst {
+				type = "text";
+				text = "instance";
+				amd,psp-type = <0xa0>;
+				amd,subprog = <2>;
+				amd,instance = <3>;
+			};
+			soft-fuse {
+				amd,psp-type = <0x0b>;
+				amd,value = /bits/ 64 <0x4000000000000005>;
+			};
+			token-unlock {
+				amd,psp-type = <0x22>;
+				amd,reserve = <0x1000>;
+			};
+			nvram {
+				amd,psp-type = <0x38>;
+				amd,region = <0x80000 0x8000>;
+				amd,writable;
+			};
+
+			other {
+				type = "text";
+				text = "other";
+				amd,bios-type = <0x6e>;
+			};
+			ucode {
+				type = "text";
+				text = "microcode";
+				amd,bios-type = <0x66>;
+				amd,instance = <1>;
+				amd,level = "2";
+			};
+			apob-nv {
+				amd,bios-type = <0x63>;
+				amd,subprog = <1>;
+				amd,region = <0x90000 0x1000>;
+				amd,writable;
+				amd,level = "2";
+			};
+			bios {
+				type = "section";
+				amd,bios-type = <0x62>;
+				amd,region-type = <2>;
+				amd,dest = /bits/ 64 <0x7150000>;
+				amd,reset;
+				amd,copy;
+				amd,read-only;
+				amd,compress;
+
+				u-boot {
+				};
+				text {
+					text = "spl";
+				};
+			};
+			apob {
+				amd,bios-type = <0x61>;
+				amd,region = <0 0>;
+				amd,dest = /bits/ 64 <0x7010000>;
+			};
+			apcb {
+				type = "text";
+				text = "apcb";
+				amd,bios-type = <0x68>;
+				amd,instance = <8>;
+			};
+		};
+	};
+};
