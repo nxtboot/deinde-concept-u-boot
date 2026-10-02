@@ -1162,6 +1162,15 @@ epyc:
   timeout: 30m
   <<: *sjg_lab_slow_dfn
 
+# The same board, booting through SPL with AMD's openSIL doing the silicon
+# set-up; the lab builds openSIL from a clean tree beside the board's blobs
+epyc-opensil:
+  variables:
+    ROLE: epyc-opensil
+  resource_group: epyc-board
+  timeout: 30m
+  <<: *sjg_lab_slow_dfn
+
 # Chromebook Pixel 2015 (samus, Broadwell), booting from an EM100 flash
 # emulator
 samus:
