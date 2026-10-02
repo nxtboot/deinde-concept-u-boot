@@ -205,6 +205,20 @@
 			<0x77 0x06 0x17>,	/* I2C5 */
 			<0x78 0x04 0x05>,	/* UART2 */
 			<0x79 0x03 0x0f>;	/* UART3 */
+
+		/*
+		 * For openSIL, as Dasharo's coreboot gives them: the over-
+		 * current pins of each xHCI's two ports (port 1 in the top
+		 * nibble), the USB3 ports held to Gen1, and for the SATA
+		 * controllers at 7.0, 7.1, 2.0 and 2.1, the ports powered off
+		 * and those which are external
+		 */
+		amd,usb2-oc-pins = /bits/ 8 <0x10 0x10>;
+		amd,usb3-oc-pins = /bits/ 8 <0x10 0x10>;
+		amd,usb-oc-polarity-low;
+		amd,usb3-force-gen1 = <0xf>;
+		amd,sata-shutdown-ports = /bits/ 8 <0xff 0xff 0x00 0x00>;
+		amd,sata-esata-ports = /bits/ 8 <0x00 0x00 0xff 0xff>;
 	};
 
 	/*
@@ -248,6 +262,9 @@
 			<124 4 0x00 0x0c>,	/* PCIe 01.4 */
 			<128 4 0x00 0x19>,	/* PCIe 03.1 */
 			<135 1 0x00 0x1c>;	/* PCIe 03.4 */
+
+		/* the BMC's link, which the ABL trains early */
+		amd,bmc-lane = <134>;
 	};
 
 	cpus {

@@ -253,6 +253,10 @@ build all PowerPC platforms:
 # hosts but covering all platforms in the pytest section.
 build all other platforms:
   extends: .world_build
+  variables:
+    # gigabyte_mz33_ar1_opensil needs an openSIL tree, which CI does not
+    # have, so let it build without one
+    OPENSIL_ALLOW_MISSING: "1"
   dependencies: []
   tags:
     - single
@@ -1154,6 +1158,15 @@ epyc-cb:
 epyc:
   variables:
     ROLE: epyc
+  resource_group: epyc-board
+  timeout: 30m
+  <<: *sjg_lab_slow_dfn
+
+# The same board, booting through SPL with AMD's openSIL doing the silicon
+# set-up; the lab builds openSIL from a clean tree beside the board's blobs
+epyc-opensil:
+  variables:
+    ROLE: epyc-opensil
   resource_group: epyc-board
   timeout: 30m
   <<: *sjg_lab_slow_dfn

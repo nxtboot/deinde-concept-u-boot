@@ -78,6 +78,18 @@ int turin_gsi_base(int busno);
 int turin_start_aps(const void *ucode);
 
 /**
+ * turin_find_aps() - Find the APs which openSIL has started
+ *
+ * openSIL starts the other threads itself, so this records their APIC IDs
+ * for turin_get_cpus(), working them out from the threads which the SMU has
+ * released as openSIL does
+ *
+ * Return: 0 if OK, -EIO if the count does not match CPUID's, other -ve on
+ * error
+ */
+int turin_find_aps(void);
+
+/**
  * turin_get_cpus() - Get the APIC IDs of the CPUs
  *
  * @idsp: Returns the APIC IDs, the boot processor's first

@@ -197,6 +197,86 @@ so that coreboot's normal log level shows them. Then::
 lists the registers each firmware writes and the other does not, and those
 whose final values differ, with names from openSIL's headers.
 
+Building with openSIL
+---------------------
+
+U-Boot can also leave the silicon set-up to AMD's openSIL library, as
+Dasharo's coreboot does. The ``gigabyte_mz33_ar1_opensil_defconfig`` build
+enables ``CONFIG_TURIN_OPENSIL`` so that U-Boot builds openSIL from the tree
+given by ``CONFIG_TURIN_OPENSIL_PATH`` with its own compiler and links it in.
+
+U-Boot then gives openSIL its memory, fills in its input blocks and runs its
+three timepoints. The first, in place of U-Boot's own code, sets up the data
+fabric, the SMU, the root complexes and their links, the CPU complexes,
+starting the other threads, and the FCH; the second runs once PCI is
+enumerated and the third once U-Boot is otherwise done. The input blocks take
+Dasharo's settings, with the board's own from the devicetree: the MPIO links
+from the ``/mpio`` node as U-Boot's native code uses them, the BMC's link from
+its ``amd,bmc-lane`` property and the USB and SATA settings from the ``/fch``
+node. U-Boot still takes each root bus's windows from the fabric, which
+openSIL programs, finds the CPUs which openSIL started, and writes the ACPI
+and SMBIOS tables and the memory map, which openSIL leaves to its host.
+
+The tree is a checkout of openSIL's turin_poc branch from
+https://github.com/openSIL/openSIL which is the same one that Dasharo's
+coreboot uses as ``src/vendorcode/amd/opensil/turin_poc/opensil`` in its own
+tree. The build needs the ``meson``, ``ninja``, ``nasm`` and ``python3`` tools.
+It runs openSIL's Kconfig and meson in U-Boot's output directory without
+writing to the tree, and ninja rebuilds whatever has changed, so a change to
+openSIL's source gives a new image at the next build. openSIL needs only
+``memset()`` and ``memcpy()`` as well as ``assert()`` from its host, which come
+from the two headers in ``arch/x86/cpu/turin/opensil/include`` in place of
+coreboot's. To build with buildman::
+
+   buildman -a 'TURIN_OPENSIL_PATH="/path/to/opensil"' \
+      gigabyte_mz33_ar1_opensil
+
+Without the tree the build fails, since U-Boot would not be able to set up the
+SoC. A build which must go ahead anyway, such as CI's world build, can set
+``OPENSIL_ALLOW_MISSING=1`` in the environment; the build then warns and
+produces a U-Boot which does not work on the board.
+
+openSIL is built for size and position-independent, without SSE and with the
+small code model, like the rest of U-Boot. Even so it adds about 280KB, which
+does not fit in the 1MB BIOS image, the most the PSP will start. So this build
+boots through SPL: the BIOS image holds SPL, which opens the path to the UART,
+takes the TSC rate and memory size from the MSRs, then copies U-Boot proper
+from the flash, which is mapped just below 4GB, into DRAM and starts it in
+64-bit mode. U-Boot proper reads the microcode patches straight from the
+flash. The build produces two files:
+
+``u-boot-mz33.bin``
+   the 1MB BIOS image holding SPL, which goes into the PSP directory as above,
+   laid out for its DRAM address given by ``CONFIG_SPL_TEXT_BASE``
+
+``u-boot-mz33-flash.bin``
+   the BIOS image again, then U-Boot proper and the microcode patches, laid
+   out for its address in the memory-mapped flash given by
+   ``CONFIG_TURIN_IMAGE_ADDR``; binman writes U-Boot proper's address into
+   SPL, so the two must stay together in this image, even though the copy of
+   the BIOS image in it is not used
+
+Write ``u-boot-mz33-flash.bin`` into the FW_MAIN_A region, which holds the
+first verified-boot copy of coreboot and is not used by the native build. It
+starts at flash offset ``0x810000`` and the board maps it at ``0xff810000``
+which is the default for ``CONFIG_TURIN_IMAGE_ADDR`` too. The region is a
+CBFS, so ``cbfstool`` needs its ``-F`` option to write it as a raw region, and
+the file must first be padded with ``0xff`` bytes to the size of the region,
+which is ``0x2eff00`` bytes::
+
+   cbfstool coreboot.rom write -F -r FW_MAIN_A -f u-boot-mz33-flash-padded.bin
+
+The board then boots as quickly as the native build: U-Boot proper starts
+about 1.6s after SPL, openSIL's first timepoint takes 2.4s and Ubuntu reaches
+a login about 90s after power-on, with the NVMe drive, the GPU and both network
+ports.
+
+openSIL shares out the MMIO above 4GB among the root complexes, up to a limit
+of 2^46 which U-Boot sets because MMIO above that reads as all ones on this
+board, although CPUID reports more address bits. Under Dasharo, which enables
+SME, openSIL takes the memory-encryption bits off the address size, so its
+windows stay below 2^46 there too.
+
 Known limitations
 -----------------
 

@@ -51,6 +51,18 @@ config SYS_CAR_SIZE
 	hex
 	default 0x10000
 
+config TURIN_IMAGE_ADDR
+	hex "Address of the image holding U-Boot and the microcode"
+	help
+	  Without SPL, the PSP copies the whole of U-Boot's image, microcode
+	  patches included, into DRAM, so this is the same as CONFIG_TEXT_BASE
+	  in that case. The PSP only starts a small BIOS image, though, so a
+	  larger U-Boot needs SPL as the BIOS image, with U-Boot proper
+	  elsewhere in the flash, in an image which also holds the microcode
+	  patches. This is then the image's address in the memory-mapped
+	  flash, where SPL copies U-Boot from and where U-Boot finds the
+	  microcode.
+
 config TURIN_REG_TRACE
 	bool "Trace the register writes and firmware messages of the bring-up"
 	depends on DEBUG_UART
@@ -61,6 +73,37 @@ config TURIN_REG_TRACE
 	  prints with the same hooks. The two traces can then be compared to
 	  find what one firmware sets up and the other does not. This is for
 	  bring-up only: the output is large and slows the boot.
+
+config TURIN_OPENSIL
+	bool "Build and link AMD's openSIL library"
+	depends on X86_64
+	help
+	  Build openSIL, AMD's silicon-initialisation library, from the tree
+	  given by TURIN_OPENSIL_PATH with U-Boot's own compiler, and link it
+	  into U-Boot. This needs meson, ninja, nasm and python3 on the build
+	  machine. U-Boot still sets up the SoC with its own code; for now
+	  this only sets up openSIL's debug output and reports the memory it
+	  needs, so that the library can be tried out.
+
+config TURIN_OPENSIL_PATH
+	string "Path to the openSIL source tree"
+	depends on TURIN_OPENSIL
+	help
+	  The turin_poc branch of https://github.com/openSIL/openSIL, such as
+	  src/vendorcode/amd/opensil/turin_poc/opensil in Dasharo's coreboot
+	  tree. U-Boot builds it in its own output directory and does not
+	  write to the tree. If there is no tree here, the build fails unless
+	  OPENSIL_ALLOW_MISSING is set in the environment, as for CI's world
+	  builds; it then goes ahead without openSIL, giving a U-Boot which
+	  cannot set up the SoC.
+
+config TURIN_OPENSIL_DEBUG
+	bool "Show openSIL's messages"
+	depends on TURIN_OPENSIL
+	help
+	  Build openSIL with its trace points enabled, sending its errors and
+	  warnings to U-Boot's log as such and the rest at debug levels. This
+	  makes the library larger.
 
 config PCIE_ECAM_BASE
 	default 0xb0000000

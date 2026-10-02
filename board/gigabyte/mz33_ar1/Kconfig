@@ -18,10 +18,24 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select ARCH_AMD_TURIN
 	select BOARD_ROMSIZE_KB_1024
 
-# The PSP decompresses the image to this address; it must end on a 64KB
-# boundary, since the reset vector is the last 16 bytes of that segment
+# The PSP decompresses the BIOS image to this address; it must end on a 64KB
+# boundary, since the reset vector is the last 16 bytes of that segment. The
+# PSP will not start it larger than 1MB or anywhere else. Without SPL this
+# image is U-Boot; with SPL it is SPL (CONFIG_SPL_TEXT_BASE) and U-Boot proper
+# stays in the flash for SPL to copy
 config TEXT_BASE
 	default 0x07150000
+
+# Cache the whole of the flash window, so that SPL copies U-Boot proper
+# quickly
+config XIP_ROM_SIZE
+	default 0x1000000 if SPL
+
+# With SPL, FW_MAIN_A in the Dasharo flash map, which the native build does
+# not need for its own purpose, since it has no verified-boot RW slots
+config TURIN_IMAGE_ADDR
+	default 0xff810000 if SPL
+	default TEXT_BASE
 
 config RESET_SEG_START
 	default 0x07240000

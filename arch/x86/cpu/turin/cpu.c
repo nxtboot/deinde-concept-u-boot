@@ -29,6 +29,7 @@
 #include <asm/arch/trace.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/fch.h>
+#include <asm/arch/opensil.h>
 #include <asm/post.h>
 #include <linux/sizes.h>
 
@@ -86,6 +87,7 @@ DECLARE_GLOBAL_DATA_PTR;
 /* LPC bridge at 00:14.3; its SPI/eSPI register block */
 #define LPC_BDF_REG(reg)	((0x14 << 11) | (3 << 8) | (reg))
 #define LPC_SPI_BASE_ADDRESS	0xa0
+#define  LPC_SPI_ENABLES	GENMASK(7, 0)	/* ROM decode and others */
 #define SPI_BASE		0xfec10000
 #define ESPI_BASE		(SPI_BASE + 0x10000)
 #define ESPI_DECODE		0x40
@@ -271,6 +273,11 @@ static void turin_smu_usb_init(void)
 		log_warning("SMU USB init failed: %d\n", ret);
 }
 
+/*
+ * With SPL, SPL sets up the console path and U-Boot proper finds it ready;
+ * see x86_64/cpu.c
+ */
+#if !IS_ENABLED(CONFIG_SPL) || IS_ENABLED(CONFIG_XPL_BUILD)
 static void pm_io_setbits8(u8 reg, u8 bits)
 {
 	outb(reg, PM_INDEX);
@@ -295,6 +302,8 @@ static void sio_write(u8 reg, u8 val)
  */
 static void turin_console_path_init(void)
 {
+	u32 val;
+
 	/* ECAM, so that PCI config access works */
 	wrmsrl(MSR_MMIO_CONF_BASE, ECAM_BASE | MMIO_CONF_EN |
 	       (__fls(ECAM_BUSES) << MMIO_CONF_BUS_RANGE_SHIFT));
@@ -302,9 +311,14 @@ static void turin_console_path_init(void)
 	/* ACPIMMIO */
 	pm_io_setbits8(0x04, PM_04_ACPIMMIO_DECODE_EN);
 
-	/* LPC controller and the SPI/eSPI register block */
+	/*
+	 * LPC controller and the SPI/eSPI register block. Keep the enables in
+	 * the low bits, since without ROM decode the flash reads as 0xff
+	 */
 	setbits_8(ACPIMMIO_PMIO + PM_LPC_GATING, PM_LPC_ENABLE);
-	pci_cf8_write32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS), SPI_BASE);
+	val = pci_cf8_read32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS));
+	pci_cf8_write32(LPC_BDF_REG(LPC_SPI_BASE_ADDRESS),
+			SPI_BASE | (val & LPC_SPI_ENABLES));
 
 	/* eSPI decode for the SuperIO config port and port 80 */
 	setbits_le32(ESPI_BASE + ESPI_DECODE,
@@ -320,6 +334,12 @@ static void turin_console_path_init(void)
 	sio_write(0x30, 0x01);
 	outb(SIO_EXIT_KEY, SIO_INDEX);
 }
+
+void board_debug_uart_init(void)
+{
+	turin_console_path_init();
+}
+#endif
 
 /**
  * turin_fch_acpi_init() - Set up the FCH's legacy decoding and ACPI hardware
@@ -385,11 +405,6 @@ static int turin_irq_routing_init(void)
 	writel(PM_PCI_INT_VW_MODE, pmio + PM_PCI_INT_VW);
 
 	return 0;
-}
-
-void board_debug_uart_init(void)
-{
-	turin_console_path_init();
 }
 
 /**
@@ -525,7 +540,8 @@ static int turin_microcode_update(const void **ucodep)
 	ret = binman_entry_find(name, &entry);
 	if (ret)
 		return log_msg_ret("fnd", ret);
-	hdr = map_sysmem(CONFIG_TEXT_BASE + entry.image_pos, entry.size);
+	hdr = map_sysmem(CONFIG_TURIN_IMAGE_ADDR + entry.image_pos,
+			 entry.size);
 	if (entry.size < sizeof(*hdr) || hdr->processor_rev_id != rev_id)
 		return log_msg_ret("rev", -EINVAL);
 	*ucodep = hdr;
@@ -563,6 +579,23 @@ int arch_early_init_r(void)
 		log_err("Microcode update failed (err=%d)\n", ret);
 	/* the APs copy the name string from the boot CPU, so set it first */
 	turin_set_name_string();
+
+	/*
+	 * openSIL starts the APs and sets up the SMU's features, the USB
+	 * controllers and the links itself
+	 */
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL)) {
+		turin_mem_restore_signoff();
+		turin_ecam_init();
+		ret = turin_opensil_init(ucode);
+		if (ret)
+			log_err("openSIL set-up failed (err=%d)\n", ret);
+		ret = turin_find_aps();
+		if (ret)
+			log_err("AP discovery failed (err=%d)\n", ret);
+		return 0;
+	}
+
 	ret = turin_start_aps(ucode);
 	if (ret)
 		log_err("AP start-up failed (err=%d)\n", ret);
@@ -575,6 +608,20 @@ int arch_early_init_r(void)
 		log_err("MPIO link setup failed (err=%d)\n", ret);
 
 	return 0;
+}
+
+/* openSIL's second timepoint follows PCI enumeration, before the tables */
+void board_final_init(void)
+{
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL))
+		turin_opensil_tp2();
+}
+
+/* and its third comes once U-Boot is otherwise done */
+void board_final_cleanup(void)
+{
+	if (IS_ENABLED(CONFIG_TURIN_OPENSIL))
+		turin_opensil_tp3();
 }
 
 int dram_init(void)

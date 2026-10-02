@@ -43,10 +43,10 @@
 
 /*
  * A released thread starts at the reset vector of the BIOS image, which the
- * PSP copied to CONFIG_TEXT_BASE: that is U-Boot's own reset code, so the
- * routine must be in place first
+ * PSP copied into DRAM: that is SPL's reset code, so the routine must be in
+ * place first
  */
-#define TURIN_AP_RESET_VECTOR	(CONFIG_TEXT_BASE + CONFIG_ROM_SIZE - 0x10)
+#define TURIN_AP_RESET_VECTOR	CONFIG_RESET_VEC_LOC
 #define AP_TIMEOUT_MS		100	/* a launch takes about 20ms */
 #define CPUID_ADDR_SIZE		0x80000008
 #define CPUID_NC_MASK		0xff	/* number of threads, minus one */
@@ -288,6 +288,93 @@ out:
 	free(save);
 
 	return ret;
+}
+
+/* CPUID's extended topology: the shift for each level's ID */
+#define CPUID_EXT_TOPO		0x80000026
+#define TOPO_LEVELS		4
+#define TOPO_SHIFT_MASK		0x1f	/* in EAX */
+#define TOPO_COUNT_MASK		0xffff	/* in EBX: logical CPUs at the level */
+#define TOPO_TYPE_SHIFT		8	/* in ECX */
+#define TOPO_TYPE_MASK		0xff
+#define TOPO_TYPE_CORE		1
+#define TOPO_TYPE_COMPLEX	2
+#define TOPO_TYPE_CCD		3
+
+int turin_find_aps(void)
+{
+	int threads = ((cpuid_ebx(CPUID_EXT_APIC) >> CPUID_THREADS_SHIFT) &
+		       CPUID_THREADS_MASK) + 1;
+	int expect = (cpuid_ecx(CPUID_ADDR_SIZE) & CPUID_NC_MASK) + 1;
+	uint core_shift = 0, complex_shift = 0, ccd_shift = 0;
+	uint per_complex = 1, ccd, lccd, level;
+	u8 bsp = lapicid();
+
+	/* openSIL works the IDs out from these shifts in CalcLocalApicBrh() */
+	for (level = 0; level < TOPO_LEVELS; level++) {
+		struct cpuid_result res = cpuid_ext(CPUID_EXT_TOPO, level);
+		uint shift = res.eax & TOPO_SHIFT_MASK;
+
+		switch ((res.ecx >> TOPO_TYPE_SHIFT) & TOPO_TYPE_MASK) {
+		case TOPO_TYPE_CORE:
+			core_shift = shift;
+			break;
+		case TOPO_TYPE_COMPLEX:
+			complex_shift = shift;
+			per_complex = (res.ebx & TOPO_COUNT_MASK) / threads;
+			break;
+		case TOPO_TYPE_CCD:
+			ccd_shift = shift;
+			break;
+		}
+	}
+	if (!per_complex)
+		per_complex = 1;
+
+	apic_ids[0] = bsp;
+	num_cpus = 1;
+
+	/*
+	 * A thread's bit in its CCD's thread-enable register is set once it
+	 * has been released. openSIL numbers the CCDs and cores which are
+	 * present in order, which is how their IDs are made up
+	 */
+	for (ccd = 0, lccd = 0; ccd < MAX_CCDS; ccd++) {
+		u32 val = smn_read(SMU_THREAD_EN(ccd));
+		int lcore = -1, last_core = -1;
+		uint bit;
+
+		if (!val || val == ~0U)
+			continue;
+		for (bit = 0; bit < MAX_CORES_PER_CCD * threads; bit++) {
+			uint core = bit / threads, thread = bit % threads;
+			uint id;
+
+			if (!(val & BIT(bit)))
+				continue;
+			if ((int)core != last_core) {
+				lcore++;
+				last_core = core;
+			}
+			id = (lcore % per_complex) << core_shift |
+				(lcore / per_complex) << complex_shift |
+				lccd << ccd_shift;
+			if (threads > 1)
+				id += thread;
+			if (id == bsp)
+				continue;
+			if (num_cpus >= TURIN_AP_MAX_IDS)
+				return log_msg_ret("max", -E2BIG);
+			apic_ids[num_cpus++] = id;
+		}
+		lccd++;
+	}
+	qsort(apic_ids + 1, num_cpus - 1, 1, compare_ids);
+	log_debug("%d CPUs running (CPUID says %d)\n", num_cpus, expect);
+	if (num_cpus != expect)
+		return log_msg_ret("cnt", -EIO);
+
+	return 0;
 }
 
 int turin_get_cpus(const u8 **idsp)
