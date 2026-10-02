@@ -1,0 +1,606 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * AMD's firmware for the Platform Security Processor (PSP) on Turin, for a
+ * binman amd-fw entry. It is the list which coreboot's fw.cfg for Turin gives
+ * to amdfwtool, along with the memory-training firmware and microcode which
+ * coreboot adds to the BIOS directory.
+ *
+ * The files are AMD's, from the 3rdparty/blobs/soc/amd/Turin directory of
+ * Dasharo's coreboot tree, so binman needs that directory in its input path,
+ * e.g. with BINMAN_INDIRS.
+ *
+ * A board adds its own entries alongside: its configuration (APCB), the
+ * regions of the flash for the PSP's non-volatile data and the BIOS image.
+ *
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ */
+
+/ {
+	binman {
+		turin_psp: template-turin-psp {
+			amd,soc = "turin";
+
+			amd-pubkey {
+				type = "blob-ext";
+				filename = "TypeId0x00_AmdPubKey_BRH.tkn";
+				amd,psp-type = <0x00>;
+				amd,level = "1";
+			};
+
+			psp-bootloader {
+				type = "blob-ext";
+				filename = "TypeId0x01_PspBl_BRH.esbin";
+				amd,psp-type = <0x01>;
+			};
+
+			psp-secure-os {
+				type = "blob-ext";
+				filename = "TypeId0x02_PspOS_BRH.ecsbin";
+				amd,psp-type = <0x02>;
+			};
+
+			psp-recovery {
+				type = "blob-ext";
+				filename = "TypeId0x03_PspRecBl_BRH.esbin";
+				amd,psp-type = <0x03>;
+				amd,level = "1";
+			};
+
+			smu-firmware {
+				type = "blob-ext";
+				filename = "TypeId0x08_SmuFirmware_breithorn.ecsbin";
+				amd,psp-type = <0x08>;
+			};
+
+			smu-firmware-dense {
+				type = "blob-ext";
+				filename = "TypeId0x208_SmuFirmware_BRHDense.ecsbin";
+				amd,psp-type = <0x08>;
+				amd,subprog = <2>;
+			};
+
+			debug-unlock-key {
+				type = "blob-ext";
+				filename = "TypeId0x09_PspDebugUnlockToken_BRH.stkn";
+				amd,psp-type = <0x09>;
+				amd,level = "2";
+			};
+
+			abl-pubkey {
+				type = "blob-ext";
+				filename = "TypeId0x0A_PspAblPubKey_BRH.stkn";
+				amd,psp-type = <0x0a>;
+			};
+
+			/* bit 0 enables secure debug */
+			soft-fuse {
+				amd,psp-type = <0x0b>;
+				amd,value = /bits/ 64 <0x1>;
+			};
+
+			secure-debug-unlock {
+				type = "blob-ext";
+				filename = "TypeId0x13_SduFw_BRH.ecsbin";
+				amd,psp-type = <0x13>;
+			};
+
+			ip-key-manager {
+				type = "blob-ext";
+				filename = "TypeId0x15_IpKeyManagerDriver_BRH.ecsbin";
+				amd,psp-type = <0x15>;
+			};
+
+			sev-driver {
+				type = "blob-ext";
+				filename = "TypeId0x1A_SevDriver_BRH.ecsbin";
+				amd,psp-type = <0x1a>;
+			};
+
+			boot-driver {
+				type = "blob-ext";
+				filename = "TypeId0x1B_BootDriver_BRH.ecsbin";
+				amd,psp-type = <0x1b>;
+			};
+
+			soc-driver {
+				type = "blob-ext";
+				filename = "TypeId0x1C_SocDriver_BRH.ecsbin";
+				amd,psp-type = <0x1c>;
+			};
+
+			debug-driver {
+				type = "blob-ext";
+				filename = "TypeId0x1D_HadDriver_BRH.ecsbin";
+				amd,psp-type = <0x1d>;
+			};
+
+			interface-driver {
+				type = "blob-ext";
+				filename = "TypeId0x1F_InterfaceDriver_BRH.ecsbin";
+				amd,psp-type = <0x1f>;
+			};
+
+			wrapped-ikek {
+				type = "blob-ext";
+				filename = "TypeId0x21_PspAmdIkek_BRH.bin";
+				amd,psp-type = <0x21>;
+				amd,level = "1";
+			};
+
+			/* space for a time-bound secure-debug unlock */
+			token-unlock {
+				amd,psp-type = <0x22>;
+				amd,reserve = <0x1000>;
+			};
+
+			security-policy {
+				type = "blob-ext";
+				filename = "TypeId0x24_RegisterAccessPolicy_BRH.cesbin";
+				amd,psp-type = <0x24>;
+			};
+
+			security-policy-dense {
+				type = "blob-ext";
+				filename = "TypeId0x224_RegisterAccessPolicy_BRHDense.cesbin";
+				amd,psp-type = <0x24>;
+				amd,subprog = <2>;
+			};
+
+			system-driver {
+				type = "blob-ext";
+				filename = "TypeId0x28_PspSystemDriver_BRH.ecsbin";
+				amd,psp-type = <0x28>;
+			};
+
+			mp5-firmware {
+				type = "blob-ext";
+				filename = "TypeId0x2A_SmuFirmware_breithorn.ecsbin";
+				amd,psp-type = <0x2a>;
+			};
+
+			mp5-firmware-dense {
+				type = "blob-ext";
+				filename = "TypeId0x22A_SmuFirmware_BRHDense.ecsbin";
+				amd,psp-type = <0x2a>;
+				amd,subprog = <2>;
+			};
+
+			abl-runtime {
+				type = "blob-ext";
+				filename = "TypeId0x2D_AblRt.ecsbin";
+				amd,psp-type = <0x2d>;
+			};
+
+			abl {
+				type = "blob-ext";
+				filename = "TypeId0x30_AgesaBootLoaderU_BRH.ecsbin";
+				amd,psp-type = <0x30>;
+			};
+
+			phy-firmware {
+				type = "blob-ext";
+				filename = "TypeId0x42_PhyFw_BRH.ecsbin";
+				amd,psp-type = <0x42>;
+			};
+
+			usb-phy {
+				type = "blob-ext";
+				filename = "TypeId0x44_USB_PHY_BRH.esbin";
+				amd,psp-type = <0x44>;
+			};
+
+			tos-security-policy {
+				type = "blob-ext";
+				filename = "TypeId0x45_RegisterAccessPolicy_BRH.cesbin";
+				amd,psp-type = <0x45>;
+			};
+
+			tos-security-policy-dense {
+				type = "blob-ext";
+				filename = "TypeId0x245_RegisterAccessPolicy_BRHDense.cesbin";
+				amd,psp-type = <0x45>;
+				amd,subprog = <2>;
+			};
+
+			drtm-driver {
+				type = "blob-ext";
+				filename = "TypeId0x47_DRTMDriver_BRH.ecsbin";
+				amd,psp-type = <0x47>;
+			};
+
+			key-database {
+				type = "blob-ext";
+				filename = "TypeId0x50_PspKeyDataBase_BRH.sbin";
+				amd,psp-type = <0x50>;
+			};
+
+			tos-key-database {
+				type = "blob-ext";
+				filename = "TypeId0x51_PspTosKeyDataBase_BRH.ecsbin";
+				amd,psp-type = <0x51>;
+			};
+
+			spl-table {
+				type = "blob-ext";
+				filename = "TypeId0x55_SPLTable_BRH.sbin";
+				amd,psp-type = <0x55>;
+				amd,level = "1";
+			};
+
+			mpio-firmware {
+				type = "blob-ext";
+				filename = "TypeId0x5DMpioFw_BRH.cesbin";
+				amd,psp-type = <0x5d>;
+			};
+
+			ras-driver {
+				type = "blob-ext";
+				filename = "TypeId0x64_RasDriver_BRH.ecsbin";
+				amd,psp-type = <0x64>;
+			};
+
+			ras-ta {
+				type = "blob-ext";
+				filename = "TypeId0x65_ta_ras_prod_amdTEE.ecsbin";
+				amd,psp-type = <0x65>;
+			};
+
+			fhp-driver {
+				type = "blob-ext";
+				filename = "TypeId0x67_FHPDriver_BRH.ecsbin";
+				amd,psp-type = <0x67>;
+			};
+
+			spdm-driver {
+				type = "blob-ext";
+				filename = "TypeId0x68_SPDMDriver_BRH.ecsbin";
+				amd,psp-type = <0x68>;
+			};
+
+			dpe-driver {
+				type = "blob-ext";
+				filename = "TypeId0x69_DPEDriver_BRH.ecsbin";
+				amd,psp-type = <0x69>;
+			};
+
+			psp-bootloader-ab {
+				type = "blob-ext";
+				filename = "TypeId0x73_PspBl_BRH.ecsbin";
+				amd,psp-type = <0x73>;
+			};
+
+			df-rib {
+				type = "blob-ext";
+				filename = "TypeId0x76_DfRib_BRH.csbin";
+				amd,psp-type = <0x76>;
+			};
+
+			mpdma-tf {
+				type = "blob-ext";
+				filename = "TypeId0x8C_MPDMATF_BRH.sbin";
+				amd,psp-type = <0x8c>;
+			};
+
+			gmi3-phy {
+				type = "blob-ext";
+				filename = "TypeId0x91_GmiPhyFw_BRH.esbin";
+				amd,psp-type = <0x91>;
+			};
+
+			mpdma-pm {
+				type = "blob-ext";
+				filename = "TypeId0x92_Page_BRH.sbin";
+				amd,psp-type = <0x92>;
+			};
+
+			sram-fw-ext {
+				type = "blob-ext";
+				filename = "TypeId0x9D_AspSramFwExt_BRH.sbin";
+				amd,psp-type = <0x9d>;
+				amd,level = "1";
+			};
+
+			tos-whitelist {
+				type = "blob-ext";
+				filename = "TypeId0x9F_psp_tos_wl_bin_brh.sbin";
+				amd,psp-type = <0x9f>;
+			};
+
+			s3-image-brh-a0 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRH_A0.sbin";
+				amd,psp-type = <0xa0>;
+			};
+
+			s3-image-brhd-a0 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRHD_A0.sbin";
+				amd,psp-type = <0xa0>;
+				amd,instance = <1>;
+			};
+
+			s3-image-brh-b0 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRH_B0.sbin";
+				amd,psp-type = <0xa0>;
+				amd,instance = <2>;
+			};
+
+			s3-image-brh-c0 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRH_C0.sbin";
+				amd,psp-type = <0xa0>;
+				amd,instance = <3>;
+			};
+
+			s3-image-brhd-b0 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRHD_B0.sbin";
+				amd,psp-type = <0xa0>;
+				amd,instance = <4>;
+			};
+
+			s3-image-brh-c1 {
+				type = "blob-ext";
+				filename = "TypeId0xA0_S3Image_BRH_C1.sbin";
+				amd,psp-type = <0xa0>;
+				amd,instance = <6>;
+			};
+
+			pmu-imem-0-3 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmImem3_BRH.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,instance = <3>;
+			};
+
+			pmu-imem-0-4 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmImem4_BRH.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,instance = <4>;
+			};
+
+			pmu-imem-0-9 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmPosttrainImem9_BRH.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,instance = <9>;
+			};
+
+			pmu-imem-0-10 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmPosttrainImem10_BRH.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,instance = <10>;
+			};
+
+			pmu-imem-4-3 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmImem3_BRH_C0.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <3>;
+			};
+
+			pmu-imem-4-4 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmImem4_BRH_C0.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <4>;
+			};
+
+			pmu-imem-4-5 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5LrdimmImem5_BRH.csbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <5>;
+			};
+
+			pmu-imem-4-6 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5LrdimmImem6_BRH.csbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <6>;
+			};
+
+			pmu-imem-4-7 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5Lrdimm2Imem7_BRH.csbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <7>;
+			};
+
+			pmu-imem-4-9 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmPosttrainImem9_BRH_C0.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <9>;
+			};
+
+			pmu-imem-4-10 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmPosttrainImem10_BRH_C0.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <10>;
+			};
+
+			pmu-imem-4-11 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5RdimmQuickbootImem11_BRH_C0.ecsbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <11>;
+			};
+
+			pmu-imem-4-13 {
+				type = "blob-ext";
+				filename = "Type0x64_AppbDdr5LrdimmQuickbootImem13_BRH.csbin";
+				amd,bios-type = <0x64>;
+				amd,subprog = <4>;
+				amd,instance = <13>;
+			};
+
+			pmu-dmem-0-3 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmDmem3_BRH.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,instance = <3>;
+			};
+
+			pmu-dmem-0-4 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmDmem4_BRH.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,instance = <4>;
+			};
+
+			pmu-dmem-0-9 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmPosttrainDmem9_BRH.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,instance = <9>;
+			};
+
+			pmu-dmem-0-10 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmPosttrainDmem10_BRH.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,instance = <10>;
+			};
+
+			pmu-dmem-4-3 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmDmem3_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <3>;
+			};
+
+			pmu-dmem-4-4 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmDmem4_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <4>;
+			};
+
+			pmu-dmem-4-5 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5LrdimmDmem5_BRH.csbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <5>;
+			};
+
+			pmu-dmem-4-6 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5LrdimmDmem6_BRH.csbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <6>;
+			};
+
+			pmu-dmem-4-7 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5Lrdimm2Dmem7_BRH.csbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <7>;
+			};
+
+			pmu-dmem-4-9 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmPosttrainDmem9_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <9>;
+			};
+
+			pmu-dmem-4-10 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmPosttrainDmem10_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <10>;
+			};
+
+			pmu-dmem-4-11 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmQuickbootDmem11_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <11>;
+			};
+
+			pmu-dmem-4-12 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5RdimmQuickbootDmem12_BRH_C0.ecsbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <12>;
+			};
+
+			pmu-dmem-4-13 {
+				type = "blob-ext";
+				filename = "Type0x65_AppbDdr5LrdimmQuickbootDmem13_BRH.csbin";
+				amd,bios-type = <0x65>;
+				amd,subprog = <4>;
+				amd,instance = <13>;
+			};
+
+			ucode-brh-a0 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRH_A0.bin";
+				amd,bios-type = <0x66>;
+				amd,level = "2";
+			};
+
+			ucode-brh-b0 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRH_B0.bin";
+				amd,bios-type = <0x66>;
+				amd,instance = <1>;
+				amd,level = "2";
+			};
+
+			ucode-brh-c0 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRH_C0.bin";
+				amd,bios-type = <0x66>;
+				amd,instance = <2>;
+				amd,level = "2";
+			};
+
+			ucode-brh-c1 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRH_C1.bin";
+				amd,bios-type = <0x66>;
+				amd,instance = <3>;
+				amd,level = "2";
+			};
+
+			ucode-brhd-a0 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRHD_A0.bin";
+				amd,bios-type = <0x66>;
+				amd,instance = <4>;
+				amd,level = "2";
+			};
+
+			ucode-brhd-b0 {
+				type = "blob-ext";
+				filename = "UcodePatch_BRHD_B0.bin";
+				amd,bios-type = <0x66>;
+				amd,instance = <5>;
+				amd,level = "2";
+			};
+		};
+	};
+};
