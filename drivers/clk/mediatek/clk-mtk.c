@@ -13,6 +13,7 @@
 #include <asm/io.h>
 #include <linux/bitops.h>
 #include <linux/delay.h>
+#include <linux/err.h>
 
 #include "clk-mtk.h"
 
@@ -147,6 +148,24 @@ static const int mtk_common_clk_of_xlate(struct clk *clk,
 	clk->data = 0;
 
 	return 0;
+}
+
+static int mtk_common_clk_get_unmapped_id(struct clk *clk)
+{
+	struct mtk_clk_priv *priv = dev_get_priv(clk->dev);
+	const struct mtk_clk_tree *tree = priv->tree;
+	int i;
+
+	if (!tree->id_offs_map)
+		return clk->id;
+
+	/* Perform reverse lookup of unmapped ID. */
+	for (i = 0; i < tree->id_offs_map_size; i++) {
+		if (tree->id_offs_map[i] == clk->id)
+			return i;
+	}
+
+	return -ENOENT;
 }
 
 static bool mtk_clk_id_is_pll(const struct mtk_clk_tree *tree, int mapped_id)
@@ -355,10 +374,10 @@ static void mtk_clk_print_rate(struct udevice *dev, int mapped_id)
 		.dev = dev,
 		.id = mapped_id,
 	};
-	long rate = clk_get_rate(&clk);
+	ulong rate = clk_get_rate(&clk);
 
-	if (rate < 0)
-		printf(", error! clk_get_rate() failed: %ld", rate);
+	if (IS_ERR_VALUE(rate))
+		printf(", error! clk_get_rate() failed: %d", (int)rate);
 	else
 		printf(", Rate: %lu Hz", rate);
 }
@@ -867,6 +886,7 @@ static int mtk_common_clk_set_parent(struct clk *clk, struct clk *parent)
 {
 	struct mtk_clk_priv *parent_priv = dev_get_priv(parent->dev);
 	struct mtk_clk_priv *priv = dev_get_priv(clk->dev);
+	int parent_unmapped_id;
 	u32 parent_type;
 
 	if (!mtk_clk_id_is_mux(priv->tree, clk->id))
@@ -875,8 +895,12 @@ static int mtk_common_clk_set_parent(struct clk *clk, struct clk *parent)
 	if (!parent_priv)
 		return 0;
 
+	parent_unmapped_id = mtk_common_clk_get_unmapped_id(parent);
+	if (parent_unmapped_id < 0)
+		return parent_unmapped_id;
+
 	parent_type = parent_priv->tree->flags & CLK_PARENT_MASK;
-	return mtk_clk_mux_set_parent(priv->base, parent->id, parent_type,
+	return mtk_clk_mux_set_parent(priv->base, parent_unmapped_id, parent_type,
 			&priv->tree->muxes[clk->id - priv->tree->muxes_offs]);
 }
 

@@ -122,7 +122,8 @@ static int clk_get_by_indexed_prop(struct udevice *dev, const char *prop_name,
 	int ret;
 	struct ofnode_phandle_args args;
 
-	debug("%s(dev=%p, index=%d, clk=%p)\n", __func__, dev, index, clk);
+	debug("%s(dev=%s, index=%d, clk=%p)\n", __func__, dev_read_name(dev),
+	      index, clk);
 
 	assert(clk);
 	clk->dev = NULL;
@@ -183,8 +184,8 @@ int clk_get_bulk(struct udevice *dev, struct clk_bulk *bulk)
 bulk_get_err:
 	err = clk_release_all(bulk->clks, bulk->count);
 	if (err)
-		debug("%s: could not release all clocks for %p\n",
-		      __func__, dev);
+		debug("%s: could not release all clocks for %s\n",
+		      __func__, dev_read_name(dev));
 
 	return ret;
 }
@@ -196,9 +197,11 @@ static struct clk *clk_set_default_get_by_id(struct clk *clk)
 	if (CONFIG_IS_ENABLED(CLK_CCF)) {
 		int ret = clk_get_by_id(clk->id, &c);
 
-		if (ret)
+		if (ret) {
 			debug("%s(): could not get parent clock pointer, id %lu\n",
 			      __func__, clk->id);
+			ERR_PTR(ret);
+		}
 	}
 
 	return c;
@@ -215,8 +218,8 @@ static int clk_set_default_parents(struct udevice *dev,
 	num_parents = dev_count_phandle_with_args(dev, "assigned-clock-parents",
 						  "#clock-cells", 0);
 	if (num_parents < 0) {
-		debug("%s: could not read assigned-clock-parents for %p\n",
-		      __func__, dev);
+		debug("%s: could not read assigned-clock-parents for %s\n",
+		      __func__, dev_read_name(dev));
 		return 0;
 	}
 
@@ -352,7 +355,7 @@ static int clk_set_default_rates(struct udevice *dev,
 
 		c = clk_set_default_get_by_id(&clk);
 		if (IS_ERR(c))
-			continue;
+			return PTR_ERR(c);
 
 		ret = clk_set_rate(c, rates[index]);
 
@@ -408,7 +411,7 @@ int clk_get_by_name_nodev(ofnode node, const char *name, struct clk *clk)
 {
 	int index = 0;
 
-	debug("%s(node=%p, name=%s, clk=%p)\n", __func__,
+	debug("%s(node=%s, name=%s, clk=%p)\n", __func__,
 		ofnode_get_name(node), name, clk);
 	clk->dev = NULL;
 
@@ -465,7 +468,7 @@ int clk_request(struct udevice *dev, struct clk *clk)
 {
 	const struct clk_ops *ops;
 
-	debug("%s(dev=%p, clk=%p)\n", __func__, dev, clk);
+	debug("%s(dev=%s, clk=%p)\n", __func__, dev_read_name(dev), clk);
 	if (!clk)
 		return 0;
 	ops = clk_dev_ops(dev);
