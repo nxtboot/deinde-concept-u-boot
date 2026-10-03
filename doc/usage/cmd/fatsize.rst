@@ -74,5 +74,6 @@ See also
   filesize
 * :doc:`fatwrite<fatwrite>` for creating the file in the first place
 * :doc:`fatinfo<fatinfo>` for showing which filesystem is on the device
+* :doc:`ext4size<ext4size>` for the same operation on an ext filesystem
 * :doc:`size<size>` for the same operation on any supported filesystem
 * *fatls* for listing files with their sizes

@@ -1158,6 +1158,15 @@ F:	scripts/event_dump.py
 F:	test/common/event.c
 F:	test/py/tests/test_event_dump.py
 
+EXT4 COMMANDS
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	cmd/ext4.c
+F:	doc/usage/cmd/ext4load.rst
+F:	doc/usage/cmd/ext4size.rst
+F:	test/py/tests/test_ext4load.py
+F:	test/py/tests/test_ext4size.py
+
 EXTENSION
 M:	Kory Maincent <kory.maincent@bootlin.com>
 S:	Maintained

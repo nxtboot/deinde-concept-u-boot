@@ -3097,6 +3097,7 @@ config CMD_EXT2
 config CMD_EXT4
 	bool "ext4 command support"
 	select FS_EXT4 if !FS_EXT4L
+	select GETOPT
 	help
 	  Enables EXT4 FS command
 
