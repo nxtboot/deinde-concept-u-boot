@@ -1301,8 +1301,11 @@ INPUT
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
 T:	git https://concept.deinde.dev/u-boot/u-boot.git
+F:	cmd/mouse.c
+F:	doc/usage/cmd/mouse.rst
 F:	drivers/input
 F:	include/mouse.h
+F:	test/cmd/mouse.c
 
 JEDEC JC-42.4 / TSE2004av TEMPERATURE SENSOR
 M:	Vincent Jardin <vjardin@free.fr>
@@ -2076,6 +2079,13 @@ T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-watchdog.git
 F:	cmd/wdt.c
 F:	drivers/watchdog/
 F:	include/watchdog*.h
+
+W1 COMMAND
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	cmd/w1.c
+F:	doc/usage/cmd/w1.rst
+F:	test/cmd/w1.c
 
 X86
 M:	Simon Glass <sjg@chromium.org>
