@@ -344,6 +344,29 @@ def test_distro_arm_app_extlinux(ubman):
 
     ubman.restart_uboot()
 
+@pytest.mark.boardspec('firefly-rk3399')
+@pytest.mark.role('ff3399')
+@pytest.mark.restart
+def test_distro_shim_arm64(ubman):
+    """Test booting Ubuntu 24.04 on arm64 through shim and GRUB
+
+    The ff3399 role's card holds an Ubuntu install whose EFI system partition
+    has Ubuntu's signed shim and GRUB. shim uses the
+    EFI_MEMORY_ATTRIBUTE_PROTOCOL to set the permissions of each section of
+    GRUB, so this checks that GRUB can still run once shim has done that.
+    """
+    with ubman.log.section('boot'):
+        ubman.run_command('bootmeth order efi')
+        ubman.run_command('bootflow scan -b', wait_for_prompt=False)
+        ubman.expect([r'Booting /\\EFI\\BOOT\\BOOTAA64.EFI'])
+
+    with ubman.log.section('Linux'):
+        with ubman.temporary_timeout(200 * 1000):
+            ubman.expect(['EFI stub: Booting Linux Kernel'])
+            ubman.expect([' login: '])
+
+    ubman.restart_uboot()
+
 @pytest.mark.boardspec('efi-x86_app64')
 @pytest.mark.role('efi-x86_64-uboot-iso-install')
 @pytest.mark.restart
