@@ -9,16 +9,19 @@
 #include <command.h>
 #include <console.h>
 #include <dm.h>
+#include <getopt.h>
 #include <mouse.h>
 #include <u-boot/schedule.h>
 
-static int do_mouse_dump(struct cmd_tbl *cmdtp, int flag, int argc,
-			 char *const argv[])
+static int do_mouse_dump(struct getopt_state *gs)
 {
 	struct udevice *dev;
 	bool running;
 	int count;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	ret = uclass_first_device_err(UCLASS_MOUSE, &dev);
 	if (ret) {
@@ -66,4 +69,4 @@ static char mouse_help_text[] =
 	"dump - Dump input from a mouse";
 
 U_BOOT_CMD_WITH_SUBCMDS(mouse, "Mouse input", mouse_help_text,
-	U_BOOT_SUBCMD_MKENT(dump, 1, 1, do_mouse_dump));
+	U_BOOT_CMD_MKENT_GETOPT(dump, 1, 1, do_mouse_dump, "", ""));

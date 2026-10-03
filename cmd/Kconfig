@@ -3378,6 +3378,7 @@ config CMD_MALLOC_LOG
 config CMD_MOUSE
 	bool "mouse - Show mouse input"
 	default y if MOUSE
+	select GETOPT
 	help
 	  This shows the data produced by a mouse. If a mouse device is
 	  available records are printed when the mouse is moved. This can be
