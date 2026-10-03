@@ -249,6 +249,8 @@ See also
 
 * :doc:`sspi<sspi>` for sending commands to a SPI device by hand, when it has
   no driver
+* :doc:`mtd<mtd>` for the same operations through the MTD stack, which names
+  the device rather than its bus and chip select
 * :doc:`mtdparts<mtdparts>` for splitting a flash device into named partitions
 * :doc:`cbfsinit<cbfsinit>` for reading a coreboot filesystem out of a flash
   device which the chipset maps into memory

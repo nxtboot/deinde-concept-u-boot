@@ -152,5 +152,5 @@ See also
 * :doc:`chpart<chpart>` for choosing which of these partitions is current
 * :doc:`sf<sf>` for reading and writing SPI flash, which can be partitioned
   this way
-* *mtd* for the MTD stack command which supersedes this one
+* :doc:`mtd<mtd>` for the MTD stack command which supersedes this one
 * *nand* for NAND operations, which accept a partition name defined here
