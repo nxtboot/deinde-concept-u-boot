@@ -582,6 +582,14 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 			ret = mtd_special_write_oob(mtd, off, &io_op,
 						    write_empty_pages, woob);
 
+		/*
+		 * The ECC corrected every bitflip it found, so the data is
+		 * good. All the device says is that the number of flips has
+		 * reached its reporting threshold.
+		 */
+		if (ret == -EUCLEAN)
+			ret = 0;
+
 		if (ret) {
 			printf("Failure while %s at offset 0x%llx\n",
 			       read ? "reading" : "writing", off);
