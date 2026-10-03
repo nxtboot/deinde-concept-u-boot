@@ -43,7 +43,8 @@ static int w1_bus(void)
 
 static int w1_read(int argc, char *const argv[])
 {
-	int bus_n = 0, dev_n = 0, offset = 0, len = 512;
+	int bus_n = 0, dev_n = 0, offset = 0;
+	ulong len = 512;
 	int i;
 	struct udevice *bus, *dev;
 	int ret;
