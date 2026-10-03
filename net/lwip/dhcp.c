@@ -54,7 +54,7 @@ static int dhcp_loop(struct udevice *udev)
 	 * Request the DHCP stack to parse and store the NTP servers for
 	 * eventual use by the SNTP command
 	 */
-	if (CONFIG_IS_ENABLED(CMD_SNTP))
+	if (CONFIG_IS_ENABLED(CONFIG_CMD_SNTP))
 		sntp_servermode_dhcp(1);
 
 	start = get_timer(0);
@@ -114,7 +114,7 @@ static int dhcp_loop(struct udevice *udev)
 		strncpy(boot_file_name, dhcp->boot_file_name,
 			sizeof(boot_file_name));
 #endif
-	if (CONFIG_IS_ENABLED(CMD_SNTP)) {
+	if (CONFIG_IS_ENABLED(CONFIG_CMD_SNTP)) {
 		ntpserverip = sntp_getserver(1);
 		if (ntpserverip != IP_ADDR_ANY)
 			env_set("ntpserverip", ip4addr_ntoa(ntpserverip));

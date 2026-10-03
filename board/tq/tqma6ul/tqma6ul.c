@@ -20,7 +20,7 @@
 
 int tq_bb_board_early_init_f(void)
 {
-	if (CONFIG_IS_ENABLED(FSL_QSPI))
+	if (CONFIG_IS_ENABLED(CONFIG_FSL_QSPI))
 		enable_qspi_clk(0);
 
 	return 0;

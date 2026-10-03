@@ -354,7 +354,7 @@ static int mtk_clk_mux_set_parent(void __iomem *base, u32 parent,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 static void mtk_clk_print_mapped_id(int unmapped_id, int mapped_id, bool has_map)
 {
 	/*
@@ -700,7 +700,7 @@ static int mtk_apmixedsys_disable(struct clk *clk)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 static void mtk_apmixedsys_dump(struct udevice *dev)
 {
 	struct mtk_clk_priv *priv = dev_get_priv(dev);
@@ -904,7 +904,7 @@ static int mtk_common_clk_set_parent(struct clk *clk, struct clk *parent)
 			&priv->tree->muxes[clk->id - priv->tree->muxes_offs]);
 }
 
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 static void mtk_topckgen_dump(struct udevice *dev)
 {
 	struct mtk_clk_priv *priv = dev_get_priv(dev);
@@ -1038,7 +1038,7 @@ static ulong mtk_infrasys_get_rate(struct clk *clk)
 	return rate;
 }
 
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 static void mtk_infrasys_dump(struct udevice *dev)
 {
 	struct mtk_clk_priv *priv = dev_get_priv(dev);
@@ -1080,7 +1080,7 @@ const struct clk_ops mtk_clk_apmixedsys_ops = {
 	.disable = mtk_apmixedsys_disable,
 	.set_rate = mtk_apmixedsys_set_rate,
 	.get_rate = mtk_apmixedsys_get_rate,
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 	.dump = mtk_apmixedsys_dump,
 #endif
 };
@@ -1090,7 +1090,7 @@ const struct clk_ops mtk_clk_fixed_pll_ops = {
 	.enable = mtk_dummy_enable,
 	.disable = mtk_dummy_enable,
 	.get_rate = mtk_topckgen_get_rate,
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 	.dump = mtk_topckgen_dump,
 #endif
 };
@@ -1101,7 +1101,7 @@ const struct clk_ops mtk_clk_topckgen_ops = {
 	.disable = mtk_topckgen_disable,
 	.get_rate = mtk_topckgen_get_rate,
 	.set_parent = mtk_common_clk_set_parent,
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 	.dump = mtk_topckgen_dump,
 #endif
 };
@@ -1112,7 +1112,7 @@ const struct clk_ops mtk_clk_infrasys_ops = {
 	.disable = mtk_clk_infrasys_disable,
 	.get_rate = mtk_infrasys_get_rate,
 	.set_parent = mtk_common_clk_set_parent,
-#if CONFIG_IS_ENABLED(CMD_CLK)
+#if CONFIG_IS_ENABLED(CONFIG_CMD_CLK)
 	.dump = mtk_infrasys_dump,
 #endif
 };

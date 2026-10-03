@@ -27,7 +27,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(PCIE_DW_AMD)
+#if CONFIG_IS_ENABLED(CONFIG_PCIE_DW_AMD)
 #define VERSAL2_MEM_MAP_USED	4
 #else
 #define VERSAL2_MEM_MAP_USED	3
@@ -60,7 +60,7 @@ static struct mm_region versal2_mem_map[VERSAL2_MEM_MAP_MAX] = {
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
-#if CONFIG_IS_ENABLED(PCIE_DW_AMD)
+#if CONFIG_IS_ENABLED(CONFIG_PCIE_DW_AMD)
 	}, {
 		/* PCIe DBI (1 MB) and config space (255 MB) are contiguous */
 		.virt = 0x100000000000UL,
@@ -129,7 +129,7 @@ void fill_bd_mem_info(void)
 
 struct mm_region *mem_map = versal2_mem_map;
 
-#if CONFIG_IS_ENABLED(SYS_MEM_RSVD_FOR_MMU)
+#if CONFIG_IS_ENABLED(CONFIG_SYS_MEM_RSVD_FOR_MMU)
 u64 get_page_table_size(void)
 {
 	return 0x14000;

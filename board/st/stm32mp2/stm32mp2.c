@@ -105,7 +105,7 @@ enum env_location env_get_location(enum env_operation op, int prio)
 
 	case BOOT_FLASH_NAND:
 	case BOOT_FLASH_SPINAND:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_UBI))
+		if (CONFIG_IS_ENABLED(CONFIG_ENV_IS_IN_UBI))
 			return ENVL_UBI;
 		else
 			return ENVL_NOWHERE;
@@ -147,7 +147,7 @@ int mmc_get_boot(void)
 
 int mmc_get_env_dev(void)
 {
-	const int mmc_env_dev = CONFIG_IS_ENABLED(ENV_IS_IN_MMC, (CONFIG_ENV_MMC_DEVICE_INDEX), (-1));
+	const int mmc_env_dev = CONFIG_IS_ENABLED(CONFIG_ENV_IS_IN_MMC, (CONFIG_ENV_MMC_DEVICE_INDEX), (-1));
 
 	if (mmc_env_dev >= 0)
 		return mmc_env_dev;

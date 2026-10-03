@@ -824,7 +824,7 @@ enum gd_flags {
 	GD_FLG_EMUL = 0x20000000,
 };
 
-#if CONFIG_IS_ENABLED(ULIB)
+#if CONFIG_IS_ENABLED(CONFIG_ULIB)
 #define gd_ulib()	(gd->flags & GD_FLG_ULIB)
 #else
 #define gd_ulib()	0

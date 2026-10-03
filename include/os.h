@@ -600,7 +600,7 @@ int os_unmap(void *buf, int size);
  * @fname: Path to the output file on the host filesystem
  * Return: 0 on success, negative error code on failure
  */
-#if !CONFIG_IS_ENABLED(SYS_MALLOC_LEGACY)
+#if !CONFIG_IS_ENABLED(CONFIG_SYS_MALLOC_LEGACY)
 int malloc_dump_to_file(const char *fname);
 #else
 static inline int malloc_dump_to_file(const char *fname) { return 0; }

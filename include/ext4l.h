@@ -36,7 +36,7 @@ struct ext4l_state {
 };
 
 /* Select op when EXT4_WRITE is enabled, fallback otherwise */
-#if CONFIG_IS_ENABLED(EXT4_WRITE)
+#if CONFIG_IS_ENABLED(CONFIG_EXT4_WRITE)
 #define ext4l_op_ptr(op, fallback)	op
 #else
 #define ext4l_op_ptr(op, fallback)	fallback

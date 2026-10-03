@@ -3162,7 +3162,7 @@ int mmc_init(struct mmc *mmc)
 		return err;
 	}
 
-	if (CONFIG_IS_ENABLED(CYCLIC, (!mmc->cyclic.func), (NULL))) {
+	if (CONFIG_IS_ENABLED(CONFIG_CYCLIC, (!mmc->cyclic.func), (NULL))) {
 		/* Register cyclic function for card detect polling */
 		cyclic_register(&mmc->cyclic, mmc_cyclic_cd_poll, 100 * 1000,
 				mmc->cfg->name);
@@ -3175,7 +3175,7 @@ int mmc_deinit(struct mmc *mmc)
 {
 	u32 caps_filtered;
 
-	if (CONFIG_IS_ENABLED(CYCLIC, (mmc->cyclic.func), (NULL)))
+	if (CONFIG_IS_ENABLED(CONFIG_CYCLIC, (mmc->cyclic.func), (NULL)))
 		cyclic_unregister(&mmc->cyclic);
 
 	if (!IS_ENABLED(CONFIG_MMC_UHS_SUPPORT) &&

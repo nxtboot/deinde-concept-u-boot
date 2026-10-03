@@ -565,7 +565,7 @@ static int do_efi_show_defaults(struct cmd_tbl *cmdtp, int flag,
 	return CMD_RET_SUCCESS;
 }
 
-#if CONFIG_IS_ENABLED(EFI_ECPT)
+#if CONFIG_IS_ENABLED(CONFIG_EFI_ECPT)
 /**
  * do_efi_show_ecpt() - show UEFI conformance profiles in ECPT
  *
@@ -604,7 +604,7 @@ static int do_efi_show_ecpt(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	return CMD_RET_SUCCESS;
 }
-#endif /* CONFIG_IS_ENABLED(EFI_ECPT) */
+#endif /* CONFIG_IS_ENABLED(CONFIG_EFI_ECPT) */
 
 /**
  * do_efi_show_log() - show UEFI log of boot-services calls
@@ -1695,7 +1695,7 @@ static struct cmd_tbl cmd_efidebug_sub[] = {
 			 "", ""),
 	U_BOOT_CMD_MKENT(defaults, CONFIG_SYS_MAXARGS, 1, do_efi_show_defaults,
 			 "", ""),
-#if CONFIG_IS_ENABLED(EFI_ECPT)
+#if CONFIG_IS_ENABLED(CONFIG_EFI_ECPT)
 	U_BOOT_CMD_MKENT(ecpt, CONFIG_SYS_MAXARGS, 1, do_efi_show_ecpt,
 			 "", ""),
 #endif
@@ -1799,7 +1799,7 @@ U_BOOT_LONGHELP(efidebug,
 	"  - show UEFI handles\n"
 	"efidebug defaults\n"
 	"  - show default EFI filename and PXE architecture\n"
-#if CONFIG_IS_ENABLED(EFI_ECPT)
+#if CONFIG_IS_ENABLED(CONFIG_EFI_ECPT)
 	"efidebug ecpt\n"
 	"  - show conformance profiles in the ECPT\n"
 #endif

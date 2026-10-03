@@ -34,7 +34,7 @@ enum fs_type_t {
 #define FS_DT_REG  8         /* regular file */
 #define FS_DT_LNK  10        /* symbolic link */
 
-#define FS_DIRENT_NAME_LEN	CONFIG_IS_ENABLED(FS_EXFAT, (1024), (256))
+#define FS_DIRENT_NAME_LEN	CONFIG_IS_ENABLED(CONFIG_FS_EXFAT, (1024), (256))
 
 /**
  * struct fs_dirent - directory entry

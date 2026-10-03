@@ -198,7 +198,7 @@ static int booti_place(ulong cur, u64 text_offset, u64 image_size, u64 flags,
 			 * did, then leave the Image where it is, if that will
 			 * do, else find somewhere for it
 			 */
-			if (!placed && CONFIG_IS_ENABLED(BOOTI_RANDOMIZE_BASE) &&
+			if (!placed && CONFIG_IS_ENABLED(CONFIG_BOOTI_RANDOMIZE_BASE) &&
 			    !bootargs_has_nokaslr() &&
 			    !booti_random_base(image_size, &dst))
 				done = true;
@@ -291,7 +291,7 @@ int booti_alloc(ulong size, ulong *addrp)
 
 	if (!IS_ENABLED(CONFIG_LMB))
 		return -ENOSYS;
-	if (CONFIG_IS_ENABLED(BOOTI_RANDOMIZE_BASE) &&
+	if (CONFIG_IS_ENABLED(CONFIG_BOOTI_RANDOMIZE_BASE) &&
 	    !bootargs_has_nokaslr() &&
 	    !booti_random_base(alloc_size(size), &base)) {
 		*addrp = base;

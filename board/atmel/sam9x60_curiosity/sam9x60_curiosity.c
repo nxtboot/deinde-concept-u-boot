@@ -28,7 +28,7 @@ void at91_prepare_cpu_var(void);
 
 static void board_leds_init(void)
 {
-#if !CONFIG_IS_ENABLED(LED_BOOT)
+#if !CONFIG_IS_ENABLED(CONFIG_LED_BOOT)
 	at91_set_pio_output(AT91_PIO_PORTD, 17, 0);	/* LED RED */
 	at91_set_pio_output(AT91_PIO_PORTD, 19, 0);	/* LED GREEN */
 	at91_set_pio_output(AT91_PIO_PORTD, 21, 1);	/* LED BLUE */

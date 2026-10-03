@@ -202,7 +202,7 @@ int serial_init(void)
 	 * early boot. Full serial initialization happens in serial_initialize()
 	 * after relocation.
 	 */
-	if ((CONFIG_IS_ENABLED(DEBUG_UART) && IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
+	if ((CONFIG_IS_ENABLED(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
 	    !(gd->flags & GD_FLG_RELOC))
 		return 0;
 

@@ -769,7 +769,7 @@ int pmbus_set_active(int bus_seq, u8 addr)
 	 * the right per class formats instead of the blanket
 	 * LINEAR16 / LINEAR11 fallback.
 	 */
-	if (CONFIG_IS_ENABLED(DM_REGULATOR_PMBUS_HELPER) &&
+	if (CONFIG_IS_ENABLED(CONFIG_DM_REGULATOR_PMBUS_HELPER) &&
 	    !pmbus_active_state.info) {
 		const struct pmbus_driver_info *di =
 			pmbus_regulator_info_by_addr(bus_seq, addr);

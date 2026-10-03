@@ -1779,7 +1779,7 @@ int fdtdec_apply_bloblist_dtos(void)
 	int blob_size;
 	size_t padded_size, max_size;
 
-	if (!CONFIG_IS_ENABLED(OF_LIBFDT_OVERLAY) ||
+	if (!CONFIG_IS_ENABLED(CONFIG_OF_LIBFDT_OVERLAY) ||
 	    !IS_ENABLED(CONFIG_BLOBLIST))
 		return 0;
 

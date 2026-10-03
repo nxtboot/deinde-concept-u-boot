@@ -357,7 +357,7 @@ static const struct sdhci_ops snps_sdhci_ops = {
 	.set_ios_post = snps_sdhci_set_ios_post,
 	.platform_execute_tuning = snps_sdhci_execute_tuning,
 	.set_enhanced_strobe = snps_sdhci_set_enhanced_strobe,
-#if CONFIG_IS_ENABLED(MMC_SDHCI_ADMA_HELPERS)
+#if CONFIG_IS_ENABLED(CONFIG_MMC_SDHCI_ADMA_HELPERS)
 	.adma_write_desc = snps_sdhci_adma_write_desc,
 #endif
 };

@@ -18,7 +18,7 @@
 #ifndef __ASM_ARCH_IPU_H__
 #define __ASM_ARCH_IPU_H__
 
-#if !CONFIG_IS_ENABLED(IPU_CLK_LEGACY)
+#if !CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 #include <clk.h>
 #endif
 #include <ipu_pixfmt.h>
@@ -34,7 +34,7 @@
 
 struct ipu_ctx;
 
-#if CONFIG_IS_ENABLED(IPU_CLK_LEGACY)
+#if CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY)
 
 struct clk {
 	const char *name;
@@ -122,7 +122,7 @@ static inline int ipu_pixel_clk_init_legacy(struct ipu_ctx *ctx, int id)
 	return -ENOSYS;
 }
 
-#endif /* CONFIG_IS_ENABLED(IPU_CLK_LEGACY) */
+#endif /* CONFIG_IS_ENABLED(CONFIG_IPU_CLK_LEGACY) */
 
 struct udevice;
 

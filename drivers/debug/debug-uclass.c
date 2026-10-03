@@ -57,7 +57,7 @@ static int debug_post_probe(struct udevice *dev)
 {
 	char msg[40];
 
-	if (!CONFIG_IS_ENABLED(DEBUG_DEV_ANNOUNCE))
+	if (!CONFIG_IS_ENABLED(CONFIG_DEBUG_DEV_ANNOUNCE))
 		return 0;
 
 	snprintf(msg, sizeof(msg), "U-Boot debug device %s\n", dev->name);
@@ -81,7 +81,7 @@ static int debug_announce(void)
 {
 	struct udevice *dev;
 
-	if (!CONFIG_IS_ENABLED(DEBUG_DEV_ANNOUNCE))
+	if (!CONFIG_IS_ENABLED(CONFIG_DEBUG_DEV_ANNOUNCE))
 		return 0;
 
 	uclass_foreach_dev_probe(UCLASS_DEBUG, dev) {

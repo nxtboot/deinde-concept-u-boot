@@ -100,7 +100,8 @@ efi_status_t efi_query_variable_info_int(u32 attributes,
 /* Fixed address of the buffer, or 0: the option only exists with a store */
 #define EFI_VAR_BUF_ADDR \
 	(IS_ENABLED(CONFIG_EFI_RT_VOLATILE_STORE) ? \
-	 CONFIG_IF_ENABLED_INT(EFI_RT_VOLATILE_STORE, EFI_VAR_BUF_ADDR) : 0)
+	 CONFIG_IF_ENABLED_INT(CONFIG_EFI_RT_VOLATILE_STORE, \
+			       CONFIG_EFI_VAR_BUF_ADDR) : 0)
 
 /*
  * This constant identifies the file format for storing UEFI variables in

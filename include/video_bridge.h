@@ -80,7 +80,7 @@ struct video_bridge_ops {
 #define video_bridge_get_ops(dev) \
 		((struct video_bridge_ops *)(dev)->driver->ops)
 
-#if CONFIG_IS_ENABLED(VIDEO_BRIDGE)
+#if CONFIG_IS_ENABLED(CONFIG_VIDEO_BRIDGE)
 /**
  * video_bridge_attach() - attach a video bridge
  *

@@ -121,7 +121,7 @@ char *backtrace_strf(unsigned int skip, char *buf, int size);
  * @skip: number of stack frames to skip (0 to include backtrace_str itself)
  * Return: pointer to static string, or NULL on error
  */
-#if CONFIG_IS_ENABLED(BACKTRACE)
+#if CONFIG_IS_ENABLED(CONFIG_BACKTRACE)
 const char *backtrace_str(unsigned int skip);
 #else
 static inline const char *backtrace_str(unsigned int skip)
