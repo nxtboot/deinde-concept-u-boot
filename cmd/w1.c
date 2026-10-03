@@ -6,6 +6,7 @@
  */
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 #include <w1.h>
 #include <w1-eeprom.h>
 #include <dm/device-internal.h>
@@ -104,8 +105,14 @@ static int w1_read(int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-int do_w1(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_w1(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
+
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -118,10 +125,10 @@ int do_w1(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(w1, 6, 0, do_w1,
-	   "onewire interface utility commands",
-	   "bus - show onewire bus info (all)\n"
-	   "w1 read [<bus> [<dev> [offset [length]]]]"
-	   "    - read from onewire device 'dev' on onewire bus 'bus'"
-	   " starting from offset 'offset' and length 'length'\n"
-	   "      defaults: bus 0, dev 0, offset 0, length 512 bytes.");
+U_BOOT_CMD_GETOPT(w1, 6, 0, do_w1,
+		  "onewire interface utility commands",
+		  "bus - show onewire bus info (all)\n"
+		  "w1 read [<bus> [<dev> [offset [length]]]]"
+		  "    - read from onewire device 'dev' on onewire bus 'bus'"
+		  " starting from offset 'offset' and length 'length'\n"
+		  "      defaults: bus 0, dev 0, offset 0, length 512 bytes.");

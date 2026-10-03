@@ -1508,6 +1508,7 @@ config CMD_W1
 	depends on W1 && W1_EEPROM
 	default y if W1
 	bool "w1 - Support for Dallas 1-Wire protocol"
+	select GETOPT
 	help
 	  Dallas 1-wire protocol support
 
