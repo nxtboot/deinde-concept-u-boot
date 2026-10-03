@@ -519,13 +519,19 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 		goto out_put_mtd;
 	}
 
-	default_len = dump ? mtd->writesize : mtd->size;
+	if (start_off >= mtd->size)
+		goto past_end;
+
+	default_len = dump ? mtd->writesize : mtd->size - start_off;
 	len = argc > 1 ? hextoul(argv[1], NULL) : default_len;
 	if (!mtd_is_aligned_with_min_io_size(mtd, len)) {
 		len = round_up(len, mtd->writesize);
 		printf("Size not on a page boundary (0x%x), rounding to 0x%llx\n",
 		       mtd->writesize, len);
 	}
+
+	if (len > mtd->size - start_off)
+		goto past_end;
 
 	remaining = len;
 	npages = mtd_len_to_pages(mtd, len);
@@ -559,7 +565,7 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	/* Search for the first good block after the given offset */
 	off = start_off;
-	while (mtd_block_isbad(mtd, off))
+	while (off < mtd->size && mtd_block_isbad(mtd, off))
 		off += mtd->erasesize;
 
 	led_activity_blink();
@@ -569,6 +575,12 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	/* Loop over the pages to do the actual read/write */
 	while (remaining) {
+		if (off >= mtd->size) {
+			printf("Ran out of good blocks on %s\n", mtd->name);
+			ret = -ENOSPC;
+			break;
+		}
+
 		/* Skip the block if it is bad */
 		if (mtd_is_aligned_with_block_size(mtd, off) &&
 		    mtd_block_isbad(mtd, off)) {
@@ -628,6 +640,12 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = CMD_RET_SUCCESS;
 	}
 
+	goto out_put_mtd;
+
+past_end:
+	printf("Op does not fit in %s (%llx)\n", mtd->name, mtd->size);
+	ret = CMD_RET_FAILURE;
+
 out_put_mtd:
 	put_mtd_device(mtd);
 
@@ -656,7 +674,6 @@ static int do_mtd_erase(struct cmd_tbl *cmdtp, int flag, int argc,
 	argv += 2;
 
 	off = argc > 0 ? hextoul(argv[0], NULL) : 0;
-	len = argc > 1 ? hextoul(argv[1], NULL) : mtd->size;
 
 	if (!mtd_is_aligned_with_block_size(mtd, off)) {
 		printf("Offset not aligned with a block (0x%x)\n",
@@ -665,12 +682,20 @@ static int do_mtd_erase(struct cmd_tbl *cmdtp, int flag, int argc,
 		goto out_put_mtd;
 	}
 
+	if (off >= mtd->size)
+		goto past_end;
+
+	len = argc > 1 ? hextoul(argv[1], NULL) : mtd->size - off;
+
 	if (!mtd_is_aligned_with_block_size(mtd, len)) {
 		printf("Size not a multiple of a block (0x%x)\n",
 		       mtd->erasesize);
 		ret = CMD_RET_FAILURE;
 		goto out_put_mtd;
 	}
+
+	if (len > mtd->size - off)
+		goto past_end;
 
 	printf("Erasing 0x%08llx ... 0x%08llx (%d eraseblock(s))\n",
 	       off, off + len - 1, mtd_div_by_eb(len, mtd));
@@ -715,6 +740,12 @@ static int do_mtd_erase(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = CMD_RET_FAILURE;
 	else
 		ret = CMD_RET_SUCCESS;
+
+	goto out_put_mtd;
+
+past_end:
+	printf("Op does not fit in %s (%llx)\n", mtd->name, mtd->size);
+	ret = CMD_RET_FAILURE;
 
 out_put_mtd:
 	put_mtd_device(mtd);
@@ -1254,7 +1285,7 @@ U_BOOT_LONGHELP(mtd,
 	"\t<off>: offset in <name> in bytes (default: start of the part)\n"
 	"\t\t* must be block-aligned for erase\n"
 	"\t\t* must be page-aligned otherwise\n"
-	"\t<size>: length of the operation in bytes (default: the entire device)\n"
+	"\t<size>: length of the operation in bytes (default: to the end of the device)\n"
 	"\t\t* must be a multiple of a block for erase\n"
 	"\t\t* must be a multiple of a page otherwise (special case: default is a page with dump)\n"
 #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
