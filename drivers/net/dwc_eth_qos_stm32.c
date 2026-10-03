@@ -54,7 +54,7 @@ static ulong eqos_get_tick_clk_rate_stm32(struct udevice *dev)
 {
 	struct eqos_priv __maybe_unused *eqos = dev_get_priv(dev);
 
-	if (!CONFIG_IS_ENABLED(CLK))
+	if (!IS_ENABLED(CONFIG_CLK))
 		return 0;
 
 	return clk_get_rate(&eqos->clk_master_bus);
@@ -65,7 +65,7 @@ static int eqos_start_clks_stm32(struct udevice *dev)
 	struct eqos_priv __maybe_unused *eqos = dev_get_priv(dev);
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK))
+	if (!IS_ENABLED(CONFIG_CLK))
 		return 0;
 
 	dev_dbg(dev, "%s:\n", __func__);
@@ -116,7 +116,7 @@ static int eqos_stop_clks_stm32(struct udevice *dev)
 {
 	struct eqos_priv __maybe_unused *eqos = dev_get_priv(dev);
 
-	if (!CONFIG_IS_ENABLED(CLK))
+	if (!IS_ENABLED(CONFIG_CLK))
 		return 0;
 
 	dev_dbg(dev, "%s:\n", __func__);

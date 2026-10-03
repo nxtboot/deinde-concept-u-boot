@@ -65,7 +65,7 @@ void board_init_f(ulong dummy)
 	writel(0x00ff00ff, APMU_BASE + 0x1c);
 	clrbits_le32(APMU_BASE + 0x68, BIT(29));
 
-	if (CONFIG_IS_ENABLED(OF_CONTROL)) {
+	if (IS_ENABLED(CONFIG_OF_CONTROL)) {
 		ret = spl_early_init();
 		if (ret) {
 			debug("spl_early_init() failed: %d\n", ret);

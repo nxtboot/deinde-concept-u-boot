@@ -122,7 +122,7 @@ static void fsp_handle_reset(int status, const struct fspm_upd *upd)
 	    status > FSP_STATUS_RESET_REQUIRED_8)
 		return;
 
-	if (CONFIG_IS_ENABLED(MRC_CACHE_SAVE))
+	if (IS_ENABLED(CONFIG_MRC_CACHE_SAVE))
 		save_mrc_data_before_reset(upd);
 
 	if (status == FSP_STATUS_RESET_REQUIRED_COLD) {

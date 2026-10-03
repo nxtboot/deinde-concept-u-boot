@@ -100,7 +100,7 @@ struct clk_bulk {
 
 struct phandle_1_arg;
 
-#if CONFIG_IS_ENABLED(OF_CONTROL) && CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_OF_CONTROL) && IS_ENABLED(CONFIG_CLK)
 /**
  * clk_get_by_phandle() - Get a clock by its phandle information (of-platadata)
  * @dev: Device containing the phandle
@@ -392,7 +392,7 @@ enum clk_defaults_stage {
 	CLK_DEFAULTS_POST_FORCE,
 };
 
-#if CONFIG_IS_ENABLED(OF_REAL) && CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_OF_REAL) && IS_ENABLED(CONFIG_CLK)
 /**
  * clk_set_defaults - Process ``assigned-{clocks/clock-parents/clock-rates}``
  *                    properties to configure clocks
@@ -426,7 +426,7 @@ static inline int clk_release_bulk(struct clk_bulk *bulk)
 	return clk_release_all(bulk->clks, bulk->count);
 }
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 /**
  * clk_request() - Request a clock by provider-specific ID.
  * @dev:	The clock provider device.
@@ -590,7 +590,7 @@ bool clk_dev_binded(struct clk *clk);
  */
 ulong clk_get_id(const struct clk *clk);
 
-#else /* CONFIG_IS_ENABLED(CLK) */
+#else /* IS_ENABLED(CONFIG_CLK) */
 
 static inline int clk_request(struct udevice *dev, struct clk *clk)
 {
@@ -666,7 +666,7 @@ static inline ulong clk_get_id(const struct clk *clk)
 {
 	return 0;
 }
-#endif /* CONFIG_IS_ENABLED(CLK) */
+#endif /* IS_ENABLED(CONFIG_CLK) */
 
 /**
  * clk_valid() - check if clk is valid

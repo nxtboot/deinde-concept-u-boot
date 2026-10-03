@@ -31,7 +31,7 @@ __weak int br_board_late_init(void)
 	return 0;
 }
 
-#if defined(CONFIG_SPL_BUILD) && CONFIG_IS_ENABLED(FPGA)
+#if defined(CONFIG_SPL_BUILD) && IS_ENABLED(CONFIG_FPGA)
 const char *fpga_paths[2] = { "/binman/blob-ext@4",
 			      "/binman/blob-ext@1"};
 
@@ -138,7 +138,7 @@ int board_init(void)
 		}
 	}
 
-#if CONFIG_IS_ENABLED(FPGA)
+#if IS_ENABLED(CONFIG_FPGA)
 	unsigned int bmode;
 	unsigned int bank;
 

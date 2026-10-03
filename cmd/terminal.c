@@ -30,7 +30,7 @@ int do_terminal(struct cmd_tbl *cmd, int flag, int argc, char *const argv[])
 	 * the call is unnecessary; each device is reinit'd via its own
 	 * probe.
 	 */
-	if (!CONFIG_IS_ENABLED(DM_SERIAL))
+	if (!IS_ENABLED(CONFIG_DM_SERIAL))
 		serial_reinit_all();
 
 	printf("Entering terminal mode for port %s\n", dev->name);

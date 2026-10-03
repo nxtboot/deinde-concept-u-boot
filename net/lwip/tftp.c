@@ -80,7 +80,7 @@ static int store_block(struct tftp_ctx *ctx, void *src, u16_t len)
 	ulong pos;
 	void *ptr;
 
-	if (CONFIG_IS_ENABLED(LMB)) {
+	if (IS_ENABLED(CONFIG_LMB)) {
 		if (store_addr + len < store_addr ||
 		    lmb_read_check(store_addr, len)) {
 			puts("\nTFTP error: ");

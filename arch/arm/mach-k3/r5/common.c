@@ -31,7 +31,7 @@ enum {
 	IMAGE_AMT,
 };
 
-#if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
+#if IS_ENABLED(CONFIG_FIT_IMAGE_POST_PROCESS)
 static const char *image_os_match[IMAGE_AMT] = {
 	"arm-trusted-firmware",
 	"tee",
@@ -77,7 +77,7 @@ int load_firmware(char *name_fw, char *name_loadaddr, u32 *loadaddr)
 	char *name = NULL;
 	int size = 0;
 
-	if (!CONFIG_IS_ENABLED(FS_LOADER))
+	if (!IS_ENABLED(CONFIG_FS_LOADER))
 		return 0;
 
 	*loadaddr = 0;
@@ -170,7 +170,7 @@ void __noreturn jump_to_image(struct spl_image_info *spl_image)
 	if (ret)
 		panic("%s: ATF failed to load on rproc (%d)\n", __func__, ret);
 
-#if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
+#if IS_ENABLED(CONFIG_FIT_IMAGE_POST_PROCESS)
 	/* Authenticate ATF */
 	void *image_addr = (void *)fit_image_info[IMAGE_ID_ATF].image_start;
 
@@ -323,7 +323,7 @@ void remove_fwl_configs(struct fwl_data *fwl_data, size_t fwl_data_size)
 	}
 }
 
-#if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
+#if IS_ENABLED(CONFIG_FIT_IMAGE_POST_PROCESS)
 void board_fit_image_post_process(const void *fit, int node, void **p_image,
 				  size_t *p_size)
 {

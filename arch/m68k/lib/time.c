@@ -24,7 +24,7 @@ static volatile ulong timestamp = 0;
 #define CFG_SYS_WATCHDOG_FREQ (CONFIG_SYS_HZ / 2)
 #endif
 
-#if CONFIG_IS_ENABLED(MCFTMR)
+#if IS_ENABLED(CONFIG_MCFTMR)
 #ifndef CFG_SYS_UDELAY_BASE
 #	error	"uDelay base not defined!"
 #endif

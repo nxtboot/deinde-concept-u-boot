@@ -20,21 +20,21 @@
 struct arch_global_data {
 	long boot_hart;		/* boot hart id */
 	phys_addr_t firmware_fdt_addr;
-#if CONFIG_IS_ENABLED(RISCV_ACLINT)
+#if IS_ENABLED(CONFIG_RISCV_ACLINT)
 	void __iomem *aclint;	/* aclint base address */
 #endif
 #ifdef CONFIG_ANDES_PLICSW
 	void __iomem *plicsw;	/* andes plicsw base address */
 #endif
-#if CONFIG_IS_ENABLED(SMP)
+#if IS_ENABLED(CONFIG_SMP)
 	struct ipi_data ipi[CONFIG_NR_CPUS];
 #endif
-#if !CONFIG_IS_ENABLED(XIP)
+#if !IS_ENABLED(CONFIG_XIP)
 #ifdef CONFIG_AVAILABLE_HARTS
 	ulong available_harts;
 #endif
 #endif
-#if CONFIG_IS_ENABLED(ACPI)
+#if IS_ENABLED(CONFIG_ACPI)
 	ulong table_start;		/* Start address of ACPI tables */
 	ulong table_end;		/* End address of ACPI tables */
 	ulong table_start_high;		/* Start address of high ACPI tables */

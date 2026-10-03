@@ -26,7 +26,7 @@ static inline void sync(void)
 #define __W
 #endif
 
-#if CONFIG_IS_ENABLED(SYS_THUMB_BUILD)
+#if IS_ENABLED(CONFIG_SYS_THUMB_BUILD)
 #define __R "l"
 #define __RM "=l"
 #else
@@ -386,7 +386,7 @@ void __memcpy_fromio(void *to, const volatile void __iomem *from, size_t count)
 		count--;
 	}
 
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF)) {
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF)) {
 		if (mmu_status()) {
 			while (count >= 8) {
 				*(u64 *)to = __raw_readq(from);
@@ -418,7 +418,7 @@ void __memcpy_toio(volatile void __iomem *to, const void *from, size_t count)
 		count--;
 	}
 
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF)) {
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF)) {
 		if (mmu_status()) {
 			while (count >= 8) {
 				__raw_writeq(*(u64 *)from, to);

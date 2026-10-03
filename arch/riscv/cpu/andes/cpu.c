@@ -30,7 +30,7 @@ int cleanup_before_linux(void)
 void harts_early_init(void)
 {
 	/* Enable I/D-cache in SPL */
-	if (CONFIG_IS_ENABLED(RISCV_MMODE)) {
+	if (IS_ENABLED(CONFIG_RISCV_MMODE)) {
 		unsigned long mcache_ctl_val = csr_read(CSR_MCACHE_CTL);
 		unsigned long mmisc_ctl_val = csr_read(CSR_MMISC_CTL);
 
@@ -39,15 +39,15 @@ void harts_early_init(void)
 				MCACHE_CTL_DC_WAROUND_EN | MCACHE_CTL_L2C_WAROUND_EN | \
 				MCACHE_CTL_IC_ECCEN | MCACHE_CTL_DC_ECCEN | MCACHE_CTL_TLB_ECCEN);
 
-		if (!CONFIG_IS_ENABLED(SYS_ICACHE_OFF))
+		if (!IS_ENABLED(CONFIG_SYS_ICACHE_OFF))
 			mcache_ctl_val |= MCACHE_CTL_IC_EN;
 
-		if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+		if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 			mcache_ctl_val |= (MCACHE_CTL_DC_EN | MCACHE_CTL_DC_COHEN);
 
 		csr_write(CSR_MCACHE_CTL, mcache_ctl_val);
 
-		if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF)) {
+		if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF)) {
 			/*
 			 * Check mcache_ctl.DC_COHEN, we assume this platform does
 			 * not support CM if the bit is hard-wired to 0.

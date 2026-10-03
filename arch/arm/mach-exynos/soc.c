@@ -20,7 +20,7 @@ extern void _main(void);
 void *secondary_boot_addr = (void *)_main;
 #endif /* CONFIG_TARGET_ESPRESSO7420 */
 
-#if !CONFIG_IS_ENABLED(SYSRESET)
+#if !IS_ENABLED(CONFIG_SYSRESET)
 void reset_cpu(void)
 {
 #ifdef CONFIG_CPU_V7A
@@ -29,7 +29,7 @@ void reset_cpu(void)
 }
 #endif
 
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 void enable_caches(void)
 {
 	/* Enable D-cache. I-cache is already enabled in start.S */

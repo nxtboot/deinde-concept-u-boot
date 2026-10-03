@@ -1040,7 +1040,7 @@ efi_status_t efi_load_pe(struct efi_loaded_image_obj *handle,
 	 * If on x86 a write affects a prefetched instruction,
 	 * the prefetch queue is invalidated.
 	 */
-	if (!CONFIG_IS_ENABLED(X86))
+	if (!IS_ENABLED(CONFIG_X86))
 		invalidate_icache_all();
 
 	/* Populate the loaded image interface bits */

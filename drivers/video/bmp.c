@@ -40,7 +40,7 @@ struct bmp_image *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 	unsigned long len;
 	struct bmp_image *bmp;
 
-	if (!CONFIG_IS_ENABLED(VIDEO_BMP_GZIP))
+	if (!IS_ENABLED(CONFIG_VIDEO_BMP_GZIP))
 		return NULL;
 
 	/*

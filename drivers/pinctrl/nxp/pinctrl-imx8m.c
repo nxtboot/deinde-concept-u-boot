@@ -30,7 +30,7 @@ static const struct udevice_id imx8m_pinctrl_match[] = {
 	{ /* sentinel */ }
 };
 
-#if CONFIG_IS_ENABLED(CMD_PINMUX)
+#if IS_ENABLED(CONFIG_CMD_PINMUX)
 
 #if IS_ENABLED(CONFIG_IMX8MP)
 #include "pinctrl-imx8mp.c"
@@ -76,7 +76,7 @@ static int imx8m_get_pin_muxing(struct udevice *dev, unsigned int selector,
 #endif
 
 static const struct pinctrl_ops imx8m_pinctrl_ops = {
-#if CONFIG_IS_ENABLED(CMD_PINMUX)
+#if IS_ENABLED(CONFIG_CMD_PINMUX)
 	.get_pin_name = imx8m_get_pin_name,
 	.get_pins_count = imx8m_get_pins_count,
 	.get_pin_muxing = imx8m_get_pin_muxing,

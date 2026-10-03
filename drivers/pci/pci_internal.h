@@ -138,7 +138,7 @@ int pciauto_config_device(struct udevice *dev);
  * The allocator hooks: pci_auto_sorted.c allocates everything once the root
  * bus has scanned all its buses, pci_auto_simple.c as the devices are found
  */
-#if CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST)
+#if IS_ENABLED(CONFIG_PCI_PNP_LARGEST_FIRST)
 /**
  * pciauto_alloc_resources() - Allocate the resources of a bus's devices
  *

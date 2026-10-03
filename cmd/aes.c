@@ -282,15 +282,15 @@ static int do_aes(struct getopt_state *gs)
 
 	if (!strncmp(argv[1], "enc", 3) || !strncmp(argv[1], "dec", 3))
 		return cmd_aes_cbc_simple(argc, argv, key_len);
-	else if (CONFIG_IS_ENABLED(DM_AES) && !strncmp(argv[1], "get_slots", 9))
+	else if (IS_ENABLED(CONFIG_DM_AES) && !strncmp(argv[1], "get_slots", 9))
 		return cmd_aes_get_slots();
-	else if (CONFIG_IS_ENABLED(DM_AES) && !strncmp(argv[1], "set_key", 7))
+	else if (IS_ENABLED(CONFIG_DM_AES) && !strncmp(argv[1], "set_key", 7))
 		return cmd_aes_set_key(argc, argv, key_len);
-	else if (CONFIG_IS_ENABLED(DM_AES) && !strncmp(argv[1], "select_slot", 11))
+	else if (IS_ENABLED(CONFIG_DM_AES) && !strncmp(argv[1], "select_slot", 11))
 		return cmd_aes_select_slot(argc, argv, key_len);
-	else if (CONFIG_IS_ENABLED(DM_AES) && !strncmp(argv[1], "ecb", 3))
+	else if (IS_ENABLED(CONFIG_DM_AES) && !strncmp(argv[1], "ecb", 3))
 		return cmd_aes_ecb(argc, argv, key_len);
-	else if (CONFIG_IS_ENABLED(DM_AES) && !strncmp(argv[1], "cbc", 3))
+	else if (IS_ENABLED(CONFIG_DM_AES) && !strncmp(argv[1], "cbc", 3))
 		return cmd_aes_cbc(argc, argv, key_len);
 	else
 		return CMD_RET_USAGE;
@@ -311,7 +311,7 @@ U_BOOT_LONGHELP(aes,
 	"                             The $len size must be multiple of 16 bytes.\n"
 	"                             The $key and $iv must be 16 bytes long."
 
-#if CONFIG_IS_ENABLED(DM_AES)
+#if IS_ENABLED(CONFIG_DM_AES)
 	"\n"
 	"aes get_slots - Gives number of available key slots\n"
 	"aes [.128,.192,.256] set_key key slot - Load key at address $key into the slot $slot\n"

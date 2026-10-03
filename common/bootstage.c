@@ -605,7 +605,7 @@ int _bootstage_stash_default(void)
 
 	stash = NULL;
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
-	    CONFIG_IS_ENABLED(BLOBLIST)) {
+	    IS_ENABLED(CONFIG_BLOBLIST)) {
 		stash = bloblist_ensure(BLOBLISTT_U_BOOT_BOOTSTAGE,
 					CONFIG_BOOTSTAGE_STASH_SIZE);
 		/*
@@ -628,7 +628,7 @@ int _bootstage_unstash_default(void)
 
 	stash = NULL;
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
-	    CONFIG_IS_ENABLED(BLOBLIST))
+	    IS_ENABLED(CONFIG_BLOBLIST))
 		stash = bloblist_find(BLOBLISTT_U_BOOT_BOOTSTAGE,
 				      CONFIG_BOOTSTAGE_STASH_SIZE);
 	/*

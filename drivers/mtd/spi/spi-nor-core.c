@@ -400,7 +400,7 @@ static ssize_t spi_nor_read_data(struct spi_nor *nor, loff_t from, size_t len,
 	while (remaining) {
 		op.data.nbytes = remaining < UINT_MAX ? remaining : UINT_MAX;
 
-		if (CONFIG_IS_ENABLED(SPI_DIRMAP) && nor->dirmap.rdesc) {
+		if (IS_ENABLED(CONFIG_SPI_DIRMAP) && nor->dirmap.rdesc) {
 			/*
 			 * Record current operation information which may be used
 			 * when the address or data length exceeds address mapping.
@@ -446,7 +446,7 @@ static ssize_t spi_nor_write_data(struct spi_nor *nor, loff_t to, size_t len,
 
 	spi_nor_setup_op(nor, &op, nor->write_proto);
 
-	if (CONFIG_IS_ENABLED(SPI_DIRMAP) && nor->dirmap.wdesc) {
+	if (IS_ENABLED(CONFIG_SPI_DIRMAP) && nor->dirmap.wdesc) {
 		memcpy(&nor->dirmap.wdesc->info.op_tmpl, &op,
 		       sizeof(struct spi_mem_op));
 		op.data.nbytes = spi_mem_dirmap_write(nor->dirmap.wdesc, op.addr.val,
@@ -655,7 +655,7 @@ static struct spi_nor *mtd_to_spi_nor(struct mtd_info *mtd)
 	return mtd->priv;
 }
 
-#if !CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if !IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 static u8 spi_nor_convert_opcode(u8 opcode, const u8 table[][2], size_t size)
 {
 	size_t i;
@@ -739,7 +739,7 @@ static void spi_nor_set_4byte_opcodes(struct spi_nor *nor,
 	nor->program_opcode = spi_nor_convert_3to4_program(nor->program_opcode);
 	nor->erase_opcode = spi_nor_convert_3to4_erase(nor->erase_opcode);
 }
-#endif /* !CONFIG_IS_ENABLED(SPI_FLASH_BAR) */
+#endif /* !IS_ENABLED(CONFIG_SPI_FLASH_BAR) */
 
 /* Enable/disable 4-byte addressing mode. */
 static int set_4byte(struct spi_nor *nor, const struct flash_info *info,
@@ -930,7 +930,7 @@ static int spi_nor_erase_chip_wait_till_ready(struct spi_nor *nor, unsigned long
 	return spi_nor_wait_till_ready_with_timeout(nor, timeout);
 }
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 /*
  * This "clean_bar" is necessary in a situation when one was accessing
  * spi flash memory > 16 MiB by using Bank Address Register's BA24 bit.
@@ -1145,7 +1145,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 				nor->spi->flags &= ~SPI_XFER_U_PAGE;
 		}
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 		ret = write_bar(nor, offset);
 		if (ret < 0)
 			goto erase_err;
@@ -1179,7 +1179,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	addr_known = false;
 erase_err:
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 	err = clean_bar(nor);
 	if (!ret)
 		ret = err;
@@ -1626,7 +1626,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		if (nor->flags & SNOR_F_HAS_PARALLEL)
 			offset /= 2;
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 		ret = write_bar(nor, offset);
 		if (ret < 0)
 			return log_ret(ret);
@@ -1664,7 +1664,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	ret = 0;
 
 read_err:
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 	ret = clean_bar(nor);
 #endif
 	return ret;
@@ -2018,7 +2018,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 			}
 		}
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 		ret = write_bar(nor, offset);
 		if (ret < 0)
 			return ret;
@@ -2092,7 +2092,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 	}
 
 write_err:
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 	ret = clean_bar(nor);
 #endif
 	return ret;
@@ -2275,7 +2275,7 @@ static int spansion_read_cr_quad_enable(struct spi_nor *nor)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_SFDP_SUPPORT)
+#if IS_ENABLED(CONFIG_SPI_FLASH_SFDP_SUPPORT)
 /**
  * spansion_no_read_cr_quad_enable() - set QE bit in Configuration Register.
  * @nor:	pointer to a 'struct spi_nor'
@@ -2331,7 +2331,7 @@ spi_nor_set_pp_settings(struct spi_nor_pp_command *pp,
 	pp->proto = proto;
 }
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_SFDP_SUPPORT)
+#if IS_ENABLED(CONFIG_SPI_FLASH_SFDP_SUPPORT)
 /*
  * Serial Flash Discoverable Parameters (SFDP) parsing.
  */
@@ -3075,7 +3075,7 @@ static int spi_nor_init_params(struct spi_nor *nor,
 		params->hwcaps.mask |= SNOR_HWCAPS_READ_FAST;
 
 		/* Mask out Fast Read if not requested at DT instantiation. */
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 		if (!ofnode_read_bool(dev_ofnode(nor->spi->dev),
 				      "m25p,fast-read"))
 			params->hwcaps.mask &= ~SNOR_HWCAPS_READ_FAST;
@@ -3181,8 +3181,8 @@ static int spi_nor_init_params(struct spi_nor *nor,
 		spi_nor_post_sfdp_fixups(nor, params);
 	}
 
-#if CONFIG_IS_ENABLED(DM_SPI)
-	if (CONFIG_IS_ENABLED(SPI_STACKED_PARALLEL)) {
+#if IS_ENABLED(CONFIG_DM_SPI)
+	if (IS_ENABLED(CONFIG_SPI_STACKED_PARALLEL)) {
 		u64 flash_size[SNOR_FLASH_CNT_MAX] = { 0 };
 		struct udevice *dev = nor->spi->dev;
 		u32 idx = 0, i = 0;
@@ -3692,7 +3692,7 @@ static int s25fs_s_setup(struct spi_nor *nor, const struct flash_info *info,
 	u8 cfr3v;
 
 	/* Bank Address Register is not supported */
-	if (CONFIG_IS_ENABLED(SPI_FLASH_BAR))
+	if (IS_ENABLED(CONFIG_SPI_FLASH_BAR))
 		return -EOPNOTSUPP;
 
 	/*
@@ -3808,7 +3808,7 @@ static int s25_s28_setup(struct spi_nor *nor, const struct flash_info *info,
 	int ret;
 	u8 cr;
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 	return -ENOTSUPP; /* Bank Address Register is not supported */
 #endif
 	/*
@@ -4159,7 +4159,7 @@ static struct spi_nor_fixups mt35xu512aba_fixups = {
 };
 #endif /* CONFIG_SPI_FLASH_MT35XU */
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_MACRONIX)
+#if IS_ENABLED(CONFIG_SPI_FLASH_MACRONIX)
 /**
  * spi_nor_macronix_octal_dtr_enable() - Enable octal DTR on Macronix flashes.
  * @nor:	pointer to a 'struct spi_nor'
@@ -4238,7 +4238,7 @@ static struct spi_nor_fixups macronix_octal_fixups = {
 };
 #endif /* CONFIG_SPI_FLASH_MACRONIX */
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_WINBOND)
+#if IS_ENABLED(CONFIG_SPI_FLASH_WINBOND)
 
 #define WINBOND_NOR_OP_SELDIE  0xc2    /* Select active die */
 
@@ -4444,7 +4444,7 @@ static int spi_nor_soft_reset(struct spi_nor *nor)
 	ext = nor->cmd_ext_type;
 	if (nor->cmd_ext_type == SPI_NOR_EXT_NONE) {
 		nor->cmd_ext_type = SPI_NOR_EXT_REPEAT;
-#if CONFIG_IS_ENABLED(SPI_NOR_BOOT_SOFT_RESET_EXT_INVERT)
+#if IS_ENABLED(CONFIG_SPI_NOR_BOOT_SOFT_RESET_EXT_INVERT)
 		nor->cmd_ext_type = SPI_NOR_EXT_INVERT;
 #endif /* SPI_NOR_BOOT_SOFT_RESET_EXT_INVERT */
 	}
@@ -4517,7 +4517,7 @@ void spi_nor_set_fixups(struct spi_nor *nor)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(SPI_FLASH_BAR) &&
+	if (IS_ENABLED(CONFIG_SPI_FLASH_BAR) &&
 	    !strcmp(nor->info->name, "s25fl256l"))
 		nor->fixups = &s25fl256l_fixups;
 
@@ -4531,13 +4531,13 @@ void spi_nor_set_fixups(struct spi_nor *nor)
 		nor->fixups = &mt35xu512aba_fixups;
 #endif
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_MACRONIX)
+#if IS_ENABLED(CONFIG_SPI_FLASH_MACRONIX)
 	if (JEDEC_MFR(nor->info) == SNOR_MFR_MACRONIX &&
 	    nor->info->flags & SPI_NOR_OCTAL_DTR_READ)
 		nor->fixups = &macronix_octal_fixups;
 #endif /* SPI_FLASH_MACRONIX */
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_WINBOND)
+#if IS_ENABLED(CONFIG_SPI_FLASH_WINBOND)
 	if (JEDEC_MFR(nor->info) == SNOR_MFR_WINBOND) {
 		u8 multi_die_models[][2] = {
 			{ 0x40, 0x21 }, /* W25Q01JV */
@@ -4704,7 +4704,7 @@ int spi_nor_scan(struct spi_nor *nor)
 	if (nor->flags & (SNOR_F_HAS_PARALLEL | SNOR_F_HAS_STACKED))
 		shift = 1;
 	if (nor->addr_width == 3 && (mtd->size >> shift) > SZ_16M) {
-#if !CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if !IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 		/* enable 4-byte addressing if the device exceeds 16MiB */
 		nor->addr_width = 4;
 		if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||

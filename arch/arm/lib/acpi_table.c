@@ -195,7 +195,7 @@ static void acpi_write_pp_setup_one_page(struct acpi_pp_page *page,
 		  (ulong)&acpi_pp_code_start, (ulong)reloc, acpi_pp_code_size);
 	memcpy(reloc, &acpi_pp_code_start, acpi_pp_code_size);
 
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		flush_dcache_range((unsigned long)page,
 				   (unsigned long)(page + 1));
 }
@@ -267,7 +267,7 @@ void acpi_write_park(struct acpi_madt *madt)
 	acpi_pp_tables = virt_to_phys(start);
 
 	/* Make sure other cores see written value in memory */
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		flush_dcache_all();
 
 	/* Send an event to wake up the secondary CPU. */

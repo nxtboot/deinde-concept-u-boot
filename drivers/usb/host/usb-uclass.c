@@ -174,7 +174,7 @@ int usb_get_max_xfer_size(struct usb_device *udev, size_t *size)
 	return ops->get_max_xfer_size(bus, size);
 }
 
-#if CONFIG_IS_ENABLED(UTHREAD)
+#if IS_ENABLED(CONFIG_UTHREAD)
 static struct uthread_mutex mutex = UTHREAD_MUTEX_INITIALIZER;
 #endif
 
@@ -218,7 +218,7 @@ int usb_stop(void)
 #ifdef CONFIG_USB_STORAGE
 	usb_stor_reset();
 #endif
-	if (CONFIG_IS_ENABLED(BOOTSTD)) {
+	if (IS_ENABLED(CONFIG_BOOTSTD)) {
 		int ret;
 
 		ret = bootdev_unhunt(UCLASS_USB);
@@ -370,7 +370,7 @@ static void usb_report_devices(struct uclass *uc)
 
 static void run_threads(void)
 {
-#if CONFIG_IS_ENABLED(UTHREAD)
+#if IS_ENABLED(CONFIG_UTHREAD)
 	if (!nthr)
 		return;
 	while (!uthread_grp_done(grp_id))
@@ -415,7 +415,7 @@ int usb_init(void)
 		usb_init_bus(bus);
 	}
 
-	if (CONFIG_IS_ENABLED(UTHREAD))
+	if (IS_ENABLED(CONFIG_UTHREAD))
 		run_threads();
 
 	usb_started = true;
@@ -435,7 +435,7 @@ int usb_init(void)
 			usb_scan_bus(bus, true);
 	}
 
-	if (CONFIG_IS_ENABLED(UTHREAD))
+	if (IS_ENABLED(CONFIG_UTHREAD))
 		run_threads();
 
 	/*
@@ -454,7 +454,7 @@ int usb_init(void)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(UTHREAD))
+	if (IS_ENABLED(CONFIG_UTHREAD))
 		run_threads();
 
 	usb_report_devices(uc);

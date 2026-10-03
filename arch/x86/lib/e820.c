@@ -116,7 +116,7 @@ static inline u64 e820_ram_top(void)
 	return ram_top ? ram_top : 0x100000000ULL;
 }
 
-#if CONFIG_IS_ENABLED(EFI_LOADER)
+#if IS_ENABLED(CONFIG_EFI_LOADER)
 void efi_add_known_memory(void)
 {
 	struct e820_entry e820[E820MAX];
@@ -170,9 +170,9 @@ void efi_add_known_memory(void)
 		efi_add_memory_map(X86_PAGETABLE_BASE, X86_PAGETABLE_SIZE,
 				   EFI_BOOT_SERVICES_DATA);
 }
-#endif /* CONFIG_IS_ENABLED(EFI_LOADER) */
+#endif /* IS_ENABLED(CONFIG_EFI_LOADER) */
 
-#if CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP)
+#if IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP)
 void lmb_arch_add_memory(void)
 {
 	struct e820_entry e820[E820MAX];
@@ -204,4 +204,4 @@ void lmb_arch_add_memory(void)
 	if (IS_ENABLED(CONFIG_X86_64))
 		lmb_reserve(X86_PAGETABLE_BASE, X86_PAGETABLE_SIZE, LMB_NONE);
 }
-#endif /* CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP) */
+#endif /* IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP) */

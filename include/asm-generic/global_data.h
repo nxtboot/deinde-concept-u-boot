@@ -86,7 +86,7 @@ struct global_data {
 	 * @cpu_clk: CPU clock rate in Hz
 	 */
 	unsigned long cpu_clk;
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+#if IS_ENABLED(CONFIG_ENV_SUPPORT)
 	/**
 	 * @env_addr: address of environment structure
 	 *
@@ -145,7 +145,7 @@ struct global_data {
 	 * @baudrate: baud rate of the serial interface
 	 */
 	unsigned int baudrate;
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+#if IS_ENABLED(CONFIG_ENV_SUPPORT)
 	/**
 	 * @env_has_init: bit mask indicating environment locations
 	 *
@@ -216,7 +216,7 @@ struct global_data {
 	 */
 	unsigned long board_type;
 #endif
-#if CONFIG_IS_ENABLED(PRE_CONSOLE_BUFFER)
+#if IS_ENABLED(CONFIG_PRE_CONSOLE_BUFFER)
 	/**
 	 * @precon_buf_idx: pre-console buffer index
 	 *
@@ -229,7 +229,7 @@ struct global_data {
 	 */
 	long precon_buf_idx;
 #endif
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	/**
 	 * @passage_mach: Incoming machine information from standard passage
 	 *
@@ -281,11 +281,11 @@ struct global_data {
 	 * @uclass_root_s.
 	 */
 	struct list_head *uclass_root;
-# if CONFIG_IS_ENABLED(OF_PLATDATA_DRIVER_RT)
+# if IS_ENABLED(CONFIG_OF_PLATDATA_DRIVER_RT)
 	/** @dm_driver_rt: Dynamic info about the driver */
 	struct driver_rt *dm_driver_rt;
 # endif
-#if CONFIG_IS_ENABLED(OF_PLATDATA_RT)
+#if IS_ENABLED(CONFIG_OF_PLATDATA_RT)
 	/** @dm_udevice_rt: Dynamic info about the udevice */
 	struct udevice_rt *dm_udevice_rt;
 	/**
@@ -302,13 +302,13 @@ struct global_data {
 	 */
 	struct udevice *timer;
 #endif
-#if CONFIG_IS_ENABLED(OF_LIVE)
+#if IS_ENABLED(CONFIG_OF_LIVE)
 	/**
 	 * @of_root: root node of the live tree
 	 */
 	struct device_node *of_root;
 #endif
-#if CONFIG_IS_ENABLED(MULTI_DTB_FIT)
+#if IS_ENABLED(CONFIG_MULTI_DTB_FIT)
 	/**
 	 * @multi_dtb_fit: pointer to uncompressed multi-dtb FIT image
 	 */
@@ -323,19 +323,19 @@ struct global_data {
 	 */
 	void *trace_buff;
 #endif
-#if CONFIG_IS_ENABLED(SYS_I2C_LEGACY)
+#if IS_ENABLED(CONFIG_SYS_I2C_LEGACY)
 	/**
 	 * @cur_i2c_bus: currently used I2C bus
 	 */
 	int cur_i2c_bus;
 #endif
-#if CONFIG_IS_ENABLED(CMD_BDINFO_EXTRA)
+#if IS_ENABLED(CONFIG_CMD_BDINFO_EXTRA)
 	/**
 	 * @malloc_start: start of malloc() region
 	 */
 	unsigned long malloc_start;
 #endif
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	/**
 	 * @malloc_base: base address of early malloc()
 	 */
@@ -370,7 +370,7 @@ struct global_data {
 	 */
 	struct membuf console_in;
 #endif
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	/**
 	 * @video_top: top of video frame buffer area
 	 */
@@ -380,7 +380,7 @@ struct global_data {
 	 */
 	ulong video_bottom;
 #endif
-#if CONFIG_IS_ENABLED(VIDEO_GLYPH_STATS)
+#if IS_ENABLED(CONFIG_VIDEO_GLYPH_STATS)
 	/**
 	 * @glyph_count: number of glyphs rendered
 	 */
@@ -445,13 +445,13 @@ struct global_data {
 	 */
 	bool processing_msg;
 #endif
-#if CONFIG_IS_ENABLED(BLOBLIST)
+#if IS_ENABLED(CONFIG_BLOBLIST)
 	/**
 	 * @bloblist: blob list information
 	 */
 	struct bloblist_hdr *bloblist;
 #endif
-#if CONFIG_IS_ENABLED(HANDOFF)
+#if IS_ENABLED(CONFIG_HANDOFF)
 	/**
 	 * @spl_handoff: SPL hand-off information
 	 */
@@ -475,31 +475,31 @@ struct global_data {
 	 */
 	ulong acpi_start;
 #endif
-#if CONFIG_IS_ENABLED(GENERATE_SMBIOS_TABLE)
+#if IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE)
 	/**
 	 * @smbios_version: Points to SMBIOS type 0 version
 	 */
 	char *smbios_version;
 #endif
-#if CONFIG_IS_ENABLED(EVENT)
+#if IS_ENABLED(CONFIG_EVENT)
 	/**
 	 * @event_state: Points to the current state of events
 	 */
 	struct event_state event_state;
 #endif
-#if CONFIG_IS_ENABLED(CYCLIC)
+#if IS_ENABLED(CONFIG_CYCLIC)
 	/**
 	 * @cyclic_list: list of registered cyclic functions
 	 */
 	struct hlist_head cyclic_list;
 #endif
-#if CONFIG_IS_ENABLED(UPL)
+#if IS_ENABLED(CONFIG_UPL)
 	/**
 	 * @upl: Universal Payload-handoff information
 	 */
 	struct upl *upl;
 #endif
-#if CONFIG_IS_ENABLED(CONSOLE_PAGER)
+#if IS_ENABLED(CONFIG_CONSOLE_PAGER)
 	/**
 	 * @pager: Pointer to the pager settings, or NULL if none
 	 *
@@ -531,7 +531,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #endif
 
 /* These macros help avoid #ifdefs in the code */
-#if CONFIG_IS_ENABLED(OF_LIVE)
+#if IS_ENABLED(CONFIG_OF_LIVE)
 #define gd_of_root()		gd->of_root
 #define gd_of_root_ptr()	&gd->of_root
 #define gd_set_of_root(_root)	gd->of_root = (_root)
@@ -541,7 +541,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_set_of_root(_root)
 #endif
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA_DRIVER_RT)
+#if IS_ENABLED(CONFIG_OF_PLATDATA_DRIVER_RT)
 #define gd_set_dm_driver_rt(dyn)	gd->dm_driver_rt = dyn
 #define gd_dm_driver_rt()		gd->dm_driver_rt
 #else
@@ -549,7 +549,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_dm_driver_rt()		NULL
 #endif
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA_RT)
+#if IS_ENABLED(CONFIG_OF_PLATDATA_RT)
 #define gd_set_dm_udevice_rt(dyn)	gd->dm_udevice_rt = dyn
 #define gd_dm_udevice_rt()		gd->dm_udevice_rt
 #define gd_set_dm_priv_base(dyn)	gd->dm_priv_base = dyn
@@ -587,7 +587,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_set_firmware_fdt_addr(addr)
 #endif
 
-#if CONFIG_IS_ENABLED(MULTI_DTB_FIT)
+#if IS_ENABLED(CONFIG_MULTI_DTB_FIT)
 #define gd_multi_dtb_fit()	gd->multi_dtb_fit
 #define gd_set_multi_dtb_fit(_dtb)	gd->multi_dtb_fit = _dtb
 #else
@@ -595,13 +595,13 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_set_multi_dtb_fit(_dtb)
 #endif
 
-#if CONFIG_IS_ENABLED(EVENT_DYNAMIC)
+#if IS_ENABLED(CONFIG_EVENT_DYNAMIC)
 #define gd_event_state()	((struct event_state *)&gd->event_state)
 #else
 #define gd_event_state()	NULL
 #endif
 
-#if CONFIG_IS_ENABLED(CMD_BDINFO_EXTRA)
+#if IS_ENABLED(CONFIG_CMD_BDINFO_EXTRA)
 #define gd_malloc_start()		gd->malloc_start
 #define gd_set_malloc_start(_val)	gd->malloc_start = (_val)
 #else
@@ -623,7 +623,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_console_out_ovf()		0
 #endif
 
-#if CONFIG_IS_ENABLED(UPL)
+#if IS_ENABLED(CONFIG_UPL)
 #define gd_upl()		gd->upl
 #define gd_set_upl(_val)	gd->upl = (_val)
 #else
@@ -631,7 +631,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_set_upl(val)
 #endif
 
-#if CONFIG_IS_ENABLED(BLOBLIST)
+#if IS_ENABLED(CONFIG_BLOBLIST)
 #define gd_bloblist()		gd->bloblist
 #define gd_set_bloblist(_val)	gd->bloblist = (_val)
 #else
@@ -639,13 +639,13 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_set_bloblist(_val)
 #endif
 
-#if CONFIG_IS_ENABLED(BOOTSTAGE)
+#if IS_ENABLED(CONFIG_BOOTSTAGE)
 #define gd_bootstage()		gd->bootstage
 #else
 #define gd_bootstage()		NULL
 #endif
 
-#if CONFIG_IS_ENABLED(TRACE)
+#if IS_ENABLED(CONFIG_TRACE)
 #define gd_trace_buff()		gd->trace_buff
 #define gd_trace_size()		CONFIG_TRACE_BUFFER_SIZE
 #else
@@ -653,7 +653,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_trace_size()		0
 #endif
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 #define gd_video_top()		gd->video_top
 #define gd_video_bottom()	gd->video_bottom
 #define gd_video_size()		(gd->video_top - gd->video_bottom)
@@ -663,7 +663,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_video_size()		0
 #endif
 
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 #define gd_passage_bloblist()	gd->passage_bloblist
 #define gd_passage_dtb()	gd->passage_dtb
 #else
@@ -671,7 +671,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_passage_dtb()	0
 #endif
 
-#if CONFIG_IS_ENABLED(CONSOLE_PAGER)
+#if IS_ENABLED(CONFIG_CONSOLE_PAGER)
 #define gd_pager()		gd->pager
 #define gd_pagerp()		&gd->pager
 #define gd_pager_page_len()	gd->pager->page_len
@@ -681,7 +681,7 @@ static_assert(sizeof(struct global_data) == GD_SIZE);
 #define gd_pager_page_len()	0
 #endif
 
-#if CONFIG_IS_ENABLED(VIDEO_GLYPH_STATS)
+#if IS_ENABLED(CONFIG_VIDEO_GLYPH_STATS)
 #define gd_glyph_count()		gd->glyph_count
 #define gd_inc_glyph_count()		gd->glyph_count++
 #else

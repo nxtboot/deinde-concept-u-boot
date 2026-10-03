@@ -210,7 +210,7 @@ int at91_pio3_set_d_periph(unsigned port, unsigned pin, int use_pullup)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 static bool at91_get_port_output(struct at91_port *at91_port, int offset)
 {
 	u32 mask, val;
@@ -495,7 +495,7 @@ int at91_get_pio_value(unsigned port, unsigned pin)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(DM_GPIO)
+#if !IS_ENABLED(CONFIG_DM_GPIO)
 /* Common GPIO API */
 
 int gpio_request(unsigned gpio, const char *label)
@@ -537,7 +537,7 @@ int gpio_set_value(unsigned gpio, int value)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 
 struct at91_port_priv {
 	struct at91_port *regs;
@@ -697,7 +697,7 @@ static int at91_gpio_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	plat->base_addr = dev_read_addr(dev);
 #endif
 	plat->bank_name = at91_get_bank_name(plat->base_addr);
@@ -709,7 +709,7 @@ static int at91_gpio_probe(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static const struct udevice_id at91_gpio_ids[] = {
 	{ .compatible = "atmel,at91rm9200-gpio" },
 	{ }
@@ -719,7 +719,7 @@ static const struct udevice_id at91_gpio_ids[] = {
 U_BOOT_DRIVER(atmel_at91rm9200_gpio) = {
 	.name	= "atmel_at91rm9200_gpio",
 	.id	= UCLASS_GPIO,
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	.of_match = at91_gpio_ids,
 	.plat_auto	= sizeof(struct at91_port_plat),
 #endif

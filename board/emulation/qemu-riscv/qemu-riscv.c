@@ -29,7 +29,7 @@ int is_flash_available(void)
 int board_late_init(void)
 {
 	/* start usb so that usb keyboard can be used as input device */
-	if (CONFIG_IS_ENABLED(USB_KEYBOARD))
+	if (IS_ENABLED(CONFIG_USB_KEYBOARD))
 		usb_init();
 
 	/*

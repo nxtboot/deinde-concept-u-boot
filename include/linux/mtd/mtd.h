@@ -413,7 +413,7 @@ int mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 int mtd_panic_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 		    const u_char *buf);
 
-#if CONFIG_IS_ENABLED(MTD_BLOCK)
+#if IS_ENABLED(CONFIG_MTD_BLOCK)
 static inline struct mtd_info *blk_desc_to_mtd(struct blk_desc *bdesc)
 {
 	void *priv = dev_get_priv(bdesc->bdev);
@@ -576,7 +576,7 @@ unsigned mtd_mmap_capabilities(struct mtd_info *mtd);
 
 #ifdef __UBOOT__
 /* drivers/mtd/mtdcore.h */
-#if CONFIG_IS_ENABLED(MTD)
+#if IS_ENABLED(CONFIG_MTD)
 int add_mtd_device(struct mtd_info *mtd);
 int del_mtd_device(struct mtd_info *mtd);
 #else
@@ -608,8 +608,8 @@ static inline int del_mtd_partitions(struct mtd_info *mtd)
 }
 #endif
 
-#if defined(CONFIG_MTD_PARTITIONS) && CONFIG_IS_ENABLED(DM) && \
-    CONFIG_IS_ENABLED(OF_CONTROL)
+#if defined(CONFIG_MTD_PARTITIONS) && IS_ENABLED(CONFIG_DM) && \
+    IS_ENABLED(CONFIG_OF_CONTROL)
 int add_mtd_partitions_of(struct mtd_info *master);
 #else
 static inline int add_mtd_partitions_of(struct mtd_info *master)

@@ -938,7 +938,7 @@ static int mt7988_ethdma_bind(struct udevice *dev)
 {
 	int ret = 0;
 
-	if (CONFIG_IS_ENABLED(RESET_MEDIATEK)) {
+	if (IS_ENABLED(CONFIG_RESET_MEDIATEK)) {
 		ret = mediatek_reset_bind(dev, MT7988_ETHDMA_RST_CTRL_OFS, 1);
 		if (ret)
 			debug("Warning: failed to bind reset controller\n");
@@ -1079,7 +1079,7 @@ static int mt7988_ethwarp_bind(struct udevice *dev)
 {
 	int ret = 0;
 
-	if (CONFIG_IS_ENABLED(RESET_MEDIATEK)) {
+	if (IS_ENABLED(CONFIG_RESET_MEDIATEK)) {
 		ret = mediatek_reset_bind(dev, MT7988_ETHWARP_RST_CTRL_OFS, 2);
 		if (ret)
 			debug("Warning: failed to bind reset controller\n");

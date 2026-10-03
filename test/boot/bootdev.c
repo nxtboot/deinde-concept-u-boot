@@ -152,7 +152,7 @@ static int bootdev_test_any(struct unit_test_state *uts)
 	 * However if DSA_SANDBOX is disabled the dsa-test@{0,1} devices
 	 * are not there.
 	 */
-	if (CONFIG_IS_ENABLED(DSA_SANDBOX))
+	if (IS_ENABLED(CONFIG_DSA_SANDBOX))
 		seq = "8";
 	else
 		seq = "6";

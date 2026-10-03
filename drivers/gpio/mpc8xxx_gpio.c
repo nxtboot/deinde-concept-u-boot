@@ -223,7 +223,7 @@ static int mpc8xxx_gpio_get_flags(struct udevice *dev, uint gpio,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static int mpc8xxx_gpio_of_to_plat(struct udevice *dev)
 {
 	struct mpc8xxx_gpio_plat *plat = dev_get_plat(dev);
@@ -326,7 +326,7 @@ U_BOOT_DRIVER(gpio_mpc8xxx) = {
 	.name	= "gpio_mpc8xxx",
 	.id	= UCLASS_GPIO,
 	.ops	= &gpio_mpc8xxx_ops,
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	.of_to_plat = mpc8xxx_gpio_of_to_plat,
 	.plat_auto	= sizeof(struct mpc8xxx_gpio_plat),
 	.of_match = mpc8xxx_gpio_ids,

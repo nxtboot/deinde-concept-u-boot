@@ -99,7 +99,7 @@ static int pcie_cdns_config_serdes(struct udevice *dev)
 {
 	int ret;
 
-	if (CONFIG_IS_ENABLED(MUX_MMIO)) {
+	if (IS_ENABLED(CONFIG_MUX_MMIO)) {
 		struct udevice *mux;
 
 		ret = uclass_get_device_by_seq(UCLASS_MUX, 0, &mux);
@@ -109,7 +109,7 @@ static int pcie_cdns_config_serdes(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(PHY_CADENCE_TORRENT)) {
+	if (IS_ENABLED(CONFIG_PHY_CADENCE_TORRENT)) {
 		struct phy serdes;
 
 		ret = generic_phy_get_by_name(dev,  "pcie-phy", &serdes);

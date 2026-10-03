@@ -16,7 +16,7 @@
 
 #include <part_efi.h>
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 /* MM service UUID string (big-endian format). This UUID is  common across all MM SPs */
 #define MM_SP_UUID	"33d532ed-e699-0942-c09c-a798d9cd722d"
 #endif
@@ -256,7 +256,7 @@ struct smm_variable_var_check_property {
 	u16                       name[];
 };
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 /* supported MM transports */
 enum mm_comms_select {
 	MM_COMMS_UNDEFINED,

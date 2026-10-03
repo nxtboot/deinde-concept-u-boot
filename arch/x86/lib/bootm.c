@@ -61,7 +61,7 @@ static int boot_prep_linux(struct bootm_headers *images)
 	size_t len;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(OF_LIBFDT) && IS_ENABLED(CONFIG_LMB) && images->ft_len) {
+	if (IS_ENABLED(CONFIG_OF_LIBFDT) && IS_ENABLED(CONFIG_LMB) && images->ft_len) {
 		debug("using: FDT\n");
 		if (image_setup_linux(images)) {
 			puts("FDT creation failed! hanging...");
@@ -198,7 +198,7 @@ int boot_linux_kernel(ulong setup_base, ulong entry, bool image_64bit)
 		 * TODO(sjg@chromium.org): Support booting 32-bit kernels from
 		 * 64-bit U-Boot
 		 */
-		if (CONFIG_IS_ENABLED(X86_64)) {
+		if (IS_ENABLED(CONFIG_X86_64)) {
 			typedef void (*h_func)(ulong zero, ulong setup);
 			h_func func;
 			struct setup_header *hdr = &(((struct boot_params *)(setup_base))->hdr);

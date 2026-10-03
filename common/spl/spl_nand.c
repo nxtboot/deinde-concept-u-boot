@@ -136,7 +136,7 @@ static int spl_nand_load_image(struct spl_image_info *spl_image,
 #endif
 	nand_init();
 
-#if CONFIG_IS_ENABLED(OS_BOOT)
+#if IS_ENABLED(CONFIG_OS_BOOT)
 	if (!spl_start_uboot()) {
 		err = spl_nand_load_image_os(spl_image, bootdev);
 		if (!err)

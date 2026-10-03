@@ -67,7 +67,7 @@ extern "C" {
  * When using simple malloc (SPL/TPL), redirect to simple implementations.
  * Skip this when compiling dlmalloc.c itself to avoid conflicts.
  */
-#if CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE) && !defined(COMPILING_DLMALLOC)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_SIMPLE) && !defined(COMPILING_DLMALLOC)
 #define malloc malloc_simple
 #define realloc realloc_simple
 #define calloc calloc_simple
@@ -845,7 +845,7 @@ int malloc_log_entry(uint idx, struct mlog_entry **entryp);
  * @busyp: If non-NULL, returns true if the reentrant guard is stuck
  * Return: true if backtrace collection is active (neither skipped nor busy)
  */
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 void malloc_backtrace_skip(bool skip);
 void malloc_backtrace_unbusy(void);
 bool malloc_backtrace_is_active(bool *skipp, bool *busyp);
@@ -873,7 +873,7 @@ static inline bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
  *
  * Return: true if the registry has overflowed at any point
  */
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 bool malloc_mcheck_overflow(void);
 size_t malloc_mcheck_count(void);
 #else
@@ -1017,7 +1017,7 @@ int initf_malloc(void);
  * @info: Place to put the statistics
  * Return: 0 on success, -ENOSYS if not available (MALLOC_DEBUG not enabled)
  */
-#if CONFIG_IS_ENABLED(MALLOC_DEBUG)
+#if IS_ENABLED(CONFIG_MALLOC_DEBUG)
 int malloc_get_info(struct malloc_info *info);
 #else
 static inline int malloc_get_info(struct malloc_info *info)

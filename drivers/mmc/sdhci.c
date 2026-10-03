@@ -70,7 +70,7 @@ static void sdhci_transfer_pio(struct sdhci_host *host, struct mmc_data *data)
 	}
 }
 
-#if (CONFIG_IS_ENABLED(MMC_SDHCI_SDMA) || CONFIG_IS_ENABLED(MMC_SDHCI_ADMA))
+#if (IS_ENABLED(CONFIG_MMC_SDHCI_SDMA) || IS_ENABLED(CONFIG_MMC_SDHCI_ADMA))
 static void sdhci_prepare_dma(struct sdhci_host *host, struct mmc_data *data,
 			      int *is_aligned, int trans_bytes)
 {
@@ -108,7 +108,7 @@ static void sdhci_prepare_dma(struct sdhci_host *host, struct mmc_data *data,
 		dma_addr = dev_phys_to_bus(mmc_to_dev(host->mmc), host->start_addr);
 		sdhci_writel(host, dma_addr, SDHCI_DMA_ADDRESS);
 	}
-#if CONFIG_IS_ENABLED(MMC_SDHCI_ADMA)
+#if IS_ENABLED(CONFIG_MMC_SDHCI_ADMA)
 	else if (host->flags & (USE_ADMA | USE_ADMA64)) {
 		sdhci_prepare_adma_table(host, host->adma_desc_table, data,
 					 host->start_addr);
@@ -176,7 +176,7 @@ static int sdhci_transfer_data(struct sdhci_host *host, struct mmc_data *data)
 		}
 	} while (!(stat & SDHCI_INT_DATA_END));
 
-#if (CONFIG_IS_ENABLED(MMC_SDHCI_SDMA) || CONFIG_IS_ENABLED(MMC_SDHCI_ADMA))
+#if (IS_ENABLED(CONFIG_MMC_SDHCI_SDMA) || IS_ENABLED(CONFIG_MMC_SDHCI_ADMA))
 	if (host->flags & USE_DMA) {
 		dma_unmap_single(host->start_addr, data->blocks * data->blocksize,
 				 mmc_get_dma_dir(data));
@@ -351,7 +351,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		return -ECOMM;
 }
 
-#if defined(CONFIG_DM_MMC) && CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if defined(CONFIG_DM_MMC) && IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
 	int err;
@@ -551,7 +551,7 @@ void sdhci_set_uhs_timing(struct sdhci_host *host)
 
 void sdhci_set_voltage(struct sdhci_host *host)
 {
-	if (CONFIG_IS_ENABLED(MMC_IO_VOLTAGE)) {
+	if (IS_ENABLED(CONFIG_MMC_IO_VOLTAGE)) {
 		struct mmc *mmc = (struct mmc *)host->mmc;
 		u32 ctrl;
 
@@ -559,7 +559,7 @@ void sdhci_set_voltage(struct sdhci_host *host)
 
 		switch (mmc->signal_voltage) {
 		case MMC_SIGNAL_VOLTAGE_330:
-#if CONFIG_IS_ENABLED(DM_REGULATOR)
+#if IS_ENABLED(CONFIG_DM_REGULATOR)
 			if (mmc->vqmmc_supply) {
 				if (regulator_set_enable_if_allowed(mmc->vqmmc_supply, false)) {
 					pr_err("failed to disable vqmmc-supply\n");
@@ -595,7 +595,7 @@ void sdhci_set_voltage(struct sdhci_host *host)
 
 			break;
 		case MMC_SIGNAL_VOLTAGE_180:
-#if CONFIG_IS_ENABLED(DM_REGULATOR)
+#if IS_ENABLED(CONFIG_DM_REGULATOR)
 			if (mmc->vqmmc_supply) {
 				if (regulator_set_enable_if_allowed(mmc->vqmmc_supply, false)) {
 					pr_err("failed to disable vqmmc-supply\n");
@@ -716,7 +716,7 @@ static int sdhci_set_ios(struct mmc *mmc)
 static int sdhci_init(struct mmc *mmc)
 {
 	struct sdhci_host *host = mmc->priv;
-#if CONFIG_IS_ENABLED(DM_MMC) && CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_MMC) && IS_ENABLED(CONFIG_DM_GPIO)
 	struct udevice *dev = mmc->dev;
 
 	gpio_request_by_name(dev, "cd-gpios", 0,
@@ -792,7 +792,7 @@ static int sdhci_get_cd(struct udevice *dev)
 	if (mmc->cfg->host_caps & MMC_CAP_NEEDS_POLL)
 		return 1;
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	value = dm_gpio_get_value(&host->cd_gpio);
 	if (value >= 0) {
 		if (mmc->cfg->host_caps & MMC_CAP_CD_ACTIVE_HIGH)
@@ -828,7 +828,7 @@ static int sdhci_wait_dat0(struct udevice *dev, int state,
 	return -ETIMEDOUT;
 }
 
-#if CONFIG_IS_ENABLED(MMC_HS400_ES_SUPPORT)
+#if IS_ENABLED(CONFIG_MMC_HS400_ES_SUPPORT)
 static int sdhci_set_enhanced_strobe(struct udevice *dev)
 {
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
@@ -846,11 +846,11 @@ const struct dm_mmc_ops sdhci_ops = {
 	.set_ios	= sdhci_set_ios,
 	.get_cd		= sdhci_get_cd,
 	.deferred_probe	= sdhci_deferred_probe,
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.execute_tuning	= sdhci_execute_tuning,
 #endif
 	.wait_dat0	= sdhci_wait_dat0,
-#if CONFIG_IS_ENABLED(MMC_HS400_ES_SUPPORT)
+#if IS_ENABLED(CONFIG_MMC_HS400_ES_SUPPORT)
 	.set_enhanced_strobe = sdhci_set_enhanced_strobe,
 #endif
 };
@@ -866,7 +866,7 @@ int sdhci_setup_cfg(struct mmc_config *cfg, struct sdhci_host *host,
 		u32 f_max, u32 f_min)
 {
 	u32 caps, caps_1 = 0;
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 	u64 dt_caps, dt_caps_mask;
 
 	dt_caps_mask = dev_read_u64_default(host->mmc->dev,
@@ -881,14 +881,14 @@ int sdhci_setup_cfg(struct mmc_config *cfg, struct sdhci_host *host,
 #endif
 	log_debug("caps: %#x\n", caps);
 
-#if CONFIG_IS_ENABLED(MMC_SDHCI_SDMA)
+#if IS_ENABLED(CONFIG_MMC_SDHCI_SDMA)
 	if ((caps & SDHCI_CAN_DO_SDMA)) {
 		host->flags |= USE_SDMA;
 	} else {
 		log_debug("Controller doesn't support SDMA\n");
 	}
 #endif
-#if CONFIG_IS_ENABLED(MMC_SDHCI_ADMA)
+#if IS_ENABLED(CONFIG_MMC_SDHCI_ADMA)
 	if (!(caps & SDHCI_CAN_DO_ADMA2)) {
 		log_err("Controller doesn't support ADMA\n");
 		return -EINVAL;
@@ -916,7 +916,7 @@ int sdhci_setup_cfg(struct mmc_config *cfg, struct sdhci_host *host,
 
 	/* Check whether the clock multiplier is supported or not */
 	if (SDHCI_GET_VERSION(host) >= SDHCI_SPEC_300) {
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 		caps_1 = ~upper_32_bits(dt_caps_mask) &
 			 sdhci_readl(host, SDHCI_CAPABILITIES_1);
 		caps_1 |= upper_32_bits(dt_caps);

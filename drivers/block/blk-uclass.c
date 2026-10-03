@@ -791,7 +791,7 @@ static int part_create_block_devices(struct udevice *blk_dev)
 	struct udevice *dev;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(PARTITIONS) || !blk_enabled())
+	if (!IS_ENABLED(CONFIG_PARTITIONS) || !blk_enabled())
 		return 0;
 
 	if (device_get_uclass_id(blk_dev) != UCLASS_BLK)
@@ -832,7 +832,7 @@ static int part_create_block_devices(struct udevice *blk_dev)
 
 static int blk_post_probe(struct udevice *dev)
 {
-	if (CONFIG_IS_ENABLED(PARTITIONS) && blk_enabled()) {
+	if (IS_ENABLED(CONFIG_PARTITIONS) && blk_enabled()) {
 		struct blk_desc *desc = dev_get_uclass_plat(dev);
 
 		if (part_init(desc) == -EIO)

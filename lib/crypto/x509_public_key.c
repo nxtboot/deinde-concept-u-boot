@@ -30,7 +30,7 @@
 #include "x509_parser.h"
 #endif
 
-#if !CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if !IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 
 /*
  * Set up the signature parameters in an X.509 certificate.  This involves
@@ -141,7 +141,7 @@ error:
 	return ret;
 }
 
-#endif /* !CONFIG_IS_ENABLED(MBEDTLS_LIB_X509) */
+#endif /* !IS_ENABLED(CONFIG_MBEDTLS_LIB_X509) */
 
 #ifndef __UBOOT__
 /*

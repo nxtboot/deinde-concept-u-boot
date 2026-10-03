@@ -106,7 +106,7 @@ struct fsl_esdhc_priv {
 	unsigned int sdhc_clk;
 	bool is_sdhc_per_clk;
 	unsigned int clock;
-#if !CONFIG_IS_ENABLED(DM_MMC)
+#if !IS_ENABLED(CONFIG_DM_MMC)
 	struct mmc *mmc;
 #endif
 	struct udevice *dev;
@@ -854,7 +854,7 @@ __weak int esdhc_status_fixup(void *blob, const char *compat)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 static int fsl_esdhc_get_cd(struct udevice *dev);
 static void esdhc_disable_for_no_card(void *blob)
 {
@@ -895,7 +895,7 @@ void fdt_fixup_esdhc(void *blob, struct bd_info *bd)
 }
 #endif
 
-#if !CONFIG_IS_ENABLED(DM_MMC)
+#if !IS_ENABLED(CONFIG_DM_MMC)
 static int esdhc_getcd(struct mmc *mmc)
 {
 	struct fsl_esdhc_priv *priv = mmc->priv;
@@ -1104,7 +1104,7 @@ static int fsl_esdhc_reinit(struct udevice *dev)
 	return esdhc_init_common(priv, &plat->mmc);
 }
 
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static int fsl_esdhc_execute_tuning(struct udevice *dev, uint32_t opcode)
 {
 	struct fsl_esdhc_plat *plat = dev_get_plat(dev);
@@ -1177,7 +1177,7 @@ static const struct dm_mmc_ops fsl_esdhc_ops = {
 	.get_cd		= fsl_esdhc_get_cd,
 	.send_cmd	= fsl_esdhc_send_cmd,
 	.set_ios	= fsl_esdhc_set_ios,
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.execute_tuning = fsl_esdhc_execute_tuning,
 #endif
 	.reinit = fsl_esdhc_reinit,

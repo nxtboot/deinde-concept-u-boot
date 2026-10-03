@@ -27,7 +27,7 @@
 #include <linux/types.h>
 #include <serial.h>
 
-#if CONFIG_IS_ENABLED(DM_SERIAL) ||  defined(CONFIG_NS16550_DYNAMIC) || \
+#if IS_ENABLED(CONFIG_DM_SERIAL) ||  defined(CONFIG_NS16550_DYNAMIC) || \
 	defined(CONFIG_DEBUG_UART)
 /*
  * For driver model we always use one byte per register, and sort out the
@@ -114,12 +114,12 @@ struct ns16550 {
 	UART_REG(scr);		/* 10*/
 	UART_REG(ssr);		/* 11*/
 #endif
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 	struct ns16550_plat *plat;
 #endif
 };
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 #define serial_out(value, addr)	\
 	ns16550_writeb(com_port, \
 		(unsigned char *)(addr) - (unsigned char *)com_port, value)

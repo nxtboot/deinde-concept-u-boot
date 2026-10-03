@@ -97,7 +97,7 @@ static int bcm_cpu_on(struct udevice *dev)
 	*start_address = (uintptr_t)_start;
 
 	/* Make sure the other CPUs see the written start address */
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		flush_dcache_all();
 
 	/* Send an event to wake up the secondary CPU. */
@@ -145,7 +145,7 @@ static int bcm_cpu_of_to_plat(struct udevice *dev)
 	struct bcm_plat *plat = dev_get_plat(dev);
 	const char *prop;
 
-	if (CONFIG_IS_ENABLED(ARMV8_MULTIENTRY)) {
+	if (IS_ENABLED(CONFIG_ARMV8_MULTIENTRY)) {
 		plat->release_addr = ~0ULL;
 
 		prop = dev_read_string(dev, "enable-method");
@@ -184,7 +184,7 @@ static int bcm_cpu_probe(struct udevice *dev)
 	 * ARMV8_MULTIENTRY is enabled release the secondary CPUs and
 	 * let them enter U-Boot as well.
 	 */
-	if (CONFIG_IS_ENABLED(ARMV8_MULTIENTRY)) {
+	if (IS_ENABLED(CONFIG_ARMV8_MULTIENTRY)) {
 		ret = bcm_cpu_on(dev);
 		if (ret)
 			return ret;

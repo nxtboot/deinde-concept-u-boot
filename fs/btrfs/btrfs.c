@@ -275,7 +275,7 @@ void btrfs_close(void)
 
 int btrfs_uuid(char *uuid_str)
 {
-#if CONFIG_IS_ENABLED(LIB_UUID)
+#if IS_ENABLED(CONFIG_LIB_UUID)
 	if (current_fs_info)
 		uuid_bin_to_str(current_fs_info->super_copy->fsid, uuid_str,
 				UUID_STR_FORMAT_STD);

@@ -74,7 +74,7 @@ int board_init(void)
 {
 	set_clk_enet(ENET_125MHZ);
 
-	if (CONFIG_IS_ENABLED(DWC_ETH_QOS))
+	if (IS_ENABLED(CONFIG_DWC_ETH_QOS))
 		setup_eqos();
 
 	return 0;

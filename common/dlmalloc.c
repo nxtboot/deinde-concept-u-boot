@@ -568,7 +568,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 
 #ifdef __UBOOT__
 
-#if CONFIG_IS_ENABLED(MALLOC_DEBUG)
+#if IS_ENABLED(CONFIG_MALLOC_DEBUG)
 #define DEBUG 1
 #define CALLER_PARAM , const char *caller
 #define CALLER_ARG , caller
@@ -594,15 +594,15 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define USE_LOCKS 0
 #define USE_SPIN_LOCKS 0
 
-#if !CONFIG_IS_ENABLED(UNIT_TEST) && !IS_ENABLED(CONFIG_MALLOC_DEBUG)
+#if !IS_ENABLED(CONFIG_UNIT_TEST) && !IS_ENABLED(CONFIG_MALLOC_DEBUG)
 #define NO_MALLINFO 1
 #define NO_MALLOC_STATS 1
 #endif
-#if !CONFIG_IS_ENABLED(SANDBOX)
+#if !IS_ENABLED(CONFIG_SANDBOX)
 #define INSECURE 1
 #endif
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_SMALL)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_SMALL)
 #define NO_REALLOC_IN_PLACE 1
 #define SIMPLE_MEMALIGN 1
 #define NO_TREE_BINS 1
@@ -633,9 +633,9 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION) || CONFIG_IS_ENABLED(MALLOC_DEBUG)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION) || IS_ENABLED(CONFIG_MALLOC_DEBUG)
 #define STATIC_IF_MCHECK static
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 #undef MALLOC_COPY
 #undef MALLOC_ZERO
 static inline void MALLOC_ZERO(void *p, size_t sz) { memset(p, 0, sz); }
@@ -3710,7 +3710,7 @@ static struct mallinfo internal_mallinfo(mstate m) {
 
 #endif /* !NO_MALLINFO */
 
-#if CONFIG_IS_ENABLED(MALLOC_DEBUG)
+#if IS_ENABLED(CONFIG_MALLOC_DEBUG)
 int malloc_get_info(struct malloc_info *info)
 {
   struct mallinfo mi = internal_mallinfo(gm);
@@ -4106,7 +4106,7 @@ static void unlink_large_chunk(mstate M, tchunkptr X) {
  * When mcheck is enabled, internal calls must use the _impl functions
  * to avoid going through the mcheck wrappers which expect user pointers.
  */
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 #define internal_malloc(m, b) dlmalloc_impl(b CALLER_NULL)
 #define internal_free(m, mem) dlfree_impl(mem)
 #else
@@ -4952,7 +4952,7 @@ static void* tmalloc_small(mstate m, size_t nb) {
 STATIC_IF_MCHECK
 void *dlmalloc_impl(size_t bytes CALLER_PARAM) {
 #ifdef __UBOOT__
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
   if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT))
     return malloc_simple(bytes);
 #endif
@@ -4964,7 +4964,7 @@ void *dlmalloc_impl(size_t bytes CALLER_PARAM) {
   if (!mem_malloc_start && !mem_malloc_end)
     return NULL;
 
-  if (CONFIG_IS_ENABLED(UNIT_TEST) && malloc_testing) {
+  if (IS_ENABLED(CONFIG_UNIT_TEST) && malloc_testing) {
     if (--malloc_max_allocs < 0)
       return NULL;
   }
@@ -5128,7 +5128,7 @@ void dlfree_impl(void* mem) {
 #if !NO_MALLOC_STATS
   free_count++;
 #endif
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
   /* free() is a no-op - all the memory will be freed on relocation */
   if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
     VALGRIND_FREELIKE_BLOCK(mem, SIZE_SZ);
@@ -5259,7 +5259,7 @@ void* dlcalloc_impl(size_t n_elements, size_t elem_size) {
   }
   mem = dlmalloc_impl(req CALLER_NULL);
 #ifdef __UBOOT__
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
   /* For pre-reloc simple malloc, just zero the memory directly */
   if (mem != 0 && !(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
     memset(mem, '\0', req);
@@ -5699,13 +5699,13 @@ void* dlrealloc_impl(void* oldmem, size_t bytes) {
 #if !NO_MALLOC_STATS
   realloc_count++;
 #endif
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
   if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
     /* This is harder to support and should not be needed */
     panic("pre-reloc realloc() is not supported");
   }
 #endif
-  if (CONFIG_IS_ENABLED(UNIT_TEST) && malloc_testing) {
+  if (IS_ENABLED(CONFIG_UNIT_TEST) && malloc_testing) {
     if (--malloc_max_allocs < 0)
       return NULL;
   }
@@ -5820,7 +5820,7 @@ void* dlrealloc_in_place(void* oldmem, size_t bytes) {
 STATIC_IF_MCHECK
 void* dlmemalign_impl(size_t alignment, size_t bytes) {
 #ifdef __UBOOT__
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
   if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT))
     return memalign_simple(alignment, bytes);
 #endif
@@ -5955,12 +5955,12 @@ STATIC_IF_MCHECK size_t dlmalloc_usable_size_impl(const void *mem)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 #include <backtrace.h>
 #include <os.h>
 #include "mcheck_core.inc.h"
 
-#if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
+#if IS_ENABLED(CONFIG_MCHECK_BACKTRACE)
 /* Guard against recursive backtrace calls during malloc */
 static bool in_backtrace __section(".data");
 
@@ -5981,21 +5981,21 @@ void mcheck_set_disabled(bool disabled)
 
 void malloc_backtrace_skip(bool skip)
 {
-#if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
+#if IS_ENABLED(CONFIG_MCHECK_BACKTRACE)
 	mcheck_skip_backtrace = skip;
 #endif
 }
 
 void malloc_backtrace_unbusy(void)
 {
-#if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
+#if IS_ENABLED(CONFIG_MCHECK_BACKTRACE)
 	in_backtrace = false;
 #endif
 }
 
 bool malloc_backtrace_is_active(bool *skipp, bool *busyp)
 {
-#if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
+#if IS_ENABLED(CONFIG_MCHECK_BACKTRACE)
 	if (skipp)
 		*skipp = mcheck_skip_backtrace;
 	if (busyp)
@@ -6022,7 +6022,7 @@ size_t malloc_mcheck_count(void)
 
 static const char *mcheck_caller(void)
 {
-#if CONFIG_IS_ENABLED(MCHECK_BACKTRACE)
+#if IS_ENABLED(CONFIG_MCHECK_BACKTRACE)
 	const char *caller = NULL;
 
 	if (!in_backtrace && !mcheck_skip_backtrace) {
@@ -6036,7 +6036,7 @@ static const char *mcheck_caller(void)
 #endif
 }
 
-#if CONFIG_IS_ENABLED(MCHECK_LOG)
+#if IS_ENABLED(CONFIG_MCHECK_LOG)
 /* Malloc traffic logging for debugging allocation patterns */
 
 #if IS_ENABLED(CONFIG_SANDBOX)
@@ -6289,7 +6289,7 @@ void *dlmalloc(size_t bytes)
 	 * bump allocator that can't free, so mcheck overhead is useless and
 	 * wastes the limited pre-relocation heap space.
 	 */
-	if (CONFIG_IS_ENABLED(SYS_MALLOC_F) &&
+	if (IS_ENABLED(CONFIG_SYS_MALLOC_F) &&
 	    !(gd->flags & GD_FLG_FULL_MALLOC_INIT))
 		return malloc_simple(bytes);
 
@@ -6311,7 +6311,7 @@ void *dlmalloc(size_t bytes)
 
 void dlfree(void *mem)
 {
-	if (CONFIG_IS_ENABLED(SYS_MALLOC_F) &&
+	if (IS_ENABLED(CONFIG_SYS_MALLOC_F) &&
 	    !(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		dlfree_impl(mem);
 		return;
@@ -6364,7 +6364,7 @@ void *dlmemalign(size_t alignment, size_t bytes)
 	const char *caller;
 	void *p;
 
-	if (CONFIG_IS_ENABLED(SYS_MALLOC_F) &&
+	if (IS_ENABLED(CONFIG_SYS_MALLOC_F) &&
 	    !(gd->flags & GD_FLG_FULL_MALLOC_INIT))
 		return memalign_simple(alignment, bytes);
 
@@ -6392,7 +6392,7 @@ void *dlcalloc(size_t n, size_t elem_size)
 	size_t sz;
 	void *p;
 
-	if (CONFIG_IS_ENABLED(SYS_MALLOC_F) &&
+	if (IS_ENABLED(CONFIG_SYS_MALLOC_F) &&
 	    !(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		sz = n * elem_size;
 		p = malloc_simple(sz);
@@ -6449,7 +6449,7 @@ int mcheck(mcheck_abortfunc_t f)
 void mcheck_check_all(void) { mcheck_pedantic_check(); }
 
 enum mcheck_status mprobe(void *__ptr) { return mcheck_mprobe(__ptr); }
-#elif CONFIG_IS_ENABLED(MALLOC_DEBUG)
+#elif IS_ENABLED(CONFIG_MALLOC_DEBUG)
 /*
  * Simple wrappers when MALLOC_DEBUG is enabled but not MCHECK.
  * These just forward to the _impl functions.
@@ -6480,7 +6480,7 @@ void *dlcalloc(size_t n, size_t elem_size)
 }
 #endif /* MCHECK_HEAP_PROTECTION */
 
-#if CONFIG_IS_ENABLED(MALLOC_DEBUG) && !CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MALLOC_DEBUG) && !IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 /* Wrapper needed when MALLOC_DEBUG makes dlmalloc_usable_size_impl static */
 size_t dlmalloc_usable_size(const void *mem)
 {
@@ -6488,7 +6488,7 @@ size_t dlmalloc_usable_size(const void *mem)
 }
 #endif
 
-#if !CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if !IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 /* Stub when mcheck is not enabled */
 void mcheck_set_disabled(bool disabled)
 {
@@ -7422,11 +7422,11 @@ void mem_malloc_init(ulong start, ulong size)
 
 	debug("using memory %#lx-%#lx for malloc()\n", mem_malloc_start,
 	      mem_malloc_end);
-#if CONFIG_IS_ENABLED(SYS_MALLOC_CLEAR_ON_INIT)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_CLEAR_ON_INIT)
 	memset((void *)mem_malloc_start, '\0', size);
 #endif
 
-#if !CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
+#if !IS_ENABLED(CONFIG_SYS_MALLOC_SIMPLE)
 	/* Initialize the malloc state so is_initialized() is true */
 	gm->least_addr = (char *)mem_malloc_start;
 	gm->seg.base = (char *)mem_malloc_start;
@@ -7464,7 +7464,7 @@ void malloc_disable_testing(void)
  * @sz: chunk size
  * Return: pointer to mcheck header if found, NULL otherwise
  */
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 static struct mcheck_hdr *find_mcheck_hdr_in_chunk(void *mem, size_t sz)
 {
 	struct mcheck_hdr *hdr;
@@ -7597,7 +7597,7 @@ static void malloc_dump_impl(dump_out_fn out, void *ctx)
 			void *mem = chunk2mem(q);
 
 			if (is_inuse(q)) {
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 				struct mcheck_hdr *hdr;
 
 				hdr = find_mcheck_hdr_in_chunk(mem, sz);
@@ -7614,7 +7614,7 @@ static void malloc_dump_impl(dump_out_fn out, void *ctx)
 				used += sz;
 				used_count++;
 			} else {
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 				struct mcheck_hdr *hdr;
 
 				hdr = find_freed_mcheck_hdr(mem, sz);
@@ -7701,7 +7701,7 @@ static int count_used_chunks(void)
 
 size_t malloc_mcheck_hdr_size(void)
 {
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 	return sizeof(struct mcheck_hdr);
 #else
 	return 0;
@@ -7831,7 +7831,7 @@ static void print_new_allocs(struct malloc_leak_snap *snap)
 				void *mem = chunk2mem(q);
 				size_t sz = chunksize(q);
 
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 				/*
 				 * For memalign()ed chunks the header is
 				 * offset by aln_skip, so use the registry-
@@ -7925,7 +7925,7 @@ size_t malloc_largest_free(void)
 
 int initf_malloc(void)
 {
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	assert(gd->malloc_base);	/* Set up by crt0.S */
 	gd->malloc_limit = CONFIG_VAL(SYS_MALLOC_F_LEN);
 	gd->malloc_ptr = 0;

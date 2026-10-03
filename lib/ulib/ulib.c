@@ -40,7 +40,7 @@ const char *ulib_get_version(void)
 
 void ulib_putsn(const char *s, int len)
 {
-	if (CONFIG_IS_ENABLED(CONSOLE_PUTSN))
+	if (IS_ENABLED(CONFIG_CONSOLE_PUTSN))
 		putsn(s, len);
 	else
 		while (len--)

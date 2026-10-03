@@ -18,7 +18,7 @@ void acpi_fill_fadt(struct acpi_fadt *fadt)
 {
 	fadt->flags = ACPI_FADT_HW_REDUCED_ACPI | ACPI_FADT_LOW_PWR_IDLE_S0;
 
-	if (CONFIG_IS_ENABLED(SEC_FIRMWARE_ARMV8_PSCI) &&
+	if (IS_ENABLED(CONFIG_SEC_FIRMWARE_ARMV8_PSCI) &&
 	    sec_firmware_support_psci_version() != PSCI_INVALID_VER)
 		fadt->arm_boot_arch = ACPI_ARM_PSCI_COMPLIANT;
 }

@@ -1245,7 +1245,7 @@ static int console_truetype_probe(struct udevice *dev)
 	debug("%s: start\n", __func__);
 
 	/* Allocate scratch buffer for stbtt internal allocations */
-	if (CONFIG_IS_ENABLED(CONSOLE_TRUETYPE_SCRATCH)) {
+	if (IS_ENABLED(CONFIG_CONSOLE_TRUETYPE_SCRATCH)) {
 		priv->scratch_buf = malloc(CONFIG_CONSOLE_TRUETYPE_SCRATCH_SIZE);
 		if (priv->scratch_buf) {
 			priv->scratch.buf = priv->scratch_buf;

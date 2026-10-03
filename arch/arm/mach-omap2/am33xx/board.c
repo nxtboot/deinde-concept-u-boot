@@ -58,7 +58,7 @@
 #define AM43XX_RDWRLVLFULL_START			0x80000000
 
 /* SPI flash. */
-#if CONFIG_IS_ENABLED(DM_SPI) && !CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_DM_SPI) && !IS_ENABLED(CONFIG_OF_CONTROL)
 #define AM33XX_SPI0_BASE	0x48030000
 #define AM33XX_SPI0_OFFSET	(AM33XX_SPI0_BASE + OMAP4_MCSPI_REG_OFFSET)
 #endif
@@ -67,7 +67,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int dram_init(void)
 {
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 	sdram_init();
 #endif
 
@@ -86,7 +86,7 @@ int dram_init_banksize(void)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(OF_CONTROL)
+#if !IS_ENABLED(CONFIG_OF_CONTROL)
 static const struct ns16550_plat am33xx_serial[] = {
 	{ .base = CFG_SYS_NS16550_COM1, .reg_shift = 2,
 	  .clock = CFG_SYS_NS16550_CLK, .fcr = UART_FCR_DEFVAL, },
@@ -119,7 +119,7 @@ U_BOOT_DRVINFOS(am33xx_uarts) = {
 #  endif
 };
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 static const struct omap_i2c_plat am33xx_i2c[] = {
 	{ I2C_BASE1, 100000, OMAP_I2C_REV_V2},
 	{ I2C_BASE2, 100000, OMAP_I2C_REV_V2},
@@ -133,7 +133,7 @@ U_BOOT_DRVINFOS(am33xx_i2c) = {
 };
 #endif
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 static const struct omap_gpio_plat am33xx_gpio[] = {
 	{ 0, AM33XX_GPIO0_BASE },
 	{ 1, AM33XX_GPIO1_BASE },
@@ -156,7 +156,7 @@ U_BOOT_DRVINFOS(am33xx_gpios) = {
 #endif
 };
 #endif
-#if CONFIG_IS_ENABLED(DM_SPI) && !CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_DM_SPI) && !IS_ENABLED(CONFIG_OF_CONTROL)
 static const struct omap3_spi_plat omap3_spi_pdata = {
 	.regs = (struct mcspi *)AM33XX_SPI0_OFFSET,
 	.pin_dir = MCSPI_PINDIR_D0_IN_D1_OUT,
@@ -169,7 +169,7 @@ U_BOOT_DRVINFO(am33xx_spi) = {
 #endif
 #endif
 
-#if !CONFIG_IS_ENABLED(DM_GPIO)
+#if !IS_ENABLED(CONFIG_DM_GPIO)
 static const struct gpio_bank gpio_bank_am33xx[] = {
 	{ (void *)AM33XX_GPIO0_BASE },
 	{ (void *)AM33XX_GPIO1_BASE },
@@ -288,7 +288,7 @@ int arch_misc_init(void)
 
 #endif /* CONFIG_AM335X_USB* && CONFIG_XPL_BUILD */
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 
 #if defined(CONFIG_SPL_AM33XX_ENABLE_RTC32K_OSC) || \
 	(defined(CONFIG_XPL_BUILD) && defined(CONFIG_SPL_RTC_DDR_SUPPORT))
@@ -525,7 +525,7 @@ void board_init_f(ulong dummy)
 static int am33xx_dm_post_init(void)
 {
 	hw_data_init();
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 	early_system_init();
 #endif
 	return 0;

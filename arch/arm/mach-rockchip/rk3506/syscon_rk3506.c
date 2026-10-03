@@ -13,7 +13,7 @@ U_BOOT_DRIVER(rockchip_rk3506_syscon) = {
 	.name = "rockchip_rk3506_syscon",
 	.id = UCLASS_SYSCON,
 	.of_match = rk3506_syscon_ids,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind = dm_scan_fdt_dev,
 #endif
 };

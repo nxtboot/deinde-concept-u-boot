@@ -47,7 +47,7 @@ struct cyclic_info {
 /** Function type for cyclic functions */
 typedef void (*cyclic_func_t)(struct cyclic_info *c);
 
-#if CONFIG_IS_ENABLED(CYCLIC)
+#if IS_ENABLED(CONFIG_CYCLIC)
 
 /**
  * cyclic_register - Register a new cyclic function

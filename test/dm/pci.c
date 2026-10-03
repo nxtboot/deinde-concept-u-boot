@@ -667,7 +667,7 @@ static int dm_test_pci_alloc_order(struct unit_test_state *uts)
 	struct udevice *bus, *bridge, *swap1, *swap1f, *behind;
 	ulong base, limit;
 
-	if (!CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST))
+	if (!IS_ENABLED(CONFIG_PCI_PNP_LARGEST_FIRST))
 		return -EAGAIN;
 
 	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 2, &bus));
@@ -707,7 +707,7 @@ static int dm_test_pci_alloc_nested(struct unit_test_state *uts)
 	struct udevice *bus, *outer, *inner, *swap1, *bottom;
 	ulong base, limit;
 
-	if (!CONFIG_IS_ENABLED(PCI_PNP_LARGEST_FIRST))
+	if (!IS_ENABLED(CONFIG_PCI_PNP_LARGEST_FIRST))
 		return -EAGAIN;
 
 	ut_assertok(uclass_get_device_by_seq(UCLASS_PCI, 5, &bus));

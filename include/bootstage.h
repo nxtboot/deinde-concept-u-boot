@@ -296,7 +296,7 @@ struct bootstage_record {
  */
 ulong timer_get_boot_us(void);
 
-#if defined(USE_HOSTCC) || !CONFIG_IS_ENABLED(SHOW_BOOT_PROGRESS)
+#if defined(USE_HOSTCC) || !IS_ENABLED(CONFIG_SHOW_BOOT_PROGRESS)
 #define show_boot_progress(val) do {} while (0)
 #else
 /**
@@ -309,7 +309,7 @@ void show_boot_progress(int val);
 #endif
 
 #if !defined(USE_HOSTCC)
-#if CONFIG_IS_ENABLED(BOOTSTAGE)
+#if IS_ENABLED(CONFIG_BOOTSTAGE)
 #define ENABLE_BOOTSTAGE
 #endif
 #endif
@@ -587,7 +587,7 @@ int _bootstage_unstash_default(void);
 
 static inline int bootstage_stash_default(void)
 {
-	if (CONFIG_IS_ENABLED(BOOTSTAGE) && IS_ENABLED(CONFIG_BOOTSTAGE_STASH))
+	if (IS_ENABLED(CONFIG_BOOTSTAGE) && IS_ENABLED(CONFIG_BOOTSTAGE_STASH))
 		return _bootstage_stash_default();
 
 	return 0;
@@ -595,7 +595,7 @@ static inline int bootstage_stash_default(void)
 
 static inline int bootstage_unstash_default(void)
 {
-	if (CONFIG_IS_ENABLED(BOOTSTAGE) && IS_ENABLED(CONFIG_BOOTSTAGE_STASH))
+	if (IS_ENABLED(CONFIG_BOOTSTAGE) && IS_ENABLED(CONFIG_BOOTSTAGE_STASH))
 		return _bootstage_unstash_default();
 
 	return 0;

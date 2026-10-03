@@ -352,7 +352,7 @@ static int pca9450_regulator_probe(struct udevice *dev)
 		*plat = pca9450_reg_data[i];
 
 		if (!strcmp(plat->name, "LDO5")) {
-			if (CONFIG_IS_ENABLED(DM_GPIO) && CONFIG_IS_ENABLED(DM_REGULATOR_PCA9450)) {
+			if (IS_ENABLED(CONFIG_DM_GPIO) && IS_ENABLED(CONFIG_DM_REGULATOR_PCA9450)) {
 				plat->sd_vsel_gpio = devm_gpiod_get_optional(dev, "sd-vsel",
 									     GPIOD_IS_IN);
 				if (IS_ERR(plat->sd_vsel_gpio)) {

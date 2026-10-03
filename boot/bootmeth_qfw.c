@@ -121,7 +121,7 @@ static int qfw_read_file(struct udevice *dev, struct bootflow *bflow,
 	return -ENOSYS;
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 static int qfw_read_all(struct udevice *dev, struct bootflow *bflow)
 {
 	struct bootflow_img *kimg;
@@ -160,9 +160,9 @@ static int qfw_boot(struct udevice *dev, struct bootflow *bflow)
 	bmi.conf_ramdisk = conf_ramdisk;
 
 	ret = -ENOENT;
-	if (CONFIG_IS_ENABLED(LIB_BOOTI))
+	if (IS_ENABLED(CONFIG_LIB_BOOTI))
 		ret = booti_run(&bmi);
-	if (ret && CONFIG_IS_ENABLED(LIB_BOOTZ))
+	if (ret && IS_ENABLED(CONFIG_LIB_BOOTZ))
 		ret = bootz_run(&bmi);
 	if (ret && IS_ENABLED(CONFIG_ZBOOT) && simg) {
 		ret = zboot_run_args(kimg->addr, kimg->size,
@@ -186,7 +186,7 @@ static struct bootmeth_ops qfw_bootmeth_ops = {
 	.check		= qfw_check,
 	.read_bootflow	= qfw_read_bootflow,
 	.read_file	= qfw_read_file,
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 	.read_all	= qfw_read_all,
 #endif
 	.boot		= qfw_boot,

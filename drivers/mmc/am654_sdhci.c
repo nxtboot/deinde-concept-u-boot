@@ -421,7 +421,7 @@ static void am654_sdhci_write_b(struct sdhci_host *host, u8 val, int reg)
 
 	writeb(val, host->ioaddr + reg);
 }
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 #define ITAPDLY_LENGTH 32
 #define ITAPDLY_LAST_INDEX (ITAPDLY_LENGTH - 1)
 
@@ -540,7 +540,7 @@ void am654_sdhci_set_control_reg(struct sdhci_host *host)
 }
 
 const struct sdhci_ops am654_sdhci_ops = {
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.platform_execute_tuning = am654_sdhci_execute_tuning,
 #endif
 	.deferred_probe		= am654_sdhci_deferred_probe,
@@ -600,7 +600,7 @@ static int j721e_4bit_sdhci_set_ios_post(struct sdhci_host *host)
 }
 
 const struct sdhci_ops j721e_4bit_sdhci_ops = {
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.platform_execute_tuning = am654_sdhci_execute_tuning,
 #endif
 	.deferred_probe		= am654_sdhci_deferred_probe,

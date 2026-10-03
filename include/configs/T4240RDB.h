@@ -77,7 +77,7 @@
  * open - index 2
  * shorted - index 1
  */
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 #define CFG_SYS_NS16550_CLK		(get_bus_freq(0)/2)
 #endif
 

@@ -31,7 +31,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 int get_serial_clock(void)
 {
 	return get_bus_freq(0) / 2;

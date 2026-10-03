@@ -702,8 +702,8 @@ static int init_phy(struct fm_eth *fm_eth)
 		supported |= SUPPORTED_2500baseX_Full;
 #endif
 
-#if (CONFIG_IS_ENABLED(MII) || CONFIG_IS_ENABLED(CMD_MII)) && \
-	!CONFIG_IS_ENABLED(BITBANGMII)
+#if (IS_ENABLED(CONFIG_MII) || IS_ENABLED(CONFIG_CMD_MII)) && \
+	!IS_ENABLED(CONFIG_BITBANGMII)
 	if (fm_eth->type == FM_ETH_1G_E)
 		dtsec_init_phy(fm_eth);
 #endif

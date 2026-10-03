@@ -218,7 +218,7 @@ static int initr_malloc(void)
 {
 	ulong start;
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	debug("Pre-reloc malloc() used %#x bytes (%d KB)\n", gd->malloc_ptr,
 	      gd->malloc_ptr / 1024);
 #endif
@@ -235,7 +235,7 @@ static int initr_malloc(void)
 
 static int initr_of_live(void)
 {
-	if (CONFIG_IS_ENABLED(OF_LIVE)) {
+	if (IS_ENABLED(CONFIG_OF_LIVE)) {
 		int ret;
 
 		bootstage_start(BOOTSTAGE_ID_ACCUM_OF_LIVE, "of_live");
@@ -476,7 +476,7 @@ static int initr_malloc_bootparams(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 static int initr_net(void)
 {
 	if (gd_ulib())
@@ -520,7 +520,7 @@ int initr_mem(void)
 
 static int initr_lmb(void)
 {
-	if (CONFIG_IS_ENABLED(LMB))
+	if (IS_ENABLED(CONFIG_LMB))
 		return lmb_init();
 	else
 		return 0;
@@ -535,9 +535,9 @@ static int dm_announce(void)
 		dm_get_stats(&device_count, &uclass_count);
 		printf("Core:  %d devices, %d uclasses", device_count,
 		       uclass_count);
-		if (CONFIG_IS_ENABLED(OF_REAL))
+		if (IS_ENABLED(CONFIG_OF_REAL))
 			printf(", devicetree: %s", fdtdec_get_srcname());
-		if (CONFIG_IS_ENABLED(UPL))
+		if (IS_ENABLED(CONFIG_UPL))
 			printf(", universal payload active");
 		printf("\n");
 		if (IS_ENABLED(CONFIG_OF_HAS_PRIOR_STAGE) &&
@@ -601,7 +601,7 @@ static void initcall_run_r(void)
 	INITCALL(initr_reloc_global_data);
 	/* the state is runtime data, relocated just above */
 	INITCALL(efi_state_init_default);
-#if CONFIG_IS_ENABLED(SYS_INIT_RAM_LOCK) && CONFIG_IS_ENABLED(E500)
+#if IS_ENABLED(CONFIG_SYS_INIT_RAM_LOCK) && CONFIG_IS_ENABLED(E500)
 	INITCALL(initr_unlock_ram_in_cache);
 #endif
 	INITCALL(initr_barrier);
@@ -611,17 +611,17 @@ static void initcall_run_r(void)
 #if CONFIG_IS_ENABLED(CONSOLE_RECORD)
 	INITCALL(console_record_init);
 #endif
-#if CONFIG_IS_ENABLED(SYS_HAS_NONCACHED_MEMORY)
+#if IS_ENABLED(CONFIG_SYS_HAS_NONCACHED_MEMORY)
 	INITCALL(noncached_init);
 #endif
 	INITCALL(initr_of_live);
-#if CONFIG_IS_ENABLED(DM)
+#if IS_ENABLED(CONFIG_DM)
 	INITCALL(initr_dm);
 #endif
 #if CONFIG_IS_ENABLED(ADDR_MAP)
 	INITCALL(init_addr_map);
 #endif
-#if CONFIG_IS_ENABLED(BOARD_INIT)
+#if IS_ENABLED(CONFIG_BOARD_INIT)
 	INITCALL(board_init);	/* Setup chipselects */
 #endif
 	/*
@@ -630,17 +630,17 @@ static void initcall_run_r(void)
 	 * davinci SOC's is added. Remove this check once all the board
 	 * implement this.
 	 */
-#if CONFIG_IS_ENABLED(CLOCKS)
+#if IS_ENABLED(CONFIG_CLOCKS)
 	INITCALL(set_cpu_clk_info);
 #endif
 	INITCALL(initr_lmb);
-#if CONFIG_IS_ENABLED(EFI_LOADER)
+#if IS_ENABLED(CONFIG_EFI_LOADER)
 	INITCALL(efi_memory_init);
 #endif
-#if CONFIG_IS_ENABLED(BINMAN_FDT)
+#if IS_ENABLED(CONFIG_BINMAN_FDT)
 	INITCALL(initr_binman);
 #endif
-#if CONFIG_IS_ENABLED(FSP_VERSION2)
+#if IS_ENABLED(CONFIG_FSP_VERSION2)
 	INITCALL(arch_fsp_init_r);
 #endif
 	INITCALL(initr_dm_devices);
@@ -648,7 +648,7 @@ static void initcall_run_r(void)
 	INITCALL(serial_initialize);
 	INITCALL(initr_announce);
 	INITCALL(dm_announce);
-#if CONFIG_IS_ENABLED(WDT)
+#if IS_ENABLED(CONFIG_WDT)
 	INITCALL(initr_watchdog);
 #endif
 	WATCHDOG_RESET();
@@ -661,7 +661,7 @@ static void initcall_run_r(void)
 	INITCALL(post_output_backlog);
 #endif
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(PCI_INIT_R) && CONFIG_IS_ENABLED(SYS_EARLY_PCI_INIT)
+#if IS_ENABLED(CONFIG_PCI_INIT_R) && IS_ENABLED(CONFIG_SYS_EARLY_PCI_INIT)
 	/*
 	 * Do early PCI configuration _before_ the flash gets initialised,
 	 * because PCU resources are crucial for flash access on some boards.
@@ -676,11 +676,11 @@ static void initcall_run_r(void)
 	INITCALL(initr_flash);
 #endif
 	WATCHDOG_RESET();
-#if IS_ENABLED(CONFIG_PPC) || CONFIG_IS_ENABLED(M68K) || CONFIG_IS_ENABLED(X86)
+#if IS_ENABLED(CONFIG_PPC) || IS_ENABLED(CONFIG_M68K) || IS_ENABLED(CONFIG_X86)
 	/* initialize higher level parts of CPU like time base and timers */
 	INITCALL(cpu_init_r);
 #endif
-#if CONFIG_IS_ENABLED(EFI_LOADER)
+#if IS_ENABLED(CONFIG_EFI_LOADER)
 	INITCALL(efi_init_early);
 #endif
 #if CONFIG_IS_ENABLED(CMD_NAND)
@@ -696,17 +696,17 @@ static void initcall_run_r(void)
 	INITCALL(initr_pvblock);
 #endif
 	INITCALL(initr_env);
-#if CONFIG_IS_ENABLED(SYS_MALLOC_BOOTPARAMS)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_BOOTPARAMS)
 	INITCALL(initr_malloc_bootparams);
 #endif
 	WATCHDOG_RESET();
 	INITCALL(cpu_secondary_init_r);
-#if CONFIG_IS_ENABLED(ID_EEPROM)
+#if IS_ENABLED(CONFIG_ID_EEPROM)
 	INITCALL(mac_read_from_eeprom);
 #endif
 	INITCALL_EVT(EVT_SETTINGS_R);
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(PCI_INIT_R) && !CONFIG_IS_ENABLED(SYS_EARLY_PCI_INIT)
+#if IS_ENABLED(CONFIG_PCI_INIT_R) && !IS_ENABLED(CONFIG_SYS_EARLY_PCI_INIT)
 	/*
 	 * Do pci configuration
 	 */
@@ -745,7 +745,7 @@ static void initcall_run_r(void)
 #ifdef CONFIG_PCI_ENDPOINT
 	INITCALL(pci_ep_init);
 #endif
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 	WATCHDOG_RESET();
 	INITCALL(initr_net);
 #endif
@@ -793,7 +793,7 @@ void board_init_r(gd_t *new_gd, ulong dest_addr)
 	 * TODO(sjg@chromium.org): Consider doing this for all archs, or
 	 * dropping the new_gd parameter.
 	 */
-	if (CONFIG_IS_ENABLED(X86_64) && !IS_ENABLED(CONFIG_EFI_APP))
+	if (IS_ENABLED(CONFIG_X86_64) && !IS_ENABLED(CONFIG_EFI_APP))
 		arch_setup_gd(new_gd);
 
 #if defined(CONFIG_RISCV)

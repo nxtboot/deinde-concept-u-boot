@@ -969,7 +969,7 @@ static int nt35510_panel_of_to_plat(struct udevice *dev)
 	struct nt35510_panel_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret =  device_get_supply_regulator(dev, "vdd-supply",
 						   &priv->vdd_reg);
 		if (ret) {
@@ -1008,7 +1008,7 @@ static int nt35510_panel_probe(struct udevice *dev)
 		return -ENODEV;
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		dev_dbg(dev, "enable regulator '%s'\n", priv->vdd_reg->name);
 		ret = regulator_set_enable(priv->vdd_reg, true);
 		if (ret)

@@ -154,7 +154,7 @@ binary.
 
 Note: When building with ``CONFIG_XPL_BUILD``, the code uses
 ``CONFIG_IS_ENABLED()`` macros to automatically select the appropriate
-phase-specific option (e.g., ``CONFIG_IS_ENABLED(SYS_MALLOC_F)`` expands to
+phase-specific option (e.g., ``IS_ENABLED(CONFIG_SYS_MALLOC_F)`` expands to
 ``CONFIG_SPL_SYS_MALLOC_F`` when building SPL).
 
 SPL (Secondary Program Loader)

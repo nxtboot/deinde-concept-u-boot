@@ -66,7 +66,7 @@ static struct mm_region mvebu_mem_map[] = {
 
 struct mm_region *mem_map = mvebu_mem_map;
 
-#if CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP)
+#if IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP)
 /**
  * mvebu_lmb_reserve() - mark a region as present but not allocatable
  * @base:	start of the region

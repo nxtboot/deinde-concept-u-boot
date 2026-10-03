@@ -1728,7 +1728,7 @@ static int rk3528_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	ret = offsetof(struct rk3528_cru, softrst_con[0]);
 	ret = rk3528_reset_bind_lut(dev, ret, 47);
 	if (ret)

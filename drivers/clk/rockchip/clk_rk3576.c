@@ -2540,7 +2540,7 @@ static int rk3576_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	ret = offsetof(struct rk3576_cru, softrst_con[0]);
 	ret = rk3576_reset_bind_lut(dev, ret, 32776);
 	if (ret)

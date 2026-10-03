@@ -113,7 +113,7 @@ static void gpio_clear_claim(struct gpio_dev_priv *uc_priv, unsigned int offset)
 	uc_priv->claimed[offset / GPIO_ALLOC_BITS] &= ~BIT(offset % GPIO_ALLOC_BITS);
 }
 
-#if CONFIG_IS_ENABLED(DM_GPIO_LOOKUP_LABEL)
+#if IS_ENABLED(CONFIG_DM_GPIO_LOOKUP_LABEL)
 /**
  * dm_gpio_lookup_label() - look for name in gpio device
  *
@@ -187,7 +187,7 @@ int dm_gpio_lookup_name(const char *name, struct gpio_desc *desc)
 			break;
 
 		/* Also search the "gpio-line-names" property in DT for a match. */
-		if (CONFIG_IS_ENABLED(DM_GPIO_LOOKUP_LINE_NAME)) {
+		if (IS_ENABLED(CONFIG_DM_GPIO_LOOKUP_LINE_NAME)) {
 			ret = dev_read_stringlist_search(dev, "gpio-line-names", name);
 			if (ret >= 0) {
 				offset = ret;
@@ -288,7 +288,7 @@ static int gpio_find_and_xlate(struct gpio_desc *desc,
 		return gpio_xlate_offs_flags(desc->dev, desc, args);
 }
 
-#if CONFIG_IS_ENABLED(GPIO_HOG)
+#if IS_ENABLED(CONFIG_GPIO_HOG)
 
 struct gpio_hog_priv {
 	struct gpio_desc gpiod;
@@ -418,7 +418,7 @@ int dm_gpio_request(struct gpio_desc *desc, const char *label)
 
 static int dm_gpio_requestf(struct gpio_desc *desc, const char *fmt, ...)
 {
-#if !defined(CONFIG_XPL_BUILD) || !CONFIG_IS_ENABLED(USE_TINY_PRINTF)
+#if !defined(CONFIG_XPL_BUILD) || !IS_ENABLED(CONFIG_USE_TINY_PRINTF)
 	va_list args;
 	char buf[40];
 
@@ -467,7 +467,7 @@ int gpio_request(unsigned gpio, const char *label)
  */
 int gpio_requestf(unsigned gpio, const char *fmt, ...)
 {
-#if !defined(CONFIG_XPL_BUILD) || !CONFIG_IS_ENABLED(USE_TINY_PRINTF)
+#if !defined(CONFIG_XPL_BUILD) || !IS_ENABLED(CONFIG_USE_TINY_PRINTF)
 	va_list args;
 	char buf[40];
 
@@ -880,7 +880,7 @@ static int get_function(struct udevice *dev, int offset, bool skip_unused,
 	if (namep) {
 		*namep = uc_priv->name[offset];
 		/* Fall back to DT "gpio-line-names" for unrequested pins. */
-		if (CONFIG_IS_ENABLED(DM_GPIO_LOOKUP_LINE_NAME) &&
+		if (IS_ENABLED(CONFIG_DM_GPIO_LOOKUP_LINE_NAME) &&
 		    (!*namep || !**namep)) {
 			const char *dt_name = NULL;
 
@@ -961,7 +961,7 @@ int gpio_get_status(struct udevice *dev, int offset, char *buf, int buffsize)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(ACPIGEN)
+#if IS_ENABLED(CONFIG_ACPIGEN)
 int gpio_get_acpi(const struct gpio_desc *desc, struct acpi_gpio *gpio)
 {
 	const struct dm_gpio_ops *ops;
@@ -1194,7 +1194,7 @@ err:
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static int _gpio_request_by_name_nodev(ofnode node, const char *list_name,
 				       int index, struct gpio_desc *desc,
 				       int flags, bool add_index)
@@ -1316,7 +1316,7 @@ int gpio_get_list_count(struct udevice *dev, const char *list_name)
 }
 #endif /* OF_PLATDATA */
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 int gpio_request_by_phandle(struct udevice *dev,
 			    const struct phandle_2_arg *cells,
 			    struct gpio_desc *desc, int flags)
@@ -1517,7 +1517,7 @@ void devm_gpiod_put(struct udevice *dev, struct gpio_desc *desc)
 
 static int gpio_post_bind(struct udevice *dev)
 {
-	if (CONFIG_IS_ENABLED(GPIO_HOG) && dev_has_ofnode(dev)) {
+	if (IS_ENABLED(CONFIG_GPIO_HOG) && dev_has_ofnode(dev)) {
 		struct udevice *child;
 		ofnode node;
 

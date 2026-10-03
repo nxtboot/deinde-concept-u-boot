@@ -4464,7 +4464,7 @@ ident_done:
 }
 EXPORT_SYMBOL(nand_detect);
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 
 static int nand_dt_init(struct mtd_info *mtd, struct nand_chip *chip, ofnode node)
 {
@@ -4554,7 +4554,7 @@ static int nand_dt_init(struct mtd_info *mtd, struct nand_chip *chip, ofnode nod
 {
 	return 0;
 }
-#endif /* CONFIG_IS_ENABLED(OF_CONTROL) */
+#endif /* IS_ENABLED(CONFIG_OF_CONTROL) */
 
 /**
  * nand_scan_ident - [NAND Interface] Scan for the NAND device

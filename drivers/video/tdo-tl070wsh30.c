@@ -74,7 +74,7 @@ static int tl070wsh30_panel_of_to_plat(struct udevice *dev)
 	struct tl070wsh30_panel_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret =  device_get_supply_regulator(dev, "power-supply",
 						   &priv->reg);
 		if (ret && ret != -ENOENT) {
@@ -107,7 +107,7 @@ static int tl070wsh30_panel_probe(struct udevice *dev)
 	struct mipi_dsi_panel_plat *plat = dev_get_plat(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR) && priv->reg) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR) && priv->reg) {
 		ret = regulator_set_enable(priv->reg, true);
 		if (ret)
 			return ret;

@@ -400,7 +400,7 @@ efi_status_t efi_install_fdt(void *fdt)
 	 * The EBBR spec requires that we have either an FDT or an ACPI table
 	 * but not both.
 	 */
-	if (CONFIG_IS_ENABLED(GENERATE_ACPI_TABLE) && fdt)
+	if (IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE) && fdt)
 		log_warning("Can't have ACPI table and device tree - ignoring DT.\n");
 
 	if (fdt == EFI_FDT_USE_INTERNAL) {
@@ -431,7 +431,7 @@ efi_status_t efi_install_fdt(void *fdt)
 		return EFI_LOAD_ERROR;
 	}
 
-	if (CONFIG_IS_ENABLED(GENERATE_ACPI_TABLE)) {
+	if (IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE)) {
 		efi_status_t ret;
 
 		/*
@@ -466,7 +466,7 @@ efi_status_t efi_install_fdt(void *fdt)
 
 	efi_try_purge_rng_seed(fdt);
 
-	if (CONFIG_IS_ENABLED(EFI_TCG2_PROTOCOL_MEASURE_DTB)) {
+	if (IS_ENABLED(CONFIG_EFI_TCG2_PROTOCOL_MEASURE_DTB)) {
 		ret = efi_tcg2_measure_dtb(fdt);
 		if (ret == EFI_SECURITY_VIOLATION) {
 			log_err("failed to measure DTB\n");

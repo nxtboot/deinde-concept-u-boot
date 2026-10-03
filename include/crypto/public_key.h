@@ -12,7 +12,7 @@
 
 #ifdef __UBOOT__
 #include <linux/types.h>
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 #include <library/common.h>
 #include <mbedtls/pk.h>
 #include <mbedtls/x509_crt.h>

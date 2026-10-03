@@ -10,7 +10,7 @@
 #include <linux/kconfig.h>
 #endif
 
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(MBEDTLS_LIB)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_MBEDTLS_LIB)
 #include <mbedtls_options.h>
 #include <mbedtls/md.h>
 
@@ -25,7 +25,7 @@ struct cmd_tbl;
  * Maximum digest size for all algorithms we support. Having this value
  * avoids a malloc() or C99 local declaration in common/cmd_hash.c.
  */
-#if CONFIG_IS_ENABLED(SHA384) || CONFIG_IS_ENABLED(SHA512)
+#if IS_ENABLED(CONFIG_SHA384) || IS_ENABLED(CONFIG_SHA512)
 #define HASH_MAX_DIGEST_SIZE	64
 #else
 #define HASH_MAX_DIGEST_SIZE	32
@@ -53,7 +53,7 @@ struct hash_algo {
 	void (*hash_func_ws)(const unsigned char *input, unsigned int ilen,
 		unsigned char *output, unsigned int chunk_sz);
 	int chunk_size;				/* Watchdog chunk size */
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(MBEDTLS_LIB)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_MBEDTLS_LIB)
 	mbedtls_md_type_t md_type;		/* mbedtls hash type */
 #endif
 	/*
@@ -130,7 +130,7 @@ int hash_command(const char *algo_name, int flags, int argc,
 int hash_block(const char *algo_name, const void *data, unsigned int len,
 	       uint8_t *output, int *output_size);
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB)
 static inline mbedtls_md_type_t hash_mbedtls_type(struct hash_algo *algo)
 {
 	return algo->md_type;

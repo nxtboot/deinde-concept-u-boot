@@ -159,7 +159,7 @@ void sunxi_gpio_set_pull_bank(void *bank_base, int pin_offset, u32 val)
 
 /* =========== Non-DM code, used by the SPL. ============ */
 
-#if !CONFIG_IS_ENABLED(DM_GPIO)
+#if !IS_ENABLED(CONFIG_DM_GPIO)
 static void sunxi_gpio_set_value(u32 pin, bool set)
 {
 	u32 bank = GPIO_BANK(pin);
@@ -239,7 +239,7 @@ int sunxi_name_to_gpio(const char *name)
 
 /* =========== DM code, used by U-Boot proper. ============ */
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 /* TODO(sjg@chromium.org): Remove this function and use device tree */
 int sunxi_name_to_gpio(const char *name)
 {

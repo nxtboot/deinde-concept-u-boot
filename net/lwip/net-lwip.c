@@ -71,7 +71,7 @@ static err_t net_lwip_tx(struct netif *netif, struct pbuf *p)
 		plen = p->len;
 	}
 
-	if (CONFIG_IS_ENABLED(LWIP_DEBUG_RXTX)) {
+	if (IS_ENABLED(CONFIG_LWIP_DEBUG_RXTX)) {
 		printf("net_lwip_tx: %u bytes, udev %s\n", plen, udev->name);
 		print_hex_dump("net_lwip_tx: ", 0, 16, 1, pp, plen, true);
 	}
@@ -365,7 +365,7 @@ int net_lwip_rx(struct udevice *udev, struct netif *netif)
 		flags = 0;
 
 		if (len > 0) {
-			if (CONFIG_IS_ENABLED(LWIP_DEBUG_RXTX)) {
+			if (IS_ENABLED(CONFIG_LWIP_DEBUG_RXTX)) {
 				printf("net_lwip_tx: %u bytes, udev %s \n", len,
 				       udev->name);
 				print_hex_dump("net_lwip_rx: ", 0, 16, 1,

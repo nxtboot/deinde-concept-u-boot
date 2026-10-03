@@ -134,7 +134,7 @@ static int rproc_pre_probe(struct udevice *dev)
 	/* See if we need to populate via fdt */
 
 	if (!dev_get_plat(dev)) {
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 		bool tmp;
 		debug("'%s': using fdt\n", dev->name);
 		uc_pdata->name = dev_read_string(dev, "remoteproc-name");
@@ -1003,7 +1003,7 @@ int rproc_set_firmware(struct udevice *rproc_dev, const char *fw_name)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(FS_LOADER)
+#if IS_ENABLED(CONFIG_FS_LOADER)
 int rproc_boot(struct udevice *rproc_dev)
 {
 	struct dm_rproc_uclass_pdata *uc_pdata;

@@ -20,7 +20,7 @@
 struct blk_desc;
 struct bootflow;
 
-#if CONFIG_IS_ENABLED(EFI_LOADER)
+#if IS_ENABLED(CONFIG_EFI_LOADER)
 
 /**
  * __efi_runtime_data - declares a non-const variable for EFI runtime section
@@ -88,7 +88,7 @@ void efi_print_image_infos(void *pc);
 /* Hook at initialization */
 efi_status_t efi_launch_capsules(void);
 
-#else /* CONFIG_IS_ENABLED(EFI_LOADER) */
+#else /* IS_ENABLED(CONFIG_EFI_LOADER) */
 
 static inline int efi_state_init_default(void)
 {
@@ -113,9 +113,9 @@ static inline efi_status_t efi_launch_capsules(void)
 	return EFI_SUCCESS;
 }
 
-#endif /* CONFIG_IS_ENABLED(EFI_LOADER) */
+#endif /* IS_ENABLED(CONFIG_EFI_LOADER) */
 
-#if CONFIG_IS_ENABLED(EFI_BINARY_EXEC)
+#if IS_ENABLED(CONFIG_EFI_BINARY_EXEC)
 /* Call this to unset the current device name */
 void efi_clear_bootdev(void);
 /* Call this to set the current device name */
@@ -129,7 +129,7 @@ static inline void efi_set_bootdev(const char *dev, const char *devnr,
 				   size_t buffer_size) { }
 #endif
 
-#if CONFIG_IS_ENABLED(NETDEVICES) && CONFIG_IS_ENABLED(EFI_LOADER)
+#if IS_ENABLED(CONFIG_NETDEVICES) && IS_ENABLED(CONFIG_EFI_LOADER)
 /* Call this to update the current device path of the efi net device */
 efi_status_t efi_net_new_dp(const char *dev, const char *server, struct udevice *udev);
 /* Call this to get the current device path of the efi net device */

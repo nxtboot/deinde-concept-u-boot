@@ -65,7 +65,7 @@ static int sntp_loop(struct udevice *udev, ip_addr_t *srvip)
 	sntp_state = NOT_DONE;
 
 	sntp_setoperatingmode(SNTP_OPMODE_POLL);
-	sntp_servermode_dhcp(CONFIG_IS_ENABLED(CMD_DHCP));
+	sntp_servermode_dhcp(IS_ENABLED(CONFIG_CMD_DHCP));
 	if (srvip) {
 		sntp_setserver(0, srvip);
 	} else {

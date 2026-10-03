@@ -11,9 +11,9 @@
 #include <phys2bus.h>
 #include <asm/io.h>
 
-#if (CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL) && !IS_ENABLED(CONFIG_OF_PLATDATA))
 
-#if CONFIG_IS_ENABLED(PCI)
+#if IS_ENABLED(CONFIG_PCI)
 static int dev_pci_iommu_enable(struct udevice *dev)
 {
 	struct udevice *parent = dev->parent;
@@ -116,7 +116,7 @@ int dev_iommu_enable(struct udevice *dev)
 		}
 	}
 
-#if CONFIG_IS_ENABLED(PCI)
+#if IS_ENABLED(CONFIG_PCI)
 	if (count < 0 && device_is_on_pci_bus(dev))
 		return dev_pci_iommu_enable(dev);
 #endif

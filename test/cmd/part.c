@@ -41,7 +41,7 @@ static int setup_gpt_partitions(struct unit_test_state *uts,
 	char dev_str[10];
 	int i, ret;
 
-	if (!CONFIG_IS_ENABLED(MMC))
+	if (!IS_ENABLED(CONFIG_MMC))
 		return -EAGAIN;
 
 	snprintf(dev_str, sizeof(dev_str), "%u", mmc_dev_num);
@@ -52,7 +52,7 @@ static int setup_gpt_partitions(struct unit_test_state *uts,
 
 	ut_assert(ret >= 0 && ret == mmc_dev_num);
 
-	if (CONFIG_IS_ENABLED(RANDOM_UUID)) {
+	if (IS_ENABLED(CONFIG_RANDOM_UUID)) {
 		for (i = 0; i < ARRAY_SIZE(gpt_parts); i++)
 			gen_rand_uuid_str(gpt_parts[i].uuid,
 					  UUID_STR_FORMAT_STD);

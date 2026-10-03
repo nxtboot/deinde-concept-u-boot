@@ -161,7 +161,7 @@ static int scmi_clk_gate(struct clk *clk, int enable)
 	 * version is set in dev's parent priv struct. Otherwise
 	 * SCMI clock version is set in dev priv struct.
 	 */
-	if (CONFIG_IS_ENABLED(CLK_CCF))
+	if (IS_ENABLED(CONFIG_CLK_CCF))
 		priv = dev_get_parent_priv(clk->dev);
 	else
 		priv = dev_get_priv(clk->dev);
@@ -226,7 +226,7 @@ static int scmi_clk_enable(struct clk *clk)
 	u32 ctrl_flags;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK_CCF))
+	if (!IS_ENABLED(CONFIG_CLK_CCF))
 		return scmi_clk_gate(clk, 1);
 
 	ret = scmi_clk_get_ctrl_flags(clk, &ctrl_flags);
@@ -246,7 +246,7 @@ static int scmi_clk_disable(struct clk *clk)
 	u32 ctrl_flags;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK_CCF))
+	if (!IS_ENABLED(CONFIG_CLK_CCF))
 		return scmi_clk_gate(clk, 0);
 
 	ret = scmi_clk_get_ctrl_flags(clk, &ctrl_flags);
@@ -314,7 +314,7 @@ static ulong scmi_clk_set_rate(struct clk *clk, ulong rate)
 	u32 ctrl_flags;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK_CCF))
+	if (!IS_ENABLED(CONFIG_CLK_CCF))
 		return __scmi_clk_set_rate(clk, rate);
 
 	ret = scmi_clk_get_ctrl_flags(clk, &ctrl_flags);
@@ -347,7 +347,7 @@ static int scmi_clk_probe(struct udevice *dev)
 		return ret;
 	}
 
-	if (!CONFIG_IS_ENABLED(CLK_CCF))
+	if (!IS_ENABLED(CONFIG_CLK_CCF))
 		return 0;
 
 	/* register CCF children: CLK UCLASS, no probed again */
@@ -404,7 +404,7 @@ static int scmi_clk_set_parent(struct clk *clk, struct clk *parent)
 	u32 ctrl_flags;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK_CCF))
+	if (!IS_ENABLED(CONFIG_CLK_CCF))
 		return __scmi_clk_set_parent(clk, parent);
 
 	ret = scmi_clk_get_ctrl_flags(clk, &ctrl_flags);

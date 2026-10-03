@@ -36,7 +36,7 @@ ENTRY(lowlevel_init)
 	/* backup LR */
 	mov	x29, lr
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 	/* reset SMP mailbox ASAP */
 	ldr	x0, =SCU_CPU_SMP_READY
 	str	wzr, [x0]
@@ -100,7 +100,7 @@ relocate_smp_mbox_insn:
 	str	w0, [x1]
 
 	sev
-#endif	/* !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT) */
+#endif	/* !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT) */
 
 	/* back to arch calling code */
 	mov	lr, x29

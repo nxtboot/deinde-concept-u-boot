@@ -137,7 +137,7 @@ struct bootmeth_ops {
 	int (*read_file)(struct udevice *dev, struct bootflow *bflow,
 			 const char *file_path, ulong *addrp, ulong align,
 			 enum bootflow_img_t type, ulong *sizep);
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 	/**
 	 * readall() - read all files for a bootflow
 	 *

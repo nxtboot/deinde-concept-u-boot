@@ -48,7 +48,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 
 static int mmc_env_partition_by_name(struct blk_desc *desc, const char *str,
 				     struct disk_partition *info)
@@ -126,7 +126,7 @@ static inline int mmc_offset_try_partition(const char *str, int copy, s64 *val)
 
 	if (str) {
 		ret = mmc_env_partition_by_name(desc, str, &info);
-	} else if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID) && !str) {
+	} else if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID) && !str) {
 		ret = mmc_env_partition_by_guid(desc, &info, &copy);
 	}
 	if (ret < 0)
@@ -185,7 +185,7 @@ static inline s64 mmc_offset(struct mmc *mmc, int copy)
 	}
 
 	/* try the GPT partition with "U-Boot ENV" TYPE GUID */
-	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID) && hwpart == 0) {
+	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID) && hwpart == 0) {
 		err = mmc_offset_try_partition(NULL, copy, &val);
 		if (!err)
 			return val;
@@ -291,7 +291,7 @@ static const char *init_mmc_for_env(struct mmc *mmc)
 	if (!mmc)
 		return "No MMC card found";
 
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 	struct udevice *dev;
 
 	if (blk_get_from_parent(mmc->dev, &dev))

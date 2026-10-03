@@ -111,7 +111,7 @@ int board_late_init(void)
 	virtio_init();
 
 	/* start usb so that usb keyboard can be used as input device */
-	if (CONFIG_IS_ENABLED(USB_KEYBOARD))
+	if (IS_ENABLED(CONFIG_USB_KEYBOARD))
 		usb_init();
 
 	return 0;
@@ -131,7 +131,7 @@ int dram_init(void)
 	 * of available memory to avoid hang during MMU
 	 * initialization.
 	 */
-	if (CONFIG_IS_ENABLED(ARMV7_LPAE))
+	if (IS_ENABLED(CONFIG_ARMV7_LPAE))
 		gd->ram_size -= (gd->ram_size % 0x200000);
 
 	return 0;
@@ -147,7 +147,7 @@ int dram_init_banksize(void)
 int board_fdt_blob_setup(void **fdtp)
 {
 	/* QEMU loads a generated DTB for us at the start of RAM. */
-	if (CONFIG_IS_ENABLED(OF_PASSAGE))
+	if (IS_ENABLED(CONFIG_OF_PASSAGE))
 		return -EEXIST;
 
 	*fdtp = (void *)CFG_SYS_SDRAM_BASE;

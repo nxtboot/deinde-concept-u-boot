@@ -55,7 +55,7 @@ static ulong spl_fit_read(struct spl_load_info *load, ulong file_offset,
 	if (ret)
 		return ret;
 
-	if (CONFIG_IS_ENABLED(OS_BOOT)) {
+	if (IS_ENABLED(CONFIG_OS_BOOT)) {
 		header = (struct legacy_img_hdr *)buf;
 		if (image_get_magic(header) != FDT_MAGIC)
 			return size;
@@ -105,7 +105,7 @@ end:
 	return err;
 }
 
-#if CONFIG_IS_ENABLED(OS_BOOT)
+#if IS_ENABLED(CONFIG_OS_BOOT)
 int spl_load_image_fat_os(struct spl_image_info *spl_image,
 			  struct spl_boot_device *bootdev,
 			  struct blk_desc *block_dev, int partition)
@@ -117,7 +117,7 @@ int spl_load_image_fat_os(struct spl_image_info *spl_image,
 	if (err)
 		return err;
 
-	if (!CONFIG_IS_ENABLED(ENV_SUPPORT))
+	if (!IS_ENABLED(CONFIG_ENV_SUPPORT))
 		goto defaults;
 
 	file = env_get("falcon_image_file");

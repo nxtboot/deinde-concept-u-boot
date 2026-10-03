@@ -48,7 +48,7 @@ bool scene_chklog(const char *name)
 	const char *filter, *end, *p;
 	int len;
 
-	if (!CONFIG_IS_ENABLED(EXPO_LOG_FILTER))
+	if (!IS_ENABLED(CONFIG_EXPO_LOG_FILTER))
 		return true;
 
 	filter = env_get("expo_log_filter");

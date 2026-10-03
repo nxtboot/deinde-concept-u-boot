@@ -194,7 +194,7 @@ static void __noreturn bl31_entry(ulong bl31_entry, ulong bl32_entry,
 	atf_entry_t  atf_entry = (atf_entry_t)bl31_entry;
 	void *bl31_params;
 
-	if (CONFIG_IS_ENABLED(ATF_LOAD_IMAGE_V2))
+	if (IS_ENABLED(CONFIG_ATF_LOAD_IMAGE_V2))
 		bl31_params = bl2_plat_get_bl31_params_v2(bl32_entry,
 							  bl33_entry,
 							  fdt_addr);
@@ -203,7 +203,7 @@ static void __noreturn bl31_entry(ulong bl31_entry, ulong bl32_entry,
 						       fdt_addr);
 
 	raw_write_daif(SPSR_EXCEPTION_MASK);
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		dcache_disable();
 
 	atf_entry(bl31_params, (void *)fdt_addr);
@@ -299,7 +299,7 @@ void __noreturn spl_invoke_atf(struct spl_image_info *spl_image)
 	 * older ATF versions that have insufficiently robust (or
 	 * overzealous) argument validation.
 	 */
-	if (CONFIG_IS_ENABLED(ATF_NO_PLATFORM_PARAM))
+	if (IS_ENABLED(CONFIG_ATF_NO_PLATFORM_PARAM))
 		platform_param = 0;
 
 	/*

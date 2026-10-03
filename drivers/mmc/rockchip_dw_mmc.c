@@ -20,7 +20,7 @@
 #include <linux/err.h>
 
 struct rockchip_mmc_plat {
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_rockchip_rk3288_dw_mshc dtplat;
 #endif
 	struct mmc_config cfg;
@@ -57,7 +57,7 @@ static uint rockchip_dwmmc_get_mmc_clk(struct dwmci_host *host, uint freq)
 		 * configured from that phase, so the DW MMC core can
 		 * calculate the correct clock divider.
 		 */
-		if (!CONFIG_IS_ENABLED(CLK) &&
+		if (!IS_ENABLED(CONFIG_CLK) &&
 		    IS_ENABLED(CONFIG_MMC_DW_ROCKCHIP_CLK_HANDOFF)) {
 			u32 *ratep;
 
@@ -93,7 +93,7 @@ static int rockchip_dwmmc_of_to_plat(struct udevice *dev)
 	struct rockchip_dwmmc_priv *priv = dev_get_priv(dev);
 	struct dwmci_host *host = &priv->host;
 
-	if (!CONFIG_IS_ENABLED(OF_REAL))
+	if (!IS_ENABLED(CONFIG_OF_REAL))
 		return 0;
 
 	host->name = dev->name;
@@ -147,7 +147,7 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 	struct dwmci_host *host = &priv->host;
 	int ret;
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_rockchip_rk3288_dw_mshc *dtplat = &plat->dtplat;
 
 	host->name = dev->name;
@@ -170,7 +170,7 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 	host->fifo_depth = priv->fifo_depth;
 	host->fifo_mode = priv->fifo_mode;
 
-#if CONFIG_IS_ENABLED(MMC_PWRSEQ)
+#if IS_ENABLED(CONFIG_MMC_PWRSEQ)
 	/* Enable power if needed */
 	ret = mmc_pwrseq_get_power(dev, &plat->cfg);
 	if (!ret) {

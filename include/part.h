@@ -74,10 +74,10 @@ struct disk_partition {
 	 */
 	int	bootable;
 	u16	type_flags;	/* top 16 bits of GPT partition attributes	*/
-#if CONFIG_IS_ENABLED(PARTITION_UUIDS)
+#if IS_ENABLED(CONFIG_PARTITION_UUIDS)
 	char	uuid[UUID_STR_LEN + 1];	/* filesystem UUID as string, if exists	*/
 #endif
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	char	type_guid[UUID_STR_LEN + 1];	/* type GUID as string, if exists	*/
 #endif
 #ifdef CONFIG_DOS_PARTITION
@@ -91,7 +91,7 @@ extern char *__invalid_use_of_disk_partition_uuid;
 
 static inline const char *disk_partition_uuid(const struct disk_partition *info)
 {
-#if CONFIG_IS_ENABLED(PARTITION_UUIDS)
+#if IS_ENABLED(CONFIG_PARTITION_UUIDS)
 	return info->uuid;
 #else
 	return __invalid_use_of_disk_partition_uuid;
@@ -101,14 +101,14 @@ static inline const char *disk_partition_uuid(const struct disk_partition *info)
 static inline void disk_partition_set_uuid(struct disk_partition *info,
 					   const char *val)
 {
-#if CONFIG_IS_ENABLED(PARTITION_UUIDS)
+#if IS_ENABLED(CONFIG_PARTITION_UUIDS)
 	strlcpy(info->uuid, val, UUID_STR_LEN + 1);
 #endif
 }
 
 static inline void disk_partition_clr_uuid(struct disk_partition *info)
 {
-#if CONFIG_IS_ENABLED(PARTITION_UUIDS)
+#if IS_ENABLED(CONFIG_PARTITION_UUIDS)
 	*info->uuid = '\0';
 #endif
 }
@@ -120,7 +120,7 @@ extern char *__invalid_use_of_disk_partition_type_guid;
  * disk_partition_type_guid() - get partition type GUID
  *
  * By using this function to get the partition type GUID we can use
- * 'if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))' instead of
+ * 'if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))' instead of
  * '#ifdef CONFIG_PARTITION_TYPE_GUID'.
  *
  * @info:	partition information
@@ -129,7 +129,7 @@ extern char *__invalid_use_of_disk_partition_type_guid;
 static inline const
 char *disk_partition_type_guid(const struct disk_partition *info)
 {
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	return info->type_guid;
 #else
 	return __invalid_use_of_disk_partition_type_guid;
@@ -140,7 +140,7 @@ char *disk_partition_type_guid(const struct disk_partition *info)
  * disk_partition_set_type_guid() - set partition type GUID
  *
  * By using this function to set the partition type GUID we can use
- * 'if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))' instead of
+ * 'if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))' instead of
  * '#ifdef CONFIG_PARTITION_TYPE_GUID'.
  *
  * @info:	partition information
@@ -149,14 +149,14 @@ char *disk_partition_type_guid(const struct disk_partition *info)
 static inline void disk_partition_set_type_guid(struct disk_partition *info,
 						const char *val)
 {
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	strlcpy(info->type_guid, val, UUID_STR_LEN + 1);
 #endif
 }
 
 static inline void disk_partition_clr_type_guid(struct disk_partition *info)
 {
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	*info->type_guid = '\0';
 #endif
 }
@@ -180,7 +180,7 @@ struct disk_part {
 };
 
 /* Misc _get_dev functions */
-#if CONFIG_IS_ENABLED(PARTITIONS)
+#if IS_ENABLED(CONFIG_PARTITIONS)
 /**
  * blk_get_dev() - get a pointer to a block device given its type and number
  *
@@ -544,7 +544,7 @@ int part_driver_get_info(struct part_driver *drv, struct blk_desc *desc, int par
 
 #include <part_efi.h>
 
-#if CONFIG_IS_ENABLED(EFI_PARTITION)
+#if IS_ENABLED(CONFIG_EFI_PARTITION)
 /* disk/part_efi.c */
 /**
  * write_gpt_table() - Write the GUID Partition Table to disk
@@ -691,7 +691,7 @@ int part_get_gpt_pte(struct blk_desc *desc, int part, gpt_entry *gpt_e);
 
 #endif
 
-#if CONFIG_IS_ENABLED(DOS_PARTITION)
+#if IS_ENABLED(CONFIG_DOS_PARTITION)
 /**
  * is_valid_dos_buf() - Ensure that a DOS MBR image is valid
  *
@@ -732,7 +732,7 @@ int part_get_mbr(struct blk_desc *desc, int part, dos_partition_t *mbr);
 
 #endif
 
-#if CONFIG_IS_ENABLED(PARTITIONS)
+#if IS_ENABLED(CONFIG_PARTITIONS)
 /**
  * part_driver_get_count() - get partition driver count
  *

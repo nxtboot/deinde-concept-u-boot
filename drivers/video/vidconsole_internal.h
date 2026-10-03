@@ -241,7 +241,7 @@ int console_fixed_putc_xy(struct udevice *dev, void *vctx, uint x_frac, uint y,
  */
 static inline u8 console_utf_to_cp437(int codepoint)
 {
-	if (CONFIG_IS_ENABLED(CHARSET)) {
+	if (IS_ENABLED(CONFIG_CHARSET)) {
 		utf_to_cp(&codepoint, codepage_437);
 		return codepoint;
 	}

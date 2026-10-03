@@ -12,7 +12,7 @@
 #define FLAG_REPARSING       (1 << 2)	  /* >=2nd pass */
 #define FLAG_CONT_ON_NEWLINE (1 << 3)	  /* continue when we see \n */
 
-#if CONFIG_IS_ENABLED(HUSH_OLD_PARSER)
+#if IS_ENABLED(CONFIG_HUSH_OLD_PARSER)
 extern int u_boot_hush_start(void);
 extern int parse_string_outer(const char *str, int flag);
 extern int parse_file_outer(void);
@@ -38,7 +38,7 @@ static inline int set_local_var(const char *s, int flg_export)
 	return 0;
 }
 #endif
-#if CONFIG_IS_ENABLED(HUSH_MODERN_PARSER)
+#if IS_ENABLED(CONFIG_HUSH_MODERN_PARSER)
 extern int u_boot_hush_start_modern(void);
 extern int parse_string_outer_modern(const char *str, int flag);
 extern void parse_and_run_file(void);

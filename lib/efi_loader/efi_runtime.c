@@ -825,7 +825,7 @@ void efi_runtime_relocate(ulong offset, struct efi_mem_desc *map)
 	 * If on x86 a write affects a prefetched instruction,
 	 * the prefetch queue is invalidated.
 	 */
-	if (!CONFIG_IS_ENABLED(X86))
+	if (!IS_ENABLED(CONFIG_X86))
 		invalidate_icache_all();
 }
 

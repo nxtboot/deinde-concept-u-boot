@@ -22,7 +22,7 @@ struct cmd_tbl;
  *	alignment in memory.
  *
  */
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 #define PKTBUFSRX	CONFIG_SYS_RX_ETH_BUFFER
 #endif
 #define PKTALIGN	ARCH_DMA_MINALIGN
@@ -136,7 +136,7 @@ static inline void net_set_state(enum net_loop_state state)
 }
 
 extern int		net_restart_wrap;	/* Tried all network devices */
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 extern uchar		*net_rx_packets[PKTBUFSRX]; /* Receive packets */
 #endif
 extern const u8		net_bcast_ethaddr[ARP_HLEN];	/* Ethernet broadcast address */
@@ -241,7 +241,7 @@ int eth_rx(void);			/* Check for received packets */
  */
 void reset_phy(void);
 
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 /**
  * eth_set_enable_bootdevs() - Enable or disable binding of Ethernet bootdevs
  *

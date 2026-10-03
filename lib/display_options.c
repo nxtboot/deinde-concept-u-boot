@@ -98,7 +98,7 @@ void print_freq(uint64_t freq, const char *s)
 	printf(" %cHz%s", c, s);
 }
 
-#if CONFIG_IS_ENABLED(LIB_FORMAT_SIZE)
+#if IS_ENABLED(CONFIG_LIB_FORMAT_SIZE)
 char *format_size(char *buf, uint64_t size)
 #else
 static char *format_size(char *buf, uint64_t size)
@@ -210,7 +210,7 @@ int hexdump_line(ulong addr, const void *data, uint width, uint count,
 			x = lb.us[i] = *(volatile uint16_t *)data;
 		else
 			x = lb.uc[i] = *(volatile uint8_t *)data;
-		if (CONFIG_IS_ENABLED(USE_TINY_PRINTF))
+		if (IS_ENABLED(CONFIG_USE_TINY_PRINTF))
 			out += sprintf(out, " %x", (uint)x);
 		else
 			out += sprintf(out, " %0*lx", width * 2, x);

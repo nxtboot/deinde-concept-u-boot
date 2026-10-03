@@ -15,7 +15,7 @@
 
 static int dm_test_cmd_hash_md5(struct unit_test_state *uts)
 {
-	if (!CONFIG_IS_ENABLED(MD5)) {
+	if (!IS_ENABLED(CONFIG_MD5)) {
 		ut_assert(run_command("hash md5 $loadaddr 0", 0));
 
 		return 0;
@@ -38,7 +38,7 @@ static int dm_test_cmd_hash_md5(struct unit_test_state *uts)
 	ut_assertok(ut_check_console_line(uts,
 					  "d41d8cd98f00b204e9800998ecf8427e"));
 
-	if (!CONFIG_IS_ENABLED(HASH_VERIFY)) {
+	if (!IS_ENABLED(CONFIG_HASH_VERIFY)) {
 		ut_assert(run_command("hash -v md5 $loadaddr 0 foo", 0));
 		ut_assertok(ut_check_console_line(
 				uts, "hash - compute hash message digest"));
@@ -61,7 +61,7 @@ DM_TEST(dm_test_cmd_hash_md5, UTF_CONSOLE);
 
 static int dm_test_cmd_hash_sha256(struct unit_test_state *uts)
 {
-	if (!CONFIG_IS_ENABLED(SHA256)) {
+	if (!IS_ENABLED(CONFIG_SHA256)) {
 		ut_assert(run_command("hash sha256 $loadaddr 0", 0));
 
 		return 0;
@@ -84,7 +84,7 @@ static int dm_test_cmd_hash_sha256(struct unit_test_state *uts)
 	ut_assertok(ut_check_console_line(
 			uts, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
 
-	if (!CONFIG_IS_ENABLED(HASH_VERIFY)) {
+	if (!IS_ENABLED(CONFIG_HASH_VERIFY)) {
 		ut_assert(run_command("hash -v sha256 $loadaddr 0 foo", 0));
 		ut_assertok(ut_check_console_line(
 				uts, "hash - compute hash message digest"));
@@ -109,7 +109,7 @@ static int cmd_test_hash_sm3_256(struct unit_test_state *uts)
 {
 	const char *sum = "1ab21d8355cfa17f8e61194831e81a8f22bec8c728fefb747ed035eb5082aa2b";
 
-	if (!CONFIG_IS_ENABLED(SM3)) {
+	if (!IS_ENABLED(CONFIG_SM3)) {
 		ut_assert(run_command("hash sm3_256 $loadaddr 0", 0));
 
 		return 0;
@@ -129,7 +129,7 @@ static int cmd_test_hash_sm3_256(struct unit_test_state *uts)
 	ut_assert(strstr(uts->actual_str, sum));
 	ut_assertok(ut_check_console_line(uts, sum));
 
-	if (!CONFIG_IS_ENABLED(HASH_VERIFY)) {
+	if (!IS_ENABLED(CONFIG_HASH_VERIFY)) {
 		ut_assert(run_command("hash -v sm3_256 $loadaddr 0 foo", 0));
 		ut_assertok(ut_check_console_line(uts,
 						  "hash - compute hash message digest"));

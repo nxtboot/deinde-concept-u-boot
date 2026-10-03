@@ -336,7 +336,7 @@ static int upl_test_base(struct unit_test_state *uts)
 	struct upl upl, check;
 	struct abuf buf;
 
-	if (!CONFIG_IS_ENABLED(OFNODE_MULTI_TREE))
+	if (!IS_ENABLED(CONFIG_OFNODE_MULTI_TREE))
 		return -EAGAIN;  /* skip test */
 	ut_assertok(upl_get_test_data(uts, &upl));
 
@@ -383,7 +383,7 @@ static int upl_test_read_write(struct unit_test_state *uts)
 {
 	ulong addr;
 
-	if (!CONFIG_IS_ENABLED(OFNODE_MULTI_TREE))
+	if (!IS_ENABLED(CONFIG_OFNODE_MULTI_TREE))
 		return -EAGAIN;  /* skip test */
 	ut_assertok(run_command("upl write", 0));
 

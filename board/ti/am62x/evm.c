@@ -33,7 +33,7 @@
 #define board_is_am62x_lp_skevm()  board_ti_k3_is("AM62-LP-SKEVM")
 #define board_is_am62x_sip_skevm()  board_ti_k3_is("AM62SIP-SKEVM")
 
-#if CONFIG_IS_ENABLED(SPLASH_SCREEN)
+#if IS_ENABLED(CONFIG_SPLASH_SCREEN)
 static struct splash_location default_splash_locations[] = {
 	{
 		.name = "sf",

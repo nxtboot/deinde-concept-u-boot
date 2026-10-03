@@ -17,7 +17,7 @@
 
 enum { PMIC_I2C, PMIC_SPI, PMIC_NONE};
 
-#if CONFIG_IS_ENABLED(POWER_LEGACY)
+#if IS_ENABLED(CONFIG_POWER_LEGACY)
 #include <power/pmic_legacy.h>
 #else
 /**

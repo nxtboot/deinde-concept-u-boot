@@ -23,7 +23,7 @@
 #define FAKE_BUILD_TAG	"jenkins-u-boot-denx_uboot_dm-master-build-aarch64" \
 			"and a lot more text to come"
 
-#if CONFIG_IS_ENABLED(LIB_UUID)
+#if IS_ENABLED(CONFIG_LIB_UUID)
 /* Test printing GUIDs */
 static int print_guid(struct unit_test_state *uts)
 {
@@ -48,7 +48,7 @@ static int print_guid(struct unit_test_state *uts)
 	sprintf(str, "%pUL", guid);
 	ut_asserteq_str("04030201-0605-0807-090A-0B0C0D0E0F10", str);
 	sprintf(str, "%pUs", guid_esp);
-	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID) ||
+	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID) ||
 	    IS_ENABLED(CONFIG_CMD_EFIDEBUG) || IS_ENABLED(CONFIG_EFI))
 		ut_asserteq_str("EFI System Partition", str);
 	else
@@ -62,7 +62,7 @@ static int print_guid(struct unit_test_state *uts)
 COMMON_TEST(print_guid, 0);
 #endif
 
-#if CONFIG_IS_ENABLED(EFI_LOADER) && !defined(LEGACY_API_BUILD)
+#if IS_ENABLED(CONFIG_EFI_LOADER) && !defined(LEGACY_API_BUILD)
 /* Test efi_loader specific printing */
 static int print_efi_ut(struct unit_test_state *uts)
 {
@@ -118,7 +118,7 @@ static int print_printf(struct unit_test_state *uts)
 	snprintf(str, 0, "testing none");
 	ut_asserteq('x', *str);
 
-	if (CONFIG_IS_ENABLED(EFI_LOADER) || IS_ENABLED(CONFIG_EFI_APP)) {
+	if (IS_ENABLED(CONFIG_EFI_LOADER) || IS_ENABLED(CONFIG_EFI_APP)) {
 		sprintf(big_str, "_%ls_", u"foo");
 		ut_assertok(strcmp("_foo_", big_str));
 	}
@@ -289,7 +289,7 @@ static int print_do_hex_dump(struct unit_test_state *uts)
 	int i;
 	ulong addr;
 
-	if (!CONFIG_IS_ENABLED(HEXDUMP))
+	if (!IS_ENABLED(CONFIG_HEXDUMP))
 		return -EAGAIN;
 
 	buf = calloc(1, BUF_SIZE);

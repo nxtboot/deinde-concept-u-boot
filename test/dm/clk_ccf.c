@@ -21,7 +21,7 @@ static int dm_test_clk_ccf(struct unit_test_state *uts)
 	struct udevice *dev, *test_dev;
 	long long rate;
 	int ret;
-#if CONFIG_IS_ENABLED(CLK_CCF)
+#if IS_ENABLED(CONFIG_CLK_CCF)
 	struct clk clk_ccf;
 	const char *clkname;
 	int clkid, i;
@@ -118,7 +118,7 @@ static int dm_test_clk_ccf(struct unit_test_state *uts)
 	rate = clk_set_rate(clk, 60000000);
 	ut_asserteq_64(60000000, rate);
 
-#if CONFIG_IS_ENABLED(CLK_CCF)
+#if IS_ENABLED(CONFIG_CLK_CCF)
 	/* Test clk tree enable/disable */
 
 	ret = clk_get_by_index(test_dev, SANDBOX_CLK_TEST_ID_I2C_ROOT, &clk_ccf);

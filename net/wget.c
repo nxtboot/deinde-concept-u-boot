@@ -53,7 +53,7 @@ static inline int store_block(uchar *src, unsigned int offset, unsigned int len)
 	// Avoid overflow
 	if (wget_info->buffer_size && wget_info->buffer_size < offset + len)
 		return -1;
-	if (CONFIG_IS_ENABLED(LMB) && wget_info->set_bootdev) {
+	if (IS_ENABLED(CONFIG_LMB) && wget_info->set_bootdev) {
 		if (store_addr < image_load_addr ||
 		    lmb_read_check(store_addr, len)) {
 			if (!wget_info->silent) {

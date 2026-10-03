@@ -113,7 +113,7 @@ static char hist_data[HIST_MAX][HIST_SIZE + 1];
 #endif
 static char *hist_list[HIST_MAX];
 
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 #ifdef CONFIG_CMDLINE_UNDO_COUNT
 #define UNDO_COUNT	CONFIG_CMDLINE_UNDO_COUNT
 #else
@@ -262,7 +262,7 @@ void cread_print_hist_list(void)
 	}							\
 }
 
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 /**
  * cread_start_of_line() - Move cursor to start of line
  *
@@ -295,7 +295,7 @@ static void cread_start_of_line(struct cli_line_state *cls)
 #define BEGINNING_OF_LINE() GOTO_LINE_START(0)
 #endif
 
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 static void cread_erase_to_eol(struct cli_line_state *cls)
 {
 	struct cli_editor_state *ed = cli_editor(cls);
@@ -338,7 +338,7 @@ static void cread_erase_to_eol(struct cli_line_state *cls)
 	}						\
 }
 
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 /**
  * cread_end_of_line() - Move cursor to end of line
  *
@@ -449,7 +449,7 @@ int cread_line_process_ch(struct cli_line_state *cls, char ichar)
 		}
 		break;
 	case CTL_CH('r'):	/* backward-word */
-		if (CONFIG_IS_ENABLED(CMDLINE_EDITOR) && cls->num) {
+		if (IS_ENABLED(CONFIG_CMDLINE_EDITOR) && cls->num) {
 			uint pos = cls->num;
 
 			/* skip spaces before word */
@@ -463,7 +463,7 @@ int cread_line_process_ch(struct cli_line_state *cls, char ichar)
 		}
 		break;
 	case CTL_CH('t'):	/* forward-word */
-		if (CONFIG_IS_ENABLED(CMDLINE_EDITOR) && cls->num < cls->eol_num) {
+		if (IS_ENABLED(CONFIG_CMDLINE_EDITOR) && cls->num < cls->eol_num) {
 			uint pos = cls->num;
 
 			/* skip spaces after cursor */
@@ -553,7 +553,7 @@ int cread_line_process_ch(struct cli_line_state *cls, char ichar)
 		}
 		break;
 	case CTL_CH('y'):
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 		cread_yank(cls);
 #endif
 		break;
@@ -561,7 +561,7 @@ int cread_line_process_ch(struct cli_line_state *cls, char ichar)
 		cread_restore_undo(cls);
 		break;
 	case CTL_CH('g'):
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 		cread_redo(cls);
 #endif
 		break;
@@ -696,7 +696,7 @@ void cli_cread_init_undo(struct cli_line_state *cls, char *buf, uint buf_size)
 
 void cli_cread_uninit(struct cli_line_state *cls)
 {
-	if (CONFIG_IS_ENABLED(CMDLINE_EDITOR)) {
+	if (IS_ENABLED(CONFIG_CMDLINE_EDITOR)) {
 		struct cli_editor_state *ed = cli_editor(cls);
 		struct cli_undo_pos *pos;
 

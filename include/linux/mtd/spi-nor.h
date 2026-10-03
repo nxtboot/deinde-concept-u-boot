@@ -569,7 +569,7 @@ struct spi_nor {
 	u8			rdsr_dummy;
 	u8			rdsr_addr_nbytes;
 	u8			addr_mode_nbytes;
-#if CONFIG_IS_ENABLED(SPI_FLASH_BAR)
+#if IS_ENABLED(CONFIG_SPI_FLASH_BAR)
 	u8			bank_read_cmd;
 	u8			bank_write_cmd;
 	u8			bank_curr;
@@ -655,7 +655,7 @@ void spi_nor_setup_op(const struct spi_nor *nor,
  */
 int spi_nor_scan(struct spi_nor *nor);
 
-#if CONFIG_IS_ENABLED(SPI_FLASH_TINY)
+#if IS_ENABLED(CONFIG_SPI_FLASH_TINY)
 static inline int spi_nor_remove(struct spi_nor *nor)
 {
 	return 0;

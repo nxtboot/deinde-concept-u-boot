@@ -38,7 +38,7 @@ static void fdt_error(const char *msg)
 	puts(" - must RESET the board to recover.\n");
 }
 
-#if CONFIG_IS_ENABLED(LEGACY_IMAGE_FORMAT)
+#if IS_ENABLED(CONFIG_LEGACY_IMAGE_FORMAT)
 static const struct legacy_img_hdr *image_get_fdt(ulong fdt_addr)
 {
 	const struct legacy_img_hdr *fdt_hdr = map_sysmem(fdt_addr, 0);
@@ -336,7 +336,7 @@ static int select_fdt(struct bootm_headers *images, const char *select, u8 arch,
 	const char *buf;
 	ulong fdt_addr;
 
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 	const char *fit_uname_config = images->fit_uname_cfg;
 	const char *fit_uname_fdt = NULL;
 	ulong default_addr;
@@ -371,7 +371,7 @@ static int select_fdt(struct bootm_headers *images, const char *select, u8 arch,
 			debug("*  fdt: cmdline image address = 0x%08lx\n",
 			      fdt_addr);
 		}
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 	} else {
 		/* use FIT configuration provided in first bootm
 		 * command argument
@@ -396,7 +396,7 @@ static int select_fdt(struct bootm_headers *images, const char *select, u8 arch,
 	 */
 	buf = map_sysmem(fdt_addr, 0);
 	switch (genimg_get_format(buf)) {
-#if CONFIG_IS_ENABLED(LEGACY_IMAGE_FORMAT)
+#if IS_ENABLED(CONFIG_LEGACY_IMAGE_FORMAT)
 	case IMAGE_FORMAT_LEGACY: {
 			const struct legacy_img_hdr *fdt_hdr;
 			ulong load, load_end;
@@ -448,7 +448,7 @@ static int select_fdt(struct bootm_headers *images, const char *select, u8 arch,
 		 * (libfdt based) and raw FDT blob (also libfdt
 		 * based).
 		 */
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 			/* check FDT blob vs FIT blob */
 			if (!fit_check_format(buf, IMAGE_SIZE_INVAL)) {
 				ulong load, len;
@@ -717,14 +717,14 @@ int image_setup_libfdt(struct bootm_headers *images, void *blob, bool lmb)
 	if (!ft_verify_fdt(blob))
 		goto err;
 
-	if (CONFIG_IS_ENABLED(BLKMAP) && CONFIG_IS_ENABLED(EFI_LOADER)) {
+	if (IS_ENABLED(CONFIG_BLKMAP) && IS_ENABLED(CONFIG_EFI_LOADER)) {
 		fdt_ret = fdt_efi_pmem_setup(blob);
 		if (fdt_ret)
 			goto err;
 	}
 
 	/* after here we are using a livetree */
-	if (!of_live_active() && CONFIG_IS_ENABLED(EVENT)) {
+	if (!of_live_active() && IS_ENABLED(CONFIG_EVENT)) {
 		struct event_ft_fixup fixup;
 
 		fixup.tree = oftree_from_fdt(blob);
@@ -740,7 +740,7 @@ int image_setup_libfdt(struct bootm_headers *images, void *blob, bool lmb)
 	}
 
 	/* Delete the old LMB reservation */
-	if (CONFIG_IS_ENABLED(LMB) && lmb)
+	if (IS_ENABLED(CONFIG_LMB) && lmb)
 		lmb_free(map_to_sysmem(blob), fdt_totalsize(blob));
 
 	ret = fdt_shrink_to_minimum(blob, 0);
@@ -749,7 +749,7 @@ int image_setup_libfdt(struct bootm_headers *images, void *blob, bool lmb)
 	of_size = ret;
 
 	/* Create a new LMB reservation */
-	if (CONFIG_IS_ENABLED(LMB) && lmb)
+	if (IS_ENABLED(CONFIG_LMB) && lmb)
 		lmb_reserve(map_to_sysmem(blob), of_size, LMB_NONE);
 
 	if (IS_ENABLED(CONFIG_OF_BOARD_SETUP_EXTENDED) && !skip_board_fixup)

@@ -1416,7 +1416,7 @@ static fdt_addr_t eqos_get_base_addr_common(struct udevice *dev, fdt_addr_t addr
 	struct eqos_priv *eqos = dev_get_priv(dev);
 
 	if (addr == FDT_ADDR_T_NONE) {
-#if CONFIG_IS_ENABLED(FDT_64BIT)
+#if IS_ENABLED(CONFIG_FDT_64BIT)
 		dev_err(dev, "addr=0x%llx is invalid.\n", addr);
 #else
 		dev_err(dev, "addr=0x%x is invalid.\n", addr);

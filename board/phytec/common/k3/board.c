@@ -108,12 +108,12 @@ enum env_location env_get_location(enum env_operation op, int prio)
 	switch (boot_device) {
 	case BOOT_DEVICE_MMC1:
 	case BOOT_DEVICE_MMC2:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_FAT))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_FAT))
 			return ENVL_FAT;
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_MMC))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_MMC))
 			return ENVL_MMC;
 	case BOOT_DEVICE_SPI:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_SPI_FLASH))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_SPI_FLASH))
 			return ENVL_SPI_FLASH;
 	default:
 		return ENVL_NOWHERE;

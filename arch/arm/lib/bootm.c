@@ -167,7 +167,7 @@ __weak void board_prep_linux(struct bootm_headers *images) { }
 static int boot_prep_linux(struct bootm_headers *images)
 {
 	char *commandline = env_get("bootargs");
-	bool use_fdt = CONFIG_IS_ENABLED(OF_LIBFDT) && IS_ENABLED(CONFIG_LMB);
+	bool use_fdt = IS_ENABLED(CONFIG_OF_LIBFDT) && IS_ENABLED(CONFIG_LMB);
 
 	if (use_fdt && images->ft_len) {
 		debug("using: FDT\n");
@@ -327,7 +327,7 @@ static void boot_jump_linux(struct bootm_headers *images, int flag)
 	bootm_final(flag);
 	cleanup_before_linux();
 
-	if (CONFIG_IS_ENABLED(OF_LIBFDT) && images->ft_len)
+	if (IS_ENABLED(CONFIG_OF_LIBFDT) && images->ft_len)
 		r2 = (unsigned long)images->ft_addr;
 	else
 		r2 = gd->bd->bi_boot_params;

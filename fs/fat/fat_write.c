@@ -1149,7 +1149,7 @@ getit:
  */
 static void dentry_set_time(struct dir_entry *dentptr)
 {
-	if (CONFIG_IS_ENABLED(DM_RTC)) {
+	if (IS_ENABLED(CONFIG_DM_RTC)) {
 		struct udevice *dev;
 		struct rtc_time tm;
 		u16 date;
@@ -1245,7 +1245,7 @@ static int update_parent_dir_props(struct fat_itr *dir_itr)
 	u32 target_clust = dir_itr->start_clust;
 
 	/* Short circuit if no RTC because it only updates timestamps */
-	if (!CONFIG_IS_ENABLED(DM_RTC))
+	if (!IS_ENABLED(CONFIG_DM_RTC))
 		return ret;
 
 	/* duplicate struct fsdata */

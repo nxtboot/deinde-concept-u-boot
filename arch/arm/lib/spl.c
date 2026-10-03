@@ -49,7 +49,7 @@ void __weak board_init_f(ulong dummy)
 /*
  * This function jumps to an image with argument, usually an FDT.
  */
-#if CONFIG_IS_ENABLED(OS_BOOT)
+#if IS_ENABLED(CONFIG_OS_BOOT)
 #ifdef CONFIG_ARM64
 void __noreturn jump_to_image_linux(struct spl_image_info *spl_image)
 {
@@ -77,7 +77,7 @@ void __noreturn jump_to_image_linux(struct spl_image_info *spl_image)
 #endif	/* CONFIG_ARM64 */
 #endif
 
-#if CONFIG_IS_ENABLED(OPTEE_IMAGE)
+#if IS_ENABLED(CONFIG_OPTEE_IMAGE)
 void __noreturn jump_to_image_optee(struct spl_image_info *spl_image)
 {
 	/* flush and turn off caches before jumping to OPTEE */

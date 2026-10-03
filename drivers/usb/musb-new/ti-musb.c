@@ -22,7 +22,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(DM_USB)
+#if IS_ENABLED(CONFIG_DM_USB)
 /* USB 2.0 PHY Control */
 #define CM_PHY_PWRDN			(1 << 0)
 #define CM_PHY_OTG_PWRDN		(1 << 1)
@@ -49,7 +49,7 @@ static void ti_musb_set_phy_power(struct udevice *dev, u8 on)
 	}
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 
 static int ti_musb_get_usb_index(int node)
 {
@@ -182,7 +182,7 @@ static int ti_musb_host_remove(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static const struct udevice_id ti_musb_host_periph_ids[] = {
 	{ .compatible = "ti,musb-am33xx" },
 	{ }
@@ -220,7 +220,7 @@ static int ti_musb_host_of_to_plat(struct udevice *dev)
 U_BOOT_DRIVER(ti_musb_host) = {
 	.name	= "ti-musb-host",
 	.id	= UCLASS_USB,
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	.of_match = ti_musb_host_periph_ids,
 	.bind = ti_musb_host_bind,
 	.of_to_plat = ti_musb_host_of_to_plat,
@@ -232,12 +232,12 @@ U_BOOT_DRIVER(ti_musb_host) = {
 	.priv_auto	= sizeof(struct musb_host_data),
 };
 
-#if CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if IS_ENABLED(CONFIG_DM_USB_GADGET)
 struct ti_musb_peripheral {
 	struct musb *periph;
 };
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static int ti_musb_peripheral_bind(struct udevice *dev)
 {
 	enum usb_dr_mode dr_mode = usb_get_dr_mode(dev_ofnode(dev));
@@ -309,7 +309,7 @@ static const struct usb_gadget_generic_ops ti_musb_gadget_ops = {
 U_BOOT_DRIVER(ti_musb_peripheral) = {
 	.name	= "ti-musb-peripheral",
 	.id	= UCLASS_USB_GADGET_GENERIC,
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	.of_match = ti_musb_host_periph_ids,
 	.bind = ti_musb_peripheral_bind,
 	.of_to_plat = ti_musb_peripheral_of_to_plat,
@@ -323,7 +323,7 @@ U_BOOT_DRIVER(ti_musb_peripheral) = {
 };
 #endif
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static int ti_musb_wrapper_bind(struct udevice *parent)
 {
 	ofnode node;
@@ -378,6 +378,6 @@ U_BOOT_DRIVER(ti_musb_wrapper) = {
 	.of_match = ti_musb_ids,
 	.bind = ti_musb_wrapper_bind,
 };
-#endif /* CONFIG_IS_ENABLED(OF_CONTROL) */
+#endif /* IS_ENABLED(CONFIG_OF_CONTROL) */
 
-#endif /* CONFIG_IS_ENABLED(DM_USB) */
+#endif /* IS_ENABLED(CONFIG_DM_USB) */

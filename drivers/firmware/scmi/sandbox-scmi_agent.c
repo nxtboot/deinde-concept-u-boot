@@ -1212,7 +1212,7 @@ static int sandbox_scmi_test_process_msg(struct udevice *dev,
 		}
 		break;
 	case SCMI_PROTOCOL_ID_POWER_DOMAIN:
-		if (!CONFIG_IS_ENABLED(SCMI_POWER_DOMAIN))
+		if (!IS_ENABLED(CONFIG_SCMI_POWER_DOMAIN))
 			return sandbox_proto_not_supported(msg);
 
 		switch (msg->message_id) {
@@ -1235,7 +1235,7 @@ static int sandbox_scmi_test_process_msg(struct udevice *dev,
 		}
 		break;
 	case SCMI_PROTOCOL_ID_CLOCK:
-		if (!CONFIG_IS_ENABLED(CLK_SCMI))
+		if (!IS_ENABLED(CONFIG_CLK_SCMI))
 			return sandbox_proto_not_supported(msg);
 
 		switch (msg->message_id) {
@@ -1258,7 +1258,7 @@ static int sandbox_scmi_test_process_msg(struct udevice *dev,
 		}
 		break;
 	case SCMI_PROTOCOL_ID_RESET_DOMAIN:
-		if (!CONFIG_IS_ENABLED(RESET_SCMI))
+		if (!IS_ENABLED(CONFIG_RESET_SCMI))
 			return sandbox_proto_not_supported(msg);
 
 		switch (msg->message_id) {
@@ -1271,7 +1271,7 @@ static int sandbox_scmi_test_process_msg(struct udevice *dev,
 		}
 		break;
 	case SCMI_PROTOCOL_ID_VOLTAGE_DOMAIN:
-		if (!CONFIG_IS_ENABLED(DM_REGULATOR_SCMI))
+		if (!IS_ENABLED(CONFIG_DM_REGULATOR_SCMI))
 			return sandbox_proto_not_supported(msg);
 
 		switch (msg->message_id) {

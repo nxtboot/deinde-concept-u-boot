@@ -8,7 +8,7 @@
  * as file malloc-2.6.6.c.
  */
 
-#if CONFIG_IS_ENABLED(UNIT_TEST)
+#if IS_ENABLED(CONFIG_UNIT_TEST)
 #define DEBUG
 #endif
 
@@ -610,7 +610,7 @@ void mem_malloc_init(ulong start, ulong size)
 
 	debug("using memory %#lx-%#lx for malloc()\n", mem_malloc_start,
 	      mem_malloc_end);
-#if CONFIG_IS_ENABLED(SYS_MALLOC_CLEAR_ON_INIT)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_CLEAR_ON_INIT)
 	memset((void *)mem_malloc_start, 0x0, size);
 #endif
 }
@@ -1260,12 +1260,12 @@ Void_t* mALLOc_impl(bytes) size_t bytes;
 
   INTERNAL_SIZE_T nb;
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT))
 		return malloc_simple(bytes);
 #endif
 
-  if (CONFIG_IS_ENABLED(UNIT_TEST) && malloc_testing) {
+  if (IS_ENABLED(CONFIG_UNIT_TEST) && malloc_testing) {
     if (--malloc_max_allocs < 0)
       return NULL;
   }
@@ -1538,7 +1538,7 @@ void fREe_impl(mem) Void_t* mem;
   mchunkptr fwd;       /* misc temp for linking */
   int       islr;      /* track whether merging with last_remainder */
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	/* free() is a no-op - all the memory will be freed on relocation */
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		VALGRIND_FREELIKE_BLOCK(mem, SIZE_SZ);
@@ -1696,13 +1696,13 @@ Void_t* rEALLOc_impl(oldmem, bytes) Void_t* oldmem; size_t bytes;
   /* realloc of null is supposed to be same as malloc */
   if (oldmem == NULL) return mALLOc_impl(bytes);
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		/* This is harder to support and should not be needed */
 		panic("pre-reloc realloc() is not supported");
 	}
 #endif
-  if (CONFIG_IS_ENABLED(UNIT_TEST) && malloc_testing) {
+  if (IS_ENABLED(CONFIG_UNIT_TEST) && malloc_testing) {
     if (--malloc_max_allocs < 0)
       return NULL;
   }
@@ -1918,7 +1918,7 @@ Void_t* mEMALIGn_impl(alignment, bytes) size_t alignment; size_t bytes;
   if (bytes > CONFIG_SYS_MALLOC_LEN || (long)bytes < 0)
      return NULL;
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		return memalign_simple(alignment, bytes);
 	}
@@ -2096,7 +2096,7 @@ Void_t* cALLOc_impl(n, elem_size) size_t n; size_t elem_size;
   INTERNAL_SIZE_T sz = n * elem_size;
 
   /* check if expand_top called, in which case don't need to clear */
-#if CONFIG_IS_ENABLED(SYS_MALLOC_CLEAR_ON_INIT)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_CLEAR_ON_INIT)
 #if MORECORE_CLEARS
   mchunkptr oldtop = top;
   INTERNAL_SIZE_T oldtopsize = chunksize(top);
@@ -2110,7 +2110,7 @@ Void_t* cALLOc_impl(n, elem_size) size_t n; size_t elem_size;
     return NULL;
   else
   {
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
 		memset(mem, 0, sz);
 		return mem;
@@ -2126,7 +2126,7 @@ Void_t* cALLOc_impl(n, elem_size) size_t n; size_t elem_size;
 
     csz = chunksize(p);
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_CLEAR_ON_INIT)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_CLEAR_ON_INIT)
 #if MORECORE_CLEARS
     if (p == oldtop && csz > oldtopsize)
     {
@@ -2483,7 +2483,7 @@ int mALLOPt(param_number, value) int param_number; int value;
 
 int initf_malloc(void)
 {
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	assert(gd->malloc_base);	/* Set up by crt0.S */
 	gd->malloc_limit = CONFIG_VAL(SYS_MALLOC_F_LEN);
 	gd->malloc_ptr = 0;

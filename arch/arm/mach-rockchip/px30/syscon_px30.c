@@ -18,13 +18,13 @@ static const struct udevice_id px30_syscon_ids[] = {
 U_BOOT_DRIVER(syscon_px30) = {
 	.id = UCLASS_SYSCON,
 	.name = "px30_syscon",
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind = dm_scan_fdt_dev,
 #endif
 	.of_match = px30_syscon_ids,
 };
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 static int px30_syscon_bind_of_plat(struct udevice *dev)
 {
 	dev->driver_data = dev->driver->of_match->data;

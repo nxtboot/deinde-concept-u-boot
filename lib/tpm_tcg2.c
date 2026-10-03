@@ -690,7 +690,7 @@ __weak int tcg2_platform_get_log(struct udevice *dev, void **ptrp, u32 *sizep)
 	 * (fdt, tpm event log, etc...) from previous boot stage via bloblist
 	 * mandatorily following Firmware Handoff spec.
 	 */
-	if (!CONFIG_IS_ENABLED(BLOBLIST)) {
+	if (!IS_ENABLED(CONFIG_BLOBLIST)) {
 		addr_prop = dev_read_prop(dev, "tpm_event_log_addr", &asize);
 		size_prop = dev_read_prop(dev, "tpm_event_log_size", &ssize);
 	}

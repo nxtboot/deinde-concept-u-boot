@@ -57,7 +57,7 @@ struct expo_test_mode {
 	ulong poll_avg_us;
 };
 
-#if CONFIG_IS_ENABLED(EXPO_TEST)
+#if IS_ENABLED(CONFIG_EXPO_TEST)
 
 /**
  * expo_test_init() - Initialize test mode for an expo

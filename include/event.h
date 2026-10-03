@@ -398,7 +398,7 @@ struct evspy_info {
 	event_handler_t func;
 	u8 type;
 	u8 flags;
-#if CONFIG_IS_ENABLED(EVENT_DEBUG)
+#if IS_ENABLED(CONFIG_EVENT_DEBUG)
 	const char *id;
 #endif
 };
@@ -417,13 +417,13 @@ struct evspy_info_simple {
 	event_handler_simple_t func;
 	u8 type;
 	u8 flags;
-#if CONFIG_IS_ENABLED(EVENT_DEBUG)
+#if IS_ENABLED(CONFIG_EVENT_DEBUG)
 	const char *id;
 #endif
 };
 
 /* Declare a new event spy */
-#if CONFIG_IS_ENABLED(EVENT_DEBUG)
+#if IS_ENABLED(CONFIG_EVENT_DEBUG)
 #define _ESPY_REC(_type, _func)   { _func, _type, 0, #_func, }
 #define _ESPY_REC_SIMPLE(_type, _func)  { _func, _type, EVSPYF_SIMPLE, #_func, }
 #else
@@ -433,7 +433,7 @@ struct evspy_info_simple {
 
 static inline const char *event_spy_id(struct evspy_info *spy)
 {
-#if CONFIG_IS_ENABLED(EVENT_DEBUG)
+#if IS_ENABLED(CONFIG_EVENT_DEBUG)
 	return spy->id;
 #else
 	return "?";
@@ -473,7 +473,7 @@ void event_show_spy_list(void);
  */
 const char *event_type_name(enum event_t type);
 
-#if CONFIG_IS_ENABLED(EVENT)
+#if IS_ENABLED(CONFIG_EVENT)
 /**
  * event_notify() - notify spies about an event
  *
@@ -528,7 +528,7 @@ static inline int event_notify_resp(enum event_t type, void *data, int size)
 
 #endif
 
-#if CONFIG_IS_ENABLED(EVENT_DYNAMIC)
+#if IS_ENABLED(CONFIG_EVENT_DYNAMIC)
 /**
  * event_uninit() - Clean up dynamic events
  *

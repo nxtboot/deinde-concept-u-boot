@@ -562,7 +562,7 @@ static void sunxi_spl_store_dram_size(phys_addr_t dram_size)
 
 static void status_led_init(void)
 {
-#if CONFIG_IS_ENABLED(SUNXI_LED_STATUS)
+#if IS_ENABLED(CONFIG_SUNXI_LED_STATUS)
 	unsigned int state = IS_ENABLED(CONFIG_SPL_SUNXI_LED_STATUS_ACTIVE_HIGH);
 	unsigned int gpio = CONFIG_SPL_SUNXI_LED_STATUS_GPIO;
 
@@ -575,7 +575,7 @@ void sunxi_board_init(void)
 {
 	int power_failed = 0;
 
-	if (CONFIG_IS_ENABLED(SUNXI_LED_STATUS))
+	if (IS_ENABLED(CONFIG_SUNXI_LED_STATUS))
 		status_led_init();
 
 #ifdef CONFIG_SY8106A_POWER

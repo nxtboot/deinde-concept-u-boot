@@ -13,7 +13,7 @@
 #include <asm/global_data.h>
 #include <dm/uclass-internal.h>
 
-#if CONFIG_IS_ENABLED(OF_LIBFDT)
+#if IS_ENABLED(CONFIG_OF_LIBFDT)
 /**
  * spl_node_to_boot_device() - maps from a DT-node to a SPL boot device
  * @node:	of_offset of the node
@@ -76,7 +76,7 @@ static int spl_node_to_boot_device(int node)
 	 */
 	if (!uclass_find_device_by_of_offset(UCLASS_SPI_FLASH, node, &parent))
 		return BOOT_DEVICE_SPI;
-	if (CONFIG_IS_ENABLED(SPI_NAND_LOAD) &&
+	if (IS_ENABLED(CONFIG_SPI_NAND_LOAD) &&
 	    !fdt_node_check_compatible(gd->fdt_blob, node, "spi-nand"))
 		return BOOT_DEVICE_SPI;
 
@@ -109,13 +109,13 @@ void board_boot_order(u32 *spl_boot_list)
 	int idx = 0;
 
 	/* Add RAM boot for maskrom mode boot over USB */
-	if (BROM_BOOTSOURCE_ID_ADDR && CONFIG_IS_ENABLED(RAM_DEVICE) &&
+	if (BROM_BOOTSOURCE_ID_ADDR && IS_ENABLED(CONFIG_RAM_DEVICE) &&
 	    read_brom_bootsource_id() == BROM_BOOTSOURCE_USB) {
 		spl_boot_list[idx++] = BOOT_DEVICE_RAM;
 	}
 
 	/* In case of no fdt (or only plat), use spl_boot_device() */
-	if (!CONFIG_IS_ENABLED(OF_CONTROL) || CONFIG_IS_ENABLED(OF_PLATDATA)) {
+	if (!IS_ENABLED(CONFIG_OF_CONTROL) || IS_ENABLED(CONFIG_OF_PLATDATA)) {
 		spl_boot_list[idx++] = spl_boot_device();
 		return;
 	}
@@ -178,7 +178,7 @@ void board_boot_order(u32 *spl_boot_list)
 int spl_decode_boot_device(u32 boot_device, char *buf, size_t buflen)
 {
 	struct udevice *dev;
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 	int dev_num;
 #endif
 	int ret;
@@ -227,7 +227,7 @@ int spl_decode_boot_device(u32 boot_device, char *buf, size_t buflen)
 			}
 
 			ret = uclass_find_device_by_of_offset(UCLASS_SPI_FLASH, node, &dev);
-			if (ret && CONFIG_IS_ENABLED(SPI_NAND_LOAD)) {
+			if (ret && IS_ENABLED(CONFIG_SPI_NAND_LOAD)) {
 				ret = uclass_find_device_by_of_offset(UCLASS_MTD, node, &dev);
 				if (!ret && !device_is_compatible(dev, "spi-nand"))
 					ret = -ENODEV;
@@ -255,7 +255,7 @@ int spl_decode_boot_device(u32 boot_device, char *buf, size_t buflen)
 		return ofnode_get_path(dev_ofnode(dev), buf, buflen);
 	}
 
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 	dev_num = (boot_device == BOOT_DEVICE_MMC1) ? 0 : 1;
 
 	ret = blk_find_device(UCLASS_MMC, dev_num, &dev);

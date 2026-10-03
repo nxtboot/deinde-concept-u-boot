@@ -87,7 +87,7 @@ struct power_domain_plat {
  * @power_domain	A pointer to a power domain struct to initialize.
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_get(struct udevice *dev, struct power_domain *power_domain);
 #else
 static inline
@@ -106,7 +106,7 @@ int power_domain_get(struct udevice *dev, struct power_domain *power_domain)
  *
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_get_by_index(struct udevice *dev,
 			      struct power_domain *power_domain, int index);
 #else
@@ -127,7 +127,7 @@ int power_domain_get_by_index(struct udevice *dev,
  *
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_get_by_name(struct udevice *dev,
 			     struct power_domain *power_domain, const char *name);
 #else
@@ -146,7 +146,7 @@ int power_domain_get_by_name(struct udevice *dev,
  *		requested by power_domain_get().
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_free(struct power_domain *power_domain);
 #else
 static inline int power_domain_free(struct power_domain *power_domain)
@@ -164,7 +164,7 @@ static inline int power_domain_free(struct power_domain *power_domain)
  *         -EALREADY if the domain is already on,
  *         a negative error code otherwise.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_on_lowlevel(struct power_domain *power_domain);
 #else
 static inline int power_domain_on_lowlevel(struct power_domain *power_domain)
@@ -203,7 +203,7 @@ static inline int power_domain_on(struct power_domain *power_domain)
  *         is decremented),
  *         a negative error code otherwise.
  */
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 int power_domain_off_lowlevel(struct power_domain *power_domain);
 #else
 static inline int power_domain_off_lowlevel(struct power_domain *power_domain)
@@ -238,7 +238,7 @@ static inline int power_domain_off(struct power_domain *power_domain)
  *
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(OF_REAL) && CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_OF_REAL) && IS_ENABLED(CONFIG_POWER_DOMAIN)
 int dev_power_domain_on(struct udevice *dev);
 #else
 static inline int dev_power_domain_on(struct udevice *dev)
@@ -254,7 +254,7 @@ static inline int dev_power_domain_on(struct udevice *dev)
  *
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(OF_REAL) && CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_OF_REAL) && IS_ENABLED(CONFIG_POWER_DOMAIN)
 int dev_power_domain_off(struct udevice *dev);
 #else
 static inline int dev_power_domain_off(struct udevice *dev)

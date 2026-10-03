@@ -348,7 +348,7 @@ int of_live_build(const void *fdt_blob, struct device_node **rootp)
 			debug("Failed to populate live tree nodes from EFI: err=%d\n", ret);
 	}
 
-	if (CONFIG_IS_ENABLED(EVENT)) {
+	if (IS_ENABLED(CONFIG_EVENT)) {
 		evt.of_live_built.root = *rootp;
 		ret = event_notify(EVT_OF_LIVE_BUILT, &evt, sizeof(evt));
 		if (ret) {

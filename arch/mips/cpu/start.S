@@ -46,8 +46,8 @@
 		sp, sp, GD_SIZE		# reserve space for gd
 	and	sp, sp, t0		# force 16 byte alignment
 	move	k0, sp			# save gd pointer
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F) && \
-    !CONFIG_IS_ENABLED(INIT_STACK_WITHOUT_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F) && \
+    !IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
 	li	t2, CONFIG_VAL(SYS_MALLOC_F_LEN)
 	PTR_SUBU \
 		sp, sp, t2		# reserve space for early malloc
@@ -63,8 +63,8 @@
 	blt	t0, t1, 1b
 	 nop
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F) && \
-    !CONFIG_IS_ENABLED(INIT_STACK_WITHOUT_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F) && \
+    !IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
 	PTR_S	sp, GD_MALLOC_BASE(k0)	# gd->malloc_base offset
 #endif
 	.endm
@@ -229,7 +229,7 @@ wr_done:
 # endif
 #endif
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 # ifdef CONFIG_SYS_MIPS_CACHE_INIT_RAM_LOAD
 	/* Initialize any external memory */
 	PTR_LA	t9, lowlevel_init
@@ -250,7 +250,7 @@ wr_done:
 	 nop
 #endif
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 # ifndef CONFIG_SYS_MIPS_CACHE_INIT_RAM_LOAD
 	/* Initialize any external memory */
 	PTR_LA	t9, lowlevel_init

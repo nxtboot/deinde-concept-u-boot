@@ -157,7 +157,7 @@ static int print_resetinfo(void)
 }
 #endif
 
-#if defined(CONFIG_DISPLAY_CPUINFO) && CONFIG_IS_ENABLED(CPU)
+#if defined(CONFIG_DISPLAY_CPUINFO) && IS_ENABLED(CONFIG_CPU)
 static int print_cpuinfo(void)
 {
 	struct udevice *dev;
@@ -263,7 +263,7 @@ __weak int dram_init_banksize(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(SYS_I2C_LEGACY)
+#if IS_ENABLED(CONFIG_SYS_I2C_LEGACY)
 static int init_func_i2c(void)
 {
 	puts("I2C:   ");
@@ -299,7 +299,7 @@ static int setup_mon_len(void)
 
 static int setup_spl_handoff(void)
 {
-#if CONFIG_IS_ENABLED(HANDOFF)
+#if IS_ENABLED(CONFIG_HANDOFF)
 	gd->spl_handoff = bloblist_find(BLOBLISTT_U_BOOT_SPL_HANDOFF,
 					sizeof(struct spl_handoff));
 	debug("Found SPL hand-off info %p\n", gd->spl_handoff);
@@ -474,7 +474,7 @@ static int setup_relocaddr_from_bloblist(void)
 
 static int reserve_video(void)
 {
-	if (CONFIG_IS_ENABLED(VIDEO)) {
+	if (IS_ENABLED(CONFIG_VIDEO)) {
 		ulong addr;
 		int ret;
 
@@ -508,10 +508,10 @@ static int reserve_uboot(void)
 	 * This should be the first place GD_FLG_SKIP_RELOC is read from.
 	 * Set GD_FLG_SKIP_RELOC flag if CONFIG_SKIP_RELOCATE is enabled.
 	 */
-	if (CONFIG_IS_ENABLED(SKIP_RELOCATE))
+	if (IS_ENABLED(CONFIG_SKIP_RELOCATE))
 		gd->flags |= GD_FLG_SKIP_RELOC;
 
-	if (!(gd->flags & GD_FLG_SKIP_RELOC) && !CONFIG_IS_ENABLED(SKIP_RELOCATE_CODE)) {
+	if (!(gd->flags & GD_FLG_SKIP_RELOC) && !IS_ENABLED(CONFIG_SKIP_RELOCATE_CODE)) {
 		/*
 		 * reserve memory for U-Boot code, data & bss
 		 * round down to next 4 kB limit
@@ -832,7 +832,7 @@ static int jump_to_copy(void)
 	 * (CPU cache)
 	 */
 	arch_setup_gd(gd->new_gd);
-# if CONFIG_IS_ENABLED(X86_64)
+# if IS_ENABLED(CONFIG_X86_64)
 		board_init_f_r_trampoline64(gd->new_gd, gd->start_addr_sp);
 # else
 		board_init_f_r_trampoline(gd->start_addr_sp);
@@ -875,7 +875,7 @@ static int initf_dm(void)
 {
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(SYS_MALLOC_F))
+	if (!IS_ENABLED(CONFIG_SYS_MALLOC_F))
 		return 0;
 
 	bootstage_start(BOOTSTAGE_ID_ACCUM_DM_F, "dm_f");
@@ -885,7 +885,7 @@ static int initf_dm(void)
 	 * model, the serial port will still be bound later through
 	 * serial_find_console_or_panic() via /chosen/stdout-path
 	 */
-	if (!CONFIG_IS_ENABLED(SKIP_EARLY_DM))
+	if (!IS_ENABLED(CONFIG_SKIP_EARLY_DM))
 		ret = dm_init_and_scan(true);
 	else
 		ret = dm_init(false);
@@ -950,10 +950,10 @@ static void initcall_run_f(void)
 	 */
 	INITCALL(setup_mon_len);
 	INITCALL(initf_malloc);
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	INITCALL(fdtdec_setup);
 #endif
-#if CONFIG_IS_ENABLED(TRACE_EARLY)
+#if IS_ENABLED(CONFIG_TRACE_EARLY)
 	INITCALL(trace_early_init);
 #endif
 	INITCALL(initf_upl);
@@ -967,11 +967,11 @@ static void initcall_run_f(void)
 #endif
 	INITCALL(initf_bootstage); /* uses its own timer, so does not need DM */
 	INITCALL(event_init);
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	INITCALL(fdtdec_apply_bloblist_dtos);
 #endif
 	INITCALL(setup_spl_handoff);
-#if CONFIG_IS_ENABLED(CONSOLE_RECORD_INIT_F)
+#if IS_ENABLED(CONFIG_CONSOLE_RECORD_INIT_F)
 	INITCALL(console_record_init);
 #endif
 	INITCALL_EVT(EVT_FSP_INIT_F);
@@ -988,7 +988,7 @@ static void initcall_run_f(void)
 #if !defined(CONFIG_M68K) || (defined(CONFIG_M68K) && !defined(CONFIG_MCFTMR))
 	INITCALL(timer_init);		/* initialize timer */
 #endif
-#if CONFIG_IS_ENABLED(BOARD_POSTCLK_INIT)
+#if IS_ENABLED(CONFIG_BOARD_POSTCLK_INIT)
 	INITCALL(board_postclk_init);
 #endif
 	INITCALL(env_init);		/* initialize environment */
@@ -998,7 +998,7 @@ static void initcall_run_f(void)
 	INITCALL(display_options);	/* say that we are here */
 	INITCALL(display_text_info);	/* show debugging info if required */
 	INITCALL(checkcpu);
-#if CONFIG_IS_ENABLED(SYSRESET)
+#if IS_ENABLED(CONFIG_SYSRESET)
 	INITCALL(print_resetinfo);
 #endif
 	/* display cpu info (and speed) */
@@ -1014,7 +1014,7 @@ static void initcall_run_f(void)
 	WATCHDOG_INIT();
 	INITCALL_EVT(EVT_MISC_INIT_F);
 	WATCHDOG_RESET();
-#if CONFIG_IS_ENABLED(SYS_I2C_LEGACY)
+#if IS_ENABLED(CONFIG_SYS_I2C_LEGACY)
 	INITCALL(init_func_i2c);
 #endif
 	INITCALL(announce_dram_init);
@@ -1073,7 +1073,7 @@ static void initcall_run_f(void)
 	INITCALL(reloc_bootstage);
 	INITCALL(reloc_bloblist);
 	INITCALL(setup_reloc);
-#if CONFIG_IS_ENABLED(X86) || CONFIG_IS_ENABLED(ARC)
+#if IS_ENABLED(CONFIG_X86) || IS_ENABLED(CONFIG_ARC)
 	INITCALL(copy_uboot_to_ram);
 	INITCALL(do_elf_reloc_fixups);
 #endif
@@ -1088,7 +1088,7 @@ static void initcall_run_f(void)
 	 * watchdog device is not serviced is as small as possible.
 	 */
 	INITCALL(cyclic_unregister_all);
-#if !CONFIG_IS_ENABLED(ARM) && !CONFIG_IS_ENABLED(SANDBOX)
+#if !IS_ENABLED(CONFIG_ARM) && !IS_ENABLED(CONFIG_SANDBOX)
 	INITCALL(jump_to_copy);
 #endif
 }
@@ -1107,7 +1107,7 @@ void board_init_f(ulong boot_flags)
 	initcall_run_f();
 
 #if !defined(CONFIG_ARM) && !defined(CONFIG_SANDBOX) && \
-		!defined(CONFIG_EFI_APP) && !CONFIG_IS_ENABLED(X86_64) && \
+		!defined(CONFIG_EFI_APP) && !IS_ENABLED(CONFIG_X86_64) && \
 		!defined(CONFIG_ARC)
 	/* NOTREACHED - jump_to_copy() does not return */
 	hang();
@@ -1138,7 +1138,7 @@ static void initcall_run_f_r(void)
 	 * A 64-bit build which started in SPL has its caches on already, but
 	 * one which started in 64-bit mode does not
 	 */
-#if !CONFIG_IS_ENABLED(X86_64) || IS_ENABLED(CONFIG_X86_RUN_64BIT_NO_SPL)
+#if !IS_ENABLED(CONFIG_X86_64) || IS_ENABLED(CONFIG_X86_RUN_64BIT_NO_SPL)
 	INITCALL(init_cache_f_r);
 #endif
 }

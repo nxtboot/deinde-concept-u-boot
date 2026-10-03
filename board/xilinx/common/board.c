@@ -518,7 +518,7 @@ int board_late_init_xilinx(void)
 				ret |= env_set_by_index("uuid", id, uuid);
 			}
 
-			if (!CONFIG_IS_ENABLED(NET))
+			if (!IS_ENABLED(CONFIG_NET))
 				continue;
 
 			for (i = 0; i < EEPROM_HDR_NO_OF_MAC_ADDR; i++) {
@@ -633,7 +633,7 @@ error:
 
 bool __maybe_unused __weak board_detection(void)
 {
-	if (CONFIG_IS_ENABLED(DM_I2C) && CONFIG_IS_ENABLED(I2C_EEPROM)) {
+	if (IS_ENABLED(CONFIG_DM_I2C) && IS_ENABLED(CONFIG_I2C_EEPROM)) {
 		int ret;
 
 		ret = xilinx_read_eeprom();

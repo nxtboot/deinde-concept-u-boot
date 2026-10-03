@@ -46,7 +46,7 @@ static int dm_test_part(struct unit_test_state *uts)
 	};
 
 	ut_asserteq(2, blk_get_device_by_str("mmc", "2", &mmc_dev_desc));
-	if (CONFIG_IS_ENABLED(RANDOM_UUID)) {
+	if (IS_ENABLED(CONFIG_RANDOM_UUID)) {
 		gen_rand_uuid_str(parts[0].uuid, UUID_STR_FORMAT_STD);
 		gen_rand_uuid_str(parts[1].uuid, UUID_STR_FORMAT_STD);
 		gen_rand_uuid_str(str_disk_guid, UUID_STR_FORMAT_STD);
@@ -207,7 +207,7 @@ static int dm_test_part_get_info_by_type(struct unit_test_state *uts)
 	};
 
 	ut_asserteq(2, blk_get_device_by_str("mmc", "2", &mmc_dev_desc));
-	if (CONFIG_IS_ENABLED(RANDOM_UUID)) {
+	if (IS_ENABLED(CONFIG_RANDOM_UUID)) {
 		gen_rand_uuid_str(gpt_parts[0].uuid, UUID_STR_FORMAT_STD);
 		gen_rand_uuid_str(gpt_parts[1].uuid, UUID_STR_FORMAT_STD);
 		gen_rand_uuid_str(str_disk_guid, UUID_STR_FORMAT_STD);
@@ -262,7 +262,7 @@ static int dm_test_part_get_info_by_uuid(struct unit_test_state *uts)
 
 	ut_asserteq(2, blk_get_device_by_str("mmc", "2", &mmc_dev_desc));
 
-	if (CONFIG_IS_ENABLED(RANDOM_UUID)) {
+	if (IS_ENABLED(CONFIG_RANDOM_UUID)) {
 		for (i = 0; i < ARRAY_SIZE(parts); i++)
 			gen_rand_uuid_str(parts[i].uuid, UUID_STR_FORMAT_STD);
 

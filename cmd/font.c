@@ -11,7 +11,7 @@
 #include <video.h>
 #include <video_console.h>
 
-#if CONFIG_IS_ENABLED(VIDEO_GLYPH_STATS)
+#if IS_ENABLED(CONFIG_VIDEO_GLYPH_STATS)
 static int do_font_info(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
@@ -85,7 +85,7 @@ static int do_font_size(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(VIDEO_GLYPH_STATS)
+#if IS_ENABLED(CONFIG_VIDEO_GLYPH_STATS)
 #define FONT_INFO_HELP	"\nfont info - show glyph rendering statistics"
 #define FONT_INFO_SUB	, U_BOOT_SUBCMD_MKENT(info, 1, 1, do_font_info)
 #else

@@ -541,7 +541,7 @@ void fixup_cmdtable(struct cmd_tbl *cmdtp, int size)
 int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
 		   char *const argv[], int *repeatable)
 {
-	if (CONFIG_IS_ENABLED(GETOPT) && (cmdtp->cmd_flags & CMDF_GETOPT)) {
+	if (IS_ENABLED(CONFIG_GETOPT) && (cmdtp->cmd_flags & CMDF_GETOPT)) {
 		int (*func)(struct getopt_state *gs);
 		struct getopt_state gs;
 

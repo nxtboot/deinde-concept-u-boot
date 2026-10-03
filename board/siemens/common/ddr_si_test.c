@@ -17,7 +17,7 @@
 #include <command.h>
 #include <exports.h>
 #include <time.h>
-#if CONFIG_IS_ENABLED(AM33XX)
+#if IS_ENABLED(CONFIG_AM33XX)
 #include <asm/arch-am33xx/hardware_am33xx.h>
 #include <asm/arch-am33xx/cpu.h>
 #include <asm/io.h>
@@ -44,7 +44,7 @@ static union {
 	} test_pattern;
 static int num_ptn32;
 
-#if CONFIG_IS_ENABLED(AM33XX)
+#if IS_ENABLED(CONFIG_AM33XX)
 static inline void wdt_disable(void)
 {
 	struct wd_timer *wdtimer = (struct wd_timer *)WDT_BASE;
@@ -72,7 +72,7 @@ static inline void wdt_enable(void)
 static inline void wdt_disable(void) {}
 
 static inline void wdt_enable(void) {}
-#endif /* CONFIG_IS_ENABLED(AM33XX) */
+#endif /* IS_ENABLED(CONFIG_AM33XX) */
 
 static int do_ddr_set_ptn(struct cmd_tbl *cmdtp, int flag, int argc,
 			  char *const argv[])

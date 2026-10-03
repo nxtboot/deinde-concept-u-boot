@@ -54,7 +54,7 @@ long get_ram_size(long *base, long maxsize)
 	int            i = 0;
 	int            dcache_en = 0;
 
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		dcache_en = dcache_status();
 
 	for (cnt = (maxsize / sizeof(long)) >> 1; cnt > 0; cnt >>= 1) {
@@ -149,7 +149,7 @@ long probe_ram_size_by_alias(const struct ram_alias_check *checks)
 	int dcache_en = 0;
 	long ret = 0;
 
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		dcache_en = dcache_status();
 
 	while (checks->probe_addr && !ret) {

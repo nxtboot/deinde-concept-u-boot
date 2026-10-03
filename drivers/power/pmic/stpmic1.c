@@ -28,7 +28,7 @@ enum pmic_nvm_op {
 	NVM_WRITE,
 };
 
-#if CONFIG_IS_ENABLED(DM_REGULATOR)
+#if IS_ENABLED(CONFIG_DM_REGULATOR)
 static const struct pmic_child_info stpmic1_children_info[] = {
 	{ .prefix = "ldo", .driver = "stpmic1_ldo" },
 	{ .prefix = "buck", .driver = "stpmic1_buck" },
@@ -74,7 +74,7 @@ static int stpmic1_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 static int stpmic1_bind(struct udevice *dev)
 {
 	int ret;
-#if CONFIG_IS_ENABLED(DM_REGULATOR)
+#if IS_ENABLED(CONFIG_DM_REGULATOR)
 	ofnode regulators_node;
 	int children;
 
@@ -98,7 +98,7 @@ static int stpmic1_bind(struct udevice *dev)
 			return ret;
 	}
 
-	if (CONFIG_IS_ENABLED(SYSRESET))
+	if (IS_ENABLED(CONFIG_SYSRESET))
 		return device_bind_driver(dev, "stpmic1-sysreset",
 					  "stpmic1-sysreset", NULL);
 

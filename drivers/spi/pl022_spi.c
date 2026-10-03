@@ -72,7 +72,7 @@ struct pl022_spi_pdata {
 	fdt_addr_t addr;
 	fdt_size_t size;
 	unsigned int freq;
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	struct gpio_desc cs_gpio;
 #endif
 };
@@ -160,7 +160,7 @@ static int pl022_spi_release_bus(struct udevice *dev)
 
 static void pl022_spi_set_cs(struct udevice *dev, bool on)
 {
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	struct udevice *bus = dev->parent;
 	struct pl022_spi_pdata *plat = dev_get_plat(bus);
 
@@ -316,7 +316,7 @@ static const struct dm_spi_ops pl022_spi_ops = {
 	.cs_info        = pl022_cs_info,
 };
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static int pl022_spi_of_to_plat(struct udevice *bus)
 {
 	struct pl022_spi_pdata *plat = dev_get_plat(bus);
@@ -333,7 +333,7 @@ static int pl022_spi_of_to_plat(struct udevice *bus)
 
 	plat->freq = clk_get_rate(&clkdev);
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	ret = gpio_request_by_name(bus, "cs-gpios", 0, &plat->cs_gpio,
 				   GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
 	if (ret < 0 && ret != -ENOENT)
@@ -352,7 +352,7 @@ static const struct udevice_id pl022_spi_ids[] = {
 U_BOOT_DRIVER(pl022_spi) = {
 	.name   = "pl022_spi",
 	.id     = UCLASS_SPI,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.of_match = pl022_spi_ids,
 	.of_to_plat = pl022_spi_of_to_plat,
 #endif

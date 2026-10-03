@@ -265,7 +265,7 @@ static inline void *bloblist_check_magic(ulong addr)
 	return ptr;
 }
 
-#if CONFIG_IS_ENABLED(BLOBLIST)
+#if IS_ENABLED(CONFIG_BLOBLIST)
 /**
  * bloblist_get_blob() - Find a blob and get the size of it
  *
@@ -283,7 +283,7 @@ static inline void *bloblist_get_blob(uint tag, int *sizep)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(BLOBLIST)
+#if IS_ENABLED(CONFIG_BLOBLIST)
 /**
  * bloblist_apply_blobs() - Apply the data of blobs by tag
  *
@@ -422,7 +422,7 @@ int bloblist_new(ulong addr, uint size, uint flags, uint align_log2);
  */
 int bloblist_check(ulong addr, uint size);
 
-#if CONFIG_IS_ENABLED(BLOBLIST)
+#if IS_ENABLED(CONFIG_BLOBLIST)
 /**
  * bloblist_finish() - Set up the bloblist for the next U-Boot part
  *

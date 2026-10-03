@@ -314,7 +314,7 @@ U_BOOT_DRIVER(virtio_emul) = {
 UCLASS_DRIVER(virtio_emul) = {
 	.name	= "virtio_emul",
 	.id	= UCLASS_VIRTIO_EMUL,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.post_bind	= dm_scan_fdt_dev,
 #endif
 };

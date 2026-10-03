@@ -71,7 +71,7 @@ static int nxp_xspi_claim_bus(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 static int nxp_xspi_clk_prep_enable(struct nxp_xspi *x)
 {
 	return clk_enable(&x->clk);
@@ -213,7 +213,7 @@ static void nxp_xspi_enable_ddr(struct nxp_xspi *x)
 static int nxp_xspi_set_speed(struct udevice *bus, uint speed)
 {
 	debug("%s: %u\n", __func__, speed);
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct nxp_xspi *x = dev_get_priv(bus);
 	int ret;
 
@@ -605,7 +605,7 @@ static void nxp_xspi_select_mem(struct nxp_xspi *xspi, struct spi_slave *slave,
 		xspi->dtr = true;
 	}
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	int ret;
 
 	nxp_xspi_clk_disable_unprep(xspi);
@@ -715,7 +715,7 @@ static int nxp_xspi_of_to_plat(struct udevice *bus)
 	fdt_addr_t ahb_addr;
 	fdt_addr_t ahb_size;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	int ret;
 #endif
 
@@ -739,7 +739,7 @@ static int nxp_xspi_of_to_plat(struct udevice *bus)
 	x->config.gmid = true;
 	x->config.env = 0;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_get_by_name(bus, "xspi", &x->clk);
 	if (ret) {
 		dev_err(bus, "failed to get xspi clock\n");
@@ -815,7 +815,7 @@ static int nxp_xspi_default_setup(struct nxp_xspi *x)
 	int ret = 0;
 	u32 reg;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_set_rate(&x->clk, 20UL * 1000000UL);
 	if (ret < 0) {
 		dev_err(x->dev, "clk_set_rate fail\n");

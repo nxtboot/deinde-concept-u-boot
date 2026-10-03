@@ -59,7 +59,7 @@ static int dm_setup_inst(void)
 {
 	DM_ROOT_NON_CONST = DM_DEVICE_GET(root);
 
-	if (CONFIG_IS_ENABLED(OF_PLATDATA_RT)) {
+	if (IS_ENABLED(CONFIG_OF_PLATDATA_RT)) {
 		struct udevice_rt *urt;
 		void *start, *end;
 		int each_size;
@@ -98,14 +98,14 @@ int dm_init(bool of_live)
 		dm_warn("Virtual root driver already exists!\n");
 		return -EINVAL;
 	}
-	if (CONFIG_IS_ENABLED(OF_PLATDATA_INST)) {
+	if (IS_ENABLED(CONFIG_OF_PLATDATA_INST)) {
 		gd->uclass_root = &uclass_head;
 	} else {
 		gd->uclass_root = &DM_UCLASS_ROOT_S_NON_CONST;
 		INIT_LIST_HEAD(DM_UCLASS_ROOT_NON_CONST);
 	}
 
-	if (CONFIG_IS_ENABLED(OF_PLATDATA_INST)) {
+	if (IS_ENABLED(CONFIG_OF_PLATDATA_INST)) {
 		ret = dm_setup_inst();
 		if (ret) {
 			log_debug("dm_setup_inst() failed: %d\n", ret);
@@ -116,7 +116,7 @@ int dm_init(bool of_live)
 					  &DM_ROOT_NON_CONST);
 		if (ret)
 			return ret;
-		if (CONFIG_IS_ENABLED(OF_CONTROL))
+		if (IS_ENABLED(CONFIG_OF_CONTROL))
 			dev_set_ofnode(DM_ROOT_NON_CONST, ofnode_root());
 		ret = device_probe(DM_ROOT_NON_CONST);
 		if (ret)
@@ -139,7 +139,7 @@ int dm_uninit(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_DEVICE_REMOVE)
+#if IS_ENABLED(CONFIG_DM_DEVICE_REMOVE)
 int dm_remove_devices_flags(uint flags)
 {
 	device_remove(dm_root(), flags);
@@ -159,7 +159,7 @@ int dm_scan_plat(bool pre_reloc_only)
 {
 	int ret;
 
-	if (CONFIG_IS_ENABLED(OF_PLATDATA_DRIVER_RT)) {
+	if (IS_ENABLED(CONFIG_OF_PLATDATA_DRIVER_RT)) {
 		struct driver_rt *dyn;
 		int n_ents;
 
@@ -179,7 +179,7 @@ int dm_scan_plat(bool pre_reloc_only)
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * dm_scan_fdt_node() - Scan the device tree and bind drivers for a node
  *
@@ -278,7 +278,7 @@ __weak int dm_scan_other(bool pre_reloc_only)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA_INST) && CONFIG_IS_ENABLED(READ_ONLY)
+#if IS_ENABLED(CONFIG_OF_PLATDATA_INST) && IS_ENABLED(CONFIG_READ_ONLY)
 void *dm_priv_to_rw(void *priv)
 {
 	long offset = priv - (void *)__priv_data_start;
@@ -352,7 +352,7 @@ static int dm_scan(bool pre_reloc_only)
 		return ret;
 	}
 
-	if (CONFIG_IS_ENABLED(OF_REAL)) {
+	if (IS_ENABLED(CONFIG_OF_REAL)) {
 		ret = dm_extended_scan(pre_reloc_only);
 		if (ret) {
 			dm_warn("dm_extended_scan() failed: %d\n", ret);
@@ -371,19 +371,19 @@ int dm_init_and_scan(bool pre_reloc_only)
 {
 	int ret;
 
-	ret = dm_init(CONFIG_IS_ENABLED(OF_LIVE));
+	ret = dm_init(IS_ENABLED(CONFIG_OF_LIVE));
 	if (ret) {
 		dm_warn("dm_init() failed: %d\n", ret);
 		return ret;
 	}
-	if (!CONFIG_IS_ENABLED(OF_PLATDATA_INST)) {
+	if (!IS_ENABLED(CONFIG_OF_PLATDATA_INST)) {
 		ret = dm_scan(pre_reloc_only);
 		if (ret) {
 			log_debug("dm_scan() failed: %d\n", ret);
 			return ret;
 		}
 	}
-	if (CONFIG_IS_ENABLED(DM_EVENT)) {
+	if (IS_ENABLED(CONFIG_DM_EVENT)) {
 		ret = event_notify_null(gd->flags & GD_FLG_RELOC ?
 					EVT_DM_POST_INIT_R :
 					EVT_DM_POST_INIT_F);
@@ -453,7 +453,7 @@ void dm_get_mem(struct dm_stats *stats)
 		stats->tag_size;
 }
 
-#if CONFIG_IS_ENABLED(ACPIGEN)
+#if IS_ENABLED(CONFIG_ACPIGEN)
 static int root_acpi_get_name(const struct udevice *dev, char *out_name)
 {
 	return acpi_copy_name(out_name, "\\_SB");

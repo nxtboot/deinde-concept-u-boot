@@ -207,7 +207,7 @@ static int adl_pinctrl_of_to_plat(struct udevice *dev)
 	return intel_pinctrl_of_to_plat(dev, comm, GPIO_NUM_PAD_CFG_REGS);
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static const struct udevice_id adl_gpio_ids[] = {
 	{ .compatible = "intel,alderlake-pinctrl" },
 	{ }
@@ -220,7 +220,7 @@ U_BOOT_DRIVER(intel_alderlake_pinctrl) = {
 	.of_match	= of_match_ptr(adl_gpio_ids),
 	.probe		= intel_pinctrl_probe,
 	.ops		= &intel_pinctrl_ops,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind		= dm_scan_fdt_dev,
 #endif
 	.of_to_plat	= adl_pinctrl_of_to_plat,

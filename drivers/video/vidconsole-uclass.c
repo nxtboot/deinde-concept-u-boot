@@ -528,7 +528,7 @@ int vidconsole_put_char(struct udevice *dev, void *vctx, char ch)
 		ctx->last_ch = 0;
 		break;
 	default:
-		if (CONFIG_IS_ENABLED(CHARSET)) {
+		if (IS_ENABLED(CONFIG_CHARSET)) {
 			cp = utf8_to_utf32_stream(ch, ctx->utf8_buf);
 			if (cp == 0)
 				return 0;

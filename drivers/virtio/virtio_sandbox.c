@@ -221,7 +221,7 @@ U_BOOT_DRIVER(virtio_sandbox2) = {
 	.ops	= &virtio_sandbox2_ops,
 	.probe	= virtio_sandbox_probe,
 	.priv_auto	= sizeof(struct virtio_sandbox_priv),
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind = dm_scan_fdt_dev,
 #endif
 };

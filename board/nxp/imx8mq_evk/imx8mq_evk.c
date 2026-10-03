@@ -71,7 +71,7 @@ int board_mmc_get_env_dev(int devno)
 
 int board_late_init(void)
 {
-#if CONFIG_IS_ENABLED(ENV_IS_IN_MMC)
+#if IS_ENABLED(CONFIG_ENV_IS_IN_MMC)
 	board_late_mmc_env_init();
 #endif
 

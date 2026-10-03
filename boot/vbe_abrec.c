@@ -106,7 +106,7 @@ static int vbe_abrec_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 {
 	int ret;
 
-	if (CONFIG_IS_ENABLED(BOOTMETH_VBE_ABREC_FW)) {
+	if (IS_ENABLED(CONFIG_BOOTMETH_VBE_ABREC_FW)) {
 		if (vbe_phase() == VBE_PHASE_FIRMWARE) {
 			ret = abrec_read_bootflow_fw(dev, bflow);
 			if (ret)
@@ -163,7 +163,7 @@ static int bootmeth_vbe_abrec_bind(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static const struct udevice_id vbe_abrec_ids[] = {
 	{ .compatible = "fwupd,vbe-abrec" },
 	{ }

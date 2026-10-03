@@ -102,9 +102,9 @@ DEBUG_UART_FUNCS
 
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 
-#if CONFIG_IS_ENABLED(OF_REAL) && CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_OF_REAL) && IS_ENABLED(CONFIG_SERIAL_PRESENT)
 static int omap_serial_of_to_plat(struct udevice *dev)
 {
 	struct ns16550_plat *plat = dev_get_plat(dev);
@@ -205,11 +205,11 @@ const struct dm_serial_ops omap_serial_ops = {
 	.getinfo = ns16550_serial_getinfo,
 };
 
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
 U_BOOT_DRIVER(omap_serial) = {
 	.name	= "omap_serial",
 	.id	= UCLASS_SERIAL,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.of_match = omap_serial_ids,
 	.of_to_plat = omap_serial_of_to_plat,
 	.plat_auto	= sizeof(struct ns16550_plat),
@@ -217,7 +217,7 @@ U_BOOT_DRIVER(omap_serial) = {
 	.priv_auto	= sizeof(struct ns16550),
 	.probe = ns16550_serial_probe,
 	.ops	= &omap_serial_ops,
-#if !CONFIG_IS_ENABLED(OF_CONTROL)
+#if !IS_ENABLED(CONFIG_OF_CONTROL)
 	.flags	= DM_FLAG_PRE_RELOC,
 #endif
 };

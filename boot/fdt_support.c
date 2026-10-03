@@ -457,7 +457,7 @@ int fdt_chosen(void *fdt)
 		return err;
 	}
 
-	if (CONFIG_IS_ENABLED(GENERATE_SMBIOS_TABLE)) {
+	if (IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE)) {
 		/* Inject SMBIOS address when we have a valid address.
 		* This is useful for systems using booti/bootm instead of bootefi.
 		* Failure to set this property is non-fatal, we only generate a
@@ -1556,7 +1556,7 @@ static int fdt_node_ancestors(const void *blob, int node, int *anc, int max)
 {
 	int off, depth;
 
-	if (!CONFIG_IS_ENABLED(OF_PRERELOC_FAST))
+	if (!IS_ENABLED(CONFIG_OF_PRERELOC_FAST))
 		return -1;
 
 	for (off = 0, depth = 0; off >= 0 && depth >= 0;
@@ -2243,7 +2243,7 @@ int fdt_setup_simplefb_node(void *fdt, int node, u64 base_address, u32 width,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 int fdt_add_fb_mem_rsv(void *blob)
 {
 	struct fdt_memory mem;

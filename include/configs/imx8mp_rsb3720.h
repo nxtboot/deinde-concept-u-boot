@@ -45,13 +45,13 @@
 # define BOOT_TARGET_MMC(func)
 #endif
 
-#if CONFIG_IS_ENABLED(CMD_PXE)
+#if IS_ENABLED(CONFIG_CMD_PXE)
 # define BOOT_TARGET_PXE(func) func(PXE, pxe, na)
 #else
 # define BOOT_TARGET_PXE(func)
 #endif
 
-#if CONFIG_IS_ENABLED(CMD_DHCP)
+#if IS_ENABLED(CONFIG_CMD_DHCP)
 # define BOOT_TARGET_DHCP(func) func(DHCP, dhcp, na)
 #else
 # define BOOT_TARGET_DHCP(func)

@@ -172,7 +172,7 @@ void fastboot_multiresponse(int cmd, char *response)
 		fastboot_getvar_all(response);
 		break;
 	case FASTBOOT_COMMAND_OEM_CONSOLE:
-		if (CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_CONSOLE)) {
+		if (IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_CONSOLE)) {
 			char buf[FASTBOOT_RESPONSE_LEN] = { 0 };
 
 			if (console_record_isempty()) {

@@ -701,7 +701,7 @@ static int sh_ether_probe(struct udevice *udev)
 
 	priv->iobase = pdata->iobase;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_get_by_index(udev, 0, &priv->clk);
 	if (ret < 0)
 		return ret;
@@ -725,7 +725,7 @@ static int sh_ether_probe(struct udevice *udev)
 
 	port_info->iobase = (void __iomem *)(uintptr_t)BASE_IO_ADDR;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_enable(&priv->clk);
 	if (ret)
 		goto err_mdio_register;
@@ -744,7 +744,7 @@ static int sh_ether_probe(struct udevice *udev)
 	return 0;
 
 err_phy_config:
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	clk_disable(&priv->clk);
 #endif
 err_mdio_register:
@@ -757,7 +757,7 @@ static int sh_ether_remove(struct udevice *udev)
 	struct sh_ether_priv *priv = dev_get_priv(udev);
 	struct sh_eth_info *port_info = &priv->port_info;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	clk_disable(&priv->clk);
 #endif
 	free(port_info->phydev);

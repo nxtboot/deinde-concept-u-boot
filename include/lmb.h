@@ -124,7 +124,7 @@ long lmb_add(phys_addr_t base, phys_size_t size);
  */
 long lmb_reserve(phys_addr_t base, phys_size_t size, u32 flags);
 
-#if CONFIG_IS_ENABLED(LMB)
+#if IS_ENABLED(CONFIG_LMB)
 phys_addr_t lmb_alloc(phys_size_t size, ulong align);
 #else
 static inline phys_addr_t lmb_alloc(phys_size_t size, ulong align)

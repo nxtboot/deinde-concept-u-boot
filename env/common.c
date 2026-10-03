@@ -380,7 +380,7 @@ static int env_update_fdt_addr_from_bloblist(void)
 	 * fdt_addr is by default used by booti, bootm and bootefi,
 	 * thus set it to point to the fdt embedded in a bloblist if it exists.
 	 */
-	if (!CONFIG_IS_ENABLED(BLOBLIST) ||
+	if (!IS_ENABLED(CONFIG_BLOBLIST) ||
 	    gd->fdt_src != FDTSRC_PASSAGE)
 		return 0;
 
@@ -521,7 +521,7 @@ int env_check_redund(const char *buf1, int buf1_read_fail,
 		 * was a redundant environment. Follow up 'env save' will
 		 * then store two environment copies.
 		 */
-		if (CONFIG_IS_ENABLED(ENV_REDUNDANT_UPGRADE) && !buf1_read_fail &&
+		if (IS_ENABLED(CONFIG_ENV_REDUNDANT_UPGRADE) && !buf1_read_fail &&
 		    crc32(0, tmp_envs->data, ENV_SINGLE_SIZE) == tmp_envs->crc) {
 			for (i = ENV_SIZE - 1; i >= 0; i--)
 				tmp_env1->data[i] = tmp_envs->data[i];

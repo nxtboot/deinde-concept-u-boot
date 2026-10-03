@@ -62,7 +62,7 @@ struct efi_capsule_update_info update_info = {
 
 #endif /* EFI_HAVE_CAPSULE_SUPPORT */
 
-#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+#if !IS_ENABLED(CONFIG_OF_PLATDATA)
 /*
  * Add a simple GPIO device (don't use with of-platdata as it interferes with
  * the auto-generated devices)
@@ -131,7 +131,7 @@ int ft_board_setup(void *fdt, struct bd_info *bd)
 	return fdt_add_mem_rsv(fdt, 0x00d02000, 0x4000);
 }
 
-#if CONFIG_IS_ENABLED(SUPPORT_EXTENSION_SCAN) && \
+#if IS_ENABLED(CONFIG_SUPPORT_EXTENSION_SCAN) && \
 	!CONFIG_IS_ENABLED(XPL_BUILD)
 static int sandbox_extension_board_scan(struct udevice *dev,
 					struct alist *extension_list)

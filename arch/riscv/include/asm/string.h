@@ -23,37 +23,37 @@
 #undef __HAVE_ARCH_MEMZERO
 
 #undef __HAVE_ARCH_MEMCPY
-#if CONFIG_IS_ENABLED(USE_ARCH_MEMCPY)
+#if IS_ENABLED(CONFIG_USE_ARCH_MEMCPY)
 #define __HAVE_ARCH_MEMCPY
 #endif
 extern void *memcpy(void *, const void *, __kernel_size_t);
 
 #undef __HAVE_ARCH_MEMMOVE
-#if CONFIG_IS_ENABLED(USE_ARCH_MEMMOVE)
+#if IS_ENABLED(CONFIG_USE_ARCH_MEMMOVE)
 #define __HAVE_ARCH_MEMMOVE
 #endif
 extern void *memmove(void *, const void *, __kernel_size_t);
 
 #undef __HAVE_ARCH_MEMZERO
-#if CONFIG_IS_ENABLED(USE_ARCH_MEMSET)
+#if IS_ENABLED(CONFIG_USE_ARCH_MEMSET)
 #define __HAVE_ARCH_MEMSET
 #endif
 extern void *memset(void *, int, __kernel_size_t);
 
 #undef __HAVE_ARCH_STRLEN
-#if CONFIG_IS_ENABLED(USE_ARCH_STRLEN)
+#if IS_ENABLED(CONFIG_USE_ARCH_STRLEN)
 #define __HAVE_ARCH_STRLEN
 #endif
 extern __kernel_size_t strlen(const char *);
 
 #undef __HAVE_ARCH_STRCMP
-#if CONFIG_IS_ENABLED(USE_ARCH_STRCMP)
+#if IS_ENABLED(CONFIG_USE_ARCH_STRCMP)
 #define __HAVE_ARCH_STRCMP
 #endif
 extern int strcmp(const char *, const char *);
 
 #undef __HAVE_ARCH_STRNCMP
-#if CONFIG_IS_ENABLED(USE_ARCH_STRNCMP)
+#if IS_ENABLED(CONFIG_USE_ARCH_STRNCMP)
 #define __HAVE_ARCH_STRNCMP
 #endif
 extern int strncmp(const char *, const char *, size_t __kernel_size_t);

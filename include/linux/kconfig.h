@@ -86,7 +86,7 @@ long invalid_use_of_IF_ENABLED_INT(void);
 	__concat(__unwrap, config_enabled(CONFIG_VAL(option), 0)) (case1, case0)
 
 /*
- * CONFIG_IS_ENABLED(FOO) returns 1 if CONFIG_FOO is enabled for the phase being
+ * IS_ENABLED(CONFIG_FOO) returns 1 if CONFIG_FOO is enabled for the phase being
  * built, else 0. Note that CONFIG_FOO corresponds to CONFIG_SPL_FOO (in
  * Kconfig) for the SPL phase, CONFIG_TPL_FOO for the TPL phase, etc.
  *
@@ -94,7 +94,7 @@ long invalid_use_of_IF_ENABLED_INT(void);
  * SPL equivalent. So in that case there is a CONFIG_xxx for example, but not a
  * CONFIG_SPL_xxx
  *
- * This is needed as a transition measure while CONFIG_IS_ENABLED() is used on
+ * This is needed as a transition measure while IS_ENABLED(CONFIG_) is used on
  * options without SPL equivalent, since in that case it should always return
  * zero. Once we add SPL equivalents, this clause can be dropped.
  *

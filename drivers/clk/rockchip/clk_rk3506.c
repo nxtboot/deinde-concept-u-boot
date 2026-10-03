@@ -1140,7 +1140,7 @@ static int rk3506_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-	if (!CONFIG_IS_ENABLED(RESET_ROCKCHIP))
+	if (!IS_ENABLED(CONFIG_RESET_ROCKCHIP))
 		return 0;
 
 	ret = rk3506_reset_bind_lut(dev, RK3506_SOFTRST_CON0, 23);

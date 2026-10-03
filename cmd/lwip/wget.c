@@ -28,7 +28,7 @@ U_BOOT_CMD(wget, 4, 1, do_wget,
 #endif
 );
 
-#if CONFIG_IS_ENABLED(WGET_CACERT) || CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT) || CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
 char *cacert;
 size_t cacert_size;
 enum auth_mode cacert_auth_mode = AUTH_OPTIONAL;
@@ -91,7 +91,7 @@ int set_cacert_builtin(void)
 #endif
 #endif  /* CONFIG_WGET_CACERT || CONFIG_WGET_BUILTIN_CACERT */
 
-#if CONFIG_IS_ENABLED(WGET_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT)
 static int set_auth(enum auth_mode auth)
 {
 	cacert_auth_mode = auth;
@@ -185,7 +185,7 @@ int do_wget(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 
 	wget_info = &default_wget_info;
 
-#if CONFIG_IS_ENABLED(WGET_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT)
 	if (argc == 4 && !strncmp(argv[1], "cacert", strlen("cacert")))
 		return set_cacert(argv[2], argv[3]);
 	if (argc == 3 && !strncmp(argv[1], "cacert", strlen("cacert"))) {

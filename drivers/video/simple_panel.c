@@ -58,7 +58,7 @@ static int simple_panel_set_backlight(struct udevice *dev, int percent)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(I2C_EDID) && CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_I2C_EDID) && IS_ENABLED(CONFIG_DM_I2C)
 static int simple_panel_get_edid_timing(struct udevice *dev,
 					struct display_timing *timings)
 {
@@ -149,7 +149,7 @@ static int simple_panel_of_to_plat(struct udevice *dev)
 	struct simple_panel_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret = uclass_get_device_by_phandle(UCLASS_REGULATOR, dev,
 						   "power-supply", &priv->reg);
 		if (ret) {

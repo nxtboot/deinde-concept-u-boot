@@ -29,7 +29,7 @@ struct ofnode_phandle_args {
 	uint32_t args[OF_MAX_PHANDLE_ARGS];
 };
 
-#if CONFIG_IS_ENABLED(OFNODE_MULTI_TREE)
+#if IS_ENABLED(CONFIG_OFNODE_MULTI_TREE)
 /**
  * oftree_reset() - reset the state of the oftree list
  *
@@ -140,7 +140,7 @@ static inline void oftree_dispose(oftree tree) {}
 
 #endif /* OFNODE_MULTI_TREE */
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * oftree_new() - Create a new, empty tree
  *
@@ -406,7 +406,7 @@ static inline void ofnode_put(ofnode node)
 		of_node_put(node.np);
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * ofnode_name_eq() - Check a node name ignoring its unit address
  *
@@ -568,7 +568,7 @@ static inline int ofnode_read_s32(ofnode node, const char *propname,
 	return ofnode_read_u32(node, propname, (u32 *)outp);
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * ofnode_read_u32_default() - Read a 32-bit integer from a property
  *
@@ -775,7 +775,7 @@ static inline ofnode ofnode_find_subnode_unit(ofnode node,
 }
 #endif
 
-#if CONFIG_IS_ENABLED(OF_REAL) && CONFIG_IS_ENABLED(DM_INLINE_OFNODE)
+#if IS_ENABLED(CONFIG_OF_REAL) && IS_ENABLED(CONFIG_DM_INLINE_OFNODE)
 #include <asm/global_data.h>
 
 static inline bool ofnode_is_enabled(ofnode node)
@@ -807,7 +807,7 @@ static inline ofnode ofnode_next_subnode(ofnode node)
 	return offset_to_ofnode(
 		fdt_next_subnode(gd->fdt_blob, ofnode_to_offset(node)));
 }
-#elif CONFIG_IS_ENABLED(OF_REAL)
+#elif IS_ENABLED(CONFIG_OF_REAL)
 /**
  * ofnode_count_elems_of_size() - count the number of elements of size @elem_size
  * in the property @propname.
@@ -900,7 +900,7 @@ static inline ofnode ofnode_next_subnode(ofnode node)
 	     ofnode_valid(node); \
 	     node = ofnode_next_subnode(node))
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * ofnode_get_parent() - get the ofnode's parent (enclosing ofnode)
  *
@@ -2225,7 +2225,7 @@ static inline phy_interface_t ofnode_read_phy_mode(ofnode mac_node)
 	     ofprop_valid(&prop); \
 	     ofnode_next_property(&prop))
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * ofnode_conf_read_bool() - Read a boolean value from the U-Boot config
  *
@@ -2413,7 +2413,7 @@ static inline int ofnode_read_bootscript_flash(u64 *bootscr_flash_offset,
 }
 #endif /* OF_REAL */
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /**
  * of_add_subnode() - add a new subnode to a node
  *

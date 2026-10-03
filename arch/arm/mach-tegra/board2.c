@@ -35,7 +35,7 @@
 #if IS_ENABLED(CONFIG_TEGRA_CLKRST)
 #include <asm/arch/clock.h>
 #endif
-#if CONFIG_IS_ENABLED(PINCTRL_TEGRA)
+#if IS_ENABLED(CONFIG_PINCTRL_TEGRA)
 #include <asm/arch/funcmux.h>
 #include <asm/arch/pinmux.h>
 #endif

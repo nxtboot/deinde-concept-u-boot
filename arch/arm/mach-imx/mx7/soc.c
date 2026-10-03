@@ -67,7 +67,7 @@ U_BOOT_DRVINFO(imx7_thermal) = {
 };
 #endif
 
-#if CONFIG_IS_ENABLED(IMX_RDC)
+#if IS_ENABLED(CONFIG_IMX_RDC)
 /*
  * In current design, if any peripheral was assigned to both A7 and M4,
  * it will receive ipg_stop or ipg_wait when any of the 2 platforms enter
@@ -235,7 +235,7 @@ const struct rproc_att *imx_bootaux_get_hostmap(void)
 }
 #endif
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 /* enable all periherial can be accessed in nosec mode */
 static void init_csu(void)
 {
@@ -325,7 +325,7 @@ int arch_cpu_init(void)
 
 	init_cpu_basic();
 
-#if CONFIG_IS_ENABLED(IMX_RDC)
+#if IS_ENABLED(CONFIG_IMX_RDC)
 	isolate_resource();
 #endif
 

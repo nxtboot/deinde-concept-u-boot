@@ -67,7 +67,7 @@ static const char * const imx8mn_usdhc2_sels[] = {"osc_24m", "sys_pll1_400m", "s
 						  "sys_pll2_500m", "sys_pll3_out", "sys_pll1_266m",
 						  "audio_pll2_out", "sys_pll1_100m", };
 
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 static const char * const imx8mn_ecspi1_sels[] = {"osc_24m", "sys_pll2_200m", "sys_pll1_40m",
 						  "sys_pll1_160m", "sys_pll1_800m", "sys_pll3_out",
 						  "sys_pll2_250m", "audio_pll2_out", };
@@ -422,7 +422,7 @@ static int imx8mn_clk_probe(struct udevice *dev)
 	       imx_clk_gate4(dev, "pwm4_root_clk", "pwm4", base + 0x42b0, 0));
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 	clk_dm(IMX8MN_CLK_ECSPI1,
 	       imx8m_clk_composite(dev, "ecspi1", imx8mn_ecspi1_sels, base + 0xb280));
 	clk_dm(IMX8MN_CLK_ECSPI2,

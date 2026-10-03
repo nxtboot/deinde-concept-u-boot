@@ -37,8 +37,8 @@
 		sp, sp, GD_SIZE		# reserve space for gd
 	and	sp, sp, t0		# force 16 byte alignment
 	move	k0, sp			# save gd pointer
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F) && \
-    !CONFIG_IS_ENABLED(INIT_STACK_WITHOUT_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F) && \
+    !IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
 	li	t2, CONFIG_VAL(SYS_MALLOC_F_LEN)
 	PTR_SUBU \
 		sp, sp, t2		# reserve space for early malloc
@@ -54,8 +54,8 @@
 	blt	t0, t1, 1b
 	 nop
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F) && \
-    !CONFIG_IS_ENABLED(INIT_STACK_WITHOUT_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F) && \
+    !IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
 	PTR_S	sp, GD_MALLOC_BASE(k0)	# gd->malloc_base offset
 #endif
 	.endm
@@ -199,7 +199,7 @@ ENTRY(_start)
 	/* Set up initial stack and global data */
 	setup_stack_gd
 
-#if CONFIG_IS_ENABLED(INIT_STACK_WITHOUT_MALLOC_F)
+#if IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
 	/* Set malloc base */
 	li	t0, (CFG_SYS_INIT_SP_ADDR + 15) & (~15)
 	PTR_S	t0, GD_MALLOC_BASE(k0)	# gd->malloc_base offset

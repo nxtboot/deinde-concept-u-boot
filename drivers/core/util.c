@@ -11,7 +11,7 @@
 #include <linux/libfdt.h>
 #include <linux/list.h>
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 int pci_get_devfn(struct udevice *dev)
 {
 	struct fdt_pci_addr addr;

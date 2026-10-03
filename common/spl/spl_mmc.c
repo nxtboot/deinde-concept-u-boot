@@ -75,7 +75,7 @@ static int spl_mmc_find_device(struct mmc **mmcp, int mmc_dev)
 {
 	int ret;
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 	struct udevice *dev;
 	struct uclass *uc;
 
@@ -99,7 +99,7 @@ static int spl_mmc_find_device(struct mmc **mmcp, int mmc_dev)
 		       mmc_dev, ret);
 		return ret;
 	}
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 	log_debug("mmc %d: %s\n", mmc_dev, (*mmcp)->dev->name);
 #endif
 
@@ -141,7 +141,7 @@ static int mmc_load_image_raw_partition(struct spl_image_info *spl_image,
 }
 #endif
 
-#if CONFIG_IS_ENABLED(FALCON_BOOT_MMCSD)
+#if IS_ENABLED(CONFIG_FALCON_BOOT_MMCSD)
 static int mmc_load_image_raw_os(struct spl_image_info *spl_image,
 				 struct spl_boot_device *bootdev,
 				 struct mmc *mmc)
@@ -196,12 +196,12 @@ static int spl_mmc_fs_load_os(struct spl_image_info *spl_image,
 {
 	int err = -ENOSYS;
 
-	if (CONFIG_IS_ENABLED(FS_FAT)) {
+	if (IS_ENABLED(CONFIG_FS_FAT)) {
 		err = spl_load_image_fat_os(spl_image, bootdev, blk_dev, part);
 		if (!err)
 			return 0;
 	}
-	if (CONFIG_IS_ENABLED(FS_EXT4)) {
+	if (IS_ENABLED(CONFIG_FS_EXT4)) {
 		err = spl_load_image_ext_os(spl_image, bootdev, blk_dev, part);
 		if (!err)
 			return 0;
@@ -216,17 +216,17 @@ static int __maybe_unused spl_mmc_fs_load(struct spl_image_info *spl_image,
 {
 	int err = -ENOENT;
 
-	if (CONFIG_IS_ENABLED(FS_FAT)) {
+	if (IS_ENABLED(CONFIG_FS_FAT)) {
 		err = spl_load_image_fat(spl_image, bootdev, blk_dev, part, file);
 		if (!err)
 			return 0;
 	}
-	if (CONFIG_IS_ENABLED(FS_EXT4)) {
+	if (IS_ENABLED(CONFIG_FS_EXT4)) {
 		err = spl_load_image_ext(spl_image, bootdev, blk_dev, part, file);
 		if (!err)
 			return 0;
 	}
-	if (CONFIG_IS_ENABLED(FS_SQUASHFS)) {
+	if (IS_ENABLED(CONFIG_FS_SQUASHFS)) {
 		err = spl_load_image_sqfs(spl_image, bootdev, blk_dev, part, file);
 		if (!err)
 			return 0;
@@ -289,9 +289,9 @@ static int spl_mmc_do_fs_boot(struct spl_image_info *spl_image,
 
 u32 __weak spl_mmc_boot_mode(struct mmc *mmc, const u32 boot_device)
 {
-	if (CONFIG_IS_ENABLED(FS_FAT) ||
-	    CONFIG_IS_ENABLED(FS_EXT4) ||
-	    CONFIG_IS_ENABLED(FS_SQUASHFS))
+	if (IS_ENABLED(CONFIG_FS_FAT) ||
+	    IS_ENABLED(CONFIG_FS_EXT4) ||
+	    IS_ENABLED(CONFIG_FS_SQUASHFS))
 		return MMCSD_MODE_FS;
 
 	if (IS_ENABLED(CONFIG_SUPPORT_EMMC_BOOT))
@@ -351,7 +351,7 @@ int __weak spl_mmc_emmc_boot_partition(struct mmc *mmc)
 static int spl_mmc_get_mmc_devnum(struct mmc *mmc)
 {
 	struct blk_desc *block_dev;
-#if !CONFIG_IS_ENABLED(BLK)
+#if !IS_ENABLED(CONFIG_BLK)
 	block_dev = &mmc->block_dev;
 #else
 	block_dev = mmc_get_blk_desc(mmc);
@@ -400,7 +400,7 @@ int spl_mmc_load(struct spl_image_info *spl_image,
 	case MMCSD_MODE_EMMCBOOT:
 		part = spl_mmc_emmc_boot_partition(mmc);
 
-		if (CONFIG_IS_ENABLED(MMC_TINY))
+		if (IS_ENABLED(CONFIG_MMC_TINY))
 			ret = mmc_switch_part(mmc, part);
 		else
 			ret = blk_dselect_hwpart(mmc_get_blk_desc(mmc), part);

@@ -22,7 +22,7 @@ enum pl01x_type {
  */
 #include <dt-structs.h>
 struct pl01x_serial_plat {
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_serial_pl01x dtplat;
 #endif
 	unsigned long base;

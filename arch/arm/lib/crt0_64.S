@@ -69,7 +69,7 @@ ENTRY(_main)
 /*
  * Set up initial C runtime environment and call board_init_f(0).
  */
-#if CONFIG_IS_ENABLED(HAVE_INIT_STACK)
+#if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
 	ldr	x0, =CONFIG_VAL(STACK)
 #elif defined(CONFIG_INIT_SP_RELATIVE)
 #if CONFIG_POSITION_INDEPENDENT
@@ -90,11 +90,11 @@ ENTRY(_main)
 	mov	x18, x0
 	bl	board_init_f_init_reserve
 
-#if defined(CONFIG_DEBUG_UART) && CONFIG_IS_ENABLED(SERIAL)
+#if defined(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_SERIAL)
 	bl	debug_uart_init
 #endif
 
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	str	x19, [x18, #GD_PASSAGE_MACH]
 	str	x20, [x18, #GD_PASSAGE_DTB]
 	str	x21, [x18, #GD_PASSAGE_BLOBLIST]
@@ -144,7 +144,7 @@ relocation_return:
  */
 	bl	c_runtime_cpu_setup		/* still call old routine */
 #endif /* !CONFIG_XPL_BUILD */
-#if !defined(CONFIG_XPL_BUILD) || CONFIG_IS_ENABLED(FRAMEWORK)
+#if !defined(CONFIG_XPL_BUILD) || IS_ENABLED(CONFIG_FRAMEWORK)
 #if defined(CONFIG_XPL_BUILD)
 	bl	spl_relocate_stack_gd           /* may return NULL */
 	/* set up gd here, outside any C code, if new stack is returned */

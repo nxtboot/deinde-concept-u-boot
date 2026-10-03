@@ -64,7 +64,7 @@ static int clk_fixed_rate_of_to_plat(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CLK_CCF)
+#if IS_ENABLED(CONFIG_CLK_CCF)
 struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 				    ulong rate)
 {

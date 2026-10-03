@@ -45,7 +45,7 @@ static int hi6220_dwmmc_of_to_plat(struct udevice *dev)
 	struct dwmci_host *host = &priv->host;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK) && CONFIG_IS_ENABLED(DM_RESET)) {
+	if (IS_ENABLED(CONFIG_CLK) && IS_ENABLED(CONFIG_DM_RESET)) {
 		priv->clks[HI6220_DWMMC_CLK_BIU] = devm_clk_get(dev, "biu");
 		if (IS_ERR(priv->clks[HI6220_DWMMC_CLK_BIU])) {
 			ret = PTR_ERR(priv->clks[HI6220_DWMMC_CLK_BIU]);
@@ -94,7 +94,7 @@ static int hi6220_dwmmc_probe(struct udevice *dev)
 	mmc_data = (struct hisi_mmc_data *)dev_get_driver_data(dev);
 
 	host->bus_hz = mmc_data->clock;
-	if (CONFIG_IS_ENABLED(CLK) && CONFIG_IS_ENABLED(DM_RESET)) {
+	if (IS_ENABLED(CONFIG_CLK) && IS_ENABLED(CONFIG_DM_RESET)) {
 		ret = clk_prepare_enable(priv->clks[HI6220_DWMMC_CLK_BIU]);
 		if (ret) {
 			dev_err(dev, "Failed to enable biu clock(ret = %d).\n", ret);

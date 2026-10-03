@@ -16,7 +16,7 @@
 #include <asm/arch-rockchip/bootrom.h>
 #include <linux/bitops.h>
 
-#if CONFIG_IS_ENABLED(BANNER_PRINT)
+#if IS_ENABLED(CONFIG_BANNER_PRINT)
 #include <timestamp.h>
 #endif
 

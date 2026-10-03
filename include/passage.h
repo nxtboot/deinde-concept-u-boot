@@ -35,7 +35,7 @@ static inline ulong passage_mach_version(void)
  */
 static inline bool passage_valid(void)
 {
-#if CONFIG_IS_ENABLED(BLOBLIST_PASSAGE)
+#if IS_ENABLED(CONFIG_BLOBLIST_PASSAGE)
 	return gd->passage_mach == passage_mach_version();
 #else
 	return false;

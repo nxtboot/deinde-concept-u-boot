@@ -42,7 +42,7 @@
 /*
  * Size-saving "small" ints (arch-dependent)
  */
-#if CONFIG_IS_ENABLED(X86) || CONFIG_IS_ENABLED(X86_64) || CONFIG_IS_ENABLED(MIPS)
+#if IS_ENABLED(CONFIG_X86) || IS_ENABLED(CONFIG_X86_64) || IS_ENABLED(CONFIG_MIPS)
 /* add other arches which benefit from this... */
 typedef signed char smallint;
 typedef unsigned char smalluint;
@@ -309,7 +309,7 @@ static int u_boot_cli_readline(struct in_str *i)
 	#error "SYS_PROMPT_HUSH_PS2 is not defined!"
 #endif
 
-	if (CONFIG_IS_ENABLED(CMDLINE_PS_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_CMDLINE_PS_SUPPORT)) {
 		if (!G.promptmode)
 			ps_prompt = env_get("PS1");
 		else

@@ -9,14 +9,14 @@
 #include <i2c.h>
 #include "eeprom.h"
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 static struct udevice *i2c_dev;
 #endif
 
 /* Probe I2C and set-up EEPROM */
 int siemens_ee_setup(void)
 {
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *bus;
 	int ret;
 
@@ -44,7 +44,7 @@ err:
 /* Read data from EEPROM */
 int siemens_ee_read_data(uint address, uchar *buffer, int len)
 {
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	return dm_i2c_read(i2c_dev, address, buffer, len);
 #else
 	return i2c_read(SIEMENS_EE_I2C_ADDR, address, 2, buffer, len);

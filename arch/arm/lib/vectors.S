@@ -24,7 +24,7 @@
 #else
 	b	reset
 #endif
-#if !CONFIG_IS_ENABLED(SYS_NO_VECTOR_TABLE)
+#if !IS_ENABLED(CONFIG_SYS_NO_VECTOR_TABLE)
 	ldr	pc, _undefined_instruction
 	ldr	pc, _software_interrupt
 	ldr	pc, _prefetch_abort
@@ -89,7 +89,7 @@ _start:
 	ARM_VECTORS
 #endif /* !defined(CONFIG_ENABLE_ARM_SOC_BOOT0_HOOK) */
 
-#if !CONFIG_IS_ENABLED(SYS_NO_VECTOR_TABLE)
+#if !IS_ENABLED(CONFIG_SYS_NO_VECTOR_TABLE)
 /*
  *************************************************************************
  *
@@ -135,30 +135,30 @@ _fiq:			.word fiq
 
 #ifdef CONFIG_XPL_BUILD
 
-#if !CONFIG_IS_ENABLED(SYS_NO_VECTOR_TABLE)
+#if !IS_ENABLED(CONFIG_SYS_NO_VECTOR_TABLE)
 	.align	5
 undefined_instruction:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	undefined_instruction
 #endif
 software_interrupt:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	software_interrupt
 #endif
 prefetch_abort:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	prefetch_abort
 #endif
 data_abort:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	data_abort
 #endif
 not_used:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	not_used
 #endif
 irq:
-#if CONFIG_IS_ENABLED(USE_SEPARATE_FAULT_HANDLERS)
+#if IS_ENABLED(CONFIG_USE_SEPARATE_FAULT_HANDLERS)
 	b	irq
 #endif
 fiq:
@@ -293,7 +293,7 @@ software_interrupt:
 	get_bad_stack_swi
 	bad_save_user_regs
 	bl	do_software_interrupt
-#if CONFIG_IS_ENABLED(SEMIHOSTING_FALLBACK)
+#if IS_ENABLED(CONFIG_SEMIHOSTING_FALLBACK)
 	ldmia	sp, {r0 - lr}^			@ Calling r0 - lr
 	mov	r0, r0
 	ldr	lr, [sp, #S_PC]			@ Get PC

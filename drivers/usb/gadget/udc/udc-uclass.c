@@ -11,7 +11,7 @@
 #include <linux/printk.h>
 #include <linux/usb/gadget.h>
 
-#if CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if IS_ENABLED(CONFIG_DM_USB_GADGET)
 static inline const struct usb_gadget_generic_ops *
 usb_gadget_generic_dev_ops(struct udevice *dev)
 {
@@ -54,7 +54,7 @@ int udc_device_get_by_index(int index, struct udevice **udev)
 
 int udc_device_put(struct udevice *udev)
 {
-#if CONFIG_IS_ENABLED(DM_DEVICE_REMOVE)
+#if IS_ENABLED(CONFIG_DM_DEVICE_REMOVE)
 	return device_remove(udev, DM_REMOVE_NORMAL);
 #else
 	return -ENOSYS;
@@ -80,7 +80,7 @@ __weak int dm_usb_gadget_handle_interrupts(struct udevice *dev)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(DM)
+#if IS_ENABLED(CONFIG_DM)
 UCLASS_DRIVER(usb_gadget_generic) = {
 	.id		= UCLASS_USB_GADGET_GENERIC,
 	.name		= "usb_gadget",

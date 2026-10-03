@@ -26,7 +26,7 @@ U_BOOT_DRIVER(syscon_rk3288) = {
 	.of_match = rk3288_syscon_ids,
 };
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 #if IS_ENABLED(CONFIG_FDT_64BIT)
 struct rockchip_rk3288_noc_plat {
 	struct dtd_rockchip_rk3288_noc dtplat;

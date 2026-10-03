@@ -28,7 +28,7 @@ static inline int _spl_load(struct spl_image_info *spl_image,
 
 	if (image_get_magic(header) == FDT_MAGIC) {
 		log_debug("Found FIT\n");
-		if (CONFIG_IS_ENABLED(LOAD_FIT_FULL)) {
+		if (IS_ENABLED(CONFIG_LOAD_FIT_FULL)) {
 			void *buf;
 
 			/*
@@ -50,7 +50,7 @@ static inline int _spl_load(struct spl_image_info *spl_image,
 			return spl_parse_image_header(spl_image, bootdev, buf);
 		}
 
-		if (CONFIG_IS_ENABLED(LOAD_FIT)) {
+		if (IS_ENABLED(CONFIG_LOAD_FIT)) {
 			log_debug("Simple loading\n");
 			return spl_load_simple_fit(spl_image, info, offset,
 						   header);

@@ -88,7 +88,7 @@ struct pager {
 	bool test_bypass;
 };
 
-#if CONFIG_IS_ENABLED(CONSOLE_PAGER)
+#if IS_ENABLED(CONFIG_CONSOLE_PAGER)
 
 /**
  * pager_postn() - Add text to the input buffer for later handling

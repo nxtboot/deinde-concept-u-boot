@@ -11,7 +11,7 @@
 #define  CSR_MHCR_IE		BIT(0)
 #define  CSR_MHCR_DE		BIT(1)
 
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 void icache_enable(void)
 {
 	csr_write(CSR_MHCR, csr_read(CSR_MHCR) | CSR_MHCR_IE);
@@ -31,4 +31,4 @@ int dcache_status(void)
 {
 	return (csr_read(CSR_MHCR) & CSR_MHCR_DE) != 0;
 }
-#endif /* CONFIG_IS_ENABLED(RISCV_MMODE) */
+#endif /* IS_ENABLED(CONFIG_RISCV_MMODE) */

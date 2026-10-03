@@ -7,7 +7,7 @@
 #include <power/pmic.h>
 #include <power/pfuze100_pmic.h>
 
-#if CONFIG_IS_ENABLED(DM_PMIC_PFUZE100)
+#if IS_ENABLED(CONFIG_DM_PMIC_PFUZE100)
 int pfuze_mode_init(struct udevice *dev, u32 mode)
 {
 	unsigned char offset, i, switch_num;

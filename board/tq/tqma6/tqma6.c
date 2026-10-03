@@ -127,7 +127,7 @@ const char *tqma6_get_fdt_configuration(void)
 	return NULL;
 }
 
-#if CONFIG_IS_ENABLED(DM_PMIC)
+#if IS_ENABLED(CONFIG_DM_PMIC)
 /* setup board specific PMIC */
 int power_init_board(void)
 {

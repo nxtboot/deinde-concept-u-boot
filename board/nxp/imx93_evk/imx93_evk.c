@@ -30,7 +30,7 @@ struct efi_capsule_update_info update_info = {
 
 int board_late_init(void)
 {
-#if CONFIG_IS_ENABLED(ENV_IS_IN_MMC) || CONFIG_IS_ENABLED(ENV_IS_NOWHERE)
+#if IS_ENABLED(CONFIG_ENV_IS_IN_MMC) || IS_ENABLED(CONFIG_ENV_IS_NOWHERE)
 	board_late_mmc_env_init();
 #endif
 

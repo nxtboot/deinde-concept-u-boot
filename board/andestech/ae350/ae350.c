@@ -36,9 +36,9 @@ int misc_init_r(void)
     const long mask_cpu = 0xff;
     char cpu_name[10] = {};
 
-#if CONFIG_IS_ENABLED(RISCV_SMODE)
+#if IS_ENABLED(CONFIG_RISCV_SMODE)
     sbi_get_marchid(&csr_marchid);
-#elif CONFIG_IS_ENABLED(RISCV_MMODE)
+#elif IS_ENABLED(CONFIG_RISCV_MMODE)
     csr_marchid = csr_read(CSR_MARCHID);
 #endif
     if (mask_64 & csr_marchid)
@@ -104,7 +104,7 @@ int board_fdt_blob_setup(void **fdtp)
 void spl_board_init()
 {
 	/* enable andes-l2 cache */
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		enable_caches();
 }
 #endif

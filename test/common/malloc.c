@@ -551,7 +551,7 @@ static int common_test_malloc_very_large(struct unit_test_state *uts)
 	 * header and canaries; otherwise a smaller margin for dlmalloc's own
 	 * chunk alignment is enough.
 	 */
-	if (CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION))
+	if (IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION))
 		margin = SZ_256K;
 	else
 		margin = SZ_64K;
@@ -659,7 +659,7 @@ static int common_test_malloc_fill_pool(struct unit_test_state *uts)
 }
 COMMON_TEST(common_test_malloc_fill_pool, 0);
 
-#if CONFIG_IS_ENABLED(MCHECK_LOG)
+#if IS_ENABLED(CONFIG_MCHECK_LOG)
 /* Test malloc_log_info() and malloc_log_entry() */
 static int common_test_malloc_log_info(struct unit_test_state *uts)
 {

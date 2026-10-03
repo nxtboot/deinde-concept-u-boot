@@ -194,7 +194,7 @@ int vbe_read_fit(struct udevice *blk, ulong area_offset, ulong area_size,
 	log_debug("check total size %x off_dt_strings %x\n", fdt_totalsize(buf),
 		  fdt_off_dt_strings(buf));
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	log_debug("malloc base %lx ptr %x limit %x top %lx\n",
 		  gd->malloc_base, gd->malloc_ptr, gd->malloc_limit,
 		  gd->malloc_base + gd->malloc_limit);
@@ -260,7 +260,7 @@ int vbe_read_fit(struct udevice *blk, ulong area_offset, ulong area_size,
 			  fdt_size);
 	}
 
-	for_xpl = !USE_BOOTMETH && CONFIG_IS_ENABLED(RELOC_LOADER);
+	for_xpl = !USE_BOOTMETH && IS_ENABLED(CONFIG_RELOC_LOADER);
 	if (for_xpl) {
 		image->size = len;
 		image->fdt_size = fdt_size;
@@ -357,7 +357,7 @@ int vbe_read_fit(struct udevice *blk, ulong area_offset, ulong area_size,
 				memmove(fdt_base_buf, fdt_base_buf + extra,
 					fdt_size);
 			}
-#if CONFIG_IS_ENABLED(RELOC_LOADER)
+#if IS_ENABLED(CONFIG_RELOC_LOADER)
 			image->fdt_buf = fdt_base_buf;
 
 			ulong xpl_size;

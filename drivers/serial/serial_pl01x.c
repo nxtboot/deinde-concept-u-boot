@@ -27,7 +27,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 static volatile unsigned char *const port[] = CFG_PL01x_PORTS;
 static enum pl01x_type pl01x_type __section(".data");
 static struct pl01x_regs *base_regs __section(".data");
@@ -185,7 +185,7 @@ static int pl01x_generic_setbrg(struct pl01x_regs *regs, enum pl01x_type type,
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 static void pl01x_serial_init_baud(int baudrate)
 {
 	int clock = 0;
@@ -314,7 +314,7 @@ int pl01x_serial_probe(struct udevice *dev)
 	struct pl01x_priv *priv = dev_get_priv(dev);
 	int ret;
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_serial_pl01x *dtplat = &plat->dtplat;
 
 	priv->regs = (struct pl01x_regs *)dtplat->reg[0];
@@ -367,7 +367,7 @@ static const struct dm_serial_ops pl01x_serial_ops = {
 	.getinfo = pl01x_serial_getinfo,
 };
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static const struct udevice_id pl01x_serial_id[] ={
 	{.compatible = "arm,pl011", .data = TYPE_PL011},
 	{.compatible = "arm,pl010", .data = TYPE_PL010},
@@ -416,7 +416,7 @@ int pl01x_serial_of_to_plat(struct udevice *dev)
 U_BOOT_DRIVER(serial_pl01x) = {
 	.name	= "serial_pl01x",
 	.id	= UCLASS_SERIAL,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.of_match = of_match_ptr(pl01x_serial_id),
 	.of_to_plat = of_match_ptr(pl01x_serial_of_to_plat),
 #endif

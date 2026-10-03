@@ -633,7 +633,7 @@ static void tmio_sd_set_pins(struct udevice *dev)
 	__maybe_unused struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct tmio_sd_priv *priv = dev_get_priv(dev);
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR) && priv->vqmmc_dev) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR) && priv->vqmmc_dev) {
 		if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180)
 			regulator_set_value(priv->vqmmc_dev, 1800000);
 		else
@@ -641,7 +641,7 @@ static void tmio_sd_set_pins(struct udevice *dev)
 		regulator_set_enable(priv->vqmmc_dev, true);
 	}
 
-	if (CONFIG_IS_ENABLED(PINCTRL)) {
+	if (IS_ENABLED(CONFIG_PINCTRL)) {
 		if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180)
 			pinctrl_select_state(dev, "state_uhs");
 		else
@@ -740,7 +740,7 @@ int tmio_sd_probe(struct udevice *dev, u32 quirks)
 	if (!priv->regbase)
 		return -ENOMEM;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		device_get_supply_regulator(dev, "vqmmc-supply",
 					    &priv->vqmmc_dev);
 		if (priv->vqmmc_dev)

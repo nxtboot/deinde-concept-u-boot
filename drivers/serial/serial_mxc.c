@@ -209,7 +209,7 @@ static void _mxc_serial_setbrg(struct mxc_uart *base, unsigned long clk,
 	writel(UCR1_UARTEN, &base->cr1);
 }
 
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 
 #ifndef CFG_MXC_UART_BASE
 #error "define CFG_MXC_UART_BASE to use the MXC UART driver"
@@ -298,7 +298,7 @@ __weak struct serial_device *default_serial_console(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 
 int mxc_serial_setbrg(struct udevice *dev, int baudrate)
 {
@@ -313,7 +313,7 @@ int mxc_serial_setbrg(struct udevice *dev, int baudrate)
 static int mxc_serial_probe(struct udevice *dev)
 {
 	struct mxc_serial_plat *plat = dev_get_plat(dev);
-#if CONFIG_IS_ENABLED(CLK_CCF)
+#if IS_ENABLED(CONFIG_CLK_CCF)
 	int ret;
 
 	ret = clk_get_bulk(dev, &plat->clks);
@@ -372,7 +372,7 @@ static const struct dm_serial_ops mxc_serial_ops = {
 	.setbrg = mxc_serial_setbrg,
 };
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 static int mxc_serial_of_to_plat(struct udevice *dev)
 {
 	struct mxc_serial_plat *plat = dev_get_plat(dev);
@@ -403,7 +403,7 @@ static const struct udevice_id mxc_serial_ids[] = {
 U_BOOT_DRIVER(serial_mxc) = {
 	.name	= "serial_mxc",
 	.id	= UCLASS_SERIAL,
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 	.of_match = mxc_serial_ids,
 	.of_to_plat = mxc_serial_of_to_plat,
 	.plat_auto	= sizeof(struct mxc_serial_plat),

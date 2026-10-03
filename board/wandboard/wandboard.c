@@ -52,7 +52,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define REV_DETECTION		IMX_GPIO_NR(2, 28)
 
 /* Speed defined in Kconfig is only applicable when not using DM_I2C.  */
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 #define I2C1_SPEED_NON_DM	0
 #define I2C2_SPEED_NON_DM	0
 #else
@@ -257,7 +257,7 @@ static void do_enable_hdmi(struct display_info_t const *dev)
 
 static int detect_i2c(struct display_info_t const *dev)
 {
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *bus, *udev;
 	int rc;
 
@@ -350,7 +350,7 @@ static void setup_display(void)
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
-	if (CONFIG_IS_ENABLED(SATA))
+	if (IS_ENABLED(CONFIG_SATA))
 		setup_sata();
 
 	return 0;

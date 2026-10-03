@@ -61,7 +61,7 @@ SECTIONS
 
         _image_binary_end = .;
 
-#if CONFIG_IS_ENABLED(SEPARATE_BSS)
+#if IS_ENABLED(CONFIG_SEPARATE_BSS)
 	. = 0x120000;
 #endif
 	.bss (OVERLAY) : {
@@ -101,7 +101,7 @@ SECTIONS
 ASSERT(_image_binary_end % 8 == 0, \
        "_image_binary_end must be 8-byte aligned for device tree");
 
-#if !CONFIG_IS_ENABLED(SEPARATE_BSS)
+#if !IS_ENABLED(CONFIG_SEPARATE_BSS)
 ASSERT(__bss_end % 8 == 0, \
        "__bss_end must be 8-byte aligned for device tree");
 #endif

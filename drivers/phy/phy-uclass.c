@@ -176,7 +176,7 @@ int generic_phy_get_by_index_nodev(ofnode node, int index, struct phy *phy)
 		goto err;
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret = device_get_supply_regulator(phydev, "phy-supply",
 						  &supply);
 		if (ret && ret != -ENOENT) {

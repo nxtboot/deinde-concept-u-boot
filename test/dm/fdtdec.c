@@ -149,7 +149,7 @@ static int dm_test_fdt_chosen_smbios(struct unit_test_state *uts)
 	int chosen, blob_sz, fdt_sz;
 	const fdt64_t *prop;
 
-	if (!CONFIG_IS_ENABLED(GENERATE_SMBIOS_TABLE)) {
+	if (!IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE)) {
 		return -EAGAIN;
 	}
 

@@ -76,7 +76,7 @@ U_BOOT_DRVINFO(simc_serial) = {
 	.name = "serial_xtensa_semihosting",
 };
 
-#if CONFIG_IS_ENABLED(DEBUG_UART_XTENSA_SEMIHOSTING)
+#if IS_ENABLED(CONFIG_DEBUG_UART_XTENSA_SEMIHOSTING)
 #include <debug_uart.h>
 
 static inline void _debug_uart_init(void)

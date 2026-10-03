@@ -771,7 +771,7 @@ int miiphy_reset(const char *devname, unsigned char addr)
 	return phy_reset(phydev);
 }
 
-#if CONFIG_IS_ENABLED(DM_GPIO) && CONFIG_IS_ENABLED(OF_REAL) && \
+#if IS_ENABLED(CONFIG_DM_GPIO) && IS_ENABLED(CONFIG_OF_REAL) && \
     !IS_ENABLED(CONFIG_DM_ETH_PHY)
 int phy_gpio_reset(struct udevice *dev)
 {

@@ -145,7 +145,7 @@ int board_late_init(void)
 {
 	meson_set_boot_source();
 
-	if (CONFIG_IS_ENABLED(DFU) && CONFIG_IS_ENABLED(EFI_LOADER)) {
+	if (IS_ENABLED(CONFIG_DFU) && IS_ENABLED(CONFIG_EFI_LOADER)) {
 		/* Generate dfu_string for EFI capsule updates */
 		meson_setup_capsule();
 	}
@@ -153,7 +153,7 @@ int board_late_init(void)
 	return meson_board_late_init();
 }
 
-#if defined(CONFIG_XPL) || !CONFIG_IS_ENABLED(SYSRESET)
+#if defined(CONFIG_XPL) || !IS_ENABLED(CONFIG_SYSRESET)
 void reset_cpu(void)
 {
 	/*

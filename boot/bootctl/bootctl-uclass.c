@@ -17,7 +17,7 @@
 UCLASS_DRIVER(bootctrl) = {
 	.id		= UCLASS_BOOTCTL,
 	.name		= "bootctrl",
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.post_bind	= dm_scan_fdt_dev,
 #endif
 	.per_device_plat_auto	= sizeof(struct bootctl_uc_plat),

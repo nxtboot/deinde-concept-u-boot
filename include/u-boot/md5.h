@@ -8,7 +8,7 @@
 
 #include <linux/kconfig.h>
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 #include <mbedtls/md5.h>
 #endif
 #include "compiler.h"
@@ -16,7 +16,7 @@
 #define MD5_SUM_LEN	16
 #define MD5_DEF_CHUNK_SZ 0x10000
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 typedef mbedtls_md5_context MD5Context;
 #else
 typedef struct MD5Context {

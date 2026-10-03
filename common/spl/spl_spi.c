@@ -103,7 +103,7 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 
 	spl_load_init(&load, spl_spi_fit_read, flash, 1);
 
-#if CONFIG_IS_ENABLED(OS_BOOT)
+#if IS_ENABLED(CONFIG_OS_BOOT)
 	if (!spl_start_uboot()) {
 		err = spl_spi_load_image_os(spl_image, bootdev, flash, &load);
 
@@ -118,7 +118,7 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 #endif
 
 	payload_offs = spl_spi_get_uboot_offs(flash);
-	if (CONFIG_IS_ENABLED(OF_REAL)) {
+	if (IS_ENABLED(CONFIG_OF_REAL)) {
 		payload_offs = ofnode_conf_read_int("u-boot,spl-payload-offset",
 						    payload_offs);
 	}

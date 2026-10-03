@@ -20,7 +20,7 @@
 
 /* The FF-A SMC function definitions */
 
-#if CONFIG_IS_ENABLED(SANDBOX)
+#if IS_ENABLED(CONFIG_SANDBOX)
 
 /* Providing Arm SMCCC declarations to sandbox */
 

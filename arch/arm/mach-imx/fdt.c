@@ -97,7 +97,7 @@ int fixup_thermal_trips(void *blob, const char *name)
 	 * be necessary to override the trip points. Allow users to do
 	 * that. However, do keep in mind that this may damage the SoC.
 	 */
-	if (CONFIG_IS_ENABLED(ENV_SUPPORT))
+	if (IS_ENABLED(CONFIG_ENV_SUPPORT))
 		if (env_get("imx_skip_fixup_thermal_trips"))
 			return 0;
 

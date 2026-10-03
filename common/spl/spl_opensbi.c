@@ -81,7 +81,7 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	 * The next os image default is u-boot proper, once enable
 	 * OpenSBI OS boot mode, the OS image should be linux.
 	 */
-	if (CONFIG_IS_ENABLED(LOAD_FIT_OPENSBI_OS_BOOT))
+	if (IS_ENABLED(CONFIG_LOAD_FIT_OPENSBI_OS_BOOT))
 		os_type = IH_OS_LINUX;
 	else
 		os_type = IH_OS_U_BOOT;

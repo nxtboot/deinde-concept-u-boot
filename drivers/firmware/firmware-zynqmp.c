@@ -810,7 +810,7 @@ int __maybe_unused xilinx_pm_request(u32 api_id, u32 arg0, u32 arg1, u32 arg2,
 	      __func__, current_el(), api_id, arg0, arg1, arg2, arg3, arg4, arg5);
 
 	if (IS_ENABLED(CONFIG_XPL_BUILD) || current_el() == 3) {
-		if (CONFIG_IS_ENABLED(PINCTRL_ZYNQMP) &&
+		if (IS_ENABLED(CONFIG_PINCTRL_ZYNQMP) &&
 		    api_id == PM_QUERY_DATA)
 			return zynqmp_pm_query_data(arg0, arg1, arg2, ret_payload);
 #if defined(CONFIG_ZYNQMP_IPI)
@@ -862,7 +862,7 @@ static int zynqmp_firmware_bind(struct udevice *dev)
 	if (!smc_call_handler)
 		return -EINVAL;
 
-	if (CONFIG_IS_ENABLED(POWER_DOMAIN) &&
+	if (IS_ENABLED(CONFIG_POWER_DOMAIN) &&
 	    IS_ENABLED(CONFIG_ZYNQMP_POWER_DOMAIN)) {
 		ret = device_bind_driver_to_node(dev, "zynqmp_power_domain",
 						 "zynqmp_power_domain",

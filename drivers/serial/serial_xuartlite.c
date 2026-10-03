@@ -32,7 +32,7 @@ struct uartlite {
 };
 
 struct uartlite_plat {
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_serial_uartlite dtplat;
 #else
 	struct uartlite *regs;
@@ -101,7 +101,7 @@ static int uartlite_serial_probe(struct udevice *dev)
 	struct uartlite *regs;
 	int ret;
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	struct dtd_serial_uartlite *dtplat = &plat->dtplat;
 
 	regs = (struct uartlite *)dtplat->reg[0];
@@ -123,7 +123,7 @@ static int uartlite_serial_probe(struct udevice *dev)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+#if !IS_ENABLED(CONFIG_OF_PLATDATA)
 static int uartlite_serial_of_to_plat(struct udevice *dev)
 {
 	struct uartlite_plat *plat = dev_get_plat(dev);
@@ -150,7 +150,7 @@ U_BOOT_DRIVER(serial_uartlite) = {
 	.name	= "serial_uartlite",
 	.id	= UCLASS_SERIAL,
 	.of_match = uartlite_serial_ids,
-#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+#if !IS_ENABLED(CONFIG_OF_PLATDATA)
 	.of_to_plat = uartlite_serial_of_to_plat,
 #endif
 	.priv_auto	= sizeof(struct uartlite_priv),

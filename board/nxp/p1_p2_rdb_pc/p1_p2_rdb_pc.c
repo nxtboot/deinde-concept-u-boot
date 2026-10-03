@@ -242,7 +242,7 @@ int checkboard_p1_p2(void)
 		in_8(&cpld_data->pcba_rev) & 0x0F);
 
 	/* Initialize i2c early for rom_loc and flash bank information */
-	#if CONFIG_IS_ENABLED(DM_I2C)
+	#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *dev;
 	int ret;
 
@@ -471,7 +471,7 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(OF_BOARD_FIXUP)
+#if IS_ENABLED(CONFIG_OF_BOARD_FIXUP)
 static int freescale_fix_fdt(void *ctx, struct event *event)
 {
 	void *blob = oftree_lookup_fdt(event->data.ft_fixup_f.tree);

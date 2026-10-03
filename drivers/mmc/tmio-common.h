@@ -134,7 +134,7 @@ struct tmio_sd_priv {
 #define TMIO_SD_CAP_RCAR		\
 	(TMIO_SD_CAP_RCAR_GEN2 | TMIO_SD_CAP_RCAR_GEN3)
 	struct udevice *vqmmc_dev;
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct clk			clk;
 	struct clk			clkh;
 #endif

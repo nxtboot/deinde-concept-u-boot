@@ -11,7 +11,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int c)
 {
-	if (CONFIG_IS_ENABLED(RISCV_SMODE))
+	if (IS_ENABLED(CONFIG_RISCV_SMODE))
 		sbi_console_putchar(c);
 }
 
@@ -21,13 +21,13 @@ static int sbi_dbcn_available __section(".data");
 
 static inline void _debug_uart_init(void)
 {
-	if (CONFIG_IS_ENABLED(RISCV_SMODE))
+	if (IS_ENABLED(CONFIG_RISCV_SMODE))
 		sbi_dbcn_available = sbi_probe_extension(SBI_EXT_DBCN);
 }
 
 static inline void _debug_uart_putc(int ch)
 {
-	if (CONFIG_IS_ENABLED(RISCV_SMODE) && sbi_dbcn_available)
+	if (IS_ENABLED(CONFIG_RISCV_SMODE) && sbi_dbcn_available)
 		sbi_dbcn_write_byte(ch);
 }
 

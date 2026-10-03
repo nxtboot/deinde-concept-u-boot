@@ -155,7 +155,7 @@ static inline notrace gd_t *get_fs_gd_ptr(void)
 {
 	gd_t *gd_ptr;
 
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 	asm volatile("fs mov 0, %0\n" : "=r" (gd_ptr));
 #else
 	asm volatile("fs movl 0, %0\n" : "=r" (gd_ptr));
@@ -166,7 +166,7 @@ static inline notrace gd_t *get_fs_gd_ptr(void)
 
 #define gd	get_fs_gd_ptr()
 
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 /*
  * On x86_64, use MSR_FS_BASE to hold the address of gd->arch.gd_addr, mirroring
  * how 32-bit x86 uses the FS segment descriptor base.  This avoids the need for

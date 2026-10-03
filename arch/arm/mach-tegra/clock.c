@@ -736,7 +736,7 @@ void clock_ll_start_uart(enum periph_id periph_id)
 	reset_set_enable(periph_id, 0);
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 int clock_decode_periph_id(struct udevice *dev)
 {
 	enum periph_id id;
@@ -773,7 +773,7 @@ int clock_decode_pair(struct udevice *dev, int *clk_id)
 
 	return 0;
 }
-#endif /* CONFIG_IS_ENABLED(OF_CONTROL) */
+#endif /* IS_ENABLED(CONFIG_OF_CONTROL) */
 
 int clock_verify(void)
 {

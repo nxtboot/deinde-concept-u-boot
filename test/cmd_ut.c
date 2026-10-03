@@ -152,7 +152,7 @@ static void show_stats(struct unit_test_state *uts)
 		return;
 
 	ut_report(&uts->total, uts->run_count);
-	if (CONFIG_IS_ENABLED(UNIT_TEST_DURATION) &&
+	if (IS_ENABLED(CONFIG_UNIT_TEST_DURATION) &&
 	    uts->total.test_count && uts->worst) {
 		ulong avg = uts->total.duration_ms / uts->total.test_count;
 
@@ -163,7 +163,7 @@ static void show_stats(struct unit_test_state *uts)
 
 static void update_stats(struct unit_test_state *uts, const struct suite *ste)
 {
-	if (CONFIG_IS_ENABLED(UNIT_TEST_DURATION) && uts->cur.test_count) {
+	if (IS_ENABLED(CONFIG_UNIT_TEST_DURATION) && uts->cur.test_count) {
 		ulong avg;
 
 		avg = uts->cur.duration_ms ?

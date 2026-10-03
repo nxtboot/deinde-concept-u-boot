@@ -107,7 +107,7 @@ static int rockchip_gpio_get_function(struct udevice *dev, unsigned offset)
 	u32 mask = BIT(offset), data;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(PINCTRL)) {
+	if (IS_ENABLED(CONFIG_PINCTRL)) {
 		ret = pinctrl_get_gpio_mux(priv->pinctrl, priv->bank, offset);
 		if (ret < 0)
 			return ret;
@@ -181,7 +181,7 @@ static int rockchip_gpio_probe(struct udevice *dev)
 
 	priv->regs = dev_read_addr_ptr(dev);
 
-	if (CONFIG_IS_ENABLED(PINCTRL)) {
+	if (IS_ENABLED(CONFIG_PINCTRL)) {
 		ret = uclass_first_device_err(UCLASS_PINCTRL, &priv->pinctrl);
 		if (ret)
 			return ret;

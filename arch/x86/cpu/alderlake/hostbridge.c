@@ -11,7 +11,7 @@
 #include <asm/intel_acpi.h>
 #include <dm/acpi.h>
 
-#if CONFIG_IS_ENABLED(GENERATE_ACPI_TABLE)
+#if IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE)
 struct acpi_ops adl_hostbridge_acpi_ops = {
 	/* This writes the NVSA global-NVS pointer into the DSDT */
 	.inject_dsdt	= southbridge_inject_dsdt,

@@ -215,7 +215,7 @@
 /*
  * Serial Port
  */
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 #define CFG_SYS_NS16550_CLK		(get_bus_freq(0)/2)
 #endif
 #define CFG_SYS_BAUDRATE_TABLE	\

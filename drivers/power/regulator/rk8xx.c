@@ -198,7 +198,7 @@ static const struct rk8xx_reg_info rk818_buck[] = {
 	{ 1800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, REG_BUCK4_CONFIG, RK818_BUCK4_VSEL_MASK, 0x00, 0x1f },
 };
 
-#if CONFIG_IS_ENABLED(REGULATOR_RK8XX)
+#if IS_ENABLED(CONFIG_REGULATOR_RK8XX)
 static const struct rk8xx_reg_info rk806_nldo[] = {
 	/* nldo 1 */
 	{  500000, 12500, RK806_NLDO_ON_VSEL(1), RK806_NLDO_SLP_VSEL(1), NA, RK806_NLDO_VSEL_MASK, 0x00, 0xe7},
@@ -450,7 +450,7 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(REGULATOR_RK8XX)
+#if IS_ENABLED(CONFIG_REGULATOR_RK8XX)
 static int _buck_set_suspend_value(struct udevice *pmic, int buck, int uvolt)
 {
 	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);

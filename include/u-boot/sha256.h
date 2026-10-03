@@ -6,7 +6,7 @@
 #include <linux/kconfig.h>
 #include <linux/types.h>
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 #include "mbedtls_options.h"
 #include <mbedtls/sha256.h>
 #endif
@@ -20,7 +20,7 @@ extern const uint8_t sha256_der_prefix[];
 /* Reset watchdog each time we process this many bytes */
 #define CHUNKSZ_SHA256	(64 * 1024)
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 typedef mbedtls_sha256_context sha256_context;
 #else
 typedef struct {
@@ -41,7 +41,7 @@ int sha256_hmac(const unsigned char *key, int keylen,
 		const unsigned char *input, unsigned int ilen,
 		unsigned char *output);
 
-#if CONFIG_IS_ENABLED(HKDF_MBEDTLS)
+#if IS_ENABLED(CONFIG_HKDF_MBEDTLS)
 int sha256_hkdf(const unsigned char *salt, int saltlen,
 		const unsigned char *ikm, int ikmlen,
 		const unsigned char *info, int infolen,

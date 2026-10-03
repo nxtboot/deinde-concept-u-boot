@@ -115,7 +115,7 @@ struct mxc_spi_slave {
 #if defined(MXC_ECSPI)
 	u32		cfg_reg;
 #endif
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct clk	clk;
 #endif
 	int		gpio;
@@ -134,7 +134,7 @@ static inline struct mxc_spi_slave *to_mxc_spi_slave(struct spi_slave *slave)
 
 static void mxc_spi_cs_activate(struct mxc_spi_slave *mxcs)
 {
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 	struct udevice *dev = mxcs->dev;
 	struct dm_spi_slave_plat *slave_plat = dev_get_parent_plat(dev);
 
@@ -152,7 +152,7 @@ static void mxc_spi_cs_activate(struct mxc_spi_slave *mxcs)
 
 static void mxc_spi_cs_deactivate(struct mxc_spi_slave *mxcs)
 {
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 	struct udevice *dev = mxcs->dev;
 	struct dm_spi_slave_plat *slave_plat = dev_get_parent_plat(dev);
 
@@ -217,7 +217,7 @@ static s32 spi_cfg_mxc(struct mxc_spi_slave *mxcs, unsigned int cs)
 #ifdef MXC_ECSPI
 static s32 spi_cfg_mxc(struct mxc_spi_slave *mxcs, unsigned int cs)
 {
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	u32 clk_src = clk_get_rate(&mxcs->clk);
 #else
 	u32 clk_src = mxc_get_clock(MXC_CSPI_CLK);
@@ -481,7 +481,7 @@ static int mxc_spi_claim_bus_internal(struct mxc_spi_slave *mxcs, int cs)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(DM_SPI)
+#if !IS_ENABLED(CONFIG_DM_SPI)
 int spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
 		void *din, unsigned long flags)
 {
@@ -605,7 +605,7 @@ static int mxc_spi_probe(struct udevice *bus)
 	if (mxcs->base == FDT_ADDR_T_NONE)
 		return -ENODEV;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_get_by_index(bus, 0, &mxcs->clk);
 	if (ret)
 		return ret;

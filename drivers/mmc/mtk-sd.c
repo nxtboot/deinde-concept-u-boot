@@ -365,7 +365,7 @@ struct msdc_host {
 	bool cd_active_high;
 
 	/* card detection / write protection GPIOs */
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	struct gpio_desc gpio_wp;
 	struct gpio_desc gpio_cd;
 #endif
@@ -1073,7 +1073,7 @@ static int msdc_ops_get_cd(struct udevice *dev)
 		return !val ^ host->cd_active_high;
 	}
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	if (!host->gpio_cd.dev)
 		return 1;
 
@@ -1085,7 +1085,7 @@ static int msdc_ops_get_cd(struct udevice *dev)
 
 static int msdc_ops_get_wp(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	struct msdc_host *host = dev_get_priv(dev);
 
 	if (!host->gpio_wp.dev)
@@ -1097,7 +1097,7 @@ static int msdc_ops_get_wp(struct udevice *dev)
 #endif
 }
 
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static u32 test_delay_bit(u32 delay, u32 bit)
 {
 	bit %= PAD_DELAY_MAX;
@@ -1817,7 +1817,7 @@ static int msdc_of_to_plat(struct udevice *dev)
 	clk_get_by_name(dev, "axi_cg", &host->axi_cg_clk); /* optional */
 	clk_get_by_name(dev, "ahb_cg", &host->ahb_cg_clk); /* optional */
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 	gpio_request_by_name(dev, "wp-gpios", 0, &host->gpio_wp, GPIOD_IS_IN);
 	gpio_request_by_name(dev, "cd-gpios", 0, &host->gpio_cd, GPIOD_IS_IN);
 #endif
@@ -1870,7 +1870,7 @@ static const struct dm_mmc_ops msdc_ops = {
 	.set_ios = msdc_ops_set_ios,
 	.get_cd = msdc_ops_get_cd,
 	.get_wp = msdc_ops_get_wp,
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.execute_tuning = msdc_execute_tuning,
 #endif
 	.wait_dat0 = msdc_ops_wait_dat0,

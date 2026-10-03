@@ -23,7 +23,7 @@ struct udevice;
  * For now VBE-simple uses the full bootmeth, but VBE-abrec does not, to reduce
  * code size
  */
-#define USE_BOOTMETH	CONFIG_IS_ENABLED(BOOTMETH_VBE_SIMPLE)
+#define USE_BOOTMETH	IS_ENABLED(CONFIG_BOOTMETH_VBE_SIMPLE)
 
 enum {
 	MAX_VERSION_LEN		= 256,

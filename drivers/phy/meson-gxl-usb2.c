@@ -98,7 +98,7 @@
 
 struct phy_meson_gxl_usb2_priv {
 	struct regmap		*regmap;
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct clk		clk;
 #endif
 };
@@ -200,7 +200,7 @@ int meson_gxl_usb2_phy_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_get_by_index(dev, 0, &priv->clk);
 	if (ret < 0)
 		return ret;

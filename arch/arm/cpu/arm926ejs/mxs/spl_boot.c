@@ -133,7 +133,7 @@ void mxs_common_spl_init(const uint32_t arg, const uint32_t *resptr,
 
 	mxs_iomux_setup_multiple_pads(iomux_setup, iomux_size);
 
-	if (!CONFIG_IS_ENABLED(DM_SERIAL)) {
+	if (!IS_ENABLED(CONFIG_DM_SERIAL)) {
 		mxs_spl_console_init();
 		debug("SPL: Serial Console Initialised\n");
 	}

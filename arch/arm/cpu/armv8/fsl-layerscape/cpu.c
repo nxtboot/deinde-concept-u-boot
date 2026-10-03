@@ -428,7 +428,7 @@ void cpu_name(char *name)
 		strcpy(name, "unknown");
 }
 
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 /*
  * To start MMU before DDR is available, we create MMU table in SRAM.
  * The base address of SRAM is CFG_SYS_FSL_OCRAM_BASE. We use three
@@ -655,7 +655,7 @@ void enable_caches(void)
 	icache_enable();
 	dcache_enable();
 }
-#endif	/* !CONFIG_IS_ENABLED(SYS_DCACHE_OFF) */
+#endif	/* !IS_ENABLED(CONFIG_SYS_DCACHE_OFF) */
 
 #ifdef CONFIG_TFABOOT
 enum boot_src __get_boot_src(u32 porsr1)
@@ -1252,7 +1252,7 @@ int timer_init(void)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(SYSRESET)
+#if !IS_ENABLED(CONFIG_SYSRESET)
 __efi_runtime_data u32 __iomem *rstcr = (u32 *)CFG_SYS_FSL_RST_ADDR;
 
 void __efi_runtime reset_cpu(void)
@@ -1562,7 +1562,7 @@ int dram_init_banksize(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP)
+#if IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP)
 void lmb_arch_add_memory(void)
 {
 	int i;

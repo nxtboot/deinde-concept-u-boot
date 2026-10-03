@@ -235,7 +235,7 @@ static int vbe_abrec_boot(struct udevice *dev, struct bootflow *bflow)
 			     bflow->fname, img);
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 static int vbe_abrec_read_all(struct udevice *dev, struct bootflow *bflow)
 {
 	struct abrec_priv *priv = dev_get_priv(dev);
@@ -250,7 +250,7 @@ static struct bootmeth_ops bootmeth_vbe_abrec_os_ops = {
 	.read_file	= bootmeth_common_read_file,
 	.read_bootflow	= vbe_abrec_read_bootflow,
 	.boot		= vbe_abrec_boot,
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 	.read_all	= vbe_abrec_read_all,
 #endif
 };
@@ -273,7 +273,7 @@ static int bootmeth_vbe_abrec_os_bind(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static const struct udevice_id vbe_abrec_os_ids[] = {
 	{ .compatible = "vbe,abrec-os" },
 	{ }

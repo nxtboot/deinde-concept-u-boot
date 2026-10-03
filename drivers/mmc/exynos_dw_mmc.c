@@ -326,7 +326,7 @@ static int exynos_dwmmc_of_to_plat(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static int exynos_dwmmc_get_best_clksmpl(u8 candidates)
 {
 	int i;
@@ -406,7 +406,7 @@ static int exynos_dwmmc_probe(struct udevice *dev)
 
 	/* Extend generic 'dm_dwmci_ops' with .execute_tuning implementation */
 	memcpy(&exynos_dwmmc_ops, &dm_dwmci_ops, sizeof(struct dm_mmc_ops));
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	exynos_dwmmc_ops.execute_tuning = exynos_dwmmc_execute_tuning;
 #endif
 

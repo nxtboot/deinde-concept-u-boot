@@ -93,7 +93,7 @@ int fpga_loadbitstream(int devnum, char *fpgadata, size_t size,
 			       __func__);
 			printf("%s: Bitstream ID %s, current device ID %d/%s\n",
 			       __func__, dataptr, devnum, xdesc->name);
-			if (!CONFIG_IS_ENABLED(ENV_SUPPORT) ||
+			if (!IS_ENABLED(CONFIG_ENV_SUPPORT) ||
 			    env_get_yesno("fpga_skip_idcheck") != 1)
 				return FPGA_FAIL;
 
@@ -180,7 +180,7 @@ int xilinx_loadfs(xilinx_desc *desc, const void *buf, size_t bsize,
 }
 #endif
 
-#if CONFIG_IS_ENABLED(FPGA_LOAD_SECURE)
+#if IS_ENABLED(CONFIG_FPGA_LOAD_SECURE)
 int xilinx_loads(xilinx_desc *desc, const void *buf, size_t bsize,
 		 struct fpga_secure_info *fpga_sec_info)
 {

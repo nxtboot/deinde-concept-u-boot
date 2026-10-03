@@ -25,7 +25,7 @@
  * The variables here must be stored in the data section since they are used
  * before the bss section is available.
  */
-#if !CONFIG_IS_ENABLED(XIP)
+#if !IS_ENABLED(CONFIG_XIP)
 u32 hart_lottery __section(".data") = 0;
 
 #ifdef CONFIG_AVAILABLE_HARTS
@@ -39,7 +39,7 @@ u32 available_harts_lock = 1;
 
 static inline bool supports_extension(char ext)
 {
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	return csr_read(CSR_MISA) & (1 << (ext - 'a'));
 #elif CONFIG_CPU
 	char sext[2] = {ext};
@@ -100,7 +100,7 @@ static inline bool supports_extension(char ext)
 
 static int riscv_cpu_probe(void)
 {
-	if (CONFIG_IS_ENABLED(CPU)) {
+	if (IS_ENABLED(CONFIG_CPU)) {
 		int ret;
 
 		/* probe cpus so that RISC-V timer can be bound */
@@ -118,7 +118,7 @@ EVENT_SPY_SIMPLE(EVT_DM_POST_INIT_R, riscv_cpu_probe);
  * there's nothing to do, since we just need to clear any existing IPIs, and
  * that is handled by the sending of an ipi itself.
  */
-#if CONFIG_IS_ENABLED(SMP)
+#if IS_ENABLED(CONFIG_SMP)
 static void dummy_pending_ipi_clear(ulong hart, ulong arg0, ulong arg1)
 {
 }
@@ -128,7 +128,7 @@ int riscv_cpu_setup(void)
 {
 	int __maybe_unused ret;
 
-	if (!CONFIG_IS_ENABLED(CPU))
+	if (!IS_ENABLED(CONFIG_CPU))
 		return 0;
 
 	/* Enable FPU */
@@ -137,7 +137,7 @@ int riscv_cpu_setup(void)
 		csr_write(CSR_FCSR, 0);
 	}
 
-	if (CONFIG_IS_ENABLED(RISCV_MMODE)) {
+	if (IS_ENABLED(CONFIG_RISCV_MMODE)) {
 		/*
 		 * Enable perf counters for cycle, time,
 		 * and instret counters only
@@ -160,7 +160,7 @@ int riscv_cpu_setup(void)
 #endif
 	}
 
-#if CONFIG_IS_ENABLED(SMP)
+#if IS_ENABLED(CONFIG_SMP)
 	ret = riscv_init_ipi();
 	if (ret)
 		return ret;
@@ -199,7 +199,7 @@ __weak void harts_early_init(void)
 {
 }
 
-#if !CONFIG_IS_ENABLED(SYSRESET)
+#if !IS_ENABLED(CONFIG_SYSRESET)
 void reset_cpu(void)
 {
 	printf("resetting ...\n");

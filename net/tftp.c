@@ -164,7 +164,7 @@ static inline int store_block(int block, uchar *src, unsigned int len)
 	ulong store_addr = tftp_load_addr + offset;
 	void *ptr;
 
-	if (CONFIG_IS_ENABLED(LMB)) {
+	if (IS_ENABLED(CONFIG_LMB)) {
 		if (store_addr < tftp_load_addr ||
 		    lmb_read_check(store_addr, len)) {
 			puts("\nTFTP error: ");

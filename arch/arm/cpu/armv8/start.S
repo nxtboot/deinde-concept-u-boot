@@ -57,7 +57,7 @@ reset:
 	b	save_boot_params
 .globl	save_boot_params_ret
 save_boot_params_ret:
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	# Keep passage information in case it is provided
 	cmp	x2, #0
 	bne	no_passage

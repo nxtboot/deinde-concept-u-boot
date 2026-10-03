@@ -18,7 +18,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 
 /*
  *  With 4k page granule, a virtual address is split into 4 lookup parts
@@ -1190,7 +1190,7 @@ int mmu_get_page_attrs(phys_addr_t addr, u64 *attrsp)
 	return -ENOENT;
 }
 
-#else	/* !CONFIG_IS_ENABLED(SYS_DCACHE_OFF) */
+#else	/* !IS_ENABLED(CONFIG_SYS_DCACHE_OFF) */
 
 /*
  * For SPL builds, we may want to not have dcache enabled. Any real U-Boot
@@ -1227,9 +1227,9 @@ void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 {
 }
 
-#endif	/* !CONFIG_IS_ENABLED(SYS_DCACHE_OFF) */
+#endif	/* !IS_ENABLED(CONFIG_SYS_DCACHE_OFF) */
 
-#if !CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_ICACHE_OFF)
 
 void icache_enable(void)
 {
@@ -1253,7 +1253,7 @@ void invalidate_icache_all(void)
 	__asm_invalidate_l3_icache();
 }
 
-#else	/* !CONFIG_IS_ENABLED(SYS_ICACHE_OFF) */
+#else	/* !IS_ENABLED(CONFIG_SYS_ICACHE_OFF) */
 
 void icache_enable(void)
 {
@@ -1272,7 +1272,7 @@ void invalidate_icache_all(void)
 {
 }
 
-#endif	/* !CONFIG_IS_ENABLED(SYS_ICACHE_OFF) */
+#endif	/* !IS_ENABLED(CONFIG_SYS_ICACHE_OFF) */
 
 int mmu_status(void)
 {

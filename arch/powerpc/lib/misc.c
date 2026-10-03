@@ -17,7 +17,7 @@
 
 int arch_misc_init(void)
 {
-	if (CONFIG_IS_ENABLED(CMD_BOOTM)) {
+	if (IS_ENABLED(CONFIG_CMD_BOOTM)) {
 		phys_size_t bootm_size;
 		ulong size, bootmap_base;
 

@@ -322,7 +322,7 @@ U_BOOT_DRIVER(serial_esp32) = {
 	.plat_auto = sizeof(struct esp32_uart_plat),
 	.probe = esp32_serial_probe,
 	.ops = &esp32_serial_ops,
-#if !CONFIG_IS_ENABLED(OF_CONTROL)
+#if !IS_ENABLED(CONFIG_OF_CONTROL)
 	.flags = DM_FLAG_PRE_RELOC,
 #endif
 };

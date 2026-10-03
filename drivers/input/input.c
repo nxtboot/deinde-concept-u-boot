@@ -724,7 +724,7 @@ int input_stdio_register(struct stdio_dev *dev)
 
 	error = stdio_register(dev);
 
-	if (!CONFIG_IS_ENABLED(ENV_SUPPORT))
+	if (!IS_ENABLED(CONFIG_ENV_SUPPORT))
 		return 0;
 
 	if (!error) {

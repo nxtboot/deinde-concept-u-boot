@@ -284,7 +284,7 @@ static int label_localboot(struct pxe_label *label)
  */
 static void label_boot_kaslrseed(struct pxe_context *ctx)
 {
-#if CONFIG_IS_ENABLED(DM_RNG)
+#if IS_ENABLED(CONFIG_DM_RNG)
 	int err;
 
 	err = fdt_check_header(ctx->fdt);
@@ -410,7 +410,7 @@ static void label_apply_fdtoverlays(struct pxe_context *ctx,
 static void label_boot_extension(struct pxe_context *ctx,
 				 struct pxe_label *label)
 {
-#if CONFIG_IS_ENABLED(SUPPORT_EXTENSION_SCAN)
+#if IS_ENABLED(CONFIG_SUPPORT_EXTENSION_SCAN)
 	const struct extension *extension;
 	struct fdt_header *working_fdt;
 	struct alist *extension_list;
@@ -679,7 +679,7 @@ static int label_run_boot(struct pxe_context *ctx, struct pxe_label *label,
 	 */
 	fmt = genimg_get_format_comp(buf);
 
-	if (CONFIG_IS_ENABLED(LIB_BOOTM) &&
+	if (IS_ENABLED(CONFIG_LIB_BOOTM) &&
 	    (fmt == IMAGE_FORMAT_FIT || fmt == IMAGE_FORMAT_LEGACY)) {
 		int states;
 
@@ -693,11 +693,11 @@ static int label_run_boot(struct pxe_context *ctx, struct pxe_label *label,
 			BOOTM_STATE_PRE_LOAD | BOOTM_STATE_FINDOTHER |
 			BOOTM_STATE_LOADOS);
 	/* Try booting an AArch64 Linux kernel image */
-	} else if (CONFIG_IS_ENABLED(LIB_BOOTI) && fmt == IMAGE_FORMAT_BOOTI) {
+	} else if (IS_ENABLED(CONFIG_LIB_BOOTI) && fmt == IMAGE_FORMAT_BOOTI) {
 		log_debug("using booti\n");
 		ret = booti_run(&bmi);
 	/* Try booting a Image */
-	} else if (CONFIG_IS_ENABLED(LIB_BOOTZ)) {
+	} else if (IS_ENABLED(CONFIG_LIB_BOOTZ)) {
 		log_debug("using bootz\n");
 		ret = bootz_run(&bmi);
 	/* Try booting an x86_64 Linux kernel image */

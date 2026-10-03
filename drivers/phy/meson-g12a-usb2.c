@@ -154,11 +154,11 @@ enum meson_soc_id {
 
 struct phy_meson_g12a_usb2_priv {
 	struct regmap		*regmap;
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct clk		clk;
 #endif
 	struct reset_ctl	reset;
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 	struct power_domain pwrdm;
 #endif
 	int soc_id;
@@ -171,7 +171,7 @@ static int phy_meson_g12a_usb2_init(struct phy *phy)
 	u32 value;
 	int ret;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_enable(&priv->clk);
 	if (ret && ret != -ENOSYS && ret != -ENOTSUPP) {
 		pr_err("failed to enable PHY clock\n");
@@ -286,7 +286,7 @@ static int phy_meson_g12a_usb2_exit(struct phy *phy)
 	struct phy_meson_g12a_usb2_priv *priv = dev_get_priv(dev);
 	int ret;
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	clk_disable(&priv->clk);
 #endif
 
@@ -325,7 +325,7 @@ int meson_g12a_usb2_phy_probe(struct udevice *dev)
 		return ret;
 	}
 
-#if CONFIG_IS_ENABLED(POWER_DOMAIN)
+#if IS_ENABLED(CONFIG_POWER_DOMAIN)
 	ret = power_domain_get(dev, &priv->pwrdm);
 	if (ret < 0 && ret != -ENODEV && ret != -ENOENT) {
 		pr_err("failed to get power domain : %d\n", ret);
@@ -341,7 +341,7 @@ int meson_g12a_usb2_phy_probe(struct udevice *dev)
 	}
 #endif
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	ret = clk_get_by_index(dev, 0, &priv->clk);
 	if (ret < 0)
 		return ret;
