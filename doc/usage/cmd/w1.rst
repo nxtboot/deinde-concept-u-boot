@@ -1,0 +1,120 @@
+.. SPDX-License-Identifier: GPL-2.0+
+
+.. index::
+   single: w1 (command)
+
+w1 command
+==========
+
+Synopsis
+--------
+
+::
+
+    w1 bus
+    w1 read [<bus> [<dev> [<offset> [<length>]]]]
+
+Description
+-----------
+
+The w1 command gives access to devices on a Dallas 1-Wire bus. Such a bus
+carries both power and data on a single wire, and is used for small EEPROMs
+and temperature sensors.
+
+Devices are found when the bus is probed: U-Boot walks the wire, reads the
+64-bit ROM id of each device it finds and binds a driver for the family code
+that id starts with. A device which also appears in the devicetree is matched
+to its node rather than being bound afresh.
+
+w1 bus
+~~~~~~
+
+Show bus 0 and the devices on it. The bus line gives its sequence number, its
+name in the driver model tree and whether it is active, meaning probed. Each
+device line gives its name, its sequence number, the uclass of the driver bound
+to it and its family code.
+
+Despite the help text saying 'all', only bus 0 is shown; a board with more
+than one 1-Wire bus has no way to list the others.
+
+w1 read
+~~~~~~~
+
+Read from an EEPROM on the bus and print the bytes as hexadecimal, with no
+separators and no trailing newline of their own.
+
+All four arguments are decimal, not hexadecimal, and each may be left out to
+take its default.
+
+bus
+    bus number, defaulting to 0
+
+dev
+    device number on that bus, counting from 0 in the order the devices were
+    found, defaulting to 0
+
+offset
+    offset within the device to start reading from, defaulting to 0
+
+length
+    number of bytes to read, defaulting to 512, which is also the most that
+    may be asked for
+
+Only a device whose driver is in the w1_eeprom uclass can be read; anything
+else is refused, since the command has no way to know how to talk to it.
+
+Example
+-------
+
+This shows the bus on sandbox, which has a single emulated EEPROM behind a
+GPIO-driven bus::
+
+    => w1 bus
+    Bus 0:  onewire  (active)
+            sandbox_eeprom@0 (0) uclass w1_eeprom : family 0x0
+
+The family code is 0 because the emulated GPIO returns no ROM id, so nothing
+was read from the wire. For the same reason a read fails::
+
+    => w1 read
+    error reading device sandbox_eeprom@0
+
+A bus which is not there, or a device number past the end of the bus, is
+reported before anything is read::
+
+    => w1 read 1
+    one wire interface not found
+    => w1 read 0 1
+    invalid dev
+
+The length is checked first of all, so it is refused even where there is no
+bus::
+
+    => w1 read 0 0 0 513
+    len needs to be <= 512
+
+Configuration
+-------------
+
+The command is only available if CONFIG_CMD_W1=y, which needs CONFIG_W1=y and
+CONFIG_W1_EEPROM=y along with a driver for the bus. Sandbox drives its bus
+through CONFIG_W1_GPIO=y and has an emulated EEPROM behind it, declared in
+sandbox.dtsi; the test devicetree has no 1-Wire bus at all.
+
+Return value
+------------
+
+The return value $? is 0 (true) if the bus was shown or the bytes were read,
+1 (false) otherwise: no such bus, no such device, a device which is not an
+EEPROM, a length above 512, or a read which fails.
+
+A sub-command which is not bus or read, or no sub-command at all, gives the
+usage message instead.
+
+See also
+--------
+
+* :doc:`i3c<i3c>` for the same sort of access to devices on an I3C bus
+* :doc:`sspi<sspi>` for sending bytes to a device on a SPI bus by hand
+* :doc:`dm<dm>` for the driver model tree, which shows the bus as the parent
+  of the devices found on it
