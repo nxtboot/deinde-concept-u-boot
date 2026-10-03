@@ -2485,7 +2485,7 @@ int initf_malloc(void)
 {
 #if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	assert(gd->malloc_base);	/* Set up by crt0.S */
-	gd->malloc_limit = CONFIG_VAL(SYS_MALLOC_F_LEN);
+	gd->malloc_limit = CONFIG_SYS_MALLOC_F_LEN;
 	gd->malloc_ptr = 0;
 #endif
 

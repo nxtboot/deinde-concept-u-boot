@@ -693,13 +693,13 @@ int fit_image_get_data(const void *fit, int noffset, const void **data,
 			if (len > max_offset - offset
 			/*
 			 * #if (not a runtime if) is required: FIT_SIGNATURE_MAX_SIZE
-			 * depends on FIT_SIGNATURE, so CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE)
+			 * depends on FIT_SIGNATURE, so CONFIG_FIT_SIGNATURE_MAX_SIZE
 			 * is undefined when signing is disabled and referencing it
 			 * here would fail to compile.
 			 */
 #if IS_ENABLED(CONFIG_FIT_SIGNATURE)
-			    || offset > CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE) ||
-			    len > CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE) - offset
+			    || offset > CONFIG_FIT_SIGNATURE_MAX_SIZE ||
+			    len > CONFIG_FIT_SIGNATURE_MAX_SIZE - offset
 #endif
 			) {
 				printf("FIT external data is out of bounds (offset=%d, size=%d)\n",

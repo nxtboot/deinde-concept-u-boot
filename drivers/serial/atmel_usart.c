@@ -316,7 +316,7 @@ U_BOOT_DRIVER(serial_atmel) = {
 #ifdef CONFIG_DEBUG_UART_ATMEL
 static inline void _debug_uart_init(void)
 {
-	atmel_usart3_t *usart = (atmel_usart3_t *)CONFIG_VAL(DEBUG_UART_BASE);
+	atmel_usart3_t *usart = (atmel_usart3_t *)CONFIG_DEBUG_UART_BASE;
 
 	if (IS_ENABLED(CONFIG_DEBUG_UART_SKIP_INIT))
 		return;
@@ -326,7 +326,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int ch)
 {
-	atmel_usart3_t *usart = (atmel_usart3_t *)CONFIG_VAL(DEBUG_UART_BASE);
+	atmel_usart3_t *usart = (atmel_usart3_t *)CONFIG_DEBUG_UART_BASE;
 
 	while (!(readl(&usart->csr) & USART3_BIT(TXRDY)))
 		;

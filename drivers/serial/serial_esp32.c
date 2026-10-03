@@ -342,7 +342,7 @@ esp32_debug_uart_data(void)
 
 static inline void _debug_uart_init(void)
 {
-	void __iomem *base = (void __iomem *)CONFIG_VAL(DEBUG_UART_BASE);
+	void __iomem *base = (void __iomem *)CONFIG_DEBUG_UART_BASE;
 	const struct esp32_uart_soc_data *data = esp32_debug_uart_data();
 
 	esp32_uart_setbrg(base, data,
@@ -353,7 +353,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int ch)
 {
-	void __iomem *base = (void __iomem *)CONFIG_VAL(DEBUG_UART_BASE);
+	void __iomem *base = (void __iomem *)CONFIG_DEBUG_UART_BASE;
 	const struct esp32_uart_soc_data *data =
 			esp32_debug_uart_data();
 

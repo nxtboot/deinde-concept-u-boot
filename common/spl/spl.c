@@ -532,7 +532,7 @@ static int spl_common_init(bool setup_malloc)
 #ifdef CFG_MALLOC_F_ADDR
 		gd->malloc_base = CFG_MALLOC_F_ADDR;
 #endif
-		gd->malloc_limit = CONFIG_VAL(SYS_MALLOC_F_LEN);
+		gd->malloc_limit = CONFIG_SYS_MALLOC_F_LEN;
 		gd->malloc_ptr = 0;
 	}
 #endif
@@ -951,17 +951,17 @@ __weak void spl_relocate_stack_check(void)
 {
 #if IS_ENABLED(CONFIG_SYS_REPORT_STACK_F_USAGE)
 	ulong init_sp = gd->start_addr_sp;
-	ulong stack_bottom = init_sp - CONFIG_VAL(SIZE_LIMIT_PROVIDE_STACK);
+	ulong stack_bottom = init_sp - CONFIG_SIZE_LIMIT_PROVIDE_STACK;
 	u8 *ptr = (u8 *)stack_bottom;
 	ulong i;
 
-	for (i = 0; i < CONFIG_VAL(SIZE_LIMIT_PROVIDE_STACK); i++) {
-		if (*ptr != CONFIG_VAL(SYS_STACK_F_CHECK_BYTE))
+	for (i = 0; i < CONFIG_SIZE_LIMIT_PROVIDE_STACK; i++) {
+		if (*ptr != CONFIG_SYS_STACK_F_CHECK_BYTE)
 			break;
 		ptr++;
 	}
 	printf("SPL initial stack usage: %lu bytes\n",
-	       CONFIG_VAL(SIZE_LIMIT_PROVIDE_STACK) - i);
+	       CONFIG_SIZE_LIMIT_PROVIDE_STACK - i);
 #endif
 }
 

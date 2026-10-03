@@ -167,7 +167,7 @@ int video_reserve(ulong *addrp)
 
 	/* Allocate space for PCI video devices in case there were not bound */
 	if (*addrp == gd->video_top)
-		*addrp -= CONFIG_VAL(VIDEO_PCI_DEFAULT_FB_SIZE);
+		*addrp -= CONFIG_VIDEO_PCI_DEFAULT_FB_SIZE;
 
 	gd->video_bottom = *addrp;
 	debug("Video frame buffers from %lx to %lx\n", gd->video_bottom,

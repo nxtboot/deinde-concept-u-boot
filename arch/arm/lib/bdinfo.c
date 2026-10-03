@@ -60,7 +60,7 @@ void arch_print_bdinfo(void)
 #endif
 #if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	printf("Early malloc usage: %x / %x\n", gd->malloc_ptr,
-	       CONFIG_VAL(SYS_MALLOC_F_LEN));
+	       CONFIG_SYS_MALLOC_F_LEN);
 #endif
 #ifdef CONFIG_ARM64
 	lprint_num_l("CurrentEL", current_el());

@@ -128,7 +128,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int ch)
 {
-	void __iomem *base = (void __iomem *)CONFIG_VAL(DEBUG_UART_BASE);
+	void __iomem *base = (void __iomem *)CONFIG_DEBUG_UART_BASE;
 
 	__raw_writel(ch, base + GOLDFISH_TTY_PUT_CHAR);
 }

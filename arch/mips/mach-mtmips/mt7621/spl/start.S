@@ -39,7 +39,7 @@
 	move	k0, sp			# save gd pointer
 #if IS_ENABLED(CONFIG_SYS_MALLOC_F) && \
     !IS_ENABLED(CONFIG_INIT_STACK_WITHOUT_MALLOC_F)
-	li	t2, CONFIG_VAL(SYS_MALLOC_F_LEN)
+	li	t2, CONFIG_SYS_MALLOC_F_LEN
 	PTR_SUBU \
 		sp, sp, t2		# reserve space for early malloc
 	and	sp, sp, t0		# force 16 byte alignment

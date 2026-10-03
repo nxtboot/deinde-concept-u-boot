@@ -34,7 +34,7 @@
 
 #define __config_val(cfg) CONFIG_ ## cfg
 
-#define CONFIG_VAL(option)  __config_val(option)
+#define CONFIG_option  __config_val(option)
 
 /*
  * Count number of arguments to a variadic macro. Currently only need

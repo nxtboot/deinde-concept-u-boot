@@ -382,7 +382,7 @@ static int setup_ram_config(void)
 	 * memory size from the SDRAM controller setup will have to
 	 * get fixed.
 	 */
-#if CONFIG_VAL(SYS_MEM_TOP_HIDE)
+#if CONFIG_SYS_MEM_TOP_HIDE
 	gd->ram_top -= CONFIG_SYS_MEM_TOP_HIDE;
 	gd->ram_size -= CONFIG_SYS_MEM_TOP_HIDE;
 #endif

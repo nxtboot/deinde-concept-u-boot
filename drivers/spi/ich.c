@@ -1059,7 +1059,7 @@ static inline void em100_ich_wait(struct ich9_spi_regs *regs, u8 mask,
 static inline void _debug_uart_puts(const char *str, int len)
 {
 	struct ich9_spi_regs *regs =
-		(struct ich9_spi_regs *)CONFIG_VAL(DEBUG_UART_BASE);
+		(struct ich9_spi_regs *)CONFIG_DEBUG_UART_BASE;
 	u8 buf[EM100_HDR_LEN + EM100_ICH_MAX_DATA];
 
 	while (len > 0) {

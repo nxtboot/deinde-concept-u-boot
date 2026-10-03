@@ -103,7 +103,7 @@ _start:
  */
 call_board_init_f:
 #if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
-	li	t0, CONFIG_VAL(STACK)
+	li	t0, CONFIG_STACK
 #else
 	li	t0, SYS_INIT_SP_ADDR
 #endif

@@ -43,9 +43,9 @@ static int parser_string_to_gd_flags(const char *parser)
 static int gd_flags_to_parser_config(int flag)
 {
 	if (gd->flags & GD_FLG_HUSH_OLD_PARSER)
-		return CONFIG_VAL(HUSH_OLD_PARSER);
+		return CONFIG_HUSH_OLD_PARSER;
 	if (gd->flags & GD_FLG_HUSH_MODERN_PARSER)
-		return CONFIG_VAL(HUSH_MODERN_PARSER);
+		return CONFIG_HUSH_MODERN_PARSER;
 	return -1;
 }
 

@@ -46,11 +46,11 @@ __weak void board_init_f_init_stack_protection(void)
 {
 #if IS_ENABLED(CONFIG_SYS_REPORT_STACK_F_USAGE)
 	ulong stack_bottom = gd->start_addr_sp -
-		CONFIG_VAL(SIZE_LIMIT_PROVIDE_STACK);
+		CONFIG_SIZE_LIMIT_PROVIDE_STACK;
 
 	/* substact some safety margin (0x20) since stack is in use here */
-	memset((void *)stack_bottom, CONFIG_VAL(SYS_STACK_F_CHECK_BYTE),
-	       CONFIG_VAL(SIZE_LIMIT_PROVIDE_STACK) - 0x20);
+	memset((void *)stack_bottom, CONFIG_SYS_STACK_F_CHECK_BYTE,
+	       CONFIG_SIZE_LIMIT_PROVIDE_STACK - 0x20);
 #endif
 }
 
@@ -83,7 +83,7 @@ ulong board_init_f_alloc_reserve(ulong top)
 	/* Reserve early malloc arena */
 #ifndef CFG_MALLOC_F_ADDR
 #if IS_ENABLED(CONFIG_SYS_MALLOC_F)
-	top -= CONFIG_VAL(SYS_MALLOC_F_LEN);
+	top -= CONFIG_SYS_MALLOC_F_LEN;
 #endif
 #endif
 	/* LAST : reserve GD (rounded up to a multiple of 16 bytes) */
@@ -166,7 +166,7 @@ void board_init_f_init_reserve(ulong base)
 	/* go down one 'early malloc arena' */
 	gd->malloc_base = base;
 #if IS_ENABLED(CONFIG_ZERO_MEM_BEFORE_USE)
-	memset((void *)base, '\0', CONFIG_VAL(SYS_MALLOC_F_LEN));
+	memset((void *)base, '\0', CONFIG_SYS_MALLOC_F_LEN);
 #endif
 #endif
 

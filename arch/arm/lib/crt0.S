@@ -101,7 +101,7 @@ ENTRY(_main)
  */
 
 #if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
-	ldr	r0, =CONFIG_VAL(STACK)
+	ldr	r0, =CONFIG_STACK
 #else
 	ldr	r0, =(SYS_INIT_SP_ADDR)
 #endif

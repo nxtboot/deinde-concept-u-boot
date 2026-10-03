@@ -167,7 +167,7 @@ DM_DRIVER_ALIAS(serial_uartlite, xlnx_xps_uartlite_1_00_a)
 
 static inline void _debug_uart_init(void)
 {
-	struct uartlite *regs = (struct uartlite *)CONFIG_VAL(DEBUG_UART_BASE);
+	struct uartlite *regs = (struct uartlite *)CONFIG_DEBUG_UART_BASE;
 	int ret;
 
 	uart_out32(&regs->control, 0);
@@ -183,7 +183,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int ch)
 {
-	struct uartlite *regs = (struct uartlite *)CONFIG_VAL(DEBUG_UART_BASE);
+	struct uartlite *regs = (struct uartlite *)CONFIG_DEBUG_UART_BASE;
 
 	while (uart_in32(&regs->status) & SR_TX_FIFO_FULL)
 		;

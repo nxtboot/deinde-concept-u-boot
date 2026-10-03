@@ -229,8 +229,8 @@ U_BOOT_DRIVER(serial_msm) = {
 #ifdef CONFIG_DEBUG_UART_MSM
 
 static struct msm_serial_data init_serial_data = {
-	.base = CONFIG_VAL(DEBUG_UART_BASE),
-	.clk_rate = CONFIG_VAL(DEBUG_UART_CLOCK),
+	.base = CONFIG_DEBUG_UART_BASE,
+	.clk_rate = CONFIG_DEBUG_UART_CLOCK,
 };
 
 #include <debug_uart.h>

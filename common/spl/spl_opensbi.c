@@ -70,7 +70,7 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	 * the error. This applies both to Falcon mode (loading Linux) and to
 	 * loading U-Boot proper.
 	 */
-#if CONFIG_VAL(PAYLOAD_ARGS_ADDR)
+#if CONFIG_PAYLOAD_ARGS_ADDR
 	memcpy((void *)CONFIG_SPL_PAYLOAD_ARGS_ADDR, spl_image->fdt_addr,
 	       fdt_totalsize(spl_image->fdt_addr));
 	spl_image->fdt_addr = map_sysmem(CONFIG_SPL_PAYLOAD_ARGS_ADDR, 0);

@@ -299,7 +299,7 @@ static inline struct stm32_uart_info *_debug_uart_info(void)
 
 static inline void _debug_uart_init(void)
 {
-	void __maybe_unused __iomem *base = (void __iomem *)CONFIG_VAL(DEBUG_UART_BASE);
+	void __maybe_unused __iomem *base = (void __iomem *)CONFIG_DEBUG_UART_BASE;
 	struct stm32_uart_info *uart_info __maybe_unused = _debug_uart_info();
 
 	/*
@@ -316,7 +316,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int c)
 {
-	void __iomem *base = (void __iomem *)CONFIG_VAL(DEBUG_UART_BASE);
+	void __iomem *base = (void __iomem *)CONFIG_DEBUG_UART_BASE;
 	struct stm32_uart_info *uart_info = _debug_uart_info();
 
 	while (_stm32_serial_putc(base, uart_info, c) == -EAGAIN)

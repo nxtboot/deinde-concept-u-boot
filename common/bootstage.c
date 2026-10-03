@@ -30,7 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 int bootstage_unstash_err __section(".data");
 
 enum {
-	RECORD_COUNT = CONFIG_VAL(BOOTSTAGE_RECORD_COUNT),
+	RECORD_COUNT = CONFIG_BOOTSTAGE_RECORD_COUNT,
 };
 
 struct bootstage_data {
