@@ -113,6 +113,7 @@ obj-$(CONFIG_CMD_IO) += io.o
 endif
 obj-$(CONFIG_CMD_IOTRACE) += iotrace.o
 obj-$(CONFIG_CMD_MBR) += mbr.o
+obj-$(CONFIG_CMD_MOUSE) += mouse.o
 obj-$(CONFIG_CMD_PINMUX) += pinmux.o
 obj-$(CONFIG_CMD_PMC) += pmc.o
 obj-$(CONFIG_CMD_PWM) += pwm.o
@@ -146,3 +147,6 @@ obj-$(CONFIG_CMD_UNZIP) += unzip.o
 endif
 obj-$(CONFIG_CMD_LZMADEC) += lzmadec.o
 obj-$(CONFIG_CMD_UNLZ4) += unlz4.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_W1) += w1.o
+endif

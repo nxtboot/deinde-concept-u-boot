@@ -375,3 +375,10 @@ This shows dumping the cedit::
         dims: 0x0
         Text: str_id 41 font_name '(default)' font_size 0
             str ''
+
+See also
+--------
+
+* :doc:`mouse<mouse>` for showing the mouse events the editor responds to
+* :doc:`bootmenu<bootmenu>` for a simpler menu which needs no expo description
+* :doc:`font<font>` for the fonts the editor draws its text with

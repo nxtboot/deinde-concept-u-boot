@@ -126,3 +126,5 @@ See also
 * :doc:`bmp<bmp>` for drawing a BMP image on the display
 * :doc:`2048<2048>` for a game which needs an ANSI terminal rather than a
   display
+* :doc:`mouse<mouse>` for the pointer position, which is measured against the
+  size of the display

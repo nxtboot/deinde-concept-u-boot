@@ -1508,6 +1508,7 @@ config CMD_W1
 	depends on W1 && W1_EEPROM
 	default y if W1
 	bool "w1 - Support for Dallas 1-Wire protocol"
+	select GETOPT
 	help
 	  Dallas 1-wire protocol support
 
@@ -3378,6 +3379,7 @@ config CMD_MALLOC_LOG
 config CMD_MOUSE
 	bool "mouse - Show mouse input"
 	default y if MOUSE
+	select GETOPT
 	help
 	  This shows the data produced by a mouse. If a mouse device is
 	  available records are printed when the mouse is moved. This can be

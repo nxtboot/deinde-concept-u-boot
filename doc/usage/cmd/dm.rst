@@ -529,3 +529,5 @@ See also
   works
 * :doc:`ethsw<ethsw>` for configuring an Ethernet switch, whose driver
   registers its sub-commands directly rather than through a uclass
+* :doc:`w1<w1>` for a 1-Wire bus, whose devices are bound when the bus is
+  probed rather than from the devicetree
