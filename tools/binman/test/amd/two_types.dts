@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0+
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	binman {
+		amd-fw {
+			amd,soc = "turin";
+			amd,spi-read-mode = <0>;
+			amd,spi-speed = <0>;
+
+			u-boot {
+				amd,psp-type = <0x01>;
+				amd,bios-type = <0x62>;
+			};
+		};
+	};
+};

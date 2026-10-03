@@ -141,29 +141,36 @@ the serial port. For bring-up there are 'smn' (System Management Network
 access), 'mca' (machine-check banks), 'fch' (the FCH's interrupt routing
 and power-management registers), 'ioapic' and 'pci intr'.
 
-The image goes into the PSP directory in place of coreboot's bootblock,
-using tools from the Dasharo coreboot build (build/util/cbfstool/amdcompress
-and build/util/amdfwtool/amdfwtool) and the same amdfwtool arguments that
-build uses (get them with 'make -n -B V=1 build/amdfw.rom'), changing only
-the image, its destination and its size::
+Binman builds the whole flash image as ``u-boot.rom`` with an ``amd-fw`` entry
+for the firmware which the PSP reads. That starts with the Embedded Firmware
+Structure at offset ``0x20000`` and holds the PSP and BIOS directories, AMD's
+firmware, the board's configuration and the BIOS image, compressed. This is the
+same layout that coreboot's amdfwtool produces for Dasharo, byte for byte. The
+image also holds the regions which the PSP keeps its own data in. The AMD
+firmware and the board's configuration are not part of U-Boot, so binman needs
+these in its input directories, which are set with ``BINMAN_INDIRS`` in the
+environment:
 
-   amdcompress --infile u-boot-mz33.bin --outfile u-boot.img --compress \
-      --maxsize 0x100000
-   amdfwtool ...other arguments as in the coreboot build... \
-      --bios-bin u-boot.img --bios-bin-dest 0x7150000 \
-      --bios-uncomp-size 0x100000 --output amdfw.rom
+* AMD's firmware for Turin, from ``3rdparty/blobs/soc/amd/Turin`` in Dasharo's
+  coreboot tree (``Turin.zip`` from the Dasharo release directory), as listed
+  in ``arch/x86/dts/turin-psp.dtsi``
+* the board's configuration for the ABL in the files ``data_rec.apcb`` and
+  ``data_rec1.apcb`` and ``data_rec2.apcb`` along with ``early_vga.bin`` from
+  ``src/mainboard/gigabyte/mz33-ar1`` in the same tree
+* the microcode patches in the ``cpu_microcode_<rev>.bin`` files, as carried by
+  the Dasharo image
+* optionally a saved copy of the ABL's memory context in ``apob-nv.bin`` so that
+  the first boot after flashing does not retrain the memory (see above)
 
-Then replace the PSP directory in a flash image built for the board, at
-the position the coreboot build put it, removing the coreboot stages and
-payload which are no longer used (and make room for the larger image)::
+For example::
 
-   cbfstool coreboot.rom remove -n apu/amdfw
-   cbfstool coreboot.rom remove -n fallback/payload
-   cbfstool coreboot.rom remove -n fallback/ramstage
-   cbfstool coreboot.rom remove -n fallback/romstage
-   cbfstool coreboot.rom add -f amdfw.rom -n apu/amdfw -t amdfw -b 0x17800
+   export BINMAN_INDIRS="/path/to/coreboot/3rdparty/blobs/soc/amd/Turin \
+      /path/to/coreboot/src/mainboard/gigabyte/mz33-ar1 /path/to/ucode"
+   make gigabyte_mz33_ar1_defconfig
+   make -j$(nproc)
 
-The result is flashed as above. Note that the destination plus the size
+The result is flashed as above. The BIOS image is also written to the file
+``u-boot-mz33.bin`` on its own. Note that the destination plus the size
 must end on a 64KB boundary and the reset vector must be the last 16 bytes
 of the image, which is what the defconfig's CONFIG_TEXT_BASE,
 CONFIG_RESET_SEG_START, CONFIG_SYS_X86_START16 and CONFIG_RESET_VEC_LOC
@@ -243,28 +250,12 @@ boots through SPL: the BIOS image holds SPL, which opens the path to the UART,
 takes the TSC rate and memory size from the MSRs, then copies U-Boot proper
 from the flash, which is mapped just below 4GB, into DRAM and starts it in
 64-bit mode. U-Boot proper reads the microcode patches straight from the
-flash. The build produces two files:
-
-``u-boot-mz33.bin``
-   the 1MB BIOS image holding SPL, which goes into the PSP directory as above,
-   laid out for its DRAM address given by ``CONFIG_SPL_TEXT_BASE``
-
-``u-boot-mz33-flash.bin``
-   the BIOS image again, then U-Boot proper and the microcode patches, laid
-   out for its address in the memory-mapped flash given by
-   ``CONFIG_TURIN_IMAGE_ADDR``; binman writes U-Boot proper's address into
-   SPL, so the two must stay together in this image, even though the copy of
-   the BIOS image in it is not used
-
-Write ``u-boot-mz33-flash.bin`` into the FW_MAIN_A region, which holds the
-first verified-boot copy of coreboot and is not used by the native build. It
-starts at flash offset ``0x810000`` and the board maps it at ``0xff810000``
-which is the default for ``CONFIG_TURIN_IMAGE_ADDR`` too. The region is a
-CBFS, so ``cbfstool`` needs its ``-F`` option to write it as a raw region, and
-the file must first be padded with ``0xff`` bytes to the size of the region,
-which is ``0x2eff00`` bytes::
-
-   cbfstool coreboot.rom write -F -r FW_MAIN_A -f u-boot-mz33-flash-padded.bin
+flash. Binman puts the BIOS image in the PSP directory as above, with U-Boot
+proper and the microcode patches after the PSP's firmware in ``u-boot.rom``
+whose first 16MB the board maps at ``0xff000000`` which is the address given by
+``CONFIG_TURIN_IMAGE_ADDR`` here. Binman also writes U-Boot proper's address
+into SPL. The BIOS image is written to ``u-boot-mz33.bin`` too, laid out for the
+DRAM address given by ``CONFIG_SPL_TEXT_BASE`` in this case.
 
 The board then boots as quickly as the native build: U-Boot proper starts
 about 1.6s after SPL, openSIL's first timepoint takes 2.4s and Ubuntu reaches

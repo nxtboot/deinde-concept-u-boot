@@ -31,10 +31,9 @@ config TEXT_BASE
 config XIP_ROM_SIZE
 	default 0x1000000 if SPL
 
-# With SPL, FW_MAIN_A in the Dasharo flash map, which the native build does
-# not need for its own purpose, since it has no verified-boot RW slots
+# With SPL, the flash image, whose first 16MB is mapped below 4GB
 config TURIN_IMAGE_ADDR
-	default 0xff810000 if SPL
+	default 0xff000000 if SPL
 	default TEXT_BASE
 
 config RESET_SEG_START

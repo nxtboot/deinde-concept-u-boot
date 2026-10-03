@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * The microcode patches for each revision of Turin, from AMD as the Dasharo
+ * image carries them. These are binman entries, included in the image whose
+ * layout U-Boot reads, so that it can find the patch for its processor by
+ * name.
+ *
+ * Copyright 2026 Simon Glass <sjg@chromium.org>
+ */
+
+amd-ucode-b000 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b000.bin";
+	align = <16>;
+};
+
+amd-ucode-b010 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b010.bin";
+	align = <16>;
+};
+
+amd-ucode-b020 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b020.bin";
+	align = <16>;
+};
+
+amd-ucode-b021 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b021.bin";
+	align = <16>;
+};
+
+amd-ucode-b100 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b100.bin";
+	align = <16>;
+};
+
+amd-ucode-b110 {
+	type = "blob-ext";
+	filename = "cpu_microcode_b110.bin";
+	align = <16>;
+};

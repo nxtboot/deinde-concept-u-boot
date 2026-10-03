@@ -2,20 +2,26 @@
 /*
  * Copyright 2026 Simon Glass <sjg@chromium.org>
  *
+ * Binman produces u-boot.rom, an image of the whole 32MB flash. It holds the
+ * firmware which the PSP reads, starting with the Embedded Firmware
+ * Structure at 0x20000, and the PSP's non-volatile regions. The first 16MB
+ * of the flash is mapped at 0xff000000.
+ *
  * The PSP decompresses the BIOS image into DRAM and starts the CPU at the
  * reset vector in its last 16 bytes, so that image is laid out at its DRAM
  * address rather than at the top of 4GB. The PSP only starts an image of up
  * to 1MB.
  *
  * Without SPL, the BIOS image is the whole of U-Boot, with the microcode
- * patches, at the address given by CONFIG_TEXT_BASE
+ * patches, at the address given by CONFIG_TEXT_BASE. It is built as an image
+ * of its own, u-boot-mz33.bin, which comes first so that U-Boot reads its
+ * layout to find the microcode.
  *
  * With SPL, the BIOS image holds just SPL, at the address given by
  * CONFIG_SPL_TEXT_BASE, and U-Boot proper and the microcode patches stay in
- * the flash, which is mapped in memory, where SPL copies U-Boot from. They
- * are in the same image as the BIOS image so that binman can tell SPL where
- * U-Boot is, but only the BIOS image's own file goes into the PSP directory:
- * that is u-boot-mz33.bin
+ * the flash, where SPL copies U-Boot from. Binman tells SPL where U-Boot is
+ * and U-Boot reads the flash image's layout to find the microcode. The BIOS
+ * image is still written to u-boot-mz33.bin
  */
 
 #include <config.h>
@@ -25,99 +31,203 @@
  * every devicetree in the directory
  */
 #ifdef CONFIG_TARGET_MZ33_AR1
+#include "turin-psp.dtsi"
+
+/* Where the PSP's firmware and its non-volatile regions go in the flash */
+#define MZ33_PSP_OFFSET		0x20000
+#define MZ33_SEV_NVRAM		0xe48000
+#define MZ33_SEV_NVRAM_SIZE	0x8000
+#define MZ33_RPMC_NVRAM		0xe70000
+#define MZ33_RPMC_NVRAM_SIZE	0x40000
+#define MZ33_APOB_NV		0xf30000
+#define MZ33_APOB_NV_SIZE	0xd0000
+
+#ifdef CONFIG_SPL
+#define MZ33_BIOS_ADDR		CONFIG_SPL_TEXT_BASE
+#else
+#define MZ33_BIOS_ADDR		CONFIG_TEXT_BASE
+#endif
+
 / {
 	binman {
-		pad-byte = <0xff>;
-		sort-by-offset;
-#ifdef CONFIG_SPL
-		filename = "u-boot-mz33-flash.bin";
-		skip-at-start = <CONFIG_TURIN_IMAGE_ADDR>;
-
-		bios {
-			type = "section";
-			filename = "u-boot-mz33.bin";
-			offset = <CONFIG_TURIN_IMAGE_ADDR>;
-			size = <(CONFIG_RESET_VEC_LOC + 0x10 -
-				 CONFIG_SPL_TEXT_BASE)>;
-			pad-byte = <0xff>;
-
-			/*
-			 * Offsets are from CONFIG_SPL_TEXT_BASE, where the PSP
-			 * puts the image. U-Boot's position is its address in
-			 * the flash
-			 */
-			u-boot-spl {
-				offset = <0>;
-				symbols-base = <0>;
-			};
-			x86-start16-spl {
-				offset = <(CONFIG_SYS_X86_START16 -
-					   CONFIG_SPL_TEXT_BASE)>;
-			};
-			/* padded, so that the file fills the section */
-			x86-reset16-spl {
-				offset = <(CONFIG_RESET_VEC_LOC -
-					   CONFIG_SPL_TEXT_BASE)>;
-				size = <0x10>;
-			};
-		};
-
-		u-boot {
-		};
-#else
-		filename = "u-boot-mz33.bin";
-		skip-at-start = <CONFIG_TEXT_BASE>;
-		size = <CONFIG_ROM_SIZE>;
-
-		u-boot {
-			offset = <CONFIG_TEXT_BASE>;
-		};
-#endif
+		multiple-images;
 
 		/*
-		 * The microcode patches for each processor revision, from AMD
-		 * as the Dasharo image carries them. Without SPL the PSP copies
-		 * them into DRAM with the rest of the image; with SPL they are
-		 * read from the flash
+		 * The board's own entries in the PSP and BIOS directories,
+		 * which follow Dasharo's coreboot port
 		 */
-		amd-ucode-b000 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b000.bin";
-			align = <16>;
+		mz33_psp: template-mz33-psp {
+			amd,spi-read-mode = <0>;
+			amd,spi-speed = <0>;
+			amd,espi-config = <0x0e 0xff 0xff 0xff>;
+
+			/* the board's configuration for the ABL */
+			apcb {
+				type = "blob-ext";
+				filename = "data_rec.apcb";
+				amd,bios-type = <0x68>;
+			};
+			apcb-1 {
+				type = "blob-ext";
+				filename = "data_rec1.apcb";
+				amd,bios-type = <0x68>;
+				amd,instance = <8>;
+			};
+			apcb-2 {
+				type = "blob-ext";
+				filename = "data_rec2.apcb";
+				amd,bios-type = <0x68>;
+				amd,instance = <9>;
+			};
+
+			early-vga {
+				type = "blob-ext";
+				filename = "early_vga.bin";
+				amd,bios-type = <0x69>;
+				amd,level = "2";
+			};
+
+			/* where the ABL writes its output in DRAM */
+			apob {
+				amd,bios-type = <0x61>;
+				amd,region = <0 0>;
+				amd,dest = /bits/ 64 <0x7010000>;
+			};
+
+			/* the ABL's saved memory-training data */
+			apob-nv {
+				amd,bios-type = <0x63>;
+				amd,region = <MZ33_APOB_NV MZ33_APOB_NV_SIZE>;
+				amd,writable;
+				amd,level = "2";
+			};
+
+			nv-store {
+				amd,bios-type = <0x6d>;
+				amd,region = <0 0>;
+				amd,writable;
+				amd,level = "2";
+			};
+
+			sev-nvram {
+				amd,psp-type = <0x38>;
+				amd,region = <MZ33_SEV_NVRAM MZ33_SEV_NVRAM_SIZE>;
+				amd,writable;
+			};
+
+			rpmc-nvram {
+				amd,psp-type = <0x54>;
+				amd,region = <MZ33_RPMC_NVRAM MZ33_RPMC_NVRAM_SIZE>;
+				amd,writable;
+				amd,level = "2";
+			};
 		};
-		amd-ucode-b010 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b010.bin";
-			align = <16>;
-		};
-		amd-ucode-b020 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b020.bin";
-			align = <16>;
-		};
-		amd-ucode-b021 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b021.bin";
-			align = <16>;
-		};
-		amd-ucode-b100 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b100.bin";
-			align = <16>;
-		};
-		amd-ucode-b110 {
-			type = "blob-ext";
-			filename = "cpu_microcode_b110.bin";
-			align = <16>;
-		};
+
 #ifndef CONFIG_SPL
-		x86-start16 {
-			offset = <CONFIG_SYS_X86_START16>;
-		};
-		x86-reset16 {
-			offset = <CONFIG_RESET_VEC_LOC>;
+		bios {
+			filename = "u-boot-mz33.bin";
+			pad-byte = <0xff>;
+			sort-by-offset;
+			skip-at-start = <CONFIG_TEXT_BASE>;
+			size = <CONFIG_ROM_SIZE>;
+
+			u-boot {
+				offset = <CONFIG_TEXT_BASE>;
+			};
+#include "turin-ucode.dtsi"
+			x86-start16 {
+				offset = <CONFIG_SYS_X86_START16>;
+			};
+			x86-reset16 {
+				offset = <CONFIG_RESET_VEC_LOC>;
+			};
 		};
 #endif
+
+		rom {
+			filename = "u-boot.rom";
+			size = <0x2000000>;
+			pad-byte = <0xff>;
+			sort-by-offset;
+
+			amd-fw {
+				offset = <MZ33_PSP_OFFSET>;
+				insert-template = <&turin_psp &mz33_psp>;
+
+				bios {
+					amd,bios-type = <0x62>;
+					amd,dest = /bits/ 64 <MZ33_BIOS_ADDR>;
+					amd,reset;
+					amd,copy;
+					amd,compress;
+#ifdef CONFIG_SPL
+					type = "section";
+					filename = "u-boot-mz33.bin";
+					size = <(CONFIG_RESET_VEC_LOC + 0x10 -
+						 CONFIG_SPL_TEXT_BASE)>;
+					pad-byte = <0xff>;
+
+					/*
+					 * Offsets are from CONFIG_SPL_TEXT_BASE,
+					 * where the PSP puts the image. U-Boot's
+					 * position is its address in the flash
+					 */
+					u-boot-spl {
+						offset = <0>;
+						symbols-base =
+							<CONFIG_TURIN_IMAGE_ADDR>;
+					};
+					x86-start16-spl {
+						offset = <(CONFIG_SYS_X86_START16 -
+							   CONFIG_SPL_TEXT_BASE)>;
+					};
+					/* padded, so that the file fills it */
+					x86-reset16-spl {
+						offset = <(CONFIG_RESET_VEC_LOC -
+							   CONFIG_SPL_TEXT_BASE)>;
+						size = <0x10>;
+					};
+#else
+					/* the image built above */
+					type = "blob";
+					filename = "u-boot-mz33.bin";
+#endif
+				};
+			};
+
+#ifdef CONFIG_SPL
+			u-boot {
+			};
+#include "turin-ucode.dtsi"
+#endif
+
+			sev-nvram {
+				type = "fill";
+				offset = <MZ33_SEV_NVRAM>;
+				size = <MZ33_SEV_NVRAM_SIZE>;
+				fill-byte = [ff];
+			};
+
+			rpmc-nvram {
+				type = "fill";
+				offset = <MZ33_RPMC_NVRAM>;
+				size = <MZ33_RPMC_NVRAM_SIZE>;
+				fill-byte = [ff];
+			};
+
+			/*
+			 * Saved memory-training data, if available, so that the
+			 * first boot does not train the memory from scratch,
+			 * which takes several minutes
+			 */
+			apob-nv {
+				type = "blob-ext";
+				filename = "apob-nv.bin";
+				offset = <MZ33_APOB_NV>;
+				size = <MZ33_APOB_NV_SIZE>;
+				optional;
+			};
+		};
 	};
 };
 #endif
