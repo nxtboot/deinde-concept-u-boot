@@ -78,6 +78,7 @@ ifdef CONFIG_CONSOLE_RECORD
 obj-$(CONFIG_CMD_MEMORY) += loop.o mm.o nm.o
 obj-$(CONFIG_LOOPW) += loopw.o
 ifdef CONFIG_SANDBOX
+obj-$(CONFIG_CMD_MTD) += mtd.o
 obj-$(CONFIG_CMD_MTDPARTS) += chpart.o mtdparts.o
 endif
 obj-$(CONFIG_CMD_MX_CYCLIC) += mdc.o mwc.o
