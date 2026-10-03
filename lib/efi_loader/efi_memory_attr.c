@@ -118,7 +118,10 @@ out:
 /**
  * change_attributes() - Set or clear attributes on a range
  *
- * Each page keeps its memory type and gains or loses the RO and XP bits.
+ * Each page keeps its memory type and gains or loses the RO and XP bits. Pages
+ * which have the same attributes to start with are changed together, so that a
+ * whole block of the page tables is changed in place rather than being split
+ * into pages, which would use up the space for page tables.
  *
  * @base: Start of the range
  * @length: Length of the range in bytes
@@ -129,40 +132,39 @@ out:
 static efi_status_t change_attributes(efi_physical_addr_t base, u64 length,
 				      u64 attrs, bool set)
 {
+	efi_physical_addr_t end = base + length;
+	efi_physical_addr_t addr, next;
+	u64 bits = 0;
 	efi_status_t ret;
-	u64 addr;
 
 	ret = check_range(base, length, attrs, set);
 	if (ret != EFI_SUCCESS)
 		return ret;
-	attrs &= SUPPORTED_ATTRS;
-	if (!attrs)
+	if (attrs & EFI_MEMORY_RO)
+		bits |= PTE_BLOCK_RO;
+	if (attrs & EFI_MEMORY_XP)
+		bits |= xp_pte_bits();
+	if (!bits)
 		return EFI_SUCCESS;
-	for (addr = base; addr < base + length; addr += EFI_PAGE_SIZE) {
-		u64 pte, bits = 0;
+	for (addr = base; addr < end; addr = next) {
+		u64 pte, next_pte;
 
 		if (mmu_get_page_attrs(addr, &pte))
 			return EFI_NO_MAPPING;
-		if (attrs & EFI_MEMORY_RO)
-			bits |= PTE_BLOCK_RO;
-		if (attrs & EFI_MEMORY_XP)
-			bits |= xp_pte_bits();
-		pte = set ? pte | bits : pte & ~bits;
-		mmu_change_region_attr_nobreak(addr, EFI_PAGE_SIZE, pte);
+		for (next = addr + EFI_PAGE_SIZE; next < end;
+		     next += EFI_PAGE_SIZE) {
+			if (mmu_get_page_attrs(next, &next_pte))
+				return EFI_NO_MAPPING;
+			if (next_pte != pte)
+				break;
+		}
+		mmu_change_region_attr_nobreak(addr, next - addr,
+					       set ? pte | bits : pte & ~bits);
 	}
 
 	return EFI_SUCCESS;
 }
 
-/**
- * set_memory_attributes() - Set attributes on a range
- *
- * @this: Protocol instance
- * @base: Start of the range
- * @length: Length of the range in bytes
- * @attributes: Attributes to set
- * Return: status code
- */
 static efi_status_t EFIAPI
 set_memory_attributes(struct efi_memory_attribute_protocol *this,
 		      efi_physical_addr_t base, u64 length, u64 attributes)
