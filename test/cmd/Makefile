@@ -147,3 +147,6 @@ obj-$(CONFIG_CMD_UNZIP) += unzip.o
 endif
 obj-$(CONFIG_CMD_LZMADEC) += lzmadec.o
 obj-$(CONFIG_CMD_UNLZ4) += unlz4.o
+ifdef CONFIG_CONSOLE_RECORD
+obj-$(CONFIG_CMD_W1) += w1.o
+endif
