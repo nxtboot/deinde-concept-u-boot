@@ -114,7 +114,7 @@ int do_w1(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (!strcmp(argv[1], "read"))
 		return w1_read(argc, argv);
 
-	return CMD_RET_SUCCESS;
+	return CMD_RET_USAGE;
 }
 
 U_BOOT_CMD(w1, 6, 0, do_w1,
