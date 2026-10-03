@@ -4,7 +4,8 @@
  *
  * Lets a payload mark memory read-only or non-executable, and read those
  * attributes back, by changing the page tables. Only the RO and XP attributes
- * are supported; RP (no access) is not.
+ * are supported. Memory is never read-protected, so RP (no access) cannot be
+ * set, while clearing it has nothing to do.
  *
  * Copyright 2026 Google LLC
  */
@@ -50,20 +51,27 @@ static u64 pte_to_efi(u64 pte)
 /**
  * check_range() - Check that a range is valid for these calls
  *
+ * Memory is never read-protected, so clearing RP is accepted and has nothing
+ * to do, but setting it is not supported. A payload may well clear RP along
+ * with other attributes: shim clears RP and XP together to make a section
+ * executable.
+ *
  * @base: Start of the range
  * @length: Length of the range in bytes
  * @attrs: Attributes requested (may be zero for a get)
+ * @set: true if the attributes are to be set, false to clear them
  * Return: status code
  */
 static efi_status_t check_range(efi_physical_addr_t base, u64 length,
-				u64 attrs)
+				u64 attrs, bool set)
 {
 	if (!length || (base & (EFI_PAGE_SIZE - 1)) ||
 	    (length & (EFI_PAGE_SIZE - 1)))
 		return EFI_INVALID_PARAMETER;
-	if (attrs & ~SUPPORTED_ATTRS)
-		return attrs & ~(SUPPORTED_ATTRS | EFI_MEMORY_RP) ?
-			EFI_INVALID_PARAMETER : EFI_UNSUPPORTED;
+	if (attrs & ~(SUPPORTED_ATTRS | EFI_MEMORY_RP))
+		return EFI_INVALID_PARAMETER;
+	if (set && (attrs & EFI_MEMORY_RP))
+		return EFI_UNSUPPORTED;
 
 	return EFI_SUCCESS;
 }
@@ -90,7 +98,7 @@ get_memory_attributes(struct efi_memory_attribute_protocol *this,
 		ret = EFI_INVALID_PARAMETER;
 		goto out;
 	}
-	ret = check_range(base, length, 0);
+	ret = check_range(base, length, 0, false);
 	if (ret != EFI_SUCCESS)
 		goto out;
 	for (addr = base; addr < base + length; addr += EFI_PAGE_SIZE) {
@@ -124,9 +132,10 @@ static efi_status_t change_attributes(efi_physical_addr_t base, u64 length,
 	efi_status_t ret;
 	u64 addr;
 
-	ret = check_range(base, length, attrs);
+	ret = check_range(base, length, attrs, set);
 	if (ret != EFI_SUCCESS)
 		return ret;
+	attrs &= SUPPORTED_ATTRS;
 	if (!attrs)
 		return EFI_SUCCESS;
 	for (addr = base; addr < base + length; addr += EFI_PAGE_SIZE) {
