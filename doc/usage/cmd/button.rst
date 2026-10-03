@@ -65,3 +65,11 @@ The variable *$?* takes the following values
 +---+-----------------------------+
 | 1 | invalid arguments           |
 +---+-----------------------------+
+
+See also
+--------
+
+* :doc:`mouse<mouse>` for the events from a pointing device, the other sort of
+  input a board may offer
+* :doc:`gpio<gpio>` for the pins a GPIO-driven button is wired to
+* :doc:`led<led>` for the other simple device whose state the board exposes
