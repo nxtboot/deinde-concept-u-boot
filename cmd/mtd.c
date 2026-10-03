@@ -11,6 +11,7 @@
 #include <command.h>
 #include <console.h>
 #include <div64.h>
+#include <getopt.h>
 #include <led.h>
 #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
 #include <hexdump.h>
@@ -207,9 +208,10 @@ static bool mtd_oob_write_is_empty(struct mtd_oob_ops *op)
 }
 
 #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
-static int do_mtd_otp_read(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[])
+static int do_mtd_otp_read(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	size_t retlen;
 	off_t from;
@@ -217,6 +219,9 @@ static int do_mtd_otp_read(struct cmd_tbl *cmdtp, int flag, int argc,
 	bool user;
 	int ret;
 	u8 *buf;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 5)
 		return CMD_RET_USAGE;
@@ -271,13 +276,17 @@ put_mtd:
 	return ret;
 }
 
-static int do_mtd_otp_lock(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[])
+static int do_mtd_otp_lock(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	off_t from;
 	size_t len;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 4)
 		return CMD_RET_USAGE;
@@ -304,15 +313,19 @@ put_mtd:
 	return ret;
 }
 
-static int do_mtd_otp_write(struct cmd_tbl *cmdtp, int flag, int argc,
-			    char *const argv[])
+static int do_mtd_otp_write(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	size_t retlen;
 	size_t binlen;
 	u8 *binbuf;
 	off_t from;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 4)
 		return CMD_RET_USAGE;
@@ -365,14 +378,18 @@ put_mtd:
 	return ret;
 }
 
-static int do_mtd_otp_info(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[])
+static int do_mtd_otp_info(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct otp_info otp_info;
 	struct mtd_info *mtd;
 	size_t retlen;
 	bool user;
 	int ret;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc != 3)
 		return CMD_RET_USAGE;
@@ -421,11 +438,13 @@ put_mtd:
 }
 #endif
 
-static int do_mtd_list(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+static int do_mtd_list(struct getopt_state *gs)
 {
 	struct mtd_info *mtd;
 	int dev_nb = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/* Ensure all devices (and their partitions) are probed */
 	mtd_probe_devices();
@@ -466,9 +485,10 @@ static int mtd_special_write_oob(struct mtd_info *mtd, u64 off,
 	return ret;
 }
 
-static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_mtd_io(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	bool dump, read, raw, woob, benchmark, write_empty_pages, has_pages = false;
 	u64 start_off, off, len, remaining, default_len, speed;
 	unsigned long bench_start, bench_end;
@@ -479,6 +499,9 @@ static int do_mtd_io(struct cmd_tbl *cmdtp, int flag, int argc,
 	u32 oob_len;
 	u8 *buf;
 	int ret = CMD_RET_SUCCESS;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -652,14 +675,18 @@ out_put_mtd:
 	return ret;
 }
 
-static int do_mtd_erase(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+static int do_mtd_erase(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct erase_info erase_op = {};
 	struct mtd_info *mtd;
 	u64 off, len;
 	bool scrub;
 	int ret = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -754,12 +781,16 @@ out_put_mtd:
 }
 
 #ifdef CONFIG_CMD_MTD_MARKBAD
-static int do_mtd_markbad(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[])
+static int do_mtd_markbad(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	loff_t off;
 	int ret = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
@@ -923,13 +954,17 @@ out:
 	return ret;
 }
 
-static int do_nand_write_test(struct cmd_tbl *cmdtp, int flag, int argc,
-			      char *const argv[])
+static int do_nand_write_test(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	loff_t off, len;
 	int ret = 0;
 	unsigned int failed = 0, passed = 0;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1097,14 +1132,18 @@ static enum nand_read_status nand_read_block_check(struct mtd_info *mtd,
 	return NAND_READ_STATUS_OK;
 }
 
-static int do_mtd_nand_read_test(struct cmd_tbl *cmdtp, int flag, int argc,
-				 char *const argv[])
+static int do_mtd_nand_read_test(struct getopt_state *gs)
 {
+	int			argc = gs->argc;
+	char *const		*argv = gs->argv;
 	struct mtd_info		*mtd;
 	u64			off, blocks;
 	int			stat[NAND_READ_STATUS_OK + 1];
 	enum nand_read_status	ret;
 	u_char			*buf;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1186,11 +1225,15 @@ test_error:
 }
 #endif
 
-static int do_mtd_bad(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char *const argv[])
+static int do_mtd_bad(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	loff_t off;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1297,33 +1340,38 @@ U_BOOT_LONGHELP(mtd,
 
 U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils", mtd_help_text,
 #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
-		U_BOOT_SUBCMD_MKENT(otpread, 5, 1, do_mtd_otp_read),
-		U_BOOT_SUBCMD_MKENT(otpwrite, 4, 1, do_mtd_otp_write),
-		U_BOOT_SUBCMD_MKENT(otplock, 4, 1, do_mtd_otp_lock),
-		U_BOOT_SUBCMD_MKENT(otpinfo, 3, 1, do_mtd_otp_info),
+		U_BOOT_CMD_MKENT_GETOPT(otpread, 5, 1, do_mtd_otp_read,
+					"", ""),
+		U_BOOT_CMD_MKENT_GETOPT(otpwrite, 4, 1, do_mtd_otp_write,
+					"", ""),
+		U_BOOT_CMD_MKENT_GETOPT(otplock, 4, 1, do_mtd_otp_lock,
+					"", ""),
+		U_BOOT_CMD_MKENT_GETOPT(otpinfo, 3, 1, do_mtd_otp_info,
+					"", ""),
 #endif
-		U_BOOT_SUBCMD_MKENT(list, 1, 1, do_mtd_list),
-		U_BOOT_SUBCMD_MKENT_COMPLETE(read, 5, 0, do_mtd_io,
-					     mtd_name_complete),
-		U_BOOT_SUBCMD_MKENT_COMPLETE(write, 5, 0, do_mtd_io,
-					     mtd_name_complete),
-		U_BOOT_SUBCMD_MKENT_COMPLETE(dump, 4, 0, do_mtd_io,
-					     mtd_name_complete),
-		U_BOOT_SUBCMD_MKENT_COMPLETE(erase, 4, 0, do_mtd_erase,
-					     mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT(list, 1, 1, do_mtd_list, "", ""),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(read, 5, 0, do_mtd_io,
+						 "", "", mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(write, 5, 0, do_mtd_io,
+						 "", "", mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(dump, 4, 0, do_mtd_io,
+						 "", "", mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(erase, 4, 0, do_mtd_erase,
+						 "", "", mtd_name_complete),
 #if CONFIG_IS_ENABLED(CMD_MTD_MARKBAD)
-		U_BOOT_SUBCMD_MKENT_COMPLETE(markbad, 20, 0, do_mtd_markbad,
-					     mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(markbad, 20, 0,
+						 do_mtd_markbad,
+						 "", "", mtd_name_complete),
 #endif
 #if CONFIG_IS_ENABLED(CMD_MTD_NAND_WRITE_TEST)
-		U_BOOT_SUBCMD_MKENT_COMPLETE(nand_write_test, 4, 0,
-					     do_nand_write_test,
-					     mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_write_test, 4, 0,
+						 do_nand_write_test,
+						 "", "", mtd_name_complete),
 #endif
 #if CONFIG_IS_ENABLED(CMD_MTD_NAND_READ_TEST)
-		U_BOOT_SUBCMD_MKENT_COMPLETE(nand_read_test, 2, 0,
-					     do_mtd_nand_read_test,
-					     mtd_name_complete),
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_read_test, 2, 0,
+						 do_mtd_nand_read_test,
+						 "", "", mtd_name_complete),
 #endif
-		U_BOOT_SUBCMD_MKENT_COMPLETE(bad, 2, 1, do_mtd_bad,
-					     mtd_name_complete));
+		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(bad, 2, 1, do_mtd_bad,
+						 "", "", mtd_name_complete));
