@@ -7,9 +7,9 @@
 
 ifdef CONFIG_XPL_BUILD
 INPUTS-y += $(obj)/u-boot-spl.ldr
-endif
-
+else
 INPUTS-y += u-boot.ldr
+endif
 
 LDR_FLAGS += --bcode=$(CONFIG_SC_BCODE)
 LDR_FLAGS += --use-vmas
