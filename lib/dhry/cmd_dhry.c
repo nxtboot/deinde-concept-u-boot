@@ -17,9 +17,6 @@ static int do_dhry(struct getopt_state *gs)
 	int iterations = 1000000;
 	const char *arg;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	arg = getopt_pop(gs);
 	if (arg)
 		iterations = dectoul(arg, NULL);
@@ -39,7 +36,7 @@ static int do_dhry(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	dhry,	2,	1,	do_dhry,
 	"[iterations] - run dhrystone benchmark",
 	"\n    - run the Dhrystone 2.1 benchmark, a rough measure of CPU speed\n"

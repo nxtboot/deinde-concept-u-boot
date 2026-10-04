@@ -1073,9 +1073,6 @@ static int do_ethsw(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	int rc = CMD_RET_SUCCESS;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc == 1 || argc >= ETHSW_MAX_CMD_PARAMS)
 		return CMD_RET_USAGE;
 
@@ -1092,7 +1089,7 @@ static int do_ethsw(struct getopt_state *gs)
 #define ETHSW_PORT_CONF_HELP "[port <port_no>] { enable | disable | show } " \
 "- enable/disable a port; show a port's configuration"
 
-U_BOOT_CMD_GETOPT(ethsw, ETHSW_MAX_CMD_PARAMS, 0, do_ethsw,
+U_BOOT_CMD_NOOPTS(ethsw, ETHSW_MAX_CMD_PARAMS, 0, do_ethsw,
 		  "Ethernet l2 switch commands",
 		  ETHSW_PORT_CONF_HELP "\n"
 		  ETHSW_PORT_STATS_HELP "\n"

@@ -70,6 +70,11 @@ enum {
 	CMDF_GETOPT	= BIT(0),
 	/* the command may be repeated by pressing Enter at an empty prompt */
 	CMDF_REPEATABLE	= BIT(1),
+	/*
+	 * the command takes no options, so cmd_invoke() refuses any with
+	 * CMD_RET_USAGE before calling it. Only meaningful with CMDF_GETOPT
+	 */
+	CMDF_NOOPTS	= BIT(2),
 };
 
 /**
@@ -116,6 +121,25 @@ int _do_help(struct cmd_tbl *cmd_start, int cmd_items, struct cmd_tbl *cmdtp,
 struct cmd_tbl *find_cmd(const char *cmd);
 struct cmd_tbl *find_cmd_tbl(const char *cmd, struct cmd_tbl *table,
 			     int table_len);
+/**
+ * cmd_dispatch_subcmd() - Run the sub-command named by a command's argument
+ *
+ * This is the body of the command function which U_BOOT_CMD_WITH_SUBCMDS()
+ * declares. It looks up argv[1] in @subcmds and runs it with the arguments
+ * which follow, through cmd_invoke_rep(), so a getopt sub-command gets its own
+ * state. A repeat of a sub-command which cannot repeat does nothing, and the
+ * repeatable flag is narrowed to that of the sub-command.
+ *
+ * @gs: getopt state of the command; argv[1] names the sub-command
+ * @subcmds: Table of sub-commands
+ * @count: Number of entries in @subcmds
+ * Return: what the sub-command returns, CMD_RET_USAGE if none is named, none
+ *	matches or it is given too many arguments, CMD_RET_SUCCESS for a
+ *	repeat which is skipped
+ */
+int cmd_dispatch_subcmd(struct getopt_state *gs, struct cmd_tbl *subcmds,
+			int count);
+
 int complete_subcmdv(struct cmd_tbl *cmdtp, int count, int argc,
 		     char *const argv[], char last_char, int maxv,
 		     char *cmdv[]);
@@ -400,28 +424,8 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 #define U_BOOT_SUBCMDS_DO_CMD(_cmdname)					\
 	static int do_##_cmdname(struct getopt_state *gs)		\
 	{								\
-		int argc = gs->argc;					\
-		char *const *argv = gs->argv;				\
-		struct cmd_tbl *subcmd;					\
-									\
-		/* We need at least the cmd and subcmd names. */	\
-		if (argc < 2 || argc > CONFIG_SYS_MAXARGS)		\
-			return CMD_RET_USAGE;				\
-									\
-		subcmd = find_cmd_tbl(argv[1], _cmdname##_subcmds,	\
-				      ARRAY_SIZE(_cmdname##_subcmds));	\
-		if (!subcmd || argc - 1 > subcmd->maxargs)		\
-			return CMD_RET_USAGE;				\
-									\
-		if (gs->cmd_flag == CMD_FLAG_REPEAT &&			\
-		    !cmd_is_repeatable(subcmd))				\
-			return CMD_RET_SUCCESS;				\
-									\
-		if (gs->repeatable)					\
-			*gs->repeatable &= cmd_is_repeatable(subcmd);	\
-									\
-		return cmd_invoke_rep(subcmd, gs->cmd_flag, argc - 1,	\
-				      argv + 1, gs->repeatable);	\
+		return cmd_dispatch_subcmd(gs, _cmdname##_subcmds,	\
+					   ARRAY_SIZE(_cmdname##_subcmds)); \
 	}
 
 #ifdef CONFIG_AUTO_COMPLETE
@@ -462,6 +466,11 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
  *
  * Either way, _MKENT makes a table entry, the bare macro declares a
  * top-level command, and _COMPLETE also takes an auto-complete function.
+ *
+ * The _NOOPTS ones are the _GETOPT ones for a command which takes no
+ * options. cmd_invoke() refuses an option with CMD_RET_USAGE before calling
+ * the function, so it need not call getopt() itself; it can go straight to
+ * getopt_pop() or gs->argv[gs->index] for its arguments.
  */
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
@@ -469,12 +478,23 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		{ #_name, _maxargs, _CMD_REP_FLAG(_rep),		\
 		 _cmd, _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
-#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
-					 _usage, _help, _comp)		\
-		{ #_name, _maxargs, CMDF_GETOPT | _CMD_REP_FLAG(_rep),	\
+#define _U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _flags, _cmd, _usage,	\
+				 _help, _comp)				\
+		{ #_name, _maxargs, CMDF_GETOPT | (_flags),		\
 		 (int (*)(struct cmd_tbl *, int, int,			\
 			  char *const []))(_cmd),			\
 		 _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	_U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _CMD_REP_FLAG(_rep),	\
+				 _cmd, _usage, _help, _comp)
+
+#define U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	_U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs,			\
+				 CMDF_NOOPTS | _CMD_REP_FLAG(_rep),	\
+				 _cmd, _usage, _help, _comp)
 
 #define U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _rep, _cmd,		\
 				_usage, _help)				\
@@ -494,6 +514,12 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 				   _help, _comp)			\
 	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep,	\
+						 _cmd, _usage, _help, _comp)
+
+#define U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep,	\
 						 _cmd, _usage, _help, _comp)
 
 /*
@@ -545,6 +571,11 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
 					 _usage, _help, NULL)
 
+#define U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)
+
 #define U_BOOT_CMD_COMPLETE(_name, _maxargs, _rep, _cmd, _usage, _help,	\
 			    _comp)				\
 	_CMD_REMOVE(sub_ ## _name, _cmd)
@@ -553,6 +584,10 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
 #define U_BOOT_CMD_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
+
+#define U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
 				   _help, _comp)			\
 	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
@@ -575,6 +610,15 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 #define U_BOOT_CMD_MKENT(_name, _maxargs, _rep, _cmd, _usage, _help)	\
 	U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 					_usage, _help, NULL)
+
+#define U_BOOT_CMD_NOOPTS(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+	U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,		\
+				   _usage, _help, NULL)
+
+#define U_BOOT_CMD_MKENT_NOOPTS(_name, _maxargs, _rep, _cmd,		\
+				_usage, _help)				\
+	U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, NULL)
 
 #define U_BOOT_SUBCMD_MKENT_COMPLETE(_name, _maxargs, _rep, _do_cmd,	\
 				     _comp)				\

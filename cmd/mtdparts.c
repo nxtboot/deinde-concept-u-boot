@@ -1925,9 +1925,6 @@ static int do_chpart(struct getopt_state *gs)
 	struct part_info *part;
 	u8 pnum;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (mtdparts_init() !=0)
 		return 1;
 
@@ -1960,9 +1957,6 @@ static int do_mtdparts(struct getopt_state *gs)
 {
 	int argc = gs->argc;
 	char *const *argv = gs->argv;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "default") == 0) {
@@ -2080,7 +2074,7 @@ static int do_mtdparts(struct getopt_state *gs)
 }
 
 /***************************************************/
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	chpart,	2,	0,	do_chpart,
 	"change active partition of a MTD device",
 	"part-id\n"
@@ -2131,7 +2125,7 @@ U_BOOT_LONGHELP(mtdparts,
 	"<name>     := '(' NAME ')'\n"
 	"<ro-flag>  := when set to 'ro' makes partition read-only (not used, passed to kernel)");
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	mtdparts,	6,	0,	do_mtdparts,
 	"define flash/nand partitions", mtdparts_help_text
 );

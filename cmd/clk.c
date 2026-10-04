@@ -133,9 +133,6 @@ static int do_clk(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -155,4 +152,4 @@ U_BOOT_LONGHELP(clk,
 	"dump - Print clock frequencies\n"
 	"clk setfreq [clk] [freq] - Set clock frequency");
 
-U_BOOT_CMD_GETOPT(clk, 4, 1, do_clk, "CLK sub-system", clk_help_text);
+U_BOOT_CMD_NOOPTS(clk, 4, 1, do_clk, "CLK sub-system", clk_help_text);

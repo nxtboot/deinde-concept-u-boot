@@ -550,6 +550,10 @@ int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
 		gs.cmd_flag = flag;
 		gs.repeatable = repeatable;
 
+		/* a command which takes no options refuses any it is given */
+		if ((cmdtp->cmd_flags & CMDF_NOOPTS) && getopt(&gs, "+") > 0)
+			return CMD_RET_USAGE;
+
 		return func(&gs);
 	}
 
@@ -559,6 +563,35 @@ int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
 int cmd_invoke(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	return cmd_invoke_rep(cmdtp, flag, argc, argv, NULL);
+}
+
+int cmd_dispatch_subcmd(struct getopt_state *gs, struct cmd_tbl *subcmds,
+			int count)
+{
+#ifdef CONFIG_CMDLINE
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
+	struct cmd_tbl *subcmd;
+
+	/* We need at least the cmd and subcmd names. */
+	if (argc < 2 || argc > CONFIG_SYS_MAXARGS)
+		return CMD_RET_USAGE;
+
+	subcmd = find_cmd_tbl(argv[1], subcmds, count);
+	if (!subcmd || argc - 1 > subcmd->maxargs)
+		return CMD_RET_USAGE;
+
+	if (gs->cmd_flag == CMD_FLAG_REPEAT && !cmd_is_repeatable(subcmd))
+		return CMD_RET_SUCCESS;
+
+	if (gs->repeatable)
+		*gs->repeatable &= cmd_is_repeatable(subcmd);
+
+	return cmd_invoke_rep(subcmd, gs->cmd_flag, argc - 1, argv + 1,
+			      gs->repeatable);
+#else
+	return CMD_RET_USAGE;
+#endif
 }
 
 /**

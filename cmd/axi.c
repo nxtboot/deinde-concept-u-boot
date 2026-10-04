@@ -338,9 +338,6 @@ static int do_ihs_axi(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -363,7 +360,7 @@ U_BOOT_LONGHELP(axi,
 	"axi md size addr [# of objects] - read from AXI device at address [addr] and data width [size] (one of 8, 16, 32)\n"
 	"axi mw size addr value [count] - write data [value] to AXI device at address [addr] and data width [size] (one of 8, 16, 32)\n");
 
-U_BOOT_CMD_GETOPT(axi, 7, 1, do_ihs_axi,
+U_BOOT_CMD_NOOPTS(axi, 7, 1, do_ihs_axi,
 		  "AXI sub-system",
 		  axi_help_text
 );

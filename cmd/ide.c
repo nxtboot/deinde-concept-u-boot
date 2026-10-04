@@ -30,9 +30,6 @@ int do_ide(struct getopt_state *gs)
 	int argc = gs->argc;
 	char *const *argv = gs->argv;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc == 2) {
 		if (strncmp(argv[1], "res", 3) == 0) {
 			struct udevice *dev;
@@ -71,7 +68,7 @@ int do_diskboot(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return common_diskboot(cmdtp, "ide", argc, argv);
 }
 
-U_BOOT_CMD_GETOPT(ide, 5, 1, do_ide,
+U_BOOT_CMD_NOOPTS(ide, 5, 1, do_ide,
 		  "IDE sub-system",
 		  "reset - reset IDE controller\n"
 		  "ide info  - show available IDE devices\n"

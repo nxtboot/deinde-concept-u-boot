@@ -10,9 +10,6 @@
 
 int do_btrsubvol(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (gs->argc != 3)
 		return CMD_RET_USAGE;
 
@@ -23,7 +20,7 @@ int do_btrsubvol(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(btrsubvol, 3, 1, do_btrsubvol,
+U_BOOT_CMD_NOOPTS(btrsubvol, 3, 1, do_btrsubvol,
 		  "list subvolumes of a BTRFS filesystem",
 		  "<interface> <dev[:part]>\n"
 		  "     - List subvolumes of a BTRFS filesystem."

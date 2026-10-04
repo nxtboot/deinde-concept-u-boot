@@ -34,9 +34,6 @@ int do_io_iod(struct getopt_state *gs)
 	u8 buf[DISP_LINE_LEN];
 	int size, todo;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	/*
 	 * We use the last specified parameters, unless new ones are
 	 * entered.
@@ -104,9 +101,6 @@ int do_io_iow(struct getopt_state *gs)
 	ulong addr, val;
 	int size;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc != 3)
 		return CMD_RET_USAGE;
 
@@ -128,9 +122,9 @@ int do_io_iow(struct getopt_state *gs)
 }
 
 /**************************************************/
-U_BOOT_CMD_GETOPT(iod, 3, 1, do_io_iod,
+U_BOOT_CMD_NOOPTS(iod, 3, 1, do_io_iod,
 		  "IO space display", "[.b, .w, .l] address");
 
-U_BOOT_CMD_GETOPT(iow, 3, 0, do_io_iow,
+U_BOOT_CMD_NOOPTS(iow, 3, 0, do_io_iow,
 		  "IO space modify",
 		  "[.b, .w, .l] address value");

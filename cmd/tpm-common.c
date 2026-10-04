@@ -393,9 +393,6 @@ int do_tpm(struct getopt_state *gs)
 	unsigned int size;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 

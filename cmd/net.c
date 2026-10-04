@@ -580,9 +580,6 @@ int do_dns(struct getopt_state *gs)
 {
 	char *name;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	name = getopt_pop(gs);
 	if (!name)
 		return CMD_RET_USAGE;
@@ -615,7 +612,7 @@ int do_dns(struct getopt_state *gs)
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	dns,	3,	1,	do_dns,
 	"lookup the IP of a hostname",
 	"hostname [envvar]"
@@ -627,9 +624,6 @@ U_BOOT_CMD_GETOPT(
 static int do_link_local(struct getopt_state *gs)
 {
 	char tmp[22];
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (net_loop(LINKLOCAL) < 0)
 		return CMD_RET_FAILURE;
@@ -648,7 +642,7 @@ static int do_link_local(struct getopt_state *gs)
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	linklocal,	1,	1,	do_link_local,
 	"acquire a network IP address using the link-local protocol",
 	""

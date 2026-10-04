@@ -108,9 +108,6 @@ static int do_cramfs_load(struct getopt_state *gs)
 	const char *addr_str;
 	ulong addr;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	addr_str = env_get("cramfsaddr");
 	if (!addr_str) {
 		printf("Environment variable 'cramfsaddr' is not set\n");
@@ -183,9 +180,6 @@ int do_cramfs_ls(struct getopt_state *gs)
 	const char *addr_str;
 	ulong addr;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	addr_str = env_get("cramfsaddr");
 	if (!addr_str) {
 		printf("Environment variable 'cramfsaddr' is not set\n");
@@ -217,14 +211,14 @@ int do_cramfs_ls(struct getopt_state *gs)
 /* command line only */
 
 /***************************************************/
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	cramfsload,	3,	0,	do_cramfs_load,
 	"load binary file from a filesystem image",
 	"[ addr ] [ filename ]\n"
 	"    - load binary file from the image at 'cramfsaddr'\n"
 	"      to address 'addr', hexadecimal\n"
 );
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	cramfsls,	2,	1,	do_cramfs_ls,
 	"list files in a directory (default /)",
 	"[ directory ]\n"

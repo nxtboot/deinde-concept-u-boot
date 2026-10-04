@@ -29,9 +29,6 @@ static int do_go(struct getopt_state *gs)
 	ulong	addr, rc;
 	int     rcode = 0;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -53,7 +50,7 @@ static int do_go(struct getopt_state *gs)
 
 /* -------------------------------------------------------------------- */
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	go, CONFIG_SYS_MAXARGS, 1,	do_go,
 	"start application at address 'addr'",
 	"addr [arg ...]\n    - start application at address 'addr'\n"

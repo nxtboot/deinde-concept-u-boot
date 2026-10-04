@@ -275,9 +275,6 @@ static int do_aes(struct getopt_state *gs)
 	int argc = gs->argc;
 	u32 key_len;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -342,7 +339,7 @@ U_BOOT_LONGHELP(aes,
 #endif
 );
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	aes, 7, 1, do_aes,
 	"AES 128/192/256 operations",
 	aes_help_text

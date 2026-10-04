@@ -102,9 +102,6 @@ int do_iotrace(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	const char *cmd = argc < 2 ? NULL : argv[1];
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (!cmd)
 		return CMD_RET_USAGE;
 	switch (*cmd) {
@@ -131,7 +128,7 @@ int do_iotrace(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	iotrace,	4,	1,	do_iotrace,
 	"iotrace utility commands",
 	"stats                        - display iotrace stats\n"

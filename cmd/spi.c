@@ -105,9 +105,6 @@ int do_spi(struct getopt_state *gs)
 	uchar tmp;
 	int   j;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	/*
 	 * We use the last specified parameters, unless new ones are
 	 * entered.
@@ -174,7 +171,7 @@ int do_spi(struct getopt_state *gs)
 
 /***************************************************/
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	sspi,	5,	1,	do_spi,
 	"SPI utility command",
 	"[<bus>:]<cs>[.<mode>][@<freq>] <bit_len> <dout> - Send and receive bits\n"

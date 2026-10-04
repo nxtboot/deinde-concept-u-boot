@@ -19,9 +19,6 @@ static int do_cbfs_init(struct getopt_state *gs)
 	const char *arg;
 	char *ep;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	arg = getopt_pop(gs);
 	if (arg) {
 		end_of_rom = hextoul(arg, &ep);
@@ -41,7 +38,7 @@ static int do_cbfs_init(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	cbfsinit,	2,	0,	do_cbfs_init,
 	"initialize the cbfs driver",
 	"[end of rom]\n"
@@ -104,9 +101,6 @@ static int do_cbfs_ls(struct getopt_state *gs)
 {
 	const struct cbfs_cachenode *file;
 	int files = 0;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	file = file_cbfs_get_first();
 	if (!file) {
@@ -206,7 +200,7 @@ static int do_cbfs_ls(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	cbfsls,	1,	1,	do_cbfs_ls,
 	"list files",
 	"    - list the files in the cbfs\n"
@@ -215,9 +209,6 @@ U_BOOT_CMD_GETOPT(
 static int do_cbfs_fsinfo(struct getopt_state *gs)
 {
 	const struct cbfs_header *header;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	header = file_cbfs_get_header();
 	if (!header) {
@@ -238,7 +229,7 @@ static int do_cbfs_fsinfo(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	cbfsinfo,	1,	1,	do_cbfs_fsinfo,
 	"print information about filesystem",
 	"    - print information about the cbfs filesystem\n"

@@ -15,9 +15,6 @@ static int do_timer(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	static ulong start;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc != 2)
 		return CMD_RET_USAGE;
 
@@ -32,7 +29,7 @@ static int do_timer(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	timer,    2,    1,     do_timer,
 	"access the system timer",
 	"start - Reset the timer reference.\n"
