@@ -197,10 +197,9 @@ static int nand_dump(struct mtd_info *mtd, ulong off, int only_oob,
 	else
 		ops.mode = MTD_OPS_RAW;
 	i = mtd_read_oob(mtd, addr, &ops);
-	if (i < 0) {
-		printf("Error reading page at offset %08lx, %d %s\n",
-		       off, i, i == -EUCLEAN ? "correctable" :
-		       "uncorrectable, dumping raw data");
+	if (i < 0 && i != -EUCLEAN) {
+		printf("Error reading page at offset %08lx, %d uncorrectable, dumping raw data\n",
+		       off, i);
 		ret = 1;
 	}
 	printf("\nPage at offset %08lx dump:\n", off);
