@@ -181,3 +181,81 @@ static int command_test_noopts(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(command_test_noopts, 0);
+
+/* two sub-commands which record their arguments, one of them repeatable */
+static struct cmd_tbl sub_cmds[] = {
+	U_BOOT_CMD_MKENT_GETOPT(rep, 2, 1, do_noopts, "", ""),
+	U_BOOT_CMD_MKENT_GETOPT(once, 2, 0, do_noopts, "", ""),
+};
+
+/**
+ * dispatch() - Run cmd_dispatch_subcmd() on the sub_cmds table
+ *
+ * @flag: Command flag, e.g. CMD_FLAG_REPEAT
+ * @argc: Number of arguments, including the command name
+ * @argv: Arguments
+ * @repeatable: Repeatable flag to narrow, or NULL
+ * Return: what cmd_dispatch_subcmd() returns
+ */
+static int dispatch(int flag, int argc, char *const argv[], int *repeatable)
+{
+	struct getopt_state gs;
+
+	getopt_init_state(&gs, argc, argv);
+	gs.cmd_flag = flag;
+	gs.repeatable = repeatable;
+	*noopts_seen = '\0';
+
+	return cmd_dispatch_subcmd(&gs, sub_cmds, ARRAY_SIZE(sub_cmds));
+}
+
+/* Test that the shared dispatcher finds and runs a sub-command */
+static int command_test_dispatch(struct unit_test_state *uts)
+{
+	char *const rep[] = { "top", "rep", "a", NULL };
+	char *const once[] = { "top", "once", "a", NULL };
+	char *const abbrev[] = { "top", "on", "a", NULL };
+	char *const none[] = { "top", NULL };
+	char *const nosuch[] = { "top", "nosuch", NULL };
+	char *const toomany[] = { "top", "rep", "a", "b", NULL };
+	int repeatable;
+
+	if (!IS_ENABLED(CONFIG_GETOPT))
+		return -EAGAIN;
+
+	/* the sub-command gets the arguments after its name */
+	repeatable = 1;
+	ut_assertok(dispatch(0, 3, rep, &repeatable));
+	ut_asserteq_str("called a", noopts_seen);
+	ut_asserteq(1, repeatable);
+
+	/* one which cannot repeat clears the flag */
+	ut_assertok(dispatch(0, 3, once, &repeatable));
+	ut_asserteq_str("called a", noopts_seen);
+	ut_asserteq(0, repeatable);
+
+	/* the flag is optional */
+	ut_assertok(dispatch(0, 3, rep, NULL));
+	ut_asserteq_str("called a", noopts_seen);
+
+	/* an unambiguous abbreviation is enough */
+	ut_assertok(dispatch(0, 3, abbrev, NULL));
+	ut_asserteq_str("called a", noopts_seen);
+
+	/* a missing, unknown or overloaded sub-command is a usage error */
+	ut_asserteq(CMD_RET_USAGE, dispatch(0, 1, none, NULL));
+	ut_asserteq(CMD_RET_USAGE, dispatch(0, 2, nosuch, NULL));
+	ut_asserteq(CMD_RET_USAGE, dispatch(0, 4, toomany, NULL));
+	ut_asserteq_str("", noopts_seen);
+
+	/* a repeat runs a repeatable sub-command again... */
+	ut_assertok(dispatch(CMD_FLAG_REPEAT, 3, rep, NULL));
+	ut_asserteq_str("called a", noopts_seen);
+
+	/* ...but quietly skips one which is not */
+	ut_assertok(dispatch(CMD_FLAG_REPEAT, 3, once, NULL));
+	ut_asserteq_str("", noopts_seen);
+
+	return 0;
+}
+CMD_TEST(command_test_dispatch, 0);
