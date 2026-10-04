@@ -714,9 +714,8 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 			!strcmp(&cmd[4], ".oob.ecc");
 
 		off = (int)hextoul(argv[2], NULL);
-		ret = nand_dump(mtd, off, only_oob, ecc, repeat);
 
-		return ret == 0 ? 1 : 0;
+		return nand_dump(mtd, off, only_oob, ecc, repeat);
 	}
 
 	if (strncmp(cmd, "read", 4) == 0 || strncmp(cmd, "write", 5) == 0) {
