@@ -70,6 +70,11 @@ enum {
 	CMDF_GETOPT	= BIT(0),
 	/* the command may be repeated by pressing Enter at an empty prompt */
 	CMDF_REPEATABLE	= BIT(1),
+	/*
+	 * the command takes no options, so cmd_invoke() refuses any with
+	 * CMD_RET_USAGE before calling it. Only meaningful with CMDF_GETOPT
+	 */
+	CMDF_NOOPTS	= BIT(2),
 };
 
 /**
@@ -462,6 +467,11 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
  *
  * Either way, _MKENT makes a table entry, the bare macro declares a
  * top-level command, and _COMPLETE also takes an auto-complete function.
+ *
+ * The _NOOPTS ones are the _GETOPT ones for a command which takes no
+ * options. cmd_invoke() refuses an option with CMD_RET_USAGE before calling
+ * the function, so it need not call getopt() itself; it can go straight to
+ * getopt_pop() or gs->argv[gs->index] for its arguments.
  */
 
 #define U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
@@ -469,12 +479,23 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 		{ #_name, _maxargs, _CMD_REP_FLAG(_rep),		\
 		 _cmd, _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
 
-#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
-					 _usage, _help, _comp)		\
-		{ #_name, _maxargs, CMDF_GETOPT | _CMD_REP_FLAG(_rep),	\
+#define _U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _flags, _cmd, _usage,	\
+				 _help, _comp)				\
+		{ #_name, _maxargs, CMDF_GETOPT | (_flags),		\
 		 (int (*)(struct cmd_tbl *, int, int,			\
 			  char *const []))(_cmd),			\
 		 _usage, _CMD_HELP(_help) _CMD_COMPLETE(_comp) }
+
+#define U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	_U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _CMD_REP_FLAG(_rep),	\
+				 _cmd, _usage, _help, _comp)
+
+#define U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	_U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs,			\
+				 CMDF_NOOPTS | _CMD_REP_FLAG(_rep),	\
+				 _cmd, _usage, _help, _comp)
 
 #define U_BOOT_CMD_MKENT_GETOPT(_name, _maxargs, _rep, _cmd,		\
 				_usage, _help)				\
@@ -494,6 +515,12 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 				   _help, _comp)			\
 	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep,	\
+						 _cmd, _usage, _help, _comp)
+
+#define U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	ll_entry_declare(struct cmd_tbl, _name, cmd) =			\
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep,	\
 						 _cmd, _usage, _help, _comp)
 
 /*
@@ -545,6 +572,11 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
 					 _usage, _help, NULL)
 
+#define U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)		\
+	U_BOOT_CMD_MKENT_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, _comp)
+
 #define U_BOOT_CMD_COMPLETE(_name, _maxargs, _rep, _cmd, _usage, _help,	\
 			    _comp)				\
 	_CMD_REMOVE(sub_ ## _name, _cmd)
@@ -553,6 +585,10 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
 #define U_BOOT_CMD_GETOPT_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
+				   _help, _comp)			\
+	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
+
+#define U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd, _usage,	\
 				   _help, _comp)			\
 	_CMD_REMOVE_GETOPT(sub_ ## _name, _cmd)
 
@@ -575,6 +611,15 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 #define U_BOOT_CMD_MKENT(_name, _maxargs, _rep, _cmd, _usage, _help)	\
 	U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 					_usage, _help, NULL)
+
+#define U_BOOT_CMD_NOOPTS(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+	U_BOOT_CMD_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,		\
+				   _usage, _help, NULL)
+
+#define U_BOOT_CMD_MKENT_NOOPTS(_name, _maxargs, _rep, _cmd,		\
+				_usage, _help)				\
+	U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(_name, _maxargs, _rep, _cmd,	\
+					 _usage, _help, NULL)
 
 #define U_BOOT_SUBCMD_MKENT_COMPLETE(_name, _maxargs, _rep, _do_cmd,	\
 				     _comp)				\

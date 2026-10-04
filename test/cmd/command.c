@@ -7,6 +7,7 @@
 
 #include <command.h>
 #include <env.h>
+#include <getopt.h>
 #include <log.h>
 #include <string.h>
 #include <linux/errno.h>
@@ -107,3 +108,76 @@ static int command_test(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(command_test, 0);
+
+/* the arguments do_noopts() last saw, joined by spaces, or "" if not called */
+static char noopts_seen[40];
+
+/* Record the arguments, so a test can see whether and how it was called */
+static int do_noopts(struct getopt_state *gs)
+{
+	const char *arg;
+
+	strlcpy(noopts_seen, "called", sizeof(noopts_seen));
+	while ((arg = getopt_pop(gs))) {
+		strlcat(noopts_seen, " ", sizeof(noopts_seen));
+		strlcat(noopts_seen, arg, sizeof(noopts_seen));
+	}
+
+	return 0;
+}
+
+static struct cmd_tbl noopts_cmd =
+	U_BOOT_CMD_MKENT_NOOPTS(noopts, 4, 0, do_noopts, "", "");
+
+static struct cmd_tbl getopt_cmd =
+	U_BOOT_CMD_MKENT_GETOPT(getopt, 4, 0, do_noopts, "", "");
+
+/**
+ * invoke() - Run a test command through cmd_invoke()
+ *
+ * @cmdtp: Command to run
+ * @argc: Number of arguments, including the command name
+ * @argv: Arguments
+ * Return: what cmd_invoke() returns
+ */
+static int invoke(struct cmd_tbl *cmdtp, int argc, char *const argv[])
+{
+	*noopts_seen = '\0';
+
+	return cmd_invoke(cmdtp, 0, argc, argv);
+}
+
+/* Test that a command declared with no options refuses any */
+static int command_test_noopts(struct unit_test_state *uts)
+{
+	char *const plain[] = { "noopts", "a", "b", NULL };
+	char *const opt[] = { "noopts", "-x", "a", NULL };
+	char *const late[] = { "noopts", "a", "-x", NULL };
+	char *const dashes[] = { "noopts", "--", "-x", NULL };
+
+	if (!IS_ENABLED(CONFIG_GETOPT))
+		return -EAGAIN;
+
+	/* the arguments reach the function untouched */
+	ut_assertok(invoke(&noopts_cmd, 3, plain));
+	ut_asserteq_str("called a b", noopts_seen);
+
+	/* an option is refused before the function is called at all */
+	ut_asserteq(CMD_RET_USAGE, invoke(&noopts_cmd, 3, opt));
+	ut_asserteq_str("", noopts_seen);
+
+	/* after the first argument, '-x' is an argument like any other */
+	ut_assertok(invoke(&noopts_cmd, 3, late));
+	ut_asserteq_str("called a -x", noopts_seen);
+
+	/* and '--' ends the options, so it can come first too */
+	ut_assertok(invoke(&noopts_cmd, 3, dashes));
+	ut_asserteq_str("called -x", noopts_seen);
+
+	/* the flag is what does it: the same function without it is called */
+	ut_assertok(invoke(&getopt_cmd, 3, opt));
+	ut_asserteq_str("called -x a", noopts_seen);
+
+	return 0;
+}
+CMD_TEST(command_test_noopts, 0);

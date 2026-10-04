@@ -550,6 +550,10 @@ int cmd_invoke_rep(struct cmd_tbl *cmdtp, int flag, int argc,
 		gs.cmd_flag = flag;
 		gs.repeatable = repeatable;
 
+		/* a command which takes no options refuses any it is given */
+		if ((cmdtp->cmd_flags & CMDF_NOOPTS) && getopt(&gs, "+") > 0)
+			return CMD_RET_USAGE;
+
 		return func(&gs);
 	}
 
