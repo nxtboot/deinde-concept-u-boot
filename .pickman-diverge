@@ -8,12 +8,15 @@
 # <path> may be a glob.  <hunk> is a hunk fingerprint, or '*' for
 # every hunk in the file.  Run "pickman drift-accept" to add entries.
 
-README                                       3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
-arch/sandbox/include/asm/clk.h               69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-cmd/efi_common.c                             ae35f1f9e5d1  efi_memmap_type_name(): renamed from upstream to avoid clashing with the global efi_mem_type_name() of d07934b67e2f
-cmd/efi_common.c                             c784074111b3  efi_memmap_type_name(): call site of the rename above
-drivers/clk/clk_sandbox.c                    8ecb53450dbb  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/clk/clk_sandbox.c                    a943799b685c  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/clk/clk_sandbox.c                    c7ed2fa3819d  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/power/domain/sandbox-power-domain.c  0642b19358cf  The test uses power domain 2, so subdomains must be 3; upstream's 1 overruns the refcount array, which mcheck catches here
-test/dm/clk.c                                6d6cde373b96  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+README                                            3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
+arch/sandbox/include/asm/clk.h                    69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+board/phytec/phycore_imx91_93/phycore-imx91-93.c  b2c9dc505170  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+board/phytec/phycore_imx91_93/phycore-imx91-93.c  bafad51188a6  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+board/phytec/phycore_imx91_93/phycore-imx91-93.c  cd645dac27c0  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+cmd/efi_common.c                                  ae35f1f9e5d1  efi_memmap_type_name(): renamed from upstream to avoid clashing with the global efi_mem_type_name() of d07934b67e2f
+cmd/efi_common.c                                  c784074111b3  efi_memmap_type_name(): call site of the rename above
+drivers/clk/clk_sandbox.c                         8ecb53450dbb  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/clk/clk_sandbox.c                         a943799b685c  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/clk/clk_sandbox.c                         c7ed2fa3819d  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/power/domain/sandbox-power-domain.c       0642b19358cf  The test uses power domain 2, so subdomains must be 3; upstream's 1 overruns the refcount array, which mcheck catches here
+test/dm/clk.c                                     6d6cde373b96  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
