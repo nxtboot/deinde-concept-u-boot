@@ -343,7 +343,7 @@ static void do_nand_status(struct mtd_info *mtd)
 #ifdef CONFIG_ENV_OFFSET_OOB
 unsigned long nand_env_oob_offset;
 
-int do_nand_env_oob(struct cmd_tbl *cmdtp, int argc, char *const argv[])
+int do_nand_env_oob(int argc, char *const argv[])
 {
 	int ret;
 	uint32_t oob_buf[ENV_OFFSET_SIZE/sizeof(uint32_t)];
@@ -592,7 +592,7 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 #ifdef CONFIG_ENV_OFFSET_OOB
 	/* this command operates only on the first nand device */
 	if (strcmp(cmd, "env.oob") == 0)
-		return do_nand_env_oob(cmdtp, argc - 1, argv + 1);
+		return do_nand_env_oob(argc - 1, argv + 1);
 #endif
 
 	/* The following commands operate on the current device, unless
