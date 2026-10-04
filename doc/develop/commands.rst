@@ -19,6 +19,10 @@ the getopt signature, described below, which parses options for it:
     U_BOOT_CMD_GETOPT_COMPLETE(name, maxargs, repeatable, command, "usage",
                                "help", comp)
 
+If the command takes no options, use U_BOOT_CMD_NOOPTS() or
+U_BOOT_CMD_NOOPTS_COMPLETE() instead. They take the same arguments; see
+`Commands without options`_ below.
+
 Many existing commands use the older macros, which give the command function
 the classic signature instead. Do not convert one without a test to show that
 its behaviour has not changed:
@@ -169,14 +173,6 @@ which is not an option, which is how U-Boot commands have always behaved, and
 avoids needing CONFIG_GETOPT_PERMUTE, which would make every command carry a
 writable copy of its arguments.
 
-A command with no options at all still gains something from the signature: an
-empty optstring refuses any option rather than treating it as data:
-
-.. code-block:: c
-
-    if (getopt(gs, "+") > 0)
-        return CMD_RET_USAGE;
-
 The remaining arguments are taken one at a time with getopt_pop(), or read from
 ``gs->argv[gs->index]`` onwards.
 
@@ -215,6 +211,36 @@ CMD_RET_FAILURE
 CMD_RET_USAGE
     The command was called with invalid parameters. This value
     leads to the display of the usage string.
+
+Commands without options
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A command which takes no options should still refuse one, reporting '-x' with
+the usage message rather than treating it as data. Declare it with
+U_BOOT_CMD_NOOPTS() (or U_BOOT_CMD_MKENT_NOOPTS() for a sub-command) and the
+command framework does that before calling the function, so the function need
+not call getopt() at all:
+
+.. code-block:: c
+
+    static int do_hello(struct getopt_state *gs)
+    {
+        const char *name = getopt_pop(gs);
+
+        printf("Hello %s\n", name ? name : "world");
+
+        return 0;
+    }
+
+    U_BOOT_CMD_NOOPTS(hello, 2, 0, do_hello, "say hello", "[<name>]");
+
+As with the ``+`` optstring, only a leading option is refused: 'hello -x' gives
+the usage message, while 'hello a -x' and 'hello -- -x' reach the function with
+'-x' as an argument.
+
+Do not write the check into the function instead. It is the same in every
+command, and doing it once in the framework is smaller as soon as a board has
+two or three such commands.
 
 Completion function
 -------------------
