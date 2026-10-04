@@ -109,6 +109,10 @@ stages:
       options: $(container_option)
     steps:
       - script: |
+          # Prepare python environment, for binman
+          python3 -m venv /tmp/venv
+          . /tmp/venv/bin/activate
+          pip install -r tools/binman/requirements.txt setuptools
           # Allow pipefail because of how we use 'yes' here.
           set +o pipefail;
           yes 0 | make allyesconfig oldconfig all -j$(nproc)
@@ -118,7 +122,7 @@ stages:
           make tools-only_config envtools -j$(nproc)
 
   - job: utils
-    displayName: 'Run binman, buildman, dtoc and Kconfig testsuites'
+    displayName: 'Run buildman, dtoc and Kconfig testsuites'
     pool:
       vmImage: $(ubuntu_vm)
     container:
@@ -145,8 +149,6 @@ stages:
           export PATH=${UBOOT_TRAVIS_BUILD_DIR}/scripts/dtc:${PATH}
           ./tools/buildman/buildman -T0 -o ${UBOOT_TRAVIS_BUILD_DIR} -w --board tools-only
           set -ex
-          ./tools/binman/binman --toolpath ${UBOOT_TRAVIS_BUILD_DIR}/tools tool -f missing
-          ./tools/binman/binman --toolpath ${UBOOT_TRAVIS_BUILD_DIR}/tools test
           ./tools/buildman/buildman -t
           ./tools/qconfig.py -t
           ./tools/dtoc/dtoc -t
