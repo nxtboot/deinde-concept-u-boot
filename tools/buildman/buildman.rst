@@ -1408,7 +1408,7 @@ not cause the build to fail:
 Support for binary blobs
 ------------------------
 
-U-Boot is moving to using Binman (see :doc:`../develop/package/binman`) for
+U-Boot is moving to using Binman (see https://binman.readthedocs.io/) for
 dealing with the complexities of packaging U-Boot along with binary files from
 other projects. These are called 'external blobs' by Binman.
 

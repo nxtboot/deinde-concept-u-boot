@@ -34,7 +34,7 @@ The BootROM in the RZ/N1 SoC expects to find the boot image in SPKG format.
 This format is documented in Chapter 7.4 of the RZ/N1 User Manual.
 
 The `binman` tool may be used to generate the SPKG format for booting.
-See tools/binman/binman.rst for details on this tool and its pre-requisites.
+See https://binman.readthedocs.io/ for details on this tool and its pre-requisites.
 
 .. code-block:: bash
 

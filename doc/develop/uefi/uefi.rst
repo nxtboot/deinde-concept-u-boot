@@ -410,9 +410,11 @@ generated with u-boot.bin as it's input payload. The capsule
 generation parameters like image-index and image-guid are being
 specified as properties. Similarly, other properties like the private
 and public key certificate can be specified for generating signed
-capsules. Refer :ref:`etype_efi_capsule` for documentation about the
-efi-capsule binman entry type, which describes all the properties that
+capsules. Refer to the `efi-capsule entry type`_ for documentation about
+the efi-capsule binman entry type, which describes all the properties that
 can be specified.
+
+.. _`efi-capsule entry type`: https://binman.readthedocs.io/en/latest/entries.html#etype-efi-capsule
 
 Dumping capsule headers
 ***********************
