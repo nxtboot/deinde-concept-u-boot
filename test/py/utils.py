@@ -14,6 +14,7 @@ import signal
 import sys
 import time
 import re
+import shutil
 from contextlib import contextmanager
 import pytest
 
@@ -263,6 +264,22 @@ def run_and_log_expect_exception(ubman, cmd, retcode, msg):
                         "but it was not raised" % (retcode, msg))
     finally:
         runner.close()
+
+def find_binman(config):
+    """Find the binman tool to run
+
+    binman is provided by the binary-manager package. Use the copy on the
+    PATH if there is one, else tools/binman/binman in the source tree, as the
+    U-Boot build does.
+
+    Args:
+        config (ArbitraryAttributeContainer): Test configuration
+
+    Returns:
+        str: Path to binman
+    """
+    return (shutil.which('binman') or
+            os.path.join(config.source_dir, 'tools', 'binman', 'binman'))
 
 ram_base = None
 def find_ram_base(ubman):

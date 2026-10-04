@@ -563,7 +563,7 @@ def test_vboot_base(ubman, name, sha_algo, padding, sign_options, required,
     datadir = ubman.config.source_dir + '/test/py/tests/vboot/'
     fit = '%stest.fit' % tmpdir
     mkimage = ubman.config.build_dir + '/tools/mkimage'
-    binman = ubman.config.source_dir + '/tools/binman/binman'
+    binman = utils.find_binman(ubman.config)
     fit_check_sign = ubman.config.build_dir + '/tools/fit_check_sign'
     dtc_args = '-I dts -O dtb -i %s' % tmpdir
     dtb = '%ssandbox-u-boot.dtb' % tmpdir
