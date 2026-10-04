@@ -29,9 +29,6 @@ static int do_date(struct getopt_state *gs)
 	int rcode = 0;
 	int old_bus __maybe_unused;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	/* switch to correct I2C bus */
 	struct udevice *dev;
 
@@ -209,7 +206,7 @@ static int mk_date(const char *datestr, struct rtc_time *tmp)
 
 /***************************************************/
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	date,	2,	1,	do_date,
 	"get/set/reset date & time",
 	"[MMDDhhmm[[CC]YY][.ss]]\ndate reset\n"

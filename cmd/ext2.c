@@ -25,9 +25,6 @@
 
 static int do_ext2ls(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	return do_ls(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
@@ -36,20 +33,17 @@ static int do_ext2ls(struct getopt_state *gs)
  */
 static int do_ext2load(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	return do_load(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	ext2ls,	4,	1,	do_ext2ls,
 	"list files in a directory (default /)",
 	"<interface> <dev[:part]> [directory]\n"
 	"    - list files from 'dev' on 'interface' in a 'directory'"
 );
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	ext2load,	7,	0,	do_ext2load,
 	"load binary file from a Ext2 filesystem",
 	"<interface> [<dev[:part]> [addr [filename [bytes [pos]]]]]\n"

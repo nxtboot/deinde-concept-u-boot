@@ -456,9 +456,6 @@ static int do_regulator(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *cmd;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	argc--;
 	argv++;
 
@@ -469,7 +466,7 @@ static int do_regulator(struct getopt_state *gs)
 	return cmd_invoke(cmd, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD_GETOPT(regulator, CONFIG_SYS_MAXARGS, 1, do_regulator,
+U_BOOT_CMD_NOOPTS(regulator, CONFIG_SYS_MAXARGS, 1, do_regulator,
 	"uclass operations",
 	"list             - list UCLASS regulator devices\n"
 	"regulator dev [regulator-name] - show/[set] operating regulator device\n"

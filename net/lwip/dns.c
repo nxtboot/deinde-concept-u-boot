@@ -106,9 +106,6 @@ int do_dns(struct getopt_state *gs)
 {
 	const char *name;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	name = getopt_pop(gs);
 	if (!name)
 		return CMD_RET_USAGE;

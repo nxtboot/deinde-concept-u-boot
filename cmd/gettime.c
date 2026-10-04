@@ -19,9 +19,6 @@ static int do_gettime(struct getopt_state *gs)
 {
 	unsigned long int val = get_timer(0);
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 #ifdef CONFIG_SYS_HZ
 	printf("Timer val: %lu\n", val);
 	printf("Seconds : %lu\n", val / CONFIG_SYS_HZ);
@@ -35,7 +32,7 @@ static int do_gettime(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	gettime,	1,	1,	do_gettime,
 	"get timer val elapsed",
 	"get time elapsed from uboot start"

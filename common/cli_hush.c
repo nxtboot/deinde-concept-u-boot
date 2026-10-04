@@ -3661,10 +3661,6 @@ static int do_showvar(struct getopt_state *gs)
 	struct variables *cur;
 	const char *name;
 
-	/* the command takes no options, so any is a mistake */
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	name = getopt_pop(gs);
 	if (!name) {			/* Print all env variables	*/
 		for (cur = top_vars; cur; cur = cur->next) {
@@ -3696,7 +3692,7 @@ static int do_showvar(struct getopt_state *gs)
 	return rcode;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	showvar, CONFIG_SYS_MAXARGS, 1,	do_showvar,
 	"print local hushshell variables",
 	"\n    - print values of all hushshell variables\n"

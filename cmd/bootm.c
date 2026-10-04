@@ -270,9 +270,6 @@ static int do_iminfo(struct getopt_state *gs)
 	ulong	addr;
 	int	rcode = 0;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2) {
 		return image_info(image_load_addr);
 	}
@@ -356,7 +353,7 @@ static int image_info(ulong addr)
 	return 1;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	iminfo,	CONFIG_SYS_MAXARGS,	1,	do_iminfo,
 	"print header information for application image",
 	"addr [addr ...]\n"

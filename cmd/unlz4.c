@@ -19,9 +19,6 @@ static int do_unlz4(struct getopt_state *gs)
 	size_t src_len = ~0UL, dst_len = ~0UL;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	switch (argc) {
 	case 4:
 		src = hextoul(argv[1], NULL);
@@ -45,7 +42,7 @@ static int do_unlz4(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(unlz4, 4, 1, do_unlz4,
+U_BOOT_CMD_NOOPTS(unlz4, 4, 1, do_unlz4,
 		  "lz4 uncompress a memory region",
 		  "srcaddr dstaddr dstsize\n"
 		  "NOTE: Specify the destination size that is sufficiently larger\n"

@@ -12,13 +12,10 @@
 
 static int do_fs_uuid_wrapper(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	return do_fs_uuid(gs->argc, gs->argv, FS_TYPE_ANY);
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	fsuuid, 4, 1, do_fs_uuid_wrapper,
 	"Look up a filesystem UUID",
 	"<interface> <dev>:<part>\n"

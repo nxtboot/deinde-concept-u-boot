@@ -545,9 +545,6 @@ static int do_tpmtest(struct getopt_state *gs)
 	struct cmd_tbl *c;
 	int i;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	printf("argc = %d, argv = ", argc);
 
 	for (i = 0; i < argc; i++)
@@ -562,7 +559,7 @@ static int do_tpmtest(struct getopt_state *gs)
 	return c ? cmd_invoke(c, gs->cmd_flag, argc, argv) : CMD_RET_USAGE;
 }
 
-U_BOOT_CMD_GETOPT(tpmtest, 2, 1, do_tpmtest, "TPM tests",
+U_BOOT_CMD_NOOPTS(tpmtest, 2, 1, do_tpmtest, "TPM tests",
 	"\n\tearly_extend\n"
 	"\tearly_nvram\n"
 	"\tearly_nvram2\n"

@@ -68,9 +68,6 @@ static int do_pmc(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *cp;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2) /* no subcommand */
 		return CMD_RET_USAGE;
 
@@ -81,7 +78,7 @@ static int do_pmc(struct getopt_state *gs)
 	return cmd_invoke(cp, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	pmc, 2, 1, do_pmc, "Power-management controller info",
 	"info - read state and show info about the PMC\n"
 	"pmc init - read state from the PMC\n"

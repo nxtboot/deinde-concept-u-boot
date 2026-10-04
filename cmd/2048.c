@@ -334,9 +334,6 @@ static int do_2048(struct getopt_state *gs)
 	const char *arg;
 	bool success;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	arg = getopt_pop(gs);
 	if (arg && strcmp(arg, "test") == 0)
 		return test();
@@ -395,7 +392,7 @@ static int do_2048(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	2048,	2,	1,	do_2048,
 	"The 2048 game",
 	"Use your arrow keys to move the tiles. When two tiles with "

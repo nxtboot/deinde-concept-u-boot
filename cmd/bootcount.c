@@ -33,9 +33,6 @@ static int do_bootcount(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *cp;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -54,7 +51,7 @@ U_BOOT_LONGHELP(bootcount,
 	"print - print current bootcounter\n"
 	"reset - reset the bootcounter");
 
-U_BOOT_CMD_GETOPT(bootcount, 2, 1, do_bootcount,
+U_BOOT_CMD_NOOPTS(bootcount, 2, 1, do_bootcount,
 		  "bootcount",
 		  bootcount_help_text
 );

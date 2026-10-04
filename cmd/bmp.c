@@ -79,9 +79,6 @@ static int do_bmp(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	/* Strip off leading 'bmp' command argument */
 	argc--;
 	argv++;
@@ -94,7 +91,7 @@ static int do_bmp(struct getopt_state *gs)
 		return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	bmp,	5,	1,	do_bmp,
 	"manipulate BMP image data",
 	"info <imageAddr>          - display image info\n"

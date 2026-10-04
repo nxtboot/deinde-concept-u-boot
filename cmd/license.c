@@ -18,9 +18,6 @@ static int do_license(struct getopt_state *gs)
 	unsigned long len = data_size;
 	int ret = CMD_RET_SUCCESS;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	dst = malloc(data_size + 1);
 	if (!dst)
 		return CMD_RET_FAILURE;
@@ -41,7 +38,7 @@ free:
 	return ret;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	license, 1, 1, do_license,
 	"print GPL license text",
 	""

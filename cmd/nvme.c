@@ -18,9 +18,6 @@ static int do_nvme(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc == 2) {
 		if (strncmp(argv[1], "scan", 4) == 0) {
 			ret = nvme_scan_namespace();
@@ -49,7 +46,7 @@ static int do_nvme(struct getopt_state *gs)
 	return blk_common_cmd(argc, argv, UCLASS_NVME, &nvme_curr_dev);
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	nvme, 8, 1, do_nvme,
 	"NVM Express sub-system",
 	"scan - scan NVMe devices\n"

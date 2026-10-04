@@ -265,9 +265,6 @@ static int do_osd(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *c;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -290,7 +287,7 @@ U_BOOT_LONGHELP(osd,
 	"print [pos_x] [pos_y] [color] [text] - write ASCII buffer (given by text data and driver-specific color information) to osd memory\n"
 	"size [size_x] [size_y] - set OSD XY size in characters\n");
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	osd, 6, 1, do_osd,
 	"OSD sub-system",
 	osd_help_text

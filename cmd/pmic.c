@@ -212,9 +212,6 @@ static int do_pmic(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct cmd_tbl *cmd;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	argc--;
 	argv++;
 
@@ -225,7 +222,7 @@ static int do_pmic(struct getopt_state *gs)
 	return cmd_invoke(cmd, gs->cmd_flag, argc, argv);
 }
 
-U_BOOT_CMD_GETOPT(pmic, CONFIG_SYS_MAXARGS, 1, do_pmic,
+U_BOOT_CMD_NOOPTS(pmic, CONFIG_SYS_MAXARGS, 1, do_pmic,
 	"PMIC sub-system",
 	"list          - list pmic devices\n"
 	"pmic dev [name]    - show or [set] operating PMIC device\n"

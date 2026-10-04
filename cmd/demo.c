@@ -98,9 +98,6 @@ static int do_demo(struct getopt_state *gs)
 	int devnum = 0;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 	demo_cmd = find_cmd_tbl(argv[1], demo_commands,
@@ -130,7 +127,7 @@ static int do_demo(struct getopt_state *gs)
 	return cmd_process_error(demo_cmd, ret);
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	demo,   4,      1,      do_demo,
 	"Driver model (dm) demo operations",
 	"list                     List available demo devices\n"

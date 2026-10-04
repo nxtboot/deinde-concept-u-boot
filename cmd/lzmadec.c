@@ -26,9 +26,6 @@ static int do_lzmadec(struct getopt_state *gs)
 	SizeT src_len = ~0UL, dst_len = ~0UL;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	switch (argc) {
 	case 4:
 		dst_len = hextoul(argv[3], NULL);
@@ -53,7 +50,7 @@ static int do_lzmadec(struct getopt_state *gs)
 	return 0;
 }
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	lzmadec,    4,    1,    do_lzmadec,
 	"lzma uncompress a memory region",
 	"srcaddr dstaddr [dstsize]"

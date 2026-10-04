@@ -43,17 +43,11 @@
 
 static int do_ext4_size(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	return do_size(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
 static int do_ext4_load(struct getopt_state *gs)
 {
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	return do_load(gs->argc, gs->argv, FS_TYPE_EXT);
 }
 
@@ -77,7 +71,7 @@ U_BOOT_CMD(ext4write, 7, 1, do_ext4_write,
 
 #endif
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	ext4size,	4,	0,	do_ext4_size,
 	"determine a file's size",
 	"<interface> <dev[:part]> <filename>\n"
@@ -90,7 +84,7 @@ U_BOOT_CMD(ext4ls, 4, 1, do_ext4_ls,
 	   "<interface> <dev[:part]> [directory]\n"
 	   "    - list files from 'dev' on 'interface' in a 'directory'");
 
-U_BOOT_CMD_GETOPT(ext4load, 7, 0, do_ext4_load,
+U_BOOT_CMD_NOOPTS(ext4load, 7, 0, do_ext4_load,
 		  "load binary file from a Ext4 filesystem",
 		  "<interface> [<dev[:part]> [addr [filename [bytes [pos]]]]]\n"
 		  "    - load binary file 'filename' from 'dev' on 'interface'\n"

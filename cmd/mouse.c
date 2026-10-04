@@ -20,9 +20,6 @@ static int do_mouse_dump(struct getopt_state *gs)
 	int count;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	ret = uclass_first_device_err(UCLASS_MOUSE, &dev);
 	if (ret) {
 		printf("Mouse not found (err=%d)\n", ret);
@@ -69,4 +66,4 @@ static char mouse_help_text[] =
 	"dump - Dump input from a mouse";
 
 U_BOOT_CMD_WITH_SUBCMDS(mouse, "Mouse input", mouse_help_text,
-	U_BOOT_CMD_MKENT_GETOPT(dump, 1, 1, do_mouse_dump, "", ""));
+	U_BOOT_CMD_MKENT_NOOPTS(dump, 1, 1, do_mouse_dump, "", ""));

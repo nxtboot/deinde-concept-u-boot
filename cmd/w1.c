@@ -110,9 +110,6 @@ int do_w1(struct getopt_state *gs)
 	int argc = gs->argc;
 	char *const *argv = gs->argv;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -125,7 +122,7 @@ int do_w1(struct getopt_state *gs)
 	return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD_GETOPT(w1, 6, 0, do_w1,
+U_BOOT_CMD_NOOPTS(w1, 6, 0, do_w1,
 		  "onewire interface utility commands",
 		  "bus - show onewire bus info (all)\n"
 		  "w1 read [<bus> [<dev> [offset [length]]]]"
