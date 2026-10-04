@@ -582,7 +582,10 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 		}
 
 		dev = (int)dectoul(argv[2], NULL);
-		set_dev(dev);
+		if (set_dev(dev)) {
+			puts("no devices available\n");
+			return 1;
+		}
 
 		return 0;
 	}
