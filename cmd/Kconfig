@@ -1657,6 +1657,7 @@ config CMD_OPTEE
 config CMD_MTD
 	bool "mtd"
 	depends on MTD
+	select GETOPT
 	select MTD_PARTITIONS
 	help
 	  MTD commands support.

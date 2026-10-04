@@ -1485,6 +1485,13 @@ T:	git https://git.u-boot-project.org/u-boot/custodians/u-boot-mmc.git
 F:	drivers/mmc/
 N:	mmc
 
+MTD COMMAND
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+F:	cmd/mtd.c
+F:	doc/usage/cmd/mtd.rst
+F:	test/cmd/mtd.c
+
 NETWORK
 M:	Jerome Forissier <jerome.forissier@arm.com>
 S:	Maintained
