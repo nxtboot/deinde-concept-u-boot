@@ -1717,6 +1717,7 @@ config CMD_NAND
 	bool "nand"
 	default y if NAND_SUNXI
 	depends on MTD_RAW_NAND
+	select GETOPT
 	help
 	  NAND support.
 

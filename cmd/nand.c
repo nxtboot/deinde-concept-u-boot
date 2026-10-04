@@ -31,6 +31,7 @@
 #include <command.h>
 #include <console.h>
 #include <env.h>
+#include <getopt.h>
 #include <watchdog.h>
 #include <malloc.h>
 #include <mapmem.h>
@@ -532,9 +533,10 @@ static void adjust_size_for_badblocks(loff_t *size, loff_t offset, int dev)
 	}
 }
 
-static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_nand(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i, ret = 0;
 	ulong addr;
 	loff_t off, size, maxsize;
@@ -547,7 +549,10 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 #endif
 	const char *quiet_str = env_get("quiet");
 	int dev = nand_curr_device;
-	int repeat = flag & CMD_FLAG_REPEAT;
+	int repeat = gs->cmd_flag & CMD_FLAG_REPEAT;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/* at least two arguments please */
 	if (argc < 2)
@@ -1073,7 +1078,7 @@ U_BOOT_LONGHELP(nand,
 #endif
 	);
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	nand, CONFIG_SYS_MAXARGS, 1, do_nand,
 	"NAND sub-system", nand_help_text
 );
