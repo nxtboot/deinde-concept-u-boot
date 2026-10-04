@@ -39,6 +39,10 @@ def _get_readelf():
     return shutil.which('readelf') or 'readelf'
 
 
+# Build directories holding the objects for each xPL phase
+XPL_DIRS = ('spl', 'tpl', 'vpl')
+
+
 def _resolve_header(header_path, obj_dir, srcdir, cache):
     """Resolve a source path from a readelf section header to a real file
 
@@ -66,6 +70,13 @@ def _resolve_header(header_path, obj_dir, srcdir, cache):
     else:
         # Relative path - try relative to srcdir and obj_dir
         abs_path = os.path.realpath(os.path.join(srcdir, obj_dir, header_path))
+        if not os.path.exists(abs_path):
+            # xPL objects are built under a directory named after the phase,
+            # e.g. spl/common/spl/spl.o, but their source is common/spl/spl.c
+            parts = obj_dir.split(os.sep, 1)
+            if len(parts) == 2 and parts[0] in XPL_DIRS:
+                abs_path = os.path.realpath(os.path.join(srcdir, parts[1],
+                                                         header_path))
         if not os.path.exists(abs_path):
             abs_path = os.path.realpath(os.path.join(srcdir, header_path))
     result = abs_path if os.path.exists(abs_path) else None
@@ -178,7 +189,8 @@ def count_lines(file_path):
         return 0
 
 
-def extract_lines(build_dir, srcdir, jobs=None, use_threads=False):
+def extract_lines(build_dir, srcdir, jobs=None, use_threads=False,
+                  obj_files=None):
     """Extract the source lines compiled into a build.
 
     Finds all object files under build_dir and reads their DWARF line tables
@@ -193,6 +205,8 @@ def extract_lines(build_dir, srcdir, jobs=None, use_threads=False):
             The work is dominated by the readelf subprocess, so threads give a
             good speed-up, and unlike a process pool they are safe to use from
             a daemon thread (as buildman's builder threads are)
+        obj_files (list of str): Object files to read, or None to read every
+            object file under build_dir
 
     Returns:
         tuple:
@@ -201,7 +215,8 @@ def extract_lines(build_dir, srcdir, jobs=None, use_threads=False):
             list of str: Error messages, one per object file that could not be
                 read (empty on full success)
     """
-    obj_files = find_object_files(build_dir)
+    if obj_files is None:
+        obj_files = find_object_files(build_dir)
     if not obj_files:
         return defaultdict(set), []
 
