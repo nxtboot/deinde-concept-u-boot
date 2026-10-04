@@ -153,4 +153,5 @@ See also
 * :doc:`sf<sf>` for reading and writing SPI flash, which can be partitioned
   this way
 * :doc:`mtd<mtd>` for the MTD stack command which supersedes this one
-* *nand* for NAND operations, which accept a partition name defined here
+* :doc:`nand<nand>` for NAND operations, which accept a partition name
+  defined here

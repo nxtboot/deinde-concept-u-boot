@@ -252,6 +252,8 @@ See also
 * :doc:`mtd<mtd>` for the same operations through the MTD stack, which names
   the device rather than its bus and chip select
 * :doc:`mtdparts<mtdparts>` for splitting a flash device into named partitions
+* :doc:`nand<nand>` for the same operations on raw NAND, which this command
+  does not reach
 * :doc:`cbfsinit<cbfsinit>` for reading a coreboot filesystem out of a flash
   device which the chipset maps into memory
 

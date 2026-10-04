@@ -279,4 +279,5 @@ See also
 * :doc:`chpart<chpart>` for choosing which of those partitions is current
 * :doc:`sf<sf>` for SPI flash operations which name a device by bus and chip
   select rather than by MTD name
-* *nand* for the older NAND-only command, which this one supersedes
+* :doc:`nand<nand>` for the older NAND-only command, which this one
+  supersedes
