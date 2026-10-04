@@ -10,6 +10,11 @@
 
 README                                            3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
 arch/sandbox/include/asm/clk.h                    69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+board/nxp/ls1043ardb/ls1043ardb.c                 56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/ls1043ardb/ls1043ardb.c                 8bf868f7dafe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/lx2160a/lx2160a.c                       20fa86dcc77c  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/lx2160a/lx2160a.c                       56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/p1_p2_rdb_pc/p1_p2_rdb_pc.c             5af7dc73137f  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
 board/phytec/phycore_imx91_93/phycore-imx91-93.c  b2c9dc505170  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
 board/phytec/phycore_imx91_93/phycore-imx91-93.c  bafad51188a6  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
 board/phytec/phycore_imx91_93/phycore-imx91-93.c  cd645dac27c0  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
