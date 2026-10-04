@@ -39,6 +39,10 @@ def _get_readelf():
     return shutil.which('readelf') or 'readelf'
 
 
+# Build directories holding the objects for each xPL phase
+XPL_DIRS = ('spl', 'tpl', 'vpl')
+
+
 def _resolve_header(header_path, obj_dir, srcdir, cache):
     """Resolve a source path from a readelf section header to a real file
 
@@ -66,6 +70,13 @@ def _resolve_header(header_path, obj_dir, srcdir, cache):
     else:
         # Relative path - try relative to srcdir and obj_dir
         abs_path = os.path.realpath(os.path.join(srcdir, obj_dir, header_path))
+        if not os.path.exists(abs_path):
+            # xPL objects are built under a directory named after the phase,
+            # e.g. spl/common/spl/spl.o, but their source is common/spl/spl.c
+            parts = obj_dir.split(os.sep, 1)
+            if len(parts) == 2 and parts[0] in XPL_DIRS:
+                abs_path = os.path.realpath(os.path.join(srcdir, parts[1],
+                                                         header_path))
         if not os.path.exists(abs_path):
             abs_path = os.path.realpath(os.path.join(srcdir, header_path))
     result = abs_path if os.path.exists(abs_path) else None

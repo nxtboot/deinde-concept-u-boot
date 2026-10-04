@@ -112,6 +112,12 @@ class TestResolveHeader(unittest.TestCase):
             dwarf_lines._resolve_header('bar.c', 'sub', self.src, {}),
             os.path.realpath(os.path.join(self.src, 'sub', 'bar.c')))
 
+    def test_relative_via_xpl_dir(self):
+        """An xPL object's source resolves without the phase directory"""
+        self.assertEqual(
+            dwarf_lines._resolve_header('bar.c', 'spl/sub', self.src, {}),
+            os.path.realpath(os.path.join(self.src, 'sub', 'bar.c')))
+
     def test_relative_via_srcdir(self):
         """A relative path falls back to srcdir when obj_dir misses"""
         self.assertEqual(
