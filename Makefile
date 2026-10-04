@@ -1710,6 +1710,15 @@ u-boot.ldr:	u-boot
 # ---------------------------------------------------------------------------
 # Use 'make BINMAN_DEBUG=1' to enable debugging
 # Use 'make BINMAN_VERBOSE=3' to set vebosity level
+# Use 'make BINMAN=/path/to/binman' to select the binman to run
+
+# binman is provided by the binary-manager package (pip install
+# binary-manager). Use the copy on the PATH if there is one, else
+# tools/binman/binman
+ifeq ($(BINMAN),)
+BINMAN := $(or $(shell command -v binman 2>/dev/null), \
+	$(srctree)/tools/binman/binman)
+endif
 
 ifneq ($(EXT_DTB),)
 ext_dtb_list := $(basename $(notdir $(EXT_DTB)))
@@ -1736,7 +1745,7 @@ endif
 endif
 
 quiet_cmd_binman = BINMAN  $@
-cmd_binman = $(srctree)/tools/binman/binman $(if $(BINMAN_DEBUG),-D) \
+cmd_binman = $(BINMAN) $(if $(BINMAN_DEBUG),-D) \
 		$(foreach f,$(BINMAN_TOOLPATHS),--toolpath $(f)) \
                 --toolpath $(objtree)/tools \
 		$(if $(BINMAN_VERBOSE),-v$(BINMAN_VERBOSE)) \
