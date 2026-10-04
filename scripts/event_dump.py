@@ -14,6 +14,7 @@ src_path = os.path.dirname(our_path)
 
 sys.path.insert(1, os.path.join(our_path, '../tools'))
 
+# This needs binman, from the binary-manager package
 from binman import elf
 from u_boot_pylib import tools
 
