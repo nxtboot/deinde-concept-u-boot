@@ -6,6 +6,9 @@ edition = "2021"
 license = "GPL-2.0+"
 description = "Rust demo program for U-Boot library"
 authors = ["Simon Glass <simon.glass@canonical.com>"]
+# Keep the build outputs out of the files which cargo scans to decide whether
+# to rebuild, since an in-tree build puts them here and builds them in parallel
+exclude = ["build-*", "demo", "demo_static", "target"]
 
 [dependencies]
 u-boot-sys = { path = "../../lib/rust" }
