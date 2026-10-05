@@ -57,7 +57,8 @@ def is_qconfig_commit(subject):
     return any(subject.startswith(pat) for pat in QCONFIG_SUBJECTS)
 
 
-async def run(commits, source, branch_name, repo_path=None):  # pylint: disable=too-many-locals
+async def run(commits, source, branch_name, repo_path=None,  # pylint: disable=too-many-locals
+              external_paths=None):
     """Run the Claude agent to cherry-pick commits
 
     Args:
@@ -66,6 +67,8 @@ async def run(commits, source, branch_name, repo_path=None):  # pylint: disable=
         source (str): source branch name
         branch_name (str): name for the new branch to create
         repo_path (str): path to repository (defaults to current directory)
+        external_paths (list of str): Paths of tools which are maintained as
+            separate projects, whose changes are dropped, or None
 
     Returns:
         bool: True on success, False on failure
@@ -133,12 +136,29 @@ For [QCONFIG RESYNC] commits, instead of cherry-picking:
 4. Continue with the remaining commits after qconfig.py completes
 '''
 
+    # Add note about tools which have moved out of the tree
+    external_note = ''
+    if external_paths:
+        path_list = ', '.join(f"'{path}/'" for path in external_paths)
+        external_note = f'''
+
+IMPORTANT: Changes under {path_list} are maintained in separate projects and
+have already been handled there. Drop them when cherry-picking:
+1. If a cherry-pick has conflicts under these paths (typically modify/delete,
+   since the files are no longer here), resolve them by removing the files:
+   git rm <file>
+2. If a non-merge commit becomes empty as a result, skip it with
+   'git cherry-pick --skip' and note this in your report. Its changes have
+   been handled in the separate project.
+3. Do not count these dropped changes as a significant delta.
+'''
+
     # Get full hash of last commit for signal file
     last_commit_hash = commits[-1].hash
 
     prompt = f"""Cherry-pick the following commits from {source} branch:
 
-{commit_list}{applied_note}{qconfig_note}
+{commit_list}{applied_note}{qconfig_note}{external_note}
 
 Steps to follow:
 1. First run 'git status' to check the repository state is clean
@@ -255,7 +275,8 @@ def read_signal_file(repo_path=None):
         return None, None
 
 
-def cherry_pick_commits(commits, source, branch_name, repo_path=None):
+def cherry_pick_commits(commits, source, branch_name, repo_path=None,
+                        external_paths=None):
     """Synchronous wrapper for running the cherry-pick agent
 
     Args:
@@ -264,12 +285,15 @@ def cherry_pick_commits(commits, source, branch_name, repo_path=None):
         source (str): source branch name
         branch_name (str): name for the new branch to create
         repo_path (str): path to repository (defaults to current directory)
+        external_paths (list of str): Paths of tools which are maintained as
+            separate projects, whose changes are dropped, or None
 
     Returns:
         tuple: (success, conversation_log) where success is bool and
             conversation_log is the agent's output text
     """
-    return asyncio.run(run(commits, source, branch_name, repo_path))
+    return asyncio.run(run(commits, source, branch_name, repo_path,
+                           external_paths))
 
 
 def build_review_context(comments, mr_description, needs_rebase, remote,
@@ -809,3 +833,93 @@ def resolve_subtree_conflicts(name, tag, subtree_path, repo_path=None):
     """
     return asyncio.run(
         run_subtree_conflict_agent(name, tag, subtree_path, repo_path))
+
+
+def build_external_conflict_prompt(proj, commit, patch_file):
+    """Build a prompt for applying a commit to an external project
+
+    Args:
+        proj (extern.Project): Project being applied to
+        commit (CommitInfo): Upstream commit being applied
+        patch_file (str): Path to the patch, as generated from U-Boot
+
+    Returns:
+        str: The prompt for the agent
+    """
+    dest = f'{proj.dest}/' if proj.dest else 'the top level'
+    return f"""Finish applying an upstream U-Boot commit to this repository.
+
+Context: This repository is the standalone '{proj.name}' project, which was \
+split out of U-Boot. Files which are under '{proj.path}/' in U-Boot live \
+under {dest} here. Upstream commit {commit.chash} ('{commit.subject}') \
+changes '{proj.path}/', so its changes there are being applied here with \
+'git am -3', but the patch did not apply cleanly and 'git am' has stopped. \
+The patch, already adjusted to this repository's paths, is in {patch_file}
+
+Steps to follow:
+1. Run 'git status' and 'git am --show-current-patch=diff' to see what
+   failed
+2. Make the same change by hand to the files in this repository. The code
+   may have moved or changed since the project was split out, so find the
+   matching code rather than relying on line numbers.
+3. Stage the changes with 'git add' and run 'git am --continue'
+4. If the change is already present here, run 'git am --skip'
+5. Verify with 'git status' and 'git log -1' that 'git am' has finished
+
+If the change cannot sensibly be applied, run 'git am --abort' and explain
+why.
+
+Important:
+- Keep the original commit message and author
+- Only change the files the commit changes
+- Do NOT push, and do not modify other commits
+"""
+
+
+async def run_external_conflict_agent(proj, commit, patch_file, repo_path):
+    """Run the Claude agent to apply a commit to an external project
+
+    Args:
+        proj (extern.Project): Project being applied to
+        commit (CommitInfo): Upstream commit being applied
+        patch_file (str): Path to the patch, as generated from U-Boot
+        repo_path (str): Path to the worktree where 'git am' has stopped
+
+    Returns:
+        tuple: (success, conversation_log) where success is bool and
+            conversation_log is the agent's output text
+    """
+    if not check_available():
+        return False, ''
+
+    prompt = build_external_conflict_prompt(proj, commit, patch_file)
+
+    options = ClaudeAgentOptions(
+        allowed_tools=['Bash', 'Read', 'Grep', 'Edit', 'Write'],
+        cwd=repo_path,
+        max_buffer_size=MAX_BUFFER_SIZE,
+        **cli_path_option(),
+    )
+
+    tout.info(f'Starting Claude agent to apply {commit.chash} to '
+              f'{proj.name}...')
+    tout.info('')
+
+    return await run_agent_collect(prompt, options)
+
+
+def resolve_external_conflict(proj, commit, patch_file, repo_path):
+    """Synchronous wrapper for running the external-project agent
+
+    Args:
+        proj (extern.Project): Project being applied to
+        commit (CommitInfo): Upstream commit being applied
+        patch_file (str): Path to the patch, as generated from U-Boot
+        repo_path (str): Path to the worktree where 'git am' has stopped
+
+    Returns:
+        tuple: (success, conversation_log) where success is bool and
+            conversation_log is the agent's output text
+    """
+    return asyncio.run(
+        run_external_conflict_agent(proj, commit, patch_file, repo_path))

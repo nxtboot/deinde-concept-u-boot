@@ -33,7 +33,13 @@ from pickman import agent
 from pickman import control
 from pickman import database
 from pickman import drift
+from pickman import extern
 from pickman import gitlab_api as gitlab
+
+# Keep the tests away from the user's config file, so that its settings (such
+# as external projects) do not affect them. Tests which need a config file
+# patch this
+gitlab.CONFIG_FILE = '/nonexistent/pickman.conf'
 
 # Test URL constants
 TEST_OAUTH_URL = 'https://oauth2:test-token@gitlab.com/group/project.git'
@@ -3087,6 +3093,94 @@ class TestExecuteApply(unittest.TestCase):
             commit_rec = dbs.commit_get('aaa111')
             self.assertIsNotNone(commit_rec)
             self.assertEqual(commit_rec[6], 'applied')  # status field
+            dbs.close()
+
+    def _start_db(self):
+        """Create a database with a source set up"""
+        dbs = database.Database(self.db_path)
+        dbs.start()
+        dbs.source_set('us/next', 'abc123')
+        dbs.commit()
+        return dbs
+
+    def test_execute_apply_external_fails(self):
+        """Test execute_apply when porting to an external project fails"""
+        with terminal.capture():
+            dbs = self._start_db()
+            commits = [control.CommitInfo('ccc333', 'ccc333c',
+                                          'binman: Change', 'Author')]
+            args = argparse.Namespace(push=True)
+            port = extern.PortResult(False, [], ['tools/binman'], False)
+            with mock.patch.object(control.extern, 'port_commits',
+                                   return_value=port), \
+                 mock.patch.object(control.agent,
+                                   'cherry_pick_commits') as mock_agent:
+                ret, success, conv_log = control.execute_apply(
+                    dbs, 'us/next', commits, 'cherry-c', args, 'ddd444')
+
+            self.assertEqual((1, False, ''), (ret, success, conv_log))
+            mock_agent.assert_not_called()
+            self.assertEqual('conflict', dbs.commit_get('ccc333')[6])
+            self.assertEqual('abc123', dbs.source_get('us/next'))
+            dbs.close()
+
+    def test_execute_apply_external_only(self):
+        """Test execute_apply when all changes are in external projects"""
+        tout.init(tout.INFO)
+        with terminal.capture() as (stdout, _):
+            dbs = self._start_db()
+            commits = [control.CommitInfo('eee555', 'eee555e',
+                                          'binman: Change', 'Author')]
+            args = argparse.Namespace(push=True)
+            port = extern.PortResult(True, ['https://github.com/pr/1'],
+                                     ['tools/binman'], False)
+            with mock.patch.object(control.extern, 'port_commits',
+                                   return_value=port), \
+                 mock.patch.object(control.agent,
+                                   'cherry_pick_commits') as mock_agent, \
+                 mock.patch.object(control, 'push_mr') as mock_push:
+                ret, success, conv_log = control.execute_apply(
+                    dbs, 'us/next', commits, 'cherry-e', args, 'fff666')
+
+            # There is nothing to cherry-pick and no MR, but the commits are
+            # done and the source moves on
+            self.assertEqual((0, False, ''), (ret, success, conv_log))
+            mock_agent.assert_not_called()
+            mock_push.assert_not_called()
+            self.assertEqual('applied', dbs.commit_get('eee555')[6])
+            self.assertEqual('fff666', dbs.source_get('us/next'))
+            dbs.close()
+        self.assertIn('All changes are in separate projects',
+                      stdout.getvalue())
+
+    def test_execute_apply_external_some(self):
+        """Test execute_apply when some changes are in external projects"""
+        with terminal.capture():
+            dbs = self._start_db()
+            commits = [control.CommitInfo('aaa777', 'aaa777a',
+                                          'binman: Change and doc', 'Author')]
+            args = argparse.Namespace(push=True)
+            url = 'https://github.com/test/binman/pull/7'
+            port = extern.PortResult(True, [url], ['tools/binman'], True)
+            with mock.patch.object(control.extern, 'port_commits',
+                                   return_value=port), \
+                 mock.patch.object(control.agent, 'cherry_pick_commits',
+                                   return_value=(True, 'log')) as mock_agent, \
+                 mock.patch.object(control, '_has_unresolved_conflict',
+                                   return_value=False), \
+                 mock.patch.object(control, 'run_git',
+                                   return_value='cherry-s'), \
+                 mock.patch.object(control, 'push_mr',
+                                   return_value=True) as mock_push:
+                ret, success, _ = control.execute_apply(
+                    dbs, 'us/next', commits, 'cherry-s', args, 'bbb888')
+
+            self.assertEqual((0, True), (ret, success))
+            self.assertEqual(['tools/binman'],
+                             mock_agent.call_args[1]['external_paths'])
+            description = mock_push.call_args[0][3]
+            self.assertIn(f'Changes to separate projects:\n- {url}\n',
+                          description)
             dbs.close()
 
     def test_execute_apply_failure(self):
@@ -9114,6 +9208,329 @@ class TestFatalAgentError(unittest.TestCase):
             claude._report_failure(RuntimeError('conflict in foo.c'))
         self.assertIn('Agent failed', stderr.getvalue())
         self.assertIsNone(claude.fatal_seen)
+
+
+
+def _git(cwd, *args):
+    """Run a git command for the tests, returning its stripped output"""
+    return subprocess.run(['git', '-C', cwd] + list(args), check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+def _git_init(path, bare=False):
+    """Create a git repository with an identity set up"""
+    subprocess.run(['git', 'init', '-q', '-b', 'master'] +
+                   (['--bare'] if bare else []) + [path],
+                   check=True, capture_output=True)
+    if not bare:
+        _git(path, 'config', 'user.email', 'test@test.com')
+        _git(path, 'config', 'user.name', 'Test')
+
+
+class TestExtern(unittest.TestCase):
+    """Tests for porting changes to external projects"""
+
+    def setUp(self):
+        """Set up a U-Boot repo and a clone of an external project"""
+        self.test_dir = tempfile.mkdtemp()
+        self.orig_dir = os.getcwd()
+
+        # A U-Boot tree with binman in it and some upstream commits
+        self.uboot = os.path.join(self.test_dir, 'u-boot')
+        _git_init(self.uboot)
+        self._write(self.uboot, 'tools/binman/foo.py', 'line1\nline2\n')
+        self._write(self.uboot, 'README', 'readme\n')
+        self._commit(self.uboot, 'Initial')
+        self._write(self.uboot, 'tools/binman/foo.py',
+                    'line1\nline2 changed\n')
+        self.binman_only = self._commit(self.uboot, 'binman: Change foo')
+        self._write(self.uboot, 'tools/binman/foo.py',
+                    'line1\nline2 changed\nline3\n')
+        self._write(self.uboot, 'README', 'readme\nmore\n')
+        self.both = self._commit(self.uboot, 'binman: Add line3 and doc')
+        self._write(self.uboot, 'README', 'readme\nmore\nagain\n')
+        self.other = self._commit(self.uboot, 'doc: Expand the README')
+
+        # The external project, with binman's files under binman/, a clone of
+        # it and a bare repo standing in for GitHub
+        self.remote = os.path.join(self.test_dir, 'binman.git')
+        _git_init(self.remote, bare=True)
+        self.repo = os.path.join(self.test_dir, 'binman')
+        _git_init(self.repo)
+        self._write(self.repo, 'binman/foo.py', 'line1\nline2\n')
+        self._commit(self.repo, 'Initial')
+        _git(self.repo, 'remote', 'add', 'origin', self.remote)
+        _git(self.repo, 'push', '-q', 'origin', 'master')
+
+        self.proj = extern.Project('binman', 'tools/binman', self.repo,
+                                   'binman', 'origin', 'master')
+        os.chdir(self.uboot)
+
+        # Show info messages, which some tests check
+        tout.init(tout.INFO)
+
+    def tearDown(self):
+        """Clean up the repos"""
+        os.chdir(self.orig_dir)
+        shutil.rmtree(self.test_dir)
+
+    @staticmethod
+    def _write(repo, fname, data):
+        """Write a file in a repo, creating its directory as needed"""
+        path = os.path.join(repo, fname)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tools.write_file(path, data, binary=False)
+
+    @staticmethod
+    def _commit(repo, subject):
+        """Commit everything in a repo, returning a CommitInfo"""
+        _git(repo, 'add', '-A')
+        _git(repo, 'commit', '-q', '-m', subject)
+        chash = _git(repo, 'rev-parse', 'HEAD')
+        return control.CommitInfo(chash, chash[:11], subject, 'Test')
+
+    def _config(self, text):
+        """Write a config file and return its path"""
+        fname = os.path.join(self.test_dir, 'pickman.conf')
+        tools.write_file(fname, text, binary=False)
+        return fname
+
+    def test_get_projects(self):
+        """Test reading the external projects from the config file"""
+        self.assertEqual([], extern.get_projects('/nonexistent/file'))
+        fname = self._config(
+            '[gitlab]\ntoken = abc\n\n'
+            '[external:buildman]\npath = tools/buildman/\n'
+            'repo = ~/dev/buildman\ndest =\nremote = gh\nbranch = main\n\n'
+            '[external:binman]\npath = tools/binman\nrepo = /src/binman\n')
+        self.assertEqual([
+            extern.Project('binman', 'tools/binman', '/src/binman', 'binman',
+                           'origin', 'master'),
+            extern.Project('buildman', 'tools/buildman',
+                           os.path.expanduser('~/dev/buildman'), '', 'gh',
+                           'main')], extern.get_projects(fname))
+
+        # The standard config file is used by default, which the tests point
+        # at a file which does not exist
+        self.assertEqual([], extern.get_projects())
+
+    def test_get_projects_missing(self):
+        """Test a project without the required settings"""
+        fname = self._config('[external:binman]\npath = tools/binman\n')
+        with self.assertRaises(ValueError) as exc:
+            extern.get_projects(fname)
+        self.assertIn("'external:binman' needs 'path' and 'repo'",
+                      str(exc.exception))
+
+    def test_is_under(self):
+        """Test checking whether a file is within a directory"""
+        self.assertTrue(extern.is_under('tools/binman', 'tools/binman'))
+        self.assertTrue(extern.is_under('tools/binman/a/b.py',
+                                        'tools/binman'))
+        self.assertFalse(extern.is_under('tools/binmanx/a.py',
+                                         'tools/binman'))
+        self.assertFalse(extern.is_under('tools/a.py', 'tools/binman'))
+
+    def test_changed_files(self):
+        """Test listing the files changed by a commit"""
+        self.assertEqual(['README', 'tools/binman/foo.py'],
+                         extern.changed_files(self.both.hash))
+
+        # A merge commit changes nothing itself
+        _git(self.uboot, 'checkout', '-q', '-b', 'side', 'HEAD~1')
+        self._write(self.uboot, 'side', 'side\n')
+        self._commit(self.uboot, 'Side')
+        _git(self.uboot, 'checkout', '-q', 'master')
+        _git(self.uboot, 'merge', '-q', '--no-edit', 'side')
+        self.assertEqual([], extern.changed_files(
+            _git(self.uboot, 'rev-parse', 'HEAD')))
+
+    def test_split_commits(self):
+        """Test working out which commits change which projects"""
+        commits = [self.binman_only, self.both, self.other]
+        by_project, tree_needed = extern.split_commits(commits, [self.proj])
+        self.assertEqual({'binman': [self.binman_only, self.both]},
+                         by_project)
+        self.assertTrue(tree_needed)
+
+        by_project, tree_needed = extern.split_commits([self.binman_only],
+                                                       [self.proj])
+        self.assertEqual({'binman': [self.binman_only]}, by_project)
+        self.assertFalse(tree_needed)
+
+    def test_port_no_projects(self):
+        """Test porting when no external projects are configured"""
+        self.assertEqual(extern.PortResult(True, [], [], True),
+                         extern.port_commits([self.both], 'cherry-x', 'us',
+                                             False, []))
+
+    def test_port_no_changes(self):
+        """Test porting commits which do not change any project"""
+        with terminal.capture():
+            result = extern.port_commits([self.other], 'cherry-x', 'us',
+                                         False, [self.proj])
+        self.assertEqual(extern.PortResult(True, [], [], True), result)
+        self.assertEqual('', _git(self.repo, 'branch', '--list', 'cherry-x'))
+
+    def test_port_local(self):
+        """Test porting commits to a project without pushing"""
+        commits = [self.binman_only, self.both, self.other]
+        with terminal.capture() as (stdout, _):
+            result = extern.port_commits(commits, 'cherry-abc', 'us', False,
+                                         [self.proj])
+        self.assertEqual(extern.PortResult(True, [], ['tools/binman'], True),
+                         result)
+        self.assertIn('Branch cherry-abc is ready', stdout.getvalue())
+
+        # Both commits are applied, with only their binman changes, in
+        # binman/
+        self.assertEqual(
+            ['binman: Add line3 and doc', 'binman: Change foo', 'Initial'],
+            _git(self.repo, 'log', '--format=%s', 'cherry-abc').splitlines())
+        self.assertEqual('line1\nline2 changed\nline3',
+                         _git(self.repo, 'show', 'cherry-abc:binman/foo.py'))
+        self.assertEqual('binman/foo.py', _git(
+            self.repo, 'diff-tree', '--no-commit-id', '--name-only', '-r',
+            'cherry-abc'))
+
+        # The clone's own checkout is untouched and the worktree is gone
+        self.assertEqual('master', _git(self.repo, 'rev-parse',
+                                        '--abbrev-ref', 'HEAD'))
+        self.assertEqual(1, len(_git(self.repo, 'worktree',
+                                     'list').splitlines()))
+
+    def test_port_top_level(self):
+        """Test porting to a project which has the files at the top level"""
+        _git(self.repo, 'mv', 'binman/foo.py', 'foo.py')
+        _git(self.repo, 'commit', '-q', '-m', 'Move to the top level')
+        _git(self.repo, 'push', '-q', 'origin', 'master')
+        proj = self.proj._replace(dest='')
+        with terminal.capture():
+            result = extern.port_commits([self.binman_only], 'cherry-top',
+                                         'us', False, [proj])
+        self.assertTrue(result.ok)
+        self.assertFalse(result.tree_needed)
+        self.assertEqual('line1\nline2 changed',
+                         _git(self.repo, 'show', 'cherry-top:foo.py'))
+
+    def test_port_push(self):
+        """Test porting commits and opening a pull request"""
+        url = 'https://github.com/test/binman/pull/1'
+        with mock.patch.object(extern, 'create_pr',
+                               return_value=url) as mock_pr:
+            with terminal.capture():
+                result = extern.port_commits([self.binman_only], 'cherry-p',
+                                             'us', True, [self.proj])
+        self.assertEqual(extern.PortResult(True, [url], ['tools/binman'],
+                                           False), result)
+        self.assertEqual(_git(self.repo, 'rev-parse', 'cherry-p'),
+                         _git(self.remote, 'rev-parse', 'cherry-p'))
+        args = mock_pr.call_args[0]
+        self.assertEqual('cherry-p', args[2])
+        self.assertEqual('[pickman] binman: Change foo', args[3])
+        self.assertIn(f'- {self.binman_only.chash} binman: Change foo',
+                      args[4])
+
+    def test_port_push_pr_fails(self):
+        """Test failing to open a pull request"""
+        with mock.patch.object(extern, 'create_pr', return_value=None):
+            with terminal.capture():
+                result = extern.port_commits([self.binman_only], 'cherry-f',
+                                             'us', True, [self.proj])
+        self.assertFalse(result.ok)
+        self.assertEqual([], result.urls)
+
+    def test_port_no_repo(self):
+        """Test porting to a project whose clone does not exist"""
+        proj = self.proj._replace(repo='/nonexistent/binman')
+        with terminal.capture() as (_, stderr):
+            result = extern.port_commits([self.binman_only], 'cherry-x',
+                                         'us', False, [proj])
+        self.assertFalse(result.ok)
+        self.assertIn('No repository at /nonexistent/binman',
+                      stderr.getvalue())
+
+    def _make_conflict(self):
+        """Change the project so that the upstream change does not apply"""
+        self._write(self.repo, 'binman/foo.py', 'lineX\nline2\n')
+        self._commit(self.repo, 'Diverge')
+        _git(self.repo, 'push', '-q', 'origin', 'master')
+
+    def test_port_conflict_resolved(self):
+        """Test the agent resolving a patch which does not apply"""
+        self._make_conflict()
+
+        def resolve(_proj, _commit, patch_file, worktree):
+            self.assertTrue(os.path.exists(patch_file))
+            _git(worktree, 'am', '--skip')
+
+        with mock.patch.object(extern.agent, 'resolve_external_conflict',
+                               side_effect=resolve) as mock_agent:
+            with terminal.capture() as (stdout, _):
+                result = extern.port_commits([self.binman_only], 'cherry-c',
+                                             'us', False, [self.proj])
+        self.assertTrue(result.ok)
+        self.assertEqual(1, mock_agent.call_count)
+        self.assertIn('does not apply cleanly', stdout.getvalue())
+
+    def test_port_conflict_unresolved(self):
+        """Test the agent failing to resolve a patch which does not apply"""
+        self._make_conflict()
+        with mock.patch.object(extern.agent, 'resolve_external_conflict'):
+            with terminal.capture() as (_, stderr):
+                result = extern.port_commits([self.binman_only], 'cherry-u',
+                                             'us', False, [self.proj])
+        self.assertFalse(result.ok)
+        self.assertIn('Could not apply', stderr.getvalue())
+
+        # The worktree is cleaned up, leaving no 'git am' behind
+        self.assertEqual(1, len(_git(self.repo, 'worktree',
+                                     'list').splitlines()))
+
+    def test_create_pr(self):
+        """Test creating a pull request"""
+        url = 'https://github.com/test/binman/pull/2'
+        ok = command.CommandResult(stdout=f'Creating...\n{url}\n',
+                                   return_code=0)
+        with mock.patch.object(extern.command, 'run_one',
+                               return_value=ok) as mock_run:
+            self.assertEqual(url, extern.create_pr(
+                self.proj, self.repo, 'cherry-x', 'title', 'body'))
+        cmd = mock_run.call_args[0]
+        self.assertEqual(('gh', 'pr', 'create', '--base', 'master', '--head',
+                          'cherry-x', '--title', 'title', '--body', 'body'),
+                         cmd)
+        self.assertEqual(self.repo, mock_run.call_args[1]['cwd'])
+
+    def test_create_pr_exists(self):
+        """Test finding a pull request which already exists"""
+        url = 'https://github.com/test/binman/pull/3'
+        fail = command.CommandResult(stderr='already exists', return_code=1)
+        found = command.CommandResult(stdout=f'{url}\n', return_code=0)
+        with mock.patch.object(extern.command, 'run_one',
+                               side_effect=[fail, found]):
+            self.assertEqual(url, extern.create_pr(
+                self.proj, self.repo, 'cherry-x', 'title', 'body'))
+
+    def test_create_pr_fails(self):
+        """Test failing to create or find a pull request"""
+        fail = command.CommandResult(stderr='no auth', return_code=1)
+        with mock.patch.object(extern.command, 'run_one', return_value=fail):
+            with terminal.capture() as (_, stderr):
+                self.assertIsNone(extern.create_pr(
+                    self.proj, self.repo, 'cherry-x', 'title', 'body'))
+        self.assertIn('Could not create a pull request for cherry-x',
+                      stderr.getvalue())
+
+    def test_port_reads_config(self):
+        """Test that porting reads the projects from the config file"""
+        fname = self._config(f'[external:binman]\npath = tools/binman\n'
+                             f'repo = {self.repo}\n')
+        with mock.patch.object(gitlab, 'CONFIG_FILE', fname):
+            with terminal.capture():
+                result = extern.port_commits([self.binman_only], 'cherry-r',
+                                             'us', False)
+        self.assertEqual(['tools/binman'], result.paths)
 
 
 if __name__ == '__main__':

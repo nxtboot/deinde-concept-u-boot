@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(our_path, '..'))
 from pickman import agent
 from pickman import database
 from pickman import drift
+from pickman import extern
 from pickman import ftest
 from pickman import gitlab_api
 from u_boot_pylib import claude
@@ -3480,11 +3481,29 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
                        status='pending')
     dbs.commit()
 
+    # Changes to tools which are maintained as separate projects go to those
+    # projects, as pull requests
+    port = extern.port_commits(commits, branch_name, source, args.push)
+    if not port.ok:
+        for commit in commits:
+            dbs.commit_set_status(commit.hash, 'conflict')
+        dbs.commit()
+        return 1, False, ''
+    if not port.tree_needed:
+        tout.info('All changes are in separate projects, so there is nothing '
+                  'to cherry-pick here')
+        for commit in commits:
+            dbs.commit_set_status(commit.hash, 'applied')
+        if advance_to is not None:
+            dbs.source_set(source, advance_to)
+        dbs.commit()
+        return 0, False, ''
+
     # Convert CommitInfo to AgentCommit format expected by agent
     agent_commits = [AgentCommit(c.hash, c.chash, c.subject,
                                  applied_map.get(c.hash)) for c in commits]
-    success, conv_log = agent.cherry_pick_commits(agent_commits, source,
-                                                  branch_name)
+    success, conv_log = agent.cherry_pick_commits(
+        agent_commits, source, branch_name, external_paths=port.paths)
 
     # Check for signal file from agent
     signal_status, signal_commit = agent.read_signal_file()
@@ -3530,7 +3549,12 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
             title = f'[pickman] {commits[-1].subject}'
             summary = format_history(source, commits, branch_name)
             note = parked_overlap_note(shared)
-            description = (f'{summary}\n\n{note}\n'
+            ext_note = ''
+            if port.urls:
+                ext_note = ('Changes to separate projects:\n' +
+                            ''.join(f'- {url}\n' for url in port.urls) +
+                            '\n')
+            description = (f'{summary}\n\n{ext_note}{note}\n'
                            f'### Conversation log\n{conv_log}')
             if not push_mr(args, branch_name, title, description):
                 ret = 1
