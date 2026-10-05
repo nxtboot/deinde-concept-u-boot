@@ -35,6 +35,11 @@ from pickman import database
 from pickman import drift
 from pickman import gitlab_api as gitlab
 
+# Keep the tests away from the user's config file, so that its settings (such
+# as external projects) do not affect them. Tests which need a config file
+# patch this
+gitlab.CONFIG_FILE = '/nonexistent/pickman.conf'
+
 # Test URL constants
 TEST_OAUTH_URL = 'https://oauth2:test-token@gitlab.com/group/project.git'
 TEST_HTTPS_URL = 'https://gitlab.com/group/project.git'
