@@ -144,6 +144,50 @@ Path                               Name
 ``lib/lwip/lwip``                  ``lwip``
 =================================  ===========
 
+Tools Maintained Elsewhere
+--------------------------
+
+Some tools, such as binman and buildman, are now maintained as separate
+projects rather than in the U-Boot tree. Upstream commits which change them
+cannot be cherry-picked here, since the files are no longer present, so pickman
+sends those changes to the projects instead.
+
+Each project is listed in the config file (see `Requirements`_), with the
+tool's directory in the U-Boot tree, a local clone of the project and where the
+tool's files live in the project::
+
+    [external:binman]
+    path = tools/binman
+    repo = ~/dev/binman
+    dest = binman
+
+    [external:buildman]
+    path = tools/buildman
+    repo = ~/dev/buildman
+    dest = buildman
+
+Optional ``remote`` and ``branch`` settings give the remote to push to
+(default ``origin``) and the branch to work from and target (default
+``master``).
+
+Before cherry-picking a set of commits, pickman finds those which change a
+listed project. For each project it:
+
+1. Creates a branch named after the set (e.g. ``cherry-b6691d0``) in a
+   temporary worktree of the clone, from the latest ``<remote>/<branch>``, so
+   the clone's own checkout is not touched
+2. Applies the part of each commit under the tool's directory with
+   ``git am -3``, using the project's paths. A change which is already present
+   is skipped. If a patch does not apply, the Claude agent finishes applying it
+3. With ``--push``, pushes the branch and opens a pull request using the
+   ``gh`` tool, which must be logged in. Otherwise the branch is left in the
+   clone
+
+The cherry-pick into the tree then drops the changes under these directories,
+and the MR description links to the pull requests. If every change in the set
+is in these projects, there is nothing to cherry-pick, so pickman creates no MR
+and moves on to the next set.
+
 Skipping MRs
 ------------
 
@@ -846,6 +890,10 @@ appear as coming from the bot account rather than individual users.
 
 .. _GitLab Personal Access Tokens:
    https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html
+
+To send changes to tools which are maintained elsewhere (see
+`Tools Maintained Elsewhere`_), install the GitHub CLI (``gh``) and log in with
+``gh auth login``.
 
 Database
 --------
