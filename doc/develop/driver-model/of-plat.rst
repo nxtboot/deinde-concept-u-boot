@@ -832,14 +832,16 @@ Internals
 Generated files
 ~~~~~~~~~~~~~~~
 
-When enabled, dtoc generates the following five files:
+When enabled, dtoc generates the following five files. They are shown here for
+SPL; TPL and VPL each have their own, under tpl/ and vpl/, since each phase has
+its own devicetree and the phases are built in parallel:
 
-include/generated/dt-decl.h (OF_PLATDATA_INST only)
+spl/include/generated/dt-decl.h (OF_PLATDATA_INST only)
    Contains declarations for all drivers, devices and uclasses. This allows
    any `struct udevice`, `struct driver` or `struct uclass` to be located by its
    name
 
-include/generated/dt-structs-gen.h
+spl/include/generated/dt-structs-gen.h
    Contains the struct definitions for the devicetree nodes that are used. This
    is the same as without OF_PLATDATA_INST
 
