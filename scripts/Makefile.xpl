@@ -139,7 +139,11 @@ endif
 u-boot-spl-init := $(head-y)
 u-boot-spl-main := $(libs-y)
 ifdef CONFIG_OF_PLATDATA
-platdata-hdr := include/generated/dt-structs-gen.h include/generated/dt-decl.h
+# Each phase generates its own headers, since the phases are built in parallel
+# and each has its own devicetree. These are found before the top-level ones
+# since UBOOTINCLUDE puts $(obj)/include first
+platdata-hdr := $(obj)/include/generated/dt-structs-gen.h \
+	$(obj)/include/generated/dt-decl.h
 platdata-inst := $(obj)/dts/dt-uclass.o $(obj)/dts/dt-device.o
 platdata-noinst := $(obj)/dts/dt-plat.o
 
@@ -351,7 +355,7 @@ DTOC_ARGS += -i
 endif
 
 quiet_cmd_dtoc = DTOC    $@
-cmd_dtoc = $(DTOC_ARGS) -c $(obj)/dts -C include/generated all
+cmd_dtoc = $(DTOC_ARGS) -c $(obj)/dts -C $(obj)/include/generated all
 
 quiet_cmd_plat = PLAT    $@
 cmd_plat = $(CC) $(c_flags) -c $< -o $(filter-out $(PHONY),$@)
@@ -362,6 +366,7 @@ $(obj)/dts/dt-%.o: $(obj)/dts/dt-%.c $(platdata-hdr) FORCE
 # Don't use dts_dir here, since it forces running this expensive rule every time
 $(platdata-hdr) $(u-boot-spl-platdata_c) &: $(obj)/$(SPL_BIN).dtb FORCE
 	@[ -d $(obj)/dts ] || mkdir -p $(obj)/dts
+	@[ -d $(obj)/include/generated ] || mkdir -p $(obj)/include/generated
 	@# Remove old files since which ones we generate depends on the setting
 	@# of OF_PLATDATA_INST and this might change between builds. Leaving old
 	@# ones around is confusing and it is possible that switching the
