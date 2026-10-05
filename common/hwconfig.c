@@ -77,7 +77,7 @@ static const char *__hwconfig(const char *opt, size_t *arglen,
 
 	/* if we are passed a buffer use it, otherwise try the environment */
 	if (!env_hwconfig) {
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+#if IS_ENABLED(CONFIG_ENV_SUPPORT)
 		if (!(gd->flags & GD_FLG_ENV_READY) &&
 		    gd->env_valid != ENV_VALID)
 #else
@@ -88,7 +88,7 @@ static const char *__hwconfig(const char *opt, size_t *arglen,
 					"and before environment is ready\n");
 			return NULL;
 		}
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+#if IS_ENABLED(CONFIG_ENV_SUPPORT)
 		env_hwconfig = env_get("hwconfig");
 #endif
 	}

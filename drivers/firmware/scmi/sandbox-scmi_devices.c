@@ -61,7 +61,7 @@ static int sandbox_scmi_devices_remove(struct udevice *dev)
 	if (!devices)
 		return 0;
 
-	if (CONFIG_IS_ENABLED(RESET_SCMI))
+	if (IS_ENABLED(CONFIG_RESET_SCMI))
 		for (n = 0; n < SCMI_TEST_DEVICES_RD_COUNT; n++) {
 			int ret2 = reset_free(devices->reset + n);
 
@@ -89,7 +89,7 @@ static int sandbox_scmi_devices_probe(struct udevice *dev)
 		.regul_count = SCMI_TEST_DEVICES_VOLTD_COUNT,
 	};
 
-	if (CONFIG_IS_ENABLED(SCMI_POWER_DOMAIN)) {
+	if (IS_ENABLED(CONFIG_SCMI_POWER_DOMAIN)) {
 		ret = power_domain_get_by_index(dev, priv->devices.pwdom, 0);
 		if (ret) {
 			dev_err(dev, "%s: Failed on power domain\n", __func__);
@@ -97,7 +97,7 @@ static int sandbox_scmi_devices_probe(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(CLK_SCMI)) {
+	if (IS_ENABLED(CONFIG_CLK_SCMI)) {
 		for (n = 0; n < SCMI_TEST_DEVICES_CLK_COUNT; n++) {
 			ret = clk_get_by_index(dev, n, priv->devices.clk + n);
 			if (ret) {
@@ -108,7 +108,7 @@ static int sandbox_scmi_devices_probe(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(RESET_SCMI)) {
+	if (IS_ENABLED(CONFIG_RESET_SCMI)) {
 		for (n = 0; n < SCMI_TEST_DEVICES_RD_COUNT; n++) {
 			ret = reset_get_by_index(dev, n,
 						 priv->devices.reset + n);
@@ -120,7 +120,7 @@ static int sandbox_scmi_devices_probe(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR_SCMI)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR_SCMI)) {
 		for (n = 0; n < SCMI_TEST_DEVICES_VOLTD_COUNT; n++) {
 			char name[32];
 
@@ -144,7 +144,7 @@ static int sandbox_scmi_devices_probe(struct udevice *dev)
 err_regul:
 	n = SCMI_TEST_DEVICES_RD_COUNT;
 err_reset:
-	if (CONFIG_IS_ENABLED(RESET_SCMI))
+	if (IS_ENABLED(CONFIG_RESET_SCMI))
 		for (; n > 0; n--)
 			reset_free(priv->devices.reset + n - 1);
 

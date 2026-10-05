@@ -106,7 +106,7 @@ static bool ofnode_pre_reloc_recursive(ofnode parent)
 	if (ofnode_pre_reloc(parent))
 		return true;
 
-	if (CONFIG_IS_ENABLED(PINCONF_RECURSIVE)) {
+	if (IS_ENABLED(CONFIG_PINCONF_RECURSIVE)) {
 		ofnode_for_each_subnode(child, parent)
 			if (ofnode_pre_reloc_recursive(child))
 				return true;
@@ -162,10 +162,10 @@ static int pinconfig_post_bind(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(PINCTRL_FULL)
+#if IS_ENABLED(CONFIG_PINCTRL_FULL)
 UCLASS_DRIVER(pinconfig) = {
 	.id = UCLASS_PINCONFIG,
-#if CONFIG_IS_ENABLED(PINCONF_RECURSIVE)
+#if IS_ENABLED(CONFIG_PINCONF_RECURSIVE)
 	.post_bind = pinconfig_post_bind,
 #endif
 	.name = "pinconfig",
@@ -319,7 +319,7 @@ int pinctrl_select_state(struct udevice *dev, const char *statename)
 	/*
 	 * If full-implemented pinctrl is not implemented, try simple one.
 	 */
-	if (CONFIG_IS_ENABLED(PINCTRL_FULL))
+	if (IS_ENABLED(CONFIG_PINCTRL_FULL))
 		return pinctrl_select_state_full(dev, statename);
 
 	return pinctrl_select_state_simple(dev);
@@ -415,7 +415,7 @@ static int __maybe_unused pinctrl_post_bind(struct udevice *dev)
 	 * should be bound so that peripheral devices can easily search in
 	 * parent devices during later DT-parsing.
 	 */
-	if (CONFIG_IS_ENABLED(PINCTRL_FULL))
+	if (IS_ENABLED(CONFIG_PINCTRL_FULL))
 		return pinconfig_post_bind(dev);
 
 	return 0;
@@ -423,7 +423,7 @@ static int __maybe_unused pinctrl_post_bind(struct udevice *dev)
 
 UCLASS_DRIVER(pinctrl) = {
 	.id = UCLASS_PINCTRL,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.post_bind = pinctrl_post_bind,
 #endif
 	.flags = DM_UC_FLAG_SEQ_ALIAS,

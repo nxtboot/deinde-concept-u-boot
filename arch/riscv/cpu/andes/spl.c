@@ -10,7 +10,7 @@
 #include <spl.h>
 #include <asm/system.h>
 
-#if CONFIG_IS_ENABLED(RAM_SUPPORT)
+#if IS_ENABLED(CONFIG_RAM_SUPPORT)
 struct legacy_img_hdr *spl_get_load_buffer(ssize_t offset, size_t size)
 {
 	return (void *)(CONFIG_SPL_LOAD_FIT_ADDRESS + offset);

@@ -16,5 +16,5 @@ else
 obj-$(CONFIG_ARMV7_PSCI) += psci.o
 endif
 
-obj-$(CONFIG_$(PHASE_)STM32MP15_PWR) += pwr_regulator.o
+obj-$(CONFIG_STM32MP15_PWR) += pwr_regulator.o
 obj-$(CONFIG_OF_SYSTEM_SETUP) += fdt.o

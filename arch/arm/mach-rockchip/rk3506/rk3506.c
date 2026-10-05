@@ -90,7 +90,7 @@ int checkboard(void)
 	char suffix[2];
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !CONFIG_IS_ENABLED(MISC))
+	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !IS_ENABLED(CONFIG_MISC))
 		return 0;
 
 	ret = uclass_get_device_by_driver(UCLASS_MISC,

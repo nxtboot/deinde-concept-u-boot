@@ -33,7 +33,7 @@
 #define board_is_am62x_lp_skevm()  board_ti_k3_is("AM62-LP-SKEVM")
 #define board_is_am62x_sip_skevm()  board_ti_k3_is("AM62SIP-SKEVM")
 
-#if CONFIG_IS_ENABLED(SPLASH_SCREEN)
+#if IS_ENABLED(CONFIG_SPLASH_SCREEN)
 static struct splash_location default_splash_locations[] = {
 	{
 		.name = "sf",
@@ -97,7 +97,7 @@ int checkboard(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(BOARD_LATE_INIT)
+#if IS_ENABLED(CONFIG_BOARD_LATE_INIT)
 static void setup_board_eeprom_env(void)
 {
 	char *name = "am62x_skevm";
@@ -123,7 +123,7 @@ invalid_eeprom:
 #endif
 #endif
 
-#if CONFIG_IS_ENABLED(BOARD_LATE_INIT)
+#if IS_ENABLED(CONFIG_BOARD_LATE_INIT)
 int board_late_init(void)
 {
 #if defined(CONFIG_TI_I2C_BOARD_DETECT) && !defined(CONFIG_XPL_BUILD)

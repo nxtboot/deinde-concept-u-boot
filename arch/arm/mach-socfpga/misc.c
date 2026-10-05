@@ -54,7 +54,7 @@ struct bsel bsel_str[] = {
 
 int dram_init(void)
 {
-#if CONFIG_IS_ENABLED(HANDOFF) && IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5)
+#if IS_ENABLED(CONFIG_HANDOFF) && IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5)
 	struct spl_handoff *ho;
 
 	ho = bloblist_find(BLOBLISTT_U_BOOT_SPL_HANDOFF, sizeof(*ho));
@@ -72,10 +72,10 @@ int dram_init(void)
 
 void enable_caches(void)
 {
-#if !CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_ICACHE_OFF)
 	icache_enable();
 #endif
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 	dcache_enable();
 #endif
 }

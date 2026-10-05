@@ -111,7 +111,7 @@ static int rk8xx_reg_count(struct udevice *dev)
 	return RK808_NUM_OF_REGS;
 }
 
-#if CONFIG_IS_ENABLED(SPI) && CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_SPI) && IS_ENABLED(CONFIG_DM_SPI)
 struct rk806_cmd {
 	uint8_t	len: 4; /* Payload size in bytes - 1 */
 	uint8_t	reserved: 2;
@@ -129,7 +129,7 @@ static int rk8xx_write(struct udevice *dev, uint reg, const uint8_t *buff,
 {
 	int ret;
 
-#if CONFIG_IS_ENABLED(SPI) && CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_SPI) && IS_ENABLED(CONFIG_DM_SPI)
 	if (device_get_uclass_id(dev->parent) == UCLASS_SPI) {
 		struct spi_slave *spi = dev_get_parent_priv(dev);
 		struct rk806_cmd cmd = {
@@ -169,7 +169,7 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 {
 	int ret;
 
-#if CONFIG_IS_ENABLED(SPI) && CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_SPI) && IS_ENABLED(CONFIG_DM_SPI)
 	if (device_get_uclass_id(dev->parent) == UCLASS_SPI) {
 		struct spi_slave *spi = dev_get_parent_priv(dev);
 		struct rk806_cmd cmd = {
@@ -205,7 +205,7 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(PMIC_CHILDREN)
+#if IS_ENABLED(CONFIG_PMIC_CHILDREN)
 static int rk8xx_bind(struct udevice *dev)
 {
 	ofnode regulators_node;
@@ -220,7 +220,7 @@ static int rk8xx_bind(struct udevice *dev)
 
 	debug("%s: '%s' - found regulators subnode\n", __func__, dev->name);
 
-	if (CONFIG_IS_ENABLED(SYSRESET) &&
+	if (IS_ENABLED(CONFIG_SYSRESET) &&
 	    (dev_read_bool(dev, "rockchip,system-power-controller") ||
 	     dev_read_bool(dev, "system-power-controller"))) {
 		ret = device_bind_driver_to_node(dev, "rk8xx_sysreset",
@@ -372,7 +372,7 @@ U_BOOT_DRIVER(rockchip_rk805) = {
 	.name = "rockchip_rk805",
 	.id = UCLASS_PMIC,
 	.of_match = rk8xx_ids,
-#if CONFIG_IS_ENABLED(PMIC_CHILDREN)
+#if IS_ENABLED(CONFIG_PMIC_CHILDREN)
 	.bind = rk8xx_bind,
 #endif
 	.priv_auto	  = sizeof(struct rk8xx_priv),

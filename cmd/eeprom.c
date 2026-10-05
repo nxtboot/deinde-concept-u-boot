@@ -36,7 +36,7 @@
 #define	EEPROM_PAGE_SIZE	(1 << CONFIG_SYS_EEPROM_PAGE_WRITE_BITS)
 #define	EEPROM_PAGE_OFFSET(x)	((x) & (EEPROM_PAGE_SIZE - 1))
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 static int eeprom_i2c_bus;
 #endif
 
@@ -48,9 +48,9 @@ __weak int eeprom_write_enable(unsigned dev_addr, int state)
 void eeprom_init(int bus)
 {
 	/* I2C EEPROM */
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	eeprom_i2c_bus = bus;
-#elif CONFIG_IS_ENABLED(SYS_I2C_LEGACY)
+#elif IS_ENABLED(CONFIG_SYS_I2C_LEGACY)
 	if (bus >= 0)
 		i2c_set_bus_num(bus);
 	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
@@ -114,7 +114,7 @@ static int eeprom_rw_block(unsigned offset, uchar *addr, unsigned alen,
 {
 	int ret = 0;
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *dev;
 
 	ret = i2c_get_chip_for_busnum(eeprom_i2c_bus, addr[0],
@@ -151,7 +151,7 @@ static int eeprom_rw(unsigned dev_addr, unsigned offset, uchar *buffer,
 	int rcode = 0;
 	uchar addr[3];
 
-#if !CONFIG_IS_ENABLED(DM_I2C) && defined(CONFIG_SYS_I2C_EEPROM_BUS)
+#if !IS_ENABLED(CONFIG_DM_I2C) && defined(CONFIG_SYS_I2C_EEPROM_BUS)
 	eeprom_init(CONFIG_SYS_I2C_EEPROM_BUS);
 #endif
 
@@ -211,7 +211,7 @@ static long parse_numeric_param(char *str)
 }
 
 struct eeprom_dev_spec {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	struct udevice *dev;
 #endif
 	int i2c_bus;
@@ -220,7 +220,7 @@ struct eeprom_dev_spec {
 
 static void eeprom_dev_spec_init(struct eeprom_dev_spec *dev)
 {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (!dev->dev)
 #endif
 		eeprom_init(dev->i2c_bus);
@@ -229,7 +229,7 @@ static void eeprom_dev_spec_init(struct eeprom_dev_spec *dev)
 static int eeprom_dev_spec_read(struct eeprom_dev_spec *dev,
 				unsigned offset, uchar *buffer, unsigned cnt)
 {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (dev->dev)
 		return i2c_eeprom_read(dev->dev, offset, buffer, cnt);
 #endif
@@ -239,7 +239,7 @@ static int eeprom_dev_spec_read(struct eeprom_dev_spec *dev,
 static int eeprom_dev_spec_write(struct eeprom_dev_spec *dev,
 				 unsigned offset, uchar *buffer, unsigned cnt)
 {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (dev->dev)
 		return i2c_eeprom_write(dev->dev, offset, buffer, cnt);
 #endif
@@ -259,7 +259,7 @@ static int eeprom_dev_spec_write(struct eeprom_dev_spec *dev,
 static int parse_eeprom_dev_spec(struct eeprom_dev_spec *dev, int argc,
 				 char *const argv[])
 {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (argc == 0) {
 		if (!uclass_first_device_err(UCLASS_I2C_EEPROM, &dev->dev))
 			return 0;
@@ -330,7 +330,7 @@ enum eeprom_action {
 
 static enum eeprom_action parse_action(char *cmd)
 {
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (!strncmp(cmd, "list", 4))
 		return EEPROM_LIST;
 #endif
@@ -348,7 +348,7 @@ static enum eeprom_action parse_action(char *cmd)
 	return EEPROM_ACTION_INVALID;
 }
 
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 static int do_eeprom_list(void)
 {
 	struct udevice *dev;
@@ -469,7 +469,7 @@ int do_eeprom(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (action == EEPROM_ACTION_INVALID)
 		return CMD_RET_USAGE;
 
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	if (action == EEPROM_LIST)
 		return do_eeprom_list();
 #endif
@@ -535,7 +535,7 @@ int do_eeprom(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 #define EEPROM_LAYOUT_SPEC	""
 #endif
 
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 # define EEPROM_DEV_SPEC	"[device_specifier]"
 #else
 # define EEPROM_DEV_SPEC	"[[bus] devaddr]"
@@ -544,7 +544,7 @@ int do_eeprom(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(
 	eeprom,	8,	1,	do_eeprom,
 	"EEPROM sub-system",
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	"list\n"
 	"eeprom "
 #endif
@@ -559,7 +559,7 @@ U_BOOT_CMD(
 	"       - Update a specific eeprom field with new data.\n"
 	"         The new data must be written in the same human readable format as shown by the print command."
 #endif
-#if CONFIG_IS_ENABLED(I2C_EEPROM)
+#if IS_ENABLED(CONFIG_I2C_EEPROM)
 	"\n\n"
 	"DEVICE SPECIFIER - the eeprom device can be specified\n"
 	"  [dev_name] - by device name (devices can listed with the eeprom list command)\n"

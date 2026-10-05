@@ -17,7 +17,7 @@
 
 #ifdef CONFIG_SRIO_PCIE_BOOT_SLAVE
 /* Set 1M boot space */
-#define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR (CONFIG_TEXT_BASE & 0xfff00000)
+#define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR (CONFIG_PPL_TEXT_BASE & 0xfff00000)
 #define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR_PHYS \
 		(0x300000000ull | CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR)
 #define CFG_RESET_VECTOR_ADDRESS 0xfffffffc
@@ -45,9 +45,9 @@
 /*
  *  Config the L3 Cache as L3 SRAM
  */
-#define CFG_SYS_INIT_L3_ADDR		CONFIG_TEXT_BASE
+#define CFG_SYS_INIT_L3_ADDR		CONFIG_PPL_TEXT_BASE
 #ifdef CONFIG_PHYS_64BIT
-#define CFG_SYS_INIT_L3_ADDR_PHYS	(0xf00000000ull | CONFIG_TEXT_BASE)
+#define CFG_SYS_INIT_L3_ADDR_PHYS	(0xf00000000ull | CONFIG_PPL_TEXT_BASE)
 #else
 #define CFG_SYS_INIT_L3_ADDR_PHYS	CFG_SYS_INIT_L3_ADDR
 #endif
@@ -309,7 +309,7 @@
 	"bank_intlv=cs0_cs1\0"					\
 	"netdev=eth0\0"						\
 	"uboot=" CONFIG_UBOOTPATH "\0"			\
-	"ubootaddr=" __stringify(CONFIG_TEXT_BASE) "\0"		\
+	"ubootaddr=" __stringify(CONFIG_PPL_TEXT_BASE) "\0"		\
 	"tftpflash=tftpboot $loadaddr $uboot && "		\
 	"protect off $ubootaddr +$filesize && "			\
 	"erase $ubootaddr +$filesize && "			\

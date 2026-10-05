@@ -13,7 +13,7 @@ config SYS_VENDOR
 config SYS_SOC
 	default "slimbootloader"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x00100000
 
 config BOARD_SPECIFIC_OPTIONS

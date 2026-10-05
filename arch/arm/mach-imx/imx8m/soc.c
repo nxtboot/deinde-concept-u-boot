@@ -562,7 +562,7 @@ static int imx8m_check_clock(void)
 	struct udevice *dev;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = uclass_get_device_by_name(UCLASS_CLK,
 						"clock-controller@30380000",
 						&dev);
@@ -630,7 +630,7 @@ static void early_enable_caches(void)
 	if (IS_ENABLED(CONFIG_XPL_BUILD))
 		return;
 
-	if (CONFIG_IS_ENABLED(SYS_ICACHE_OFF) || CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (IS_ENABLED(CONFIG_SYS_ICACHE_OFF) || IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		return;
 
 	/* Use maximum available DRAM size in first bank. */
@@ -652,7 +652,7 @@ int arch_cpu_init(void)
 {
 	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
 
-#if !CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_ICACHE_OFF)
 	icache_enable();
 	early_enable_caches();
 #endif
@@ -1463,7 +1463,7 @@ usb_modify_speed:
 }
 #endif
 
-#if !CONFIG_IS_ENABLED(SYSRESET)
+#if !IS_ENABLED(CONFIG_SYSRESET)
 void reset_cpu(void)
 {
 	struct watchdog_regs *wdog = (struct watchdog_regs *)WDOG1_BASE_ADDR;

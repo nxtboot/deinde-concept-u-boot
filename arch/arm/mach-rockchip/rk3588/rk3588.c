@@ -277,7 +277,7 @@ int checkboard(void)
 	char suffix[3];
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !CONFIG_IS_ENABLED(MISC))
+	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !IS_ENABLED(CONFIG_MISC))
 		return 0;
 
 	ret = uclass_get_device_by_driver(UCLASS_MISC,
@@ -362,7 +362,7 @@ int ft_system_setup(void *blob, struct bd_info *bd)
 	if (!IS_ENABLED(CONFIG_OF_SYSTEM_SETUP))
 		return 0;
 
-	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !CONFIG_IS_ENABLED(MISC))
+	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !IS_ENABLED(CONFIG_MISC))
 		return -ENOSYS;
 
 	ret = uclass_get_device_by_driver(UCLASS_MISC,

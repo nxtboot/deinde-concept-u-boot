@@ -296,7 +296,7 @@ static void board_get_coding_straps(void)
 
 	gpio_free_list_nodev(gpio, ret);
 
-	if (CONFIG_IS_ENABLED(DISPLAY_PRINT))
+	if (IS_ENABLED(CONFIG_DISPLAY_PRINT))
 		printf("Code:  SoM:rev=%d,ddr3=%d Board:rev=%d\n",
 		       somcode, ddr3code, brdcode);
 }
@@ -777,13 +777,13 @@ enum env_location env_get_location(enum env_operation op, int prio)
 	switch (bootmode & TAMP_BOOT_DEVICE_MASK) {
 	case BOOT_FLASH_SD:
 	case BOOT_FLASH_EMMC:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_MMC))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_MMC))
 			return ENVL_MMC;
 		else
 			return ENVL_NOWHERE;
 
 	case BOOT_FLASH_NOR:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_SPI_FLASH))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_SPI_FLASH))
 			return ENVL_SPI_FLASH;
 		else
 			return ENVL_NOWHERE;

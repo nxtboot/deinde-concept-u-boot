@@ -870,7 +870,7 @@ u32 imx_get_fecclk(void)
 	return ccm_clk_root_get_rate(WAKEUP_AXI_CLK_ROOT);
 }
 
-#if (CONFIG_IS_ENABLED(IMX93) || CONFIG_IS_ENABLED(IMX91)) && CONFIG_IS_ENABLED(DWC_ETH_QOS)
+#if (IS_ENABLED(CONFIG_IMX93) || IS_ENABLED(CONFIG_IMX91)) && IS_ENABLED(CONFIG_DWC_ETH_QOS)
 static int imx93_eqos_interface_init(struct udevice *dev, phy_interface_t interface_type)
 {
 	struct blk_ctrl_wakeupmix_regs *bctrl =

@@ -249,7 +249,7 @@ static int net_test_wget_uri_validate(struct unit_test_state *uts)
 	ut_asserteq(false, wget_validate_uri("http://foo/ba r.html"));
 	ut_asserteq(false, wget_validate_uri("http://"));
 
-	if (CONFIG_IS_ENABLED(WGET_HTTPS)) {
+	if (IS_ENABLED(CONFIG_WGET_HTTPS)) {
 		ut_asserteq(true,
 			    wget_validate_uri("https://foo.com/bar.html"));
 		ut_asserteq(true,

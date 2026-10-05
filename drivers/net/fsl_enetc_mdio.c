@@ -148,7 +148,7 @@ static int enetc_mdio_probe(struct udevice *dev)
 
 	priv->regs_base += ENETC_MDIO_BASE;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret = device_get_supply_regulator(dev, "phy-supply",
 						  &supply);
 		if (ret && ret != -ENOENT) {

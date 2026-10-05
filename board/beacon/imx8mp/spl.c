@@ -54,7 +54,7 @@ void spl_board_init(void)
 	}
 }
 
-#if CONFIG_IS_ENABLED(DM_PMIC_PCA9450)
+#if IS_ENABLED(CONFIG_DM_PMIC_PCA9450)
 int power_init_board(void)
 {
 	struct udevice *dev;
@@ -77,7 +77,7 @@ int power_init_board(void)
 	 * Enable DVS control through PMIC_STBY_REQ and
 	 * set B1_ENMODE=1 (ON by PMIC_ON_REQ=H)
 	 */
-	if (CONFIG_IS_ENABLED(IMX8M_VDD_SOC_850MV))
+	if (IS_ENABLED(CONFIG_IMX8M_VDD_SOC_850MV))
 		pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS0, 0x14);
 	else
 		pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS0, 0x1C);

@@ -17,5 +17,5 @@ obj-$(CONFIG_SPL_SPI_NAND_LOAD) += nandcore.o
 obj-$(CONFIG_SPL_SPI_NAND_LOAD) += spi/
 
 # raw NAND still follows the normal SPL rule
-obj-$(CONFIG_$(PHASE_)NAND_SUPPORT) += raw/
+obj-$(CONFIG_NAND_SUPPORT) += raw/
 endif

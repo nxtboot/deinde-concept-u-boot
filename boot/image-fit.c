@@ -693,13 +693,13 @@ int fit_image_get_data(const void *fit, int noffset, const void **data,
 			if (len > max_offset - offset
 			/*
 			 * #if (not a runtime if) is required: FIT_SIGNATURE_MAX_SIZE
-			 * depends on FIT_SIGNATURE, so CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE)
+			 * depends on FIT_SIGNATURE, so CONFIG_FIT_SIGNATURE_MAX_SIZE
 			 * is undefined when signing is disabled and referencing it
 			 * here would fail to compile.
 			 */
-#if CONFIG_IS_ENABLED(FIT_SIGNATURE)
-			    || offset > CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE) ||
-			    len > CONFIG_VAL(FIT_SIGNATURE_MAX_SIZE) - offset
+#if IS_ENABLED(CONFIG_FIT_SIGNATURE)
+			    || offset > CONFIG_FIT_SIGNATURE_MAX_SIZE ||
+			    len > CONFIG_FIT_SIGNATURE_MAX_SIZE - offset
 #endif
 			) {
 				printf("FIT external data is out of bounds (offset=%d, size=%d)\n",
@@ -1059,7 +1059,7 @@ int fit_image_verify(const void *fit, int image_noffset)
 	size_t		size;
 	char		*err_msg = "";
 
-	if (CONFIG_IS_ENABLED(FIT_SIGNATURE) && strchr(name, '@')) {
+	if (IS_ENABLED(CONFIG_FIT_SIGNATURE) && strchr(name, '@')) {
 		/*
 		 * We don't support this since libfdt considers names with the
 		 * name root but different @ suffix to be equal
@@ -1314,10 +1314,10 @@ int fit_check_format(const void *fit, ulong size)
 	 * For the control DTB to act as a FIT image, we only require
 	 * an /images node.
 	 */
-	if (CONFIG_IS_ENABLED(CONTROL_DTB_AS_FIT) && fit == gd_fdt_blob())
+	if (IS_ENABLED(CONFIG_CONTROL_DTB_AS_FIT) && fit == gd_fdt_blob())
 		return fit_check_images_node(fit);
 
-	if (CONFIG_IS_ENABLED(FIT_FULL_CHECK)) {
+	if (IS_ENABLED(CONFIG_FIT_FULL_CHECK)) {
 		/*
 		 * If we are not given the size, make do with calculating it.
 		 * This is not as secure, so we should consider a flag to
@@ -1336,7 +1336,7 @@ int fit_check_format(const void *fit, ulong size)
 		 * the same name as a valid node but with a unit address
 		 * attached. Protect against this by disallowing unit addresses.
 		 */
-		if (!ret && CONFIG_IS_ENABLED(FIT_SIGNATURE)) {
+		if (!ret && IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
 			ret = fdt_check_no_at(fit, 0, 0);
 
 			if (ret) {
@@ -1846,7 +1846,7 @@ static int select_image(const void *fit, struct bootm_headers *images,
 	ret = fit_check_format(fit, IMAGE_SIZE_INVAL);
 	if (ret) {
 		printf("Bad FIT %s image format! (err=%d)\n", prop_name, ret);
-		if (CONFIG_IS_ENABLED(FIT_SIGNATURE) && ret == -EADDRNOTAVAIL)
+		if (IS_ENABLED(CONFIG_FIT_SIGNATURE) && ret == -EADDRNOTAVAIL)
 			printf("Signature checking prevents use of unit addresses (@) in nodes\n");
 		bootstage_error(bootstage_id + BOOTSTAGE_SUB_FORMAT);
 		return ret;
@@ -2525,7 +2525,7 @@ out:
 }
 #endif
 
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(FIT_VERITY)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_FIT_VERITY)
 
 static const char *const verity_opt_props[] = {
 	FIT_VERITY_OPT_RESTART,

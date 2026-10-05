@@ -24,7 +24,7 @@ int cbfs_fs_ls(const char *dirname);
  *
  * Return: 0 if OK, -ve on error
  */
-#if CONFIG_IS_ENABLED(VFS)
+#if IS_ENABLED(CONFIG_VFS)
 int cbfs_vfs_bind(void);
 #else
 static inline int cbfs_vfs_bind(void) { return 0; }

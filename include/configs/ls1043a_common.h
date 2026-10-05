@@ -43,8 +43,8 @@
 
 /* NAND SPL */
 #ifdef CONFIG_PPL_NAND_BOOT
-#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_TEXT_BASE
-#define CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_PPL_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
 #endif
 
 /* GPIO */
@@ -57,7 +57,7 @@
  * CFG_SYS_FLASH_BASE has the final address (core view)
  * CFG_SYS_FLASH_BASE_PHYS has the final address (IFC view)
  * CFG_SYS_FLASH_BASE_PHYS_EARLY has the temporary IFC address
- * CONFIG_TEXT_BASE is linked to 0x60000000 for booting
+ * CONFIG_PPL_TEXT_BASE is linked to 0x60000000 for booting
  */
 #define CFG_SYS_FLASH_BASE			0x60000000
 #define CFG_SYS_FLASH_BASE_PHYS		CFG_SYS_FLASH_BASE

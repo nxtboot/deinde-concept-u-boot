@@ -99,7 +99,7 @@ static int spl_fit_get_image_name(const struct spl_fit_info *ctx,
 		}
 	}
 
-	if (!found && CONFIG_IS_ENABLED(SYSINFO) && !sysinfo_get(&sysinfo)) {
+	if (!found && IS_ENABLED(CONFIG_SYSINFO) && !sysinfo_get(&sysinfo)) {
 		int rc;
 		/*
 		 * no string in the property for this index. Check if the
@@ -230,7 +230,7 @@ static int load_simple_fit(struct spl_load_info *info, ulong fit_offset,
 	bool external_data = false;
 
 	log_debug("starting\n");
-	if (CONFIG_IS_ENABLED(BOOTMETH_VBE) &&
+	if (IS_ENABLED(CONFIG_BOOTMETH_VBE) &&
 	    xpl_get_phase(info) != IH_PHASE_NONE) {
 		enum image_phase_t phase;
 		int ret;
@@ -351,7 +351,7 @@ static int load_simple_fit(struct spl_load_info *info, ulong fit_offset,
 		src = (void *)data;	/* cast away const */
 	}
 
-	if (CONFIG_IS_ENABLED(FIT_SIGNATURE)) {
+	if (IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
 		printf("## Checking hash(es) for Image %s ... ",
 		       fit_get_name(fit, node));
 		if (!fit_image_verify_with_data(fit, node, gd_fdt_blob(), src,
@@ -360,7 +360,7 @@ static int load_simple_fit(struct spl_load_info *info, ulong fit_offset,
 		puts("OK\n");
 	}
 
-	if (CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS))
+	if (IS_ENABLED(CONFIG_FIT_IMAGE_POST_PROCESS))
 		board_fit_image_post_process(fit, node, &src, &length);
 
 	load_ptr = map_sysmem(load_addr, length);
@@ -469,10 +469,10 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 		spl_image->fdt_addr = phys_to_virt(image_info.load_addr);
 	}
 
-	if (CONFIG_IS_ENABLED(FIT_IMAGE_TINY))
+	if (IS_ENABLED(CONFIG_FIT_IMAGE_TINY))
 		return 0;
 
-#if CONFIG_IS_ENABLED(LOAD_FIT_APPLY_OVERLAY)
+#if IS_ENABLED(CONFIG_LOAD_FIT_APPLY_OVERLAY)
 		void *tmpbuffer = NULL;
 
 		for (; ; index++) {
@@ -588,7 +588,7 @@ static int spl_fit_image_is_fpga(const void *fit, int node)
 
 static int spl_fit_image_get_os(const void *fit, int noffset, uint8_t *os)
 {
-	if (!CONFIG_IS_ENABLED(FIT_IMAGE_TINY) || CONFIG_IS_ENABLED(OS_BOOT))
+	if (!IS_ENABLED(CONFIG_FIT_IMAGE_TINY) || IS_ENABLED(CONFIG_OS_BOOT))
 		return fit_image_get_os(fit, noffset, os);
 
 	const char *name = fdt_getprop(fit, noffset, FIT_OS_PROP, NULL);
@@ -671,7 +671,7 @@ static int spl_fit_upload_fpga(struct spl_fit_info *ctx, int node,
 	if (!compatible) {
 		warn_deprecated("'fpga' image without 'compatible' property");
 	} else {
-		if (CONFIG_IS_ENABLED(FPGA_LOAD_SECURE))
+		if (IS_ENABLED(CONFIG_FPGA_LOAD_SECURE))
 			flags = fpga_compatible2flag(devnum, compatible);
 		if (strcmp(compatible, "u-boot,fpga-legacy"))
 			debug("Ignoring compatible = %s property\n",
@@ -795,7 +795,7 @@ static int spl_simple_fit_parse(struct spl_fit_info *ctx)
 	if (ctx->conf_node < 0)
 		return -EINVAL;
 
-	if (CONFIG_IS_ENABLED(FIT_SIGNATURE)) {
+	if (IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
 		printf("## Checking hash(es) for config %s ... ",
 		       fit_get_name(ctx->fit, ctx->conf_node));
 		if (fit_config_verify(ctx->fit, ctx->conf_node))
@@ -939,7 +939,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 			spl_image->entry_point = image_info.entry_point;
 
 		/* Record our loadables into the FDT */
-		if (!CONFIG_IS_ENABLED(FIT_IMAGE_TINY) &&
+		if (!IS_ENABLED(CONFIG_FIT_IMAGE_TINY) &&
 		    xpl_get_fdt_update(info) && spl_image->fdt_addr)
 			spl_fit_record_loadable(&ctx, index,
 						spl_image->fdt_addr,
@@ -974,7 +974,7 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 	int idx, conf_noffset;
 	int ret;
 
-	images.verify = CONFIG_IS_ENABLED(FIT_SIGNATURE);
+	images.verify = IS_ENABLED(CONFIG_FIT_SIGNATURE);
 
 	ret = fit_image_load(&images, virt_to_phys((void *)header),
 			     NULL, &fit_uname_config, IH_ARCH_DEFAULT,
@@ -1002,7 +1002,7 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 	debug(PHASE_PROMPT "payload image: %32s load addr: 0x%lx size: %d\n",
 	      spl_image->name, spl_image->load_addr, spl_image->size);
 
-	images.verify = CONFIG_IS_ENABLED(FIT_SIGNATURE);
+	images.verify = IS_ENABLED(CONFIG_FIT_SIGNATURE);
 
 	ret = fit_image_load(&images, virt_to_phys((void *)header), NULL,
 			     &fit_uname_config, IH_ARCH_DEFAULT, IH_TYPE_FLATDT,
@@ -1030,7 +1030,7 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 					FIT_LOADABLE_PROP, idx,
 				NULL), uname;
 	     idx++) {
-		images.verify = CONFIG_IS_ENABLED(FIT_SIGNATURE);
+		images.verify = IS_ENABLED(CONFIG_FIT_SIGNATURE);
 
 		ret = fit_image_load(&images, virt_to_phys((void *)header),
 				     &uname, &fit_uname_config,

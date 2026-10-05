@@ -11,4 +11,4 @@
 # Daniel Engström, Omicron Ceti AB, daniel@omicron.se.
 
 obj-y	+= coreboot.o
-obj-$(CONFIG_$(PHASE_)SMBIOS_PARSER)	+= sysinfo.o
+obj-$(CONFIG_SMBIOS_PARSER)	+= sysinfo.o

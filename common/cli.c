@@ -221,7 +221,7 @@ int do_run(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 }
 #endif
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 bool cli_process_fdt(const char **cmdp)
 {
 	/* Allow the fdt to override the boot command */
@@ -289,7 +289,7 @@ err:
 	 */
 	hang();
 }
-#endif /* CONFIG_IS_ENABLED(OF_CONTROL) */
+#endif /* IS_ENABLED(CONFIG_OF_CONTROL) */
 
 void cli_loop(void)
 {
@@ -298,7 +298,7 @@ void cli_loop(void)
 	if (IS_ENABLED(CONFIG_CMDLINE_FLUSH_STDIN))
 		console_flush_stdin();
 
-#if CONFIG_IS_ENABLED(HUSH_PARSER)
+#if IS_ENABLED(CONFIG_HUSH_PARSER)
 	if (gd->flags & GD_FLG_HUSH_MODERN_PARSER)
 		parse_and_run_file();
 	else if (gd->flags & GD_FLG_HUSH_OLD_PARSER)
@@ -320,9 +320,9 @@ void cli_init(void)
 	/* This if block is used to initialize hush parser gd flag. */
 	if (!(gd->flags & GD_FLG_HUSH_OLD_PARSER)
 		&& !(gd->flags & GD_FLG_HUSH_MODERN_PARSER)) {
-		if (CONFIG_IS_ENABLED(HUSH_OLD_PARSER))
+		if (IS_ENABLED(CONFIG_HUSH_OLD_PARSER))
 			gd->flags |= GD_FLG_HUSH_OLD_PARSER;
-		else if (CONFIG_IS_ENABLED(HUSH_MODERN_PARSER))
+		else if (IS_ENABLED(CONFIG_HUSH_MODERN_PARSER))
 			gd->flags |= GD_FLG_HUSH_MODERN_PARSER;
 	}
 
@@ -340,6 +340,6 @@ void cli_init(void)
 	hush_init_var();
 #endif
 
-	if (CONFIG_IS_ENABLED(VIDEO_ANSI) && serial_is_tty())
+	if (IS_ENABLED(CONFIG_VIDEO_ANSI) && serial_is_tty())
 		printf(ANSI_CURSOR_SHOW "\n");
 }

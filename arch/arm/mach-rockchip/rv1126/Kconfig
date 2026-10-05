@@ -58,7 +58,7 @@ config TPL_TEXT_BASE
 config SYS_MALLOC_F_LEN
 	default 0x2000
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x600000
 
 source "board/edgeble/neural-compute-module-2/Kconfig"

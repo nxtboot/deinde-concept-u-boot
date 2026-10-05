@@ -146,7 +146,7 @@ static int hx8394_panel_of_to_plat(struct udevice *dev)
 	struct hx8394_panel_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret =  device_get_supply_regulator(dev, "vcc-supply",
 						   &priv->reg_vcc);
 		if (ret && ret != -ENOENT) {
@@ -186,7 +186,7 @@ static int hx8394_panel_probe(struct udevice *dev)
 
 	dm_gpio_set_value(&priv->reset, true);
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		dev_dbg(dev, "enable vcc '%s'\n", priv->reg_vcc->name);
 		ret = regulator_set_enable(priv->reg_vcc, true);
 		if (ret)

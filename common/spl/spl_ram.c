@@ -34,7 +34,7 @@ static ulong spl_ram_load_read(struct spl_load_info *load, ulong sector,
 #endif
 	}
 	addr += sector;
-	if (CONFIG_IS_ENABLED(IMAGE_PRE_LOAD))
+	if (IS_ENABLED(CONFIG_IMAGE_PRE_LOAD))
 		addr += image_load_offset;
 
 	memcpy(buf, (void *)addr, count);
@@ -59,7 +59,7 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 #endif
 	}
 
-	if (CONFIG_IS_ENABLED(IMAGE_PRE_LOAD)) {
+	if (IS_ENABLED(CONFIG_IMAGE_PRE_LOAD)) {
 		ret = image_pre_load(addr);
 
 		if (ret)
@@ -69,12 +69,12 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 	}
 	header = map_sysmem(addr, 0);
 
-#if CONFIG_IS_ENABLED(DFU)
+#if IS_ENABLED(CONFIG_DFU)
 	if (bootdev->boot_device == BOOT_DEVICE_DFU)
 		spl_dfu_cmd(0, "dfu_alt_info_ram", "ram", "0");
 #endif
 
-#if CONFIG_IS_ENABLED(PCI_DFU)
+#if IS_ENABLED(CONFIG_PCI_DFU)
 	if (bootdev->boot_device == BOOT_DEVICE_PCIE)
 		spl_dfu_cmd(0, "dfu_alt_info_ram", "ram", "0");
 #endif
@@ -111,12 +111,12 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 
 	return ret;
 }
-#if CONFIG_IS_ENABLED(RAM_DEVICE)
+#if IS_ENABLED(CONFIG_RAM_DEVICE)
 SPL_LOAD_IMAGE_METHOD("RAM", 0, BOOT_DEVICE_RAM, spl_ram_load_image);
 #endif
-#if CONFIG_IS_ENABLED(DFU)
+#if IS_ENABLED(CONFIG_DFU)
 SPL_LOAD_IMAGE_METHOD("DFU", 0, BOOT_DEVICE_DFU, spl_ram_load_image);
 #endif
-#if CONFIG_IS_ENABLED(PCI_DFU)
+#if IS_ENABLED(CONFIG_PCI_DFU)
 SPL_LOAD_IMAGE_METHOD("PCIE", 0, BOOT_DEVICE_PCIE, spl_ram_load_image);
 #endif

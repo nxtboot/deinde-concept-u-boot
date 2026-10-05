@@ -34,10 +34,10 @@ u8 early_tlb[EARLY_TLB_SIZE] __section(".data") __aligned(0x4000);
  */
 static void early_enable_caches(void)
 {
-	if (CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		return;
 
-	if (!(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))) {
+	if (!(IS_ENABLED(CONFIG_SYS_ICACHE_OFF) && IS_ENABLED(CONFIG_SYS_DCACHE_OFF))) {
 		gd->arch.tlb_size = EARLY_TLB_SIZE;
 		gd->arch.tlb_addr = (unsigned long)&early_tlb;
 	}
@@ -78,7 +78,7 @@ void enable_caches(void)
 
 	/* Parse mem_map and find DDR entry */
 	while (mem->size) {
-		if (mem->phys == CONFIG_TEXT_BASE) {
+		if (mem->phys == CONFIG_PPL_TEXT_BASE) {
 			/* update DDR entry with real DDR size */
 			mem->size = gd->ram_size;
 			break;

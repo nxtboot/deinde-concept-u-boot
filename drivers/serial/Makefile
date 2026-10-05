@@ -3,14 +3,14 @@
 # (C) Copyright 2006-2009
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
-ifeq ($(CONFIG_$(PHASE_)DM_SERIAL),y)
+ifeq ($(CONFIG_DM_SERIAL),y)
 obj-y += serial-uclass.o
 else
 obj-y += serial.o
 endif
 
 obj-$(CONFIG_PL01X_SERIAL) += serial_pl01x.o
-obj-$(CONFIG_$(PHASE_)SYS_NS16550_SERIAL) += serial_ns16550.o
+obj-$(CONFIG_SYS_NS16550_SERIAL) += serial_ns16550.o
 
 obj-$(CONFIG_ALTERA_UART) += altera_uart.o
 obj-$(CONFIG_ALTERA_JTAG_UART) += altera_jtag_uart.o

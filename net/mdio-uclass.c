@@ -53,7 +53,7 @@ static int dm_mdio_post_bind(struct udevice *dev)
 		return -EINVAL;
 	}
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	return dm_scan_fdt_dev(dev);
 #else
 	return 0;
@@ -87,7 +87,7 @@ int dm_mdio_reset(struct udevice *mdio_dev)
 	struct mdio_perdev_priv *pdata = dev_get_uclass_priv(mdio_dev);
 	struct mii_dev *mii_bus = pdata->mii_bus;
 
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&mii_bus->reset_gpiod)) {
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&mii_bus->reset_gpiod)) {
 		dm_gpio_set_value(&mii_bus->reset_gpiod, 1);
 		udelay(mii_bus->reset_delay_us);
 		dm_gpio_set_value(&mii_bus->reset_gpiod, 0);
@@ -191,7 +191,7 @@ static int dm_mdio_post_probe(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(DM_ETH_PHY))
+	if (IS_ENABLED(CONFIG_DM_ETH_PHY))
 		mdio_bind_phy_nodes(dev);
 
 	return mdio_register(pdata->mii_bus);

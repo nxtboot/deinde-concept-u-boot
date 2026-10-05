@@ -16,7 +16,7 @@ config SYS_CPU
 config SYS_CONFIG_NAME
 	default "th1520_lpi4a"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x01b00000 if SPL
 	default 0x01c00000 if !RISCV_SMODE
 	default 0x01c00000 if RISCV_SMODE

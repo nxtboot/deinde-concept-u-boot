@@ -106,7 +106,7 @@ void ulp_watchdog_init(struct wdog_regs *wdog, u16 timeout)
 	ulp_watchdog_reset(wdog);
 }
 
-#if !CONFIG_IS_ENABLED(SYSRESET) && CONFIG_IS_ENABLED(WDT)
+#if !IS_ENABLED(CONFIG_SYSRESET) && IS_ENABLED(CONFIG_WDT)
 void reset_cpu(void)
 {
 	struct udevice *wdt;

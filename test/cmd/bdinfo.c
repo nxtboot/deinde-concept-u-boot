@@ -189,7 +189,7 @@ static int bdinfo_test_all(struct unit_test_state *uts)
 		ut_assert_nextline("pager       = %d", gd_pager_page_len());
 
 	/* The gd->multi_dtb_fit may not be available, hence, #if below. */
-#if CONFIG_IS_ENABLED(MULTI_DTB_FIT)
+#if IS_ENABLED(CONFIG_MULTI_DTB_FIT)
 	ut_assertok(test_num_l(uts, "multi_dtb_fit", (ulong)gd->multi_dtb_fit));
 #endif
 	ut_assertok(test_num_l(uts, "flags", gd->flags));
@@ -267,7 +267,7 @@ static int bdinfo_test_all(struct unit_test_state *uts)
 	if (gd->arch.resv_ram)
 		ut_check_console_linen(uts, "Reserved ram");
 #endif
-#if !(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+#if !(IS_ENABLED(CONFIG_SYS_ICACHE_OFF) && IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 	ut_check_console_linen(uts, "TLB addr");
 #endif
 	ut_check_console_linen(uts, "irq_sp");
@@ -280,7 +280,7 @@ static int bdinfo_test_all(struct unit_test_state *uts)
 #ifdef CONFIG_BOARD_TYPES
 	ut_check_console_linen(uts, "Board Type  =");
 #endif
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	ut_check_console_linen(uts, "Early malloc usage:");
 #endif
 #ifdef CONFIG_ARM64
@@ -308,7 +308,7 @@ BDINFO_TEST(bdinfo_test_full, UTF_CONSOLE);
 static int bdinfo_test_help(struct unit_test_state *uts)
 {
 	/* Test BDINFO unknown option help text print */
-	if (!CONFIG_IS_ENABLED(GETOPT)) {
+	if (!IS_ENABLED(CONFIG_GETOPT)) {
 		ut_asserteq(0, run_commandf("bdinfo -h"));
 		ut_assertok(bdinfo_test_all(uts));
 	} else {
@@ -317,10 +317,10 @@ static int bdinfo_test_help(struct unit_test_state *uts)
 		ut_assert_nextline_empty();
 		ut_assert_nextlinen("Usage:");
 		ut_assert_nextlinen("bdinfo");
-		if (CONFIG_IS_ENABLED(GETOPT))
+		if (IS_ENABLED(CONFIG_GETOPT))
 			ut_assert_nextlinen("bdinfo -a");
 		ut_assert_nextlinen("  - print all Board Info structure");
-		if (CONFIG_IS_ENABLED(GETOPT)) {
+		if (IS_ENABLED(CONFIG_GETOPT)) {
 			if (IS_ENABLED(CONFIG_NET)) {
 				ut_assert_nextlinen("bdinfo -e");
 				ut_assert_nextlinen("  - print Board Info related to network");
@@ -339,7 +339,7 @@ static int bdinfo_test_memory(struct unit_test_state *uts)
 {
 	/* Test BDINFO memory layout only print */
 	ut_assertok(run_commandf("bdinfo -m"));
-	if (!CONFIG_IS_ENABLED(GETOPT))
+	if (!IS_ENABLED(CONFIG_GETOPT))
 		ut_assertok(bdinfo_test_all(uts));
 	else
 		ut_assertok(bdinfo_check_mem(uts));
@@ -353,7 +353,7 @@ static int bdinfo_test_eth(struct unit_test_state *uts)
 {
 	/* Test BDINFO ethernet settings only print */
 	ut_assertok(run_commandf("bdinfo -e"));
-	if (!CONFIG_IS_ENABLED(GETOPT))
+	if (!IS_ENABLED(CONFIG_GETOPT))
 		ut_assertok(bdinfo_test_all(uts));
 	else if (IS_ENABLED(CONFIG_NET))
 		ut_assertok(test_eth(uts));

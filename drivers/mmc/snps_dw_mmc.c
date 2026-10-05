@@ -106,7 +106,7 @@ static int snps_dwmmc_of_to_plat(struct udevice *dev)
 	if (!ret && priv->f_max < CLOCK_MIN)
 		return -EINVAL;
 
-	if (CONFIG_IS_ENABLED(DM_GPIO))
+	if (IS_ENABLED(CONFIG_DM_GPIO))
 		gpio_request_by_name(dev, "cd-gpios", 0, &priv->cd_gpio,
 				     GPIOD_IS_IN);
 
@@ -123,7 +123,7 @@ int snps_dwmmc_getcd(struct udevice *dev)
 	struct snps_dwmci_priv_data *priv = dev_get_priv(dev);
 	struct dwmci_host *host = &priv->host;
 
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&priv->cd_gpio))
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&priv->cd_gpio))
 		return dm_gpio_get_value(&priv->cd_gpio);
 
 	return !(dwmci_readl(host, DWMCI_CDETECT) & 1);

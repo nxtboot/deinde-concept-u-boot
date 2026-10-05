@@ -266,7 +266,7 @@ static void smbios_print_generic(const struct smbios_header *table)
 {
 	char *str = (char *)table + table->length;
 
-	if (CONFIG_IS_ENABLED(HEXDUMP)) {
+	if (IS_ENABLED(CONFIG_HEXDUMP)) {
 		printf("Header and Data:\n");
 		print_hex_dump("\t", DUMP_PREFIX_OFFSET, 16, 1,
 			       table, table->length, false);
@@ -378,7 +378,7 @@ static void smbios_print_type2(struct smbios_type2 *table)
 	printf("\tContained Object Handles:\n");
 	for (i = 0; i < table->number_contained_objects; i++) {
 		printf("\t\tObject[%03d]:\n", i);
-		if (CONFIG_IS_ENABLED(HEXDUMP))
+		if (IS_ENABLED(CONFIG_HEXDUMP))
 			print_hex_dump("\t\t", DUMP_PREFIX_OFFSET, 16, 1, addr,
 				       sizeof(u16), false);
 		addr += sizeof(u16);
@@ -424,7 +424,7 @@ static void smbios_print_type3(struct smbios_type3 *table)
 		printf("\tContained Elements:\n");
 		for (i = 0; i < table->element_count; i++) {
 			printf("\t\tElement[%03d]:\n", i);
-			if (CONFIG_IS_ENABLED(HEXDUMP))
+			if (IS_ENABLED(CONFIG_HEXDUMP))
 				print_hex_dump("\t\t", DUMP_PREFIX_OFFSET, 16,
 					       1, addr,
 					       table->element_record_length,
@@ -574,7 +574,7 @@ static void smbios_print_type9(struct smbios_type9 *table)
 	printf("\tPeer (S/B/D/F/Width) groups:\n");
 	for (i = 0; i < table->peer_grouping_count; i++) {
 		printf("\t\tPeer group[%03d]:\n", i);
-		if (CONFIG_IS_ENABLED(HEXDUMP))
+		if (IS_ENABLED(CONFIG_HEXDUMP))
 			print_hex_dump("\t\t", DUMP_PREFIX_OFFSET, 16, 1, addr,
 				       SMBIOS_TYPE9_PGROUP_SIZE, false);
 		addr += SMBIOS_TYPE9_PGROUP_SIZE;

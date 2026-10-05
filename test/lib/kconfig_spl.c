@@ -14,9 +14,9 @@ static int lib_test_spl_is_enabled(struct unit_test_state *uts)
 {
 	ulong val;
 
-	ut_asserteq(0, CONFIG_IS_ENABLED(CMDLINE));
-	ut_asserteq(1, CONFIG_IS_ENABLED(OF_PLATDATA));
-	ut_asserteq(0, CONFIG_IS_ENABLED(_UNDEFINED));
+	ut_asserteq(0, IS_ENABLED(CONFIG_CMDLINE));
+	ut_asserteq(1, IS_ENABLED(CONFIG_OF_PLATDATA));
+	ut_asserteq(0, IS_ENABLED(CONFIG__UNDEFINED));
 
 	/*
 	 * This fails if CONFIG_TEST_KCONFIG_ENABLE is not enabled, since the
@@ -26,16 +26,6 @@ static int lib_test_spl_is_enabled(struct unit_test_state *uts)
 		val = IF_ENABLED_INT(CONFIG_TEST_KCONFIG_ENABLE,
 				     CONFIG_TEST_KCONFIG_VALUE);
 		printf("value %ld\n", val);
-	}
-
-	/*
-	 * This fails if CONFIG_TEST_KCONFIG_ENABLE is not enabled, since the
-	 * value is used.
-	 */
-	if (CONFIG_IS_ENABLED(TEST_KCONFIG)) {
-		val = CONFIG_IF_ENABLED_INT(TEST_KCONFIG_ENABLE,
-					    TEST_KCONFIG_VALUE);
-		printf("value2 %ld\n", val);
 	}
 
 	return 0;

@@ -106,7 +106,7 @@ To build U-Boot without SPL suitable for chainloading adjust mocha_defconfig:
 
 .. code-block::
 
-  CONFIG_TEXT_BASE=0x80A00000
+  CONFIG_PPL_TEXT_BASE=0x80A00000
   CONFIG_SKIP_LOWLEVEL_INIT=y
   # CONFIG_OF_BOARD_SETUP is not set
   CONFIG_TEGRA_PRAM=y

@@ -114,7 +114,7 @@ void check_for_uboot_update(void)
 			}
 		}
 		printf("Check update: starting factory image @%08x ...\n",
-		       CONFIG_TEXT_BASE);
+		       CONFIG_PPL_TEXT_BASE);
 	} else if (IS_ENABLED(CONFIG_PG_WCOM_UBOOT_UPDATE)) {
 		/*
 		 * When running in field updated u-boot, make sure that
@@ -122,7 +122,7 @@ void check_for_uboot_update(void)
 		 */
 		WARN_ON(bootcount > CONFIG_BOOTCOUNT_BOOTLIMIT);
 		printf("Check update: updated u-boot starting @%08x ...\n",
-		       CONFIG_TEXT_BASE);
+		       CONFIG_PPL_TEXT_BASE);
 	}
 }
 #endif

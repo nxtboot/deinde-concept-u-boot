@@ -1295,7 +1295,7 @@ static int fdt_test_chosen(struct unit_test_state *uts)
 		ut_assert(0 < console_record_readline(uts->actual_str,
 						      sizeof(uts->actual_str)));
 	ut_asserteq_str("chosen {", uts->actual_str);
-	if (CONFIG_IS_ENABLED(GENERATE_SMBIOS_TABLE))
+	if (IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE))
 		ut_assert_nextline("\tsmbios3-entrypoint = <0x%08x 0x%08x>;",
 				   upper_32_bits(smbiosaddr),
 				   lower_32_bits(smbiosaddr));
@@ -1331,7 +1331,7 @@ static int fdt_test_chosen(struct unit_test_state *uts)
 			   lower_32_bits(0x1234 + 0x5678));
 	ut_assert_nextline("\tlinux,initrd-start = <0x%08x 0x%08x>;",
 			   upper_32_bits(0x1234), lower_32_bits(0x1234));
-	if (CONFIG_IS_ENABLED(GENERATE_SMBIOS_TABLE))
+	if (IS_ENABLED(CONFIG_GENERATE_SMBIOS_TABLE))
 		ut_assert_nextline("\tsmbios3-entrypoint = <0x%08x 0x%08x>;",
 				   upper_32_bits(smbiosaddr),
 				   lower_32_bits(smbiosaddr));

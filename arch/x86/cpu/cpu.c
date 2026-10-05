@@ -275,7 +275,7 @@ char *cpu_get_name(char *name)
 	return ptr;
 }
 
-#if !CONFIG_IS_ENABLED(CPU)
+#if !IS_ENABLED(CONFIG_CPU)
 int print_cpuinfo(void)
 {
 	post_code(POST_CPU_INFO);
@@ -297,7 +297,7 @@ int print_cpuinfo(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(SHOW_BOOT_PROGRESS)
+#if IS_ENABLED(CONFIG_SHOW_BOOT_PROGRESS)
 void show_boot_progress(int val)
 {
 	outb(val, POST_PORT);

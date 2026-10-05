@@ -32,7 +32,7 @@
 #define DNS_CALLBACK
 #endif
 
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 #define NET_CALLBACKS \
 	"bootfile:bootfile," \
 	"ipaddr:ipaddr," \

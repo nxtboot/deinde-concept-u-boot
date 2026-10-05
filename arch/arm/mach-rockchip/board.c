@@ -326,7 +326,7 @@ int fastboot_set_reboot_flag(enum fastboot_reboot_reason reason)
 #ifdef CONFIG_MISC_INIT_R
 int rockchip_setup_macaddr(void)
 {
-#if CONFIG_IS_ENABLED(HASH) && CONFIG_IS_ENABLED(SHA256)
+#if IS_ENABLED(CONFIG_HASH) && IS_ENABLED(CONFIG_SHA256)
 	int ret;
 	const char *cpuid = env_get("cpuid#");
 	u8 hash[SHA256_SUM_LEN];

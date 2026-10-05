@@ -56,7 +56,7 @@ static inline uintptr_t __attribute__((no_instrument_function))
 	if (gd->flags & GD_FLG_RELOC)
 		offset -= gd->relocaddr;
 	else
-		offset -= CONFIG_TEXT_BASE;
+		offset -= CONFIG_PPL_TEXT_BASE;
 #endif
 	return offset / FUNC_SITE_SIZE;
 }
@@ -283,7 +283,7 @@ int trace_list_calls(void *buff, size_t buff_size, size_t *needed)
 		output_hdr->rec_count = upto;
 		output_hdr->type = TRACE_CHUNK_CALLS;
 		output_hdr->version = TRACE_VERSION;
-		output_hdr->text_base = CONFIG_TEXT_BASE;
+		output_hdr->text_base = CONFIG_PPL_TEXT_BASE;
 	}
 
 	/* Work out how must of the buffer we used */

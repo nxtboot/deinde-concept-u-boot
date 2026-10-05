@@ -256,7 +256,7 @@ struct trace_call *call_list;	/* list of all calls in the input trace file */
 int call_count;			/* number of calls */
 int verbose;	/* Verbosity level 0=none, 1=warn, 2=notice, 3=info, 4=debug */
 ulong text_offset;		/* text address of first function */
-ulong text_base;		/* CONFIG_TEXT_BASE from trace file */
+ulong text_base;		/* CONFIG_PPL_TEXT_BASE from trace file */
 
 /* debugging helpers */
 static void outf(int level, const char *fmt, ...)

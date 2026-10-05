@@ -18,7 +18,7 @@
 #define ZYNQ_SILICON_VER_MASK	0xF0000000
 #define ZYNQ_SILICON_VER_SHIFT	28
 
-#if CONFIG_IS_ENABLED(FPGA)
+#if IS_ENABLED(CONFIG_FPGA)
 xilinx_desc fpga = {
 	.family = xilinx_zynq,
 	.iface = devcfg,
@@ -89,7 +89,7 @@ void reset_cpu(void)
 		;
 }
 
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 void enable_caches(void)
 {
 	/* Enable D-cache. I-cache is already enabled in start.S */
@@ -114,7 +114,7 @@ static int __maybe_unused cpu_desc_id(void)
 #if defined(CONFIG_ARCH_EARLY_INIT_R)
 int arch_early_init_r(void)
 {
-#if CONFIG_IS_ENABLED(FPGA)
+#if IS_ENABLED(CONFIG_FPGA)
 	int cpu_id = cpu_desc_id();
 
 	if (cpu_id < 0)

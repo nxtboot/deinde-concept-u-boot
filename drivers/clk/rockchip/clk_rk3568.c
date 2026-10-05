@@ -16,7 +16,7 @@
 #include <dm/lists.h>
 #include <dt-bindings/clock/rk3568-cru.h>
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 struct rk3568_clk_plat {
 	struct dtd_rockchip_rk3568_cru dtd;
 };
@@ -492,7 +492,7 @@ static int rk3568_pmuclk_ofdata_to_platdata(struct udevice *dev)
 
 static int rk3568_pmuclk_bind(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	int ret = 0;
 
 	ret = offsetof(struct rk3568_pmucru, pmu_softrst_con[0]);
@@ -518,7 +518,7 @@ U_BOOT_DRIVER(rockchip_rk3568_pmucru) = {
 	.ops		= &rk3568_pmuclk_ops,
 	.bind		= rk3568_pmuclk_bind,
 	.probe		= rk3568_pmuclk_probe,
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	.plat_auto	= sizeof(struct rk3568_pmuclk_plat),
 #endif
 
@@ -2678,7 +2678,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	return ret;
 };
 
-#if (CONFIG_IS_ENABLED(OF_CONTROL)) || (!CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL)) || (!IS_ENABLED(CONFIG_OF_PLATDATA))
 static int rk3568_gmac0_src_set_parent(struct clk *clk, struct clk *parent)
 {
 	struct rk3568_clk_priv *priv = dev_get_priv(clk->dev);
@@ -2857,7 +2857,7 @@ static int rk3568_clk_set_parent(struct clk *clk, struct clk *parent)
 static struct clk_ops rk3568_clk_ops = {
 	.get_rate = rk3568_clk_get_rate,
 	.set_rate = rk3568_clk_set_rate,
-#if (CONFIG_IS_ENABLED(OF_CONTROL)) || (!CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL)) || (!IS_ENABLED(CONFIG_OF_PLATDATA))
 	.set_parent = rk3568_clk_set_parent,
 #endif
 };
@@ -2952,7 +2952,7 @@ static int rk3568_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	ret = offsetof(struct rk3568_cru, softrst_con[0]);
 	ret = rockchip_reset_bind(dev, ret, 30);
 	if (ret)
@@ -2976,7 +2976,7 @@ U_BOOT_DRIVER(rockchip_rk3568_cru) = {
 	.ops		= &rk3568_clk_ops,
 	.bind		= rk3568_clk_bind,
 	.probe		= rk3568_clk_probe,
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	.plat_auto	= sizeof(struct rk3568_clk_plat),
 #endif
 };

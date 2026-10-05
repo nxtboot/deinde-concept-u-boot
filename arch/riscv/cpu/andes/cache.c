@@ -58,21 +58,21 @@ void invalidate_dcache_range(unsigned long start, unsigned long end)
 
 void icache_enable(void)
 {
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile("csrsi %0, 0x1" :: "i"(CSR_MCACHE_CTL));
 #endif
 }
 
 void icache_disable(void)
 {
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile("csrci %0, 0x1" :: "i"(CSR_MCACHE_CTL));
 #endif
 }
 
 void dcache_enable(void)
 {
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile("csrsi %0, 0x2" :: "i"(CSR_MCACHE_CTL));
 #endif
 
@@ -83,7 +83,7 @@ void dcache_enable(void)
 
 void dcache_disable(void)
 {
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile("csrci %0, 0x2" :: "i"(CSR_MCACHE_CTL));
 #endif
 
@@ -96,7 +96,7 @@ int icache_status(void)
 {
 	int ret = 0;
 
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile (
 		"csrr t1, %1\n\t"
 		"andi %0, t1, 0x01\n\t"
@@ -113,7 +113,7 @@ int dcache_status(void)
 {
 	int ret = 0;
 
-#if CONFIG_IS_ENABLED(RISCV_MMODE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE)
 	asm volatile (
 		"csrr t1, %1\n\t"
 		"andi %0, t1, 0x02\n\t"

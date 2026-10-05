@@ -9,9 +9,9 @@
 
 #define MP2_MEM_MAP_MAX 10
 
-#if (CONFIG_TEXT_BASE < STM32_DDR_BASE) || \
-	(CONFIG_TEXT_BASE > (STM32_DDR_BASE + STM32_DDR_SIZE))
-#error "invalid CONFIG_TEXT_BASE value"
+#if (CONFIG_PPL_TEXT_BASE < STM32_DDR_BASE) || \
+	(CONFIG_PPL_TEXT_BASE > (STM32_DDR_BASE + STM32_DDR_SIZE))
+#error "invalid CONFIG_PPL_TEXT_BASE value"
 #endif
 
 struct mm_region stm32mp2_mem_map[MP2_MEM_MAP_MAX] = {
@@ -52,13 +52,13 @@ struct mm_region stm32mp2_mem_map[MP2_MEM_MAP_MAX] = {
 	}, {
 		/*
 		 * DDR = STM32_DDR_BASE / STM32_DDR_SIZE
-		 * the beginning of DDR (before CONFIG_TEXT_BASE) is not
+		 * the beginning of DDR (before CONFIG_PPL_TEXT_BASE) is not
 		 * mapped, protected by RIF and reserved for other firmware
 		 * (OP-TEE / TF-M / Cube M33)
 		 */
-		.virt = CONFIG_TEXT_BASE,
-		.phys = CONFIG_TEXT_BASE,
-		.size = STM32_DDR_SIZE - (CONFIG_TEXT_BASE - STM32_DDR_BASE),
+		.virt = CONFIG_PPL_TEXT_BASE,
+		.phys = CONFIG_PPL_TEXT_BASE,
+		.size = STM32_DDR_SIZE - (CONFIG_PPL_TEXT_BASE - STM32_DDR_BASE),
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			 PTE_BLOCK_INNER_SHARE
 	}, {

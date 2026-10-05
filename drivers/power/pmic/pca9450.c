@@ -82,7 +82,7 @@ static int pca9450_probe(struct udevice *dev)
 	unsigned int reset_ctrl;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(SYSRESET)) {
+	if (IS_ENABLED(CONFIG_SYSRESET)) {
 		ret = device_bind_driver_to_node(dev, "pca9450_sysreset",
 						 "pca9450_sysreset",
 						 dev_ofnode(dev), NULL);

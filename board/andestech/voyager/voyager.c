@@ -32,7 +32,7 @@ int dram_init_banksize(void)
 void spl_board_init(void)
 {
 	/* enable andes-l2 cache */
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		enable_caches();
 }
 #endif
@@ -41,7 +41,7 @@ void spl_board_init(void)
 int board_early_init_r(void)
 {
 	/* enable andes-l2 cache */
-	if (!CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		enable_caches();
 
 	return 0;

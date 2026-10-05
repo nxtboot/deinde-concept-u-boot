@@ -26,14 +26,14 @@
 	EXPORT_FUNC(dlmalloc, void *, malloc, size_t)
 	EXPORT_FUNC(dlrealloc, void *, realloc, void *, size_t)
 	EXPORT_FUNC(dlcalloc, void *, calloc, size_t, size_t)
-#if !CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
+#if !IS_ENABLED(CONFIG_SYS_MALLOC_SIMPLE)
 	EXPORT_FUNC(dlfree, void, free, void *)
 #endif
 #else
 	EXPORT_FUNC(malloc, void *, malloc, size_t)
 	EXPORT_FUNC(realloc, void *, realloc, void *, size_t)
 	EXPORT_FUNC(calloc, void *, calloc, size_t, size_t)
-#if !CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
+#if !IS_ENABLED(CONFIG_SYS_MALLOC_SIMPLE)
 	EXPORT_FUNC(free, void, free, void *)
 #endif
 #endif
@@ -69,7 +69,7 @@
 	EXPORT_FUNC(snprintf, int, snprintf, char *, size_t, const char *, ...)
 	EXPORT_FUNC(vsprintf, int, vsprintf, char *, const char *, va_list)
 	EXPORT_FUNC(vsnprintf, int, vsnprintf, char *, size_t, const char *, va_list)
-#if defined(CONFIG_CMD_I2C) && CONFIG_IS_ENABLED(SYS_I2C_LEGACY)
+#if defined(CONFIG_CMD_I2C) && IS_ENABLED(CONFIG_SYS_I2C_LEGACY)
 	EXPORT_FUNC(i2c_write, int, i2c_write, uchar, uint, int , uchar * , int)
 	EXPORT_FUNC(i2c_read, int, i2c_read, uchar, uint, int , uchar * , int)
 #endif

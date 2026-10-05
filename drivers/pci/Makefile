@@ -5,7 +5,7 @@
 
 obj-$(CONFIG_VIDEO) += pci_rom.o
 obj-$(CONFIG_PCI) += pci-uclass.o pci_auto.o
-ifeq ($(CONFIG_$(PHASE_)PCI_PNP_LARGEST_FIRST),y)
+ifeq ($(CONFIG_PCI_PNP_LARGEST_FIRST),y)
 obj-$(CONFIG_PCI) += pci_auto_sorted.o
 else
 obj-$(CONFIG_PCI) += pci_auto_simple.o

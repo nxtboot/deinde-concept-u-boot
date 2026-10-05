@@ -43,7 +43,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 struct rom_api *g_rom_api = (struct rom_api *)0x1980;
 
-#if CONFIG_IS_ENABLED(ENV_IS_IN_MMC) || CONFIG_IS_ENABLED(ENV_IS_NOWHERE)
+#if IS_ENABLED(CONFIG_ENV_IS_IN_MMC) || IS_ENABLED(CONFIG_ENV_IS_NOWHERE)
 __weak int board_mmc_get_env_dev(int devno)
 {
 	return devno;
@@ -797,7 +797,7 @@ enum env_location arch_env_get_location(enum env_operation op, int prio)
 
 	switch (dev) {
 	case QSPI_BOOT:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_SPI_FLASH))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_SPI_FLASH))
 			return ENVL_SPI_FLASH;
 		return ENVL_NOWHERE;
 	case SD1_BOOT:
@@ -806,11 +806,11 @@ enum env_location arch_env_get_location(enum env_operation op, int prio)
 	case MMC1_BOOT:
 	case MMC2_BOOT:
 	case MMC3_BOOT:
-		if (CONFIG_IS_ENABLED(ENV_IS_IN_MMC))
+		if (IS_ENABLED(CONFIG_ENV_IS_IN_MMC))
 			return ENVL_MMC;
-		else if (CONFIG_IS_ENABLED(ENV_IS_IN_EXT4))
+		else if (IS_ENABLED(CONFIG_ENV_IS_IN_EXT4))
 			return ENVL_EXT4;
-		else if (CONFIG_IS_ENABLED(ENV_IS_IN_FAT))
+		else if (IS_ENABLED(CONFIG_ENV_IS_IN_FAT))
 			return ENVL_FAT;
 		return ENVL_NOWHERE;
 	default:

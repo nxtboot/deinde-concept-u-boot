@@ -55,7 +55,7 @@
 #define CFG_SYS_NAND_ECCSIZE		512
 #define CFG_SYS_NAND_ECCBYTES	14
 
-#define	CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
+#define	CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
 
 /*
  * 1MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM

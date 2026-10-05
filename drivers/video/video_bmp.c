@@ -364,7 +364,7 @@ static int draw_bmp(struct udevice *dev, ulong bmp_image, int x, int y,
 	switch (bmp_bpix) {
 	case 1:
 	case 8:
-		if (CONFIG_IS_ENABLED(VIDEO_BMP_RLE8)) {
+		if (IS_ENABLED(CONFIG_VIDEO_BMP_RLE8)) {
 			u32 compression = get_unaligned_le32(
 				&bmp->header.compression);
 			debug("compressed %d %d\n", compression, BMP_BI_RLE8);
@@ -395,7 +395,7 @@ static int draw_bmp(struct udevice *dev, ulong bmp_image, int x, int y,
 		}
 		break;
 	case 16:
-		if (CONFIG_IS_ENABLED(BMP_16BPP)) {
+		if (IS_ENABLED(CONFIG_BMP_16BPP)) {
 			for (i = 0; i < height; ++i) {
 				schedule();
 				for (j = 0; j < width; j++) {
@@ -408,7 +408,7 @@ static int draw_bmp(struct udevice *dev, ulong bmp_image, int x, int y,
 		}
 		break;
 	case 24:
-		if (CONFIG_IS_ENABLED(BMP_24BPP)) {
+		if (IS_ENABLED(CONFIG_BMP_24BPP)) {
 			for (i = 0; i < height; ++i) {
 				for (j = 0; j < width; j++) {
 					u8 red = bmap[0];
@@ -465,7 +465,7 @@ static int draw_bmp(struct udevice *dev, ulong bmp_image, int x, int y,
 		}
 		break;
 	case 32:
-		if (CONFIG_IS_ENABLED(BMP_32BPP)) {
+		if (IS_ENABLED(CONFIG_BMP_32BPP)) {
 			for (i = 0; i < height; ++i) {
 				for (j = 0; j < width; j++) {
 					if (eformat == VIDEO_X2R10G10B10) {

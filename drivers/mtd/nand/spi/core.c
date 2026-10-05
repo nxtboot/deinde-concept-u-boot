@@ -1649,13 +1649,13 @@ static int spinand_bind(struct udevice *dev)
 		struct spinand_plat *plat = dev_get_plat(dev);
 		int ret;
 
-		if (CONFIG_IS_ENABLED(MTD_BLOCK)) {
+		if (IS_ENABLED(CONFIG_MTD_BLOCK)) {
 			ret = mtd_bind(dev, &plat->mtd);
 			if (ret)
 				return ret;
 		}
 
-		if (CONFIG_IS_ENABLED(UBI_BLOCK))
+		if (IS_ENABLED(CONFIG_UBI_BLOCK))
 			return ubi_bind(dev);
 	}
 

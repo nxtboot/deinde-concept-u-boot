@@ -378,7 +378,7 @@ int pciauto_config_device(struct udevice *dev)
 	int ret;
 
 	dm_pci_read_config16(dev, PCI_CLASS_DEVICE, &class);
-	if (CONFIG_IS_ENABLED(LOG)) {
+	if (IS_ENABLED(CONFIG_LOG)) {
 		u32 vendev;
 
 		dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendev);

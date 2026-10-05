@@ -9,7 +9,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "cmpc885"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x40000000
 
 config CPLD_BASE

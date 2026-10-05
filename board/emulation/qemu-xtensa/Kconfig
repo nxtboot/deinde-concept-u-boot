@@ -9,7 +9,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "qemu-xtensa"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x50000000 if (SYS_CPU = de212)
 	default 0xfe000000
 

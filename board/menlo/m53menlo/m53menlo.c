@@ -263,7 +263,7 @@ void board_preboot_os(void)
 	gpio_direction_output(IMX_GPIO_NR(6, 0), 0);
 }
 
-#if CONFIG_IS_ENABLED(OF_LIBFDT)
+#if IS_ENABLED(CONFIG_OF_LIBFDT)
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
 	if (lvds_compat_string)

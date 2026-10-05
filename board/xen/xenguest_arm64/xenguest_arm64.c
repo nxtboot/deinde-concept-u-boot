@@ -209,7 +209,7 @@ static int setup_mem_map(void)
 				PTE_BLOCK_INNER_SHARE);
 	i++;
 
-	if (CONFIG_IS_ENABLED(VIRTIO_MMIO)) {
+	if (IS_ENABLED(CONFIG_VIRTIO_MMIO)) {
 		xen_mem_map[i].virt = GUEST_VIRTIO_MMIO_BASE;
 		xen_mem_map[i].phys = GUEST_VIRTIO_MMIO_BASE;
 		xen_mem_map[i].size = GUEST_VIRTIO_MMIO_SIZE;
@@ -225,7 +225,7 @@ static int setup_mem_map(void)
 	}
 
 	for (; i < MAX_MEM_MAP_REGIONS; i++) {
-		if (CONFIG_IS_ENABLED(VIRTIO_MMIO)) {
+		if (IS_ENABLED(CONFIG_VIRTIO_MMIO)) {
 			ret = fdt_node_check_compatible(blob, mem, "virtio,mmio");
 			if (!ret)
 				continue;

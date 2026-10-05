@@ -61,7 +61,7 @@ static int setup_layout(struct spl_image_info *image, ulong *addrp)
 	uint need_size = image->size + image->fdt_size;
 	margin = buf_size - need_size;
 
-	if (CONFIG_IS_ENABLED(BLOBLIST)) {
+	if (IS_ENABLED(CONFIG_BLOBLIST)) {
 		struct vbe_handoff *handoff;
 
 		handoff = bloblist_find(BLOBLISTT_VBE,
@@ -128,15 +128,15 @@ __rcode int rcode_reloc_and_jump(struct spl_image_info *image)
 	if (*image->stack_prot != STACK_PROT_VALUE)
 		return -EFAULT;
 	magic = get_unaligned_le32(image->buf);
-	if (CONFIG_IS_ENABLED(LZMA)) {
+	if (IS_ENABLED(CONFIG_LZMA)) {
 		SizeT lzma_len = unc_len;
 
 		ret = lzmaBuffToBuffDecompress((u8 *)dst, &lzma_len,
 					       image->buf, image_len);
 		unc_len = lzma_len;
-	} else if (CONFIG_IS_ENABLED(GZIP)) {
+	} else if (IS_ENABLED(CONFIG_GZIP)) {
 		ret = gunzip(dst, unc_len, image->buf, &image_len);
-	} else if (CONFIG_IS_ENABLED(LZ4) && magic == LZ4F_MAGIC) {
+	} else if (IS_ENABLED(CONFIG_LZ4) && magic == LZ4F_MAGIC) {
 		ret = ulz4fn(image->buf, image_len, dst, &unc_len);
 		if (ret)
 			return ret;
@@ -167,7 +167,7 @@ int spl_reloc_jump(struct spl_image_info *image, spl_jump_to_image_t jump)
 	int ret;
 
 	log_debug("malloc usage %x bytes (%d KB of %d KB)\n", gd->malloc_ptr,
-		  gd->malloc_ptr / 1024, CONFIG_VAL(SYS_MALLOC_F_LEN) / 1024);
+		  gd->malloc_ptr / 1024, CONFIG_SYS_MALLOC_F_LEN / 1024);
 
 	if (*image->stack_prot != STACK_PROT_VALUE) {
 		log_err("stack busted, cannot continue\n");

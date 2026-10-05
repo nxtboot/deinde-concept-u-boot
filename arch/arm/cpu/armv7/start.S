@@ -40,7 +40,7 @@ reset:
 	/* Allow the board to save important registers */
 	b	save_boot_params
 save_boot_params_ret:
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	# Keep passage information in case it is provided
 	cmp	r0, #0
 	moveq	r6, r1		/* mach */
@@ -106,7 +106,7 @@ switch_to_hypervisor_ret:
 	orr	r0, r0, #0xc0		@ disable FIQ and IRQ
 	msr	cpsr,r0
 
-#if !CONFIG_IS_ENABLED(SYS_NO_VECTOR_TABLE)
+#if !IS_ENABLED(CONFIG_SYS_NO_VECTOR_TABLE)
 /*
  * Setup vector:
  */
@@ -123,11 +123,11 @@ switch_to_hypervisor_ret:
 #endif
 
 	/* the mask ROM code should have PLL and others stable */
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT)
 #ifdef CONFIG_CPU_V7A
 	bl	cpu_init_cp15
 #endif
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT_ONLY)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT_ONLY)
 	bl	cpu_init_crit
 #endif
 #endif
@@ -140,7 +140,7 @@ ENTRY(c_runtime_cpu_setup)
 /*
  * If I-cache is enabled invalidate it
  */
-#if !CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_ICACHE_OFF)
 	mcr	p15, 0, r0, c7, c5, 0	@ invalidate icache
 	dsb
 	isb
@@ -179,7 +179,7 @@ ENDPROC(switch_to_hypervisor)
  *************************************************************************/
 ENTRY(cpu_init_cp15)
 
-#if CONFIG_IS_ENABLED(ARMV7_SET_CORTEX_SMPEN)
+#if IS_ENABLED(CONFIG_ARMV7_SET_CORTEX_SMPEN)
 	/*
 	 * The Arm Cortex-A7 TRM says this bit must be enabled before
 	 * "any cache or TLB maintenance operations are performed".
@@ -207,7 +207,7 @@ ENTRY(cpu_init_cp15)
 	bic	r0, r0, #0x00000007	@ clear bits 2:0 (-CAM)
 	orr	r0, r0, #0x00000002	@ set bit 1 (--A-) Align
 	orr	r0, r0, #0x00000800	@ set bit 11 (Z---) BTB
-#if CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
+#if IS_ENABLED(CONFIG_SYS_ICACHE_OFF)
 	bic	r0, r0, #0x00001000	@ clear bit 12 (I) I-cache
 #else
 	orr	r0, r0, #0x00001000	@ set bit 12 (I) I-cache
@@ -258,8 +258,8 @@ ENTRY(cpu_init_cp15)
 	orr	r2, r4, r2		@ r2 has combined CPU variant + revision
 
 /* Early stack for ERRATA that needs into call C code */
-#if CONFIG_IS_ENABLED(HAVE_INIT_STACK)
-	ldr	r0, =CONFIG_VAL(STACK)
+#if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
+	ldr	r0, =CONFIG_STACK
 #else
 	ldr	r0, =(SYS_INIT_SP_ADDR)
 #endif
@@ -372,8 +372,8 @@ skip_errata_801819:
 	mov	pc, r5			@ back to my caller
 ENDPROC(cpu_init_cp15)
 
-#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT) && \
-	!CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT_ONLY)
+#if !IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT) && \
+	!IS_ENABLED(CONFIG_SKIP_LOWLEVEL_INIT_ONLY)
 /*************************************************************************
  *
  * CPU_init_critical registers

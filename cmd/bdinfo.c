@@ -140,7 +140,7 @@ static int bdinfo_print_all(struct bd_info *bd)
 		show_video_info();
 	if (IS_ENABLED(CONFIG_CONSOLE_PAGER))
 		printf("pager       = %d\n", gd_pager_page_len());
-#if CONFIG_IS_ENABLED(MULTI_DTB_FIT)
+#if IS_ENABLED(CONFIG_MULTI_DTB_FIT)
 	lprint_num_l("multi_dtb_fit", (ulong)gd->multi_dtb_fit);
 #endif
 	lprint_num_l("flags", gd->flags);
@@ -169,7 +169,7 @@ int do_bdinfo(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	struct getopt_state gs;
 	int opt;
 
-	if (!CONFIG_IS_ENABLED(GETOPT) || argc == 1)
+	if (!IS_ENABLED(CONFIG_GETOPT) || argc == 1)
 		return bdinfo_print_all(bd);
 
 	getopt_init_state(&gs, argc, argv);
@@ -198,11 +198,11 @@ U_BOOT_CMD(
 	"print Board Info structure",
 // Long help prepended with command's name, and `bdinfo` is a valid command
 	"\n"
-#if CONFIG_IS_ENABLED(GETOPT)
+#if IS_ENABLED(CONFIG_GETOPT)
 	"bdinfo -a\n"
 #endif
 	"  - print all Board Info structure"
-#if CONFIG_IS_ENABLED(GETOPT)
+#if IS_ENABLED(CONFIG_GETOPT)
 	"\n"
 #if IS_ENABLED(CONFIG_NET)
 	"bdinfo -e\n"

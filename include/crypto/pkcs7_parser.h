@@ -11,7 +11,7 @@
 #include <linux/oid_registry.h>
 #include <crypto/pkcs7.h>
 #include <crypto/x509_parser.h>
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 #include "mbedtls_options.h"
 #include <mbedtls/pkcs7.h>
 #include <library/x509_internal.h>
@@ -26,7 +26,7 @@
 	pr_devel("<== %s()"FMT"\n", __func__, ##__VA_ARGS__)
 
 /* Backup the parsed MedTLS context that we need */
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 struct pkcs7_mbedtls_ctx {
 	void *content_data;
 };
@@ -70,7 +70,7 @@ struct pkcs7_sinfo_mbedtls_ctx {
  * Content Data or Authenticate Attributes.
  */
 struct pkcs7_signed_info {
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 	struct pkcs7_sinfo_mbedtls_ctx *mbedtls_ctx;
 #endif
 	struct pkcs7_signed_info *next;
@@ -109,7 +109,7 @@ struct pkcs7_signed_info {
 };
 
 struct pkcs7_message {
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 	struct pkcs7_mbedtls_ctx *mbedtls_ctx;
 #endif
 	struct x509_certificate *certs;	/* Certificate list */

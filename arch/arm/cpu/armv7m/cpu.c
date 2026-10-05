@@ -20,7 +20,7 @@
  */
 int cleanup_before_linux(void)
 {
-	if (!CONFIG_IS_ENABLED(LIB_BOOTM) && !CONFIG_IS_ENABLED(LIB_BOOTZ))
+	if (!IS_ENABLED(CONFIG_LIB_BOOTM) && !IS_ENABLED(CONFIG_LIB_BOOTZ))
 		return 0;
 
 	/*

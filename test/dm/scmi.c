@@ -210,7 +210,7 @@ static int dm_test_scmi_cmd(struct unit_test_state *uts)
 	int num_proto = 0;
 	char cmd_out[30];
 
-	if (!CONFIG_IS_ENABLED(CMD_SCMI))
+	if (!IS_ENABLED(CONFIG_CMD_SCMI))
 		return -EAGAIN;
 
 	/* preparation */
@@ -223,13 +223,13 @@ static int dm_test_scmi_cmd(struct unit_test_state *uts)
 	 * This estimation is correct as far as a corresponding
 	 * protocol support is added to sandbox fake serer.
 	 */
-	if (CONFIG_IS_ENABLED(POWER_DOMAIN))
+	if (IS_ENABLED(CONFIG_POWER_DOMAIN))
 		num_proto++;
-	if (CONFIG_IS_ENABLED(CLK_SCMI))
+	if (IS_ENABLED(CONFIG_CLK_SCMI))
 		num_proto++;
-	if (CONFIG_IS_ENABLED(RESET_SCMI))
+	if (IS_ENABLED(CONFIG_RESET_SCMI))
 		num_proto++;
-	if (CONFIG_IS_ENABLED(DM_REGULATOR_SCMI))
+	if (IS_ENABLED(CONFIG_DM_REGULATOR_SCMI))
 		num_proto++;
 
 	/* scmi info */
@@ -244,13 +244,13 @@ static int dm_test_scmi_cmd(struct unit_test_state *uts)
 	ut_assert_nextline("    > 1: OSPM");
 	snprintf(cmd_out, 30, "  # of protocols: %d", num_proto);
 	ut_assert_nextline(cmd_out);
-	if (CONFIG_IS_ENABLED(SCMI_POWER_DOMAIN))
+	if (IS_ENABLED(CONFIG_SCMI_POWER_DOMAIN))
 		ut_assert_nextline("      Power domain management");
-	if (CONFIG_IS_ENABLED(CLK_SCMI))
+	if (IS_ENABLED(CONFIG_CLK_SCMI))
 		ut_assert_nextline("      Clock management");
-	if (CONFIG_IS_ENABLED(RESET_SCMI))
+	if (IS_ENABLED(CONFIG_RESET_SCMI))
 		ut_assert_nextline("      Reset domain management");
-	if (CONFIG_IS_ENABLED(DM_REGULATOR_SCMI))
+	if (IS_ENABLED(CONFIG_DM_REGULATOR_SCMI))
 		ut_assert_nextline("      Voltage domain management");
 	ut_assert_nextline("  vendor: U-Boot");
 	ut_assert_nextline("  sub vendor: Sandbox");
@@ -294,7 +294,7 @@ static int dm_test_scmi_power_domains(struct unit_test_state *uts)
 	u8 *name;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(SCMI_POWER_DOMAIN))
+	if (!IS_ENABLED(CONFIG_SCMI_POWER_DOMAIN))
 		return -EAGAIN;
 
 	/* preparation */
@@ -396,7 +396,7 @@ static int dm_test_scmi_clocks(struct unit_test_state *uts)
 	int ret_dev;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(CLK_SCMI))
+	if (!IS_ENABLED(CONFIG_CLK_SCMI))
 		return -EAGAIN;
 
 	ret = load_sandbox_scmi_test_devices(uts, &agent, &dev);
@@ -464,7 +464,7 @@ static int dm_test_scmi_resets(struct unit_test_state *uts)
 	struct udevice *agent_dev, *reset_dev, *dev = NULL;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(RESET_SCMI))
+	if (!IS_ENABLED(CONFIG_RESET_SCMI))
 		return -EAGAIN;
 
 	ret = load_sandbox_scmi_test_devices(uts, &agent, &dev);
@@ -503,7 +503,7 @@ static int dm_test_scmi_voltage_domains(struct unit_test_state *uts)
 	struct udevice *dev;
 	struct udevice *regul0_dev;
 
-	if (!CONFIG_IS_ENABLED(DM_REGULATOR_SCMI))
+	if (!IS_ENABLED(CONFIG_DM_REGULATOR_SCMI))
 		return -EAGAIN;
 
 	ut_assertok(load_sandbox_scmi_test_devices(uts, &agent, &dev));

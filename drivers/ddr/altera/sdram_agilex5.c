@@ -370,7 +370,7 @@ int sdram_mmr_init_full(struct udevice *dev)
 	 */
 	if (io96b_ctrl->ecc_status) {
 		if (ecc_interrupt_status(io96b_ctrl)) {
-			if (CONFIG_IS_ENABLED(WDT)) {
+			if (IS_ENABLED(CONFIG_WDT)) {
 				struct udevice *wdt;
 
 				printf("DDR: ECC error recover start now\n");

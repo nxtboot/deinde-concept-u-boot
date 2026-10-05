@@ -22,13 +22,13 @@
 #include <linux/usb/gadget.h>
 #include <linux/usb/atmel_usba_udc.h>
 
-#if CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if IS_ENABLED(CONFIG_DM_USB_GADGET)
 #include <mach/atmel_usba_udc.h>
 
 static int usba_udc_start(struct usb_gadget *gadget,
 			  struct usb_gadget_driver *driver);
 static int usba_udc_stop(struct usb_gadget *gadget);
-#endif /* CONFIG_IS_ENABLED(DM_USB_GADGET) */
+#endif /* IS_ENABLED(CONFIG_DM_USB_GADGET) */
 
 #include "atmel_usba_udc.h"
 
@@ -536,7 +536,7 @@ static const struct usb_gadget_ops usba_udc_ops = {
 	.wakeup			= usba_udc_wakeup,
 	.set_selfpowered	= usba_udc_set_selfpowered,
 	.pullup			= usba_udc_pullup,
-#if CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if IS_ENABLED(CONFIG_DM_USB_GADGET)
 	.udc_start		= usba_udc_start,
 	.udc_stop		= usba_udc_stop,
 #endif
@@ -1235,7 +1235,7 @@ static struct usba_ep *usba_udc_pdata(struct usba_platform_data *pdata,
 	return eps;
 }
 
-#if !CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if !IS_ENABLED(CONFIG_DM_USB_GADGET)
 static struct usba_udc controller = {
 	.regs = (unsigned *)ATMEL_BASE_UDPHS,
 	.fifo = (unsigned *)ATMEL_BASE_UDPHS_FIFO,
@@ -1312,7 +1312,7 @@ int usba_udc_probe(struct usba_platform_data *pdata)
 	return 0;
 }
 
-#else /* !CONFIG_IS_ENABLED(DM_USB_GADGET) */
+#else /* !IS_ENABLED(CONFIG_DM_USB_GADGET) */
 struct usba_priv_data {
 	struct clk_bulk		clks;
 	struct usba_udc		udc;
@@ -1438,4 +1438,4 @@ U_BOOT_DRIVER(atmel_usba_udc) = {
 	.remove = usba_udc_remove,
 	.priv_auto = sizeof(struct usba_priv_data),
 };
-#endif /* !CONFIG_IS_ENABLED(DM_USB_GADGET) */
+#endif /* !IS_ENABLED(CONFIG_DM_USB_GADGET) */

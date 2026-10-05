@@ -153,7 +153,7 @@ enum env_location env_get_location(enum env_operation op, int prio)
 	if (prio)
 		return ENVL_UNKNOWN;
 
-	if (CONFIG_IS_ENABLED(ENV_IS_NOWHERE) && get_boot_device() == USB_BOOT)
+	if (IS_ENABLED(CONFIG_ENV_IS_NOWHERE) && get_boot_device() == USB_BOOT)
 		return ENVL_NOWHERE;
 
 	return arch_env_get_location(op, prio);

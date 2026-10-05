@@ -176,7 +176,7 @@ int env_load(void)
 	int best_prio = -1;
 	int prio;
 
-	if (CONFIG_IS_ENABLED(ENV_WRITEABLE_LIST)) {
+	if (IS_ENABLED(CONFIG_ENV_WRITEABLE_LIST)) {
 		/*
 		 * When using a list of writeable variables, the baseline comes
 		 * from the built-in default env. So load this first.

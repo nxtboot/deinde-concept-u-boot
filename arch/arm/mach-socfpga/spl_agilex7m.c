@@ -65,7 +65,7 @@ void board_init_f(ulong dummy)
 	 * component. Watchdog need to be enabled after clock driver because
 	 * it will retrieve the clock frequency from clock driver.
 	 */
-	if (CONFIG_IS_ENABLED(WDT))
+	if (IS_ENABLED(CONFIG_WDT))
 		initr_watchdog();
 
 	preloader_console_init();

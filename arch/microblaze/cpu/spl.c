@@ -16,13 +16,13 @@ void board_boot_order(u32 *spl_boot_list)
 {
 	u32 i = 0;
 
-	if (CONFIG_IS_ENABLED(NOR_SUPPORT))
+	if (IS_ENABLED(CONFIG_NOR_SUPPORT))
 		spl_boot_list[i++] = BOOT_DEVICE_NOR;
 
-	if (CONFIG_IS_ENABLED(SPI_FLASH_SUPPORT))
+	if (IS_ENABLED(CONFIG_SPI_FLASH_SUPPORT))
 		spl_boot_list[i++] = BOOT_DEVICE_SPI;
 
-	if (CONFIG_IS_ENABLED(RAM_SUPPORT))
+	if (IS_ENABLED(CONFIG_RAM_SUPPORT))
 		spl_boot_list[i++] = BOOT_DEVICE_RAM;
 }
 

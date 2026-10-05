@@ -15,7 +15,7 @@
 1:
 #endif
 
-#if CONFIG_IS_ENABLED(ROCKCHIP_EARLYRETURN_TO_BROM)
+#if IS_ENABLED(CONFIG_ROCKCHIP_EARLYRETURN_TO_BROM)
 /*
  * Keep track of the re-entries with help of the lr register.
  * This binary can be re-used and called from various BROM functions.

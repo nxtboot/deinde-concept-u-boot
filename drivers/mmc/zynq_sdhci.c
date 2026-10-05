@@ -1182,7 +1182,7 @@ static int arasan_sdhci_probe(struct udevice *dev)
 	if (priv->no_1p8)
 		host->quirks |= SDHCI_QUIRK_NO_1_8_V;
 
-	if (CONFIG_IS_ENABLED(ARCH_VERSAL_NET) &&
+	if (IS_ENABLED(CONFIG_ARCH_VERSAL_NET) &&
 	    arasan_sdhci_is_compatible(dev, SDHCI_COMPATIBLE_VERSAL_NET_EMMC))
 		host->quirks |= SDHCI_QUIRK_CAPS_BIT63_FOR_HS400;
 

@@ -77,7 +77,7 @@
  * open - index 2
  * shorted - index 1
  */
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 #define CFG_SYS_NS16550_CLK		(get_bus_freq(0)/2)
 #endif
 
@@ -376,7 +376,7 @@
 	"usb1:dr_mode=host,phy_type=" __stringify(__USB_PHY_TYPE) "\0"\
 	"netdev=eth0\0"						\
 	"uboot=" CONFIG_UBOOTPATH "\0"		\
-	"ubootaddr=" __stringify(CONFIG_TEXT_BASE) "\0"	\
+	"ubootaddr=" __stringify(CONFIG_PPL_TEXT_BASE) "\0"	\
 	"tftpflash=tftpboot $loadaddr $uboot && "		\
 	"protect off $ubootaddr +$filesize && "			\
 	"erase $ubootaddr +$filesize && "			\

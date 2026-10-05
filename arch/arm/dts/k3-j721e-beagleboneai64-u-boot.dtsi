@@ -312,7 +312,7 @@
 					os = "u-boot";
 					arch = "arm";
 					compression = "none";
-					load = <CONFIG_TEXT_BASE>;
+					load = <CONFIG_PPL_TEXT_BASE>;
 					blob {
 						filename = UBOOT_NODTB;
 					};

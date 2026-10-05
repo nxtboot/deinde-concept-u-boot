@@ -448,7 +448,7 @@ int cmd_source_script(ulong addr, const char *fit_uname, const char *confname);
 	U_BOOT_SUBCMDS_DO_CMD(_cmdname)					\
 	U_BOOT_SUBCMDS_COMPLETE(_cmdname)
 
-#if CONFIG_IS_ENABLED(CMDLINE)
+#if IS_ENABLED(CONFIG_CMDLINE)
 /* Encode the _rep argument as the CMDF_REPEATABLE flag bit */
 #define _CMD_REP_FLAG(_rep)	((_rep) ? CMDF_REPEATABLE : 0)
 

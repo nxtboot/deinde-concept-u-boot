@@ -340,7 +340,7 @@ void *board_spl_fit_buffer_addr(ulong fit_size, int sectors, int bl_len)
 #if defined(CONFIG_SPL_LOAD_FIT_ADDRESS)
 	return (void *)CONFIG_SPL_LOAD_FIT_ADDRESS;
 #else
-	return (void *)(CONFIG_TEXT_BASE + CONFIG_SYS_BOOTM_LEN);
+	return (void *)(CONFIG_PPL_TEXT_BASE + CONFIG_SYS_BOOTM_LEN);
 #endif
 }
 /*

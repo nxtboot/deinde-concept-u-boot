@@ -209,7 +209,7 @@ static int _mtk_serial_pending(struct mtk_serial_priv *priv, bool input)
 		return (readl(&priv->regs->lsr) & UART_LSR_THRE) ? 0 : 1;
 }
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 static int mtk_serial_setbrg(struct udevice *dev, int baudrate)
 {
 	struct mtk_serial_priv *priv = dev_get_priv(dev);
@@ -484,7 +484,7 @@ static inline void _debug_uart_init(void)
 	struct mtk_serial_priv priv;
 
 	memset(&priv, 0, sizeof(struct mtk_serial_priv));
-	priv.regs = (void *) CONFIG_VAL(DEBUG_UART_BASE);
+	priv.regs = (void *) CONFIG_DEBUG_UART_BASE;
 	priv.fixed_clk_rate = CONFIG_DEBUG_UART_CLOCK;
 
 	writel(0, &priv.regs->ier);
@@ -497,7 +497,7 @@ static inline void _debug_uart_init(void)
 static inline void _debug_uart_putc(int ch)
 {
 	struct mtk_serial_regs __iomem *regs =
-		(void *) CONFIG_VAL(DEBUG_UART_BASE);
+		(void *) CONFIG_DEBUG_UART_BASE;
 
 	while (!(readl(&regs->lsr) & UART_LSR_THRE))
 		;

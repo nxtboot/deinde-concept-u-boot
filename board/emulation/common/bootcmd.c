@@ -8,7 +8,7 @@
 #include <event.h>
 #include <qfw.h>
 
-#if CONFIG_IS_ENABLED(EVENT)
+#if IS_ENABLED(CONFIG_EVENT)
 static int qemu_get_bootcmd(void *ctx, struct event *event)
 {
 	struct event_bootcmd *bc = &event->data.bootcmd;

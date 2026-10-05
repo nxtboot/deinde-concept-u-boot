@@ -37,7 +37,7 @@ struct icc_path;
  * Return:	icc_path pointer on success or ERR_PTR() on error. NULL is returned
  * when the API is disabled or the "interconnects" DT property is missing.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 struct icc_path *of_icc_get(struct udevice *dev, const char *name);
 #else
 static inline
@@ -62,7 +62,7 @@ struct icc_path *of_icc_get(struct udevice *dev, const char *name)
  * Return:	icc_path pointer on success or ERR_PTR() on error. NULL is returned
  * when the API is disabled or the "interconnects" DT property is missing.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 struct icc_path *of_icc_get_by_index(struct udevice *dev, int idx);
 #else
 static inline
@@ -81,7 +81,7 @@ struct icc_path *of_icc_get_by_index(struct udevice *dev, int idx)
  * @path:	An interconnect path
  * Return: 0 if OK, or a negative error code.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 int icc_put(struct icc_path *path);
 #else
 static inline int icc_put(struct icc_path *path)
@@ -100,7 +100,7 @@ static inline int icc_put(struct icc_path *path)
  * @path:	An interconnect path
  * Return: 0 if OK, or a negative error code. -ENOSYS if not implemented.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 int icc_enable(struct icc_path *path);
 #else
 static inline int icc_enable(struct icc_path *path)
@@ -119,7 +119,7 @@ static inline int icc_enable(struct icc_path *path)
  * @path:	An interconnect path
  * Return: 0 if OK, or a negative error code. -ENOSYS if not implemented.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 int icc_disable(struct icc_path *path);
 #else
 static inline int icc_disable(struct icc_path *path)
@@ -143,7 +143,7 @@ static inline int icc_disable(struct icc_path *path)
  * @peak_bw:	Peak bandwidth in request kBps
  * Return: 0 if OK, or a negative error code. -ENOSYS if not implemented.
  */
-#if CONFIG_IS_ENABLED(INTERCONNECT)
+#if IS_ENABLED(CONFIG_INTERCONNECT)
 int icc_set_bw(struct icc_path *path, u32 avg_bw, u32 peak_bw);
 #else
 static inline int icc_set_bw(struct icc_path *path, u32 avg_bw, u32 peak_bw)

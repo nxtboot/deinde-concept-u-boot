@@ -25,7 +25,7 @@
 
 #define CFG_SYS_NAND_ECCSIZE		512
 #define CFG_SYS_NAND_ECCBYTES	13
-#define CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
 /* NAND block size is 128 KiB.  Synchronize these values with
  * corresponding Device Tree entries in Linux:
  *  MLO(SPL)             4 * NAND_BLOCK_SIZE = 512 KiB  @ 0x000000

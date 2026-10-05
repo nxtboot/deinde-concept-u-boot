@@ -246,7 +246,7 @@ static int part_get_info_extended(struct blk_desc *desc,
 		return -1;
 	}
 
-	if (CONFIG_IS_ENABLED(PARTITION_UUIDS) && !ext_part_sector)
+	if (IS_ENABLED(CONFIG_PARTITION_UUIDS) && !ext_part_sector)
 		disksig = get_unaligned_le32(&buffer[DOS_PART_DISKSIG_OFFSET]);
 
 	if (info) {
@@ -279,7 +279,7 @@ static int part_get_info_extended(struct blk_desc *desc,
 				/* sprintf(info->type, "%d, pt->sys_ind); */
 				strcpy((char *)info->type, "U-Boot");
 				info->bootable = get_bootable(pt);
-				if (CONFIG_IS_ENABLED(PARTITION_UUIDS)) {
+				if (IS_ENABLED(CONFIG_PARTITION_UUIDS)) {
 					char str[12];
 
 					sprintf(str, "%08x-%02x", disksig, part_num);

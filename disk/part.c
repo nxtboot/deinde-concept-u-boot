@@ -131,7 +131,7 @@ static struct blk_desc *get_dev_hwpart(const char *ifname, int dev, int hwpart)
 
 	if (!blk_enabled())
 		return NULL;
-	if (CONFIG_IS_ENABLED(BLK)) {
+	if (IS_ENABLED(CONFIG_BLK)) {
 		struct udevice *blk;
 
 		ret = blk_get_devnum_by_uclass_idname(ifname, dev, &blk);
@@ -337,12 +337,12 @@ int part_init(struct blk_desc *desc)
 
 static void print_part_header(const char *type, struct blk_desc *desc)
 {
-#if CONFIG_IS_ENABLED(MAC_PARTITION) || \
-	CONFIG_IS_ENABLED(DOS_PARTITION) || \
-	CONFIG_IS_ENABLED(ISO_PARTITION) || \
-	CONFIG_IS_ENABLED(AMIGA_PARTITION) || \
-	CONFIG_IS_ENABLED(EFI_PARTITION) || \
-	CONFIG_IS_ENABLED(MTD_PARTITIONS)
+#if IS_ENABLED(CONFIG_MAC_PARTITION) || \
+	IS_ENABLED(CONFIG_DOS_PARTITION) || \
+	IS_ENABLED(CONFIG_ISO_PARTITION) || \
+	IS_ENABLED(CONFIG_AMIGA_PARTITION) || \
+	IS_ENABLED(CONFIG_EFI_PARTITION) || \
+	IS_ENABLED(CONFIG_MTD_PARTITIONS)
 	printf("\nPartition Map for %s device %d  --   Partition Type: %s\n\n",
 	       uclass_get_name(desc->uclass_id), desc->devnum, type);
 #endif /* any CONFIG_..._PARTITION */
@@ -532,7 +532,7 @@ int blk_get_device_part_str(const char *ifname, const char *dev_part_str,
 #endif
 
 	/* If no dev_part_str, use bootdevice environment variable */
-	if (CONFIG_IS_ENABLED(ENV_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_ENV_SUPPORT)) {
 		if (!dev_part_str || !strlen(dev_part_str) ||
 		    !strcmp(dev_part_str, "-"))
 			dev_part_str = env_get("bootdevice");
@@ -734,7 +734,7 @@ int part_get_info_by_uuid(struct blk_desc *desc, const char *uuid,
 	int ret;
 	int i;
 
-	if (!CONFIG_IS_ENABLED(PARTITION_UUIDS))
+	if (!IS_ENABLED(CONFIG_PARTITION_UUIDS))
 		return -ENOENT;
 
 	part_drv = part_driver_lookup_type(desc);

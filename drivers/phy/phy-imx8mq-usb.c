@@ -261,7 +261,7 @@ static int imx8mq_usb_phy_power_on(struct phy *usb_phy)
 	u32 value;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = clk_enable(&imx_phy->phy_clk);
 		if (ret) {
 			dev_err(dev, "Failed to enable usb phy clock: %d\n", ret);
@@ -269,7 +269,7 @@ static int imx8mq_usb_phy_power_on(struct phy *usb_phy)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR) && imx_phy->vbus_supply) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR) && imx_phy->vbus_supply) {
 		ret = regulator_set_enable_if_allowed(imx_phy->vbus_supply, true);
 		if (ret && ret != -ENOSYS) {
 			dev_err(dev, "Failed to enable VBUS regulator: %d\n", ret);
@@ -285,7 +285,7 @@ static int imx8mq_usb_phy_power_on(struct phy *usb_phy)
 	return 0;
 
 err:
-	if (CONFIG_IS_ENABLED(CLK))
+	if (IS_ENABLED(CONFIG_CLK))
 		clk_disable(&imx_phy->phy_clk);
 	return ret;
 }
@@ -302,10 +302,10 @@ static int imx8mq_usb_phy_power_off(struct phy *usb_phy)
 	value |= PHY_CTRL6_RXTERM_OVERRIDE_SEL;
 	writel(value, imx_phy->base + PHY_CTRL6);
 
-	if (CONFIG_IS_ENABLED(CLK))
+	if (IS_ENABLED(CONFIG_CLK))
 		clk_disable(&imx_phy->phy_clk);
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR) && imx_phy->vbus_supply) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR) && imx_phy->vbus_supply) {
 		ret = regulator_set_enable_if_allowed(imx_phy->vbus_supply, false);
 		if (ret && ret != -ENOSYS) {
 			dev_err(dev, "Failed to disable VBUS regulator: %d\n", ret);
@@ -333,7 +333,7 @@ int imx8mq_usb_phy_probe(struct udevice *dev)
 	if (!priv->base)
 		return -EINVAL;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = clk_get_by_name(dev, "phy", &priv->phy_clk);
 		if (ret) {
 			dev_err(dev, "Failed to get usb phy clock %d\n", ret);
@@ -341,7 +341,7 @@ int imx8mq_usb_phy_probe(struct udevice *dev)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret = device_get_supply_regulator(dev, "vbus-supply",
 						  &priv->vbus_supply);
 		if (ret && ret != -ENOENT) {

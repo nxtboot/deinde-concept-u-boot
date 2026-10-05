@@ -153,9 +153,9 @@ static void _exit_trap(ulong code, ulong epc, ulong tval, struct pt_regs *regs)
 		printf("EPC: " REG_FMT " RA: " REG_FMT " reloc adjusted\n",
 		       epc - gd->reloc_off, regs->ra - gd->reloc_off);
 
-	if (CONFIG_IS_ENABLED(SHOW_REGS))
+	if (IS_ENABLED(CONFIG_SHOW_REGS))
 		show_regs(regs);
-	if (CONFIG_IS_ENABLED(FRAMEPOINTER))
+	if (IS_ENABLED(CONFIG_FRAMEPOINTER))
 		show_backtrace(regs);
 	show_code(epc);
 	show_efi_loaded_images(epc);
@@ -190,7 +190,7 @@ ulong handle_trap(ulong cause, ulong epc, ulong tval, struct pt_regs *regs)
 	efi_restore_gd();
 
 	if (cause == CAUSE_BREAKPOINT &&
-	    CONFIG_IS_ENABLED(SEMIHOSTING_FALLBACK)) {
+	    IS_ENABLED(CONFIG_SEMIHOSTING_FALLBACK)) {
 		ulong pre_addr = epc - 4, post_addr = epc + 4;
 
 		/* Check for prior and post addresses to be in same page. */

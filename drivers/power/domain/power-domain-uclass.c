@@ -175,7 +175,7 @@ int power_domain_off_lowlevel(struct power_domain *power_domain)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 static int dev_power_domain_ctrl(struct udevice *dev, bool on)
 {
 	struct power_domain pd;

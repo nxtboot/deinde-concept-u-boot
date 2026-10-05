@@ -18,12 +18,12 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+#if IS_ENABLED(CONFIG_FIT_SIGNATURE)
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #endif
 
-#if CONFIG_IS_ENABLED(IMAGE_PRE_LOAD) && CONFIG_IS_ENABLED(LIBCRYPTO)
+#if IS_ENABLED(CONFIG_IMAGE_PRE_LOAD) && IS_ENABLED(CONFIG_LIBCRYPTO)
 #include <openssl/rsa.h>
 #include <openssl/err.h>
 #endif
@@ -1633,7 +1633,7 @@ static int fit_config_add_verification_data(const char *keydir,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+#if IS_ENABLED(CONFIG_FIT_SIGNATURE)
 /*
  * 0) open file (open)
  * 1) read certificate (PEM_read_X509)
@@ -1867,7 +1867,7 @@ int fit_check_sign(const void *fit, const void *key,
 }
 #endif
 
-#if CONFIG_IS_ENABLED(IMAGE_PRE_LOAD) && CONFIG_IS_ENABLED(LIBCRYPTO)
+#if IS_ENABLED(CONFIG_IMAGE_PRE_LOAD) && IS_ENABLED(CONFIG_LIBCRYPTO)
 /**
  * rsa_verify_openssl() - Verify a signature against some data with openssl API
  *

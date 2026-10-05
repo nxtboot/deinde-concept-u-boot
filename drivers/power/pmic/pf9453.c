@@ -127,7 +127,7 @@ static int pf9453_probe(struct udevice *dev)
 	unsigned int reset_ctrl;
 	int ret = 0;
 
-	if (CONFIG_IS_ENABLED(DM_GPIO) && CONFIG_IS_ENABLED(DM_REGULATOR_PF9453)) {
+	if (IS_ENABLED(CONFIG_DM_GPIO) && IS_ENABLED(CONFIG_DM_REGULATOR_PF9453)) {
 		priv->sd_vsel_gpio = devm_gpiod_get_optional(dev, "sd-vsel",
 							     GPIOD_IS_OUT |
 							     GPIOD_IS_OUT_ACTIVE);

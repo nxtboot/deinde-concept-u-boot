@@ -584,7 +584,7 @@ static int enetc_probe(struct udevice *dev)
 		return -ENODEV;
 	}
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		res = device_get_supply_regulator(dev, "serdes-supply",
 						  &supply);
 		if (res  && res  != -ENOENT) {

@@ -72,7 +72,7 @@ struct uthread_mutex {
 
 #define UTHREAD_MUTEX_INITIALIZER { .state = UTHREAD_MUTEX_UNLOCKED }
 
-#if CONFIG_IS_ENABLED(UTHREAD)
+#if IS_ENABLED(CONFIG_UTHREAD)
 
 /**
  * uthread_create() - Create a uthread object and make it ready for execution
@@ -184,5 +184,5 @@ static inline bool uthread_grp_done(unsigned int grp_id)
 #define uthread_mutex_trylock(_mutex) ({ 0 })
 #define uthread_mutex_unlock(_mutex) ({ 0; })
 
-#endif /* CONFIG_IS_ENABLED(UTHREAD) */
+#endif /* IS_ENABLED(CONFIG_UTHREAD) */
 #endif /* _UTHREAD_H_ */

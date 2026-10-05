@@ -51,7 +51,7 @@ efi_status_t efi_root_node_register(void)
 		(&bs->root,
 		 /* Device path protocol */
 		 &efi_guid_device_path, dp,
-#if CONFIG_IS_ENABLED(EFI_DEVICE_PATH_TO_TEXT)
+#if IS_ENABLED(CONFIG_EFI_DEVICE_PATH_TO_TEXT)
 		 /* Device path to text protocol */
 		 &efi_guid_device_path_to_text_protocol,
 		 &efi_device_path_to_text,
@@ -61,7 +61,7 @@ efi_status_t efi_root_node_register(void)
 		 &efi_guid_device_path_utilities_protocol,
 		 &efi_device_path_utilities,
 #endif
-#if CONFIG_IS_ENABLED(EFI_DT_FIXUP)
+#if IS_ENABLED(CONFIG_EFI_DT_FIXUP)
 		 /* Device-tree fix-up protocol */
 		 &efi_guid_dt_fixup_protocol,
 		 &efi_dt_fixup_prot,

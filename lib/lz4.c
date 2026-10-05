@@ -117,7 +117,7 @@ typedef enum { decode_full_block = 0, partial_decode = 1 } earlyEnd_directive;
  * code is relocated at runtime. Unfortunately this increase code-size slightly
  * so only do it if spl_reloc is enabled
  */
-#if CONFIG_IS_ENABLED(RELOC_LOADER)
+#if IS_ENABLED(CONFIG_RELOC_LOADER)
 #define STATIC
 #else
 #define STATIC static

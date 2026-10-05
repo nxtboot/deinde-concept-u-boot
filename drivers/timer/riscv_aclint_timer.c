@@ -25,7 +25,7 @@ static u64 notrace riscv_aclint_timer_get_count(struct udevice *dev)
 					       dev_get_driver_data(dev)));
 }
 
-#if CONFIG_IS_ENABLED(RISCV_MMODE) && IS_ENABLED(CONFIG_TIMER_EARLY)
+#if IS_ENABLED(CONFIG_RISCV_MMODE) && IS_ENABLED(CONFIG_TIMER_EARLY)
 /**
  * timer_early_get_rate() - Get the timer rate before driver model
  */
@@ -45,7 +45,7 @@ u64 notrace timer_early_get_count(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(RISCV_MMODE) && CONFIG_IS_ENABLED(BOOTSTAGE)
+#if IS_ENABLED(CONFIG_RISCV_MMODE) && IS_ENABLED(CONFIG_BOOTSTAGE)
 ulong timer_get_boot_us(void)
 {
 	int ret;

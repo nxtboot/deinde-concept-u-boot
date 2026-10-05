@@ -32,7 +32,7 @@ int main(void)
 
 	DEFINE(GD_FLAGS, offsetof(struct global_data, flags));
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	DEFINE(GD_MALLOC_BASE, offsetof(struct global_data, malloc_base));
 #endif
 
@@ -44,11 +44,11 @@ int main(void)
 
 	DEFINE(GD_NEW_GD, offsetof(struct global_data, new_gd));
 
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+#if IS_ENABLED(CONFIG_ENV_SUPPORT)
 	DEFINE(GD_ENV_ADDR, offsetof(struct global_data, env_addr));
 #endif
 
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	DEFINE(GD_PASSAGE_MACH, offsetof(struct global_data, passage_mach));
 	DEFINE(GD_PASSAGE_BLOBLIST,
 	       offsetof(struct global_data, passage_bloblist));

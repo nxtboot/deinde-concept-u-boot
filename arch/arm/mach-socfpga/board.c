@@ -61,7 +61,7 @@ int board_init(void)
 
 int dram_init_banksize(void)
 {
-#if CONFIG_IS_ENABLED(HANDOFF) && IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5)
+#if IS_ENABLED(CONFIG_HANDOFF) && IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5)
 #ifndef CONFIG_SPL_BUILD
 	struct spl_handoff *ho;
 
@@ -198,7 +198,7 @@ void board_prep_linux(struct bootm_headers *images)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP)
+#if IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP)
 void lmb_arch_add_memory(void)
 {
 	int i;

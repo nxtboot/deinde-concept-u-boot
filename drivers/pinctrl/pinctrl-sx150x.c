@@ -890,7 +890,7 @@ static struct pinctrl_ops sx150x_pinctrl_ops = {
 	.set_state = pinctrl_generic_set_state,
 	.get_pins_count = sx150x_pinctrl_get_pins_count,
 	.get_pin_name = sx150x_pinctrl_get_pin_name,
-#if CONFIG_IS_ENABLED(PINCONF)
+#if IS_ENABLED(CONFIG_PINCONF)
 	.pinconf_set = sx150x_pinctrl_conf_set,
 	.pinconf_num_params = ARRAY_SIZE(sx150x_conf_params),
 	.pinconf_params = sx150x_conf_params,

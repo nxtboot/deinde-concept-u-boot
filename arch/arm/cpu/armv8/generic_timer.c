@@ -119,7 +119,7 @@ ulong timer_get_boot_us(void)
 	return val / get_tbclk();
 }
 
-#if CONFIG_IS_ENABLED(ARMV8_UDELAY_EVENT_STREAM)
+#if IS_ENABLED(CONFIG_ARMV8_UDELAY_EVENT_STREAM)
 void __udelay(unsigned long usec)
 {
 	u64 target = get_ticks() + usec_to_tick(usec);

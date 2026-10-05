@@ -51,7 +51,7 @@ int phytec_eeprom_read(u8 *data, int bus_num, int addr, int size, int offset)
 {
 	int ret;
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *dev;
 
 	ret = i2c_get_chip_for_busnum(bus_num, addr, 2, &dev);

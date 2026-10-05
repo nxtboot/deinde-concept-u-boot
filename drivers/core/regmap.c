@@ -78,7 +78,7 @@ static struct regmap *regmap_alloc(int count)
 	return map;
 }
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 int regmap_init_mem_plat(struct udevice *dev, void *reg, int size, int count,
 			 struct regmap **mapp)
 {

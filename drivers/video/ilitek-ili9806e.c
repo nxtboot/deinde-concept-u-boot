@@ -96,7 +96,7 @@ static int ilitek_ili9806e_of_to_plat(struct udevice *dev)
 	struct ilitek_ili9806e_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	if (CONFIG_IS_ENABLED(DM_REGULATOR)) {
+	if (IS_ENABLED(CONFIG_DM_REGULATOR)) {
 		ret = device_get_supply_regulator(dev, "vdd-supply", &priv->vdd);
 		if (ret) {
 			dev_err(dev, "Cannot get vdd supply\n");

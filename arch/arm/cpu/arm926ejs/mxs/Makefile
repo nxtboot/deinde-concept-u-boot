@@ -60,14 +60,14 @@ spl/u-boot-spl.ivt: spl/u-boot-spl.bin FORCE
 
 u-boot.ivt: u-boot.bin FORCE
 	$(call if_changed,mkalign_mxs)
-	$(call if_changed,mkivt_mxs,$(CONFIG_TEXT_BASE),\
+	$(call if_changed,mkivt_mxs,$(CONFIG_PPL_TEXT_BASE),\
 		0x40001000,0x40001040)
 
 spl/u-boot-spl.csf: spl/u-boot-spl.ivt spl/u-boot-spl.bin board/$(VENDOR)/$(BOARD)/sign/u-boot-spl.csf FORCE
 	$(call if_changed,mkcsfreq_mxs,$(CONFIG_SPL_TEXT_BASE),0x8000)
 
 u-boot.csf: u-boot.ivt u-boot.bin board/$(VENDOR)/$(BOARD)/sign/u-boot.csf FORCE
-	$(call if_changed,mkcsfreq_mxs,$(CONFIG_TEXT_BASE),0x40001000)
+	$(call if_changed,mkcsfreq_mxs,$(CONFIG_PPL_TEXT_BASE),0x40001000)
 
 %.sig: %.csf FORCE
 	$(call if_changed,mkcst_mxs)

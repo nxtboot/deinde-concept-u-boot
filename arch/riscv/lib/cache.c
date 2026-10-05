@@ -84,7 +84,7 @@ static int riscv_zicbom_init(void)
 {
 	struct udevice *dev;
 
-	if (!CONFIG_IS_ENABLED(RISCV_ISA_ZICBOM) || zicbom_block_size)
+	if (!IS_ENABLED(CONFIG_RISCV_ISA_ZICBOM) || zicbom_block_size)
 		return 1;
 
 	uclass_first_device(UCLASS_CPU, &dev);

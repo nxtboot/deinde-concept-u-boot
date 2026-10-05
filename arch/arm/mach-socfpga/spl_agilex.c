@@ -87,7 +87,7 @@ void board_init_f(ulong dummy)
 	 * component. Watchdog need to be enabled after clock driver because
 	 * it will retrieve the clock frequency from clock driver.
 	 */
-	if (CONFIG_IS_ENABLED(WDT))
+	if (IS_ENABLED(CONFIG_WDT))
 		initr_watchdog();
 
 	preloader_console_init();
@@ -112,7 +112,7 @@ void board_init_f(ulong dummy)
 		hang();
 	}
 
-#if CONFIG_IS_ENABLED(ALTERA_SDRAM)
+#if IS_ENABLED(CONFIG_ALTERA_SDRAM)
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 	if (ret) {
 		debug("DRAM init failed: %d\n", ret);

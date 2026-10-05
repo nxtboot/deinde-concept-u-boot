@@ -102,7 +102,7 @@ u32 __weak get_lpuart_clk(void)
 	return get_board_sys_clk();
 }
 
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 static int get_lpuart_clk_rate(struct udevice *dev, u32 *clk_rate)
 {
 	struct lpuart_serial_plat *plat = dev_get_plat(dev);
@@ -151,7 +151,7 @@ static void _lpuart_serial_setbrg(struct udevice *dev,
 	u16 sbr;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = get_lpuart_clk_rate(dev, &clk);
 		if (ret)
 			return;
@@ -241,7 +241,7 @@ static void _lpuart32_serial_setbrg_7ulp(struct udevice *dev,
 	u32 clk;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = get_lpuart_clk_rate(dev, &clk);
 		if (ret)
 			return;
@@ -310,7 +310,7 @@ static void _lpuart32_serial_setbrg(struct udevice *dev,
 	u32 sbr;
 	int ret;
 
-	if (CONFIG_IS_ENABLED(CLK)) {
+	if (IS_ENABLED(CONFIG_CLK)) {
 		ret = get_lpuart_clk_rate(dev, &clk);
 		if (ret)
 			return;
@@ -483,7 +483,7 @@ static int lpuart_serial_pending(struct udevice *dev, bool input)
 
 static int lpuart_serial_probe(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(CLK)
+#if IS_ENABLED(CONFIG_CLK)
 	struct lpuart_serial_plat *plat = dev_get_plat(dev);
 	struct clk per_clk;
 	struct clk ipg_clk;

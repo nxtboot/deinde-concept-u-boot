@@ -173,7 +173,7 @@ void do_undefined_instruction (struct pt_regs *pt_regs)
 
 void do_software_interrupt (struct pt_regs *pt_regs)
 {
-	if (CONFIG_IS_ENABLED(SEMIHOSTING_FALLBACK) &&
+	if (IS_ENABLED(CONFIG_SEMIHOSTING_FALLBACK) &&
 	    smh_emulate_trap(pt_regs))
 		return;
 

@@ -22,7 +22,7 @@
 #include <linux/sizes.h>
 
 /*
- * Warning: changing CONFIG_TEXT_BASE requires
+ * Warning: changing CONFIG_PPL_TEXT_BASE requires
  * adapting the initial boot program.
  * Since the linker has to swallow that define, we must use a pure
  * hex number here!
@@ -123,8 +123,8 @@
 /* Defines for SPL */
 
 #define CFG_SYS_NAND_U_BOOT_SIZE	SZ_512K
-#define	CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
-#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_TEXT_BASE
+#define	CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_DST	CONFIG_PPL_TEXT_BASE
 
 #define CFG_SYS_NAND_ECCSIZE		256
 #define CFG_SYS_NAND_ECCBYTES	3

@@ -640,7 +640,7 @@ static int dwmci_set_ios(struct mmc *mmc)
 			return ret;
 	}
 
-#if CONFIG_IS_ENABLED(DM_REGULATOR)
+#if IS_ENABLED(CONFIG_DM_REGULATOR)
 	if (mmc->vqmmc_supply) {
 		int ret;
 
@@ -732,7 +732,7 @@ static int dwmci_init(struct mmc *mmc)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 int dwmci_probe(struct udevice *dev)
 {
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
@@ -757,7 +757,7 @@ void dwmci_setup_cfg(struct mmc_config *cfg, struct dwmci_host *host,
 		     u32 max_clk, u32 min_clk)
 {
 	cfg->name = host->name;
-#if !CONFIG_IS_ENABLED(DM_MMC)
+#if !IS_ENABLED(CONFIG_DM_MMC)
 	cfg->ops = &dwmci_ops;
 #endif
 	cfg->f_min = min_clk;

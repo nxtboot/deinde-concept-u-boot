@@ -226,7 +226,7 @@
 /*
  * I2C
  */
-#if !CONFIG_IS_ENABLED(DM_I2C)
+#if !IS_ENABLED(CONFIG_DM_I2C)
 #define CFG_SYS_I2C_NOPROBES		{ {0, 0x69} }
 #endif
 
@@ -293,15 +293,15 @@
 	"netdev=eth0\0"				\
 	"uboot=" CONFIG_UBOOTPATH "\0"	\
 	"tftpflash=tftpboot $loadaddr $uboot; "	\
-		"protect off " __stringify(CONFIG_TEXT_BASE)	\
+		"protect off " __stringify(CONFIG_PPL_TEXT_BASE)	\
 			" +$filesize; "	\
-		"erase " __stringify(CONFIG_TEXT_BASE)		\
+		"erase " __stringify(CONFIG_PPL_TEXT_BASE)		\
 			" +$filesize; "	\
-		"cp.b $loadaddr " __stringify(CONFIG_TEXT_BASE)	\
+		"cp.b $loadaddr " __stringify(CONFIG_PPL_TEXT_BASE)	\
 			" $filesize; "	\
-		"protect on " __stringify(CONFIG_TEXT_BASE)		\
+		"protect on " __stringify(CONFIG_PPL_TEXT_BASE)		\
 			" +$filesize; "	\
-		"cmp.b $loadaddr " __stringify(CONFIG_TEXT_BASE)	\
+		"cmp.b $loadaddr " __stringify(CONFIG_PPL_TEXT_BASE)	\
 			" $filesize\0"	\
 	"consoledev=ttyS1\0"			\
 	"ramdiskaddr=2000000\0"			\

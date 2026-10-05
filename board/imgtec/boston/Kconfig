@@ -13,7 +13,7 @@ config SYS_CONFIG_NAME
 config ENV_SOURCE_FILE
 	default "boston"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x9fc00000 if 32BIT
 	default 0xffffffff9fc00000 if 64BIT
 

@@ -1820,7 +1820,7 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
  */
 #define ROCKCHIP_MMC_DELAY_ELEMENT_PSEC 60
 
-#if (CONFIG_IS_ENABLED(OF_CONTROL)) || (!CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL)) || (!IS_ENABLED(CONFIG_OF_PLATDATA))
 static int __maybe_unused rk3588_dclk_vop_set_parent(struct clk *clk,
 						     struct clk *parent)
 {
@@ -1913,7 +1913,7 @@ static int rk3588_clk_set_parent(struct clk *clk, struct clk *parent)
 static struct clk_ops rk3588_clk_ops = {
 	.get_rate = rk3588_clk_get_rate,
 	.set_rate = rk3588_clk_set_rate,
-#if (CONFIG_IS_ENABLED(OF_CONTROL)) || (!CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL)) || (!IS_ENABLED(CONFIG_OF_PLATDATA))
 	.set_parent = rk3588_clk_set_parent,
 #endif
 };
@@ -2023,7 +2023,7 @@ static int rk3588_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	ret = offsetof(struct rk3588_cru, softrst_con[0]);
 	ret = rk3588_reset_bind_lut(dev, ret, 49158);
 	if (ret)

@@ -23,7 +23,7 @@
 #include <linux/bitops.h>
 #include <linux/sizes.h>
 
-#if CONFIG_IS_ENABLED(BANNER_PRINT)
+#if IS_ENABLED(CONFIG_BANNER_PRINT)
 #include <timestamp.h>
 #endif
 
@@ -90,7 +90,7 @@ void board_init_f(ulong dummy)
 
 	tpl_board_init();
 
-	if (CONFIG_IS_ENABLED(RAM)) {
+	if (IS_ENABLED(CONFIG_RAM)) {
 		ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 		if (ret) {
 			printf("DRAM init failed: %d\n", ret);
@@ -103,7 +103,7 @@ void board_init_f(ulong dummy)
 		 * with VBE, where VPL does)
 		 */
 		if (IS_ENABLED(CONFIG_ARM64) &&
-		    !CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+		    !IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 			tpl_enable_caches();
 	}
 }
@@ -111,7 +111,7 @@ void board_init_f(ulong dummy)
 void spl_board_prepare_for_boot(void)
 {
 	/* The next phase expects the caches off, as they were on entry */
-	if (IS_ENABLED(CONFIG_ARM64) && !CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (IS_ENABLED(CONFIG_ARM64) && !IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		cleanup_before_linux();
 }
 

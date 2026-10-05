@@ -11,13 +11,13 @@
 #include <linux/time.h>
 #include <crypto/public_key.h>
 #include <keys/asymmetric-type.h>
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 #include <image.h>
 #include <mbedtls/error.h>
 #include <mbedtls/asn1.h>
 #endif
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 struct x509_cert_mbedtls_ctx {
 	void	*tbs;			/* Signed data */
 	void	*raw_serial;		/* Raw serial number in ASN.1 */
@@ -37,7 +37,7 @@ struct x509_cert_mbedtls_ctx {
  * 'verified' is not in use.
  */
 struct x509_certificate {
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 	struct x509_cert_mbedtls_ctx *mbedtls_ctx;
 #endif
 	struct x509_certificate *next;
@@ -75,7 +75,7 @@ struct x509_certificate {
  * x509_cert_parser.c
  */
 extern void x509_free_certificate(struct x509_certificate *cert);
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 /**
  * x509_populate_pubkey() - Populate public key from MbedTLS context
  *
@@ -109,7 +109,7 @@ extern int x509_decode_time(time64_t *_t,  size_t hdrlen,
 /*
  * x509_public_key.c
  */
-#if !CONFIG_IS_ENABLED(MBEDTLS_LIB_X509)
+#if !IS_ENABLED(CONFIG_MBEDTLS_LIB_X509)
 extern int x509_get_sig_params(struct x509_certificate *cert);
 #endif
 extern int x509_check_for_self_signed(struct x509_certificate *cert);

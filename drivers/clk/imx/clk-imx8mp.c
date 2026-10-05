@@ -14,12 +14,12 @@
 
 #include "clk.h"
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 static u32 share_count_media;
 #endif
 
 static const char * const pll_ref_sels[] = { "osc_24m", "dummy", "dummy", "dummy", };
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 static const char * const video_pll1_bypass_sels[] = {"video_pll1", "video_pll1_ref_sel", };
 #endif
 static const char * const dram_pll_bypass_sels[] = {"dram_pll", "dram_pll_ref_sel", };
@@ -38,7 +38,7 @@ static const char * const imx8mp_hsio_axi_sels[] = {"osc_24m", "sys_pll2_500m", 
 						    "sys_pll2_100m", "sys_pll2_200m", "clk_ext2",
 						    "clk_ext4", "audio_pll2_out", };
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 static const char * const imx8mp_media_isp_sels[] = {"osc_24m", "sys_pll2_1000m", "sys_pll1_800m",
 						     "sys_pll3_out", "sys_pll1_400m", "audio_pll2_out",
 						     "clk_ext1", "sys_pll2_500m", };
@@ -56,7 +56,7 @@ static const char * const imx8mp_nand_usdhc_sels[] = {"osc_24m", "sys_pll1_266m"
 						      "sys_pll2_200m", "sys_pll1_133m", "sys_pll3_out",
 						      "sys_pll2_250m", "audio_pll1_out", };
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 static const char * const imx8mp_media_axi_sels[] = {"osc_24m", "sys_pll2_1000m", "sys_pll1_800m",
 						     "sys_pll3_out", "sys_pll1_40m", "audio_pll2_out",
 						     "clk_ext1", "sys_pll2_500m", };
@@ -198,7 +198,7 @@ static const char * const imx8mp_usdhc3_sels[] = {"osc_24m", "sys_pll1_400m", "s
 						  "sys_pll2_500m", "sys_pll3_out", "sys_pll1_266m",
 						  "audio_pll2_out", "sys_pll1_100m", };
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 static const char * const imx8mp_media_disp_pix_sels[] = {"osc_24m", "video_pll1_out", "audio_pll2_out",
 							  "audio_pll1_out", "sys_pll1_800m",
 							  "sys_pll2_1000m", "sys_pll3_out", "clk_ext4", };
@@ -233,7 +233,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 
 	clk_dm(IMX8MP_CLK_DUMMY, clk_register_fixed_rate(NULL, "dummy", 0));
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_VIDEO_PLL1_REF_SEL, imx_clk_mux(dev, "video_pll1_ref_sel", base + 0x28, 0, 2, pll_ref_sels, ARRAY_SIZE(pll_ref_sels)));
 #endif
 	clk_dm(IMX8MP_DRAM_PLL_REF_SEL, imx_clk_mux(dev, "dram_pll_ref_sel", base + 0x50, 0, 2, pll_ref_sels, ARRAY_SIZE(pll_ref_sels)));
@@ -242,7 +242,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_SYS_PLL2_REF_SEL, imx_clk_mux(dev, "sys_pll2_ref_sel", base + 0x104, 0, 2, pll_ref_sels, ARRAY_SIZE(pll_ref_sels)));
 	clk_dm(IMX8MP_SYS_PLL3_REF_SEL, imx_clk_mux(dev, "sys_pll3_ref_sel", base + 0x114, 0, 2, pll_ref_sels, ARRAY_SIZE(pll_ref_sels)));
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_VIDEO_PLL1, imx_clk_pll14xx("video_pll1", "video_pll1_ref_sel", base + 0x28,
 						  &imx_1443x_pll));
 #endif
@@ -257,7 +257,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_SYS_PLL3, imx_clk_pll14xx("sys_pll3", "sys_pll3_ref_sel", base + 0x114,
 						&imx_1416x_pll));
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_VIDEO_PLL1_BYPASS, imx_clk_mux_flags(dev, "video_pll1_bypass", base + 0x28, 16, 1, video_pll1_bypass_sels, ARRAY_SIZE(video_pll1_bypass_sels), CLK_SET_RATE_PARENT));
 #endif
 	clk_dm(IMX8MP_DRAM_PLL_BYPASS, imx_clk_mux_flags(dev, "dram_pll_bypass", base + 0x50, 4, 1, dram_pll_bypass_sels, ARRAY_SIZE(dram_pll_bypass_sels), CLK_SET_RATE_PARENT));
@@ -266,7 +266,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_SYS_PLL2_BYPASS, imx_clk_mux_flags(dev, "sys_pll2_bypass", base + 0x104, 4, 1, sys_pll2_bypass_sels, ARRAY_SIZE(sys_pll2_bypass_sels), CLK_SET_RATE_PARENT));
 	clk_dm(IMX8MP_SYS_PLL3_BYPASS, imx_clk_mux_flags(dev, "sys_pll3_bypass", base + 0x114, 4, 1, sys_pll3_bypass_sels, ARRAY_SIZE(sys_pll3_bypass_sels), CLK_SET_RATE_PARENT));
 
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_VIDEO_PLL1_OUT, imx_clk_gate(dev, "video_pll1_out", "video_pll1_bypass", base + 0x28, 13));
 #endif
 	clk_dm(IMX8MP_DRAM_PLL_OUT, imx_clk_gate(dev, "dram_pll_out", "dram_pll_bypass", base + 0x50, 13));
@@ -314,13 +314,13 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_CLK_A53_DIV, imx_clk_divider2(dev, "arm_a53_div", "arm_a53_cg", base + 0x8000, 0, 3));
 
 	clk_dm(IMX8MP_CLK_HSIO_AXI, imx8m_clk_composite(dev, "hsio_axi", imx8mp_hsio_axi_sels, base + 0x8380));
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_CLK_MEDIA_ISP, imx8m_clk_composite(dev, "media_isp", imx8mp_media_isp_sels, base + 0x8400));
 #endif
 	clk_dm(IMX8MP_CLK_MAIN_AXI, imx8m_clk_composite_critical(dev, "main_axi", imx8mp_main_axi_sels, base + 0x8800));
 	clk_dm(IMX8MP_CLK_ENET_AXI, imx8m_clk_composite_critical(dev, "enet_axi", imx8mp_enet_axi_sels, base + 0x8880));
 	clk_dm(IMX8MP_CLK_NAND_USDHC_BUS, imx8m_clk_composite_critical(dev, "nand_usdhc_bus", imx8mp_nand_usdhc_sels, base + 0x8900));
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_CLK_MEDIA_AXI, imx8m_clk_composite(dev, "media_axi", imx8mp_media_axi_sels, base + 0x8a00));
 	clk_dm(IMX8MP_CLK_MEDIA_APB, imx8m_clk_composite(dev, "media_apb", imx8mp_media_apb_sels, base + 0x8a80));
 #endif
@@ -328,7 +328,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_CLK_NOC_IO, imx8m_clk_composite_critical(dev, "noc_io", imx8mp_noc_io_sels, base + 0x8d80));
 
 	clk_dm(IMX8MP_CLK_AHB, imx8m_clk_composite_critical(dev, "ahb_root", imx8mp_ahb_sels, base + 0x9000));
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_CLK_MEDIA_DISP2_PIX, imx8m_clk_composite(dev, "media_disp2_pix", imx8mp_media_disp_pix_sels, base + 0x9300));
 #endif
 
@@ -369,7 +369,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 
 	clk_dm(IMX8MP_CLK_WDOG, imx8m_clk_composite(dev, "wdog", imx8mp_wdog_sels, base + 0xb900));
 	clk_dm(IMX8MP_CLK_USDHC3, imx8m_clk_composite(dev, "usdhc3", imx8mp_usdhc3_sels, base + 0xbc80));
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_CLK_MEDIA_DISP1_PIX, imx8m_clk_composite(dev, "media_disp1_pix", imx8mp_media_disp_pix_sels, base + 0xbe00));
 	clk_dm(IMX8MP_CLK_MEDIA_LDB, imx8m_clk_composite(dev, "media_ldb", imx8mp_media_ldb_sels, base + 0xbf00));
 #endif
@@ -416,7 +416,7 @@ static int imx8mp_clk_probe(struct udevice *dev)
 	clk_dm(IMX8MP_CLK_WDOG2_ROOT, imx_clk_gate4(dev, "wdog2_root_clk", "wdog", base + 0x4540, 0));
 	clk_dm(IMX8MP_CLK_WDOG3_ROOT, imx_clk_gate4(dev, "wdog3_root_clk", "wdog", base + 0x4550, 0));
 	clk_dm(IMX8MP_CLK_HSIO_ROOT, imx_clk_gate4(dev, "hsio_root_clk", "ipg_root", base + 0x45c0, 0));
-#if CONFIG_IS_ENABLED(VIDEO)
+#if IS_ENABLED(CONFIG_VIDEO)
 	clk_dm(IMX8MP_CLK_MEDIA_APB_ROOT, imx_clk_gate2_shared2(dev, "media_apb_root_clk", "media_apb", base + 0x45d0, 0, &share_count_media));
 	clk_dm(IMX8MP_CLK_MEDIA_AXI_ROOT, imx_clk_gate2_shared2(dev, "media_axi_root_clk", "media_axi", base + 0x45d0, 0, &share_count_media));
 	clk_dm(IMX8MP_CLK_MEDIA_DISP1_PIX_ROOT, imx_clk_gate2_shared2(dev, "media_disp1_pix_root_clk", "media_disp1_pix", base + 0x45d0, 0, &share_count_media));

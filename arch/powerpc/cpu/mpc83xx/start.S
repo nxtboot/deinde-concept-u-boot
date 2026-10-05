@@ -41,7 +41,7 @@
 #endif
 
 #if defined(CONFIG_NAND_SPL) || \
-	(defined(CONFIG_XPL_BUILD) && CONFIG_IS_ENABLED(INIT_MINIMAL))
+	(defined(CONFIG_XPL_BUILD) && IS_ENABLED(CONFIG_INIT_MINIMAL))
 #define MINIMAL_SPL
 #endif
 
@@ -245,14 +245,14 @@ in_flash:
 	cmplw	r3, r4
 	bne	1b
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 
-#if CONFIG_VAL(SYS_MALLOC_F_LEN) + GENERATED_GBL_DATA_SIZE > CFG_SYS_INIT_RAM_SIZE
+#if CONFIG_SYS_MALLOC_F_LEN + GENERATED_GBL_DATA_SIZE > CFG_SYS_INIT_RAM_SIZE
 #error "SYS_MALLOC_F_LEN too large to fit into initial RAM."
 #endif
 
 	/* r3 = new stack pointer / pre-reloc malloc area */
-	subi    r3, r3, CONFIG_VAL(SYS_MALLOC_F_LEN)
+	subi    r3, r3, CONFIG_SYS_MALLOC_F_LEN
 
 	/* Set pointer to pre-reloc malloc area in GD */
 	stw     r3, GD_MALLOC_BASE(r4)

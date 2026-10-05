@@ -20,7 +20,7 @@
 #define	CFG_SYS_SDRAM_BASE		0x00000000
 
 /* FLASH organization */
-#define CFG_SYS_FLASH_BASE		CONFIG_TEXT_BASE
+#define CFG_SYS_FLASH_BASE		CONFIG_PPL_TEXT_BASE
 
 /*
  * For booting Linux, the board info and command line data

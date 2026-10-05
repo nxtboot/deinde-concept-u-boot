@@ -97,7 +97,7 @@ static const char * const imx8mm_uart4_sels[] = {"osc_24m", "sys_pll1_80m", "sys
 					  "sys_pll2_100m", "sys_pll3_out", "clk_ext2", "clk_ext3",
 					  "audio_pll2_out", };
 
-#if CONFIG_IS_ENABLED(PCIE_DW_IMX)
+#if IS_ENABLED(CONFIG_PCIE_DW_IMX)
 static const char * const imx8mm_pcie1_ctrl_sels[] = {"osc_24m", "sys_pll2_250m", "sys_pll2_200m",
 						      "sys_pll1_266m", "sys_pll1_800m", "sys_pll2_500m",
 						      "sys_pll2_333m", "sys_pll3_out", };
@@ -137,7 +137,7 @@ static const char * const imx8mm_usdhc3_sels[] = {"osc_24m", "sys_pll1_400m", "s
 						  "sys_pll2_500m", "sys_pll3_out", "sys_pll1_266m",
 						  "audio_pll2_clk", "sys_pll1_100m", };
 
-#if CONFIG_IS_ENABLED(NXP_FSPI)
+#if IS_ENABLED(CONFIG_NXP_FSPI)
 static const char * const imx8mm_qspi_sels[] = {"osc_24m", "sys_pll1_400m", "sys_pll2_333m",
 						"sys_pll2_500m", "audio_pll2_out", "sys_pll1_266m",
 						"sys_pll3_out", "sys_pll1_100m", };
@@ -151,7 +151,7 @@ static const char * const imx8mm_usb_phy_sels[] = {"osc_24m", "sys_pll1_100m", "
 						   "sys_pll2_100m", "sys_pll2_200m", "clk_ext2",
 						   "clk_ext3", "audio_pll2_out", };
 
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 static const char * const imx8mm_ecspi1_sels[] = {"osc_24m", "sys_pll2_200m", "sys_pll1_40m",
 						  "sys_pll1_160m", "sys_pll1_800m", "sys_pll3_out",
 						  "sys_pll2_250m", "audio_pll2_out", };
@@ -313,7 +313,7 @@ static int imx8mm_clk_probe(struct udevice *dev)
 		imx8m_clk_composite(dev, "usb_bus", imx8mm_usb_bus_sels, base + 0x8b80));
 
 	/* IP */
-#if CONFIG_IS_ENABLED(PCIE_DW_IMX)
+#if IS_ENABLED(CONFIG_PCIE_DW_IMX)
 	clk_dm(IMX8MM_CLK_PCIE1_CTRL,
 	       imx8m_clk_composite(dev, "pcie1_ctrl", imx8mm_pcie1_ctrl_sels,
 				   base + 0xa300));
@@ -423,12 +423,12 @@ static int imx8mm_clk_probe(struct udevice *dev)
 	       imx_clk_gate4(dev, "pwm4_root_clk", "pwm4", base + 0x42b0, 0));
 #endif
 
-#if CONFIG_IS_ENABLED(PCIE_DW_IMX)
+#if IS_ENABLED(CONFIG_PCIE_DW_IMX)
 	clk_dm(IMX8MM_CLK_PCIE1_ROOT,
 	       imx_clk_gate4(dev, "pcie1_root_clk", "pcie1_ctrl", base + 0x4250, 0));
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 	clk_dm(IMX8MM_CLK_ECSPI1,
 	       imx8m_clk_composite(dev, "ecspi1", imx8mm_ecspi1_sels, base + 0xb280));
 	clk_dm(IMX8MM_CLK_ECSPI2,
@@ -444,7 +444,7 @@ static int imx8mm_clk_probe(struct udevice *dev)
 	       imx_clk_gate4(dev, "ecspi3_root_clk", "ecspi3", base + 0x4090, 0));
 #endif
 
-#if CONFIG_IS_ENABLED(NXP_FSPI)
+#if IS_ENABLED(CONFIG_NXP_FSPI)
 	clk_dm(IMX8MM_CLK_QSPI,
 	       imx8m_clk_composite(dev, "qspi", imx8mm_qspi_sels, base + 0xab80));
 	clk_dm(IMX8MM_CLK_QSPI_ROOT,

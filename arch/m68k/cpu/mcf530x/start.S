@@ -39,8 +39,8 @@ _vectors:
 /* Flash offset is 0 until we setup CS0 */
 .long	0x00000000
 #if defined(CONFIG_M5307) && \
-	   (CONFIG_TEXT_BASE == CFG_SYS_INT_FLASH_BASE)
-.long	_start - CONFIG_TEXT_BASE
+	   (CONFIG_PPL_TEXT_BASE == CFG_SYS_INT_FLASH_BASE)
+.long	_start - CONFIG_PPL_TEXT_BASE
 #else
 .long	_START
 #endif

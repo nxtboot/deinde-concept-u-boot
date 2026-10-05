@@ -34,11 +34,11 @@ static int console_set_font(struct udevice *dev, struct vidconsole_ctx *ctx,
 
 int check_bpix_support(int bpix)
 {
-	if (bpix == VIDEO_BPP8 && CONFIG_IS_ENABLED(VIDEO_BPP8))
+	if (bpix == VIDEO_BPP8 && IS_ENABLED(CONFIG_VIDEO_BPP8))
 		return 0;
-	else if (bpix == VIDEO_BPP16 && CONFIG_IS_ENABLED(VIDEO_BPP16))
+	else if (bpix == VIDEO_BPP16 && IS_ENABLED(CONFIG_VIDEO_BPP16))
 		return 0;
-	else if (bpix == VIDEO_BPP32 && CONFIG_IS_ENABLED(VIDEO_BPP32))
+	else if (bpix == VIDEO_BPP32 && IS_ENABLED(CONFIG_VIDEO_BPP32))
 		return 0;
 	else
 		return -ENOSYS;
@@ -286,7 +286,7 @@ int console_alloc_cursor(struct udevice *dev, struct vidconsole_cursor *curs)
 	struct udevice *vid;
 	int save_count;
 
-	if (!CONFIG_IS_ENABLED(CURSOR) || xpl_phase() < PHASE_BOARD_R)
+	if (!IS_ENABLED(CONFIG_CURSOR) || xpl_phase() < PHASE_BOARD_R)
 		return 0;
 	vid = dev_get_parent(dev);
 	vid_priv = dev_get_uclass_priv(vid);

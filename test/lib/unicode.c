@@ -100,7 +100,7 @@ static int unicode_test_u16_strcpy(struct unit_test_state *uts)
 LIB_TEST(unicode_test_u16_strcpy, 0);
 
 /* U-Boot uses UTF-16 strings in the EFI context only. */
-#if CONFIG_IS_ENABLED(EFI_LOADER) && !defined(LEGACY_API_BUILD)
+#if IS_ENABLED(CONFIG_EFI_LOADER) && !defined(LEGACY_API_BUILD)
 static int unicode_test_string16(struct unit_test_state *uts)
 {
 	char buf[20];
@@ -631,7 +631,7 @@ static int unicode_test_u16_strcasecmp(struct unit_test_state *uts)
 	ut_assert(u16_strcasecmp(u"abcd", u"abcE") < 0);
 	ut_assert(u16_strcasecmp(u"abcd", u"abcd") == 0);
 	ut_assert(u16_strcasecmp(u"abcd", u"abcd") == 0);
-	if (CONFIG_IS_ENABLED(EFI_UNICODE_CAPITALIZATION)) {
+	if (IS_ENABLED(CONFIG_EFI_UNICODE_CAPITALIZATION)) {
 		/* Cyrillic letters */
 		ut_assert(u16_strcasecmp(u"\x043a\x043d\x0438\x0433\x0430",
 					 u"\x041a\x041d\x0418\x0413\x0410") == 0);

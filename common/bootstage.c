@@ -30,7 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 int bootstage_unstash_err __section(".data");
 
 enum {
-	RECORD_COUNT = CONFIG_VAL(BOOTSTAGE_RECORD_COUNT),
+	RECORD_COUNT = CONFIG_BOOTSTAGE_RECORD_COUNT,
 };
 
 struct bootstage_data {
@@ -605,7 +605,7 @@ int _bootstage_stash_default(void)
 
 	stash = NULL;
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
-	    CONFIG_IS_ENABLED(BLOBLIST)) {
+	    IS_ENABLED(CONFIG_BLOBLIST)) {
 		stash = bloblist_ensure(BLOBLISTT_U_BOOT_BOOTSTAGE,
 					CONFIG_BOOTSTAGE_STASH_SIZE);
 		/*
@@ -628,7 +628,7 @@ int _bootstage_unstash_default(void)
 
 	stash = NULL;
 	if (IS_ENABLED(CONFIG_BOOTSTAGE_STASH_BLOBLIST) &&
-	    CONFIG_IS_ENABLED(BLOBLIST))
+	    IS_ENABLED(CONFIG_BLOBLIST))
 		stash = bloblist_find(BLOBLISTT_U_BOOT_BOOTSTAGE,
 				      CONFIG_BOOTSTAGE_STASH_SIZE);
 	/*

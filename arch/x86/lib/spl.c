@@ -73,7 +73,7 @@ static int x86_spl_init(void)
 	 * TODO(sjg@chromium.org): We use this area of RAM for the stack
 	 * and global_data in SPL. Once U-Boot starts up and releocates it
 	 * is not needed. We could make this a CONFIG option or perhaps
-	 * place it immediately below CONFIG_TEXT_BASE.
+	 * place it immediately below CONFIG_PPL_TEXT_BASE.
 	 */
 	__maybe_unused char *ptr = (char *)0x110000;
 #else
@@ -108,7 +108,7 @@ static int x86_spl_init(void)
 	 */
 	if (!IS_ENABLED(CONFIG_SPL_BOARD_INIT))
 		preloader_console_init();
-#if !defined(CONFIG_TPL) && !CONFIG_IS_ENABLED(CPU)
+#if !defined(CONFIG_TPL) && !IS_ENABLED(CONFIG_CPU)
 	ret = print_cpuinfo();
 	if (ret) {
 		log_debug("print_cpuinfo() failed (err=%d)\n", ret);
@@ -255,8 +255,8 @@ static int spl_board_load_image(struct spl_image_info *spl_image,
 				struct spl_boot_device *bootdev)
 {
 	spl_image->size = CONFIG_SYS_MONITOR_LEN;
-	spl_image->entry_point = CONFIG_TEXT_BASE;
-	spl_image->load_addr = CONFIG_TEXT_BASE;
+	spl_image->entry_point = CONFIG_PPL_TEXT_BASE;
+	spl_image->load_addr = CONFIG_PPL_TEXT_BASE;
 	spl_image->os = IH_OS_U_BOOT;
 	spl_image->name = "U-Boot";
 
@@ -303,10 +303,10 @@ void spl_board_init(void)
 	if (IS_ENABLED(CONFIG_ARCH_QEMU_X86))
 		qemu_chipset_init();
 
-	if (CONFIG_IS_ENABLED(UPL_OUT))
+	if (IS_ENABLED(CONFIG_UPL_OUT))
 		gd->flags |= GD_FLG_UPL;
 
-	if (CONFIG_IS_ENABLED(VIDEO)) {
+	if (IS_ENABLED(CONFIG_VIDEO)) {
 		struct udevice *dev;
 		int ret;
 

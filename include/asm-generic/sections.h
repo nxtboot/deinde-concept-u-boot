@@ -107,7 +107,7 @@ extern char image_base[];
 extern void _start(void);
 
 #ifndef USE_HOSTCC
-#if CONFIG_IS_ENABLED(RELOC_LOADER)
+#if IS_ENABLED(CONFIG_RELOC_LOADER)
 #define __rcode __section(".text.rcode")
 #define __rdata __section(".text.rdata")
 #else

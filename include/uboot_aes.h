@@ -219,7 +219,7 @@ struct aes_ops {
 
 #define aes_get_ops(dev)	((struct aes_ops *)(dev)->driver->ops)
 
-#if CONFIG_IS_ENABLED(DM_AES)
+#if IS_ENABLED(CONFIG_DM_AES)
 
 /**
  * dm_aes_get_available_key_slots - How many key slots this AES device has

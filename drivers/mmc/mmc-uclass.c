@@ -124,7 +124,7 @@ int mmc_getcd(struct mmc *mmc)
 	return dm_mmc_get_cd(mmc->dev);
 }
 
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static int dm_mmc_execute_tuning(struct udevice *dev, uint opcode)
 {
 	struct dm_mmc_ops *ops = mmc_get_ops(dev);
@@ -146,7 +146,7 @@ int mmc_execute_tuning(struct mmc *mmc, uint opcode)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(MMC_HS400_ES_SUPPORT)
+#if IS_ENABLED(CONFIG_MMC_HS400_ES_SUPPORT)
 static int dm_mmc_set_enhanced_strobe(struct udevice *dev)
 {
 	struct dm_mmc_ops *ops = mmc_get_ops(dev);
@@ -305,7 +305,7 @@ struct mmc *mmc_get_mmc_dev(const struct udevice *dev)
 	return upriv->mmc;
 }
 
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 struct mmc *find_mmc_device(int dev_num)
 {
 	struct udevice *dev, *mmc_dev;
@@ -524,7 +524,7 @@ static int mmc_remove(struct udevice *dev)
 
 static const struct blk_ops mmc_blk_ops = {
 	.read	= mmc_bread,
-#if CONFIG_IS_ENABLED(MMC_WRITE)
+#if IS_ENABLED(CONFIG_MMC_WRITE)
 	.write	= mmc_bwrite,
 	.erase	= mmc_berase,
 #endif

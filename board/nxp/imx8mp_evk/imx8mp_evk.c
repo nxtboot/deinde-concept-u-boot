@@ -8,7 +8,7 @@
 #include <env.h>
 #include <asm/arch/sys_proto.h>
 
-#if CONFIG_IS_ENABLED(EFI_HAVE_CAPSULE_SUPPORT)
+#if IS_ENABLED(CONFIG_EFI_HAVE_CAPSULE_SUPPORT)
 #define IMX_BOOT_IMAGE_GUID \
 	EFI_GUID(0x928b33bc, 0xe58b, 0x4247, 0x9f, 0x1d, \
 		 0x3b, 0xf1, 0xee, 0x1c, 0xda, 0xff)
@@ -28,7 +28,7 @@ struct efi_capsule_update_info update_info = {
 };
 #endif /* EFI_HAVE_CAPSULE_SUPPORT */
 
-#if CONFIG_IS_ENABLED(ENV_IS_IN_MMC)
+#if IS_ENABLED(CONFIG_ENV_IS_IN_MMC)
 int board_mmc_get_env_dev(int devno)
 {
 	return devno;
@@ -37,7 +37,7 @@ int board_mmc_get_env_dev(int devno)
 
 int board_late_init(void)
 {
-#if CONFIG_IS_ENABLED(ENV_IS_IN_MMC)
+#if IS_ENABLED(CONFIG_ENV_IS_IN_MMC)
 	board_late_mmc_env_init();
 #endif
 

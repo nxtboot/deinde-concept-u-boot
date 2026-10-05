@@ -2668,7 +2668,7 @@ static int fsg_bind(struct usb_configuration *c, struct usb_function *f)
 	char __maybe_unused	*sn;
 	fsg->gadget = gadget;
 
-	if (CONFIG_IS_ENABLED(ENV_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_ENV_SUPPORT)) {
 		sn = env_get("serial#");
 		if (sn)
 			g_dnl_set_serialnumber(sn);

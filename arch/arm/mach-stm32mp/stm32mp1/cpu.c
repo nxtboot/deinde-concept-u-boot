@@ -99,10 +99,10 @@ static void early_enable_caches(void)
 {
 #if (!IS_ENABLED(CONFIG_XPL_BUILD) || !IS_ENABLED(CONFIG_STM32MP13X))
 	/* I-cache is already enabled in start.S: cpu_init_cp15 */
-	if (CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		return;
 
-#if !(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+#if !(IS_ENABLED(CONFIG_SYS_ICACHE_OFF) && IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 	gd->arch.tlb_size = PGTABLE_SIZE;
 	gd->arch.tlb_addr = (unsigned long)&early_tlb;
 #endif

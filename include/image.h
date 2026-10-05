@@ -459,7 +459,7 @@ struct bootm_headers {
 	ulong		cmdline_end;
 	struct bd_info		*kbd;
 
-#if CONFIG_IS_ENABLED(FIT_VERITY)
+#if IS_ENABLED(CONFIG_FIT_VERITY)
 	/*
 	 * dm-verity kernel command-line fragments, populated during FIT
 	 * parsing by fit_verity_build_cmdline().  Bootmeths can check
@@ -859,7 +859,7 @@ int fit_image_load(struct bootm_headers *images, ulong addr,
 		   enum image_arch_t arch, int image_ph_type, int bootstage_id,
 		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
 
-#if !defined(USE_HOSTCC) && CONFIG_IS_ENABLED(FIT_VERITY)
+#if !defined(USE_HOSTCC) && IS_ENABLED(CONFIG_FIT_VERITY)
 /**
  * fit_verity_build_cmdline() - build dm-verity cmdline from FIT metadata
  * @fit:		pointer to the FIT blob
@@ -1367,7 +1367,7 @@ struct fit_print_ctx {
 	int tab;
 };
 
-#if CONFIG_IS_ENABLED(FIT_PRINT)
+#if IS_ENABLED(CONFIG_FIT_PRINT)
 
 /**
  * fit_print_init() - initialize FIT print context
@@ -1686,7 +1686,7 @@ int fit_image_verify_with_data(const void *fit, int image_noffset,
 			       size_t size);
 
 int fit_image_verify(const void *fit, int noffset);
-#if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+#if IS_ENABLED(CONFIG_FIT_SIGNATURE)
 int fit_config_verify(const void *fit, int conf_noffset);
 int fit_config_verify_with_key_blob(const void *fit, int conf_noffset,
 				    const void *key_blob);
@@ -1827,7 +1827,7 @@ int calculate_hash(const void *data, int data_len, const char *algo,
  * device
  */
 #if defined(USE_HOSTCC)
-# if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+# if IS_ENABLED(CONFIG_FIT_SIGNATURE)
 #  define IMAGE_ENABLE_SIGN	1
 #  define FIT_IMAGE_ENABLE_VERIFY	1
 #  include <openssl/evp.h>
@@ -1837,7 +1837,7 @@ int calculate_hash(const void *data, int data_len, const char *algo,
 # endif
 #else
 # define IMAGE_ENABLE_SIGN	0
-# define FIT_IMAGE_ENABLE_VERIFY	CONFIG_IS_ENABLED(FIT_SIGNATURE)
+# define FIT_IMAGE_ENABLE_VERIFY	IS_ENABLED(CONFIG_FIT_SIGNATURE)
 #endif
 
 #ifdef USE_HOSTCC
@@ -2046,7 +2046,7 @@ struct sig_header_s {
  */
 int image_pre_load(ulong addr);
 
-#if defined(USE_HOSTCC) && CONFIG_IS_ENABLED(LIBCRYPTO)
+#if defined(USE_HOSTCC) && IS_ENABLED(CONFIG_LIBCRYPTO)
 /**
  * rsa_verify_openssl() - Verify a signature against some data with openssl API
  *
@@ -2171,7 +2171,7 @@ static inline int fit_image_check_target_arch(const void *fdt, int node)
 # endif
 #else
 # define IMAGE_ENABLE_ENCRYPT	0
-# define IMAGE_ENABLE_DECRYPT	CONFIG_IS_ENABLED(FIT_CIPHER)
+# define IMAGE_ENABLE_DECRYPT	IS_ENABLED(CONFIG_FIT_CIPHER)
 #endif
 
 /* Information passed to the ciphering routines */

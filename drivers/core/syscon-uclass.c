@@ -49,7 +49,7 @@ static int syscon_pre_probe(struct udevice *dev)
 	if (device_get_uclass_id(dev->parent) == UCLASS_PCI)
 		return 0;
 
-#if CONFIG_IS_ENABLED(OF_PLATDATA)
+#if IS_ENABLED(CONFIG_OF_PLATDATA)
 	/*
 	 * With OF_PLATDATA we really have no way of knowing the format of
 	 * the device-specific platform data. So we assume that it starts with
@@ -204,7 +204,7 @@ static const struct udevice_id generic_syscon_ids[] = {
 U_BOOT_DRIVER(generic_syscon) = {
 	.name	= "syscon",
 	.id	= UCLASS_SYSCON,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind           = dm_scan_fdt_dev,
 #endif
 	.of_match = generic_syscon_ids,

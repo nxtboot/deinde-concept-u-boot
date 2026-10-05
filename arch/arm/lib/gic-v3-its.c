@@ -233,7 +233,7 @@ U_BOOT_DRIVER(arm_gic_v3) = {
 	.id		= UCLASS_IRQ,
 	.of_match	= gic_v3_ids,
 	.ops		= &arm_gic_v3_ops,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.bind		= dm_scan_fdt_dev,
 #endif
 	ACPI_OPS_PTR(&gic_v3_acpi_ops)

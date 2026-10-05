@@ -9,7 +9,7 @@
 #include <dm.h>
 #include <log.h>
 #include <nvmxip.h>
-#if CONFIG_IS_ENABLED(SANDBOX64)
+#if IS_ENABLED(CONFIG_SANDBOX64)
 #include <asm/test.h>
 #endif
 #include <linux/bitops.h>

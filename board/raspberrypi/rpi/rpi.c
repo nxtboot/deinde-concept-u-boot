@@ -649,7 +649,7 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 	else
 		update_fdt_from_fw(blob, (void *)gd->fdt_blob);
 
-	if (CONFIG_IS_ENABLED(FDT_SIMPLEFB)) {
+	if (IS_ENABLED(CONFIG_FDT_SIMPLEFB)) {
 		node = fdt_node_offset_by_compatible(blob, -1, "simple-framebuffer");
 		if (node < 0)
 			fdt_simplefb_add_node(blob);
@@ -666,7 +666,7 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(GENERATE_ACPI_TABLE)
+#if IS_ENABLED(CONFIG_GENERATE_ACPI_TABLE)
 static bool is_rpi4(void)
 {
 	return of_machine_is_compatible("brcm,bcm2711") ||

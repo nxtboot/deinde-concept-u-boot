@@ -59,7 +59,7 @@
 #define _MCHECKCORE_INC_H      1
 #include "mcheck.h"
 
-#if CONFIG_IS_ENABLED(MCHECK_HEAP_PROTECTION)
+#if IS_ENABLED(CONFIG_MCHECK_HEAP_PROTECTION)
 #define mcheck_flood memset
 
 // these are from /dev/random:

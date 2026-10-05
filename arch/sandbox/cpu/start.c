@@ -755,10 +755,10 @@ int sandbox_init(int argc, char *argv[], struct global_data *data)
 	if (state->upl)
 		gd->flags |= GD_FLG_UPL;
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_F)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_F)
 	gd->malloc_base = CFG_MALLOC_F_ADDR;
 #endif
-#if CONFIG_IS_ENABLED(LOG)
+#if IS_ENABLED(CONFIG_LOG)
 	gd->default_log_level = state->default_log_level;
 #endif
 	setup_ram_buf(state);

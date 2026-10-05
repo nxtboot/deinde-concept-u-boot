@@ -32,7 +32,7 @@
 #include <u-boot/crc.h>
 
 /* GUID for basic data partitons */
-#if CONFIG_IS_ENABLED(EFI_PARTITION)
+#if IS_ENABLED(CONFIG_EFI_PARTITION)
 static const efi_guid_t partition_basic_data_guid = PARTITION_BASIC_DATA_GUID;
 #endif
 
@@ -189,7 +189,7 @@ static void prepare_backup_gpt_header(gpt_header *gpt_h)
 	gpt_h->header_crc32 = cpu_to_le32(calc_crc32);
 }
 
-#if CONFIG_IS_ENABLED(EFI_PARTITION)
+#if IS_ENABLED(CONFIG_EFI_PARTITION)
 /*
  * Public Functions (include/part.h)
  */
@@ -273,7 +273,7 @@ static void __maybe_unused part_print_efi(struct blk_desc *desc)
 		       print_efiname(&gpt_pte[i]));
 		printf("\tattrs:\t0x%016llx\n", gpt_pte[i].attributes.raw);
 		uuid = (unsigned char *)gpt_pte[i].partition_type_guid.b;
-		if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID))
+		if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID))
 			printf("\ttype:\t%pUl\n\t\t(%pUs)\n", uuid, uuid);
 		else
 			printf("\ttype:\t%pUl\n", uuid);
@@ -308,12 +308,12 @@ static int __maybe_unused part_get_info_efi(struct blk_desc *desc, int part,
 	strcpy((char *)info->type, "U-Boot");
 	info->bootable = get_bootable(&gpt_pte);
 	info->type_flags = gpt_pte.attributes.fields.type_guid_specific;
-	if (CONFIG_IS_ENABLED(PARTITION_UUIDS)) {
+	if (IS_ENABLED(CONFIG_PARTITION_UUIDS)) {
 		uuid_bin_to_str(gpt_pte.unique_partition_guid.b,
 				(char *)disk_partition_uuid(info),
 				UUID_STR_FORMAT_GUID);
 	}
-	if (CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)) {
+	if (IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)) {
 		uuid_bin_to_str(gpt_pte.partition_type_guid.b,
 				(char *)disk_partition_type_guid(info),
 				UUID_STR_FORMAT_GUID);
@@ -460,7 +460,7 @@ int gpt_fill_pte(struct blk_desc *desc,
 	int i, k;
 	size_t efiname_len, dosname_len;
 	unsigned char *bin_uuid;
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	char *str_type_guid;
 	unsigned char *bin_type_guid;
 #endif
@@ -507,7 +507,7 @@ int gpt_fill_pte(struct blk_desc *desc,
 		else
 			gpt_e[i].ending_lba = cpu_to_le64(offset - 1);
 
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 		str_type_guid = partitions[i].type_guid;
 		bin_type_guid = gpt_e[i].partition_type_guid.b;
 		if (strlen(str_type_guid)) {
@@ -528,7 +528,7 @@ int gpt_fill_pte(struct blk_desc *desc,
 			&partition_basic_data_guid, 16);
 #endif
 
-		if (CONFIG_IS_ENABLED(PARTITION_UUIDS)) {
+		if (IS_ENABLED(CONFIG_PARTITION_UUIDS)) {
 			const char *str_uuid;
 
 			str_uuid = disk_partition_uuid(&partitions[i]);

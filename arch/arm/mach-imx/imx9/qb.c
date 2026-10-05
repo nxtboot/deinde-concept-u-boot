@@ -213,7 +213,7 @@ static int imx_qb_get_dev_qbdata_offset(void *dev, int dev_type, ulong offset,
 		}
 		break;
 	case SPI_DEV:
-		if (!CONFIG_IS_ENABLED(SPI)) {
+		if (!IS_ENABLED(CONFIG_SPI)) {
 			ret = -EOPNOTSUPP;
 			goto imx_qb_get_dev_qbdata_offset_exit;
 		}
@@ -325,7 +325,7 @@ static int imx_qb_spi(bool save)
 	u64 offset;
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(SPI)) {
+	if (!IS_ENABLED(CONFIG_SPI)) {
 		printf("SPI not enabled\n");
 		return -EOPNOTSUPP;
 	}

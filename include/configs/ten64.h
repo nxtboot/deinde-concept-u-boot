@@ -45,14 +45,14 @@
 	"bootm $load_addr#ten64\0"
 #undef CFG_EXTRA_ENV_SETTINGS
 
-#if CONFIG_IS_ENABLED(CMD_BOOTMENU)
+#if IS_ENABLED(CONFIG_CMD_BOOTMENU)
 #define DEFAULT_MENU_ENTRIES \
 	"bootmenu_0=Continue standard boot=run bootcmd\0" \
 	"bootmenu_1=Boot into recovery=run bootcmd_recovery\0" \
 	"bootmenu_2=Boot OpenWrt from NAND=run bootcmd_openwrt_nand\0"
 #else
 #define DEFAULT_MENU_ENTRIES ""
-#endif /* CONFIG_IS_ENABLED(CMD_BOOTMENU) */
+#endif /* IS_ENABLED(CONFIG_CMD_BOOTMENU) */
 
 #define CFG_EXTRA_ENV_SETTINGS \
 	"BOARD=ten64\0"					\

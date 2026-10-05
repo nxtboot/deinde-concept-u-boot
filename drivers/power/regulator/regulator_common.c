@@ -27,7 +27,7 @@ int regulator_common_of_to_plat(struct udevice *dev,
 
 	/* Get optional enable GPIO desc */
 	gpio = &plat->gpio;
-	if (CONFIG_IS_ENABLED(DM_GPIO)) {
+	if (IS_ENABLED(CONFIG_DM_GPIO)) {
 		ret = gpio_request_by_name(dev, enable_gpio_name, 0, gpio, flags);
 		if (ret) {
 			debug("Regulator '%s' optional enable GPIO - not found! Error: %d\n",
@@ -53,7 +53,7 @@ int regulator_common_get_enable(const struct udevice *dev,
 	struct regulator_common_plat *plat)
 {
 	/* Enable GPIO is optional */
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&plat->gpio))
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&plat->gpio))
 		return dm_gpio_get_value(&plat->gpio);
 
 	return true;
@@ -69,7 +69,7 @@ int regulator_common_set_enable(const struct udevice *dev,
 	      dm_gpio_is_valid(&plat->gpio));
 
 	/* Enable GPIO is optional */
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&plat->gpio)) {
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&plat->gpio)) {
 		/* If previously enabled, increase count */
 		if (enable && plat->enable_count > 0) {
 			plat->enable_count++;

@@ -103,7 +103,7 @@ static int riscv_cpu_bind(struct udevice *dev)
 		plat->family = 0x201;
 	else
 		plat->family = 0x200;
-	if (CONFIG_IS_ENABLED(RISCV_SMODE)) {
+	if (IS_ENABLED(CONFIG_RISCV_SMODE)) {
 		/*
 		 * For RISC-V CPUs the SMBIOS Processor ID field contains
 		 * the Machine Vendor ID from CSR mvendorid.

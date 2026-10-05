@@ -13,7 +13,7 @@
 #include <div64.h>
 #include <getopt.h>
 #include <led.h>
-#if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+#if IS_ENABLED(CONFIG_CMD_MTD_OTP)
 #include <hexdump.h>
 #endif
 #include <malloc.h>
@@ -207,7 +207,7 @@ static bool mtd_oob_write_is_empty(struct mtd_oob_ops *op)
 	return true;
 }
 
-#if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+#if IS_ENABLED(CONFIG_CMD_MTD_OTP)
 static int do_mtd_otp_read(struct getopt_state *gs)
 {
 	int argc = gs->argc;
@@ -1306,19 +1306,19 @@ U_BOOT_LONGHELP(mtd,
 	"\n"
 	"Specific functions:\n"
 	"mtd bad                                         <name>\n"
-#if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+#if IS_ENABLED(CONFIG_CMD_MTD_OTP)
 	"mtd otpread                                     <name> [u|f] <off> <size>\n"
 	"mtd otpwrite                                    <name> <off> <hex string>\n"
 	"mtd otplock                                     <name> <off> <size>\n"
 	"mtd otpinfo                                     <name> [u|f]\n"
 #endif
-#if CONFIG_IS_ENABLED(CMD_MTD_MARKBAD)
+#if IS_ENABLED(CONFIG_CMD_MTD_MARKBAD)
 	"mtd markbad                                     <name>         <off> [<off> ...]\n"
 #endif
-#if CONFIG_IS_ENABLED(CMD_MTD_NAND_WRITE_TEST)
+#if IS_ENABLED(CONFIG_CMD_MTD_NAND_WRITE_TEST)
 	"mtd nand_write_test                             <name>        [<off> [<size>]]\n"
 #endif
-#if CONFIG_IS_ENABLED(CMD_MTD_NAND_READ_TEST)
+#if IS_ENABLED(CONFIG_CMD_MTD_NAND_READ_TEST)
 	"mtd nand_read_test                              <name>\n"
 #endif
 	"\n"
@@ -1331,7 +1331,7 @@ U_BOOT_LONGHELP(mtd,
 	"\t<size>: length of the operation in bytes (default: to the end of the device)\n"
 	"\t\t* must be a multiple of a block for erase\n"
 	"\t\t* must be a multiple of a page otherwise (special case: default is a page with dump)\n"
-#if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+#if IS_ENABLED(CONFIG_CMD_MTD_OTP)
 	"\t<hex string>: hex string without '0x' and spaces. Example: ABCD1234\n"
 	"\t[u|f]: user or factory OTP region\n"
 #endif
@@ -1339,7 +1339,7 @@ U_BOOT_LONGHELP(mtd,
 	"The .dontskipff option forces writing empty pages, don't use it if unsure.\n");
 
 U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils", mtd_help_text,
-#if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+#if IS_ENABLED(CONFIG_CMD_MTD_OTP)
 		U_BOOT_CMD_MKENT_GETOPT(otpread, 5, 1, do_mtd_otp_read,
 					"", ""),
 		U_BOOT_CMD_MKENT_GETOPT(otpwrite, 4, 1, do_mtd_otp_write,
@@ -1358,17 +1358,17 @@ U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils", mtd_help_text,
 						 "", "", mtd_name_complete),
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(erase, 4, 0, do_mtd_erase,
 						 "", "", mtd_name_complete),
-#if CONFIG_IS_ENABLED(CMD_MTD_MARKBAD)
+#if IS_ENABLED(CONFIG_CMD_MTD_MARKBAD)
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(markbad, 20, 0,
 						 do_mtd_markbad,
 						 "", "", mtd_name_complete),
 #endif
-#if CONFIG_IS_ENABLED(CMD_MTD_NAND_WRITE_TEST)
+#if IS_ENABLED(CONFIG_CMD_MTD_NAND_WRITE_TEST)
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_write_test, 4, 0,
 						 do_nand_write_test,
 						 "", "", mtd_name_complete),
 #endif
-#if CONFIG_IS_ENABLED(CMD_MTD_NAND_READ_TEST)
+#if IS_ENABLED(CONFIG_CMD_MTD_NAND_READ_TEST)
 		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_read_test, 2, 0,
 						 do_mtd_nand_read_test,
 						 "", "", mtd_name_complete),

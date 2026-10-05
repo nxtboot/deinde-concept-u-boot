@@ -165,7 +165,7 @@ static int distro_efi_try_bootflow_files(struct udevice *dev,
 	bflow->fdt_size = size;
 	bflow->fdt_addr = fdt_addr;
 
-	if (!CONFIG_IS_ENABLED(SUPPORT_EXTENSION_SCAN))
+	if (!IS_ENABLED(CONFIG_SUPPORT_EXTENSION_SCAN))
 		return 0;
 
 	ret = extension_scan();

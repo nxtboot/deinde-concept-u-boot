@@ -22,7 +22,7 @@
 #define UART_MCRVAL (UART_MCR_DTR | \
 		     UART_MCR_RTS)		/* RTS/DTR */
 
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 #ifdef CONFIG_SYS_NS16550_PORT_MAPPED
 #define serial_out(x, y)	outb(x, (ulong)y)
 #define serial_in(y)		inb((ulong)y)
@@ -87,7 +87,7 @@ static inline int serial_in_shift(void *addr, int shift)
 #endif
 }
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 
 #ifndef CFG_SYS_NS16550_CLK
 #define CFG_SYS_NS16550_CLK  0
@@ -261,7 +261,7 @@ void ns16550_init(struct ns16550 *com_port, int baud_divisor)
 #endif
 }
 
-#if !CONFIG_IS_ENABLED(NS16550_MIN_FUNCTIONS)
+#if !IS_ENABLED(CONFIG_NS16550_MIN_FUNCTIONS)
 void ns16550_reinit(struct ns16550 *com_port, int baud_divisor)
 {
 	serial_out(CFG_SYS_NS16550_IER, &com_port->ier);
@@ -270,7 +270,7 @@ void ns16550_reinit(struct ns16550 *com_port, int baud_divisor)
 	serial_out(ns16550_getfcr(com_port), &com_port->fcr);
 	ns16550_setbrg(com_port, baud_divisor);
 }
-#endif /* !CONFIG_IS_ENABLED(NS16550_MIN_FUNCTIONS) */
+#endif /* !IS_ENABLED(CONFIG_NS16550_MIN_FUNCTIONS) */
 
 void ns16550_putc(struct ns16550 *com_port, char c)
 {
@@ -288,7 +288,7 @@ void ns16550_putc(struct ns16550 *com_port, char c)
 		schedule();
 }
 
-#if !CONFIG_IS_ENABLED(NS16550_MIN_FUNCTIONS)
+#if !IS_ENABLED(CONFIG_NS16550_MIN_FUNCTIONS)
 char ns16550_getc(struct ns16550 *com_port)
 {
 	while ((serial_in(&com_port->lsr) & UART_LSR_DR) == 0)
@@ -302,7 +302,7 @@ int ns16550_tstc(struct ns16550 *com_port)
 	return (serial_in(&com_port->lsr) & UART_LSR_DR) != 0;
 }
 
-#endif /* !CONFIG_IS_ENABLED(NS16550_MIN_FUNCTIONS) */
+#endif /* !IS_ENABLED(CONFIG_NS16550_MIN_FUNCTIONS) */
 
 #ifdef CONFIG_DEBUG_UART_NS16550
 
@@ -310,7 +310,7 @@ int ns16550_tstc(struct ns16550 *com_port)
 
 static inline void _debug_uart_init(void)
 {
-	struct ns16550 *com_port = (struct ns16550 *)CONFIG_VAL(DEBUG_UART_BASE);
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_DEBUG_UART_BASE;
 	int baud_divisor;
 
 	/* Wait until tx buffer is empty */
@@ -349,7 +349,7 @@ static inline int NS16550_read_baud_divisor(struct ns16550 *com_port)
 
 static inline void _debug_uart_putc(int ch)
 {
-	struct ns16550 *com_port = (struct ns16550 *)CONFIG_VAL(DEBUG_UART_BASE);
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_DEBUG_UART_BASE;
 
 	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE)) {
 #ifdef CONFIG_DEBUG_UART_NS16550_CHECK_ENABLED
@@ -369,7 +369,7 @@ DEBUG_UART_FUNCS
 
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SERIAL)
+#if IS_ENABLED(CONFIG_DM_SERIAL)
 int ns16550_serial_putc(struct udevice *dev, const char ch)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -469,7 +469,7 @@ int ns16550_serial_getinfo(struct udevice *dev, struct serial_device_info *info)
 	struct ns16550_plat *plat = com_port->plat;
 
 	/* save code size */
-	if (!not_xpl() && !CONFIG_IS_ENABLED(UPL_OUT))
+	if (!not_xpl() && !IS_ENABLED(CONFIG_UPL_OUT))
 		return -ENOSYS;
 
 	info->type = SERIAL_CHIP_16550_COMPATIBLE;
@@ -535,14 +535,14 @@ int ns16550_serial_probe(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 enum {
 	PORT_NS16550 = 0,
 	PORT_JZ4780,
 };
 #endif
 
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 int ns16550_serial_of_to_plat(struct udevice *dev)
 {
 	struct ns16550_plat *plat = dev_get_plat(dev);
@@ -601,8 +601,8 @@ const struct dm_serial_ops ns16550_serial_ops = {
 	.getinfo = ns16550_serial_getinfo,
 };
 
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_OF_REAL)
 /*
  * Please consider existing compatible strings before adding a new
  * one to keep this table compact. Or you may add a generic "ns16550"
@@ -619,12 +619,12 @@ static const struct udevice_id ns16550_serial_ids[] = {
 };
 #endif /* OF_REAL */
 
-/* TODO(sjg@chromium.org): Integrate this into a macro like CONFIG_IS_ENABLED */
+/* TODO(sjg@chromium.org): Integrate this into a macro like IS_ENABLED */
 #if !defined(CONFIG_TPL_BUILD) || defined(CONFIG_TPL_DM_SERIAL)
 U_BOOT_DRIVER(ns16550_serial) = {
 	.name	= "ns16550_serial",
 	.id	= UCLASS_SERIAL,
-#if CONFIG_IS_ENABLED(OF_REAL)
+#if IS_ENABLED(CONFIG_OF_REAL)
 	.of_match = ns16550_serial_ids,
 	.of_to_plat = ns16550_serial_of_to_plat,
 	.plat_auto	= sizeof(struct ns16550_plat),
@@ -632,7 +632,7 @@ U_BOOT_DRIVER(ns16550_serial) = {
 	.priv_auto	= sizeof(struct ns16550),
 	.probe = ns16550_serial_probe,
 	.ops	= &ns16550_serial_ops,
-#if !CONFIG_IS_ENABLED(OF_CONTROL)
+#if !IS_ENABLED(CONFIG_OF_CONTROL)
 	.flags	= DM_FLAG_PRE_RELOC,
 #endif
 };

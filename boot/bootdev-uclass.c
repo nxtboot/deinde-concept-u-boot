@@ -175,7 +175,7 @@ int bootdev_find_in_blk(struct udevice *dev, struct udevice *blk,
 	} else if ((iter->flags & BOOTFLOWIF_ONLY_BOOTABLE) &&
 		   iter->first_bootable >= 0 &&
 		   (iter->first_bootable ? !info.bootable : iter->part != 1) &&
-		   !(CONFIG_IS_ENABLED(BOOTMETH_BLS) &&
+		   !(IS_ENABLED(CONFIG_BOOTMETH_BLS) &&
 		     part_is_bls_target(&info))) {
 		log_debug("Skipping non-bootable partition %d\n", iter->part);
 		return log_msg_ret("boot", -EINVAL);
@@ -443,7 +443,7 @@ int bootdev_find_by_label(const char *label, struct udevice **devp,
 	struct uclass *uc;
 	enum uclass_id id;
 
-	if (!CONFIG_IS_ENABLED(BLK))
+	if (!IS_ENABLED(CONFIG_BLK))
 		return -ENOSYS;
 
 	ret = label_to_uclass(label, &seq, &method_flags);

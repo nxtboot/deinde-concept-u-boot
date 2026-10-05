@@ -190,7 +190,7 @@
 #define MEMP_MEM_INIT			1
 #define MEM_LIBC_MALLOC			1
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_TLS)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_TLS)
 #define LWIP_ALTCP                      1
 #define LWIP_ALTCP_TLS                  1
 #define LWIP_ALTCP_TLS_MBEDTLS          1

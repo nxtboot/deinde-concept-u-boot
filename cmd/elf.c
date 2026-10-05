@@ -26,7 +26,7 @@
 /* Interpreter command to boot an arbitrary ELF image from memory */
 int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
-#if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
+#if IS_ENABLED(CONFIG_CMD_ELF_FDT_SETUP)
 	struct bootm_headers img = {0};
 	unsigned long fdt_addr = 0; /* Address of the FDT */
 #endif
@@ -49,7 +49,7 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		argc--; argv++;
 	}
 
-#if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
+#if IS_ENABLED(CONFIG_CMD_ELF_FDT_SETUP)
 	/* Check for [-d fdt_addr_r] option. */
 	if ((argc >= 2) && (argv[0][0] == '-') && (argv[0][1] == 'd')) {
 		if (strict_strtoul(argv[1], 16, &fdt_addr) != 0)
@@ -67,7 +67,7 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	} else
 		addr = image_load_addr;
 
-#if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
+#if IS_ENABLED(CONFIG_CMD_ELF_FDT_SETUP)
 	if (fdt_addr) {
 		log_debug("Setting up FDT at 0x%08lx ...\n", fdt_addr);
 		flush();
@@ -321,13 +321,13 @@ U_BOOT_CMD(
 	bootelf, CONFIG_SYS_MAXARGS, 0, do_bootelf,
 	"Boot from an ELF image in memory",
 	"[-p|-s] "
-#if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
+#if IS_ENABLED(CONFIG_CMD_ELF_FDT_SETUP)
 	"[-d fdt_addr_r] "
 #endif
 	"[address]\n"
 	"\t- load ELF image at [address] via program headers (-p)\n"
 	"\t  or via section headers (-s)\n"
-#if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
+#if IS_ENABLED(CONFIG_CMD_ELF_FDT_SETUP)
 	"\t- setup FDT image at [fdt_addr_r] (-d)"
 #endif
 );

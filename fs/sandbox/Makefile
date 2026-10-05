@@ -9,4 +9,4 @@
 # Pavel Bartusek, Sysgo Real-Time Solutions AG, pba@sysgo.de
 
 obj-y := sandboxfs.o
-obj-$(CONFIG_$(PHASE_)BOOTSTD) += hostfs_bootdev.o
+obj-$(CONFIG_BOOTSTD) += hostfs_bootdev.o

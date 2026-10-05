@@ -116,7 +116,7 @@ int of_populate_from_efi(struct device_node *root)
 {
 	int ret = 0;
 
-	if (CONFIG_IS_ENABLED(VIDEO_SIMPLE) && CONFIG_IS_ENABLED(OF_LIVE))
+	if (IS_ENABLED(CONFIG_VIDEO_SIMPLE) && IS_ENABLED(CONFIG_OF_LIVE))
 		ret = of_populate_framebuffer(root);
 
 	return ret;

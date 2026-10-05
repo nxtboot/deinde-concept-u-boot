@@ -24,7 +24,7 @@
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
-#if !CONFIG_IS_ENABLED(DM_MMC)
+#if !IS_ENABLED(CONFIG_DM_MMC)
 #include <asm/arch/mmc.h>
 #endif
 #include <linux/delay.h>
@@ -488,7 +488,7 @@ static void sunxi_mmc_reset(void *regs)
 
 /* non-DM code here is used by the (ARM) SPL only */
 
-#if !CONFIG_IS_ENABLED(DM_MMC)
+#if !IS_ENABLED(CONFIG_DM_MMC)
 /* support 4 mmc hosts */
 struct sunxi_mmc_priv mmc_host[4];
 

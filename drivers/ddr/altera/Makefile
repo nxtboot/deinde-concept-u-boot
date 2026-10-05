@@ -6,7 +6,7 @@
 # (C) Copyright 2010, Thomas Chou <thomas@wytron.com.tw>
 # Copyright (C) 2014-2025 Altera Corporation <www.altera.com>
 
-ifdef CONFIG_$(PHASE_)ALTERA_SDRAM
+ifdef CONFIG_ALTERA_SDRAM
 obj-$(CONFIG_ARCH_SOCFPGA_GEN5) += sdram_gen5.o sequencer.o
 obj-$(CONFIG_ARCH_SOCFPGA_ARRIA10) += sdram_arria10.o
 obj-$(CONFIG_ARCH_SOCFPGA_STRATIX10) += sdram_soc64.o sdram_s10.o

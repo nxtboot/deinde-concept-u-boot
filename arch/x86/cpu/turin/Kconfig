@@ -55,7 +55,7 @@ config TURIN_IMAGE_ADDR
 	hex "Address of the image holding U-Boot and the microcode"
 	help
 	  Without SPL, the PSP copies the whole of U-Boot's image, microcode
-	  patches included, into DRAM, so this is the same as CONFIG_TEXT_BASE
+	  patches included, into DRAM, so this is the same as CONFIG_PPL_TEXT_BASE
 	  in that case. The PSP only starts a small BIOS image, though, so a
 	  larger U-Boot needs SPL as the BIOS image, with U-Boot proper and
 	  the microcode patches elsewhere in the flash. This is then the

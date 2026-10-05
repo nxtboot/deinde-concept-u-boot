@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0+
 
 ifeq ($(CONFIG_EFI_APP),)
-ifdef CONFIG_$(PHASE_)X86_64
-ifneq ($(CONFIG_$(PHASE_)X86_16BIT_INIT)$(CONFIG_X86_32BIT_ENTRY),)
+ifdef CONFIG_X86_64
+ifneq ($(CONFIG_X86_16BIT_INIT)$(CONFIG_X86_32BIT_ENTRY),)
 head-y := arch/x86/cpu/start_from_32.o
 else
 head-y := arch/x86/cpu/start64.o
 endif
 else
-ifeq ($(CONFIG_$(PHASE_)X86_16BIT_INIT),y)
+ifeq ($(CONFIG_X86_16BIT_INIT),y)
 head-y := arch/x86/cpu/start.o
 else
 ifndef CONFIG_SPL
@@ -24,9 +24,9 @@ endif
 endif
 endif # EFI
 
-ifndef CONFIG_$(PHASE_)X86_64
-head-$(CONFIG_$(PHASE_)X86_16BIT_INIT) += arch/x86/cpu/start16.o
-head-$(CONFIG_$(PHASE_)X86_16BIT_INIT) += arch/x86/cpu/resetvec.o
+ifndef CONFIG_X86_64
+head-$(CONFIG_X86_16BIT_INIT) += arch/x86/cpu/start16.o
+head-$(CONFIG_X86_16BIT_INIT) += arch/x86/cpu/resetvec.o
 endif
 
 libs-y += arch/x86/cpu/
@@ -51,7 +51,7 @@ u-boot-x86-16bit.lds: $(srctree)/arch/x86/cpu/u-boot-16bit.lds prepare FORCE
 	$(call if_changed_dep,cpp_lds)
 
 LDFLAGS_u-boot-x86-16bit.elf := -m elf_i386 -static -nostdlib \
-	--defsym=_start=$(CONFIG_TEXT_BASE)
+	--defsym=_start=$(CONFIG_PPL_TEXT_BASE)
 
 u-boot-x86-16bit.elf: arch/x86/cpu/start16.o arch/x86/cpu/resetvec.o \
 		u-boot-x86-16bit.lds FORCE

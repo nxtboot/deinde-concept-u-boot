@@ -961,11 +961,11 @@ skip-at-start:
     adding an empty 4K region at the start, except that Binman does not actually
     output it.
 
-    For PowerPC mpc85xx based CPU, CONFIG_TEXT_BASE is the entry
+    For PowerPC mpc85xx based CPU, CONFIG_PPL_TEXT_BASE is the entry
     offset of the first entry. It can be 0xeff40000 or 0xfff40000 for
     nor flash boot, 0x201000 for sd boot etc.
 
-    'end-at-4gb' property is not applicable where CONFIG_TEXT_BASE +
+    'end-at-4gb' property is not applicable where CONFIG_PPL_TEXT_BASE +
     Image size != 4gb.
 
 Image Properties

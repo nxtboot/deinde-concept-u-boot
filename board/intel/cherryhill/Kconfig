@@ -9,7 +9,7 @@ config SYS_VENDOR
 config SYS_SOC
 	default "braswell"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0xffe00000
 
 config BOARD_SPECIFIC_OPTIONS # dummy

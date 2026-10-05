@@ -55,7 +55,7 @@ static int do_coninfo(struct cmd_tbl *cmd, int flag, int argc,
 			puts("\n");
 
 		for (l = 0; l < MAX_FILES; l++) {
-			if (CONFIG_IS_ENABLED(CONSOLE_MUX)) {
+			if (IS_ENABLED(CONFIG_CONSOLE_MUX)) {
 				if (iomux_match_device(console_devices[l],
 						       cd_count[l], sdev) >= 0)
 					printf("|   |-- %s\n", stdio_names[l]);

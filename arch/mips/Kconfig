@@ -320,7 +320,7 @@ config MIPS_MACH_EARLY_INIT
 	  from start.S. This function can be used e.g. to do some very early
 	  CPU / SoC intitialization or image copying. Its called very early
 	  and at this stage the PC might not match the linking address
-	  (CONFIG_TEXT_BASE) - no absolute jump done until this call.
+	  (CONFIG_PPL_TEXT_BASE) - no absolute jump done until this call.
 
 config MIPS_CACHE_SETUP
 	bool "Allow generic start code to initialize and setup caches"

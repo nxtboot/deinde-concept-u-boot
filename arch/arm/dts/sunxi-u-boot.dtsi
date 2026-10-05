@@ -53,9 +53,9 @@
 					os = "u-boot";
 					arch = ARCH;
 					compression = "none";
-					load = <CONFIG_TEXT_BASE>;
+					load = <CONFIG_PPL_TEXT_BASE>;
 #if CONFIG_SUNXI_BL31_BASE == 0
-					entry = <CONFIG_TEXT_BASE>;
+					entry = <CONFIG_PPL_TEXT_BASE>;
 #endif
 
 					u-boot-nodtb {

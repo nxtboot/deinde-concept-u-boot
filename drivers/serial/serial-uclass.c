@@ -34,7 +34,7 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 static const unsigned long baudrate_table[] = CFG_SYS_BAUDRATE_TABLE;
 
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
 static int serial_check_stdout(const void *blob, struct udevice **devp)
 {
 	int node = -1;
@@ -85,13 +85,13 @@ static void serial_find_console_or_panic(void)
 	int ret;
 #endif
 
-	if (CONFIG_IS_ENABLED(OF_PLATDATA)) {
+	if (IS_ENABLED(CONFIG_OF_PLATDATA)) {
 		uclass_first_device(UCLASS_SERIAL, &dev);
 		if (dev) {
 			gd->cur_serial_dev = dev;
 			return;
 		}
-	} else if (CONFIG_IS_ENABLED(OF_CONTROL) && blob) {
+	} else if (IS_ENABLED(CONFIG_OF_CONTROL) && blob) {
 		/* Live tree has support for stdout */
 		if (of_live_active()) {
 			struct device_node *np = of_get_stdout();
@@ -108,7 +108,7 @@ static void serial_find_console_or_panic(void)
 			}
 		}
 	}
-	if (!IS_ENABLED(CONFIG_XPL_BUILD) || !CONFIG_IS_ENABLED(OF_CONTROL) ||
+	if (!IS_ENABLED(CONFIG_XPL_BUILD) || !IS_ENABLED(CONFIG_OF_CONTROL) ||
 	    !blob) {
 		/*
 		 * Try to use CONFIG_CONS_INDEX if available (it is numbered
@@ -195,14 +195,14 @@ int fetch_baud_from_dtb(void)
 /* Called prior to relocation */
 int serial_init(void)
 {
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
 	/*
 	 * Skip serial device probe before relocation if debug UART is enabled
 	 * and early DM is skipped. Debug UART will handle console output during
 	 * early boot. Full serial initialization happens in serial_initialize()
 	 * after relocation.
 	 */
-	if ((CONFIG_IS_ENABLED(DEBUG_UART) && CONFIG_IS_ENABLED(SKIP_EARLY_DM)) &&
+	if ((IS_ENABLED(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
 	    !(gd->flags & GD_FLG_RELOC))
 		return 0;
 
@@ -297,7 +297,7 @@ static void _serial_puts(struct udevice *dev, const char *str)
 {
 	struct dm_serial_ops *ops = serial_get_ops(dev);
 
-	if (!CONFIG_IS_ENABLED(SERIAL_PUTS) || !ops->puts) {
+	if (!IS_ENABLED(CONFIG_SERIAL_PUTS) || !ops->puts) {
 		while (*str)
 			_serial_putc(dev, *str++);
 		return;
@@ -324,7 +324,7 @@ static void _serial_putsn(struct udevice *dev, const char *str, size_t len)
 {
 	struct dm_serial_ops *ops = serial_get_ops(dev);
 
-	if (!CONFIG_IS_ENABLED(SERIAL_PUTS) || !ops->puts) {
+	if (!IS_ENABLED(CONFIG_SERIAL_PUTS) || !ops->puts) {
 		while (len--)
 			_serial_putc(dev, *str++);
 		return;
@@ -372,7 +372,7 @@ static int __serial_tstc(struct udevice *dev)
 	return 1;
 }
 
-#if CONFIG_IS_ENABLED(SERIAL_RX_BUFFER)
+#if IS_ENABLED(CONFIG_SERIAL_RX_BUFFER)
 static int _serial_tstc(struct udevice *dev)
 {
 	struct serial_dev_priv *upriv = dev_get_uclass_priv(dev);
@@ -405,7 +405,7 @@ static int _serial_getc(struct udevice *dev)
 	return val;
 }
 
-#else /* CONFIG_IS_ENABLED(SERIAL_RX_BUFFER) */
+#else /* IS_ENABLED(CONFIG_SERIAL_RX_BUFFER) */
 
 static int _serial_getc(struct udevice *dev)
 {
@@ -416,7 +416,7 @@ static int _serial_tstc(struct udevice *dev)
 {
 	return __serial_tstc(dev);
 }
-#endif /* CONFIG_IS_ENABLED(SERIAL_RX_BUFFER) */
+#endif /* IS_ENABLED(CONFIG_SERIAL_RX_BUFFER) */
 
 void serial_putc(char ch)
 {
@@ -516,9 +516,9 @@ void serial_stdio_init(void)
 {
 }
 
-#if CONFIG_IS_ENABLED(DM_STDIO)
+#if IS_ENABLED(CONFIG_DM_STDIO)
 
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
 static void serial_stub_putc(struct stdio_dev *sdev, const char ch)
 {
 	_serial_putc(sdev->priv, ch);
@@ -694,7 +694,7 @@ int serial_query_size(int *rowsp, int *colsp)
 	int ret = 0;
 	int n[2];
 
-	if (!CONFIG_IS_ENABLED(SERIAL_TERM_PRESENT))
+	if (!IS_ENABLED(CONFIG_SERIAL_TERM_PRESENT))
 		return -ENOENT;
 
 #ifdef CONFIG_SANDBOX
@@ -770,11 +770,11 @@ int serial_get_size(int *rowsp, int *colsp)
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(SERIAL_PRESENT)
+#if IS_ENABLED(CONFIG_SERIAL_PRESENT)
 static int serial_post_probe(struct udevice *dev)
 {
 	struct dm_serial_ops *ops = serial_get_ops(dev);
-#if CONFIG_IS_ENABLED(DM_STDIO)
+#if IS_ENABLED(CONFIG_DM_STDIO)
 	struct serial_dev_priv *upriv = dev_get_uclass_priv(dev);
 	struct stdio_dev sdev;
 #endif
@@ -787,7 +787,7 @@ static int serial_post_probe(struct udevice *dev)
 			return ret;
 	}
 
-#if CONFIG_IS_ENABLED(DM_STDIO)
+#if IS_ENABLED(CONFIG_DM_STDIO)
 	if (!(gd->flags & GD_FLG_RELOC))
 		return 0;
 	memset(&sdev, '\0', sizeof(sdev));
@@ -808,7 +808,7 @@ static int serial_post_probe(struct udevice *dev)
 
 static int serial_pre_remove(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(SYS_STDIO_DEREGISTER)
+#if IS_ENABLED(CONFIG_SYS_STDIO_DEREGISTER)
 	struct serial_dev_priv *upriv = dev_get_uclass_priv(dev);
 
 	if (stdio_deregister_dev(upriv->sdev, true))

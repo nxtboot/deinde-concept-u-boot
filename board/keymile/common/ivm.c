@@ -353,7 +353,7 @@ int ivm_read_eeprom(unsigned char *buf, int len, int mac_address_offset)
 		return 1;
 	}
 
-#if CONFIG_IS_ENABLED(ARCH_LS1021A)
+#if IS_ENABLED(CONFIG_ARCH_LS1021A)
 	/* add deblocking here */
 	i2c_make_abort();
 #endif

@@ -109,7 +109,7 @@ static int tegra_timer_probe(struct udevice *dev)
 
 static int tegra_timer_bind(struct udevice *dev)
 {
-	if (CONFIG_IS_ENABLED(WDT_TEGRA))
+	if (IS_ENABLED(CONFIG_WDT_TEGRA))
 		return device_bind_driver_to_node(dev, "tegra_wdt", "tegra-wdt",
 						  dev_ofnode(dev), NULL);
 	return 0;

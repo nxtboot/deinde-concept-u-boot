@@ -14,7 +14,7 @@
 #include <asm/arch/sys_proto.h>
 #include <asm/io.h>
 
-#if CONFIG_IS_ENABLED(EFI_HAVE_CAPSULE_SUPPORT)
+#if IS_ENABLED(CONFIG_EFI_HAVE_CAPSULE_SUPPORT)
 #define IMX_BOOT_IMAGE_GUID \
 	EFI_GUID(0xead2005e, 0x7780, 0x400b, 0x93, 0x48, \
 		 0xa2, 0x82, 0xeb, 0x85, 0x8b, 0x6b)

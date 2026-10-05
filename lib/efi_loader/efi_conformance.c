@@ -26,7 +26,7 @@ efi_status_t efi_ecpt_register(void)
 	size_t ecpt_size;
 
 	static const efi_guid_t profiles[] = {
-	#if CONFIG_IS_ENABLED(EFI_EBBR_2_1_CONFORMANCE)
+	#if IS_ENABLED(CONFIG_EFI_EBBR_2_1_CONFORMANCE)
 		EFI_CONFORMANCE_PROFILE_EBBR_2_1_GUID,
 	#endif
 	};

@@ -159,7 +159,7 @@ static int store_block(struct wget_ctx *ctx, void *src, u16_t len)
 	if (wget_info->buffer_size && wget_info->buffer_size < ctx->size + len)
 		return -1;
 
-	if (CONFIG_IS_ENABLED(LMB) && wget_info->set_bootdev) {
+	if (IS_ENABLED(CONFIG_LMB) && wget_info->set_bootdev) {
 		if (store_addr + len < store_addr ||
 		    lmb_read_check(store_addr, len)) {
 			if (!wget_info->silent) {
@@ -289,13 +289,13 @@ static err_t httpc_headers_done_cb(httpc_state_t *connection, void *arg, struct 
 }
 
 
-#if CONFIG_IS_ENABLED(WGET_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT)
 #endif
 
 static int wget_handle_request(struct wget_ctx *ctx, bool is_https,
 			       struct udevice *udev, struct netif *netif)
 {
-#if CONFIG_IS_ENABLED(WGET_HTTPS)
+#if IS_ENABLED(CONFIG_WGET_HTTPS)
 	altcp_allocator_t tls_allocator;
 #endif
 	httpc_connection_t conn;
@@ -310,13 +310,13 @@ static int wget_handle_request(struct wget_ctx *ctx, bool is_https,
 	}
 
 	memset(&conn, 0, sizeof(conn));
-#if CONFIG_IS_ENABLED(WGET_HTTPS)
+#if IS_ENABLED(CONFIG_WGET_HTTPS)
 	if (is_https) {
 		char *ca;
 		size_t ca_sz;
 
-#if CONFIG_IS_ENABLED(WGET_CACERT) || CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
-#if CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT) || IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 		if (!cacert_initialized)
 			set_cacert_builtin();
 #endif
@@ -470,7 +470,7 @@ bool wget_validate_uri(char *uri)
 
 	if (!strncmp(uri, "http://", strlen("http://"))) {
 		prefix_len = strlen("http://");
-	} else if (CONFIG_IS_ENABLED(WGET_HTTPS)) {
+	} else if (IS_ENABLED(CONFIG_WGET_HTTPS)) {
 		if (!strncmp(uri, "https://", strlen("https://"))) {
 			prefix_len = strlen("https://");
 		} else {

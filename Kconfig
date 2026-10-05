@@ -300,7 +300,7 @@ config CUSTOM_SYS_INIT_SP_ADDR
 	default 0x4030ff00 if AM33XX
 	default 0x4033ff00 if AM43XX
 	default 0x4037ff00 if DRA7XX
-	default TEXT_BASE if TFABOOT
+	default PPL_TEXT_BASE if TFABOOT
 
 config SYS_MALLOC_F
 	bool "Enable malloc() pool before relocation"
@@ -847,7 +847,7 @@ config HAVE_TEXT_BASE
 	depends on !EFI_APP
 	default y
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	depends on HAVE_TEXT_BASE
 	default 0x0 if POSITION_INDEPENDENT
 	default 0x17800000 if ARCH_MX6
@@ -872,7 +872,7 @@ config HAVE_SYS_UBOOT_START
 	depends on HAVE_TEXT_BASE
 	help
 	  By default, the address in memory that U-Boot will be copied from
-	  (TEXT_BASE) and the entry point are the same. Select this to start the
+	  (PPL_TEXT_BASE) and the entry point are the same. Select this to start the
 	  execution of U-Boot from a different address.
 	  This may be required if a header or vector table needs to be copied
 	  but not executed.
@@ -880,10 +880,10 @@ config HAVE_SYS_UBOOT_START
 config SYS_UBOOT_START
 	hex
 	depends on HAVE_TEXT_BASE
-	default TEXT_BASE
+	default PPL_TEXT_BASE
 	prompt "U-Boot entry" if HAVE_SYS_UBOOT_START
 	help
-	  If TEXT_BASE differs from the start of execution, this sets the
+	  If PPL_TEXT_BASE differs from the start of execution, this sets the
 	  address in memory that U-Boot will start execution from initially.
 
 config HAVE_SYS_MONITOR_BASE
@@ -896,10 +896,10 @@ config HAVE_SYS_MONITOR_BASE
 config SYS_MONITOR_BASE
 	depends on HAVE_SYS_MONITOR_BASE
 	hex "Physical start address of boot monitor code"
-	default TEXT_BASE
+	default PPL_TEXT_BASE
 	help
 	  The physical start address of boot monitor code (which is the same as
-	  CONFIG_TEXT_BASE when linking) and the same as CFG_SYS_FLASH_BASE
+	  CONFIG_PPL_TEXT_BASE when linking) and the same as CFG_SYS_FLASH_BASE
 	  when booting from flash.
 
 config SPL_SYS_MONITOR_BASE

@@ -70,7 +70,7 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	 * the error. This applies both to Falcon mode (loading Linux) and to
 	 * loading U-Boot proper.
 	 */
-#if CONFIG_VAL(PAYLOAD_ARGS_ADDR)
+#if CONFIG_PAYLOAD_ARGS_ADDR
 	memcpy((void *)CONFIG_SPL_PAYLOAD_ARGS_ADDR, spl_image->fdt_addr,
 	       fdt_totalsize(spl_image->fdt_addr));
 	spl_image->fdt_addr = map_sysmem(CONFIG_SPL_PAYLOAD_ARGS_ADDR, 0);
@@ -81,7 +81,7 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	 * The next os image default is u-boot proper, once enable
 	 * OpenSBI OS boot mode, the OS image should be linux.
 	 */
-	if (CONFIG_IS_ENABLED(LOAD_FIT_OPENSBI_OS_BOOT))
+	if (IS_ENABLED(CONFIG_LOAD_FIT_OPENSBI_OS_BOOT))
 		os_type = IH_OS_LINUX;
 	else
 		os_type = IH_OS_U_BOOT;

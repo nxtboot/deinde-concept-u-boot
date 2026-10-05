@@ -11,7 +11,7 @@
 
 #include <linux/types.h>
 
-#if CONFIG_IS_ENABLED(LIB_FORMAT_SIZE)
+#if IS_ENABLED(CONFIG_LIB_FORMAT_SIZE)
 /**
  * format_size() - Format a size with a suffix
  *

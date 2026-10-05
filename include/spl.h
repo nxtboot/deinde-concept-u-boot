@@ -286,7 +286,7 @@ struct spl_image_info {
 	u8 os;
 	ulong load_addr;
 	ulong entry_point;
-#if CONFIG_IS_ENABLED(LOAD_FIT) || CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+#if IS_ENABLED(CONFIG_LOAD_FIT) || IS_ENABLED(CONFIG_LOAD_FIT_FULL)
 	void *fdt_addr;
 #endif
 	u32 boot_device;
@@ -300,7 +300,7 @@ struct spl_image_info {
 	ulong dcrc_length;
 	ulong dcrc;
 #endif
-#if CONFIG_IS_ENABLED(RELOC_LOADER)
+#if IS_ENABLED(CONFIG_RELOC_LOADER)
 	void *buf;
 	void *fdt_buf;
 	void *fdt_start;
@@ -315,7 +315,7 @@ typedef void __noreturn (*spl_jump_to_image_t)(struct spl_image_info *);
 
 static inline void *spl_image_fdt_addr(struct spl_image_info *info)
 {
-#if CONFIG_IS_ENABLED(LOAD_FIT) || CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+#if IS_ENABLED(CONFIG_LOAD_FIT) || IS_ENABLED(CONFIG_LOAD_FIT_FULL)
 	return info->fdt_addr;
 #else
 	return 0;
@@ -353,7 +353,7 @@ struct spl_load_info {
 #if IS_ENABLED(CONFIG_SPL_LOAD_BLOCK)
 	u16 bl_len;
 #endif
-#if CONFIG_IS_ENABLED(BOOTMETH_VBE)
+#if IS_ENABLED(CONFIG_BOOTMETH_VBE)
 	u8 phase;
 	u8 fdt_update;
 #endif
@@ -381,14 +381,14 @@ static inline void spl_set_bl_len(struct spl_load_info *info, int bl_len)
 static inline void xpl_set_phase(struct spl_load_info *info,
 				 enum image_phase_t phase)
 {
-#if CONFIG_IS_ENABLED(BOOTMETH_VBE)
+#if IS_ENABLED(CONFIG_BOOTMETH_VBE)
 	info->phase = phase;
 #endif
 }
 
 static inline enum image_phase_t xpl_get_phase(struct spl_load_info *info)
 {
-#if CONFIG_IS_ENABLED(BOOTMETH_VBE)
+#if IS_ENABLED(CONFIG_BOOTMETH_VBE)
 	return info->phase;
 #else
 	return IH_PHASE_NONE;
@@ -398,14 +398,14 @@ static inline enum image_phase_t xpl_get_phase(struct spl_load_info *info)
 static inline void xpl_set_fdt_update(struct spl_load_info *info,
 				      bool fdt_update)
 {
-#if CONFIG_IS_ENABLED(BOOTMETH_VBE)
+#if IS_ENABLED(CONFIG_BOOTMETH_VBE)
 	info->fdt_update = fdt_update;
 #endif
 }
 
 static inline enum image_phase_t xpl_get_fdt_update(struct spl_load_info *info)
 {
-#if CONFIG_IS_ENABLED(BOOTMETH_VBE)
+#if IS_ENABLED(CONFIG_BOOTMETH_VBE)
 	return info->fdt_update;
 #else
 	return true;
@@ -462,7 +462,7 @@ ulong spl_get_image_size(void);
  * spl_get_image_text_base() - get the text base of the next phase
  *
  * This returns the address that the next stage is linked to run at, i.e.
- * CONFIG_SPL_TEXT_BASE or CONFIG_TEXT_BASE
+ * CONFIG_SPL_TEXT_BASE or CONFIG_PPL_TEXT_BASE
  *
  * Return: text-base address
  */
@@ -673,7 +673,7 @@ unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc,
  *
  * This sets up the given spl_image which the standard values obtained from
  * config options: CONFIG_SYS_MONITOR_LEN, CONFIG_SYS_UBOOT_START,
- * CONFIG_TEXT_BASE.
+ * CONFIG_PPL_TEXT_BASE.
  *
  * @spl_image: Image description to set up
  */

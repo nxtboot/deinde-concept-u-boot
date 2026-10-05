@@ -49,7 +49,7 @@ __weak int spi_get_env_dev(void)
 
 static int setup_flash_device(struct spi_flash **env_flash)
 {
-#if CONFIG_IS_ENABLED(DM_SPI_FLASH)
+#if IS_ENABLED(CONFIG_DM_SPI_FLASH)
 	struct udevice *new;
 	int	ret;
 	int dev = spi_get_env_dev();

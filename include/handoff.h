@@ -10,7 +10,7 @@
 
 #include <linux/types.h>
 
-#if CONFIG_IS_ENABLED(HANDOFF)
+#if IS_ENABLED(CONFIG_HANDOFF)
 
 #include <asm/handoff.h>
 #endif
@@ -23,7 +23,7 @@
  * @ram_size: Value to use for gd->ram_size
  */
 struct spl_handoff {
-#if CONFIG_IS_ENABLED(HANDOFF)
+#if IS_ENABLED(CONFIG_HANDOFF)
 	struct arch_spl_handoff arch;
 #endif
 	u64 ram_size;

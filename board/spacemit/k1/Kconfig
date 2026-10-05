@@ -12,7 +12,7 @@ config SYS_CPU
 config SYS_CONFIG_NAME
 	default "k1"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x00200000
 
 config SPL_OPENSBI_LOAD_ADDR

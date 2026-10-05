@@ -13,7 +13,7 @@
  * to 1MB.
  *
  * Without SPL, the BIOS image is the whole of U-Boot, with the microcode
- * patches, at the address given by CONFIG_TEXT_BASE. It is built as an image
+ * patches, at the address given by CONFIG_PPL_TEXT_BASE. It is built as an image
  * of its own, u-boot-mz33.bin, which comes first so that U-Boot reads its
  * layout to find the microcode.
  *
@@ -45,7 +45,7 @@
 #ifdef CONFIG_SPL
 #define MZ33_BIOS_ADDR		CONFIG_SPL_TEXT_BASE
 #else
-#define MZ33_BIOS_ADDR		CONFIG_TEXT_BASE
+#define MZ33_BIOS_ADDR		CONFIG_PPL_TEXT_BASE
 #endif
 
 / {
@@ -128,11 +128,11 @@
 			filename = "u-boot-mz33.bin";
 			pad-byte = <0xff>;
 			sort-by-offset;
-			skip-at-start = <CONFIG_TEXT_BASE>;
+			skip-at-start = <CONFIG_PPL_TEXT_BASE>;
 			size = <CONFIG_ROM_SIZE>;
 
 			u-boot {
-				offset = <CONFIG_TEXT_BASE>;
+				offset = <CONFIG_PPL_TEXT_BASE>;
 			};
 #include "turin-ucode.dtsi"
 			x86-start16 {

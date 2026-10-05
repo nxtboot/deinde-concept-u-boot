@@ -19,7 +19,7 @@ struct cv1800b_sdhci_plat {
 	struct mmc mmc;
 };
 
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 static void cv1800b_set_tap_delay(struct sdhci_host *host, u16 tap)
 {
 	sdhci_writel(host, PHY_TX_SRC_INVERT | tap << 16, SDHCI_PHY_TX_RX_DLY);
@@ -65,7 +65,7 @@ static int cv1800b_execute_tuning(struct mmc *mmc, u8 opcode)
 #endif
 
 const struct sdhci_ops cv1800b_sdhci_sd_ops = {
-#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
+#if IS_ENABLED(CONFIG_MMC_SUPPORTS_TUNING)
 	.platform_execute_tuning = cv1800b_execute_tuning,
 #endif
 };

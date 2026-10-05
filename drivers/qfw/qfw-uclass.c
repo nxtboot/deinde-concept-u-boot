@@ -103,7 +103,7 @@ static int qfw_get_bootflow(struct udevice *dev, struct bootflow_iter *iter,
 	const struct udevice *media = dev_get_parent(dev);
 	int ret;
 
-	if (!CONFIG_IS_ENABLED(BOOTSTD))
+	if (!IS_ENABLED(CONFIG_BOOTSTD))
 		return -ENOSYS;
 
 	log_debug("media=%s\n", media->name);

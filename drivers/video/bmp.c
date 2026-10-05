@@ -40,15 +40,15 @@ struct bmp_image *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 	unsigned long len;
 	struct bmp_image *bmp;
 
-	if (!CONFIG_IS_ENABLED(VIDEO_BMP_GZIP))
+	if (!IS_ENABLED(CONFIG_VIDEO_BMP_GZIP))
 		return NULL;
 
 	/*
 	 * Decompress bmp image
 	 */
-	len = CONFIG_VAL(VIDEO_LOGO_MAX_SIZE);
+	len = CONFIG_VIDEO_LOGO_MAX_SIZE;
 	/* allocate extra 3 bytes for 32-bit-aligned-address + 2 alignment */
-	dst = malloc(CONFIG_VAL(VIDEO_LOGO_MAX_SIZE) + 3);
+	dst = malloc(CONFIG_VIDEO_LOGO_MAX_SIZE + 3);
 	if (!dst) {
 		puts("Error: malloc in gunzip failed!\n");
 		return NULL;
@@ -57,12 +57,12 @@ struct bmp_image *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 	/* align to 32-bit-aligned-address + 2 */
 	bmp = dst + 2;
 
-	if (gunzip(bmp, CONFIG_VAL(VIDEO_LOGO_MAX_SIZE), map_sysmem(addr, 0),
+	if (gunzip(bmp, CONFIG_VIDEO_LOGO_MAX_SIZE, map_sysmem(addr, 0),
 		   &len)) {
 		free(dst);
 		return NULL;
 	}
-	if (len == CONFIG_VAL(VIDEO_LOGO_MAX_SIZE))
+	if (len == CONFIG_VIDEO_LOGO_MAX_SIZE)
 		puts("Image could be truncated (increase CONFIG_VIDEO_LOGO_MAX_SIZE)!\n");
 
 	/*

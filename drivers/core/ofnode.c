@@ -24,7 +24,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if CONFIG_IS_ENABLED(OFNODE_MULTI_TREE)
+#if IS_ENABLED(CONFIG_OFNODE_MULTI_TREE)
 static void *oftree_list[CONFIG_OFNODE_MULTI_TREE_MAX];
 static int oftree_count;
 
@@ -173,7 +173,7 @@ void *ofnode_to_fdt(ofnode node)
 	if (of_live_active())
 		panic("%s called with live tree in use!\n", __func__);
 #endif
-	if (CONFIG_IS_ENABLED(OFNODE_MULTI_TREE) && ofnode_valid(node))
+	if (IS_ENABLED(CONFIG_OFNODE_MULTI_TREE) && ofnode_valid(node))
 		fdt = ofnode_lookup_fdt(node);
 	else
 		fdt = (void *)gd->fdt_blob;
@@ -197,7 +197,7 @@ int ofnode_to_offset(ofnode node)
 	if (of_live_active())
 		return -1;
 #endif
-	if (CONFIG_IS_ENABLED(OFNODE_MULTI_TREE) && node.of_offset >= 0)
+	if (IS_ENABLED(CONFIG_OFNODE_MULTI_TREE) && node.of_offset >= 0)
 		return OFTREE_OFFSET(node.of_offset);
 
 	return node.of_offset;
@@ -207,7 +207,7 @@ oftree oftree_from_fdt(void *fdt)
 {
 	oftree tree;
 
-	if (CONFIG_IS_ENABLED(OFNODE_MULTI_TREE))
+	if (IS_ENABLED(CONFIG_OFNODE_MULTI_TREE))
 		return oftree_ensure(fdt);
 
 #ifdef OF_CHECKS
@@ -232,7 +232,7 @@ ofnode noffset_to_ofnode(ofnode other_node, int of_offset)
 
 	if (of_live_active())
 		node.np = NULL;
-	else if (!CONFIG_IS_ENABLED(OFNODE_MULTI_TREE) || of_offset < 0 ||
+	else if (!IS_ENABLED(CONFIG_OFNODE_MULTI_TREE) || of_offset < 0 ||
 		 !ofnode_valid(other_node))
 		node.of_offset = of_offset;
 	else
@@ -291,7 +291,7 @@ static ofnode ofnode_from_tree_offset(oftree tree, int offset)
 {
 	ofnode node;
 
-	if (CONFIG_IS_ENABLED(OFNODE_MULTI_TREE) && offset >= 0) {
+	if (IS_ENABLED(CONFIG_OFNODE_MULTI_TREE) && offset >= 0) {
 		int tree_id = oftree_find(tree.fdt);
 
 		if (tree_id == -1)
@@ -715,7 +715,7 @@ int ofnode_count_elems_of_size(ofnode node, const char *propname, int elem_size)
 	}
 }
 
-#if !CONFIG_IS_ENABLED(DM_INLINE_OFNODE)
+#if !IS_ENABLED(CONFIG_DM_INLINE_OFNODE)
 bool ofnode_is_enabled(ofnode node)
 {
 	if (ofnode_is_np(node)) {
@@ -1485,7 +1485,7 @@ fdt_addr_t ofnode_get_addr_size(ofnode node, const char *property,
 		ns = of_n_size_cells(np);
 		*sizep = of_read_number(prop + na, ns);
 
-		if (CONFIG_IS_ENABLED(OF_TRANSLATE) && ns > 0)
+		if (IS_ENABLED(CONFIG_OF_TRANSLATE) && ns > 0)
 			return of_translate_address(np, prop);
 		else
 			return of_read_number(prop, na);
@@ -1688,7 +1688,7 @@ int ofnode_read_simple_size_cells(ofnode node)
 }
 
 #if !defined(CONFIG_XPL_BUILD) && !defined(CONFIG_TPL_BUILD) && \
-	CONFIG_IS_ENABLED(OF_PRERELOC_FAST)
+	IS_ENABLED(CONFIG_OF_PRERELOC_FAST)
 /**
  * ofnode_has_any_prop() - Check whether a node has any of some properties
  *
@@ -1716,7 +1716,7 @@ static bool ofnode_has_any_prop(ofnode node, const char * const names[],
 		return false;
 	}
 
-	if (CONFIG_IS_ENABLED(OF_REAL)) {
+	if (IS_ENABLED(CONFIG_OF_REAL)) {
 		const void *fdt = ofnode_to_fdt(node);
 		int prop;
 
@@ -1745,7 +1745,7 @@ bool ofnode_pre_reloc(ofnode node)
 	 * They are removed in final dtb (fdtgrep 2nd pass)
 	 */
 	return true;
-#elif CONFIG_IS_ENABLED(OF_PRERELOC_FAST)
+#elif IS_ENABLED(CONFIG_OF_PRERELOC_FAST)
 	static const char * const early[] = {
 		"bootph-all",
 		"bootph-some-ram",

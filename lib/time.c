@@ -66,7 +66,7 @@ ulong timer_get_boot_us(void)
 extern unsigned long timer_read_counter(void);
 #endif
 
-#if CONFIG_IS_ENABLED(TIMER)
+#if IS_ENABLED(CONFIG_TIMER)
 ulong notrace get_tbclk(void)
 {
 	if (!gd->timer) {
@@ -198,7 +198,7 @@ void udelay(unsigned long usec)
 	do {
 		schedule();
 		kv = usec > CFG_WD_PERIOD ? CFG_WD_PERIOD : usec;
-		if (CONFIG_IS_ENABLED(UTHREAD)) {
+		if (IS_ENABLED(CONFIG_UTHREAD)) {
 			ulong t0 = timer_get_us();
 			while (timer_get_us() - t0 < kv)
 				uthread_schedule();

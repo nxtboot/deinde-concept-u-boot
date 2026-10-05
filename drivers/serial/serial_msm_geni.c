@@ -556,7 +556,7 @@ static int msm_serial_probe(struct udevice *dev)
 		return ret;
 
 	/* Skip re-init after relocation if debug UART and early DM skip are not enabled */
-	if ((!CONFIG_IS_ENABLED(DEBUG_UART) && !CONFIG_IS_ENABLED(SKIP_EARLY_DM)) &&
+	if ((!IS_ENABLED(CONFIG_DEBUG_UART) && !IS_ENABLED(CONFIG_SKIP_EARLY_DM)) &&
 	    (gd->flags & GD_FLG_RELOC))
 		return 0;
 
@@ -599,7 +599,7 @@ U_BOOT_DRIVER(serial_msm_geni) = {
 #ifdef CONFIG_DEBUG_UART_MSM_GENI
 
 static struct msm_serial_data init_serial_data = {
-	.base = CONFIG_VAL(DEBUG_UART_BASE)
+	.base = CONFIG_DEBUG_UART_BASE
 };
 
 /* Serial dumb device, to reuse driver code */
@@ -617,7 +617,7 @@ static struct udevice init_dev = {
 
 static inline void _debug_uart_init(void)
 {
-	phys_addr_t base = CONFIG_VAL(DEBUG_UART_BASE);
+	phys_addr_t base = CONFIG_DEBUG_UART_BASE;
 
 	geni_serial_init(&init_dev);
 	writel(DEF_RX_WM, base + SE_GENI_RX_WATERMARK_REG);
@@ -627,7 +627,7 @@ static inline void _debug_uart_init(void)
 
 static inline void _debug_uart_putc(int ch)
 {
-	phys_addr_t base = CONFIG_VAL(DEBUG_UART_BASE);
+	phys_addr_t base = CONFIG_DEBUG_UART_BASE;
 
 	writel(DEF_TX_WM, base + SE_GENI_TX_WATERMARK_REG);
 	qcom_geni_serial_setup_tx(base, 1);

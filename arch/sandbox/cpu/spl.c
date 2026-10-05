@@ -141,7 +141,7 @@ void spl_board_init(void)
 {
 	struct sandbox_state *state = state_get_current();
 
-	if (!CONFIG_IS_ENABLED(UNIT_TEST))
+	if (!IS_ENABLED(CONFIG_UNIT_TEST))
 		return;
 
 	if (state->run_unittests) {
@@ -316,7 +316,7 @@ static int upl_load_from_image(struct spl_image_info *spl_image,
 	int ret, fd;
 	ulong addr;
 
-	if (!CONFIG_IS_ENABLED(UPL_OUT))
+	if (!IS_ENABLED(CONFIG_UPL_OUT))
 		return -ENOTSUPP;
 
 	spl_upl_init();

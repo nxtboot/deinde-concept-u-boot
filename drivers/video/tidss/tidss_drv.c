@@ -974,7 +974,7 @@ static int tidss_drv_probe(struct udevice *dev)
 
 static int tidss_drv_remove(struct udevice *dev)
 {
-	if (CONFIG_IS_ENABLED(VIDEO_REMOVE)) {
+	if (IS_ENABLED(CONFIG_VIDEO_REMOVE)) {
 		struct tidss_drv_priv *priv = dev_get_priv(dev);
 
 		VP_REG_FLD_MOD(priv, 0, DSS_VP_CONTROL, 0, 0, 0);
@@ -1004,7 +1004,7 @@ U_BOOT_DRIVER(tidss_drv) = {
 	.probe = tidss_drv_probe,
 	.remove = tidss_drv_remove,
 	.priv_auto = sizeof(struct tidss_drv_priv),
-#if CONFIG_IS_ENABLED(VIDEO_REMOVE)
+#if IS_ENABLED(CONFIG_VIDEO_REMOVE)
 	.flags = DM_FLAG_OS_PREPARE,
 #else
 	.flags = DM_FLAG_OS_PREPARE | DM_FLAG_LEAVE_PD_ON,

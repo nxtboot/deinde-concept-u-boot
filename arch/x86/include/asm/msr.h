@@ -59,7 +59,7 @@ static inline unsigned long long native_read_tscp(unsigned int *aux)
  * edx:eax, while for x86_64 it doesn't mean rdx:rax or edx:eax. Instead,
  * it means rax *or* rdx.
  */
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 /* Using 64-bit values saves one instruction clearing the high half of low */
 #define DECLARE_ARGS(val, low, high)	unsigned long low, high
 #define EAX_EDX_VAL(val, low, high)	((low) | (high) << 32)

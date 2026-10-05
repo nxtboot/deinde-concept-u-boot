@@ -14,7 +14,7 @@ config SYS_CONFIG_NAME
 
 # The vendor FIP tool prepends a 32-byte loader header to u-boot.bin and loads
 # the result at 0x80200000, so the U-Boot code runs 0x20 bytes above that.
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x80200020
 
 config ENV_SIZE

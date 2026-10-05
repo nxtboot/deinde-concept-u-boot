@@ -79,7 +79,7 @@ int disk_rw(u32 sect, u32 nr_sect, void *buf, bool read)
 	 * A sector is a block unless the filesystem says otherwise, which is
 	 * not known until the boot sector has been read
 	 */
-	if (!CONFIG_IS_ENABLED(FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH) ||
+	if (!IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH) ||
 	    !fat_sect_size || fat_sect_size == blksz) {
 		if (read)
 			ret = blk_dread(cur_dev, start + sect, nr_sect, buf);
@@ -279,7 +279,7 @@ static void get_name(struct dir_entry *dirent, char *s_name)
 		*s_name = DELETED_FLAG;
 }
 
-#if !CONFIG_IS_ENABLED(FAT_WRITE)
+#if !IS_ENABLED(CONFIG_FAT_WRITE)
 /* Stub for read only operation */
 int flush_dirty_fat_buffer(struct fsdata *mydata)
 {
@@ -781,7 +781,7 @@ static int get_fs_info(struct fsdata *mydata)
 	fat_sect_size = mydata->sect_size;
 	mydata->clust_size = bs.cluster_size;
 	if (mydata->sect_size != cur_part_info.blksz) {
-		if (!CONFIG_IS_ENABLED(FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)) {
+		if (!IS_ENABLED(CONFIG_FS_FAT_HANDLE_SECTOR_SIZE_MISMATCH)) {
 			log_err("FAT sector size mismatch (fs=%u, dev=%lu)\n",
 				mydata->sect_size, cur_part_info.blksz);
 			return -1;
@@ -1408,7 +1408,7 @@ int fat_readdir(struct fs_dir_stream *dirs, struct fs_dirent **dentp)
 
 	memset(dent, 0, sizeof(*dent));
 	strcpy(dent->name, dir->itr.name);
-	if (CONFIG_IS_ENABLED(EFI_LOADER)) {
+	if (IS_ENABLED(CONFIG_EFI_LOADER)) {
 		dent->attr = dir->itr.dent->attr;
 		fat2rtc(le16_to_cpu(dir->itr.dent->cdate),
 			le16_to_cpu(dir->itr.dent->ctime), &dent->create_time);

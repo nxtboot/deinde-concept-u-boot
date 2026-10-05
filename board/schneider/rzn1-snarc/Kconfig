@@ -1,6 +1,6 @@
 if TARGET_SCHNEIDER_RZN1
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x20040000
 
 config SYS_MONITOR_LEN

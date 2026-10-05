@@ -11,10 +11,10 @@
 #include <eth_phy.h>
 #include <linux/delay.h>
 #include <miiphy.h>
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 # include <i2c.h>
 #endif
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 # include <spi.h>
 #endif
 #include <net/dsa.h>
@@ -118,7 +118,7 @@ struct ksz_dsa_priv {
 	u32 features;			/* chip specific features */
 };
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 static inline int ksz_i2c_read(struct udevice *dev, u32 reg, u8 *val, int len)
 {
 	return dm_i2c_read(dev, reg, val, len);
@@ -135,7 +135,7 @@ static struct ksz_phy_ops phy_i2c_ops = {
 };
 #endif
 
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 /**
  * ksz_spi_xfer() - only used for 8/16/32 bits bus access
  *
@@ -688,7 +688,7 @@ static int ksz_probe(struct udevice *dev)
 
 	parent_id = device_get_uclass_id(dev_get_parent(dev));
 	switch (parent_id) {
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	case UCLASS_I2C: {
 		ksz_ops_register(dev, &phy_i2c_ops);
 
@@ -700,7 +700,7 @@ static int ksz_probe(struct udevice *dev)
 		break;
 	}
 #endif
-#if CONFIG_IS_ENABLED(DM_SPI)
+#if IS_ENABLED(CONFIG_DM_SPI)
 	case UCLASS_SPI: {
 		ksz_ops_register(dev, &phy_spi_ops);
 		break;

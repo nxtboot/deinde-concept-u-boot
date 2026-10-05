@@ -15,7 +15,7 @@ config TARGET_ST_STM32MP25X
 
 endchoice
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x84000000
 
 config PRE_CON_BUF_ADDR

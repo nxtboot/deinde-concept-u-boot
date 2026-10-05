@@ -230,7 +230,7 @@ static int do_part_set(int argc, char *const argv[])
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 static int do_part_type(int argc, char *const argv[])
 {
 	int part;
@@ -255,7 +255,7 @@ static int do_part_type(int argc, char *const argv[])
 }
 #endif
 
-#if CONFIG_IS_ENABLED(CMD_PART_DUPCHECK)
+#if IS_ENABLED(CONFIG_CMD_PART_DUPCHECK)
 struct part_seen {
 	char uuid[UUID_STR_LEN + 1];
 	char name[PART_NAME_LEN + 1];
@@ -496,11 +496,11 @@ static int do_part(struct cmd_tbl *cmdtp, int flag, int argc,
 		return do_part_types(argc - 2, argv + 2);
 	else if (!strcmp(argv[1], "set"))
 		return do_part_set(argc - 2, argv + 2);
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	else if (!strcmp(argv[1], "type"))
 		return do_part_type(argc - 2, argv + 2);
 #endif
-#if CONFIG_IS_ENABLED(CMD_PART_DUPCHECK)
+#if IS_ENABLED(CONFIG_CMD_PART_DUPCHECK)
 	else if (!strcmp(argv[1], "dupcheck"))
 		return do_part_dupcheck(argc - 2, argv + 2);
 #endif
@@ -531,7 +531,7 @@ U_BOOT_CMD(
 	"part name <interface> <dev> <part> <varname>\n"
 	"    - set environment variable to the partition name using the partition number\n"
 	"      part must be specified as partition number\n"
-#if CONFIG_IS_ENABLED(PARTITION_TYPE_GUID)
+#if IS_ENABLED(CONFIG_PARTITION_TYPE_GUID)
 	"part type <interface> <dev>:<part>\n"
 	"    - print partition type\n"
 	"part type <interface> <dev>:<part> <varname>\n"
@@ -541,7 +541,7 @@ U_BOOT_CMD(
 	"    - set partition type for a device\n"
 	"part types\n"
 	"    - list supported partition table types"
-#if CONFIG_IS_ENABLED(CMD_PART_DUPCHECK)
+#if IS_ENABLED(CONFIG_CMD_PART_DUPCHECK)
 	"\n"
 	"part dupcheck\n"
 	"    - scan all block devices for duplicate partition UUIDs and labels"

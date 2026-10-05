@@ -498,12 +498,12 @@ restart:
 			tftp_start_server();
 			break;
 #endif
-#if CONFIG_IS_ENABLED(UDP_FUNCTION_FASTBOOT)
+#if IS_ENABLED(CONFIG_UDP_FUNCTION_FASTBOOT)
 		case FASTBOOT_UDP:
 			fastboot_udp_start_server();
 			break;
 #endif
-#if CONFIG_IS_ENABLED(TCP_FUNCTION_FASTBOOT)
+#if IS_ENABLED(CONFIG_TCP_FUNCTION_FASTBOOT)
 		case FASTBOOT_TCP:
 			fastboot_tcp_start_server();
 			break;

@@ -39,7 +39,7 @@ void set_back_to_bootrom_dnl_flag(void)
 
 __weak int rockchip_dnl_key_pressed(void)
 {
-#if CONFIG_IS_ENABLED(ADC)
+#if IS_ENABLED(CONFIG_ADC)
 	unsigned int val;
 	struct udevice *dev;
 	struct uclass *uc;

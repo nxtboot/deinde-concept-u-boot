@@ -12,7 +12,7 @@
 
 #define LOG_CATEGORY LOGC_EFI
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 #include <arm_ffa.h>
 #endif
 #include <cpu_func.h>
@@ -26,7 +26,7 @@
 #include <mm_communication.h>
 #include <tee.h>
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 /* MM return codes */
 #define MM_SUCCESS (0)
 #define MM_NOT_SUPPORTED (-1)
@@ -167,7 +167,7 @@ static efi_status_t optee_mm_communicate(void *comm_buf, ulong dsize)
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 /**
  * ffa_notify_mm_sp() - Announce there is data in the shared buffer
  *
@@ -406,7 +406,7 @@ static efi_status_t mm_communicate(u8 *comm_buf, efi_uintn_t dsize)
 	efi_status_t ret;
 	struct efi_mm_communicate_header *mm_hdr;
 	struct smm_variable_communicate_header *var_hdr;
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 	enum mm_comms_select mm_comms;
 #endif
 
@@ -414,7 +414,7 @@ static efi_status_t mm_communicate(u8 *comm_buf, efi_uintn_t dsize)
 	mm_hdr = (struct efi_mm_communicate_header *)comm_buf;
 	var_hdr = (struct smm_variable_communicate_header *)mm_hdr->data;
 
-#if CONFIG_IS_ENABLED(ARM_FFA_TRANSPORT)
+#if IS_ENABLED(CONFIG_ARM_FFA_TRANSPORT)
 	mm_comms = get_mm_comms();
 	if (mm_comms == MM_COMMS_FFA)
 		ret = ffa_mm_communicate(comm_buf, dsize);

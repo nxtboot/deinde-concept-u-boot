@@ -48,7 +48,7 @@ struct trace_output_hdr {
 	uint32_t version;		/* Version (TRACE_VERSION) */
 	uint32_t rec_count;		/* Number of records */
 	uint32_t spare;			/* 0 */
-	uint64_t text_base;		/* Value of CONFIG_TEXT_BASE */
+	uint64_t text_base;		/* Value of CONFIG_PPL_TEXT_BASE */
 	uint64_t spare2;		/* 0 */
 };
 

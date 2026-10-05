@@ -112,7 +112,7 @@
 
 /* NAND stuff */
 #define CFG_SYS_NAND_BASE           0x40000000
-#define CFG_SYS_NAND_U_BOOT_START	CONFIG_TEXT_BASE
+#define CFG_SYS_NAND_U_BOOT_START	CONFIG_PPL_TEXT_BASE
 
 /* Falcon Mode */
 

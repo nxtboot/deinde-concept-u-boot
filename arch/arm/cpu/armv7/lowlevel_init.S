@@ -26,8 +26,8 @@ WEAK(lowlevel_init)
 	/*
 	 * Setup a temporary stack. Global data is not available yet.
 	 */
-#if CONFIG_IS_ENABLED(HAVE_INIT_STACK)
-	ldr	sp, =CONFIG_VAL(STACK)
+#if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
+	ldr	sp, =CONFIG_STACK
 #else
 	ldr	sp, =SYS_INIT_SP_ADDR
 #endif

@@ -25,7 +25,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	struct blk_desc *dev_desc;
 	void *buf;
 
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 	const void *fit_hdr = NULL;
 #endif
 
@@ -89,7 +89,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 		cnt = image_get_image_size(hdr);
 		break;
 #endif
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 	case IMAGE_FORMAT_FIT:
 		fit_hdr = buf;
 		puts("Fit image detected...\n");
@@ -117,7 +117,7 @@ int common_diskboot(struct cmd_tbl *cmdtp, const char *intf, int argc,
 	}
 	bootstage_mark(BOOTSTAGE_ID_IDE_READ);
 
-#if CONFIG_IS_ENABLED(FIT)
+#if IS_ENABLED(CONFIG_FIT)
 	/* This cannot be done earlier,
 	 * we need complete FIT image in RAM first */
 	if (genimg_get_format(buf) == IMAGE_FORMAT_FIT) {

@@ -19,7 +19,7 @@
 
 #include "pinctrl-mtk-common.h"
 
-#if CONFIG_IS_ENABLED(PINCONF)
+#if IS_ENABLED(CONFIG_PINCONF)
 /**
  * struct mtk_drive_desc - the structure that holds the information
  *			    of the driving current
@@ -223,7 +223,7 @@ static int mtk_hw_get_value(struct udevice *dev, int pin, int field,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(PINCONF)
+#if IS_ENABLED(CONFIG_PINCONF)
 static int mtk_get_pin_io_type(struct udevice *dev, int pin,
 			       struct mtk_io_type_desc *io_type)
 {
@@ -378,7 +378,7 @@ static int mtk_pinmux_group_set(struct udevice *dev,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(PINCONF)
+#if IS_ENABLED(CONFIG_PINCONF)
 static const struct pinconf_param mtk_conf_params[] = {
 	{ "bias-disable", PIN_CONFIG_BIAS_DISABLE, 0 },
 	{ "bias-pull-up", PIN_CONFIG_BIAS_PULL_UP, 1 },
@@ -777,7 +777,7 @@ const struct pinctrl_ops mtk_pinctrl_ops = {
 	.get_function_name = mtk_get_function_name,
 	.pinmux_set = mtk_pinmux_set,
 	.pinmux_group_set = mtk_pinmux_group_set,
-#if CONFIG_IS_ENABLED(PINCONF)
+#if IS_ENABLED(CONFIG_PINCONF)
 	.pinconf_num_params = ARRAY_SIZE(mtk_conf_params),
 	.pinconf_params = mtk_conf_params,
 	.pinconf_set = mtk_pinconf_set,
@@ -787,7 +787,7 @@ const struct pinctrl_ops mtk_pinctrl_ops = {
 	.pinmux_property_set = mtk_pinctrl_pinmux_property_set,
 };
 
-#if CONFIG_IS_ENABLED(DM_GPIO) || \
+#if IS_ENABLED(CONFIG_DM_GPIO) || \
     (defined(CONFIG_XPL_BUILD) && defined(CONFIG_SPL_GPIO))
 static int mtk_gpio_get(struct udevice *dev, unsigned int off)
 {
@@ -910,7 +910,7 @@ bind:
 
 int mtk_pinctrl_common_bind(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(DM_GPIO) || \
+#if IS_ENABLED(CONFIG_DM_GPIO) || \
     (defined(CONFIG_XPL_BUILD) && defined(CONFIG_SPL_GPIO))
 	return mtk_gpiochip_register(dev);
 #else

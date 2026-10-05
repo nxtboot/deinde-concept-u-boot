@@ -104,7 +104,7 @@ static int font_test_info(struct unit_test_state *uts)
 {
 	int count;
 
-	if (!CONFIG_IS_ENABLED(VIDEO_GLYPH_STATS))
+	if (!IS_ENABLED(CONFIG_VIDEO_GLYPH_STATS))
 		return -EAGAIN;
 
 	count = gd_glyph_count();

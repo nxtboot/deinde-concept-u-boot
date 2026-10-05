@@ -412,7 +412,7 @@ void board_init_f(ulong dummy)
 
 	get_clocks();
 
-	if (CONFIG_IS_ENABLED(DEEP_SLEEP))
+	if (IS_ENABLED(CONFIG_DEEP_SLEEP))
 		if (is_warm_boot())
 			fsl_dp_disable_console();
 
@@ -432,9 +432,9 @@ void board_init_f(ulong dummy)
 	 * it from SD since it has already been reserved in memeory
 	 * in last boot.
 	 */
-	if (CONFIG_IS_ENABLED(DEEP_SLEEP)) {
+	if (IS_ENABLED(CONFIG_DEEP_SLEEP)) {
 		if (is_warm_boot()) {
-			second_uboot = (void (*)(void))CONFIG_TEXT_BASE;
+			second_uboot = (void (*)(void))CONFIG_PPL_TEXT_BASE;
 			second_uboot();
 		}
 	}
@@ -453,7 +453,7 @@ void ls1twr_program_regulator(void)
 #define MC34VR500_ADDR			0x8
 #define MC34VR500_DEVICEID		0x4
 #define MC34VR500_DEVICEID_MASK		0x0f
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 	struct udevice *dev;
 	int ret;
 

@@ -3,12 +3,12 @@
 
 obj-y += acpi.o
 
-ifdef CONFIG_$(PHASE_)GENERATE_ACPI_TABLE
+ifdef CONFIG_GENERATE_ACPI_TABLE
 
-obj-$(CONFIG_$(PHASE_)ACPIGEN) += acpigen.o
-obj-$(CONFIG_$(PHASE_)ACPIGEN) += acpi_device.o
-obj-$(CONFIG_$(PHASE_)ACPIGEN) += acpi_dp.o
-obj-$(CONFIG_$(PHASE_)ACPIGEN) += acpi_table.o
+obj-$(CONFIG_ACPIGEN) += acpigen.o
+obj-$(CONFIG_ACPIGEN) += acpi_device.o
+obj-$(CONFIG_ACPIGEN) += acpi_dp.o
+obj-$(CONFIG_ACPIGEN) += acpi_table.o
 obj-y += acpi_extra.o
 obj-y += acpi_writer.o
 

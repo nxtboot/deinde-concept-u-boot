@@ -115,7 +115,7 @@ static int cmd_test_malloc_leak(struct unit_test_state *uts)
 }
 CMD_TEST(cmd_test_malloc_leak, UTF_CONSOLE);
 
-#if CONFIG_IS_ENABLED(MCHECK_LOG)
+#if IS_ENABLED(CONFIG_MCHECK_LOG)
 /* Test 'malloc log' command */
 static int cmd_test_malloc_log(struct unit_test_state *uts)
 {

@@ -396,7 +396,7 @@ static int cros_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	priv->part_start = info.start;
 
 	/* Now read everything we can learn about kernel */
-#if CONFIG_IS_ENABLED(PARTITION_UUIDS)
+#if IS_ENABLED(CONFIG_PARTITION_UUIDS)
 	uuid = info.uuid;
 #endif
 	ret = cros_read_info(bflow, uuid, preamble);
@@ -420,7 +420,7 @@ static int cros_read_file(struct udevice *dev, struct bootflow *bflow,
 	return -ENOSYS;
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 static int cros_read_all(struct udevice *dev, struct bootflow *bflow)
 {
 	int ret;
@@ -481,7 +481,7 @@ static struct bootmeth_ops cros_bootmeth_ops = {
 	.read_file	= cros_read_file,
 	.free_bootflow	= cros_free_bootflow,
 	.boot		= cros_boot,
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 	.read_all	= cros_read_all,
 #endif /* BOOTSTD_FULL */
 };

@@ -25,7 +25,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = CONFIG_TEXT_BASE;
+	. = CONFIG_PPL_TEXT_BASE;
 	reloc_dst = .;
 
 	PROVIDE (_ftext = .);

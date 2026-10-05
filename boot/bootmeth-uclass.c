@@ -60,7 +60,7 @@ int bootmeth_set_bootflow(struct udevice *dev, struct bootflow *bflow,
 	return ops->set_bootflow(dev, bflow, buf, size);
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 int bootmeth_read_all(struct udevice *dev, struct bootflow *bflow)
 {
 	const struct bootmeth_ops *ops = bootmeth_get_ops(dev);

@@ -26,7 +26,7 @@
 #define PLATFORM_FFS
 #define PLATFORM_FLS
 
-#if !IS_ENABLED(CONFIG_HAS_THUMB2) && CONFIG_IS_ENABLED(SYS_THUMB_BUILD)
+#if !IS_ENABLED(CONFIG_HAS_THUMB2) && IS_ENABLED(CONFIG_SYS_THUMB_BUILD)
 
 unsigned long __fls(unsigned long word);
 unsigned long __ffs(unsigned long word);

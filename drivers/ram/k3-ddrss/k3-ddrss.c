@@ -740,7 +740,7 @@ static void k3_ddrss_ddr_bank_base_size_calc(struct k3_ddrss_desc *ddrss)
 
 	for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
 		if (ptr + na + ns <= end) {
-			if (CONFIG_IS_ENABLED(OF_TRANSLATE))
+			if (IS_ENABLED(CONFIG_OF_TRANSLATE))
 				ddrss->ddr_bank_base[bank] = fdt_translate_address(fdt, node, ptr);
 			else
 				ddrss->ddr_bank_base[bank] = fdtdec_get_number(ptr, na);
@@ -927,7 +927,7 @@ static int k3_ddrss_probe(struct udevice *dev)
 			ddrss->ecc_ranges[0].range = range->range;
 		}
 
-		if (!CONFIG_IS_ENABLED(K3_MULTI_DDR)) {
+		if (!IS_ENABLED(CONFIG_K3_MULTI_DDR)) {
 			struct k3_ddrss_ecc_region *r = range;
 
 			for (int i = 0; (i < K3_DDRSS_MAX_ECC_REG) && (r->range != 0); i++, r++) {

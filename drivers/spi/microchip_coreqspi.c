@@ -473,7 +473,7 @@ static int mchp_coreqspi_probe(struct udevice *dev)
 	/* Init the mpfs qspi hw */
 	mchp_coreqspi_init_hw(qspi);
 
-	if (CONFIG_IS_ENABLED(DM_GPIO)) {
+	if (IS_ENABLED(CONFIG_DM_GPIO)) {
 		int i;
 
 		ret = gpio_request_list_by_name(dev, "cs-gpios", qspi->cs_gpios,
@@ -507,7 +507,7 @@ static void mchp_coreqspi_cs_activate(struct udevice *dev)
 	struct dm_spi_slave_plat *slave_plat = dev_get_parent_plat(dev);
 	u32 cs = slave_plat->cs[0];
 
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&qspi->cs_gpios[cs]))
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&qspi->cs_gpios[cs]))
 		dm_gpio_set_value(&qspi->cs_gpios[cs], 1);
 }
 
@@ -518,7 +518,7 @@ static void mchp_coreqspi_cs_deactivate(struct udevice *dev)
 	struct dm_spi_slave_plat *slave_plat = dev_get_parent_plat(dev);
 	u32 cs = slave_plat->cs[0];
 
-	if (CONFIG_IS_ENABLED(DM_GPIO) && dm_gpio_is_valid(&qspi->cs_gpios[cs]))
+	if (IS_ENABLED(CONFIG_DM_GPIO) && dm_gpio_is_valid(&qspi->cs_gpios[cs]))
 		dm_gpio_set_value(&qspi->cs_gpios[cs], 0);
 }
 

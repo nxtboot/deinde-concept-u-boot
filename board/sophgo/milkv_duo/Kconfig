@@ -12,7 +12,7 @@ config SYS_CPU
 config SYS_CONFIG_NAME
 	default "milkv_duo"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x80200000
 
 config ENV_SIZE

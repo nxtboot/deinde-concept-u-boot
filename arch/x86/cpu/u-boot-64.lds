@@ -11,8 +11,8 @@ ENTRY(_start)
 
 SECTIONS
 {
-#ifdef CONFIG_TEXT_BASE
-	. = CONFIG_TEXT_BASE;	/* Location of bootcode in flash */
+#ifdef CONFIG_PPL_TEXT_BASE
+	. = CONFIG_PPL_TEXT_BASE;	/* Location of bootcode in flash */
 #endif
 	__text_start = .;
 

@@ -83,7 +83,7 @@ __dummy:
 	sync
 
 	/*
-	 * Return to start.S now running from TEXT_BASE, which points
+	 * Return to start.S now running from PPL_TEXT_BASE, which points
 	 * to DRAM address space, which effectively is L2 cache now.
 	 * This speeds up the init process extremely, especially the
 	 * DDR init code.

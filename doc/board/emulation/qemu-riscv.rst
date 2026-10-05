@@ -47,7 +47,7 @@ apply these additional settings to qemu-riscv64_smode_defconfig:
 
 ::
 
-    CONFIG_TEXT_BASE=0x20000000
+    CONFIG_PPL_TEXT_BASE=0x20000000
     CONFIG_XIP=y
     # CONFIG_AVAILABLE_HARTS is not set
     CONFIG_SYS_MONITOR_BASE=0x80200000
@@ -188,7 +188,7 @@ This can for instance be used to test capsule updates.
 Build qemu-riscv64_smode_defconfig with::
 
     CONFIG_XIP=y
-    CONFIG_TEXT_BASE=0x20000000
+    CONFIG_PPL_TEXT_BASE=0x20000000
     CONFIG_CMD_MTD=y
     CONFIG_FLASH_CFI_MTD=y
 

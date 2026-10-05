@@ -49,15 +49,15 @@ uboot_sym_start:
 	add	r6, r0, r0
 
 	lwi	r7, r20, ALIGNMENT_ADDR
-	addi	r7, r7, -CONFIG_TEXT_BASE
+	addi	r7, r7, -CONFIG_PPL_TEXT_BASE
 	add	r7, r7, r5
 	lwi	r8, r20, ALIGNMENT_ADDR + 0x4
-	addi	r8, r8, -CONFIG_TEXT_BASE
+	addi	r8, r8, -CONFIG_PPL_TEXT_BASE
 	add	r8, r8, r5
 	lwi	r9, r20, ALIGNMENT_ADDR + 0x8
-	addi	r9, r9, -CONFIG_TEXT_BASE
+	addi	r9, r9, -CONFIG_PPL_TEXT_BASE
 	add	r9, r9, r5
-	addi	r10, r0, CONFIG_TEXT_BASE
+	addi	r10, r0, CONFIG_PPL_TEXT_BASE
 
 	brlid	r15, mb_fix_rela
 	nop
@@ -194,7 +194,7 @@ __setup_exceptions:
 	rsubi	r8, r10, 0x6
 	sh	r6, r4, r8
 
-#if CONFIG_IS_ENABLED(XILINX_MICROBLAZE0_USR_EXCEP)
+#if IS_ENABLED(CONFIG_XILINX_MICROBLAZE0_USR_EXCEP)
 	/* user_vector_exception */
 	swi	r2, r4, 0x8	/* user vector exception - imm opcode */
 	swi	r3, r4, 0xC	/* user vector exception - brai opcode */

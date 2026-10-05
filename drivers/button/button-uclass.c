@@ -61,7 +61,7 @@ int button_get_code(struct udevice *dev)
 		return -ENOSYS;
 
 	code = ops->get_code(dev);
-	if (CONFIG_IS_ENABLED(BUTTON_REMAP_PHONE_KEYS))
+	if (IS_ENABLED(CONFIG_BUTTON_REMAP_PHONE_KEYS))
 		return button_remap_phone_keys(code);
 	else
 		return code;

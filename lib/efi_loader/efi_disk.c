@@ -125,7 +125,7 @@ static efi_status_t efi_disk_rw_blocks(struct efi_block_io *this,
 	if (buffer_size & (blksz - 1))
 		return EFI_BAD_BUFFER_SIZE;
 
-	if (CONFIG_IS_ENABLED(PARTITIONS) &&
+	if (IS_ENABLED(CONFIG_PARTITIONS) &&
 	    device_get_uclass_id(diskobj->header.dev) == UCLASS_PARTITION) {
 		if (direction == EFI_DISK_READ)
 			n = disk_blk_read(diskobj->header.dev, lba, blocks,
@@ -484,7 +484,7 @@ static efi_status_t efi_disk_add_dev(
 		info->revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
 
 		switch (desc->part_type) {
-#if CONFIG_IS_ENABLED(EFI_PARTITION)
+#if IS_ENABLED(CONFIG_EFI_PARTITION)
 		case PART_TYPE_EFI:
 			info->type = PARTITION_TYPE_GPT;
 			ret = part_get_gpt_pte(desc, part, &info->info.gpt);
@@ -495,7 +495,7 @@ static efi_status_t efi_disk_add_dev(
 			}
 			break;
 #endif
-#if CONFIG_IS_ENABLED(DOS_PARTITION)
+#if IS_ENABLED(CONFIG_DOS_PARTITION)
 		case PART_TYPE_DOS:
 			info->type = PARTITION_TYPE_MBR;
 			ret = part_get_mbr(desc, part, &info->info.mbr);

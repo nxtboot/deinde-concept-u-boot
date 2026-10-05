@@ -172,7 +172,7 @@ For example::
 The result is flashed as above. The BIOS image is also written to the file
 ``u-boot-mz33.bin`` on its own. Note that the destination plus the size
 must end on a 64KB boundary and the reset vector must be the last 16 bytes
-of the image, which is what the defconfig's CONFIG_TEXT_BASE,
+of the image, which is what the defconfig's CONFIG_PPL_TEXT_BASE,
 CONFIG_RESET_SEG_START, CONFIG_SYS_X86_START16 and CONFIG_RESET_VEC_LOC
 arrange.
 

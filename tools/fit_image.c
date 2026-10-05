@@ -137,7 +137,7 @@ static int fit_add_file_data(struct imgtool *itl, size_t size_inc,
 		ret = fit_set_timestamp(ptr, 0, time);
 	}
 
-	if (CONFIG_IS_ENABLED(FIT_SIGNATURE) && !ret)
+	if (IS_ENABLED(CONFIG_FIT_SIGNATURE) && !ret)
 		ret = fit_pre_load_data(itl->keydir, dest_blob, ptr);
 
 	if (!ret) {

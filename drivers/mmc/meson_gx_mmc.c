@@ -16,7 +16,7 @@
 #include <linux/log2.h>
 #include "meson_gx_mmc.h"
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 bool meson_gx_mmc_is_compatible(struct udevice *dev,
 				enum meson_gx_mmc_compatible family)
 {
@@ -69,7 +69,7 @@ static void meson_mmc_config_clock(struct mmc *mmc)
 	 * Other SoCs use CLK_CO_PHASE_180 by default.
 	 * It needs to find what is a proper value about each SoCs.
 	 */
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 	if (meson_gx_mmc_is_compatible(mmc->dev, MMC_COMPATIBLE_SM1))
 		meson_mmc_clk |= CLK_CO_PHASE_270;
 	else
@@ -88,7 +88,7 @@ static void meson_mmc_config_clock(struct mmc *mmc)
 	meson_write(mmc, meson_mmc_clk, MESON_SD_EMMC_CLOCK);
 }
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 static int meson_dm_mmc_set_ios(struct udevice *dev)
 {
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
@@ -204,7 +204,7 @@ static void meson_mmc_read_response(struct mmc *mmc, struct mmc_cmd *cmd)
 	}
 }
 
-#if CONFIG_IS_ENABLED(DM_MMC)
+#if IS_ENABLED(CONFIG_DM_MMC)
 static int meson_dm_mmc_send_cmd(struct udevice *dev, struct mmc_cmd *cmd,
 				 struct mmc_data *data)
 {
@@ -252,7 +252,7 @@ static int meson_legacy_mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 	return ret;
 }
 
-#if !CONFIG_IS_ENABLED(DM_MMC) /* Non-DM MMC driver for use in U-Boot SPL */
+#if !IS_ENABLED(CONFIG_DM_MMC) /* Non-DM MMC driver for use in U-Boot SPL */
 struct meson_mmc_plat mmc_plat[2];
 
 static int meson_legacy_mmc_init(struct mmc *mmc)
@@ -291,7 +291,7 @@ struct mmc *meson_mmc_init(int mmc_no)
 	else if (mmc_no == 1) /* MMC2: eMMC */
 		pdata->regbase = (void *)0xd0074000;
 
-#if CONFIG_IS_ENABLED(MMC_PWRSEQ)
+#if IS_ENABLED(CONFIG_MMC_PWRSEQ)
 	/* Enable power if needed */
 	ret = mmc_pwrseq_get_power(dev, cfg);
 	if (!ret) {
@@ -363,7 +363,7 @@ static int meson_mmc_probe(struct udevice *dev)
 
 	mmc_set_clock(mmc, cfg->f_min, MMC_CLK_ENABLE);
 
-#if CONFIG_IS_ENABLED(MMC_PWRSEQ)
+#if IS_ENABLED(CONFIG_MMC_PWRSEQ)
 	/* Enable power if needed */
 	ret = mmc_pwrseq_get_power(dev, cfg);
 	if (!ret) {
@@ -412,4 +412,4 @@ U_BOOT_DRIVER(meson_mmc) = {
 	.of_to_plat = meson_mmc_of_to_plat,
 	.plat_auto	= sizeof(struct meson_mmc_plat),
 };
-#endif /* CONFIG_IS_ENABLED(DM_MMC) */
+#endif /* IS_ENABLED(CONFIG_DM_MMC) */

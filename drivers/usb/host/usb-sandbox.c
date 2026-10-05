@@ -123,7 +123,7 @@ static int sandbox_submit_int(struct udevice *bus, struct usb_device *udev,
 	return ret;
 }
 
-#if !CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if !IS_ENABLED(CONFIG_DM_USB_GADGET)
 int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 {
 	struct sandbox_udc *dev = this_controller;

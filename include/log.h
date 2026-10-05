@@ -170,8 +170,8 @@ int _log_buffer(enum log_category_t cat, enum log_level_t level,
  * This header may be including when CONFIG_LOG is disabled, in which case
  * CONFIG_LOG_MAX_LEVEL is not defined. Add a check for this.
  */
-#if CONFIG_IS_ENABLED(LOG)
-#define _LOG_MAX_LEVEL CONFIG_VAL(LOG_MAX_LEVEL)
+#if IS_ENABLED(CONFIG_LOG)
+#define _LOG_MAX_LEVEL CONFIG_LOG_MAX_LEVEL
 #else
 #define _LOG_MAX_LEVEL LOGL_INFO
 #endif
@@ -219,7 +219,7 @@ int _log_buffer(enum log_category_t cat, enum log_level_t level,
 #define _log_func	NULL
 #endif
 
-#if CONFIG_IS_ENABLED(LOG)
+#if IS_ENABLED(CONFIG_LOG)
 
 /* Emit a log record if the level is less that the maximum */
 #define log(_cat, _level, _fmt, _args...) ({ \
@@ -270,7 +270,7 @@ int _log_buffer(enum log_category_t cat, enum log_level_t level,
 #define _XPL_BUILD	0
 #endif
 
-#if CONFIG_IS_ENABLED(LOG)
+#if IS_ENABLED(CONFIG_LOG)
 
 #define debug_cond(cond, fmt, args...)					\
 ({									\
@@ -344,7 +344,7 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 	_val; \
 	})
 
-#if CONFIG_IS_ENABLED(LOG) && defined(CONFIG_LOG_ERROR_RETURN)
+#if IS_ENABLED(CONFIG_LOG) && defined(CONFIG_LOG_ERROR_RETURN)
 /*
  * Log an error return value, possibly with a message. Usage:
  *
@@ -686,7 +686,7 @@ int log_device_set_enable(struct log_driver *drv, bool enable);
  */
 int log_file_set_fname(const char *fname);
 
-#if CONFIG_IS_ENABLED(LOG)
+#if IS_ENABLED(CONFIG_LOG)
 /**
  * log_init() - Set up the log system ready for use
  *

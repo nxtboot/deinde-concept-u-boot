@@ -20,7 +20,7 @@ endif
 
 if TARGET_QEMU_ARM_32BIT || TARGET_QEMU_ARM_64BIT
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x00000000
 
 endif
@@ -37,7 +37,7 @@ if TARGET_QEMU_ARM_32BIT_SPL || TARGET_QEMU_ARM_64BIT_SPL
 config SPL_TEXT_BASE
 	default 0x00000000
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x00010000
 
 config SPL_MAX_SIZE

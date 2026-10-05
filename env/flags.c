@@ -22,7 +22,7 @@
 #include <env_internal.h>
 #endif
 
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 #define ENV_FLAGS_NET_VARTYPE_REPS "im"
 #else
 #define ENV_FLAGS_NET_VARTYPE_REPS ""
@@ -57,7 +57,7 @@ static const char * const env_flags_vartype_names[] = {
 	"decimal",
 	"hexadecimal",
 	"boolean",
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 	"IP address",
 	"MAC address",
 #endif
@@ -242,7 +242,7 @@ static int _env_flags_validate_type(const char *value,
 	enum env_flags_vartype type)
 {
 	const char *end;
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 	const char *cur;
 	int i;
 #endif
@@ -271,7 +271,7 @@ static int _env_flags_validate_type(const char *value,
 		if (value[1] != '\0')
 			return -1;
 		break;
-#if CONFIG_IS_ENABLED(NET)
+#if IS_ENABLED(CONFIG_NET)
 	case env_flags_vartype_ipaddr:
 		cur = value;
 		for (i = 0; i < 4; i++) {

@@ -539,8 +539,8 @@ phys_size_t get_effective_memsize(void)
 
 			/* Find the memory region runs the U-Boot */
 			if (start >= phys_sdram_1_start && start <= end1 &&
-			    (start <= CONFIG_TEXT_BASE &&
-			    end >= CONFIG_TEXT_BASE)) {
+			    (start <= CONFIG_PPL_TEXT_BASE &&
+			    end >= CONFIG_PPL_TEXT_BASE)) {
 				if ((end + 1) <=
 				    ((sc_faddr_t)phys_sdram_1_start +
 				    phys_sdram_1_size))
@@ -771,7 +771,7 @@ void enable_caches(void)
 	dcache_enable();
 }
 
-#if !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)
+#if !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)
 u64 get_page_table_size(void)
 {
 	u64 one_pt = MAX_PTE_ENTRIES * sizeof(u64);

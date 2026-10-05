@@ -183,7 +183,7 @@ int fs_unmount(struct udevice *dev)
 	return ops->unmount(dev);
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD)
+#if IS_ENABLED(CONFIG_BOOTSTD)
 static int fs_get_bootflow(struct udevice *dev, struct bootflow_iter *iter,
 			   struct bootflow *bflow)
 {

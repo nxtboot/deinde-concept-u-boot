@@ -31,7 +31,7 @@ void setup_ifc(void)
 	_mas0 = MAS0_TLBSEL(1) | MAS0_ESEL(15);
 	_mas1 = MAS1_VALID | MAS1_TID(0) | MAS1_TS | MAS1_IPROT |
 			MAS1_TSIZE(BOOKE_PAGESZ_4M);
-	_mas2 = FSL_BOOKE_MAS2(CONFIG_TEXT_BASE, MAS2_I | MAS2_G);
+	_mas2 = FSL_BOOKE_MAS2(CONFIG_PPL_TEXT_BASE, MAS2_I | MAS2_G);
 	_mas3 = FSL_BOOKE_MAS3(flash_phys, 0, MAS3_SW|MAS3_SR|MAS3_SX);
 	_mas7 = FSL_BOOKE_MAS7(flash_phys);
 
@@ -59,7 +59,7 @@ void setup_ifc(void)
 			MAS0_ESEL(CONFIG_SYS_PPC_E500_DEBUG_TLB);
 	_mas1 = MAS1_VALID | MAS1_TID(0) | MAS1_IPROT |
 			MAS1_TSIZE(BOOKE_PAGESZ_4M);
-	_mas2 = FSL_BOOKE_MAS2(CONFIG_TEXT_BASE, MAS2_I | MAS2_G);
+	_mas2 = FSL_BOOKE_MAS2(CONFIG_PPL_TEXT_BASE, MAS2_I | MAS2_G);
 	_mas3 = FSL_BOOKE_MAS3(flash_phys, 0, MAS3_SW|MAS3_SR|MAS3_SX);
 	_mas7 = FSL_BOOKE_MAS7(flash_phys);
 
@@ -179,7 +179,7 @@ void cpu_init_early_f(void *fdt)
 	invalidate_tlb(1);
 
 #if defined(CONFIG_SYS_PPC_E500_DEBUG_TLB) && \
-	!(CONFIG_IS_ENABLED(INIT_MINIMAL) && defined(CONFIG_XPL_BUILD)) && \
+	!(IS_ENABLED(CONFIG_INIT_MINIMAL) && defined(CONFIG_XPL_BUILD)) && \
 	!defined(CONFIG_NAND_SPL)
 	disable_tlb(CONFIG_SYS_PPC_E500_DEBUG_TLB);
 #endif

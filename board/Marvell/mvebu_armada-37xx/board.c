@@ -84,7 +84,7 @@ static bool is_edpu_plus(void)
 	ofnode node;
 	int val;
 
-	if (!CONFIG_IS_ENABLED(DM_MDIO))
+	if (!IS_ENABLED(CONFIG_DM_MDIO))
 		return false;
 
 	node = ofnode_by_compatible(ofnode_null(), "marvell,orion-mdio");
@@ -330,7 +330,7 @@ static int espressobin_last_stage_init(void)
 	struct udevice *bus;
 	ofnode node;
 
-	if (!CONFIG_IS_ENABLED(DM_MDIO))
+	if (!IS_ENABLED(CONFIG_DM_MDIO))
 		return 0;
 
 	node = ofnode_by_compatible(ofnode_null(), "marvell,orion-mdio");

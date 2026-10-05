@@ -145,7 +145,7 @@ struct cli_line_state {
 	char *buf;
 	const char *prompt;
 	void *priv;
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 	struct cli_editor_state ed;
 #endif
 };
@@ -159,7 +159,7 @@ struct cli_line_state {
  */
 static inline struct cli_editor_state *cli_editor(struct cli_line_state *cls)
 {
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 	return &cls->ed;
 #else
 	return NULL;
@@ -268,7 +268,7 @@ int cli_readline_into_buffer(const char *const prompt, char *buffer,
  */
 int cli_simple_parse_line(char *line, char *argv[]);
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if IS_ENABLED(CONFIG_OF_CONTROL)
 /**
  * cli_process_fdt() - process the boot command from the FDT
  *
@@ -426,7 +426,7 @@ void cli_cread_add_initial(struct cli_line_state *cls);
 /** cread_print_hist_list() - Print the command-line history list */
 void cread_print_hist_list(void);
 
-#if CONFIG_IS_ENABLED(CMDLINE_EDITOR)
+#if IS_ENABLED(CONFIG_CMDLINE_EDITOR)
 /**
  * cread_save_undo() - Save current state for undo
  *

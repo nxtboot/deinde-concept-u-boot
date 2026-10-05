@@ -3,6 +3,6 @@
 # Copyright (c) 2025 Linaro Limited
 #
 
-obj-$(CONFIG_$(PHASE_)INTERCONNECT) += interconnect-uclass.o
-obj-$(CONFIG_$(PHASE_)INTERCONNECT_SANDBOX) += sandbox-interconnect.o sandbox-interconnect-test.o
+obj-$(CONFIG_INTERCONNECT) += interconnect-uclass.o
+obj-$(CONFIG_INTERCONNECT_SANDBOX) += sandbox-interconnect.o sandbox-interconnect-test.o
 obj-y += qcom/

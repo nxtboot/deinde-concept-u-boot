@@ -35,7 +35,7 @@ _start:
 
 .globl	_TEXT_BASE
 _TEXT_BASE:
-	.quad	CONFIG_TEXT_BASE
+	.quad	CONFIG_PPL_TEXT_BASE
 
 /*
  * These are defined in the linker script.
@@ -57,7 +57,7 @@ reset:
 	b	save_boot_params
 .globl	save_boot_params_ret
 save_boot_params_ret:
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	# Keep passage information in case it is provided
 	cmp	x2, #0
 	bne	no_passage

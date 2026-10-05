@@ -310,7 +310,7 @@ static int fit_verity_test_bad_blocksize(struct unit_test_state *uts)
 }
 FIT_VERITY_TEST(fit_verity_test_bad_blocksize, 0);
 
-#if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+#if IS_ENABLED(CONFIG_FIT_SIGNATURE)
 /**
  * build_signed_verity_fit() - build a FIT with a signable verity config
  * @buf:	output buffer (at least FIT_BUF_SIZE bytes)

@@ -95,7 +95,7 @@ static int clk_ipu_enable(struct clk *clk)
 	reg |= MXC_CCM_CCGR_CG_MASK << clk->enable_shift;
 	__raw_writel(reg, clk->enable_reg);
 
-#if CONFIG_IS_ENABLED(MX51) || CONFIG_IS_ENABLED(MX53)
+#if IS_ENABLED(CONFIG_MX51) || IS_ENABLED(CONFIG_MX53)
 	reg = __raw_readl(&mxc_ccm->ccdr);
 	reg &= ~MXC_CCM_CCDR_IPU_HS_MASK;
 	__raw_writel(reg, &mxc_ccm->ccdr);
@@ -115,7 +115,7 @@ static void clk_ipu_disable(struct clk *clk)
 	reg &= ~(MXC_CCM_CCGR_CG_MASK << clk->enable_shift);
 	__raw_writel(reg, clk->enable_reg);
 
-#if CONFIG_IS_ENABLED(MX51) || CONFIG_IS_ENABLED(MX53)
+#if IS_ENABLED(CONFIG_MX51) || IS_ENABLED(CONFIG_MX53)
 	reg = __raw_readl(&mxc_ccm->ccdr);
 	reg |= MXC_CCM_CCDR_IPU_HS_MASK;
 	__raw_writel(reg, &mxc_ccm->ccdr);
@@ -262,7 +262,7 @@ int ipu_clk_init_legacy(struct ipu_ctx *ctx)
 
 	ipu_clk->name = "ipu_clk";
 	ipu_clk->ctx = ctx;
-#if CONFIG_IS_ENABLED(MX51) || CONFIG_IS_ENABLED(MX53)
+#if IS_ENABLED(CONFIG_MX51) || IS_ENABLED(CONFIG_MX53)
 	ipu_clk->enable_reg =
 		(u32 *)(CCM_BASE_ADDR + offsetof(struct mxc_ccm_reg, CCGR5));
 	ipu_clk->enable_shift = MXC_CCM_CCGR5_IPU_OFFSET;
@@ -276,9 +276,9 @@ int ipu_clk_init_legacy(struct ipu_ctx *ctx)
 	ipu_clk->disable = clk_ipu_disable;
 	ipu_clk->usecount = 0;
 
-#if CONFIG_IS_ENABLED(MX51)
+#if IS_ENABLED(CONFIG_MX51)
 	ipu_clk->rate = IPUV3_CLK_MX51;
-#elif CONFIG_IS_ENABLED(MX53)
+#elif IS_ENABLED(CONFIG_MX53)
 	ipu_clk->rate = IPUV3_CLK_MX53;
 #else
 	ipu_clk->rate = is_mx6sdl() ? IPUV3_CLK_MX6DL : IPUV3_CLK_MX6Q;

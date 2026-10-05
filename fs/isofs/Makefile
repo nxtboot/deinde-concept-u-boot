@@ -4,7 +4,7 @@
 obj-y := interface.o support.o
 
 # VFS layer integration
-obj-$(CONFIG_$(PHASE_)VFS) += fs.o
+obj-$(CONFIG_VFS) += fs.o
 
 # Core Linux isofs files (kept close to upstream)
 obj-y += namei.o inode.o dir.o util.o rock.o export.o

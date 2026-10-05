@@ -104,7 +104,7 @@ static efi_status_t setup_memory(struct efi_priv *priv, bool verbose)
 
 	set_gd(ptr);
 
-	gd->malloc_base = (ulong)efi_malloc(priv, CONFIG_VAL(SYS_MALLOC_F_LEN),
+	gd->malloc_base = (ulong)efi_malloc(priv, CONFIG_SYS_MALLOC_F_LEN,
 					    &ret);
 	if (!gd->malloc_base)
 		return ret;

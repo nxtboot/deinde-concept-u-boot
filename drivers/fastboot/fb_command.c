@@ -62,11 +62,11 @@ static const struct {
 	},
 	[FASTBOOT_COMMAND_FLASH] =  {
 		.command = "flash",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_FLASH, (flash), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_FLASH, (flash), (NULL))
 	},
 	[FASTBOOT_COMMAND_ERASE] =  {
 		.command = "erase",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_FLASH, (erase), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_FLASH, (erase), (NULL))
 	},
 	[FASTBOOT_COMMAND_BOOT] =  {
 		.command = "boot",
@@ -98,35 +98,35 @@ static const struct {
 	},
 	[FASTBOOT_COMMAND_OEM_FORMAT] = {
 		.command = "oem format",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_FORMAT, (oem_format), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_FORMAT, (oem_format), (NULL))
 	},
 	[FASTBOOT_COMMAND_OEM_PARTCONF] = {
 		.command = "oem partconf",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_PARTCONF, (oem_partconf), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_PARTCONF, (oem_partconf), (NULL))
 	},
 	[FASTBOOT_COMMAND_OEM_BOOTBUS] = {
 		.command = "oem bootbus",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_BOOTBUS, (oem_bootbus), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_BOOTBUS, (oem_bootbus), (NULL))
 	},
 	[FASTBOOT_COMMAND_OEM_RUN] = {
 		.command = "oem run",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_OEM_RUN, (run_ucmd), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_OEM_RUN, (run_ucmd), (NULL))
 	},
 	[FASTBOOT_COMMAND_OEM_CONSOLE] = {
 		.command = "oem console",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_CONSOLE, (oem_console), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_CONSOLE, (oem_console), (NULL))
 	},
 	[FASTBOOT_COMMAND_OEM_BOARD] = {
 		.command = "oem board",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_OEM_BOARD, (oem_board), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_OEM_BOARD, (oem_board), (NULL))
 	},
 	[FASTBOOT_COMMAND_UCMD] = {
 		.command = "UCmd",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT, (run_ucmd), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_UUU_SUPPORT, (run_ucmd), (NULL))
 	},
 	[FASTBOOT_COMMAND_ACMD] = {
 		.command = "ACmd",
-		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT, (run_acmd), (NULL))
+		.dispatch = IS_ENABLED(CONFIG_FASTBOOT_UUU_SUPPORT, (run_acmd), (NULL))
 	},
 };
 
@@ -172,7 +172,7 @@ void fastboot_multiresponse(int cmd, char *response)
 		fastboot_getvar_all(response);
 		break;
 	case FASTBOOT_COMMAND_OEM_CONSOLE:
-		if (CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_CONSOLE)) {
+		if (IS_ENABLED(CONFIG_FASTBOOT_CMD_OEM_CONSOLE)) {
 			char buf[FASTBOOT_RESPONSE_LEN] = { 0 };
 
 			if (console_record_isempty()) {
@@ -482,8 +482,8 @@ static void reboot_recovery(char *cmd_parameter, char *response)
 static void __maybe_unused oem_format(char *cmd_parameter, char *response)
 {
 	char cmdbuf[32];
-	const int mmc_dev = config_opt_enabled(CONFIG_FASTBOOT_FLASH_MMC,
-					       CONFIG_FASTBOOT_FLASH_MMC_DEV, -1);
+	const int mmc_dev = IS_ENABLED(CONFIG_FASTBOOT_FLASH_MMC,
+				       (CONFIG_FASTBOOT_FLASH_MMC_DEV), (-1));
 
 	if (!env_get("partitions")) {
 		fastboot_fail("partitions not set", response);
@@ -505,8 +505,8 @@ static void __maybe_unused oem_format(char *cmd_parameter, char *response)
 static void __maybe_unused oem_partconf(char *cmd_parameter, char *response)
 {
 	char cmdbuf[32];
-	const int mmc_dev = config_opt_enabled(CONFIG_FASTBOOT_FLASH_MMC,
-					       CONFIG_FASTBOOT_FLASH_MMC_DEV, -1);
+	const int mmc_dev = IS_ENABLED(CONFIG_FASTBOOT_FLASH_MMC,
+				       (CONFIG_FASTBOOT_FLASH_MMC_DEV), (-1));
 
 	if (!cmd_parameter) {
 		fastboot_fail("Expected command parameter", response);
@@ -531,8 +531,8 @@ static void __maybe_unused oem_partconf(char *cmd_parameter, char *response)
 static void __maybe_unused oem_bootbus(char *cmd_parameter, char *response)
 {
 	char cmdbuf[32];
-	const int mmc_dev = config_opt_enabled(CONFIG_FASTBOOT_FLASH_MMC,
-					       CONFIG_FASTBOOT_FLASH_MMC_DEV, -1);
+	const int mmc_dev = IS_ENABLED(CONFIG_FASTBOOT_FLASH_MMC,
+				       (CONFIG_FASTBOOT_FLASH_MMC_DEV), (-1));
 
 	if (!cmd_parameter) {
 		fastboot_fail("Expected command parameter", response);

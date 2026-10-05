@@ -115,7 +115,7 @@ class Entry_coreboot_rom(Entry_section):
         ELF of the first stage in the payload, i.e. SPL when there is one and
         otherwise U-Boot itself: the load address is the lowest load address
         in the ELF and the entry address is its entry point. This avoids
-        having to hard-code CONFIG_SPL_TEXT_BASE or CONFIG_TEXT_BASE in the
+        having to hard-code CONFIG_SPL_TEXT_BASE or CONFIG_PPL_TEXT_BASE in the
         devicetree.
 
         Returns:

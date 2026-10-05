@@ -204,12 +204,12 @@ ulong genimg_get_kernel_addr_fit(const char *const img_addr,
 		kernel_addr = image_load_addr;
 		debug("*  kernel: default image load address = 0x%08lx\n",
 		      image_load_addr);
-	} else if (CONFIG_IS_ENABLED(FIT) &&
+	} else if (IS_ENABLED(CONFIG_FIT) &&
 		   fit_parse_conf(img_addr, image_load_addr, &kernel_addr,
 				  fit_uname_config)) {
 		debug("*  kernel: config '%s' from image at 0x%08lx\n",
 		      *fit_uname_config, kernel_addr);
-	} else if (CONFIG_IS_ENABLED(FIT) &&
+	} else if (IS_ENABLED(CONFIG_FIT) &&
 		   fit_parse_subimage(img_addr, image_load_addr, &kernel_addr,
 				      fit_uname_kernel)) {
 		debug("*  kernel: subimage '%s' from image at 0x%08lx\n",
@@ -238,21 +238,21 @@ ulong genimg_get_kernel_addr(char * const img_addr)
 
 enum image_fmt_t genimg_get_format(const void *img_addr)
 {
-	if (CONFIG_IS_ENABLED(LEGACY_IMAGE_FORMAT)) {
+	if (IS_ENABLED(CONFIG_LEGACY_IMAGE_FORMAT)) {
 		const struct legacy_img_hdr *hdr;
 
 		hdr = (const struct legacy_img_hdr *)img_addr;
 		if (image_check_magic(hdr))
 			return IMAGE_FORMAT_LEGACY;
 	}
-	if (CONFIG_IS_ENABLED(FIT) || CONFIG_IS_ENABLED(OF_LIBFDT)) {
+	if (IS_ENABLED(CONFIG_FIT) || IS_ENABLED(CONFIG_OF_LIBFDT)) {
 		if (!fdt_check_header(img_addr))
 			return IMAGE_FORMAT_FIT;
 	}
 	if (IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE) &&
 	    is_android_boot_image_header(img_addr))
 		return IMAGE_FORMAT_ANDROID;
-	if (CONFIG_IS_ENABLED(LIB_BOOTI) &&
+	if (IS_ENABLED(CONFIG_LIB_BOOTI) &&
 	    booti_is_valid(img_addr))
 		return IMAGE_FORMAT_BOOTI;
 
@@ -263,7 +263,7 @@ enum image_fmt_t genimg_get_format_comp(const void *img_addr)
 {
 	enum image_fmt_t fmt = genimg_get_format(img_addr);
 
-	if (CONFIG_IS_ENABLED(LIB_BOOTI) && fmt == IMAGE_FORMAT_INVALID &&
+	if (IS_ENABLED(CONFIG_LIB_BOOTI) && fmt == IMAGE_FORMAT_INVALID &&
 	    image_decomp_type(img_addr, 2) != IH_COMP_NONE)
 		fmt = IMAGE_FORMAT_BOOTI;
 
@@ -283,7 +283,7 @@ enum image_fmt_t genimg_get_format_comp(const void *img_addr)
  */
 int genimg_has_config(struct bootm_headers *images)
 {
-	if (CONFIG_IS_ENABLED(FIT) && images->fit_uname_cfg)
+	if (IS_ENABLED(CONFIG_FIT) && images->fit_uname_cfg)
 		return 1;
 
 	return 0;
@@ -313,7 +313,7 @@ static int select_ramdisk(struct bootm_headers *images, const char *select, u8 a
 
 	log_debug("select '%s' arch %s\n", select,
 		  genimg_get_arch_short_name(arch));
-	if (CONFIG_IS_ENABLED(FIT)) {
+	if (IS_ENABLED(CONFIG_FIT)) {
 		fit_uname_config = images->fit_uname_cfg;
 		fit_uname_ramdisk = NULL;
 
@@ -350,7 +350,7 @@ static int select_ramdisk(struct bootm_headers *images, const char *select, u8 a
 		rd_addr = hextoul(select, NULL);
 		debug("*  ramdisk: cmdline image address = 0x%08lx\n", rd_addr);
 	}
-	if (CONFIG_IS_ENABLED(FIT) && !select) {
+	if (IS_ENABLED(CONFIG_FIT) && !select) {
 		/* use FIT configuration provided in first bootm
 		 * command argument. If the property is not defined,
 		 * quit silently (with -ENOPKG)
@@ -372,7 +372,7 @@ static int select_ramdisk(struct bootm_headers *images, const char *select, u8 a
 	buf = map_sysmem(rd_addr, 0);
 	switch (genimg_get_format_comp(buf)) {
 	case IMAGE_FORMAT_LEGACY:
-		if (CONFIG_IS_ENABLED(LEGACY_IMAGE_FORMAT)) {
+		if (IS_ENABLED(CONFIG_LEGACY_IMAGE_FORMAT)) {
 			const struct legacy_img_hdr *rd_hdr;
 
 			printf("## Loading init Ramdisk from Legacy Image at %08lx ...\n",
@@ -391,7 +391,7 @@ static int select_ramdisk(struct bootm_headers *images, const char *select, u8 a
 		}
 		break;
 	case IMAGE_FORMAT_FIT:
-		if (CONFIG_IS_ENABLED(FIT)) {
+		if (IS_ENABLED(CONFIG_FIT)) {
 			log_debug("ramdisk fit load\n");
 			rd_noffset = fit_image_load(images, rd_addr,
 						    &fit_uname_ramdisk,
@@ -629,7 +629,7 @@ error:
 int boot_get_setup(struct bootm_headers *images, u8 arch,
 		   ulong *setup_start, ulong *setup_len)
 {
-	if (!CONFIG_IS_ENABLED(FIT))
+	if (!IS_ENABLED(CONFIG_FIT))
 		return -ENOENT;
 
 	return boot_get_setup_fit(images, arch, setup_start, setup_len);
@@ -698,7 +698,7 @@ int boot_get_fpga(struct bootm_headers *images)
 		if (!compatible) {
 			printf("'fpga' image without 'compatible' property\n");
 		} else {
-			if (CONFIG_IS_ENABLED(FPGA_LOAD_SECURE))
+			if (IS_ENABLED(CONFIG_FPGA_LOAD_SECURE))
 				flags = fpga_compatible2flag(devnum, compatible);
 		}
 
@@ -920,9 +920,9 @@ int image_setup_linux(struct bootm_headers *images)
 	int ret;
 
 	/* This function cannot be called without lmb support */
-	if (!CONFIG_IS_ENABLED(LMB))
+	if (!IS_ENABLED(CONFIG_LMB))
 		return -EFAULT;
-	if (CONFIG_IS_ENABLED(OF_LIBFDT))
+	if (IS_ENABLED(CONFIG_OF_LIBFDT))
 		boot_fdt_add_mem_rsv_regions(*of_flat_tree);
 
 	if (IS_ENABLED(CONFIG_SYS_BOOT_GET_CMDLINE)) {
@@ -934,13 +934,13 @@ int image_setup_linux(struct bootm_headers *images)
 		}
 	}
 
-	if (CONFIG_IS_ENABLED(OF_LIBFDT)) {
+	if (IS_ENABLED(CONFIG_OF_LIBFDT)) {
 		ret = boot_relocate_fdt(of_flat_tree, &of_size);
 		if (ret)
 			return ret;
 	}
 
-	if (CONFIG_IS_ENABLED(OF_LIBFDT) && of_size) {
+	if (IS_ENABLED(CONFIG_OF_LIBFDT) && of_size) {
 		ret = image_setup_libfdt(images, *of_flat_tree, true);
 		if (ret)
 			return ret;

@@ -92,7 +92,7 @@ u32 spl_boot_device(void)
 		defined(CONFIG_TARGET_CHROMEBOOK_KEVIN)
 	return BOOT_DEVICE_SPI;
 #endif
-	if (CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM))
+	if (IS_ENABLED(CONFIG_ROCKCHIP_BACK_TO_BROM))
 		return BOOT_DEVICE_BOOTROM;
 
 	return boot_device;
@@ -142,7 +142,7 @@ void board_init_f(ulong dummy)
 	gd->ram_top = gd->ram_base + get_effective_memsize();
 	gd->ram_top = board_get_usable_ram_top(gd->ram_size);
 
-	if (IS_ENABLED(CONFIG_ARM64) && !CONFIG_IS_ENABLED(SYS_DCACHE_OFF)) {
+	if (IS_ENABLED(CONFIG_ARM64) && !IS_ENABLED(CONFIG_SYS_DCACHE_OFF)) {
 		gd->relocaddr = gd->ram_top;
 		arch_reserve_mmu();
 		enable_caches();
@@ -157,22 +157,22 @@ void spl_board_prepare_for_boot(void)
 	 * TF-A is executed after SPL and before U-Boot. It removes our access
 	 * to the SRAM. So move the bloblist to RAM.
 	 */
-	if (xpl_phase() == PHASE_SPL && CONFIG_IS_ENABLED(BLOBLIST_RELOC)) {
-		ulong addr = CONFIG_IF_ENABLED_INT(BLOBLIST_RELOC,
-						   BLOBLIST_RELOC_ADDR);
+	if (xpl_phase() == PHASE_SPL && IS_ENABLED(CONFIG_BLOBLIST_RELOC)) {
+		ulong addr = IF_ENABLED_INT(CONFIG_BLOBLIST_RELOC,
+					    CONFIG_BLOBLIST_RELOC_ADDR);
 
 		log_debug("Relocating bloblist %p to %lx\n", gd_bloblist(),
 			  addr);
 		bloblist_reloc(map_sysmem(addr, 0), bloblist_get_total_size());
 	}
 
-	if (!IS_ENABLED(CONFIG_ARM64) || CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	if (!IS_ENABLED(CONFIG_ARM64) || IS_ENABLED(CONFIG_SYS_DCACHE_OFF))
 		return;
 
 	cleanup_before_linux();
 }
 
-#if CONFIG_IS_ENABLED(RAM_DEVICE)
+#if IS_ENABLED(CONFIG_RAM_DEVICE)
 binman_sym_declare_optional(ulong, payload, image_pos);
 binman_sym_declare_optional(ulong, payload, size);
 

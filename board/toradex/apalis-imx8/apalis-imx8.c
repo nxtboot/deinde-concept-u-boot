@@ -178,7 +178,7 @@ int board_early_init_f(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 
 #define BKL1_GPIO   IMX_GPIO_NR(1, 10)
 

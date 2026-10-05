@@ -282,7 +282,7 @@ static int dm_test_pre_run(struct unit_test_state *uts)
 	INIT_LIST_HEAD(&gd->uclass_root_s);
 
 	malloc_disable_testing();
-	if (CONFIG_IS_ENABLED(UT_DM) && !CONFIG_IS_ENABLED(OF_PLATDATA))
+	if (IS_ENABLED(CONFIG_UT_DM) && !IS_ENABLED(CONFIG_OF_PLATDATA))
 		memset(dm_testdrv_op_count, '\0', sizeof(dm_testdrv_op_count));
 	arch_reset_for_test();
 
@@ -331,7 +331,7 @@ static int dm_test_post_run(struct unit_test_state *uts)
 	 * destroy them we cannot get them back since uclass_add() is not
 	 * supported. So skip this.
 	 */
-	if (!CONFIG_IS_ENABLED(OF_PLATDATA_INST)) {
+	if (!IS_ENABLED(CONFIG_OF_PLATDATA_INST)) {
 		for (id = 0; id < UCLASS_COUNT; id++) {
 			struct uclass *uc;
 
@@ -599,7 +599,7 @@ static int test_pre_run(struct unit_test_state *uts, struct unit_test *test)
 	if (test->flags & UTF_DM)
 		ut_assertok(dm_test_pre_run(uts));
 
-	if (CONFIG_IS_ENABLED(EFI_LOADER) && (test->flags & UTF_EFI))
+	if (IS_ENABLED(CONFIG_EFI_LOADER) && (test->flags & UTF_EFI))
 		ut_assertok(efi_test_pre_run(uts));
 
 	ut_set_skip_delays(uts, false);
@@ -612,7 +612,7 @@ static int test_pre_run(struct unit_test_state *uts, struct unit_test *test)
 	if (test->flags & UTF_PROBE_TEST)
 		ut_assertok(do_autoprobe(uts));
 
-	if (CONFIG_IS_ENABLED(OF_REAL) &&
+	if (IS_ENABLED(CONFIG_OF_REAL) &&
 	    (test->flags & UTF_SCAN_FDT)) {
 		/*
 		 * only set this if we know the ethernet uclass will be created
@@ -684,7 +684,7 @@ static int test_post_run(struct unit_test_state *uts, struct unit_test *test)
 	 * Drop the EFI state once the devices are gone, since removing a
 	 * device deletes its EFI handle, which is in that state
 	 */
-	if (CONFIG_IS_ENABLED(EFI_LOADER))
+	if (IS_ENABLED(CONFIG_EFI_LOADER))
 		efi_test_post_run(uts);
 
 	/*
@@ -693,7 +693,7 @@ static int test_post_run(struct unit_test_state *uts, struct unit_test *test)
 	 * therefore frees); leaving the pointer behind turns the on_bootargs
 	 * env callback into a use-after-free.
 	 */
-	if (CONFIG_IS_ENABLED(BOOTSTD)) {
+	if (IS_ENABLED(CONFIG_BOOTSTD)) {
 		std = bootstd_try_priv();
 		if (std)
 			std->cur_bootflow = NULL;
@@ -830,7 +830,7 @@ static int ut_run_test_live_flat(struct unit_test_state *uts,
 
 	/* Run with the live tree if possible */
 	runs = 0;
-	if (CONFIG_IS_ENABLED(OF_LIVE)) {
+	if (IS_ENABLED(CONFIG_OF_LIVE)) {
 		if (!(test->flags & UTF_FLAT_TREE)) {
 			uts->of_live = true;
 			ret = ut_run_test(uts, test, leaf ?: test->name);
@@ -854,10 +854,10 @@ static int ut_run_test_live_flat(struct unit_test_state *uts,
 	 *    boards)
 	 * - the -F option is not enabled (on sandbox)
 	 */
-	if ((!CONFIG_IS_ENABLED(OF_LIVE) ||
+	if ((!IS_ENABLED(CONFIG_OF_LIVE) ||
 	     (test->flags & UTF_SCAN_FDT)) &&
 	    !(test->flags & UTF_LIVE_TREE) &&
-	    (CONFIG_IS_ENABLED(OFNODE_MULTI_TREE) ||
+	    (IS_ENABLED(CONFIG_OFNODE_MULTI_TREE) ||
 	     !(test->flags & UTF_OTHER_FDT)) &&
 	    (!runs || ut_test_run_on_flattree(test)) &&
 	    !(gd->flags & GD_FLG_FDT_CHANGED) &&
@@ -1031,12 +1031,12 @@ int ut_run_list(struct unit_test_state *uts, const char *category,
 	int ret;
 
 	memset(&uts->cur, '\0', sizeof(struct ut_stats));
-	if (CONFIG_IS_ENABLED(UNIT_TEST_DURATION)) {
+	if (IS_ENABLED(CONFIG_UNIT_TEST_DURATION)) {
 		uts->cur.start = get_timer(0);
 		start_offset = timer_test_get_offset();
 	}
 
-	if (!CONFIG_IS_ENABLED(OF_PLATDATA) &&
+	if (!IS_ENABLED(CONFIG_OF_PLATDATA) &&
 	    ut_list_has_dm_tests(tests, count, prefix, select_name)) {
 		has_dm_tests = true;
 		/*
@@ -1076,7 +1076,7 @@ int ut_run_list(struct unit_test_state *uts, const char *category,
 
 	if (ret == -ENOENT)
 		printf("Test '%s' not found\n", select_name);
-	if (CONFIG_IS_ENABLED(UNIT_TEST_DURATION)) {
+	if (IS_ENABLED(CONFIG_UNIT_TEST_DURATION)) {
 		test_offset = timer_test_get_offset() - start_offset;
 
 		uts->cur.duration_ms = get_timer(uts->cur.start) - test_offset;

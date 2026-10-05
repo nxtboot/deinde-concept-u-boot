@@ -126,7 +126,7 @@ int board_init(void)
 
 int board_late_init(void)
 {
-	if (CONFIG_IS_ENABLED(ID_EEPROM))
+	if (IS_ENABLED(CONFIG_ID_EEPROM))
 		set_fdtfile();
 
 	return 0;

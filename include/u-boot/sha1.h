@@ -17,7 +17,7 @@
 #include <linux/kconfig.h>
 #include <linux/types.h>
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 #include "mbedtls_options.h"
 #include <mbedtls/sha1.h>
 #endif
@@ -38,7 +38,7 @@ extern "C" {
 
 extern const uint8_t sha1_der_prefix[];
 
-#if CONFIG_IS_ENABLED(MBEDTLS_LIB_CRYPTO)
+#if IS_ENABLED(CONFIG_MBEDTLS_LIB_CRYPTO)
 typedef mbedtls_sha1_context sha1_context;
 #else
 /**

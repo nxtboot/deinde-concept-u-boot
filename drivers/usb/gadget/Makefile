@@ -3,9 +3,9 @@
 # (C) Copyright 2000-2007
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
-obj-$(CONFIG_$(PHASE_)USB_GADGET) += epautoconf.o config.o usbstring.o
-obj-$(CONFIG_$(PHASE_)USB_ETHER) += epautoconf.o config.o usbstring.o ether.o
-obj-$(CONFIG_$(PHASE_)USB_ETH_RNDIS) += rndis.o
+obj-$(CONFIG_USB_GADGET) += epautoconf.o config.o usbstring.o
+obj-$(CONFIG_USB_ETHER) += epautoconf.o config.o usbstring.o ether.o
+obj-$(CONFIG_USB_ETH_RNDIS) += rndis.o
 
 ifdef CONFIG_XPL_BUILD
 obj-$(CONFIG_SPL_USB_GADGET) += g_dnl.o

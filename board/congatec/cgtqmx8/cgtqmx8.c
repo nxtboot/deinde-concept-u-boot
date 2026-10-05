@@ -419,7 +419,7 @@ int board_late_init(void)
 	char *end_of_uboot;
 	char command[256];
 
-	end_of_uboot = (char *)(ulong)(CONFIG_TEXT_BASE + _end_ofs
+	end_of_uboot = (char *)(ulong)(CONFIG_PPL_TEXT_BASE + _end_ofs
 			+ fdt_totalsize(gd->fdt_blob));
 	end_of_uboot += 9;
 

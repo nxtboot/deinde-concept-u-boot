@@ -424,7 +424,7 @@ static struct lmb lmb;
 static bool lmb_should_notify(u32 flags)
 {
 	return !lmb.test && !(flags & LMB_NONOTIFY) &&
-		CONFIG_IS_ENABLED(EFI_LOADER);
+		IS_ENABLED(CONFIG_EFI_LOADER);
 }
 
 static int lmb_map_update_notify(phys_addr_t addr, phys_size_t size,
@@ -559,7 +559,7 @@ static void lmb_reserve_common(void *fdt_blob)
 {
 	lmb_reserve_uboot_region();
 
-	if (CONFIG_IS_ENABLED(OF_LIBFDT) && fdt_blob)
+	if (IS_ENABLED(CONFIG_OF_LIBFDT) && fdt_blob)
 		boot_fdt_add_mem_rsv_regions(fdt_blob);
 }
 
@@ -627,7 +627,7 @@ void lmb_add_memory(void)
 	phys_size_t size;
 	u64 ram_top = gd->ram_top;
 
-	if (CONFIG_IS_ENABLED(LMB_ARCH_MEM_MAP))
+	if (IS_ENABLED(CONFIG_LMB_ARCH_MEM_MAP))
 		return lmb_arch_add_memory();
 
 	/* Assume a 4GB ram_top if not defined */
@@ -969,7 +969,7 @@ struct lmb *lmb_get(void)
 	return &lmb;
 }
 
-#if CONFIG_IS_ENABLED(UNIT_TEST)
+#if IS_ENABLED(CONFIG_UNIT_TEST)
 int lmb_push(struct lmb *store)
 {
 	int ret;

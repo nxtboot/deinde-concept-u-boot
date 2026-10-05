@@ -48,7 +48,7 @@ int clear_bss(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 static void do_elf_reloc_fixups64(unsigned int text_base, uintptr_t size,
 				  Elf64_Rela *re_src, Elf64_Rela *re_end)
 {
@@ -161,12 +161,12 @@ int do_elf_reloc_fixups(void)
 	if (re_src == re_end)
 		panic("No relocation data");
 
-#ifdef CONFIG_TEXT_BASE
-	text_base = CONFIG_TEXT_BASE;
+#ifdef CONFIG_PPL_TEXT_BASE
+	text_base = CONFIG_PPL_TEXT_BASE;
 #else
-	panic("No CONFIG_TEXT_BASE");
+	panic("No CONFIG_PPL_TEXT_BASE");
 #endif
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 	do_elf_reloc_fixups64(text_base, size, re_src, re_end);
 #else
 	do_elf_reloc_fixups32(text_base, size, re_src, re_end);

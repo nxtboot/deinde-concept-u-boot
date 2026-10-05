@@ -63,7 +63,7 @@ static void atmel_sdhci_config_fcd(struct sdhci_host *host)
 	 * WA: SAMA5D2 doesn't drive CMD if using CD GPIO line.
 	 */
 	if ((host->mmc->cfg->host_caps & MMC_CAP_NONREMOVABLE)
-#if CONFIG_IS_ENABLED(DM_GPIO)
+#if IS_ENABLED(CONFIG_DM_GPIO)
 		|| dm_gpio_get_value(&host->cd_gpio) >= 0
 #endif
 	   ) {

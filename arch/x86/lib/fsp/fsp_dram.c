@@ -89,7 +89,7 @@ int dram_init_banksize(void)
 	 * DRAM range in MTRR otherwise the boot process goes very slowly,
 	 * which was observed on Chromebook Coral with FSP2.
 	 */
-	update_mtrr = CONFIG_IS_ENABLED(FSP_VERSION2);
+	update_mtrr = IS_ENABLED(CONFIG_FSP_VERSION2);
 
 	if (!ll_boot_init()) {
 		gd->dram[0].start = 0;
@@ -211,8 +211,8 @@ unsigned int install_e820_map(unsigned int max_entries,
 	if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)) {
 		ulong stack_size;
 
-		stack_size = CONFIG_IS_ENABLED(HAVE_ACPI_RESUME,
-					       (CONFIG_STACK_SIZE_RESUME), (0));
+		stack_size = IS_ENABLED(CONFIG_HAVE_ACPI_RESUME,
+					(CONFIG_STACK_SIZE_RESUME), (0));
 		/*
 		 * Everything between U-Boot's stack and ram top needs to be
 		 * reserved in order for ACPI S3 resume to work.
@@ -241,7 +241,7 @@ unsigned int install_e820_map(unsigned int max_entries,
 	return num_entries;
 }
 
-#if CONFIG_IS_ENABLED(HANDOFF) && IS_ENABLED(CONFIG_USE_HOB)
+#if IS_ENABLED(CONFIG_HANDOFF) && IS_ENABLED(CONFIG_USE_HOB)
 int handoff_arch_save(struct spl_handoff *ho)
 {
 	ho->arch.usable_ram_top = gd->dram[0].size;

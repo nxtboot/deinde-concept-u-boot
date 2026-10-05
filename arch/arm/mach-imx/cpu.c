@@ -47,7 +47,7 @@ u32 get_imx_reset_cause(void)
 	return reset_cause;
 }
 
-#if defined(CONFIG_DISPLAY_CPUINFO) && !defined(CONFIG_XPL_BUILD) && !CONFIG_IS_ENABLED(CPU)
+#if defined(CONFIG_DISPLAY_CPUINFO) && !defined(CONFIG_XPL_BUILD) && !IS_ENABLED(CONFIG_CPU)
 static char *get_reset_cause(void)
 {
 	switch (get_imx_reset_cause()) {

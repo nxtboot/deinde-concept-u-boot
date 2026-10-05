@@ -321,7 +321,7 @@ static void efi_clear_screen(void)
 {
 	struct efi_console *con = &efis->con;
 
-	if (CONFIG_IS_ENABLED(EFI_SCROLL_ON_CLEAR_SCREEN)) {
+	if (IS_ENABLED(CONFIG_EFI_SCROLL_ON_CLEAR_SCREEN)) {
 		unsigned int row, screen_rows, screen_columns;
 
 		/* Avoid overwriting previous outputs on streaming consoles */
@@ -1188,7 +1188,7 @@ efi_status_t efi_console_register(void)
 						     NULL);
 
 	/* Create console node and install device path protocols */
-	if (CONFIG_IS_ENABLED(DM_SERIAL)) {
+	if (IS_ENABLED(CONFIG_DM_SERIAL)) {
 		dp = efi_dp_from_uart();
 		if (!dp)
 			goto out_of_memory;

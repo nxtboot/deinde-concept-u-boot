@@ -778,7 +778,7 @@ void bootflow_remove(struct bootflow *bflow)
 	bootflow_free(bflow);
 }
 
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 int bootflow_read_all(struct bootflow *bflow)
 {
 	int ret;

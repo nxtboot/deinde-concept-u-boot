@@ -84,7 +84,7 @@ cpu_init_crit:
 
 	/* Prepare to disable the MMU */
 	adr	r2, mmu_disable_phys
-	sub	r2, r2, #(CFG_SYS_UBOOT_BASE - CONFIG_TEXT_BASE)
+	sub	r2, r2, #(CFG_SYS_UBOOT_BASE - CONFIG_PPL_TEXT_BASE)
 	b	mmu_disable
 
 	.align 5

@@ -57,7 +57,7 @@ typedef struct fsl_i2c_base {
 #define I2C_DR_RES	~(I2C_DR)
 } fsl_i2c_t;
 
-#if CONFIG_IS_ENABLED(DM_I2C)
+#if IS_ENABLED(CONFIG_DM_I2C)
 struct fsl_i2c_dev {
 	struct fsl_i2c_base __iomem *base;      /* register base */
 	u32 i2c_clk;

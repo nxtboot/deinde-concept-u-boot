@@ -199,7 +199,7 @@ static int mtu3_remove(struct udevice *dev)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(DM_USB_GADGET)
+#if IS_ENABLED(CONFIG_DM_USB_GADGET)
 static int mtu3_gadget_probe(struct udevice *dev)
 {
 	struct ssusb_mtk *ssusb = dev_to_ssusb(dev->parent);
@@ -439,17 +439,17 @@ static int mtu3_glue_bind(struct udevice *parent)
 
 	switch (dr_mode) {
 	case USB_DR_MODE_PERIPHERAL:
-		if (CONFIG_IS_ENABLED(USB_MTU3_GADGET))
+		if (IS_ENABLED(CONFIG_USB_MTU3_GADGET))
 			return mtu3_bind_gadget(parent);
 		break;
 	case USB_DR_MODE_HOST:
-		if (CONFIG_IS_ENABLED(USB_MTU3_HOST))
+		if (IS_ENABLED(CONFIG_USB_MTU3_HOST))
 			return mtu3_bind_host(parent);
 		break;
 	case USB_DR_MODE_OTG:
-		if (CONFIG_IS_ENABLED(USB_MTU3_GADGET))
+		if (IS_ENABLED(CONFIG_USB_MTU3_GADGET))
 			return mtu3_bind_gadget(parent);
-		if (CONFIG_IS_ENABLED(USB_MTU3_HOST))
+		if (IS_ENABLED(CONFIG_USB_MTU3_HOST))
 			return mtu3_bind_host(parent);
 		break;
 	default:

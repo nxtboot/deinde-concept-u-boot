@@ -64,7 +64,7 @@ void *memalign_simple(size_t align, size_t bytes)
 	return ptr;
 }
 
-#if CONFIG_IS_ENABLED(SYS_MALLOC_SIMPLE)
+#if IS_ENABLED(CONFIG_SYS_MALLOC_SIMPLE)
 void *calloc_simple(size_t nmemb, size_t elem_size)
 {
 	size_t size = nmemb * elem_size;
@@ -89,5 +89,5 @@ void free_simple(void *ptr)
 void malloc_simple_info(void)
 {
 	log_info("malloc_simple: %x bytes used, %x remain\n", gd->malloc_ptr,
-		 CONFIG_VAL(SYS_MALLOC_F_LEN) - gd->malloc_ptr);
+		 CONFIG_SYS_MALLOC_F_LEN - gd->malloc_ptr);
 }

@@ -59,7 +59,7 @@ int board_init(void)
 	fpga_add(fpga_xilinx, &versalpl);
 #endif
 
-	if (CONFIG_IS_ENABLED(DM_I2C) && CONFIG_IS_ENABLED(I2C_EEPROM))
+	if (IS_ENABLED(CONFIG_DM_I2C) && IS_ENABLED(CONFIG_I2C_EEPROM))
 		xilinx_read_eeprom();
 
 	return 0;
@@ -273,7 +273,7 @@ int dram_init(void)
 	return 0;
 }
 
-#if !CONFIG_IS_ENABLED(SYSRESET)
+#if !IS_ENABLED(CONFIG_SYSRESET)
 void reset_cpu(void)
 {
 }

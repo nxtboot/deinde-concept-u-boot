@@ -16,7 +16,7 @@
 #include <linux/ctype.h>
 #include <linux/string.h>
 
-#if CONFIG_IS_ENABLED(I2C_EDID_STANDARD)
+#if IS_ENABLED(CONFIG_I2C_EDID_STANDARD)
 #define TIMING(c, ha, hfp, hbp, hsl, va, vfp, vbp, vsl, f)	\
 	.pixelclock = { (c), (c), (c) },			\
 	.hactive = { (ha), (ha), (ha) },			\
@@ -419,7 +419,7 @@ static bool edid_get_standard_timing(struct edid1_info *edid, int i, unsigned in
 	return false;
 }
 
-#if CONFIG_IS_ENABLED(I2C_EDID_STANDARD)
+#if IS_ENABLED(CONFIG_I2C_EDID_STANDARD)
 static bool edid_find_valid_standard_timing(struct edid1_info *buf,
 					    struct display_timing *timing,
 					    bool (*mode_valid)(void *priv,
@@ -497,7 +497,7 @@ int edid_get_timing_validate(u8 *buf, int buf_size,
 		}
 	}
 
-#if CONFIG_IS_ENABLED(I2C_EDID_STANDARD)
+#if IS_ENABLED(CONFIG_I2C_EDID_STANDARD)
 	/* Look for timing in Standard Timings */
 	if (!found)
 		found = edid_find_valid_standard_timing(edid, timing, mode_valid,

@@ -3,7 +3,7 @@ if TARGET_QEMU_ARM_SBSA
 config SYS_SOC
 	default "qemu-sbsa"
 
-config TEXT_BASE
+config PPL_TEXT_BASE
 	default 0x10000100000
 
 config SYS_LOAD_ADDR

@@ -92,7 +92,7 @@ clbss_l:cmp	r0, r1			/* while not at end of BSS */
 ENTRY(_main)
 
 /* Call arch_very_early_init before initializing C runtime environment. */
-#if CONFIG_IS_ENABLED(ARCH_VERY_EARLY_INIT)
+#if IS_ENABLED(CONFIG_ARCH_VERY_EARLY_INIT)
 	bl	arch_very_early_init
 #endif
 
@@ -100,8 +100,8 @@ ENTRY(_main)
  * Set up initial C runtime environment and call board_init_f(0).
  */
 
-#if CONFIG_IS_ENABLED(HAVE_INIT_STACK)
-	ldr	r0, =CONFIG_VAL(STACK)
+#if IS_ENABLED(CONFIG_HAVE_INIT_STACK)
+	ldr	r0, =CONFIG_STACK
 #else
 	ldr	r0, =(SYS_INIT_SP_ADDR)
 #endif
@@ -113,13 +113,13 @@ ENTRY(_main)
 	mov	r9, r0
 	bl	board_init_f_init_reserve
 
-#if CONFIG_IS_ENABLED(PASSAGE_IN)
+#if IS_ENABLED(CONFIG_PASSAGE_IN)
 	str	r6, [r9, #GD_PASSAGE_MACH]
 	str	r7, [r9, #GD_PASSAGE_DTB]
 	str	r8, [r9, #GD_PASSAGE_BLOBLIST]
 #endif
 
-#if defined(CONFIG_DEBUG_UART) && CONFIG_IS_ENABLED(SERIAL)
+#if defined(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_SERIAL)
 	bl	debug_uart_init
 #endif
 
@@ -148,7 +148,7 @@ ENTRY(_main)
 	adr	r0, _main
 	ldr	r1, _start_ofs
 	add	r0, r1
-	ldr	r1, =CONFIG_TEXT_BASE
+	ldr	r1, =CONFIG_PPL_TEXT_BASE
 	sub	r1, r0
 	add	lr, r1
 #if defined(CONFIG_ENV_RELOC_GD_ENV_ADDR)
@@ -179,7 +179,7 @@ here:
 
 	bl	c_runtime_cpu_setup	/* we still call old routine here */
 #endif
-#if !defined(CONFIG_XPL_BUILD) || CONFIG_IS_ENABLED(FRAMEWORK)
+#if !defined(CONFIG_XPL_BUILD) || IS_ENABLED(CONFIG_FRAMEWORK)
 
 #if !defined(CONFIG_XPL_BUILD) || !defined(CONFIG_SPL_EARLY_BSS)
 	CLEAR_BSS
@@ -197,7 +197,7 @@ here:
 	mov     r0, r9                  /* gd_t */
 	ldr	r1, [r9, #GD_RELOCADDR]	/* dest_addr */
 	/* call board_init_r */
-#if CONFIG_IS_ENABLED(SYS_THUMB_BUILD)
+#if IS_ENABLED(CONFIG_SYS_THUMB_BUILD)
 	ldr	lr, =board_init_r	/* this is auto-relocated! */
 	bx	lr
 #else

@@ -294,8 +294,8 @@ static int decode_elf32(FILE *felf, char **argv)
 
 	text_base = elf32_to_cpu(header.e_entry);
 	/*
-	 * M68K ELF entry point is MONITOR_BASE, not TEXT_BASE.
-	 * TEXT_BASE is always MONITOR_BASE &~ 0x7ff, so clear
+	 * M68K ELF entry point is MONITOR_BASE, not PPL_TEXT_BASE.
+	 * PPL_TEXT_BASE is always MONITOR_BASE &~ 0x7ff, so clear
 	 * those bits here.
 	 */
 	if (machine == EM_M68K)

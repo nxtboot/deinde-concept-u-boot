@@ -28,12 +28,12 @@ U_BOOT_CMD(wget, 4, 1, do_wget,
 #endif
 );
 
-#if CONFIG_IS_ENABLED(WGET_CACERT) || CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT) || IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 char *cacert;
 size_t cacert_size;
 enum auth_mode cacert_auth_mode = AUTH_OPTIONAL;
 
-#if CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 extern const char builtin_cacert[];
 extern const size_t builtin_cacert_size;
 bool cacert_initialized;
@@ -76,13 +76,13 @@ static int _set_cacert(const void *addr, size_t sz)
 
 	mbedtls_x509_crt_free(&crt);
 
-#if CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 	cacert_initialized = true;
 #endif
 	return CMD_RET_SUCCESS;
 }
 
-#if CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 int set_cacert_builtin(void)
 {
 	cacert_auth_mode = AUTH_REQUIRED;
@@ -91,7 +91,7 @@ int set_cacert_builtin(void)
 #endif
 #endif  /* CONFIG_WGET_CACERT || CONFIG_WGET_BUILTIN_CACERT */
 
-#if CONFIG_IS_ENABLED(WGET_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT)
 static int set_auth(enum auth_mode auth)
 {
 	cacert_auth_mode = auth;
@@ -185,11 +185,11 @@ int do_wget(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 
 	wget_info = &default_wget_info;
 
-#if CONFIG_IS_ENABLED(WGET_CACERT)
+#if IS_ENABLED(CONFIG_WGET_CACERT)
 	if (argc == 4 && !strncmp(argv[1], "cacert", strlen("cacert")))
 		return set_cacert(argv[2], argv[3]);
 	if (argc == 3 && !strncmp(argv[1], "cacert", strlen("cacert"))) {
-#if CONFIG_IS_ENABLED(WGET_BUILTIN_CACERT)
+#if IS_ENABLED(CONFIG_WGET_BUILTIN_CACERT)
 		if (!strncmp(argv[2], "builtin", strlen("builtin")))
 			return set_cacert_builtin();
 #endif

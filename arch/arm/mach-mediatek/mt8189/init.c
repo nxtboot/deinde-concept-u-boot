@@ -31,7 +31,7 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 
 void reset_cpu(ulong addr)
 {
-	if (!CONFIG_IS_ENABLED(SYSRESET))
+	if (!IS_ENABLED(CONFIG_SYSRESET))
 		psci_system_reset();
 }
 

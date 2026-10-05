@@ -33,7 +33,7 @@
 					os = "U-Boot";
 					arch = "riscv";
 					compression = "none";
-					load = /bits/ 64 <CONFIG_TEXT_BASE>;
+					load = /bits/ 64 <CONFIG_PPL_TEXT_BASE>;
 
 					uboot_blob: u-boot-nodtb {
 					};
@@ -45,7 +45,7 @@
 					os = "Linux";
 					arch = "riscv";
 					compression = "none";
-					load = /bits/ 64 <CONFIG_TEXT_BASE>;
+					load = /bits/ 64 <CONFIG_PPL_TEXT_BASE>;
 
 					linux_blob: blob-ext {
 						filename = "Image";

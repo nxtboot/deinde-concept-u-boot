@@ -101,7 +101,7 @@ static void vidconsole_newline(struct udevice *dev, struct vidconsole_ctx *ctx)
 {
 	struct udevice *vid_dev = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid_dev);
-	const int rows = CONFIG_VAL(CONSOLE_SCROLL_LINES);
+	const int rows = CONFIG_CONSOLE_SCROLL_LINES;
 	int i, ret;
 
 	ctx->xcur_frac = ctx->xstart_frac;
@@ -528,7 +528,7 @@ int vidconsole_put_char(struct udevice *dev, void *vctx, char ch)
 		ctx->last_ch = 0;
 		break;
 	default:
-		if (CONFIG_IS_ENABLED(CHARSET)) {
+		if (IS_ENABLED(CONFIG_CHARSET)) {
 			cp = utf8_to_utf32_stream(ch, ctx->utf8_buf);
 			if (cp == 0)
 				return 0;
@@ -741,7 +741,7 @@ int vidconsole_ctx_new(struct udevice *dev, void **ctxp)
 		goto err_alloc;
 	*ptr = ctx;
 
-	if (CONFIG_IS_ENABLED(CURSOR) && xpl_phase() == PHASE_BOARD_R) {
+	if (IS_ENABLED(CONFIG_CURSOR) && xpl_phase() == PHASE_BOARD_R) {
 		ret = console_alloc_cursor(dev, &ctx->curs);
 		if (ret)
 			goto err_curs;

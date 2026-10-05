@@ -164,7 +164,7 @@ static inline int store_block(int block, uchar *src, unsigned int len)
 	ulong store_addr = tftp_load_addr + offset;
 	void *ptr;
 
-	if (CONFIG_IS_ENABLED(LMB)) {
+	if (IS_ENABLED(CONFIG_LMB)) {
 		if (store_addr < tftp_load_addr ||
 		    lmb_read_check(store_addr, len)) {
 			puts("\nTFTP error: ");
@@ -732,7 +732,8 @@ static void sanitize_tftp_block_size_option(enum proto_t protocol)
 
 	switch (protocol) {
 	case TFTPGET:
-		max_defrag = config_opt_enabled(CONFIG_IP_DEFRAG, CONFIG_NET_MAXDEFRAG, 0);
+		max_defrag = IS_ENABLED(CONFIG_IP_DEFRAG,
+					(CONFIG_NET_MAXDEFRAG), (0));
 		if (max_defrag) {
 			/* Account for IP, UDP and TFTP headers. */
 			cap = max_defrag - (20 + 8 + 4);

@@ -33,7 +33,7 @@ obj-$(CONFIG_FSL_NGPIXIS)	+= ngpixis.o
 endif
 obj-$(I2C_COMMON)		+= i2c_common.o
 obj-$(CONFIG_FSL_USE_PCA9547_MUX)		+= i2c_mux.o
-obj-$(CONFIG_$(PHASE_)VID)	+= vid.o
+obj-$(CONFIG_VID)	+= vid.o
 obj-$(CONFIG_FSL_QIXIS)	+= qixis.o
 ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_ID_EEPROM)	+= sys_eeprom.o
@@ -53,10 +53,10 @@ obj-$(CONFIG_TARGET_MPC8548CDS)	+= cds_pci_ft.o
 obj-$(CONFIG_TARGET_P3041DS)		+= ics307_clk.o
 obj-$(CONFIG_TARGET_P4080DS)		+= ics307_clk.o
 obj-$(CONFIG_TARGET_P5040DS)		+= ics307_clk.o
-ifeq ($(CONFIG_$(PHASE_)POWER_LEGACY),y)
+ifeq ($(CONFIG_POWER_LEGACY),y)
 obj-$(CONFIG_POWER_PFUZE100)	+= pfuze.o
 endif
-obj-$(CONFIG_$(PHASE_)DM_PMIC_PFUZE100)	+= pfuze.o
+obj-$(CONFIG_DM_PMIC_PFUZE100)	+= pfuze.o
 obj-$(CONFIG_POWER_MC34VR500)	+= mc34vr500.o
 ifneq (,$(filter $(SOC), imx8m imx8ulp imx9))
 obj-y				+= mmc.o

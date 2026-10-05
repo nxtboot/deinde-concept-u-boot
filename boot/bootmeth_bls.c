@@ -588,7 +588,7 @@ static struct bootmeth_ops bls_bootmeth_ops = {
 	.check		= bls_check,
 	.read_bootflow	= bls_read_bootflow,
 	.read_file	= bootmeth_common_read_file,
-#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
+#if IS_ENABLED(CONFIG_BOOTSTD_FULL)
 	.read_all	= bls_read_all,
 #endif
 	.boot		= bls_boot,

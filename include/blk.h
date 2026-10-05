@@ -28,7 +28,7 @@ struct udevice;
 
 static inline bool blk_enabled(void)
 {
-	return CONFIG_IS_ENABLED(BLK) || IS_ENABLED(CONFIG_SPL_LEGACY_BLOCK);
+	return IS_ENABLED(CONFIG_BLK) || IS_ENABLED(CONFIG_SPL_LEGACY_BLOCK);
 }
 
 #define BLK_VEN_SIZE		40
@@ -82,7 +82,7 @@ struct blk_desc {
 		uint32_t mbr_sig;	/* MBR integer signature */
 		efi_guid_t guid_sig;	/* GPT GUID Signature */
 	};
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 	/*
 	 * For now we have a few functions which take struct blk_desc as a
 	 * parameter. This field allows them to look up the associated
@@ -109,7 +109,7 @@ struct blk_desc {
 #define PAD_TO_BLOCKSIZE(size, blk_desc) \
 	(PAD_SIZE(size, blk_desc->blksz))
 
-#if CONFIG_IS_ENABLED(BLOCK_CACHE)
+#if IS_ENABLED(CONFIG_BLOCK_CACHE)
 /**
  * blkcache_read() - attempt to read a set of blocks from cache
  *
@@ -279,7 +279,7 @@ struct blk_ops {
 #endif	/* CONFIG_BOUNCE_BUFFER */
 };
 
-#if CONFIG_IS_ENABLED(BLK)
+#if IS_ENABLED(CONFIG_BLK)
 
 /*
  * These functions should take struct udevice instead of struct blk_desc,
@@ -516,7 +516,7 @@ struct blk_desc *blk_get_by_device(struct udevice *dev);
  */
 int blk_get_desc(enum uclass_id uclass_id, int devnum, struct blk_desc **descp);
 
-#if !CONFIG_IS_ENABLED(BLK)
+#if !IS_ENABLED(CONFIG_BLK)
 
 #include <errno.h>
 

@@ -8,9 +8,9 @@
 
 #include <linux/sizes.h>
 
-#define CFG_SYS_UBOOT_BASE		CONFIG_TEXT_BASE
+#define CFG_SYS_UBOOT_BASE		CONFIG_PPL_TEXT_BASE
 
-#define CFG_SYS_INIT_RAM_ADDR           CONFIG_TEXT_BASE
+#define CFG_SYS_INIT_RAM_ADDR           CONFIG_PPL_TEXT_BASE
 #define CFG_SYS_INIT_RAM_SIZE           SZ_2M
 
 /* DRAM */

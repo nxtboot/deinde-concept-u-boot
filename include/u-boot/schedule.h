@@ -5,7 +5,7 @@
 
 #include <uthread.h>
 
-#if CONFIG_IS_ENABLED(CYCLIC)
+#if IS_ENABLED(CONFIG_CYCLIC)
 /**
  * schedule() - Schedule all potentially waiting tasks
  *

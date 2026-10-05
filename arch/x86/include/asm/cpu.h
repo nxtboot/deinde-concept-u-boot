@@ -140,7 +140,7 @@ native_cpuid_reg(ebx)
 native_cpuid_reg(ecx)
 native_cpuid_reg(edx)
 
-#if CONFIG_IS_ENABLED(X86_64)
+#if IS_ENABLED(CONFIG_X86_64)
 static inline int flag_is_changeable_p(u32 flag)
 {
 	return 1;

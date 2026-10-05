@@ -17,7 +17,7 @@
 #include <linux/printk.h>
 #include <linux/stringify.h>
 
-#if CONFIG_IS_ENABLED(NET_LEGACY)
+#if IS_ENABLED(CONFIG_NET_LEGACY)
 static int do_fastboot_udp(int argc, char *const argv[],
 			   uintptr_t buf_addr, size_t buf_size)
 {
@@ -163,7 +163,7 @@ static int do_fastboot(struct getopt_state *gs)
 
 	fastboot_init((void *)buf_addr, buf_size);
 
-#if CONFIG_IS_ENABLED(NET_LEGACY)
+#if IS_ENABLED(CONFIG_NET_LEGACY)
 	if (!strcmp(argv[1], "udp"))
 		return do_fastboot_udp(argc, argv, buf_addr, buf_size);
 	if (!strcmp(argv[1], "tcp"))

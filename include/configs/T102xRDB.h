@@ -84,7 +84,7 @@
 #define CFG_SYS_SRIO_PCIE_BOOT_UCODE_ENV_ADDR_PHYS \
 		(0x300000000ull | CFG_SYS_SRIO_PCIE_BOOT_UCODE_ENV_ADDR)
 /* Set 1M boot space for PCIe boot */
-#define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR (CONFIG_TEXT_BASE & 0xfff00000)
+#define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR (CONFIG_PPL_TEXT_BASE & 0xfff00000)
 #define CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR_PHYS	\
 		(0x300000000ull | CFG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR)
 #define CFG_RESET_VECTOR_ADDRESS 0xfffffffc
@@ -283,7 +283,7 @@
 #define CFG_SYS_INIT_SP_OFFSET	(CFG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 
 /* Serial Port */
-#if !CONFIG_IS_ENABLED(DM_SERIAL)
+#if !IS_ENABLED(CONFIG_DM_SERIAL)
 #define CFG_SYS_NS16550_CLK		(get_bus_freq(0)/2)
 #endif
 
@@ -437,7 +437,7 @@
 	"hwconfig=fsl_ddr:ctlr_intlv=cacheline,"		\
 	"usb1:dr_mode=host,phy_type=" __stringify(__USB_PHY_TYPE) "\0"  \
 	"uboot=" CONFIG_UBOOTPATH "\0"		\
-	"ubootaddr=" __stringify(CONFIG_TEXT_BASE) "\0"	\
+	"ubootaddr=" __stringify(CONFIG_PPL_TEXT_BASE) "\0"	\
 	"bootargs=root=/dev/ram rw console=ttyS0,115200\0" \
 	"netdev=eth0\0"						\
 	"tftpflash=tftpboot $loadaddr $uboot && "		\

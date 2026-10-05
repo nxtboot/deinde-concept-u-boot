@@ -4,12 +4,12 @@
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
 ifdef CONFIG_DM
-obj-$(CONFIG_$(PHASE_)BACKLIGHT) += backlight-uclass.o
+obj-$(CONFIG_BACKLIGHT) += backlight-uclass.o
 obj-$(CONFIG_BACKLIGHT_GPIO) += backlight_gpio.o
 obj-$(CONFIG_BACKLIGHT_PWM) += pwm_backlight.o
-obj-$(CONFIG_$(PHASE_)CONSOLE_NORMAL) += console_normal.o
+obj-$(CONFIG_CONSOLE_NORMAL) += console_normal.o
 obj-$(CONFIG_CONSOLE_ROTATION) += console_rotate.o
-ifdef CONFIG_$(PHASE_)CONSOLE_NORMAL
+ifdef CONFIG_CONSOLE_NORMAL
 obj-y += console_core.o
 else ifdef CONFIG_CONSOLE_ROTATION
 obj-y += console_core.o
@@ -20,13 +20,13 @@ CFLAGS_REMOVE_console_truetype.o := -mgeneral-regs-only
 obj-$(CONFIG_CONSOLE_TRUETYPE) += console_truetype.o fonts/
 obj-$(CONFIG_DISPLAY) += display-uclass.o
 obj-$(CONFIG_VIDEO_MIPI_DSI) += dsi-host-uclass.o
-obj-$(CONFIG_$(PHASE_)VIDEO) += video-uclass.o vidconsole-uclass.o
-obj-$(CONFIG_$(PHASE_)VIDEO) += video_bmp.o
-obj-$(CONFIG_$(PHASE_)PANEL) += panel-uclass.o
+obj-$(CONFIG_VIDEO) += video-uclass.o vidconsole-uclass.o
+obj-$(CONFIG_VIDEO) += video_bmp.o
+obj-$(CONFIG_PANEL) += panel-uclass.o
 obj-$(CONFIG_PANEL_HX8238D) += hx8238d.o
-obj-$(CONFIG_$(PHASE_)SIMPLE_PANEL) += simple_panel.o
+obj-$(CONFIG_SIMPLE_PANEL) += simple_panel.o
 
-obj-$(CONFIG_$(PHASE_)BMP) += bmp.o
+obj-$(CONFIG_BMP) += bmp.o
 
 obj-y += vesa_helper.o
 
@@ -40,7 +40,7 @@ obj-$(CONFIG_BACKLIGHT_SAMSUNG_CMC623) += cmc623_backlight.o
 obj-${CONFIG_EXYNOS_FB} += exynos/
 obj-${CONFIG_VIDEO_ROCKCHIP} += rockchip/
 obj-${CONFIG_VIDEO_STM32} += stm32/
-obj-${CONFIG_$(PHASE_)VIDEO_TIDSS} += tidss/
+obj-${CONFIG_VIDEO_TIDSS} += tidss/
 obj-y += ti/
 
 obj-$(CONFIG_ATMEL_HLCD) += atmel_hlcdfb.o

@@ -961,7 +961,7 @@ static int rv1103b_clk_set_parent(struct clk *clk, struct clk *parent)
 static struct clk_ops rv1103b_clk_ops = {
 	.get_rate = rv1103b_clk_get_rate,
 	.set_rate = rv1103b_clk_set_rate,
-#if (CONFIG_IS_ENABLED(OF_CONTROL)) || (!CONFIG_IS_ENABLED(OF_PLATDATA))
+#if (IS_ENABLED(CONFIG_OF_CONTROL)) || (!IS_ENABLED(CONFIG_OF_PLATDATA))
 	.set_parent = rv1103b_clk_set_parent,
 #endif
 };
@@ -1041,7 +1041,7 @@ static int rv1103b_clk_bind(struct udevice *dev)
 		dev_set_priv(sys_child, priv);
 	}
 
-#if CONFIG_IS_ENABLED(RESET_ROCKCHIP)
+#if IS_ENABLED(CONFIG_RESET_ROCKCHIP)
 	ret = offsetof(struct rv1103b_cru, peri_softrst_con[0]);
 	ret = rockchip_reset_bind(dev, ret, 12); /* number of reset registers */
 	if (ret)

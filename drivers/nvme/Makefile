@@ -4,5 +4,5 @@
 
 obj-y += nvme-uclass.o nvme.o nvme_show.o
 obj-$(CONFIG_NVME_APPLE) += nvme_apple.o
-obj-$(CONFIG_$(PHASE_)NVME_PCI) += nvme_pci.o
+obj-$(CONFIG_NVME_PCI) += nvme_pci.o
 obj-$(CONFIG_NVME_SANDBOX) += sandbox_nvme.o

@@ -65,7 +65,7 @@ static int __maybe_unused do_malloc_log(struct cmd_tbl *cmdtp, int flag,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CMD_MALLOC_LEAK)
+#if IS_ENABLED(CONFIG_CMD_MALLOC_LEAK)
 static struct malloc_leak_snap leak_snap;
 
 static int do_malloc_leak(struct cmd_tbl *cmdtp, int flag,
@@ -128,7 +128,7 @@ static int do_malloc_leak(struct cmd_tbl *cmdtp, int flag,
 #define MALLOC_LEAK_SUBCMD
 #endif
 
-#if CONFIG_IS_ENABLED(CMD_MALLOC_LOG)
+#if IS_ENABLED(CONFIG_CMD_MALLOC_LOG)
 #define MALLOC_LOG_HELP	\
 	"malloc log [start|stop|dump] - log malloc traffic\n" \
 	"    start - start recording malloc/free calls\n" \

@@ -38,7 +38,7 @@ DECLARE_GLOBAL_DATA_PTR;
 /*
  * USB 2.0 Bridge Address Decoding registers setup
  */
-#if CONFIG_IS_ENABLED(DM_USB)
+#if IS_ENABLED(CONFIG_DM_USB)
 
 struct ehci_mvebu_priv {
 	struct ehci_ctrl ehci;
@@ -265,4 +265,4 @@ int ehci_hcd_stop(int index)
 	return 0;
 }
 
-#endif /* CONFIG_IS_ENABLED(DM_USB) */
+#endif /* IS_ENABLED(CONFIG_DM_USB) */

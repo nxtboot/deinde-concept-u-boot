@@ -59,7 +59,7 @@ int fpga_add(fpga_type devtype, void *desc);
 int fpga_count(void);
 const fpga_desc *fpga_get_desc(int devnum);
 int fpga_is_partial_data(int devnum, size_t img_len);
-#if CONFIG_IS_ENABLED(FPGA)
+#if IS_ENABLED(CONFIG_FPGA)
 int fpga_load(int devnum, const void *buf, size_t bsize,
 	      bitstream_type bstype, int flags);
 #else

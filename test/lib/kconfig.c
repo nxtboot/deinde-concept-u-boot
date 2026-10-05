@@ -17,15 +17,13 @@ static int lib_test_is_enabled(struct unit_test_state *uts)
 	ut_asserteq(1, IS_ENABLED(CONFIG_CMDLINE));
 	ut_asserteq(0, IS_ENABLED(CONFIG__UNDEFINED));
 
-	ut_asserteq(1, CONFIG_IS_ENABLED(CMDLINE));
-	ut_asserteq(0, CONFIG_IS_ENABLED(OF_PLATDATA));
-	ut_asserteq(0, CONFIG_IS_ENABLED(_UNDEFINED));
+	ut_asserteq(1, IS_ENABLED(CONFIG_CMDLINE));
+	ut_asserteq(0, IS_ENABLED(CONFIG_OF_PLATDATA));
+	ut_asserteq(0, IS_ENABLED(CONFIG__UNDEFINED));
 
 	if (IS_ENABLED(CONFIG_BLOBLIST)) {
 		ut_asserteq(0x100, IF_ENABLED_INT(CONFIG_BLOBLIST_FIXED,
 						  CONFIG_BLOBLIST_ADDR));
-		ut_asserteq(0x100, CONFIG_IF_ENABLED_INT(BLOBLIST_FIXED,
-							 BLOBLIST_ADDR));
 	}
 
 	/*
@@ -39,19 +37,6 @@ static int lib_test_is_enabled(struct unit_test_state *uts)
 		val = IF_ENABLED_INT(CONFIG_TEST_KCONFIG_ENABLE,
 				     CONFIG_TEST_KCONFIG_VALUE);
 		printf("value %ld\n", val);
-	}
-
-	/*
-	 * This fails if CONFIG_TEST_KCONFIG_ENABLE is not enabled, since the
-	 * value is used. Disable for SPL so that the errors in kconfig_spl.c
-	 * are detected, since otherwise a build error when building U-Boot may
-	 * cause SPL to not be built.
-	 */
-	if (!IS_ENABLED(CONFIG_SANDBOX_SPL) &&
-	    CONFIG_IS_ENABLED(TEST_KCONFIG)) {
-		val = CONFIG_IF_ENABLED_INT(TEST_KCONFIG_ENABLE,
-					    TEST_KCONFIG_VALUE);
-		printf("value2 %ld\n", val);
 	}
 
 	return 0;

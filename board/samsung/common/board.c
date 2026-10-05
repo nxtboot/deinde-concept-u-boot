@@ -110,7 +110,7 @@ int board_init(void)
 	}
 	boot_temp_check();
 #endif
-#if CONFIG_VAL(SYS_MEM_TOP_HIDE)
+#if CONFIG_SYS_MEM_TOP_HIDE
 	/* The last few MB of memory can be reserved for secure firmware */
 	ulong size = CONFIG_SYS_MEM_TOP_HIDE;
 
@@ -186,7 +186,7 @@ int board_early_init_f(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(POWER_LEGACY) || CONFIG_IS_ENABLED(DM_PMIC)
+#if IS_ENABLED(CONFIG_POWER_LEGACY) || IS_ENABLED(CONFIG_DM_PMIC)
 int power_init_board(void)
 {
 	set_ps_hold_ctrl();
