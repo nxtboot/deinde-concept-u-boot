@@ -29,6 +29,7 @@ from pickman import drift
 from pickman import extern
 from pickman import ftest
 from pickman import gitlab_api
+from pickman import splitcfg
 from u_boot_pylib import claude
 from u_boot_pylib import command
 from u_boot_pylib import gitutil
@@ -710,6 +711,151 @@ def show_check_summary(bad, verbose, threshold, show_diff, no_colour):
     if verbose:
         tout.info('All cherry-picks have acceptable deltas ✓')
     return 0
+
+
+def _read_tree_file(ref, path):
+    """Read a file from a commit, or from the working tree
+
+    Args:
+        ref (str): Commit to read from, or None for the working tree
+        path (str): Path of the file within the tree
+
+    Returns:
+        str: Contents of the file, or '' if it does not exist
+    """
+    if ref is None:
+        if not os.path.exists(path):
+            return ''
+        return tools.read_file(path, binary=False)
+    try:
+        return command.output('git', 'show', f'{ref}:{path}')
+    except command.CommandExc:
+        return ''
+
+
+def uses_split_config(ref):
+    """Check whether a tree has a separate config for each phase
+
+    Args:
+        ref (str): Commit to check, or None for the working tree
+
+    Returns:
+        bool: True if the tree has a split config
+    """
+    kconfig_h = _read_tree_file(ref, splitcfg.KCONFIG_H)
+    return bool(kconfig_h) and splitcfg.is_split(kconfig_h)
+
+
+def split_scan(base, head):
+    """Find constructs which need adapting for a split config
+
+    Args:
+        base (str): Commit to compare from
+        head (str): Commit to compare to, or None for the working tree
+
+    Returns:
+        tuple: (found, need) where found is a list of splitcfg.Finding and
+            need is a list of options which need adding to conf_nospl
+    """
+    diff_args = ['diff', '-U0', base] + ([head] if head else [])
+    found = splitcfg.find(splitcfg.parse_added(run_git(diff_args)))
+    grep_args = ['grep', '-h', '-E', r'^\s*(menu)?config\s+(SPL|TPL|VPL)_']
+    grep_args += ([head] if head else []) + ['--', '*Kconfig*']
+    try:
+        kconfig = command.output('git', *grep_args)
+    except command.CommandExc:
+        kconfig = ''
+    variants = splitcfg.get_variants(kconfig)
+    nospl = splitcfg.get_nospl(_read_tree_file(head, splitcfg.CONF_NOSPL))
+    return found, splitcfg.needs_nospl(found, variants, nospl)
+
+
+def split_fix(found, need):
+    """Adapt the working tree for a split config
+
+    Args:
+        found (list of splitcfg.Finding): Constructs found
+        need (list of str): Options to add to conf_nospl
+
+    Returns:
+        list of str: Files which were changed
+    """
+    changed = []
+    for path in sorted({item.path for item in found}):
+        if not os.path.exists(path):
+            continue
+        old = tools.read_file(path, binary=False)
+        new = splitcfg.convert(path, old)
+        if new != old:
+            tools.write_file(path, new, binary=False)
+            changed.append(path)
+    if need:
+        old = _read_tree_file(None, splitcfg.CONF_NOSPL)
+        tools.write_file(splitcfg.CONF_NOSPL, splitcfg.add_nospl(old, need),
+                         binary=False)
+        changed.append(splitcfg.CONF_NOSPL)
+    return changed
+
+
+def split_note(base, head):
+    """Check picked commits against a split config, for the MR description
+
+    Args:
+        base (str): Commit to compare from, e.g. ci/master
+        head (str): Branch with the picked commits
+
+    Returns:
+        str: Note describing anything which still needs adapting, or '' if
+            there is nothing to report or the target has no split config
+    """
+    if not uses_split_config(base):
+        return ''
+    found, need = split_scan(base, head)
+    lines = splitcfg.format_report(found, need)
+    if not lines:
+        return ''
+    tout.warning('These picked commits still need adapting for the split '
+                 'config:')
+    for line in lines:
+        tout.warning(f'  {line}')
+    body = '\n'.join(f'- {line}' for line in lines)
+    return f'### Split config\nStill needs adapting:\n{body}\n'
+
+
+def do_split_check(args, dbs):  # pylint: disable=unused-argument
+    """Check commits for constructs which need adapting for a split config
+
+    Args:
+        args (Namespace): Parsed arguments with 'range' and 'fix'
+        dbs (Database): Database instance
+
+    Returns:
+        int: 0 if nothing needs adapting, 1 otherwise
+    """
+    base, _, head = args.range.partition('..')
+    head = head or 'HEAD'
+    if not uses_split_config(head):
+        tout.info('The tree does not have a split config')
+        return 0
+    found, need = split_scan(base, head)
+    if args.fix and (found or need):
+        if head != 'HEAD':
+            tout.error('-f needs a range ending at HEAD')
+            return 1
+        changed = split_fix(found, need)
+        if changed:
+            tout.info(f"Adapted for the split config: {' '.join(changed)}")
+            parts = []
+            if any(path != splitcfg.CONF_NOSPL for path in changed):
+                parts.append('convert to per-phase config macros')
+            if need:
+                parts.append(f"add {', '.join(need)} to conf_nospl")
+            tout.info(f"note: [pickman] {'; '.join(parts)}")
+        found, need = split_scan(base, None)
+    lines = splitcfg.format_report(found, need)
+    for line in lines:
+        tout.warning(line)
+    return 1 if lines else 0
 
 
 def do_check(args, dbs):  # pylint: disable=unused-argument
@@ -3503,7 +3649,8 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
     agent_commits = [AgentCommit(c.hash, c.chash, c.subject,
                                  applied_map.get(c.hash)) for c in commits]
     success, conv_log = agent.cherry_pick_commits(
-        agent_commits, source, branch_name, external_paths=port.paths)
+        agent_commits, source, branch_name, external_paths=port.paths,
+        split_config=uses_split_config(BRANCH_MASTER))
 
     # Check for signal file from agent
     signal_status, signal_commit = agent.read_signal_file()
@@ -3554,6 +3701,7 @@ def execute_apply(dbs, source, commits, branch_name, args, advance_to=None):  # 
                 ext_note = ('Changes to separate projects:\n' +
                             ''.join(f'- {url}\n' for url in port.urls) +
                             '\n')
+            note += split_note(BRANCH_MASTER, branch_name)
             description = (f'{summary}\n\n{ext_note}{note}\n'
                            f'### Conversation log\n{conv_log}')
             if not push_mr(args, branch_name, title, description):
@@ -3658,8 +3806,9 @@ def do_pick(args, dbs):  # pylint: disable=unused-argument,too-many-locals
                      for c in commits]
 
     # Run the agent to cherry-pick
-    success, conv_log = agent.cherry_pick_commits(agent_commits, 'ad-hoc',
-                                                  branch_name)
+    success, conv_log = agent.cherry_pick_commits(
+        agent_commits, 'ad-hoc', branch_name,
+        split_config=uses_split_config(BRANCH_MASTER))
 
     # Verify the branch actually exists - agent may have aborted and deleted it
     if success:
@@ -3677,8 +3826,9 @@ def do_pick(args, dbs):  # pylint: disable=unused-argument,too-many-locals
     if success and args.push:
         title = f'[pick] {commits[-1].subject}'
         commit_list = '\n'.join(f'- {c.chash} {c.subject}' for c in commits)
+        note = split_note(BRANCH_MASTER, branch_name)
         description = (f'Ad-hoc cherry-pick of {len(commits)} commit(s)\n\n'
-                       f'### Commits\n{commit_list}\n\n'
+                       f'### Commits\n{commit_list}\n\n{note}'
                        f'### Conversation log\n{conv_log}')
         if not push_mr(args, branch_name, title, description):
             ret = 1
@@ -4717,6 +4867,7 @@ COMMANDS = {
     'apply': do_apply,
     'check': do_check,
     'check-gitlab': do_check_gitlab,
+    'split-check': do_split_check,
     'commit-source': do_commit_source,
     'compare': do_compare,
     'count-merges': do_count_merges,

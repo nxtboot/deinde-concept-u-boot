@@ -45,6 +45,31 @@ QCONFIG_SUBJECTS = [
 ]
 
 
+# Guidance for a target with a separate config for each phase
+SPLIT_CONFIG_NOTE = '''
+
+IMPORTANT: The target gives each build phase (U-Boot proper, SPL, TPL, VPL)
+its own config, so CONFIG_FOO means the value for the phase being built.
+CONFIG_IS_ENABLED(), CONFIG_VAL(), CONFIG_IF_ENABLED_INT(),
+config_opt_enabled() and the $(PHASE_), $(XPL_), $(SPL_) and $(SPL_TPL_)
+Makefile variables do not exist there, but commits from the source may still
+use them. After each cherry-pick, before the build test, run:
+
+   ./tools/pickman/pickman split-check -f HEAD~1..HEAD
+
+This converts them in the files the commit adds them to, e.g.
+CONFIG_IS_ENABLED(FOO) becomes IS_ENABLED(CONFIG_FOO), and adds any option
+which the source only enables in U-Boot proper to scripts/conf_nospl. If it
+changes anything, amend the commit with 'git commit -a --amend' and add the
+note line it prints to the end of the commit message. If that leaves the
+commit with no changes, the target already does what the commit intended, so
+keep it as an empty commit with 'git commit -a --amend --allow-empty' and say
+so in the note. If it reports anything it could not convert, such as
+documentation, update it by hand in the same way, or report it if you are
+unsure.
+'''
+
+
 def is_qconfig_commit(subject):
     """Check if a commit subject indicates a qconfig resync commit
 
@@ -58,7 +83,7 @@ def is_qconfig_commit(subject):
 
 
 async def run(commits, source, branch_name, repo_path=None,  # pylint: disable=too-many-locals
-              external_paths=None):
+              external_paths=None, split_config=False):
     """Run the Claude agent to cherry-pick commits
 
     Args:
@@ -69,6 +94,8 @@ async def run(commits, source, branch_name, repo_path=None,  # pylint: disable=t
         repo_path (str): path to repository (defaults to current directory)
         external_paths (list of str): Paths of tools which are maintained as
             separate projects, whose changes are dropped, or None
+        split_config (bool): True if the target has a separate config for
+            each phase, so picked commits must be adapted to it
 
     Returns:
         bool: True on success, False on failure
@@ -152,13 +179,14 @@ have already been handled there. Drop them when cherry-picking:
    been handled in the separate project.
 3. Do not count these dropped changes as a significant delta.
 '''
+    split_note = SPLIT_CONFIG_NOTE if split_config else ''
 
     # Get full hash of last commit for signal file
     last_commit_hash = commits[-1].hash
 
     prompt = f"""Cherry-pick the following commits from {source} branch:
 
-{commit_list}{applied_note}{qconfig_note}{external_note}
+{commit_list}{applied_note}{qconfig_note}{external_note}{split_note}
 
 Steps to follow:
 1. First run 'git status' to check the repository state is clean
@@ -276,7 +304,7 @@ def read_signal_file(repo_path=None):
 
 
 def cherry_pick_commits(commits, source, branch_name, repo_path=None,
-                        external_paths=None):
+                        external_paths=None, split_config=False):
     """Synchronous wrapper for running the cherry-pick agent
 
     Args:
@@ -287,13 +315,15 @@ def cherry_pick_commits(commits, source, branch_name, repo_path=None,
         repo_path (str): path to repository (defaults to current directory)
         external_paths (list of str): Paths of tools which are maintained as
             separate projects, whose changes are dropped, or None
+        split_config (bool): True if the target has a separate config for
+            each phase, so picked commits must be adapted to it
 
     Returns:
         tuple: (success, conversation_log) where success is bool and
             conversation_log is the agent's output text
     """
     return asyncio.run(run(commits, source, branch_name, repo_path,
-                           external_paths))
+                           external_paths, split_config))
 
 
 def build_review_context(comments, mr_description, needs_rebase, remote,

@@ -341,6 +341,46 @@ an area at a time keeps each MR small enough to review and stops a CI failure
 in one area from holding up the rest; ``-c`` says how many areas to do at once,
 and running it again picks up where it left off.
 
+Split Config
+------------
+
+The target may give each build phase (U-Boot proper, SPL, TPL and VPL) its own
+config, so that ``CONFIG_FOO`` means the value for the phase being built.
+Pickman detects this from ``include/linux/kconfig.h``, which then no longer
+defines ``CONFIG_IS_ENABLED()``.
+
+Commits from a source without a split config may still use the macros which
+pick the phase's option: ``CONFIG_IS_ENABLED()``, ``CONFIG_VAL()``,
+``CONFIG_IF_ENABLED_INT()``, ``config_opt_enabled()`` and the ``$(PHASE_)``,
+``$(XPL_)``, ``$(SPL_)`` and ``$(SPL_TPL_)`` Makefile variables. These do not
+exist in the target, so a commit which uses them fails to build.
+
+There is a subtler problem too. In the source, ``CONFIG_IS_ENABLED(FOO)`` is
+false in SPL when there is no ``CONFIG_SPL_FOO``, but in the target
+``CONFIG_FOO`` takes U-Boot proper's value in SPL unless ``FOO`` is listed in
+``scripts/conf_nospl``. Converting the macro alone could therefore add code to
+SPL.
+
+When the target has a split config, the cherry-pick agent is told to run
+``split-check -f`` after each pick. This converts the macros in the lines the
+commit adds, e.g. ``CONFIG_IS_ENABLED(FOO)`` becomes ``IS_ENABLED(CONFIG_FOO)``
+and ``obj-$(CONFIG_$(PHASE_)FOO)`` becomes ``obj-$(CONFIG_FOO)``, and adds any
+option which the source only enables in U-Boot proper to ``conf_nospl``. A
+commit which ends up with no changes is kept as an empty commit, since the
+target already does what it intended. Documentation, and tools such as
+``qconfig.py`` which parse the macros, are reported but left alone.
+
+Once the agent finishes, pickman checks the branch again and puts anything still
+needing attention in the MR description.
+
+To check commits by hand::
+
+    ./tools/pickman/pickman split-check                 # ci/master..HEAD
+    ./tools/pickman/pickman split-check -f HEAD~1..HEAD
+
+``-f`` updates the working tree, so commit the result with
+``git commit -a --amend``.
+
 Pipeline Fix
 ------------
 
