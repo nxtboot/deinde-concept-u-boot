@@ -1,5 +1,4 @@
-build-dynamic/
-build-static/
+build-*/
 demo
 demo_static
 target/
