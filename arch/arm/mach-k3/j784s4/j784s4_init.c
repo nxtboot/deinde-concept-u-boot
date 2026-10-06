@@ -24,6 +24,9 @@
 
 #define J784S4_MAX_DDR_CONTROLLERS	4
 
+#define CTRL_MMR_CFG0_AUDIO_REFCLK1_CTRL	0x001082e4
+#define AUDIO_REFCLK1_DEFAULT			0x1c
+
 /* NAVSS North Bridge (NB) */
 #define NAVSS0_NBSS_NB0_CFG_MMRS		0x03702000
 #define NAVSS0_NBSS_NB1_CFG_MMRS		0x03703000
@@ -253,6 +256,7 @@ void k3_spl_init(void)
 		remove_fwl_configs(navss_cbass0_fwls, ARRAY_SIZE(navss_cbass0_fwls));
 	}
 
+	writel(AUDIO_REFCLK1_DEFAULT, (uintptr_t)CTRL_MMR_CFG0_AUDIO_REFCLK1_CTRL);
 
 	/* Shutdown MCU_R5 Core 1 in Split mode at A72 SPL Stage */
 	if (IS_ENABLED(CONFIG_ARM64)) {

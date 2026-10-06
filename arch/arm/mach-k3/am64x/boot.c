@@ -113,7 +113,7 @@ const char *get_reset_reason(void)
 		writel(reset_reason, CTRLMMR_MCU_RST_SRC);
 
 	if (reset_reason == 0 ||
-	   (reset_reason & (RST_SRC_SW_MAIN_POR_FROM_MAIN |
+	    (reset_reason & (RST_SRC_SW_MAIN_POR_FROM_MAIN |
 			    RST_SRC_SW_MAIN_POR_FROM_MCU)))
 		return "POR";
 
