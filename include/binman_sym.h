@@ -13,7 +13,7 @@
 
 #include <linux/build_bug.h>
 
-/* BSYM in little endian, keep in sync with tools/binman/elf.py */
+/* BSYM in little endian, keep in sync with binman/elf.py in binman */
 #define BINMAN_SYM_MAGIC_VALUE	(0x4d595342UL)
 #define BINMAN_SYM_MISSING	(-1UL)
 

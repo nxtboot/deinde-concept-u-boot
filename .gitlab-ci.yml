@@ -320,6 +320,10 @@ Build allyesconfig, tools-only and envtools:
   tags:
     - single
   script:
+    # Prepare python environment, for binman
+    - python3 -m venv /tmp/venv;
+      . /tmp/venv/bin/activate;
+      pip install -r tools/binman/requirements.txt setuptools
     # Allow pipefail because of how we use 'yes' here.
     - set +o pipefail;
       yes 0 | make allyesconfig oldconfig all -j$(nproc);
@@ -328,7 +332,7 @@ Build allyesconfig, tools-only and envtools:
       make mrproper;
       make tools-only_config envtools -j$(nproc)
 
-Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig and pickman suites:
+Run buildman, dtoc, hwids_to_dtsi, Kconfig and pickman suites:
   extends: .test_suites
   script:
     - git config --global user.name "GitLab CI Runner";
@@ -348,10 +352,6 @@ Run binman, buildman, dtoc, hwids_to_dtsi, Kconfig and pickman suites:
       ./tools/buildman/buildman -T0 -o ${UBOOT_TRAVIS_BUILD_DIR} -w
         --board tools-only;
       set -e;
-      export TOOLPATH="--toolpath ${UBOOT_TRAVIS_BUILD_DIR}/tools --toolpath /opt/coreboot";
-      ./tools/binman/binman ${TOOLPATH} tool -f missing;
-      ./tools/binman/binman ${TOOLPATH} test;
-      ./tools/binman/binman ${TOOLPATH} test -T;
       ./tools/buildman/buildman -t;
       ./tools/qconfig.py -t;
       ./tools/dtoc/dtoc -t;
@@ -893,6 +893,12 @@ coreboot test.py:
     - export PATH=$PATH:~/bin
     - export PATH=$PATH:test/hooks/bin
 
+    # Install the binman version this tree expects, in a per-job virtualenv
+    # which can still see the host's Python packages
+    - python3 -m venv --system-site-packages /tmp/venv-${CI_JOB_ID}
+    - . /tmp/venv-${CI_JOB_ID}/bin/activate
+    - pip install -q -r tools/binman/requirements.txt
+
     # Load it on the device
     - ret=0
     - echo "role ${ROLE}"
@@ -910,6 +916,8 @@ coreboot test.py:
     - if [[ $ret -ne 0 ]]; then
         exit $ret;
       fi
+  after_script:
+    - rm -rf /tmp/venv-${CI_JOB_ID}
   artifacts:
     when: always
     paths:

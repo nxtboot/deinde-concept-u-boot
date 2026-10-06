@@ -50,8 +50,7 @@ extensions = ['kerneldoc', 'rstFlatTable', 'kernel_include',
               'kfigure', 'sphinx.ext.ifconfig', # 'automarkup',
               'maintainers_include', 'sphinx.ext.autosectionlabel',
               'kernel_abi', 'kernel_feat', 'sphinx-prompt',
-              'sphinx_reredirects', 'sphinx.ext.autodoc',
-              'binman_docs' ]
+              'sphinx_reredirects', 'sphinx.ext.autodoc' ]
 
 #
 # cdomain is badly broken in Sphinx 3+.  Leaving it out generates *most*
@@ -154,7 +153,12 @@ author = 'The U-Boot development community'
 
 # Pages we have moved after being heavily referenced externally
 redirects = {
-    "develop/py_testing": "pytest/usage.html"
+    "develop/py_testing": "pytest/usage.html",
+    # binman's documentation is now with the binary-manager package
+    "develop/package/binman": "https://binman.readthedocs.io/en/latest/binman.html",
+    "develop/package/entries": "https://binman.readthedocs.io/en/latest/entries.html",
+    "develop/package/bintools": "https://binman.readthedocs.io/en/latest/bintools.html",
+    "develop/binman_tests": "https://binman.readthedocs.io/en/latest/binman_tests.html",
 }
 
 # The version info for the project you're documenting, acts as replacement for

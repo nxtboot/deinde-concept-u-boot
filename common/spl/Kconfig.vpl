@@ -290,7 +290,7 @@ config VPL_BINMAN_SYMBOLS
 	  binman_sym_declare(type, entry, prop) macro and accessed by the
 	  binman_sym(type, entry, prop) macro defined in binman_sym.h.
 
-	  See tools/binman/binman.rst for a detailed explanation.
+	  See https://binman.readthedocs.io/ for a detailed explanation.
 
 config VPL_BINMAN_UBOOT_SYMBOLS
 	bool "Declare binman symbols for U-Boot phases in VPL"

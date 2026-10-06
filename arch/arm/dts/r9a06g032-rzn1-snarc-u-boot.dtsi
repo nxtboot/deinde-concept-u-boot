@@ -3,7 +3,7 @@
  * Configuration file for binman
  *
  * After building u-boot, can generate the SPKG output by running:
- * tools/binman/binman build -d arch/arm/dts/r9a06g032-rzn1-snarc.dtb -O <outdir>
+ * binman build -d arch/arm/dts/r9a06g032-rzn1-snarc.dtb -O <outdir>
  */
 
 #include <config.h>

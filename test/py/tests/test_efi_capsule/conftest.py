@@ -9,6 +9,7 @@ import os
 from subprocess import call, check_call, CalledProcessError
 from tests import fs_helper
 import pytest
+import utils
 from capsule_defs import CAPSULE_DATA_DIR, CAPSULE_INSTALL_DIR, EFITOOLS_PATH
 
 @pytest.fixture(scope='function')
@@ -82,8 +83,10 @@ def efi_capsule_data(request, ubman):
                    'dtc -I dts -O dtb capsule_gen_tmp.dts -o capsule_binman.dtb;'
                    % (data_dir, ubman.config.source_dir, ubman.config.source_dir), shell=True)
         check_call('cd %s; '
-                   './tools/binman/binman --toolpath %s/tools build -u -d %s/capsule_binman.dtb -O %s -m --allow-missing -I %s -I ./board/sandbox -I ./arch/sandbox/dts'
-                   % (ubman.config.source_dir, ubman.config.build_dir, data_dir, data_dir, data_dir), shell=True)
+                   '%s --toolpath %s/tools build -u -d %s/capsule_binman.dtb -O %s -m --allow-missing -I %s -I ./board/sandbox -I ./arch/sandbox/dts'
+                   % (ubman.config.source_dir, utils.find_binman(ubman.config),
+                      ubman.config.build_dir, data_dir, data_dir, data_dir),
+                   shell=True)
         check_call('cp %s/Test* %s' % (ubman.config.build_dir, data_dir), shell=True)
         os.environ['PYTHONPATH'] = pythonpath
 

@@ -161,7 +161,7 @@ parallel testing. All the threads write to it at once, so it is garbled.
 
 Note that the ``tools/`` tests still run each tool's tests once after the other,
 although within that, they do run in parallel. So for example, the buildman
-tests run in parallel, then the binman tests run in parallel. There would be a
+tests run in parallel, then the dtoc tests run in parallel. There would be a
 significant advantage to running them all in parallel together, but that would
 require a large amount of refactoring, e.g. with more use of pytest fixtures.
 The code-coverage tests are omitted since they cannot run in parallel due to a
