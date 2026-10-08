@@ -379,7 +379,7 @@ static int rcar_gen4_pcie_load_firmware(struct rcar_gen4_pcie *rcar)
 	if (!rcar->firmware)
 		return -ENOMEM;
 
-	ret = request_firmware_into_buf_via_script((void **)&rcar->firmware,
+	ret = request_firmware_into_buf_via_script(rcar->firmware,
 						   RCAR_GEN4_PCIE_FIRMWARE_SIZE,
 						   "renesas_rcar_gen4_load_firmware",
 						   &rcar->firmware_size);

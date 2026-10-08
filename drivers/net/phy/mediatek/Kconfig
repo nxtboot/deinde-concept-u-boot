@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 config MTK_NET_PHYLIB
-	tristate
+	bool
 
 config PHY_MEDIATEK_2P5GE
-	tristate "MediaTek built-in 2.5Gb ethernet PHYs"
+	bool "MediaTek built-in 2.5Gb ethernet PHYs"
 	depends on OF_CONTROL && (TARGET_MT7987 || TARGET_MT7988)
 	depends on SUPPORTS_FW_LOADER
 	select FW_LOADER
