@@ -17,7 +17,7 @@ Synopsis
     gpt rename <interface> <dev> <part> <name>
     gpt repair <interface> <dev>
     gpt set-bootable <interface> <dev> <partition list>
-    gpt env set <interface> <dev> <partition name>
+    gpt setenv <interface> <dev> <partition name>
     gpt swap <interface> <dev> <name1> <name2>
     gpt transpose <interface> <dev> <part1> <part2>
     gpt verify <interface> <dev> [<partition string>]
@@ -249,7 +249,7 @@ Swap the order of the 'boot' and 'rootfs' partition table entries::
 
 Other example: a disk with known partition types::
 
-    => setenv gpt_parts 'name=u-boot,size=32M,type=data;\
+    => env set gpt_parts 'name=u-boot,size=32M,type=data;\
     name=env,size=1M,type=u-boot-env;
     name=ESP,size=128M,type=system;
     name=rootfs,size=3072M,type=linux;
