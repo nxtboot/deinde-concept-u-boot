@@ -31,6 +31,7 @@
 #include <command.h>
 #include <console.h>
 #include <env.h>
+#include <getopt.h>
 #include <watchdog.h>
 #include <malloc.h>
 #include <mapmem.h>
@@ -197,10 +198,9 @@ static int nand_dump(struct mtd_info *mtd, ulong off, int only_oob,
 	else
 		ops.mode = MTD_OPS_RAW;
 	i = mtd_read_oob(mtd, addr, &ops);
-	if (i < 0) {
-		printf("Error reading page at offset %08lx, %d %s\n",
-		       off, i, i == -EUCLEAN ? "correctable" :
-		       "uncorrectable, dumping raw data");
+	if (i < 0 && i != -EUCLEAN) {
+		printf("Error reading page at offset %08lx, %d uncorrectable, dumping raw data\n",
+		       off, i);
 		ret = 1;
 	}
 	printf("\nPage at offset %08lx dump:\n", off);
@@ -344,7 +344,7 @@ static void do_nand_status(struct mtd_info *mtd)
 #ifdef CONFIG_ENV_OFFSET_OOB
 unsigned long nand_env_oob_offset;
 
-int do_nand_env_oob(struct cmd_tbl *cmdtp, int argc, char *const argv[])
+int do_nand_env_oob(int argc, char *const argv[])
 {
 	int ret;
 	uint32_t oob_buf[ENV_OFFSET_SIZE/sizeof(uint32_t)];
@@ -533,9 +533,10 @@ static void adjust_size_for_badblocks(loff_t *size, loff_t offset, int dev)
 	}
 }
 
-static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
-		   char *const argv[])
+static int do_nand(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	int i, ret = 0;
 	ulong addr;
 	loff_t off, size, maxsize;
@@ -548,7 +549,10 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 #endif
 	const char *quiet_str = env_get("quiet");
 	int dev = nand_curr_device;
-	int repeat = flag & CMD_FLAG_REPEAT;
+	int repeat = gs->cmd_flag & CMD_FLAG_REPEAT;
+
+	if (getopt(gs, "+") > 0)
+		return CMD_RET_USAGE;
 
 	/* at least two arguments please */
 	if (argc < 2)
@@ -582,7 +586,10 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 		}
 
 		dev = (int)dectoul(argv[2], NULL);
-		set_dev(dev);
+		if (set_dev(dev)) {
+			puts("no devices available\n");
+			return 1;
+		}
 
 		return 0;
 	}
@@ -590,7 +597,7 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 #ifdef CONFIG_ENV_OFFSET_OOB
 	/* this command operates only on the first nand device */
 	if (strcmp(cmd, "env.oob") == 0)
-		return do_nand_env_oob(cmdtp, argc - 1, argv + 1);
+		return do_nand_env_oob(argc - 1, argv + 1);
 #endif
 
 	/* The following commands operate on the current device, unless
@@ -712,9 +719,8 @@ static int do_nand(struct cmd_tbl *cmdtp, int flag, int argc,
 			!strcmp(&cmd[4], ".oob.ecc");
 
 		off = (int)hextoul(argv[2], NULL);
-		ret = nand_dump(mtd, off, only_oob, ecc, repeat);
 
-		return ret == 0 ? 1 : 0;
+		return nand_dump(mtd, off, only_oob, ecc, repeat);
 	}
 
 	if (strncmp(cmd, "read", 4) == 0 || strncmp(cmd, "write", 5) == 0) {
@@ -1072,7 +1078,7 @@ U_BOOT_LONGHELP(nand,
 #endif
 	);
 
-U_BOOT_CMD(
+U_BOOT_CMD_GETOPT(
 	nand, CONFIG_SYS_MAXARGS, 1, do_nand,
 	"NAND sub-system", nand_help_text
 );

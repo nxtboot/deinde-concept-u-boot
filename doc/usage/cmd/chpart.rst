@@ -70,4 +70,5 @@ See also
 * :doc:`mtdparts<mtdparts>` for defining the partitions this command chooses
   between
 * :doc:`mtd<mtd>` for the MTD stack command which supersedes both
-* *nand* for NAND operations, which act on the partition chosen here
+* :doc:`nand<nand>` for NAND operations, which act on the partition chosen
+  here
