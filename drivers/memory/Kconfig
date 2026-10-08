@@ -38,7 +38,7 @@ config STM32_FMC2_EBI
 	  SOCs containing the FMC2 External Bus Interface.
 
 config STM32_OMM
-	tristate "STM32 Octo Memory Manager"
+	bool "STM32 Octo Memory Manager"
 	depends on ARCH_STM32MP
 	help
 	  This driver manages the muxing between the 2 OSPI busses and
