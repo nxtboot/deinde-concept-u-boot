@@ -10,6 +10,7 @@
 #include <linux/bitfield.h>
 
 #if IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5)
+
 /*
  * Setting RESET_PULSE_OVERRIDE bit for successful reset staggering pulse
  * generation and setting PORT_OVERCURRENT bit so that until we turn on the
