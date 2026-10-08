@@ -117,6 +117,7 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	char *bootline; /* Text of the bootline */
 	char *tmp; /* Temporary char pointer */
 	char build_buf[BOOTLINE_BUF_LEN]; /* Buffer for building the bootline */
+	size_t len; /* Number of bytes of bootline to copy */
 	int ptr = 0;
 #ifdef CONFIG_X86
 	ulong base;
@@ -281,8 +282,9 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		bootline = build_buf;
 	}
 
-	memcpy((void *)bootaddr, bootline, max(strlen(bootline), (size_t)255));
-	flush_cache(bootaddr, max(strlen(bootline), (size_t)255));
+	len = strlen(bootline) + 1;
+	memcpy((void *)bootaddr, bootline, len);
+	flush_cache(bootaddr, len);
 	printf("## Using bootline (@ 0x%lx): %s\n", bootaddr, (char *)bootaddr);
 
 	/*
