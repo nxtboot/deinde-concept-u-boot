@@ -9,6 +9,7 @@
 # every hunk in the file.  Run "pickman drift-accept" to add entries.
 
 README                                            3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
+arch/arm/cpu/u-boot-spl.lds                       df101e958d56  555f90527cb keeps empty __rel_dyn_start/__rel_dyn_end markers, since armv7 start.S references them for CONFIG_POSITION_INDEPENDENT platforms such as qemu_arm_spl
 arch/sandbox/include/asm/clk.h                    69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
 board/nxp/ls1043ardb/ls1043ardb.c                 56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
 board/nxp/ls1043ardb/ls1043ardb.c                 8bf868f7dafe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
