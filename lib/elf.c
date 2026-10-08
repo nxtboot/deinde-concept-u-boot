@@ -81,19 +81,25 @@ unsigned long load_elf64_image_phdr(unsigned long addr)
 {
 	Elf64_Ehdr *ehdr; /* Elf header structure pointer */
 	Elf64_Phdr *phdr; /* Program header structure pointer */
+	unsigned long entry;
+	void *base;
 	int i;
 
-	ehdr = (Elf64_Ehdr *)addr;
-	phdr = (Elf64_Phdr *)(addr + (ulong)ehdr->e_phoff);
+	/* the size is not known until the header is read, so map without it */
+	base = map_sysmem(addr, 0);
+	ehdr = base;
+	phdr = base + (ulong)ehdr->e_phoff;
 
 	/* Load each program header */
 	for (i = 0; i < ehdr->e_phnum; ++i, ++phdr) {
-		void *dst = (void *)(ulong)phdr->p_paddr;
-		void *src = (void *)addr + phdr->p_offset;
+		void *dst, *src;
 
 		/* Only load PT_LOAD program header */
 		if (phdr->p_type != PT_LOAD)
 			continue;
+
+		dst = map_sysmem(phdr->p_paddr, phdr->p_memsz);
+		src = base + phdr->p_offset;
 
 		debug("Loading phdr %i to 0x%p (%lu bytes)\n",
 		      i, dst, (ulong)phdr->p_filesz);
@@ -102,10 +108,13 @@ unsigned long load_elf64_image_phdr(unsigned long addr)
 		if (phdr->p_filesz != phdr->p_memsz)
 			memset(dst + phdr->p_filesz, 0x00,
 			       phdr->p_memsz - phdr->p_filesz);
-		flush_cache(rounddown((unsigned long)dst, ARCH_DMA_MINALIGN),
+		unmap_sysmem(dst);
+		flush_cache(rounddown((ulong)phdr->p_paddr,
+				      ARCH_DMA_MINALIGN),
 			    roundup(phdr->p_memsz, ARCH_DMA_MINALIGN));
 	}
 
+	entry = ehdr->e_entry;
 	if (ehdr->e_machine == EM_PPC64 && (ehdr->e_flags &
 					    EF_PPC64_ELFV1_ABI)) {
 		/*
@@ -113,12 +122,14 @@ unsigned long load_elf64_image_phdr(unsigned long addr)
 		 * descriptor pointer with the first double word being the
 		 * address of the entry point of the function.
 		 */
-		uintptr_t addr = ehdr->e_entry;
+		Elf64_Addr *desc = map_sysmem(entry, sizeof(*desc));
 
-		return *(Elf64_Addr *)addr;
+		entry = *desc;
+		unmap_sysmem(desc);
 	}
+	unmap_sysmem(base);
 
-	return ehdr->e_entry;
+	return entry;
 }
 
 unsigned long load_elf64_image_shdr(unsigned long addr)
@@ -127,21 +138,27 @@ unsigned long load_elf64_image_shdr(unsigned long addr)
 	Elf64_Shdr *shdr; /* Section header structure pointer */
 	unsigned char *strtab = 0; /* String table pointer */
 	unsigned char *image; /* Binary image pointer */
+	unsigned long entry;
+	void *base;
 	int i; /* Loop counter */
 
-	ehdr = (Elf64_Ehdr *)addr;
+	/* the size is not known until the header is read, so map without it */
+	base = map_sysmem(addr, 0);
+	ehdr = base;
 
 	/* Find the section header string table for output info */
-	shdr = (Elf64_Shdr *)(addr + (ulong)ehdr->e_shoff +
-			     (ehdr->e_shstrndx * sizeof(Elf64_Shdr)));
+	shdr = base + (ulong)ehdr->e_shoff +
+		(ehdr->e_shstrndx * sizeof(Elf64_Shdr));
 
 	if (shdr->sh_type == SHT_STRTAB)
-		strtab = (unsigned char *)(addr + (ulong)shdr->sh_offset);
+		strtab = base + (ulong)shdr->sh_offset;
 
 	/* Load each appropriate section */
 	for (i = 0; i < ehdr->e_shnum; ++i) {
-		shdr = (Elf64_Shdr *)(addr + (ulong)ehdr->e_shoff +
-				     (i * sizeof(Elf64_Shdr)));
+		void *dst;
+
+		shdr = base + (ulong)ehdr->e_shoff +
+			(i * sizeof(Elf64_Shdr));
 
 		if (!(shdr->sh_flags & SHF_ALLOC) ||
 		    shdr->sh_addr == 0 || shdr->sh_size == 0) {
@@ -156,20 +173,21 @@ unsigned long load_elf64_image_shdr(unsigned long addr)
 			       (long)shdr->sh_size);
 		}
 
+		dst = map_sysmem(shdr->sh_addr, shdr->sh_size);
 		if (shdr->sh_type == SHT_NOBITS) {
-			memset((void *)(uintptr_t)shdr->sh_addr, 0,
-			       shdr->sh_size);
+			memset(dst, 0, shdr->sh_size);
 		} else {
-			image = (unsigned char *)addr + (ulong)shdr->sh_offset;
-			memcpy((void *)(uintptr_t)shdr->sh_addr,
-			       (const void *)image, shdr->sh_size);
+			image = base + (ulong)shdr->sh_offset;
+			memcpy(dst, (const void *)image, shdr->sh_size);
 		}
+		unmap_sysmem(dst);
 		flush_cache(rounddown(shdr->sh_addr, ARCH_DMA_MINALIGN),
 			    roundup((shdr->sh_addr + shdr->sh_size),
 				     ARCH_DMA_MINALIGN) -
 				rounddown(shdr->sh_addr, ARCH_DMA_MINALIGN));
 	}
 
+	entry = ehdr->e_entry;
 	if (ehdr->e_machine == EM_PPC64 && (ehdr->e_flags &
 					    EF_PPC64_ELFV1_ABI)) {
 		/*
@@ -177,12 +195,14 @@ unsigned long load_elf64_image_shdr(unsigned long addr)
 		 * descriptor pointer with the first double word being the
 		 * address of the entry point of the function.
 		 */
-		uintptr_t addr = ehdr->e_entry;
+		Elf64_Addr *desc = map_sysmem(entry, sizeof(*desc));
 
-		return *(Elf64_Addr *)addr;
+		entry = *desc;
+		unmap_sysmem(desc);
 	}
+	unmap_sysmem(base);
 
-	return ehdr->e_entry;
+	return entry;
 }
 
 /*
