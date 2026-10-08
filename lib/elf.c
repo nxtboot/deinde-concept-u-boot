@@ -8,6 +8,7 @@
 #include <elf.h>
 #include <env.h>
 #include <errno.h>
+#include <mapmem.h>
 #include <net.h>
 #include <vxworks.h>
 #ifdef CONFIG_X86
@@ -288,18 +289,18 @@ unsigned long load_elf_image_shdr(unsigned long addr)
 int valid_elf_image(unsigned long addr)
 {
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
+	int valid = 1;
 
-	ehdr = (Elf32_Ehdr *)addr;
+	ehdr = map_sysmem(addr, sizeof(*ehdr));
 
 	if (!IS_ELF(*ehdr)) {
 		printf("## No elf image at address 0x%08lx\n", addr);
-		return 0;
-	}
-
-	if (ehdr->e_type != ET_EXEC) {
+		valid = 0;
+	} else if (ehdr->e_type != ET_EXEC) {
 		printf("## Not a 32-bit elf image at address 0x%08lx\n", addr);
-		return 0;
+		valid = 0;
 	}
+	unmap_sysmem(ehdr);
 
-	return 1;
+	return valid;
 }
