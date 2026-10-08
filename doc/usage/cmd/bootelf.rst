@@ -63,4 +63,6 @@ need CONFIG_CMD_ELF_FDT_SETUP=y.
 See also
 --------
 
+* :doc:`bootvx<bootvx>` for starting a VxWorks image, which shares this
+  command's file and its ELF loader but sets up a bootline first
 * :doc:`go<go>` for calling code at an address which is already known
