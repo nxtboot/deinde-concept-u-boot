@@ -23,5 +23,9 @@ cmd/efi_common.c                                  c784074111b3  efi_memmap_type_
 drivers/clk/clk_sandbox.c                         8ecb53450dbb  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
 drivers/clk/clk_sandbox.c                         a943799b685c  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
 drivers/clk/clk_sandbox.c                         c7ed2fa3819d  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/interconnect/qcom/bcm-voter.c             04fdfcf38e0d  Downstream list_sort() takes a const callback (26d56f96d1c); upstream's non-const cmp_vcd() would not match list_cmp_func_t
+drivers/phy/phy-mtk-xsphy.c                       bb5159b35d05  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
 drivers/power/domain/sandbox-power-domain.c       0642b19358cf  The test uses power domain 2, so subdomains must be 3; upstream's 1 overruns the refcount array, which mcheck catches here
+drivers/video/lp855x_backlight.c                  c62dadaa443c  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
+include/soc/qcom/rpmh.h                           f50472861ef0  The !RPMH rpmh_write() stub takes 'struct device' upstream, a Linux type U-Boot lacks; this tree uses 'struct udevice' as the real prototype does
 test/dm/clk.c                                     6d6cde373b96  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
