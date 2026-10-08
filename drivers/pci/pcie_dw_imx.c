@@ -129,31 +129,26 @@ static void imx95_pcie_init_phy(struct pcie_dw_imx *priv)
  * Workaround: Set SS_RW_REG_1[SYS_AUX_PWR_DET] to 1.
  */
 	regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_SS_RW_REG_1,
-		IMX95_PCIE_SYS_AUX_PWR_DET, IMX95_PCIE_SYS_AUX_PWR_DET);
+			   IMX95_PCIE_SYS_AUX_PWR_DET,
+			   IMX95_PCIE_SYS_AUX_PWR_DET);
 
-	regmap_update_bits(priv->iomuxc_gpr,
-		IMX95_PCIE_SS_RW_REG_0,
-		IMX95_PCIE_PHY_CR_PARA_SEL,
-		IMX95_PCIE_PHY_CR_PARA_SEL);
+	regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_SS_RW_REG_0,
+			   IMX95_PCIE_PHY_CR_PARA_SEL,
+			   IMX95_PCIE_PHY_CR_PARA_SEL);
 
 	if (priv->enable_ext_refclk) {
 		/* External clock is used as reference clock */
-		regmap_update_bits(priv->iomuxc_gpr,
-			IMX95_PCIE_PHY_GEN_CTRL,
-			IMX95_PCIE_REF_USE_PAD,
-			IMX95_PCIE_REF_USE_PAD);
-		regmap_update_bits(priv->iomuxc_gpr,
-			IMX95_PCIE_SS_RW_REG_0,
-			IMX95_PCIE_REF_CLKEN, 0);
+		regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_PHY_GEN_CTRL,
+				   IMX95_PCIE_REF_USE_PAD,
+				   IMX95_PCIE_REF_USE_PAD);
+		regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_SS_RW_REG_0,
+				   IMX95_PCIE_REF_CLKEN, 0);
 	} else {
-		regmap_update_bits(priv->iomuxc_gpr,
-			IMX95_PCIE_PHY_GEN_CTRL,
-			IMX95_PCIE_REF_USE_PAD, 0);
+		regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_PHY_GEN_CTRL,
+				   IMX95_PCIE_REF_USE_PAD, 0);
 
-		regmap_update_bits(priv->iomuxc_gpr,
-			IMX95_PCIE_SS_RW_REG_0,
-			IMX95_PCIE_REF_CLKEN,
-			IMX95_PCIE_REF_CLKEN);
+		regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_SS_RW_REG_0,
+				   IMX95_PCIE_REF_CLKEN, IMX95_PCIE_REF_CLKEN);
 	}
 
 	/* Force CLKREQ# low by override */
@@ -206,13 +201,11 @@ static int imx95_pcie_core_reset(struct pcie_dw_imx *priv, bool assert)
 		 * hardware by doing a read. Otherwise, there is no guarantee
 		 * that the write has reached the hardware before udelay().
 		 */
-		regmap_read(priv->iomuxc_gpr, IMX95_PCIE_RST_CTRL,
-				     &val);
+		regmap_read(priv->iomuxc_gpr, IMX95_PCIE_RST_CTRL, &val);
 		udelay(15);
 		regmap_update_bits(priv->iomuxc_gpr, IMX95_PCIE_RST_CTRL,
-				  IMX95_PCIE_COLD_RST, 0);
-		regmap_read(priv->iomuxc_gpr, IMX95_PCIE_RST_CTRL,
-				     &val);
+				   IMX95_PCIE_COLD_RST, 0);
+		regmap_read(priv->iomuxc_gpr, IMX95_PCIE_RST_CTRL, &val);
 		udelay(10);
 	}
 
