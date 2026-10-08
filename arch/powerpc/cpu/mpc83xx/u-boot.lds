@@ -57,7 +57,6 @@ SECTIONS
    * _end - This is end of u-boot.bin image.
    * dtb will be appended here to make u-boot-dtb.bin
    */
-  . = ALIGN(8);
   _end = .;
 
   . = ALIGN(4096);

@@ -50,7 +50,6 @@ SECTIONS
 		__binman_sym_start = .;
 		KEEP(*(SORT(.binman_sym*)));
 		__binman_sym_end = .;
-		. = ALIGN(8);
 	} > .nor
 
 	/*
