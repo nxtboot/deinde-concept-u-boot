@@ -139,6 +139,7 @@ ifdef CONFIG_NET_LEGACY
 obj-$(CONFIG_CMD_BOOTP) += bootp.o
 obj-$(CONFIG_CMD_DNS) += dns.o
 obj-$(CONFIG_CMD_LINK_LOCAL) += linklocal.o
+obj-$(CONFIG_CMD_RARP) += rarpboot.o
 obj-$(CONFIG_CMD_WGET) += wget.o
 endif
 obj-$(CONFIG_ARM_FFA_TRANSPORT) += armffa.o
