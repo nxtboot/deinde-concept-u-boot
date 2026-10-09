@@ -26,6 +26,7 @@ endif
 common_make_args += V=$(VERBOSE)
 common_make_args += BINMAN_DEBUG=1
 common_make_args += BINMAN_VERBOSE=3
+common_make_args += BINMAN=$(CURDIR)/debian/binman.sh
 
 # the upstream build passes LDFLAGS directly to ld instead of calling gcc for
 # linking; so instead of passing -Wl,foo in LDFLAGS as in automake builds, one

@@ -25,6 +25,24 @@ fi
 echo "Pulling latest changes..."
 git pull
 
+# Binman is maintained as the binary-manager package. Launchpad builds have
+# no network access, so put the version which U-Boot asks for into the source
+# package, where debian/binman.sh runs it
+BINMAN_VERSION=$(sed -n 's/^binary-manager==//p' tools/binman/requirements.txt)
+echo "Fetching binary-manager ${BINMAN_VERSION}..."
+rm -rf debian/binman
+mkdir -p debian/binman
+trap 'rm -rf debian/binman' EXIT
+BINMAN_URL=$(python3 - "$BINMAN_VERSION" <<'PYEOF'
+import json, sys, urllib.request
+url = f'https://pypi.org/pypi/binary-manager/{sys.argv[1]}/json'
+with urllib.request.urlopen(url) as resp:
+    files = json.load(resp)['urls']
+print(next(f['url'] for f in files if f['packagetype'] == 'sdist'))
+PYEOF
+)
+curl -sSfL "$BINMAN_URL" | tar -xz -C debian/binman --strip-components=1
+
 # Get version info from the tree
 UBOOT_VERSION=$(sed -n 's/^VERSION = //p' Makefile).$(sed -n 's/^PATCHLEVEL = //p' Makefile)
 GIT_DATE=$(date -u +%Y%m%d)
