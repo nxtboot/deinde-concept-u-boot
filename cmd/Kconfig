@@ -411,6 +411,7 @@ config CMD_BOOTCTL
 	bool "bootctl"
 	depends on BOOTCTL
 	default y
+	select GETOPT
 	help
 	  Provide information about the bootctl system, including access to
 	  drivers and other features.

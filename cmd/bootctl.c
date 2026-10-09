@@ -9,9 +9,9 @@
 #include <bootctl.h>
 #include <command.h>
 #include <dm.h>
+#include <getopt.h>
 
-static int do_bootctl_list(struct cmd_tbl *cmdtp, int flag, int argc,
-			   char *const argv[])
+static int do_bootctl_list(struct getopt_state *gs)
 {
 	struct udevice *dev;
 	struct uclass *uc;
@@ -35,8 +35,7 @@ static int do_bootctl_list(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-static int do_bootctl_run(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[])
+static int do_bootctl_run(struct getopt_state *gs)
 {
 	int ret;
 
@@ -51,8 +50,8 @@ static int do_bootctl_run(struct cmd_tbl *cmdtp, int flag, int argc,
 
 U_BOOT_LONGHELP(bootctl,
 	"list      - list bootctl drivers\n"
-	"run      - run a boot");
+	"bootctl run       - run a boot");
 
 U_BOOT_CMD_WITH_SUBCMDS(bootctl, "Boot control", bootctl_help_text,
-	U_BOOT_SUBCMD_MKENT(list, 1, 1, do_bootctl_list),
-	U_BOOT_SUBCMD_MKENT(run, 1, 1, do_bootctl_run));
+	U_BOOT_CMD_MKENT_NOOPTS(list, 1, 1, do_bootctl_list, "", ""),
+	U_BOOT_CMD_MKENT_NOOPTS(run, 1, 1, do_bootctl_run, "", ""));

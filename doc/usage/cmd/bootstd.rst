@@ -75,5 +75,15 @@ Return value
 
 The return value $? is always 0 (true).
 
+See also
+--------
+
+* :doc:`bootflow<bootflow>` for listing and booting the bootflows which
+  standard boot finds
+* :doc:`bootdev<bootdev>` for the devices which are scanned for them
+* :doc:`bootmeth<bootmeth>` for the methods used to scan each device
+* :doc:`bootctl<bootctl>` for boot control, whose schema sets the bootdev
+  order through its 'labels' option
+
 
 .. BootflowStates_:

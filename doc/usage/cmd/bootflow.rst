@@ -793,6 +793,7 @@ See also
 * :doc:`../luks` - LUKS encryption support
 * :doc:`../tkey-fde` - TKey full disk encryption
 * :doc:`bootdev` - Boot device documentation
+* :doc:`bootctl` - Boot control, which offers these bootflows in a menu
 * :doc:`/develop/bootstd/index` - Standard boot documentation
 
 
