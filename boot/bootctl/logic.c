@@ -32,6 +32,15 @@ enum {
 	ERROR_TIMEOUT_MS	= 5000,	/* timeout for error message display */
 };
 
+static int logic_bind(struct udevice *dev)
+{
+	struct bootctl_uc_plat *ucp = dev_get_uclass_plat(dev);
+
+	ucp->desc = "Controls the boot process";
+
+	return 0;
+}
+
 static int logic_prepare(struct udevice *dev)
 {
 	struct logic_priv *priv = dev_get_priv(dev);
@@ -991,6 +1000,7 @@ U_BOOT_DRIVER(bc_logic) = {
 	.name		= "bc_logic",
 	.id		= UCLASS_BOOTCTL,
 	.of_match	= logic_ids,
+	.bind		= logic_bind,
 	.ops		= &ops,
 	.of_to_plat	= logic_of_to_plat,
 	.probe		= logic_probe,
