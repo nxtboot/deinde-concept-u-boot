@@ -88,6 +88,8 @@ See also
 
 * :doc:`bootelf<bootelf>` for starting an ELF file, which finds the entry
   point in the file rather than being told it
+* :doc:`bootvx<bootvx>` for starting a VxWorks image, which sets up a
+  bootline for it before jumping
 * :doc:`iminfo<iminfo>` for the entry point recorded in an image header
 * :doc:`load<load>` for reading an application into memory first
 * :doc:`bootm<bootm>` for booting an operating system, which does not return

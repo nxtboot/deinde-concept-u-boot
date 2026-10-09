@@ -8,8 +8,10 @@
 #include <cpu_func.h>
 #include <elf.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <log.h>
+#include <mapmem.h>
 #ifdef CONFIG_CMD_ELF_BOOTVX
 #include <net.h>
 #include <vxworks.h>
@@ -110,13 +112,18 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
  * be either an ELF image or a raw binary.  Will attempt to setup the
  * bootline and other parameters correctly.
  */
-int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_bootvx(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long addr; /* Address of image */
 	unsigned long bootaddr = 0; /* Address to put the bootline */
 	char *bootline; /* Text of the bootline */
 	char *tmp; /* Temporary char pointer */
 	char build_buf[BOOTLINE_BUF_LEN]; /* Buffer for building the bootline */
+	char *dest; /* Where the bootline is copied to */
+	void *entry; /* Entry point of the image */
+	size_t len; /* Number of bytes of bootline to copy */
 	int ptr = 0;
 #ifdef CONFIG_X86
 	ulong base;
@@ -281,9 +288,12 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		bootline = build_buf;
 	}
 
-	memcpy((void *)bootaddr, bootline, max(strlen(bootline), (size_t)255));
-	flush_cache(bootaddr, max(strlen(bootline), (size_t)255));
-	printf("## Using bootline (@ 0x%lx): %s\n", bootaddr, (char *)bootaddr);
+	len = strlen(bootline) + 1;
+	dest = map_sysmem(bootaddr, len);
+	memcpy(dest, bootline, len);
+	flush_cache(bootaddr, len);
+	printf("## Using bootline (@ 0x%lx): %s\n", bootaddr, dest);
+	unmap_sysmem(dest);
 
 	/*
 	 * If the data at the load address is an elf image, then
@@ -298,6 +308,7 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	printf("## Starting vxWorks at 0x%08lx ...\n", addr);
 	flush();
 
+	entry = map_sysmem(addr, 0);
 	dcache_disable();
 #if defined(CONFIG_ARM64) && defined(CONFIG_ARMV8_PSCI)
 	armv8_setup_psci();
@@ -306,10 +317,11 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 #ifdef CONFIG_X86
 	/* VxWorks on x86 uses stack to pass parameters */
-	((asmlinkage void (*)(int))addr)(0);
+	((asmlinkage void (*)(int))entry)(0);
 #else
-	((void (*)(int))addr)(0);
+	((void (*)(int))entry)(0);
 #endif
+	unmap_sysmem(entry);
 
 	puts("## vxWorks terminated\n");
 
@@ -333,7 +345,7 @@ U_BOOT_CMD(
 );
 
 #ifdef CONFIG_CMD_ELF_BOOTVX
-U_BOOT_CMD(
+U_BOOT_CMD_NOOPTS(
 	bootvx, 2, 0, do_bootvx,
 	"Boot vxWorks from an ELF image",
 	" [address] - load address of vxWorks ELF image."
