@@ -340,6 +340,139 @@ static int cmd_test_cbfsls_empty(struct unit_test_state *uts)
 }
 CMD_TEST(cmd_test_cbfsls_empty, UTF_CONSOLE);
 
+/* Test loading a file out of a CBFS */
+static int cmd_test_cbfsload_base(struct unit_test_state *uts)
+{
+	ulong end, addr = CBFS_LOAD_ADDR;
+	void *rom, *buf;
+	int i;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	buf = map_sysmem(addr, HELLO_SIZE);
+	memset(buf, '\0', HELLO_SIZE);
+
+	ut_assertok(run_commandf("cbfsload %lx hello", addr));
+	ut_assert_nextline("reading hello");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("%d bytes read", HELLO_SIZE);
+	ut_assert_console_end();
+
+	for (i = 0; i < HELLO_SIZE; i++)
+		ut_asserteq(HELLO_BYTE, ((u8 *)buf)[i]);
+	ut_asserteq(HELLO_SIZE, env_get_hex("filesize", 0));
+
+	unmap_sysmem(buf);
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsload_base, UTF_CONSOLE);
+
+/* Test the byte count, which caps the read rather than asking for that much */
+static int cmd_test_cbfsload_bytes(struct unit_test_state *uts)
+{
+	ulong end, addr = CBFS_LOAD_ADDR;
+	void *rom, *buf;
+	int i;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	/* a count shorter than the file stops the read there */
+	buf = map_sysmem(addr, UBOOT_SIZE);
+	memset(buf, '\0', UBOOT_SIZE);
+	ut_assertok(run_commandf("cbfsload %lx u-boot %x", addr,
+				 UBOOT_SIZE / 2));
+	ut_assert_nextline("reading u-boot");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("%d bytes read", UBOOT_SIZE / 2);
+	ut_assert_console_end();
+
+	for (i = 0; i < UBOOT_SIZE / 2; i++)
+		ut_asserteq(UBOOT_BYTE, ((u8 *)buf)[i]);
+	for (; i < UBOOT_SIZE; i++)
+		ut_asserteq(0, ((u8 *)buf)[i]);
+	ut_asserteq(UBOOT_SIZE / 2, env_get_hex("filesize", 0));
+
+	/* a count past the end of the file reads only the file */
+	memset(buf, '\0', UBOOT_SIZE);
+	ut_assertok(run_commandf("cbfsload %lx u-boot %x", addr,
+				 UBOOT_SIZE * 2));
+	ut_assert_nextline("reading u-boot");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("%d bytes read", UBOOT_SIZE);
+	ut_assert_console_end();
+
+	for (i = 0; i < UBOOT_SIZE; i++)
+		ut_asserteq(UBOOT_BYTE, ((u8 *)buf)[i]);
+	ut_asserteq(UBOOT_SIZE, env_get_hex("filesize", 0));
+
+	/* so does a count of zero, which is what leaving it out means */
+	ut_assertok(run_commandf("cbfsload %lx u-boot 0", addr));
+	ut_assert_nextline("reading u-boot");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("%d bytes read", UBOOT_SIZE);
+	ut_assert_console_end();
+	ut_asserteq(UBOOT_SIZE, env_get_hex("filesize", 0));
+
+	unmap_sysmem(buf);
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsload_bytes, UTF_CONSOLE);
+
+/* Test the ways cbfsload can fail */
+static int cmd_test_cbfsload_bad(struct unit_test_state *uts)
+{
+	ulong end, addr = CBFS_LOAD_ADDR;
+	void *rom;
+
+	ut_assertok(build_rom(uts, ROMT_FILES, &end, &rom));
+	ut_assertok(run_commandf("cbfsinit %lx", end));
+	ut_assert_console_end();
+
+	/* a name the archive does not hold */
+	ut_asserteq(1, run_commandf("cbfsload %lx nope", addr));
+	ut_assert_nextline("File not found: nope");
+	ut_assert_console_end();
+
+	/*
+	 * The command declares a maxargs of 4 and no minimum, so a line with
+	 * too few arguments reaches the handler and gets a usage line of its
+	 * own rather than the help text
+	 */
+	ut_asserteq(1, run_commandf("cbfsload %lx", addr));
+	ut_assert_nextline("usage: cbfsload <addr> <filename> [bytes]");
+	ut_assert_console_end();
+
+	/* one argument too many is a usage error, so the help text is shown */
+	ut_asserteq(1, run_commandf("cbfsload %lx hello 10 x", addr));
+	ut_assert_nextlinen("cbfsload - load binary file");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("Usage:");
+
+	/* the rest is the help text, which is not what this test is about */
+	console_record_reset();
+
+	/* without a CBFS there is nothing to read from */
+	ut_assertok(free_rom(uts, rom, end));
+	ut_assert_console_end();
+
+	ut_asserteq(1, run_commandf("cbfsload %lx hello", addr));
+	ut_assert_nextline("CBFS not initialized.");
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_cbfsload_bad, UTF_CONSOLE);
+
 /* Test reading a CBFS file with the generic 'load' command */
 static int cmd_test_cbfs_load(struct unit_test_state *uts)
 {
