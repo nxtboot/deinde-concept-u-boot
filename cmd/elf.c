@@ -111,7 +111,8 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
  * be either an ELF image or a raw binary.  Will attempt to setup the
  * bootline and other parameters correctly.
  */
-int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+static int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc,
+		     char *const argv[])
 {
 	unsigned long addr; /* Address of image */
 	unsigned long bootaddr = 0; /* Address to put the bootline */
