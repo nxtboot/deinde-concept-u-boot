@@ -56,6 +56,15 @@ def add_main_commands(subparsers):
     check_cmd.add_argument('-d', '--diff', action='store_true',
                            help='Show source code diff for problem commits')
 
+    split_cmd = subparsers.add_parser(
+        'split-check',
+        help='Check commits for macros which need adapting for a split config')
+    split_cmd.add_argument('range', nargs='?', default='ci/master..HEAD',
+                           help='Commits to check (default: ci/master..HEAD)')
+    split_cmd.add_argument('-f', '--fix', action='store_true',
+                           help='Convert them in the working tree and add '
+                                'options to conf_nospl as needed')
+
     check_gl = subparsers.add_parser('check-gitlab',
                                       help='Check GitLab permissions')
     check_gl.add_argument('-r', '--remote', default='ci',

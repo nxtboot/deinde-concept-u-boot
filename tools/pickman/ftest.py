@@ -35,6 +35,7 @@ from pickman import database
 from pickman import drift
 from pickman import extern
 from pickman import gitlab_api as gitlab
+from pickman import splitcfg
 
 # Keep the tests away from the user's config file, so that its settings (such
 # as external projects) do not affect them. Tests which need a config file
@@ -9532,6 +9533,346 @@ class TestExtern(unittest.TestCase):
                                              'us', False)
         self.assertEqual(['tools/binman'], result.paths)
 
+
+
+class TestSplitcfg(unittest.TestCase):
+    """Tests for adapting picked commits to a split config"""
+
+    def test_is_split(self):
+        """Test detecting a split config from kconfig.h"""
+        self.assertFalse(splitcfg.is_split(
+            '#define CONFIG_IS_ENABLED(option, ...)\t\\\n'))
+        self.assertTrue(splitcfg.is_split('#define IS_ENABLED(option)\n'))
+
+    def test_paths(self):
+        """Test deciding which files to check and convert"""
+        self.assertTrue(splitcfg.skip_path('tools/qconfig.py'))
+        self.assertTrue(splitcfg.skip_path('tools/pickman/control.py'))
+        self.assertFalse(splitcfg.skip_path('tools/mkimage.c'))
+        self.assertTrue(splitcfg.is_code('drivers/core/device.c'))
+        self.assertTrue(splitcfg.is_code('drivers/Makefile'))
+        self.assertTrue(splitcfg.is_code('scripts/Makefile.xpl'))
+        self.assertTrue(splitcfg.is_code('arch/arm/config.mk'))
+        self.assertFalse(splitcfg.is_code('doc/develop/spl.rst'))
+
+    def test_parse_added(self):
+        """Test finding the lines added by a diff"""
+        diff = '\n'.join([
+            'diff --git a/a.c b/a.c',
+            '--- a/a.c',
+            '+++ b/a.c',
+            '@@ -10,0 +11,2 @@ int f(void)',
+            '+one',
+            '+two',
+            '@@ -20 +22 @@',
+            '-old',
+            '+new',
+            ' context',
+            '+after',
+            'diff --git a/gone.c b/gone.c',
+            '--- a/gone.c',
+            '+++ /dev/null',
+            '@@ -1 +0,0 @@',
+            '-gone',
+        ])
+        self.assertEqual(
+            [('a.c', 11, 'one'), ('a.c', 12, 'two'), ('a.c', 22, 'new'),
+             ('a.c', 24, 'after')],
+            splitcfg.parse_added(diff))
+
+    def test_find(self):
+        """Test finding old-style constructs"""
+        added = [
+            ('a.c', 1, 'if (CONFIG_IS_ENABLED(FOO) && CONFIG_VAL(BAR))'),
+            ('a.c', 2, 'x = CONFIG_IF_ENABLED_INT(CONFIG_A, B);'),
+            ('a.c', 3, 'y = config_opt_enabled(CONFIG_C, 1, 2);'),
+            ('a.c', 4, 'z = config_opt_enabled(var, 1, 2);'),
+            ('Makefile', 5, 'obj-$(CONFIG_$(PHASE_)D) += d.o'),
+            ('tools/qconfig.py', 6, 'CONFIG_IS_ENABLED(E)'),
+            ('a.c', 7, 'if (IS_ENABLED(CONFIG_F))'),
+        ]
+        found = splitcfg.find(added)
+        self.assertEqual(
+            [('a.c', 1, 'CONFIG_IS_ENABLED()', 'FOO'),
+             ('a.c', 1, 'CONFIG_VAL()', 'BAR'),
+             ('a.c', 2, 'CONFIG_IF_ENABLED_INT()', 'A'),
+             ('a.c', 3, 'config_opt_enabled()', 'C'),
+             ('a.c', 4, 'config_opt_enabled()', None),
+             ('Makefile', 5, 'CONFIG_$(PHASE_)', 'D')],
+            [(item.path, item.line, item.kind, item.option)
+             for item in found])
+
+    def test_options(self):
+        """Test working out which options need adding to conf_nospl"""
+        variants = splitcfg.get_variants(
+            'config SPL_DM_MMC\nmenuconfig TPL_FOO\n  config VPL_BAR\n')
+        self.assertEqual({'DM_MMC', 'FOO', 'BAR'}, variants)
+        nospl = splitcfg.get_nospl(
+            '# Options\n\nText here\nACPIGEN\nUTHREAD\n')
+        self.assertEqual({'ACPIGEN', 'UTHREAD'}, nospl)
+
+        def finding(path, kind, option):
+            return splitcfg.Finding(path, 1, kind, option, '')
+
+        found = [
+            finding('a.c', 'CONFIG_IS_ENABLED()', 'DM_MMC'),
+            finding('a.c', 'CONFIG_IS_ENABLED()', 'ACPIGEN'),
+            finding('a.c', 'CONFIG_IS_ENABLED()', 'SPL_X'),
+            finding('a.c', 'CONFIG_IS_ENABLED()', 'NEW'),
+            finding('Makefile', 'CONFIG_$(PHASE_)', 'MK'),
+            finding('a.c', 'CONFIG_VAL()', 'VAL'),
+            finding('a.c', 'config_opt_enabled()', None),
+            finding('doc/a.rst', 'CONFIG_IS_ENABLED()', 'DOC'),
+        ]
+        self.assertEqual(['MK', 'NEW'],
+                         splitcfg.needs_nospl(found, variants, nospl))
+
+    def test_add_nospl(self):
+        """Test adding options to conf_nospl"""
+        text = '# Options\n\nSome text\n\nACPIGEN\nUTHREAD\n'
+        self.assertEqual(
+            '# Options\n\nSome text\n\nACPIGEN\nNEW\nUTHREAD\n',
+            splitcfg.add_nospl(text, ['NEW', 'ACPIGEN']))
+        self.assertEqual('A\nB\n', splitcfg.add_nospl('', ['B', 'A']))
+
+    def test_convert(self):
+        """Test converting old-style constructs"""
+        src = '\n'.join([
+            '#if CONFIG_IS_ENABLED(FOO)',
+            '\tif (CONFIG_IS_ENABLED(CONFIG_BAR, (a), (b)))',
+            '\tint v = CONFIG_VAL(SYS_MALLOC_F_LEN);',
+            '\tu = CONFIG_IF_ENABLED_INT(BLOBLIST_FIXED, BLOBLIST_ADDR);',
+            '\tint device = config_opt_enabled(CONFIG_X,',
+            '\t\t\t\t\tCONFIG_X_ID, -1);',
+        ])
+        expect = '\n'.join([
+            '#if IS_ENABLED(CONFIG_FOO)',
+            '\tif (IS_ENABLED(CONFIG_BAR, (a), (b)))',
+            '\tint v = CONFIG_SYS_MALLOC_F_LEN;',
+            '\tu = IF_ENABLED_INT(CONFIG_BLOBLIST_FIXED, '
+            'CONFIG_BLOBLIST_ADDR);',
+            '\tint device = IS_ENABLED(CONFIG_X,',
+            '\t\t\t\t\t(CONFIG_X_ID), (-1));',
+        ])
+        self.assertEqual(expect, splitcfg.convert('a.c', src))
+        self.assertEqual(
+            'obj-$(CONFIG_FOO) += foo.o\nobj-$(CONFIG_BAR) += bar/\n',
+            splitcfg.convert('drivers/Makefile',
+                             'obj-$(CONFIG_$(PHASE_)FOO) += foo.o\n'
+                             'obj-$(CONFIG_$(SPL_TPL_)BAR) += bar/\n'))
+
+        # Documentation and tools which parse the macros are left alone
+        for path in ['doc/a.rst', 'tools/qconfig.py']:
+            self.assertEqual('CONFIG_IS_ENABLED(FOO)',
+                             splitcfg.convert(path, 'CONFIG_IS_ENABLED(FOO)'))
+
+    def test_convert_coe(self):
+        """Test converting config_opt_enabled() with tricky arguments"""
+        self.assertEqual(
+            'x = IS_ENABLED(CONFIG_A, (f(1, [2, 3], {4})), ("a,)b\\"c"));',
+            splitcfg.convert(
+                'a.c',
+                'x = config_opt_enabled(CONFIG_A, f(1, [2, 3], {4}), '
+                '"a,)b\\"c");'))
+
+        # A call nested in the arguments of another
+        self.assertEqual(
+            "x = IS_ENABLED(CONFIG_A, ('('), (IS_ENABLED(CONFIG_B, (1), "
+            "(2))));",
+            splitcfg.convert(
+                'a.c',
+                "x = config_opt_enabled(CONFIG_A, '(', "
+                'config_opt_enabled(CONFIG_B, 1, 2));'))
+
+        # Calls which are not understood are left alone
+        for text in ['x = config_opt_enabled(CONFIG_A, 1);',
+                     'x = config_opt_enabled(CONFIG_A, 1, 2']:
+            self.assertEqual(text, splitcfg.convert('a.c', text))
+
+    def test_format_report(self):
+        """Test formatting the report"""
+        found = [
+            splitcfg.Finding('a.c', 3, 'CONFIG_IS_ENABLED()', 'FOO', ''),
+            splitcfg.Finding('a.c', 4, 'config_opt_enabled()', None, ''),
+            splitcfg.Finding('doc/a.rst', 5, 'CONFIG_VAL()', 'BAR', ''),
+        ]
+        self.assertEqual(
+            ['a.c:3: CONFIG_IS_ENABLED() FOO',
+             'a.c:4: config_opt_enabled()',
+             'doc/a.rst:5 (not code, so not converted): CONFIG_VAL() BAR',
+             'Only enabled in U-Boot proper upstream, so need adding to '
+             'scripts/conf_nospl: FOO'],
+            splitcfg.format_report(found, ['FOO']))
+        self.assertEqual([], splitcfg.format_report([], []))
+
+
+class TestSplitPrompt(unittest.TestCase):
+    """Tests for the split-config guidance in the cherry-pick prompt"""
+
+    def _prompt(self, split_config):
+        """Run the cherry-pick agent and return the prompt it was given"""
+        commits = [control.AgentCommit('aaa', 'aaa', 'Some change', None)]
+        with mock.patch.object(agent, 'check_available', return_value=True), \
+             mock.patch.object(agent, 'ClaudeAgentOptions'), \
+             mock.patch.object(agent, 'run_agent_collect',
+                               new_callable=mock.AsyncMock,
+                               return_value=(True, 'log')) as collect, \
+             terminal.capture():
+            agent.cherry_pick_commits(commits, 'us/next', 'cherry-aaa',
+                                      split_config=split_config)
+        return collect.call_args[0][0]
+
+    def test_prompt(self):
+        """Test that the guidance is only given for a split config"""
+        self.assertIn('pickman split-check -f HEAD~1..HEAD',
+                      self._prompt(True))
+        self.assertNotIn('split-check', self._prompt(False))
+
+
+class TestSplitCheck(unittest.TestCase):
+    """Tests for the split-check command, using a real git repo"""
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.orig_dir = os.getcwd()
+        os.chdir(self.test_dir)
+        for cmd in [['init', '-q'], ['config', 'user.email', 't@t.com'],
+                    ['config', 'user.name', 'Test']]:
+            subprocess.run(['git'] + cmd, check=True, capture_output=True)
+        self._write('include/linux/kconfig.h', '#define IS_ENABLED(x)\n')
+        self._write('scripts/conf_nospl', '# Options\n\nACPIGEN\n')
+        self._write('Kconfig', 'config FOO\n\tbool\nconfig SPL_FOO\n\tbool\n')
+        self._commit('base')
+
+    def tearDown(self):
+        os.chdir(self.orig_dir)
+        shutil.rmtree(self.test_dir)
+
+    @staticmethod
+    def _write(path, text):
+        """Write a file, creating its directory"""
+        if os.path.dirname(path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        tools.write_file(path, text, binary=False)
+
+    @staticmethod
+    def _commit(msg):
+        """Commit everything in the working tree"""
+        subprocess.run(['git', 'add', '-A'], check=True, capture_output=True)
+        subprocess.run(['git', 'commit', '-q', '--allow-empty', '-m', msg],
+                       check=True, capture_output=True)
+
+    @staticmethod
+    def _run(rng, fix=False):
+        """Run split-check, returning the return code and output lines"""
+        tout.init(tout.INFO)
+        args = argparse.Namespace(range=rng, fix=fix)
+        with terminal.capture() as (out, err):
+            ret = control.do_split_check(args, None)
+        lines = (out.getvalue() + err.getvalue()).splitlines()
+        return ret, lines
+
+    def _pick(self):
+        """Add a commit which uses the old macros"""
+        self._write('drivers/Makefile',
+                    'obj-$(CONFIG_$(PHASE_)FOO) += foo.o\n'
+                    'obj-$(CONFIG_$(PHASE_)BAR) += bar.o\n')
+        self._write('drivers/foo.c', 'int x = CONFIG_IS_ENABLED(FOO);\n')
+        self._commit('pick')
+
+    def test_clean(self):
+        """Test a range with nothing to adapt"""
+        self._write('drivers/foo.c', 'int x = IS_ENABLED(CONFIG_FOO);\n')
+        self._commit('pick')
+        self.assertEqual((0, []), self._run('HEAD~1..HEAD'))
+
+    def test_report(self):
+        """Test reporting what needs adapting"""
+        self._pick()
+        ret, lines = self._run('HEAD~1..HEAD')
+        self.assertEqual(1, ret)
+        self.assertEqual(
+            ['drivers/Makefile:1: CONFIG_$(PHASE_) FOO',
+             'drivers/Makefile:2: CONFIG_$(PHASE_) BAR',
+             'drivers/foo.c:1: CONFIG_IS_ENABLED() FOO',
+             'Only enabled in U-Boot proper upstream, so need adding to '
+             'scripts/conf_nospl: BAR'], lines)
+
+    def test_fix(self):
+        """Test adapting the working tree"""
+        self._pick()
+        self._write('doc/a.rst', 'CONFIG_IS_ENABLED(FOO)\n')
+        self._commit('doc')
+        ret, lines = self._run('HEAD~2', fix=True)
+        self.assertEqual(1, ret)
+        self.assertIn('note: [pickman] convert to per-phase config macros; '
+                      'add BAR to conf_nospl', lines)
+        self.assertEqual(['doc/a.rst:1 (not code, so not converted): '
+                          'CONFIG_IS_ENABLED() FOO'], lines[-1:])
+        self.assertEqual('obj-$(CONFIG_FOO) += foo.o\n'
+                         'obj-$(CONFIG_BAR) += bar.o\n',
+                         tools.read_file('drivers/Makefile', binary=False))
+        self.assertEqual('# Options\n\nACPIGEN\nBAR\n',
+                         tools.read_file('scripts/conf_nospl', binary=False))
+
+    def test_fix_only_nospl(self):
+        """Test a fix which only adds to conf_nospl"""
+        self._write('drivers/Makefile',
+                    'obj-$(CONFIG_$(PHASE_)BAR) += bar.o\n')
+        self._commit('pick')
+        tools.write_file('drivers/Makefile', 'obj-y += bar.o\n',
+                         binary=False)
+        os.remove('scripts/conf_nospl')
+        ret, lines = self._run('HEAD~1..HEAD', fix=True)
+        self.assertEqual(0, ret)
+        self.assertIn('note: [pickman] add BAR to conf_nospl', lines)
+        self.assertEqual('BAR\n',
+                         tools.read_file('scripts/conf_nospl', binary=False))
+
+    def test_fix_needs_head(self):
+        """Test that -f refuses a range which does not end at HEAD"""
+        self._pick()
+        self._commit('empty')
+        ret, lines = self._run('HEAD~2..HEAD~1', fix=True)
+        self.assertEqual(1, ret)
+        self.assertEqual(['-f needs a range ending at HEAD'], lines)
+
+    def test_fix_missing_file(self):
+        """Test a fix where a file has since been deleted"""
+        self._pick()
+        os.remove('drivers/foo.c')
+        ret, _ = self._run('HEAD~1..HEAD', fix=True)
+        self.assertEqual(0, ret)
+
+    def test_not_split(self):
+        """Test a tree which does not have a split config"""
+        self._write('include/linux/kconfig.h',
+                    '#define CONFIG_IS_ENABLED(option, ...)\n')
+        self._commit('old')
+        self._pick()
+        self.assertEqual(
+            (0, ['The tree does not have a split config']),
+            self._run('HEAD~1..HEAD'))
+        self.assertEqual('', control.split_note('HEAD~1', 'HEAD'))
+
+    def test_split_note(self):
+        """Test the note for the MR description"""
+        self.assertEqual('', control.split_note('HEAD', 'HEAD'))
+        self._pick()
+        with terminal.capture():
+            note = control.split_note('HEAD~1', 'HEAD')
+        self.assertIn('### Split config\nStill needs adapting:\n', note)
+        self.assertIn('- drivers/foo.c:1: CONFIG_IS_ENABLED() FOO\n', note)
+
+    def test_no_kconfig(self):
+        """Test a tree with no xPL Kconfig options"""
+        os.remove('Kconfig')
+        self._commit('no kconfig')
+        self._pick()
+        ret, lines = self._run('HEAD~1')
+        self.assertEqual(1, ret)
+        self.assertIn('Only enabled in U-Boot proper upstream, so need adding '
+                      'to scripts/conf_nospl: BAR FOO', lines)
 
 if __name__ == '__main__':
     unittest.main()
