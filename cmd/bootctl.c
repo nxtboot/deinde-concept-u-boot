@@ -51,7 +51,7 @@ static int do_bootctl_run(struct cmd_tbl *cmdtp, int flag, int argc,
 
 U_BOOT_LONGHELP(bootctl,
 	"list      - list bootctl drivers\n"
-	"run      - run a boot");
+	"bootctl run       - run a boot");
 
 U_BOOT_CMD_WITH_SUBCMDS(bootctl, "Boot control", bootctl_help_text,
 	U_BOOT_SUBCMD_MKENT(list, 1, 1, do_bootctl_list),
