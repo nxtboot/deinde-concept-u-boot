@@ -8,6 +8,7 @@
 #include <cpu_func.h>
 #include <elf.h>
 #include <env.h>
+#include <getopt.h>
 #include <image.h>
 #include <log.h>
 #include <mapmem.h>
@@ -111,9 +112,10 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
  * be either an ELF image or a raw binary.  Will attempt to setup the
  * bootline and other parameters correctly.
  */
-static int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc,
-		     char *const argv[])
+static int do_bootvx(struct getopt_state *gs)
 {
+	int argc = gs->argc;
+	char *const *argv = gs->argv;
 	unsigned long addr; /* Address of image */
 	unsigned long bootaddr = 0; /* Address to put the bootline */
 	char *bootline; /* Text of the bootline */
@@ -343,7 +345,7 @@ U_BOOT_CMD(
 );
 
 #ifdef CONFIG_CMD_ELF_BOOTVX
-U_BOOT_CMD(
+U_BOOT_CMD_NOOPTS(
 	bootvx, 2, 0, do_bootvx,
 	"Boot vxWorks from an ELF image",
 	" [address] - load address of vxWorks ELF image."

@@ -240,3 +240,19 @@ static int cmd_test_bootvx_tftp(struct unit_test_state *uts)
 	return 0;
 }
 CMD_TEST(cmd_test_bootvx_tftp, UTF_CONSOLE | UTF_DM | UTF_SCAN_FDT);
+
+/* Test that the command refuses an option, since it has none */
+static int cmd_test_bootvx_opt(struct unit_test_state *uts)
+{
+	const char *help = " [address] - load address of vxWorks ELF image.";
+
+	ut_asserteq(1, run_command("bootvx -x", 0));
+	ut_assert_nextline("bootvx - Boot vxWorks from an ELF image");
+	ut_assert_nextline_empty();
+	ut_assert_nextline("Usage:");
+	ut_assert_nextline("bootvx %s", help);
+	ut_assert_console_end();
+
+	return 0;
+}
+CMD_TEST(cmd_test_bootvx_opt, UTF_CONSOLE | UTF_DM | UTF_SCAN_FDT);
