@@ -262,4 +262,5 @@ See also
 
 * :doc:`../tkey-fde` - TKey full disk encryption guide
 * :doc:`luks` - LUKS command reference
+* :doc:`bootctl` - Boot control, which can unlock a volume with a TKey
 * `Tillitis TKey documentation <https://tillitis.se/>`_

@@ -172,3 +172,12 @@ used to run the command before showing the bootmenu, i.e.::
 
     CONFIG_USE_PREBOOT=y
     CONFIG_PREBOOT="pci enum; usb start; scsi scan; nvme scan; virtio scan"
+
+See also
+--------
+
+* :doc:`bootctl<bootctl>` for a menu of Operating Systems discovered from a
+  devicetree schema rather than listed in the environment
+* :doc:`bootflow<bootflow>` for listing and booting those Operating Systems
+  from the command line
+* :doc:`cedit<cedit>` for editing the expo which draws a menu like this one
