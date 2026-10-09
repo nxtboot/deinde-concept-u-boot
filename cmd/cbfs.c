@@ -47,31 +47,34 @@ U_BOOT_CMD_NOOPTS(
 	"      CBFS is in. It defaults to 0xFFFFFFFF\n"
 );
 
-static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
-			  char *const argv[])
+static int do_cbfs_fsload(struct getopt_state *gs)
 {
 	const struct cbfs_cachenode *file;
+	const char *addr_arg, *name, *count_arg;
 	unsigned long offset;
 	unsigned long count;
 	long size;
 	void *buf;
 
-	if (argc < 3) {
+	addr_arg = getopt_pop(gs);
+	name = getopt_pop(gs);
+	if (!addr_arg || !name) {
 		printf("usage: cbfsload <addr> <filename> [bytes]\n");
 		return 1;
 	}
 
 	/* parse offset and count */
-	offset = hextoul(argv[1], NULL);
-	if (argc == 4)
-		count = hextoul(argv[3], NULL);
+	offset = hextoul(addr_arg, NULL);
+	count_arg = getopt_pop(gs);
+	if (count_arg)
+		count = hextoul(count_arg, NULL);
 	else
 		count = 0;
 
-	file = file_cbfs_find(argv[2]);
+	file = file_cbfs_find(name);
 	if (!file) {
 		if (cbfs_get_result() == CBFS_FILE_NOT_FOUND)
-			printf("%s: %s\n", file_cbfs_error(), argv[2]);
+			printf("%s: %s\n", file_cbfs_error(), name);
 		else
 			printf("%s.\n", file_cbfs_error());
 		return 1;
@@ -90,7 +93,7 @@ static int do_cbfs_fsload(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_NOOPTS(
 	cbfsload,	4,	0,	do_cbfs_fsload,
 	"load binary file from a cbfs filesystem",
 	"<addr> <filename> [bytes]\n"

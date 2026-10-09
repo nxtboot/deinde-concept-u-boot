@@ -461,6 +461,11 @@ static int cmd_test_cbfsload_bad(struct unit_test_state *uts)
 	/* the rest is the help text, which is not what this test is about */
 	console_record_reset();
 
+	/* the command takes no options, so one is refused up front */
+	ut_asserteq(1, run_commandf("cbfsload -x %lx hello", addr));
+	ut_assert_nextlinen("cbfsload - load binary file");
+	console_record_reset();
+
 	/* without a CBFS there is nothing to read from */
 	ut_assertok(free_rom(uts, rom, end));
 	ut_assert_console_end();
