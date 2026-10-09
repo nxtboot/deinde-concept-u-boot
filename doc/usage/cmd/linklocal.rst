@@ -79,6 +79,7 @@ legacy network stack and a source of random numbers.
 See also
 --------
 
+* :doc:`bootp<bootp>` for obtaining an address from a BOOTP server instead
 * *dhcp* for obtaining an address from a server instead
 * :doc:`dns<dns>` for looking up a host once the network is up
 * *ping* for checking that the address works

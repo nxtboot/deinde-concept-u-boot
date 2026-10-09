@@ -79,3 +79,11 @@ after which an ACK response is required. The window size defaults to 1.
 
 If CONFIG_TFTP_TSIZE=y, the progress bar is limited to 50 '#' characters.
 Otherwise an '#' is written per UDP package which may decrease performance.
+
+See also
+--------
+
+* :doc:`bootp<bootp>` for obtaining the network settings before an upload
+* :doc:`tftpsrv<tftpsrv>` for receiving a file from a host
+* :doc:`wget<wget>` for downloading a file over HTTP
+* *tftpboot* for downloading a file over TFTP
