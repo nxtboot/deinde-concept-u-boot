@@ -80,6 +80,8 @@ See also
 --------
 
 * :doc:`bootp<bootp>` for obtaining an address from a BOOTP server instead
+* :doc:`rarpboot<rarpboot>` for obtaining an address from a RARP server
+  instead
 * *dhcp* for obtaining an address from a server instead
 * :doc:`dns<dns>` for looking up a host once the network is up
 * *ping* for checking that the address works
