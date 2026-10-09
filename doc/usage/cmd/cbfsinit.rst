@@ -121,8 +121,8 @@ given as '-'::
     => load cbfs - 1000000 u-boot
     32 bytes read in 0 ms
 
-The generic commands read the same files as *cbfsload* and use the same
-in-memory copy of the CBFS metadata, so cbfsinit must have run first.
+The generic commands read the same files as :doc:`cbfsload<cbfsload>` and use
+the same in-memory copy of the CBFS metadata, so cbfsinit must have run first.
 
 CBFS is also offered to the VFS, as a device named 'cbfs' which this
 command binds. Mount it to reach the files by path::
@@ -142,7 +142,7 @@ See also
 
 * :doc:`cbfsinfo<cbfsinfo>` for showing the header this command reads
 * :doc:`cbfsls<cbfsls>` for listing the files this command finds
-* *cbfsload* for reading one of those files into memory
+* :doc:`cbfsload<cbfsload>` for reading one of those files into memory
 * :doc:`cbsysinfo<cbsysinfo>` for the coreboot sysinfo table, which gives the
   offset and size of the CBFS on a board which really has one
 * :doc:`sf<sf>` for reading the SPI flash a CBFS normally lives in

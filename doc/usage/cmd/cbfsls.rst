@@ -75,6 +75,6 @@ See also
 
 * :doc:`cbfsinit<cbfsinit>` for reading the CBFS this command lists
 * :doc:`cbfsinfo<cbfsinfo>` for showing the header rather than the files
-* *cbfsload* for reading one of the listed files into memory
+* :doc:`cbfsload<cbfsload>` for reading one of the listed files into memory
 * :doc:`load<load>` which reads the same files, with 'cbfs' as the
   interface, once cbfsinit has run
