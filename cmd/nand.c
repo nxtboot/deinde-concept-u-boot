@@ -551,9 +551,6 @@ static int do_nand(struct getopt_state *gs)
 	int dev = nand_curr_device;
 	int repeat = gs->cmd_flag & CMD_FLAG_REPEAT;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	/* at least two arguments please */
 	if (argc < 2)
 		goto usage;
@@ -1078,7 +1075,7 @@ U_BOOT_LONGHELP(nand,
 #endif
 	);
 
-U_BOOT_CMD_GETOPT(
+U_BOOT_CMD_NOOPTS(
 	nand, CONFIG_SYS_MAXARGS, 1, do_nand,
 	"NAND sub-system", nand_help_text
 );

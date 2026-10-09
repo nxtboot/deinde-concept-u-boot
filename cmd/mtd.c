@@ -220,9 +220,6 @@ static int do_mtd_otp_read(struct getopt_state *gs)
 	int ret;
 	u8 *buf;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc != 5)
 		return CMD_RET_USAGE;
 
@@ -285,9 +282,6 @@ static int do_mtd_otp_lock(struct getopt_state *gs)
 	size_t len;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc != 4)
 		return CMD_RET_USAGE;
 
@@ -323,9 +317,6 @@ static int do_mtd_otp_write(struct getopt_state *gs)
 	u8 *binbuf;
 	off_t from;
 	int ret;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc != 4)
 		return CMD_RET_USAGE;
@@ -388,9 +379,6 @@ static int do_mtd_otp_info(struct getopt_state *gs)
 	bool user;
 	int ret;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc != 3)
 		return CMD_RET_USAGE;
 
@@ -442,9 +430,6 @@ static int do_mtd_list(struct getopt_state *gs)
 {
 	struct mtd_info *mtd;
 	int dev_nb = 0;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	/* Ensure all devices (and their partitions) are probed */
 	mtd_probe_devices();
@@ -499,9 +484,6 @@ static int do_mtd_io(struct getopt_state *gs)
 	u32 oob_len;
 	u8 *buf;
 	int ret = CMD_RET_SUCCESS;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -685,9 +667,6 @@ static int do_mtd_erase(struct getopt_state *gs)
 	bool scrub;
 	int ret = 0;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -788,9 +767,6 @@ static int do_mtd_markbad(struct getopt_state *gs)
 	struct mtd_info *mtd;
 	loff_t off;
 	int ret = 0;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
@@ -962,9 +938,6 @@ static int do_nand_write_test(struct getopt_state *gs)
 	loff_t off, len;
 	int ret = 0;
 	unsigned int failed = 0, passed = 0;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1142,9 +1115,6 @@ static int do_mtd_nand_read_test(struct getopt_state *gs)
 	enum nand_read_status	ret;
 	u_char			*buf;
 
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
@@ -1231,9 +1201,6 @@ static int do_mtd_bad(struct getopt_state *gs)
 	char *const *argv = gs->argv;
 	struct mtd_info *mtd;
 	loff_t off;
-
-	if (getopt(gs, "+") > 0)
-		return CMD_RET_USAGE;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -1340,38 +1307,38 @@ U_BOOT_LONGHELP(mtd,
 
 U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils", mtd_help_text,
 #if IS_ENABLED(CONFIG_CMD_MTD_OTP)
-		U_BOOT_CMD_MKENT_GETOPT(otpread, 5, 1, do_mtd_otp_read,
+		U_BOOT_CMD_MKENT_NOOPTS(otpread, 5, 1, do_mtd_otp_read,
 					"", ""),
-		U_BOOT_CMD_MKENT_GETOPT(otpwrite, 4, 1, do_mtd_otp_write,
+		U_BOOT_CMD_MKENT_NOOPTS(otpwrite, 4, 1, do_mtd_otp_write,
 					"", ""),
-		U_BOOT_CMD_MKENT_GETOPT(otplock, 4, 1, do_mtd_otp_lock,
+		U_BOOT_CMD_MKENT_NOOPTS(otplock, 4, 1, do_mtd_otp_lock,
 					"", ""),
-		U_BOOT_CMD_MKENT_GETOPT(otpinfo, 3, 1, do_mtd_otp_info,
+		U_BOOT_CMD_MKENT_NOOPTS(otpinfo, 3, 1, do_mtd_otp_info,
 					"", ""),
 #endif
-		U_BOOT_CMD_MKENT_GETOPT(list, 1, 1, do_mtd_list, "", ""),
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(read, 5, 0, do_mtd_io,
+		U_BOOT_CMD_MKENT_NOOPTS(list, 1, 1, do_mtd_list, "", ""),
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(read, 5, 0, do_mtd_io,
 						 "", "", mtd_name_complete),
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(write, 5, 0, do_mtd_io,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(write, 5, 0, do_mtd_io,
 						 "", "", mtd_name_complete),
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(dump, 4, 0, do_mtd_io,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(dump, 4, 0, do_mtd_io,
 						 "", "", mtd_name_complete),
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(erase, 4, 0, do_mtd_erase,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(erase, 4, 0, do_mtd_erase,
 						 "", "", mtd_name_complete),
 #if IS_ENABLED(CONFIG_CMD_MTD_MARKBAD)
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(markbad, 20, 0,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(markbad, 20, 0,
 						 do_mtd_markbad,
 						 "", "", mtd_name_complete),
 #endif
 #if IS_ENABLED(CONFIG_CMD_MTD_NAND_WRITE_TEST)
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_write_test, 4, 0,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(nand_write_test, 4, 0,
 						 do_nand_write_test,
 						 "", "", mtd_name_complete),
 #endif
 #if IS_ENABLED(CONFIG_CMD_MTD_NAND_READ_TEST)
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(nand_read_test, 2, 0,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(nand_read_test, 2, 0,
 						 do_mtd_nand_read_test,
 						 "", "", mtd_name_complete),
 #endif
-		U_BOOT_CMD_MKENT_GETOPT_COMPLETE(bad, 2, 1, do_mtd_bad,
+		U_BOOT_CMD_MKENT_NOOPTS_COMPLETE(bad, 2, 1, do_mtd_bad,
 						 "", "", mtd_name_complete));
