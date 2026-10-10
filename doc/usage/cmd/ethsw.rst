@@ -189,5 +189,7 @@ See also
   whether an Ethernet driver has probed
 * :doc:`dns<dns>` for a network command which needs the link a switch port
   provides
+* :doc:`cdp<cdp>` for asking a switch which U-Boot does not drive what VLANs
+  its port offers
 * *mii* for reading and writing the registers of an Ethernet PHY
 * *mdio* for reaching those registers through the driver-model MDIO uclass

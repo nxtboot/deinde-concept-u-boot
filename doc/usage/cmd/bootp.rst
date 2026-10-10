@@ -124,5 +124,7 @@ See also
 * :doc:`linklocal<linklocal>` for setting up the network with no server at all
 * :doc:`wget<wget>` for downloading a file over HTTP
 * *dhcp* for obtaining a lease from a DHCP server
+* :doc:`cdp<cdp>` for obtaining the VLAN settings of the port before asking for
+  an address
 * :doc:`rarpboot<rarpboot>` for obtaining the address of the board over RARP
 * *tftpboot* for downloading a file over TFTP by hand
