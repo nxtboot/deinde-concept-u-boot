@@ -71,3 +71,11 @@ The command is only available if CONFIG_CMD_TFTPSRV=y.
 
 The command is supported by both the legacy network stack and the lwIP network
 stack.
+
+See also
+--------
+
+* :doc:`bootp<bootp>` for obtaining the network settings before listening
+* :doc:`tftpput<tftpput>` for sending a file to a server
+* :doc:`wget<wget>` for downloading a file over HTTP
+* *tftpboot* for downloading a file over TFTP

@@ -195,5 +195,6 @@ Acknowledgments are enabled by default with lwIP.
 See also
 --------
 
+* :doc:`bootp<bootp>` for setting up the network before a download
 * :doc:`dns<dns>` for finding the address of a web server by name
 * :doc:`tftpput<tftpput>` for sending a file to a server instead

@@ -84,5 +84,7 @@ See also
 * :doc:`wget<wget>` for downloading a file over HTTP
 * :doc:`ethsw<ethsw>` for configuring the Ethernet switch which carries the
   link a lookup travels over
+* :doc:`bootp<bootp>` for obtaining the name-server address from a BOOTP
+  server
 * *dhcp* for obtaining the name-server address automatically
 * *ping* for checking that a host answers
