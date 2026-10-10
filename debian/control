@@ -15,6 +15,7 @@ Build-Depends:
  python3-libfdt:native | device-tree-compiler (<< 1.7.0),
  python3-pyelftools [linux-any],
  python3-setuptools [linux-any],
+ python3-yaml [linux-any],
  swig [linux-any],
 Build-Depends-Indep:
  gcc-i686-linux-gnu [!i386],
