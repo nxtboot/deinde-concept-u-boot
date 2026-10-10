@@ -53,6 +53,12 @@ static int read_fw_from_fat(const char *ifname, int dev, int part,
 		return -ENODEV;
 	}
 
+	err = fs_set_blk_dev_with_part(blk_desc, part);
+	if (err) {
+		debug("%s: Can't set partition\n", __func__);
+		return -ENOENT;
+	}
+
 	err = fs_legacy_read(path, (ulong)buf, 0, 0, &len_read);
 	if (err) {
 		debug("%s: Can't read LDFW file\n", __func__);

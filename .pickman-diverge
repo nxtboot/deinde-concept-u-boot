@@ -8,26 +8,37 @@
 # <path> may be a glob.  <hunk> is a hunk fingerprint, or '*' for
 # every hunk in the file.  Run "pickman drift-accept" to add entries.
 
-README                                            3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
-arch/arm/cpu/u-boot-spl.lds                       df101e958d56  555f90527cb keeps empty __rel_dyn_start/__rel_dyn_end markers, since armv7 start.S references them for CONFIG_POSITION_INDEPENDENT platforms such as qemu_arm_spl
-arch/sandbox/include/asm/clk.h                    69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-board/nxp/ls1043ardb/ls1043ardb.c                 56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
-board/nxp/ls1043ardb/ls1043ardb.c                 8bf868f7dafe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
-board/nxp/lx2160a/lx2160a.c                       20fa86dcc77c  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
-board/nxp/lx2160a/lx2160a.c                       56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
-board/nxp/p1_p2_rdb_pc/p1_p2_rdb_pc.c             5af7dc73137f  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
-board/phytec/phycore_imx91_93/phycore-imx91-93.c  b2c9dc505170  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
-board/phytec/phycore_imx91_93/phycore-imx91-93.c  bafad51188a6  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
-board/phytec/phycore_imx91_93/phycore-imx91-93.c  cd645dac27c0  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
-cmd/efi_common.c                                  ae35f1f9e5d1  efi_memmap_type_name(): renamed from upstream to avoid clashing with the global efi_mem_type_name() of d07934b67e2f
-cmd/efi_common.c                                  c784074111b3  efi_memmap_type_name(): call site of the rename above
-drivers/clk/clk_sandbox.c                         8ecb53450dbb  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/clk/clk_sandbox.c                         a943799b685c  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/clk/clk_sandbox.c                         c7ed2fa3819d  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
-drivers/interconnect/qcom/bcm-voter.c             04fdfcf38e0d  Downstream list_sort() takes a const callback (26d56f96d1c); upstream's non-const cmp_vcd() would not match list_cmp_func_t
-drivers/phy/phy-mtk-xsphy.c                       bb5159b35d05  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
-drivers/power/domain/sandbox-power-domain.c       0642b19358cf  The test uses power domain 2, so subdomains must be 3; upstream's 1 overruns the refcount array, which mcheck catches here
-drivers/video/lp855x_backlight.c                  c62dadaa443c  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
-include/soc/qcom/rpmh.h                           f50472861ef0  The !RPMH rpmh_write() stub takes 'struct device' upstream, a Linux type U-Boot lacks; this tree uses 'struct udevice' as the real prototype does
-lib/efi_selftest/efi_selftest_debug_support.c     8334e130e8ab  The copy of b9bb2627bbb (1b00441689a) fixes an off-by-one: end is exclusive, so the scan stops at pos < end, not upstream's pos <= end
-test/dm/clk.c                                     6d6cde373b96  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+.mailmap                                              0f16552b424e  Jens Wiklander's entries come from a44f46af0aa (picked as 5b56cd64d48), which upstream has after ec6bbbc2de2c; this goes away when the comparison point moves past it
+README                                                3be307617f72  test/dm/fs.c asserts README's first 32 bytes; upstream's leading space before the SPDX tag breaks dm_test_fs_file and dm_test_vfs_symlink
+arch/arm/cpu/u-boot-spl.lds                           df101e958d56  555f90527cb keeps empty __rel_dyn_start/__rel_dyn_end markers, since armv7 start.S references them for CONFIG_POSITION_INDEPENDENT platforms such as qemu_arm_spl
+arch/arm/mach-imx/cmd_bmode.c                         cdd4d86de907  Downstream's <command.h> no longer pulls in <linux/string.h>, so the copy of 64307118499 (0825552d571) also adds it here; without it the file fails to build (strcmp() etc. undeclared)
+arch/arm/mach-imx/cmd_dek.c                           cdd4d86de907  Downstream's <command.h> no longer pulls in <linux/string.h>, so the copy of 64307118499 (0825552d571) also adds it here; without it the file fails to build (strcmp() etc. undeclared)
+arch/arm/mach-socfpga/secure_vab.c                    c936c5bdce6a  The copy of 05e97d0ef83 (02ee47a1ec7) adds <string.h> for memcmp()/memcpy(), which this tree's headers no longer provide indirectly; the file fails to build without it
+arch/sandbox/include/asm/clk.h                        69acbc3f1ec9  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+board/cavium/thunderx/atf.c                           cdd4d86de907  Downstream's <command.h> no longer pulls in <linux/string.h>, so the copy of 64307118499 (0825552d571) also adds it here; without it the file fails to build (strcmp() etc. undeclared)
+board/nxp/ls1043ardb/ls1043ardb.c                     56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/ls1043ardb/ls1043ardb.c                     8bf868f7dafe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/lx2160a/lx2160a.c                           20fa86dcc77c  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/lx2160a/lx2160a.c                           56d094387fbe  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/nxp/p1_p2_rdb_pc/p1_p2_rdb_pc.c                 5af7dc73137f  This tree replaced board_fix_fdt() with the EVT_FT_FIXUP_F event (160269a21cd, made under board/freescale before the rename); upstream's board_fix_fdt() would never be called here
+board/phytec/phycore_imx91_93/phycore-imx91-93.c      b2c9dc505170  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+board/phytec/phycore_imx91_93/phycore-imx91-93.c      bafad51188a6  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+board/phytec/phycore_imx91_93/phycore-imx91-93.c      cd645dac27c0  This tree replaced the board_fix_fdt() hook with the EVT_FT_FIXUP_F event; upstream's board_fix_fdt() would never be called here
+cmd/blob.c                                            cdd4d86de907  Downstream's <command.h> no longer pulls in <linux/string.h>, so the copy of 64307118499 (0825552d571) also adds it here; without it the file fails to build (strcmp() etc. undeclared)
+cmd/efi_common.c                                      ae35f1f9e5d1  efi_memmap_type_name(): renamed from upstream to avoid clashing with the global efi_mem_type_name() of d07934b67e2f
+cmd/efi_common.c                                      c784074111b3  efi_memmap_type_name(): call site of the rename above
+drivers/clk/clk_sandbox.c                             8ecb53450dbb  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/clk/clk_sandbox.c                             a943799b685c  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/clk/clk_sandbox.c                             c7ed2fa3819d  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+drivers/interconnect/qcom/bcm-voter.c                 04fdfcf38e0d  Downstream list_sort() takes a const callback (26d56f96d1c); upstream's non-const cmp_vcd() would not match list_cmp_func_t
+drivers/phy/phy-mtk-xsphy.c                           bb5159b35d05  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
+drivers/power/domain/sandbox-power-domain.c           0642b19358cf  The test uses power domain 2, so subdomains must be 3; upstream's 1 overruns the refcount array, which mcheck catches here
+drivers/video/lp855x_backlight.c                      c62dadaa443c  Downstream renamed dev_get_child_count() to dev_read_child_count() in 8abb925523d; upstream's name does not exist here
+include/soc/qcom/rpmh.h                               f50472861ef0  The !RPMH rpmh_write() stub takes 'struct device' upstream, a Linux type U-Boot lacks; this tree uses 'struct udevice' as the real prototype does
+lib/efi_selftest/efi_selftest_debug_support.c         8334e130e8ab  The copy of b9bb2627bbb (1b00441689a) fixes an off-by-one: end is exclusive, so the scan stops at pos < end, not upstream's pos <= end
+scripts/Makefile.lib-u-boot                           276be0405e9d  Downstream .incbin rules: the TKey signer and video image wrappers, '_logo' splash symbols and $(src)/$(notdir $<) paths, which the downstream image and TKey support depends on
+scripts/Makefile.lib-u-boot                           5386fcc59e0c  Downstream .incbin rules: the TKey signer and video image wrappers, '_logo' splash symbols and $(src)/$(notdir $<) paths, which the downstream image and TKey support depends on
+scripts/Makefile.lib-u-boot                           f262c61d632b  Downstream .incbin rules: the TKey signer and video image wrappers, '_logo' splash symbols and $(src)/$(notdir $<) paths, which the downstream image and TKey support depends on
+test/dm/clk.c                                         6d6cde373b96  Downstream test/cmd/clk.c needs the sandbox clk of_to_plat() from fe780310cfa, which upstream reverted in aff0f4d30ec
+test/hooks/bin/travis-ci/conf.qemu-m68k               679b8092a075  test/hooks is vendored here (upstream keeps it in the separate u-boot-test-hooks repo); these files come with the copy of the QEMU m68k CI jobs (9baf9779e20)
+test/hooks/py/travis-ci/u_boot_boardenv_qemu_m68k.py  fdc32455b58e  test/hooks is vendored here (upstream keeps it in the separate u-boot-test-hooks repo); these files come with the copy of the QEMU m68k CI jobs (9baf9779e20)
