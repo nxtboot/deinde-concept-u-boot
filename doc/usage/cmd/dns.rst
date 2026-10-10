@@ -84,6 +84,7 @@ See also
 * :doc:`wget<wget>` for downloading a file over HTTP
 * :doc:`ethsw<ethsw>` for configuring the Ethernet switch which carries the
   link a lookup travels over
+* :doc:`cdp<cdp>` for asking that switch which VLAN to tag the lookup with
 * :doc:`bootp<bootp>` for obtaining the name-server address from a BOOTP
   server
 * *dhcp* for obtaining the name-server address automatically

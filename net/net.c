@@ -1224,9 +1224,6 @@ void net_process_received_packet(uchar *in_packet, int len)
 	struct in_addr dst_ip;
 	struct in_addr src_ip;
 	int eth_proto;
-#if defined(CONFIG_CMD_CDP)
-	int iscdp;
-#endif
 	ushort cti = 0, vlanid = VLAN_NONE, myvlanid, mynvlanid;
 
 	debug_cond(DEBUG_NET_PKT, "packet received\n");
@@ -1253,8 +1250,23 @@ void net_process_received_packet(uchar *in_packet, int len)
 #endif
 
 #if defined(CONFIG_CMD_CDP)
-	/* keep track if packet is CDP */
-	iscdp = is_cdp_packet(et->et_dest);
+	/*
+	 * CDP is handled here, before the protocol is looked at, since
+	 * cdp_receive() reads the 802.2 SNAP header itself and so needs a
+	 * pointer to the start of it, whatever the packet carries
+	 */
+	if (is_cdp_packet(et->et_dest)) {
+		int hdr_size = ETHER_HDR_SIZE;
+
+		if (ntohs(et->et_protlen) == PROT_VLAN) {
+			if (len < VLAN_ETHER_HDR_SIZE)
+				return;
+			hdr_size = VLAN_ETHER_HDR_SIZE;
+		}
+		cdp_receive(in_packet + hdr_size, len - hdr_size);
+
+		return;
+	}
 #endif
 
 	myvlanid = ntohs(net_our_vlan);
@@ -1292,11 +1304,7 @@ void net_process_received_packet(uchar *in_packet, int len)
 			return;
 
 		/* if no VLAN active */
-		if ((ntohs(net_our_vlan) & VLAN_IDMASK) == VLAN_NONE
-#if defined(CONFIG_CMD_CDP)
-				&& iscdp == 0
-#endif
-				)
+		if ((ntohs(net_our_vlan) & VLAN_IDMASK) == VLAN_NONE)
 			return;
 
 		cti = ntohs(vet->vet_tag);
@@ -1308,13 +1316,6 @@ void net_process_received_packet(uchar *in_packet, int len)
 	}
 
 	debug_cond(DEBUG_NET_PKT, "Receive from protocol 0x%x\n", eth_proto);
-
-#if defined(CONFIG_CMD_CDP)
-	if (iscdp) {
-		cdp_receive((uchar *)ip, len);
-		return;
-	}
-#endif
 
 	if ((myvlanid & VLAN_IDMASK) != VLAN_NONE) {
 		if (vlanid == VLAN_NONE)

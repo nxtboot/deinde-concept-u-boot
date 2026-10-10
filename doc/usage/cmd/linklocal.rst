@@ -84,4 +84,6 @@ See also
   instead
 * *dhcp* for obtaining an address from a server instead
 * :doc:`dns<dns>` for looking up a host once the network is up
+* :doc:`cdp<cdp>` for obtaining the VLAN settings of the port, which needs no
+  address either
 * *ping* for checking that the address works
