@@ -506,7 +506,7 @@ static void cdp_update_env(void)
 	}
 }
 
-int do_cdp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+int do_cdp(struct getopt_state *gs)
 {
 	int r;
 
@@ -521,7 +521,7 @@ int do_cdp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_NOOPTS(
 	cdp,	1,	1,	do_cdp,
 	"Perform CDP network configuration",
 	"\n"
