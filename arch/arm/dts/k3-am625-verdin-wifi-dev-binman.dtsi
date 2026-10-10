@@ -253,8 +253,8 @@
 					arch = "arm32";
 					compression = "none";
 					os = "tifsstub-fs";
-					load = <0x9dc10000>;
-					entry = <0x9dc10000>;
+					load = <0x9dc00000>;
+					entry = <0x9dc00000>;
 					blob-ext {
 						filename = "tifsstub.bin_fs";
 					};
@@ -266,8 +266,8 @@
 					arch = "arm32";
 					compression = "none";
 					os = "tifsstub-gp";
-					load = <0x9dc20000>;
-					entry = <0x9dc20000>;
+					load = <0x9dc00000>;
+					entry = <0x9dc00000>;
 					blob-ext {
 						filename = "tifsstub.bin_gp";
 					};
@@ -391,8 +391,8 @@
 					arch = "arm32";
 					compression = "none";
 					os = "tifsstub-fs";
-					load = <0x9dc10000>;
-					entry = <0x9dc10000>;
+					load = <0x9dc00000>;
+					entry = <0x9dc00000>;
 					blob-ext {
 						filename = "tifsstub.bin_fs";
 					};
@@ -404,8 +404,8 @@
 					arch = "arm32";
 					compression = "none";
 					os = "tifsstub-gp";
-					load = <0x9dc20000>;
-					entry = <0x9dc20000>;
+					load = <0x9dc00000>;
+					entry = <0x9dc00000>;
 					blob-ext {
 						filename = "tifsstub.bin_gp";
 					};
