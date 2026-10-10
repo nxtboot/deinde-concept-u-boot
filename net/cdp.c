@@ -319,8 +319,13 @@ void cdp_receive(const uchar *pkt, unsigned len)
 				if (t[0] == CONFIG_CDP_APPLIANCE_VLAN_TYPE)
 					vlan = *ss;
 #else
-				/* XXX will this work; dunno */
-				vlan = ntohs(*ss);
+				/*
+				 * Keep the value in network order, as the
+				 * native VLAN above does, since
+				 * cdp_update_env() and net_our_vlan both
+				 * expect that
+				 */
+				vlan = *ss;
 #endif
 				t += 3; tlen -= 3;
 			}
